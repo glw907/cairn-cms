@@ -30,7 +30,7 @@ the matching `/sveltekit` loads, and their snippets show that shape.
 let { data, form, render, registry, icons }: {
   data: AdminData;
   form?: Record<string, unknown> | null;
-  render?: (md: string) => string | Promise<string>;
+  render?: SiteRender;
   registry?: ComponentRegistry;
   icons?: IconSet;
 };
@@ -159,7 +159,7 @@ surfaces in the slide-over.
 let { data, registry, render, icons, form }: {
   data: EditData & { siteName: string };
   registry?: ComponentRegistry;
-  render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+  render?: SiteRender;
   icons?: IconSet;
   form?: ContentFormFailure | null;
 };
@@ -468,7 +468,7 @@ let { registry, insert, update, icons, render, preview = null, disabled = false,
   insert: (text: string) => void;
   update?: (range: { from: number; to: number }, markdown: string) => void;
   icons?: IconSet;
-  render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+  render?: SiteRender;
   preview?: ResolvedPreview | null;
   disabled?: boolean;
   trigger?: boolean;

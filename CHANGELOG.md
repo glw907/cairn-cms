@@ -2,6 +2,31 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.75.0
+
+<!-- release-size: minor -->
+
+The render seam (Contract v2 phase 4a). The adapter's `rendering.render` member changes from the
+positional `render(md, opts?) => string | Promise<string>` to the entry-aware
+`render({ body, concept?, frontmatter?, resolve?, resolveMedia? }) => Promise<string>`. The single
+object argument carries the markdown in `body` and the resolvers alongside it, and the new optional
+`concept` and `frontmatter` give a custom renderer the entry's context, so it can vary its output per
+concept or per frontmatter field. The component-insert preview, which has no entry, omits them. The
+shared `SiteRender` type is now a root-barrel export, so a site can type its `render` against it.
+
+The entrance ordinal (`data-rise`) becomes unconditional pipeline output. The rehype dispatch step
+stamps a document-order `data-rise` on every top-level primitive on every render, and the `stagger`
+flag leaves `createRenderer`, the pipeline, and the seam. The ordinal is inert without site CSS, so a
+site that drives an entrance cascade keeps its `[data-rise]` rules and a site that does not is
+unaffected. The editor preview document gains a `data-cairn-preview` marker on its root so a site can
+scope an entrance animation away from the preview, which runs the same pipeline.
+
+This is breaking within the `0.x` window. Consumers must: change the adapter `render` from
+`(md, opts) => ...` to `({ body, resolve, resolveMedia }) => ...`, read the markdown from `body`, and
+return a `Promise<string>` (a typical body is `renderMarkdown(body, { resolve, resolveMedia })`).
+Consumers must: drop any `stagger` option passed to `createRenderer` or the seam; `data-rise` is now
+always emitted and is inert without `[data-rise]` CSS.
+
 ## 0.74.0
 
 <!-- release-size: minor -->

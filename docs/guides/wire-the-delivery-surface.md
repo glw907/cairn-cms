@@ -216,7 +216,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
      normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
    );
    // In defineAdapter: default the render resolver so a body image resolves on the public build.
-   //   render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+   //   render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
    ```
 
    Pass the same `publicMediaResolver` to `createPublicRoutes` (step 2) as `resolveMedia`, so the

@@ -80,7 +80,7 @@ the deps.
 ```ts
 interface PublicRoutesDeps {
   site: SiteResolver;
-  render: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+  render: SiteRender;
   origin: string;
   siteName: string;
   description: string;

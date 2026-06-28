@@ -46,7 +46,7 @@ This guide assumes you already have a running cairn site and want to shape its c
      backend: { owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' },
      email: { from: 'cms@showcase.test' },
      rendering: {
-       render: (md, opts) => renderMarkdown(md, opts),
+       render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
        components: registry,
        icons,
      },
@@ -73,7 +73,7 @@ This guide assumes you already have a running cairn site and want to shape its c
    const { renderMarkdown } = createRenderer(registry);
 
    // ...inside the adapter's rendering group:
-   rendering: { render: (md, opts) => renderMarkdown(md, opts), components: registry, icons },
+   rendering: { render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }), components: registry, icons },
    ```
 
    For the pipeline `createRenderer` assembles and how to register components, see [Configure rendering](./configure-rendering.md).

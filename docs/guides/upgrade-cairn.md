@@ -457,8 +457,9 @@ step is the one a site is most likely to miss: without the public resolver, a pu
    export const cairn = defineAdapter({
      // ...
      assets: { bucketBinding: 'MEDIA_BUCKET' },
-     // Default opts.resolveMedia so a published body image resolves; the preview path overrides it.
-     render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+     // Default resolveMedia so a published body image resolves; the preview path overrides it.
+     render: ({ body, resolve, resolveMedia }) =>
+       renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
    });
    ```
 
@@ -768,3 +769,21 @@ Consumers must: drop any import of the removed `BackendConfig`, `RepoRef`, or `A
 and replace any import of `GithubKeyEnv` (from the `/sveltekit` subpath) with `BackendEnv`. A site that
 only writes the standard adapter and never imported those types makes the one-line `backend` change and
 nothing else.
+
+## 0.75.0: the `render` seam becomes entry-aware and `Promise<string>` (breaking)
+
+The adapter's `rendering.render` member changes from the positional
+`render(md, opts?) => string | Promise<string>` to the entry-aware
+`render({ body, concept?, frontmatter?, resolve?, resolveMedia? }) => Promise<string>`. The single
+object argument carries the markdown in `body` and the resolvers alongside it, and it adds the
+optional `concept` and `frontmatter` so a custom renderer can vary its output per entry. The entrance
+ordinal (`data-rise`) is now stamped unconditionally by the pipeline, so the `stagger` option is gone.
+
+Consumers must: change the adapter `render` from `(md, opts) => ...` to
+`({ body, resolve, resolveMedia }) => ...`, read the markdown from `body`, and return a
+`Promise<string>`. A typical body becomes
+`renderMarkdown(body, { resolve, resolveMedia })`.
+
+Consumers must: drop any `stagger` option passed to `createRenderer` or the `render` seam. The
+`data-rise` ordinal is now always emitted and is inert without site CSS, so a site that wants the
+entrance cascade keeps its `[data-rise]` rules and a site that does not is unaffected.

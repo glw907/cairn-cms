@@ -209,7 +209,7 @@ export const cairn = defineAdapter({
   },
   backend: githubApp({ owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@field-notes.test' },
-  rendering: { render: (md, opts) => renderMarkdown(md, opts) },
+  rendering: { render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }) },
 });
 ```
 
@@ -278,7 +278,7 @@ export const cairn = defineAdapter({
   backend: githubApp({ owner: 'you', repo: 'field-notes', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@field-notes.test' },
   rendering: {
-    render: (md, opts) => renderMarkdown(md, opts),
+    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
     components: registry,
     icons,
   },

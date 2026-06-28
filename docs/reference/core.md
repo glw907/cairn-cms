@@ -57,7 +57,7 @@ export const cairn = defineAdapter({
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
   rendering: {
-    render: (md, opts) => renderMarkdown(md, opts),
+    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
     components: registry,
     icons,
   },
@@ -458,8 +458,28 @@ sanitize and anchor controls.
 // examples/showcase/src/lib/cairn.config.ts
 const { renderMarkdown } = createRenderer(registry);
 // the adapter's render delegates to it:
-render: (md, opts) => renderMarkdown(md, opts),
+render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
+
+#### `SiteRender`
+
+```ts
+type SiteRender = (input: {
+  body: string;
+  concept?: string;
+  frontmatter?: Record<string, unknown>;
+  resolve?: LinkResolve;
+  resolveMedia?: MediaResolve;
+}) => Promise<string>;
+```
+
+The type of the adapter's `rendering.render` member: the one renderer the editor preview and every
+public page call. It takes a single object and returns a `Promise<string>`. `body` is the markdown
+to render. `resolve` rewrites `cairn:` links to live permalinks; the build passes a
+site-resolver-backed resolver and the preview passes a manifest-backed one. `resolveMedia` resolves
+`media:` references the same way. `concept` and `frontmatter` carry the entry's context, so a custom
+renderer can vary its output per concept or per frontmatter field. Both are optional: an entry render
+supplies them, and the standalone component-insert preview omits them.
 
 #### `parseMarkdown`
 
@@ -845,7 +865,8 @@ function signatures above reference these.
 | `SlotDef` | `interface SlotDef` | One named content region of a component. A repeatable slot's `itemFields` are a `fields.*` record of leaf descriptors (v1 uses the first), and the optional `itemLabel` derives a row's label from its item values and index, falling back to the indexed label. |
 | `IconSet` | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
-| `RendererOptions` | `interface RendererOptions` | The render pipeline's stagger, sanitize, and anchor controls. |
+| `SiteRender` | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` the editor preview and every public page call. |
+| `RendererOptions` | `interface RendererOptions` | The render pipeline's sanitize and anchor controls. |
 | `ReferenceOptions` | `interface ReferenceOptions` | The title and summary for `generateComponentReference`. |
 | `SiteConfig` | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | `interface NavNode` | One navigation node: label, optional url, optional children. |

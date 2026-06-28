@@ -26,7 +26,7 @@ This guide assumes a running cairn site whose adapter you want to wire for rende
 
    ```ts
    // examples/showcase/src/lib/cairn.config.ts
-   render: (md, opts) => renderMarkdown(md, opts),
+   render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
    ```
 
 3. **Register components only if the site uses directive components.** A component is a named block an author inserts in markdown that the registry turns into custom markup. The showcase registers two, `callout` and `alert`, through `defineRegistry`. Each component declares its attributes, slots, and a `build(ctx)` function that returns the hast for that block. Inside `build`, `ctx` exposes the parsed attributes and slot content, so `ctx.slot('title')` reads an inline slot and `ctx.items('points')` reads a repeatable one. If your site has no components, skip this step and call `createRenderer()` with no argument. For the full `build(ctx)` contract and the directive grammar an author writes, see [the core reference](../reference/core.md#defineregistry).

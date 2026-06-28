@@ -63,9 +63,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
   import type { ContentFormFailure, EditData } from '../sveltekit/content-routes.js';
-  import type { LinkResolve } from '../content/links.js';
+  import type { SiteRender } from '../content/types.js';
   import { manifestLinkResolver } from '../content/manifest.js';
-  import type { MediaResolve } from '../render/resolve-media.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
@@ -77,10 +76,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     /** The site's component registry, for the insert palette. */
     registry?: ComponentRegistry;
     /** The site's design-accurate render pipeline; the preview pane renders its output, which the floored pipeline already sanitized. */
-    render?: (
-      md: string,
-      opts?: { stagger?: boolean; resolve?: LinkResolve; resolveMedia?: MediaResolve },
-    ) => string | Promise<string>;
+    render?: SiteRender;
     /** The site's icon set, for the guided form's icon fields. */
     icons?: IconSet;
     /** The last content action's failure: the save guard's broken links, the delete guard's
@@ -1232,7 +1228,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await render(md, { resolve, resolveMedia: resolveMediaRef });
+        const html = await render({ body: md, resolve, resolveMedia: resolveMediaRef });
         if (run === previewRun) {
           previewHtml = html;
           previewFailed = false;

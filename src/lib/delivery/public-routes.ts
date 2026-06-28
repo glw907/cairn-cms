@@ -10,7 +10,7 @@ import { buildSeoMeta } from './seo.js';
 import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
 import { buildLinkResolver } from './site-resolver.js';
-import type { LinkResolve } from '../content/links.js';
+import type { SiteRender } from '../content/types.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
 import { log } from '../log/index.js';
@@ -18,7 +18,7 @@ import { log } from '../log/index.js';
 /** Injected dependencies for the public loaders. */
 export interface PublicRoutesDeps {
   site: SiteResolver;
-  render: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+  render: SiteRender;
   origin: string;
   /** Site name for og:site_name and the SEO head. */
   siteName: string;
@@ -163,7 +163,21 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
       ...(fields.author ? { author: fields.author } : {}),
       ...(entry.date ? { feeds } : {}),
     });
-    return { concept: entry.concept, entry, html: await render(entry.body, { stagger: true, resolve: buildLinkResolver(site) }), canonicalUrl, seo, newer, older, ...(heroImage ? { heroImage } : {}) };
+    return {
+      concept: entry.concept,
+      entry,
+      html: await render({
+        body: entry.body,
+        concept: entry.concept,
+        frontmatter: entry.frontmatter,
+        resolve: buildLinkResolver(site),
+      }),
+      canonicalUrl,
+      seo,
+      newer,
+      older,
+      ...(heroImage ? { heroImage } : {}),
+    };
   }
 
   /** The chronological archive for one concept: every non-draft summary, newest-first. */

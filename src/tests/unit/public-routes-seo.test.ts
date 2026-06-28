@@ -50,7 +50,7 @@ const site = createSiteResolver([
 
 const routes = createPublicRoutes({
   site,
-  render: (md) => `<p>${md}</p>`,
+  render: ({ body }) => Promise.resolve(`<p>${body}</p>`),
   origin: 'https://x.test',
   siteName: 'X Site',
   description: 'Site default description.',

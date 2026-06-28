@@ -7,11 +7,11 @@ import { testAdapter, testSiteConfig } from './_content-fixture.js';
 import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
 
 describe('composeRuntime', () => {
-  it('folds the adapter into a runtime carrying the normalized concepts and backend', () => {
+  it('folds the adapter into a runtime carrying the normalized concepts and backend', async () => {
     const runtime = composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig });
     expect(runtime.concepts.map((c) => c.id)).toEqual(['posts', 'pages']);
     expect(runtime.backend).toEqual(testAdapter.backend);
-    expect(runtime.render('x')).toBe('x');
+    expect(await runtime.render({ body: 'x' })).toBe('x');
   });
 
   it('sources siteName from the site config, not the adapter', () => {

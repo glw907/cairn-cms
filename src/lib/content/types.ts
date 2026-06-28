@@ -179,6 +179,22 @@ export interface AssetConfig {
 }
 
 /**
+ * The site's one renderer (design decision 4): the editor preview and every public page call it.
+ *  Entry-aware so a custom renderer can vary output by concept or frontmatter; the default reads only
+ *  `body` plus the resolvers. `resolve` rewrites cairn: links to live permalinks (the build passes a
+ *  site-resolver-backed resolver, the preview a manifest-backed one); `resolveMedia` resolves media:
+ *  references the same way. `concept` and `frontmatter` carry the entry's context for an entry render
+ *  and are absent for the standalone component-insert preview.
+ */
+export type SiteRender = (input: {
+  body: string;
+  concept?: string;
+  frontmatter?: Record<string, unknown>;
+  resolve?: LinkResolve;
+  resolveMedia?: import('../render/resolve-media.js').MediaResolve;
+}) => Promise<string>;
+
+/**
  * The single seam the engine consumes. A site implements this at `src/lib/cairn.config.ts`, in six
  * subsystem groups (spec §8): the content concepts, the commit backend, the magic-link sender, the
  * render subsystem, the optional media stack, and the admin-experience knobs. The internal manifest
@@ -196,17 +212,9 @@ export interface CairnAdapter {
     /**
      * The one renderer the editor preview and every public page call (design decision 4). `resolve`
      *  rewrites cairn: links to live permalinks; the build passes a site-resolver-backed one, the
-     *  preview a manifest one. The trailing `resolveMedia` is additive and optional: the build passes a
-     *  site-resolver-backed media resolver, the preview a manifest-backed one.
+     *  preview a manifest one. `resolveMedia` resolves media: references the same way.
      */
-    render(
-      md: string,
-      opts?: {
-        stagger?: boolean;
-        resolve?: LinkResolve;
-        resolveMedia?: import('../render/resolve-media.js').MediaResolve;
-      },
-    ): string | Promise<string>;
+    render: SiteRender;
     /** Directive component registry; the renderer and the insert palette derive from it (seam 3). */
     components?: ComponentRegistry;
     /** The site's glyph name to SVG path-data map, for the admin icon picker and the renderer. */
@@ -342,17 +350,10 @@ export interface CairnRuntime {
   supportContact?: string;
   /**
    * The site's one renderer: the editor preview and every public page call it (design decision 4).
-   *  The trailing `resolveMedia` is additive and optional: the build passes a site-resolver-backed
-   *  media resolver, the preview a manifest-backed one.
+   *  The build passes a site-resolver-backed `resolve`/`resolveMedia` pair, the preview manifest-backed
+   *  ones.
    */
-  render(
-    md: string,
-    opts?: {
-      stagger?: boolean;
-      resolve?: LinkResolve;
-      resolveMedia?: import('../render/resolve-media.js').MediaResolve;
-    },
-  ): string | Promise<string>;
+  render: SiteRender;
   manifestPath: string;
   /** The repo-relative path to the committed media manifest, defaulted in composeRuntime. */
   mediaManifestPath: string;

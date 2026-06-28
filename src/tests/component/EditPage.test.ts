@@ -20,7 +20,7 @@ vi.mock('../../lib/components/client-ingest.js', async () => {
 // mounts EditPage joined to that band the way CairnAdmin/AdminLayout do, so a standalone render
 // still exercises the desk controls. The band carries data-testid="cairn-band".
 import EditPage from './EditPageDesk.svelte';
-import type { NamedField } from '../../lib/content/types.js';
+import type { NamedField, SiteRender } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
@@ -277,7 +277,7 @@ describe('EditPage', () => {
   });
 
   it('renders the preview into a sandboxed iframe inside the pane', async () => {
-    const props = { ...postProps({ body: 'Hello world' }), render: (md: string) => `<p>${md}</p>` };
+    const props = { ...postProps({ body: 'Hello world' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('<p>Hello world</p>');
@@ -297,7 +297,7 @@ describe('EditPage', () => {
         body: 'Styled body',
         preview: { stylesheets: ['/assets/site.css'], bodyClass: 'site-body', containerClass: 'prose' },
       }),
-      render: (md: string) => `<p>${md}</p>`,
+      render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`),
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -312,7 +312,7 @@ describe('EditPage', () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const props = {
       ...postProps({ body: 'safe text\n\n<img src=x onerror="alert(1)">' }),
-      render: (md: string) => renderMarkdown(md),
+      render: ({ body }: Parameters<SiteRender>[0]) => renderMarkdown(body),
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -327,8 +327,7 @@ describe('EditPage', () => {
         body: '[about](cairn:pages/about) and [gone](cairn:pages/gone)',
         linkTargets: [{ concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false }],
       }),
-      render: (md: string, opts?: { resolve?: (ref: { concept: string; id: string }) => string | undefined }) =>
-        renderMarkdown(md, opts),
+      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -347,13 +346,7 @@ describe('EditPage', () => {
       }),
       // The stub threads resolveMedia into the real renderMarkdown, so the assertion exercises the
       // live resolve path the way EditPage wires it.
-      render: (
-        md: string,
-        opts?: {
-          resolve?: (ref: { concept: string; id: string }) => string | undefined;
-          resolveMedia?: (ref: { slug: string | null; hash: string }) => string | undefined;
-        },
-      ) => renderMarkdown(md, opts),
+      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -405,13 +398,7 @@ describe('EditPage', () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const props = {
       ...postProps({ body: '', mediaTargets: {} }),
-      render: (
-        md: string,
-        opts?: {
-          resolve?: (ref: { concept: string; id: string }) => string | undefined;
-          resolveMedia?: (ref: { slug: string | null; hash: string }) => string | undefined;
-        },
-      ) => renderMarkdown(md, opts),
+      render: ({ body, resolve, resolveMedia }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolve, resolveMedia }),
     };
     const screen = render(EditPage, props);
 
@@ -449,7 +436,7 @@ describe('EditPage', () => {
   });
 
   it('switches the frame width from the device menu and persists the choice', async () => {
-    const props = { ...postProps({ body: 'sized' }), render: (md: string) => `<p>${md}</p>` };
+    const props = { ...postProps({ body: 'sized' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     const frame = () => screen.container.querySelector<HTMLElement>('.cairn-preview-frame')!;
@@ -945,7 +932,7 @@ describe('EditPage', () => {
   });
 
   it('switching the toolbar tab to Preview shows the preview pane', async () => {
-    const props = { ...postProps({ body: 'Tab body' }), render: (md: string) => `<p>${md}</p>` };
+    const props = { ...postProps({ body: 'Tab body' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(`<p>${body}</p>`) };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => previewSrcdoc(screen)).toContain('Tab body');
@@ -1947,7 +1934,7 @@ describe('EditPage', () => {
   });
 
   it('shows a quiet line when the preview has nothing to render', async () => {
-    const props = { ...postProps({ body: '' }), render: (md: string) => (md ? `<p>${md}</p>` : '') };
+    const props = { ...postProps({ body: '' }), render: ({ body }: Parameters<SiteRender>[0]) => Promise.resolve(body ? `<p>${body}</p>` : '') };
     const screen = render(EditPage, props);
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.element(screen.getByText('Nothing to preview yet.')).toBeInTheDocument();
@@ -1969,7 +1956,8 @@ describe('EditPage', () => {
     // A controllable async render: each call parks until the test resolves it, standing in for a
     // slow site pipeline.
     const calls: { md: string; resolve: (html: string) => void }[] = [];
-    const slowRender = (md: string) => new Promise<string>((resolve) => calls.push({ md, resolve }));
+    const slowRender = ({ body }: { body: string }) =>
+      new Promise<string>((resolve) => calls.push({ md: body, resolve }));
     const screen = render(EditPage, { ...postProps({ body: 'first body' }), render: slowRender });
     await screen.getByRole('tab', { name: 'Preview' }).click();
     await expect.poll(() => calls.length).toBe(1);

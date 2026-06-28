@@ -57,8 +57,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   import { tick } from 'svelte';
   import type { IconSet } from '../render/glyph.js';
   import type { ComponentValues } from '../render/registry.js';
-  import type { ResolvedPreview } from '../content/types.js';
-  import type { LinkResolve } from '../content/links.js';
+  import type { ResolvedPreview, SiteRender } from '../content/types.js';
   import { serializeComponent } from '../render/component-grammar.js';
   import { buildPreviewDoc } from './preview-doc.js';
   import ComponentForm from './ComponentForm.svelte';
@@ -77,7 +76,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
      *  `preview`, the configure step splits to two panes and renders the configured directive
      *  through this into a sandboxed iframe (the same path EditPage's preview uses). Optional: a
      *  host that passes none simply gets no preview pane. */
-    render?: (md: string, opts?: { stagger?: boolean; resolve?: LinkResolve }) => string | Promise<string>;
+    render?: SiteRender;
     /** The adapter's resolved preview knob (stylesheets and container class), threaded to
      *  buildPreviewDoc so the preview frame links the site's own CSS, the same as EditPage. */
     preview?: ResolvedPreview | null;
@@ -156,7 +155,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     previewState = 'settling';
     const handle = setTimeout(async () => {
       try {
-        const html = await render(md);
+        const html = await render({ body: md });
         if (run === previewRun) {
           previewDoc = buildPreviewDoc(html, preview);
           previewState = 'settled';

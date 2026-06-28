@@ -15,7 +15,7 @@ const adapter = defineAdapter({
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
 });
 
 const config: SiteConfig = { siteName: 'T' };
@@ -33,7 +33,7 @@ const requiredTitleAdapter = defineAdapter({
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.c' },
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
 });
 
 describe('buildSiteManifest', () => {

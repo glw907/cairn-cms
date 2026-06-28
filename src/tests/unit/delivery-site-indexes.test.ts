@@ -25,7 +25,7 @@ const adapter = defineAdapter({
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'noreply@test.example' },
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
 });
 
 const config = parseSiteConfig('siteName: Test\nmenus:\n  primary: []\n');
@@ -83,7 +83,7 @@ describe('createSiteIndexes build-time guards', () => {
       } as CairnAdapter['content'],
       backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
       email: { from: 'noreply@test.example' },
-      rendering: { render: (md) => md },
+      rendering: { render: ({ body }) => Promise.resolve(body) },
     });
     expect(() =>
       createSiteIndexes(siteAdapter, config, { site: {} } as SiteGlobs<typeof siteAdapter>),

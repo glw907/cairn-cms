@@ -10,7 +10,7 @@ function adapter(): CairnAdapter {
     content: { pages: { dir: 'src/content/pages', routing: 'page', fields: fieldset({}) } },
     backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     email: { from: 'cms@test' },
-    rendering: { render: (md) => md },
+    rendering: { render: ({ body }) => Promise.resolve(body) },
   };
 }
 

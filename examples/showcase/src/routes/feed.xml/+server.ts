@@ -15,7 +15,7 @@ export const GET: RequestHandler = async () => {
       url: ORIGIN + p.permalink,
       date: p.date,
       summary: p.excerpt,
-      contentHtml: await cairn.rendering.render(posts!.byId(p.id)!.body, { resolve }),
+      contentHtml: await cairn.rendering.render({ body: posts!.byId(p.id)!.body, resolve }),
       tags: p.tags,
     })),
   );

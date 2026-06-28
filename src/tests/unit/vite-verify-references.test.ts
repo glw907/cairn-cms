@@ -33,7 +33,7 @@ export default {
 
 const ADAPTER = `import { defineAdapter, fieldset, fields, parseSiteConfig } from '@glw907/cairn-cms';
 export const cairn = defineAdapter({
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
   email: { from: 'cms@test.example' },
   media: { bucketBinding: 'MEDIA_BUCKET' },
   content: {

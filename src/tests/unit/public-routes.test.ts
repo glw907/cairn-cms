@@ -22,7 +22,7 @@ const site = createSiteResolver([
   { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
 ]);
 
-const routes = createPublicRoutes({ site, render: (md) => `<r>${md.trim()}</r>`, origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
 
 describe('createPublicRoutes', () => {
   it('entryLoad resolves a dated Posts URL by pathname', async () => {
@@ -71,7 +71,7 @@ describe('createPublicRoutes', () => {
       ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined;
     const heroRoutes = createPublicRoutes({
       site: heroSite,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -100,7 +100,7 @@ describe('createPublicRoutes', () => {
     // Resolver present but the hash does not resolve: no throw, undefined projection.
     const unresolved = createPublicRoutes({
       site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -112,7 +112,7 @@ describe('createPublicRoutes', () => {
     // Media off: no resolveMedia dep at all, still undefined and no throw.
     const off = createPublicRoutes({
       site: createSiteResolver([{ descriptor: heroPages, index: heroIndex() }]),
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -134,7 +134,7 @@ describe('createPublicRoutes', () => {
       ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined;
     const heroRoutes = createPublicRoutes({
       site: heroSite,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -157,7 +157,7 @@ describe('createPublicRoutes', () => {
     ]);
     const stringRoutes = createPublicRoutes({
       site: stringSite,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -179,7 +179,7 @@ describe('createPublicRoutes', () => {
     ]);
     const coverRoutes = createPublicRoutes({
       site: coverSite,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -202,7 +202,7 @@ describe('createPublicRoutes', () => {
     ]);
     const heroRoutes = createPublicRoutes({
       site: heroSite,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',
@@ -222,7 +222,7 @@ describe('createPublicRoutes', () => {
           { path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' },
         ], pages) },
       ]);
-      return createPublicRoutes({ site: linkSite, render: (md, opts) => renderMarkdown(md, opts), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
+      return createPublicRoutes({ site: linkSite, render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
     }
 
     const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
@@ -238,7 +238,7 @@ describe('createPublicRoutes media.resolver_absent', () => {
   function build(deps: { assetsEnabled?: boolean; withResolver?: boolean }) {
     return createPublicRoutes({
       site,
-      render: (md) => `<r>${md.trim()}</r>`,
+      render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`),
       origin: 'https://example.com',
       siteName: 'Test',
       description: 'Test description.',

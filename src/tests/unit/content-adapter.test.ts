@@ -18,7 +18,7 @@ const adapter = defineAdapter({
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'noreply@test.example' },
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
 });
 
 describe('defineAdapter', () => {

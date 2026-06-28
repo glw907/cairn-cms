@@ -23,6 +23,7 @@ export type {
   ConceptUrlPolicy,
   CairnExtension,
   CairnRuntime,
+  SiteRender,
   AdminPanel,
   FieldTypeDef,
 } from './content/types.js';

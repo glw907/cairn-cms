@@ -25,7 +25,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     ],
     backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
-    render: (md) => md,
+    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },

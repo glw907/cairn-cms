@@ -8,7 +8,7 @@ const base: CairnAdapter = {
   content: {},
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '1' }),
   email: { from: 'cms@example.com' },
-  rendering: { render: (md) => md },
+  rendering: { render: ({ body }) => Promise.resolve(body) },
 };
 
 describe('composeRuntime icons', () => {

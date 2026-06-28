@@ -169,7 +169,8 @@ export const cairn = defineAdapter({
   rendering: {
     // Render through the engine so registered components (the callout) produce their markup. The
     // default media resolver backs the public build; the preview path injects its own resolveMedia.
-    render: (md, opts) => renderMarkdown(md, { ...opts, resolveMedia: opts?.resolveMedia ?? publicMediaResolver }),
+    render: ({ body, resolve, resolveMedia }) =>
+      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
     components: registry,
     icons,
   },

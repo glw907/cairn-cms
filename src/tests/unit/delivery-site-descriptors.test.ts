@@ -13,7 +13,7 @@ const adapter = {
   },
   backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'a@b.test' },
-  rendering: { render: (md: string) => md },
+  rendering: { render: ({ body }: { body: string }) => Promise.resolve(body) },
 } as unknown as CairnAdapter;
 
 const config = parseSiteConfig('siteName: Test\n');

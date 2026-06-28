@@ -55,7 +55,7 @@ function runtime(): CairnRuntime {
     concepts: [posts, pages],
     backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
     sender: { from: 'cms@test' },
-    render: (md) => md,
+    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },

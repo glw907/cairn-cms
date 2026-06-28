@@ -17,6 +17,7 @@ reason.
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.
 - [Components (`/components`)](./components.md): the admin Svelte UI.
 - [Render authoring (`/render`)](./render.md): the component-authoring toolkit for a component `build()`.
+- [Islands (`/islands`)](./islands.md): the client runtime that mounts a site's live components over the static fallbacks.
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Media (`/media`)](./media.md): the node-safe media surface: the config normalizer, the manifest functions, the naming and transform-URL helpers, the `media:` codec, and the render resolver.

@@ -2,6 +2,40 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.76.0
+
+<!-- release-size: minor -->
+
+Content islands (Contract v2 phase 4b). A directive component opts into client interactivity, and a
+small Svelte-only client runtime mounts the site's live component over the static fallback the render
+pipeline emits. This is additive: a site that registers no island is byte-identical to before and never
+imports the runtime.
+
+A component declares `hydrate?: boolean | 'visible'` on its `defineComponent`. With it set, the render
+pipeline wraps the component's `build()` output in an island boundary, a single `<div>` carrying the
+directive name in `data-cairn-island` and the component's declared scalar attributes as JSON in
+`data-cairn-props` (a `number` field is a JSON number, a `boolean` a JSON boolean, every other field a
+string). `true` mounts the island eagerly on first load and after every client-side navigation;
+`'visible'` adds `data-cairn-hydrate="visible"` and defers the mount to first intersection. The
+`build()` output becomes the no-JS fallback, so it stays the page's first paint and a no-JS reader's
+content.
+
+The adapter registers the live components on a new `rendering.islands` field, keyed by directive name.
+`defineAdapter` fails closed at declaration when a `hydrate` component has no island entry or an island
+entry has no `hydrate` component, naming the offending directive.
+
+A new `./islands` subpath exports `hydrateIslands(islands, root?)` and the `IslandRegistry` type. The
+runtime mounts each island with Svelte's own `mount()`/`unmount()` (cairn is Svelte-only by design),
+isolates a bad island (an unknown name, a malformed prop payload, or a component that throws leaves the
+static fallback in place), and is idempotent per navigation: it tears down the previous pass before it
+re-runs, so a layout calls it on `afterNavigate` without stacking duplicates.
+
+No consumer action is required. A site adds an island by setting `hydrate` on a component, registering
+the live component on `rendering.islands`, and calling `hydrateIslands` from a root layout on
+`afterNavigate`, gated on a non-empty registry so a static site ships none of the runtime. See the
+[islands reference](docs/reference/islands.md) and the [Add an island](docs/guides/add-an-island.md)
+guide.
+
 ## 0.75.0
 
 <!-- release-size: minor -->

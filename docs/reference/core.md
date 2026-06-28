@@ -271,6 +271,15 @@ malformed pattern fails at module load rather than at first insert. The built `a
 identical code. A cross-field attribute rule lives in the co-bundled `behavior` table, keyed by
 attribute name.
 
+A component opts into client hydration with `hydrate?: boolean | 'visible'`. With it set, the render
+pipeline wraps the component's `build()` output in an island boundary, and the live Svelte component the
+site registers under the same name on [`rendering.islands`](#renderingislands-adapter-member) mounts
+over that fallback in the browser. `true` mounts eagerly on first load and after every client-side
+navigation; `'visible'` defers to first intersection. The `build()` output is the no-JS fallback, so
+keep it class-driven and high-fidelity. Absent leaves the component static and server-only. The
+[`/islands`](./islands.md) reference carries the runtime, the boundary contract, and the props trust
+boundary.
+
 ```ts
 const callout = defineComponent({
   name: 'callout',
@@ -480,6 +489,28 @@ site-resolver-backed resolver and the preview passes a manifest-backed one. `res
 `media:` references the same way. `concept` and `frontmatter` carry the entry's context, so a custom
 renderer can vary its output per concept or per frontmatter field. Both are optional: an entry render
 supplies them, and the standalone component-insert preview omits them.
+
+#### `rendering.islands` (adapter member)
+
+```ts
+islands?: IslandRegistry;
+```
+
+The live Svelte components for hydrated directives, keyed by directive name, declared beside `render`
+in the adapter's `rendering` group. Every component whose [`hydrate`](#definecomponent) is set needs an
+entry here, and every entry needs a matching `hydrate` component; `defineAdapter` fails closed at
+declaration on either mismatch, naming the offending directive. An absent registry keeps the site
+static, and the client runtime is never imported. The runtime that consumes it lives at the
+[`/islands`](./islands.md) subpath; that page carries the boundary contract and the props trust
+boundary.
+
+```ts
+rendering: {
+  render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+  components: registry,
+  islands: { converter: Converter },
+},
+```
 
 #### `parseMarkdown`
 
@@ -856,7 +887,7 @@ function signatures above reference these.
 | `ReferenceEdge` | `interface ReferenceEdge` | One typed frontmatter reference edge: the field, the target concept, and the target id. |
 | `InboundReference` | `interface InboundReference` | One inbound referencer: its identity plus the distinct fields through which it references the target. |
 | `ResolvedReference` | `interface ResolvedReference` | A reference edge resolved to its target's identity (id, concept, title, permalink, optional summary), for a route to render a linked target. |
-| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, and `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview. |
+| `ComponentDef` | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `ComponentValues` | `interface ComponentValues` | Guided-form values for one component: attribute and slot values. |
 | `ComponentValidation` | `type ComponentValidation` | A validation verdict: ok, or field-keyed error messages. |

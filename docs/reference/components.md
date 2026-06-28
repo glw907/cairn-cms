@@ -659,3 +659,20 @@ compose it.
 ```svelte
 <CsrfField {token} />
 ```
+
+---
+
+## Hydrate and the island boundary
+
+A directive component can opt into client hydration with `hydrate?: boolean | 'visible'` on its
+[`defineComponent`](./core.md#definecomponent) declaration. With it set, the render pipeline wraps the
+component's `build()` output in an island boundary, and the live Svelte component the site registers
+under the same name on [`rendering.islands`](./core.md#renderingislands-adapter-member) mounts over that
+fallback in the browser. `true` mounts the island eagerly on first load and after every client-side
+navigation; `'visible'` defers the mount to first intersection. The `build()` output becomes the no-JS
+fallback, so make it class-driven (the sink guard strips inline `style`) and high-fidelity (it is first
+paint, and a size mismatch shifts the layout on mount).
+
+The admin editor renders a hydrate component's fallback in its preview, never the live island: the
+preview frame is sandboxed, so the runtime never mounts there. The full surface, the boundary DOM
+contract, and the props trust boundary live on the [islands reference](./islands.md).

@@ -11,7 +11,24 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): Contract v2 COMPLETE, released as 0.76.0 (consolidated rollup); NEXT = developer-extensibility brainstorm
+## Immediate next action (2026-06-28, latest): developer-extensibility — spec + phase-1 plan landed, IMPLEMENTING phase 1
+
+The developer-extensibility brainstorm produced the design spec
+(`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1
+(identity foundation) plan
+(`docs/superpowers/plans/2026-06-28-cairn-extensibility-phase-1-identity.md`), both hardened by
+adversarial review (an eight-lens spec review, a dedicated web-auth security review, and a
+code-grounded plan review). The design: a unified **principal** (email + session + scopes + trust
+tier), a developer `authorize` callback, the server-only `signIn` seam (cairn ships only magic-link;
+developers bring other schemes), an own-your-route admin-screen seam (phase 2), and the enforced
+`@glw907/cairn-cms/extend` contract that locks at 1.0. Two login tiers: board/core-volunteers via
+Google through `signIn` (admin tier), members via magic-link (member tier); aksailingclub is the proof
+site. Phase 1 (twelve TDD tasks) is being implemented on a feature branch off `main`; on completion it
+merges to `main` **without a release**. **NEXT after phase 1 = phase 2 (the admin-screen seam).**
+Competitive + requirements research:
+`docs/internal/2026-06-28-extensibility-competitive-research.md`.
+
+## Prior next action (2026-06-28): Contract v2 COMPLETE, released as 0.76.0 (consolidated rollup); NEXT = developer-extensibility brainstorm
 
 **The whole Contract v2 series is complete and released as `0.76.0`.** Phase 4b (islands), the last phase,
 landed and the held window (`0.69.0`–`0.76.0`) ships as one published `0.76.0` release; the intermediate

@@ -1217,6 +1217,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
   // Render the design-accurate preview as the body changes, debounced. The site's render is the
   // floored engine pipeline, so its output is already sanitized; the preview mirrors the page.
+  // The preview call threads the same entry context the public route passes (concept and
+  // frontmatter), so a custom entry-aware renderer's preview matches its page. The body is the live
+  // editor content; frontmatter is the loaded snapshot, which is faithful for the saved state.
   // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
   // async render call resolves after a newer one has started, the stale result is discarded.
   let previewRun = 0;
@@ -1228,7 +1231,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     const run = ++previewRun;
     const handle = setTimeout(async () => {
       try {
-        const html = await render({ body: md, resolve, resolveMedia: resolveMediaRef });
+        const html = await render({ body: md, concept: data.conceptId, frontmatter: data.frontmatter, resolve, resolveMedia: resolveMediaRef });
         if (run === previewRun) {
           previewHtml = html;
           previewFailed = false;

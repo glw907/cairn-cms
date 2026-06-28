@@ -15,16 +15,20 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **Developer extensibility (the next major initiative).** Now the active initiative, ahead of a stable 1.0.
-  Brainstorm first, grounded in the aksailingclub handbook (handbook.aksailingclub.org, sourced at
-  `~/Projects/aksailingclub-org/handbook/content/`, the ops-dashboard sections); the
-  club-site requirements (events, class lists, asset management, D1-backed custom features behind the admin)
-  are the concrete target, and Geoff is the first extending developer. Standing review lens and full baseline:
-  `docs/internal/extending-developer-lens.md` and the CLAUDE.md "extending-developer lens" dimension. Three
-  baseline gaps scope it: dashboard extension (Mode 2) is type-only and fail-silent, auth resolves only under
-  `/admin/**` with `resolveSession` sealed, and the public boundary is unenforced. Per Geoff, any contract or
-  core-DX change lands in the breaking pre-1.0 window, before adoption. (Moved up from "Considering"; the
-  former duplicate entry there is removed.)
+- **Developer extensibility (the active initiative, ahead of a stable 1.0).** Designed and phased in the spec
+  `docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`. **Phase 1 (identity foundation)
+  SHIPPED to `main` 2026-06-28 (unreleased)**: the unified principal/scope model with an `admin`|`member` trust
+  tier, the fail-closed `authorize` callback, the server-only `signIn` seam, route-gating on any route, and the
+  enforced `@glw907/cairn-cms/extend` boundary with a `check:extension-surface` gate. This closed two of the
+  three original baseline gaps (auth now resolves on any route via `loadPrincipal`; the public boundary is
+  enforced by the wildcard-free `exports` map). **Phase 2 (NEXT) = the admin-screen seam**: `AdminShell` +
+  `adminShellLoad` against a minimal `AdminShellData`, the data-only `admin.nav` registration with a build-time
+  href gate, scope-gated sidebar, retiring the inert `AdminPanel`/`composeRuntime` (the remaining baseline gap).
+  **Phase 3** = upgrade-contract polish (the narrowed `cairn-doctor` check, versioning docs) + the aksailingclub
+  proof (officer back-office on the admin seam + member self-service, which also lands the deferred open
+  member-send + member confirm route). Standing review lens: `docs/internal/extending-developer-lens.md` and the
+  CLAUDE.md "extending-developer lens" dimension. Per Geoff, contract/DX changes land in the breaking pre-1.0
+  window, before adoption.
 
 ## Next
 

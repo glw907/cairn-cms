@@ -5,12 +5,19 @@ next major initiative after the Contract v2 rollup, so every pass from now on is
 question: does this change make the extending developer's path easier or harder? Prefer the choices that
 move toward it. Flag the choices that move away.
 
+**The target is a broadly extensible framework, not a club site (Geoff, 2026-06-28).** The goal is to make
+cairn a broadly extensible framework grounded in a content-managed site. aksailingclub is the first example,
+a proof-of-concept; its requirements ground and validate the design but do not bound it, and they are
+illustrative, not exhaustive. Design the seam for the general case (a developer adds custom, D1-backed admin
+functionality to a content-managed site), and use aksailingclub as a concreteness check, not the spec.
+
 **Make the breaking changes now, before adoption (Geoff, 2026-06-27).** If extensibility needs to alter the
 site contract or the core developer DX, do it in the breaking pre-1.0 window, before anyone is using cairn,
-rather than after a stable release. The v2 rollup ships as a beta (the `beta` npm tag, `latest` stays on the
-prior stable), which is the dogfooding vehicle, not wide adoption; further contract changes for extensibility
-are welcome in the same pre-1.0 window and land before the stable 1.0. So the brainstorm should be
-forward-looking and willing to propose contract or DX changes, not just additive seams.
+rather than after a stable release. The Contract v2 rollup shipped as `0.76.0` to `latest` via a `v0.76.0`
+GitHub pre-release (the pre-release flag and the pre-1.0 version signal the line; 0.x caret ranges isolate
+consumers per minor, so the two sites stay on `0.68.x` until they cut over). Further contract changes for
+extensibility are welcome in the same pre-1.0 window and land before the stable 1.0. So the brainstorm should
+be forward-looking and willing to propose contract or DX changes, not just additive seams.
 
 **The proof site.** aksailingclub is the example site Geoff will use to prove the extensible-cairn concept
 (he is the first extending developer). Its canonical documentation is the **handbook**:
@@ -34,8 +41,9 @@ hand-wavy or the upgrade contract is thin.
 
 ## Worked example: a club site
 
-aksailingclub.org is the canonical target (Geoff, 2026-06-27): a club site with events, class lists, and
-asset management beyond what Posts and Pages cover. The developer wants cairn for the content management,
+aksailingclub.org is the first proof case (Geoff, 2026-06-27), one concrete instance of the general pattern,
+not the scope boundary: a club site with events, class lists, and asset management beyond what Posts and
+Pages cover. The developer wants cairn for the content management,
 then to **extend the admin interface** with the custom functionality, the whole tool **idiomatic
 SvelteKit**, with **D1 as the backend for the custom features**. That shape sets the bar for the
 extensibility initiative: a custom admin screen (an events manager, a class roster) mounted into the cairn

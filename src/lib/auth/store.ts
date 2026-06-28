@@ -75,22 +75,6 @@ export async function createSession(
   ]);
 }
 
-/**
- * Resolve a session to its editor, joining `editor` so the role is read live. An expired
- * session or a removed editor resolves to null, which revokes access on the next request.
- */
-export async function resolveSession(db: D1Database, id: string, now: number): Promise<Editor | null> {
-  const row = await db
-    .prepare(
-      `SELECT e.email AS email, e.display_name AS display_name, e.role AS role
-       FROM session s JOIN editor e ON e.email = s.email
-       WHERE s.id = ? AND s.expires_at > ?`,
-    )
-    .bind(id, now)
-    .first<EditorCols>();
-  return row ? toEditor(row) : null;
-}
-
 /** Delete a session (logout). */
 export async function deleteSession(db: D1Database, id: string): Promise<void> {
   await db.prepare('DELETE FROM session WHERE id = ?').bind(id).run();
@@ -174,8 +158,8 @@ export async function demoteOwnerIfNotLast(db: D1Database, email: string): Promi
 /**
  * Resolve a session to its email and tier without requiring an editor row, left-joining `editor`
  * for the role. A member session (email not in the allowlist) yields `role: null`, a valid scopeless
- * principal, where the prior inner-join `resolveSession` would have returned null and logged the
- * member out. An expired session resolves to null.
+ * principal, where the prior inner-join resolver would have returned null and logged the member out.
+ * An expired session resolves to null.
  */
 export async function resolvePrincipalRow(
   db: D1Database,

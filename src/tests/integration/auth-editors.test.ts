@@ -2,7 +2,7 @@ import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { seedEditor, makeEvent, countRows, expectHttpError } from './_auth-harness.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
-import { findEditor, createSession, resolveSession } from '../../lib/auth/store.js';
+import { findEditor, createSession, resolvePrincipalRow } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
 const routes = createEditorRoutes();
@@ -13,13 +13,13 @@ beforeEach(async () => {
 
 /** Build an event whose locals.editor is the acting owner (as the guard would set it). */
 function asOwner(form?: Record<string, string>) {
-  const ev = makeEvent({ url: 'https://test.dev/admin/editors', form, editor: { email: 'own@x.dev', displayName: 'Own', role: 'owner' } });
+  const ev = makeEvent({ url: 'https://test.dev/admin/editors', form, principal: { email: 'own@x.dev', displayName: 'Own', scopes: ['admin:owner', 'admin:editor'], tier: 'admin' } });
   return ev;
 }
 
 describe('management gate (scenario 7)', () => {
   it('rejects an editor from the management surface with 403', async () => {
-    const ev = makeEvent({ url: 'https://test.dev/admin/editors', editor: { email: 'ed@x.dev', displayName: 'Ed', role: 'editor' } });
+    const ev = makeEvent({ url: 'https://test.dev/admin/editors', principal: { email: 'ed@x.dev', displayName: 'Ed', scopes: ['admin:editor'], tier: 'admin' } });
     const r = await expectHttpError(() => routes.editorsLoad(ev));
     expect(r.status).toBe(403);
   });
@@ -79,8 +79,8 @@ describe('demotion takes effect live (scenario 9)', () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('two@x.dev', 'Two', 'owner');
     await createSession(db, 'sid-two', 'two@x.dev', 'admin', Date.now() + 10_000, Date.now());
-    expect((await resolveSession(db, 'sid-two', Date.now()))?.role).toBe('owner');
+    expect((await resolvePrincipalRow(db, 'sid-two', Date.now()))?.role).toBe('owner');
     await routes.setRoleAction(asOwner({ email: 'two@x.dev', role: 'editor' }));
-    expect((await resolveSession(db, 'sid-two', Date.now()))?.role).toBe('editor');
+    expect((await resolvePrincipalRow(db, 'sid-two', Date.now()))?.role).toBe('editor');
   });
 });

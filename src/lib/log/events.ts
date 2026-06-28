@@ -9,6 +9,7 @@ export type CairnLogEvent =
   | 'auth.session.created'
   | 'auth.session.destroyed'
   | 'auth.authorize.failed'
+  | 'auth.scope.denied'
   | 'commit.succeeded'
   | 'commit.failed'
   | 'config.invalid'

@@ -1,9 +1,9 @@
-// cairn-cms: the GitHub backend's plain data types and its one typed error. The backend
-// reads repo coordinates from the adapter's `BackendConfig` (spec §8); `RepoRef` is the
-// `{ owner, repo, branch }` subset, so `backend` is assignable wherever a `RepoRef` is
-// wanted with no conversion.
+// cairn-cms: the GitHub backend's plain data types and its one typed error. The GitHub App
+// provider config (`githubApp`'s input) carries these repo coordinates; `RepoRef` is the
+// `{ owner, repo, branch }` subset the read and commit transports take, so the provider config
+// is assignable wherever a `RepoRef` is wanted with no conversion.
 
-/** Repo coordinates pinned to a branch: the structural subset of `BackendConfig` the read and commit paths need. */
+/** Repo coordinates pinned to a branch: the `{ owner, repo, branch }` subset the read and commit paths need. */
 export interface RepoRef {
   owner: string;
   repo: string;

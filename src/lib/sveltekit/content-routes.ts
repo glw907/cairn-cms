@@ -667,7 +667,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  per-request resolve re-signs only on a cache miss.
    */
   function resolveBackend(event: ContentEvent): Backend {
-    return deps.backend ?? (event.locals as { backend?: Backend }).backend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return deps.backend ?? event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
@@ -2840,6 +2840,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const path = siteConfigPath();
     const backend = resolveBackend(event);
+    // Read the head BEFORE the content, so this expectedHead is at-or-before the bytes the commit
+    // merges. The settings write lands on the default branch and triggers a deploy, so it is
+    // fail-closed: a concurrent commit to the config moves the head off this value and the commit
+    // throws a conflict, surfacing the reload-and-reapply prompt below rather than a last-writer-wins.
+    const head = await backend.branchHead(backend.defaultBranch);
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
@@ -2847,10 +2852,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
-      // The settings write lands on the default branch and triggers a deploy, so it is fail-closed:
-      // pass the read head as expectedHead, so a concurrent commit to the same config surfaces the
-      // reload-and-reapply prompt below rather than a silent last-writer-wins.
-      const head = await backend.branchHead(backend.defaultBranch);
       await backend.commit(
         backend.defaultBranch,
         [{ path, content: setTidy(raw, conventions) }],

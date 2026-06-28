@@ -146,7 +146,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     log.info('auth.token.confirmed', { email });
 
     const id = generateSessionId();
-    await createSession(db, id, email, now + SESSION_TTL_MS, now);
+    await createSession(db, id, email, 'admin', now + SESSION_TTL_MS, now);
     log.info('auth.session.created', { email });
     const secure = event.url.protocol === 'https:';
     event.cookies.set(sessionCookieName(secure), id, {

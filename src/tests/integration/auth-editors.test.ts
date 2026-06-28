@@ -78,7 +78,7 @@ describe('demotion takes effect live (scenario 9)', () => {
   it('a demoted editor resolves with the new role on the next request, no re-login', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     await seedEditor('two@x.dev', 'Two', 'owner');
-    await createSession(db, 'sid-two', 'two@x.dev', Date.now() + 10_000, Date.now());
+    await createSession(db, 'sid-two', 'two@x.dev', 'admin', Date.now() + 10_000, Date.now());
     expect((await resolveSession(db, 'sid-two', Date.now()))?.role).toBe('owner');
     await routes.setRoleAction(asOwner({ email: 'two@x.dev', role: 'editor' }));
     expect((await resolveSession(db, 'sid-two', Date.now()))?.role).toBe('editor');

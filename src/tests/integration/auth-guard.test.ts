@@ -62,7 +62,7 @@ function formEvent(
 
 async function seedSession(email: string): Promise<ReturnType<typeof makeCookies>> {
   await seedEditor(email, 'Ed', 'owner');
-  await createSession(db, 'sid-ok', email, Date.now() + 10_000, Date.now());
+  await createSession(db, 'sid-ok', email, 'admin', Date.now() + 10_000, Date.now());
   return makeCookies({ [sessionCookieName(true)]: 'sid-ok' });
 }
 

@@ -2,7 +2,7 @@
 // `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
 // SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
 import type { D1Database } from '@cloudflare/workers-types';
-import type { Editor, Role } from './types.js';
+import type { AuthTier, Editor, Role } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: Role };
 
@@ -57,11 +57,12 @@ export async function consumeToken(db: D1Database, tokenHash: string, now: numbe
   return row?.email ?? null;
 }
 
-/** Create a session row. */
+/** Create a session row carrying its trust tier, set at mint time. */
 export async function createSession(
   db: D1Database,
   id: string,
   email: string,
+  tier: AuthTier,
   expiresAt: number,
   now: number,
 ): Promise<void> {
@@ -69,8 +70,8 @@ export async function createSession(
     // Sweep expired sessions on login, so abandoned rows do not accumulate (no cron needed).
     db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
     db
-      .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(id, email, expiresAt, now),
+      .prepare('INSERT INTO session (id, email, expires_at, created_at, auth_tier) VALUES (?, ?, ?, ?, ?)')
+      .bind(id, email, expiresAt, now, tier),
   ]);
 }
 
@@ -168,4 +169,68 @@ export async function demoteOwnerIfNotLast(db: D1Database, email: string): Promi
     .bind(email)
     .run();
   return res.meta.changes === 1;
+}
+
+/**
+ * Resolve a session to its email and tier without requiring an editor row, left-joining `editor`
+ * for the role. A member session (email not in the allowlist) yields `role: null`, a valid scopeless
+ * principal, where the prior inner-join `resolveSession` would have returned null and logged the
+ * member out. An expired session resolves to null.
+ */
+export async function resolvePrincipalRow(
+  db: D1Database,
+  id: string,
+  now: number,
+): Promise<{ email: string; tier: AuthTier; role: Role | null; displayName: string | null } | null> {
+  const row = await db
+    .prepare(
+      `SELECT s.email AS email, s.auth_tier AS tier, e.role AS role, e.display_name AS display_name
+       FROM session s LEFT JOIN editor e ON e.email = s.email
+       WHERE s.id = ? AND s.expires_at > ?`,
+    )
+    .bind(id, now)
+    .first<{ email: string; tier: AuthTier; role: Role | null; display_name: string | null }>();
+  return row
+    ? { email: row.email, tier: row.tier, role: row.role ?? null, displayName: row.display_name ?? null }
+    : null;
+}
+
+/** Delete every session row for an email. Called before minting a new session, to defeat fixation. */
+export async function deleteSessionsForEmail(db: D1Database, email: string): Promise<void> {
+  await db.prepare('DELETE FROM session WHERE email = ?').bind(email).run();
+}
+
+/** Delete all cairn-owned identity rows for an email (sessions and pending tokens). For erasure. */
+export async function forgetPrincipal(db: D1Database, email: string): Promise<void> {
+  await db.batch([
+    db.prepare('DELETE FROM session WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+  ]);
+}
+
+/**
+ * Fixed-window per-bucket rate check. Computes the window start from `now`, upserts the counter, and
+ * returns true when the post-increment count is within `limit`. Old windows are left to a sweep on the
+ * next write for the same bucket; the composite key keeps rows bounded per active bucket.
+ */
+export async function checkAndIncrementRate(
+  db: D1Database,
+  bucket: string,
+  now: number,
+  windowMs: number,
+  limit: number,
+): Promise<boolean> {
+  const windowStart = now - (now % windowMs);
+  const res = await db.batch([
+    db.prepare('DELETE FROM auth_rate WHERE bucket = ? AND window_start < ?').bind(bucket, windowStart),
+    db
+      .prepare(
+        `INSERT INTO auth_rate (bucket, window_start, count) VALUES (?, ?, 1)
+         ON CONFLICT (bucket, window_start) DO UPDATE SET count = count + 1
+         RETURNING count`,
+      )
+      .bind(bucket, windowStart),
+  ]);
+  const count = (res[1].results?.[0] as { count: number } | undefined)?.count ?? limit + 1;
+  return count <= limit;
 }

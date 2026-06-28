@@ -85,7 +85,7 @@ describe('log redaction', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const id = generateSessionId();
     const now = Date.now();
-    await createSession(db, id, 'ed@x.dev', now + SESSION_TTL_MS, now);
+    await createSession(db, id, 'ed@x.dev', 'admin', now + SESSION_TTL_MS, now);
     const cookies = makeCookies({ [sessionCookieName(true)]: id });
     const captured = await records(() =>
       routes().logoutAction(makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies })),

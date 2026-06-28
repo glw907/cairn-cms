@@ -14,16 +14,30 @@ This is a standalone repo at `~/Projects/cairn-cms`. It publishes to public npm 
 library's own development proves changes against `examples/showcase`, a self-contained SvelteKit
 site that consumes the package through the relative `file:../..` path.
 
-## Opinionated by design: Svelte-only, Cloudflare-only
+## What cairn is (canonical scope — read before any scope-affecting change)
 
-cairn is deliberately opinionated, and that is a standing design principle, not just today's scope. It
-targets **Svelte and Cloudflare** and does not try to serve a non-Svelte or non-Cloudflare universe. Do
-not add abstractions, interfaces, or indirection whose only purpose is portability across frameworks or
-hosts. Lean into the stack: the islands client runtime mounts with Svelte's own `mount()`/`unmount()`
-directly, with no framework-agnostic layer, and the engine reaches for Cloudflare primitives (D1, R2,
-Workers, Email) wherever they fit. A hard dependency on the stack is acceptable. "Out of scope" and "we
-don't accommodate that universe" are valid design answers. The full stack list and the scaffold-copy
-site-template direction are in the `cairn-scope-opinionated-stack` memory.
+cairn is a lean, opinionated markdown CMS for SvelteKit + Cloudflare: magic-link editor login,
+raw-markdown editing with live preview, and GitHub-App publishing, over a fixed set of content concepts
+(Posts, Pages). Its admin skeleton and getting-started scaffold are built with **DaisyUI + Tailwind**,
+the idiom a developer extends the admin in, while public output stays design-agnostic (each site brings
+its own `render`). cairn does its one job well and gets out of the way.
+
+The governing boundary, which adjudicates any scope question:
+
+**cairn owns its core job, managing markdown content and the editor/admin frame, and little else.
+Everything a site needs beyond that, its own functionality, actors, auth, data, and domain logic, belongs
+to the developer, and cairn serves it with a thin seam, not a built-in feature.** The seams are a narrow,
+versioned, enforced contract, so a developer's work survives engine updates; breaking it is a deliberate
+major-version event, not an everyday one, and the surface stays narrow precisely to keep that promise
+cheap to keep. Owner/editor and magic-link are the zero-config defaults, not ceilings: a developer can
+replace the auth and override the authorization through documented seams.
+
+Leanness is the point, not an accident. "Out of scope" and "we don't accommodate that universe" are
+valid, often correct, answers; add to the engine only when it demonstrably serves the core job, and
+prefer the leanest seam over a general feature. Before adding an abstraction, a subsystem, an actor, or
+new surface, ask whether it is cairn's job or the developer's domain, then read
+`docs/internal/what-cairn-is-and-is-not.md` and the full stack list in the `cairn-scope-opinionated-stack`
+memory.
 
 ## How to run this project
 

@@ -2,6 +2,12 @@
   "extends": "./.svelte-kit/tsconfig.json",
   "compilerOptions": {
     "strict": true,
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    // The showcase consumes cairn through file:../.., so cairn's dist .d.ts (at the repo root) resolve
+    // @sveltejs/kit to the root node_modules while the showcase's own files resolve to its local kit.
+    // Two kit copies declare the same App/$app globals, which svelte-check reports as conflicts inside
+    // kit's own .d.ts. skipLibCheck skips type-checking declaration files (where the conflict lives)
+    // while still fully checking the showcase source, including cairn.config.ts against cairn's types.
+    "skipLibCheck": true
   }
 }

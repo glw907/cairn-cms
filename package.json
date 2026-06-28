@@ -74,6 +74,10 @@
     },
     "./components/spellcheck-assets/spellchecker-wasm.wasm": "./dist/components/spellcheck-assets/spellchecker-wasm.wasm",
     "./components/spellcheck-assets/dictionary-en-us.txt": "./dist/components/spellcheck-assets/dictionary-en-us.txt",
+    "./islands": {
+      "types": "./dist/islands/index.d.ts",
+      "default": "./dist/islands/index.js"
+    },
     "./render": {
       "types": "./dist/render/authoring.d.ts",
       "svelte": "./dist/render/authoring.js",

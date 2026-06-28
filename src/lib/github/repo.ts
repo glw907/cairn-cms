@@ -187,6 +187,69 @@ function treeChanges(changes: FileChange[]): TreeChange[] {
 const COMMIT_RETRIES = 3;
 
 /**
+ * Build a tree on `parent`'s tree, create the commit, and PATCH the branch ref to it. Returns the
+ * new commit sha, or null when the ref PATCH is a non-fast-forward (the head moved). A tree-create
+ * 422 (an unprocessable delete) becomes a `CommitConflictError`, and any other non-fast-forward
+ * detail is left to the caller to map.
+ */
+async function commitOnTree(
+  repo: RepoRef,
+  parent: string,
+  tree: TreeChange[],
+  opts: { message: string; author: CommitAuthor },
+  token: string,
+): Promise<{ sha: string } | { conflict: true }> {
+  const baseTree = await commitTreeSha(repo, parent, token);
+
+  const treeRes = await fetch(gitUrl(repo, 'trees'), {
+    method: 'POST',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ base_tree: baseTree, tree }),
+  });
+  if (!treeRes.ok) {
+    // A 422 means an entry is unprocessable against the base tree, which a delete of an
+    // already-removed path produces (a concurrent delete or rename got there first). Treat it as
+    // the same non-fast-forward conflict the ref PATCH surfaces, so the caller fails safe with the
+    // reload-and-retry path instead of a raw 500.
+    if (treeRes.status === 422) throw new CommitConflictError(`${repo.branch} (tree create)`);
+    throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
+  }
+  const newTree = ((await treeRes.json()) as { sha: string }).sha;
+
+  const commitRes = await fetch(gitUrl(repo, 'commits'), {
+    method: 'POST',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
+  });
+  if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
+  const newCommit = ((await commitRes.json()) as { sha: string }).sha;
+
+  const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
+    method: 'PATCH',
+    headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sha: newCommit, force: false }),
+  });
+  if (refRes.ok) return { sha: newCommit };
+  // A non-fast-forward means the branch moved; the caller decides whether to retry or fail closed.
+  // Any other failure is not a race, so surface it.
+  if (refRes.status !== 422) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
+  return { conflict: true };
+}
+
+/** Fail-closed commit on a known head: a non-fast-forward becomes a `CommitConflictError`. */
+async function commitOnHead(
+  repo: RepoRef,
+  head: string,
+  tree: TreeChange[],
+  opts: { message: string; author: CommitAuthor },
+  token: string,
+): Promise<string> {
+  const result = await commitOnTree(repo, head, tree, opts, token);
+  if ('conflict' in result) throw new CommitConflictError(`${repo.branch} (head moved)`);
+  return result.sha;
+}
+
+/**
  * Commit several path changes in one commit over the Git Data API. The author is the editor; the
  * committer is omitted, so GitHub attributes the commit to the App. Returns the new commit sha.
  * Builds the new tree on the current head's tree, so paths not named here are preserved.
@@ -197,51 +260,34 @@ const COMMIT_RETRIES = 3;
  *
  * An empty change set is rejected, since it would otherwise push an empty commit that triggers a
  * site redeploy for no content change.
+ *
+ * When `expectedHead` is supplied the commit is fail-closed: it makes a single attempt with no
+ * retry, throws a `CommitConflictError` when the branch head is not `expectedHead` (a concurrent
+ * commit landed), and otherwise commits onto that head. The nav and settings writes, which land on
+ * the default branch and trigger a deploy, pass it so a same-branch race surfaces the editor's
+ * reload-and-reapply prompt rather than a silent last-writer-wins. Omitting it keeps the
+ * head-merge retry the entry and publish paths rely on.
  */
 export async function commitFiles(
   repo: RepoRef,
   changes: FileChange[],
   opts: { message: string; author: CommitAuthor },
   token: string,
+  expectedHead?: string,
 ): Promise<string> {
   if (changes.length === 0) throw new Error('commitFiles: no changes to commit');
   const tree = treeChanges(changes);
+  if (expectedHead !== undefined) {
+    const head = await headCommitSha(repo, token);
+    if (head !== expectedHead) throw new CommitConflictError(`${repo.branch} (head moved)`);
+    return commitOnHead(repo, head, tree, opts, token);
+  }
   for (let attempt = 0; attempt <= COMMIT_RETRIES; attempt++) {
     const parent = await headCommitSha(repo, token);
-    const baseTree = await commitTreeSha(repo, parent, token);
-
-    const treeRes = await fetch(gitUrl(repo, 'trees'), {
-      method: 'POST',
-      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ base_tree: baseTree, tree }),
-    });
-    if (!treeRes.ok) {
-      // A 422 means an entry is unprocessable against the base tree, which a delete of an
-      // already-removed path produces (a concurrent delete or rename got there first). Treat it as
-      // the same non-fast-forward conflict the ref PATCH surfaces, so the caller fails safe with the
-      // reload-and-retry path instead of a raw 500.
-      if (treeRes.status === 422) throw new CommitConflictError(`${repo.branch} (tree create)`);
-      throw new Error(`GitHub tree create failed: ${treeRes.status} ${await treeRes.text()}`);
-    }
-    const newTree = ((await treeRes.json()) as { sha: string }).sha;
-
-    const commitRes = await fetch(gitUrl(repo, 'commits'), {
-      method: 'POST',
-      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: opts.message, tree: newTree, parents: [parent], author: opts.author }),
-    });
-    if (!commitRes.ok) throw new Error(`GitHub commit create failed: ${commitRes.status} ${await commitRes.text()}`);
-    const newCommit = ((await commitRes.json()) as { sha: string }).sha;
-
-    const refRes = await fetch(gitUrl(repo, `refs/heads/${encodeURIComponent(repo.branch)}`), {
-      method: 'PATCH',
-      headers: { ...ghHeaders('application/vnd.github+json', token), 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sha: newCommit, force: false }),
-    });
-    if (refRes.ok) return newCommit;
+    const result = await commitOnTree(repo, parent, tree, opts, token);
     // A non-fast-forward means the branch moved; retry on the new head so a concurrent commit
-    // is preserved. Any other failure is not a race, so surface it.
-    if (refRes.status !== 422) throw new Error(`GitHub ref update failed: ${refRes.status} ${await refRes.text()}`);
+    // is preserved.
+    if ('sha' in result) return result.sha;
   }
   throw new CommitConflictError(`${repo.branch} (atomic commit)`);
 }

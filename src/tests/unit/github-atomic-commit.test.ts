@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { commitFiles } from '../../lib/github/repo.js';
 import { CommitConflictError, type RepoRef } from '../../lib/github/types.js';
+import { GithubDouble } from './_github-double.js';
 
 const REPO: RepoRef = { owner: 'glw907', repo: 'ecnordic-ski', branch: 'main' };
 
@@ -186,5 +187,52 @@ describe('commitFiles', () => {
       commitFiles(REPO, [{ path: 'a.md', content: 'x' }], { message: 'm', author: { name: 'n', email: 'e' } }, 'tok'),
     ).rejects.toThrow(/403/);
     expect(fetchMock).toHaveBeenCalledTimes(5);
+  });
+
+  describe('expectedHead (fail-closed commit)', () => {
+    it('commits in a single attempt when the head matches expectedHead', async () => {
+      const gh = new GithubDouble({ main: { 'a.md': 'old' } });
+      gh.install();
+      const head = gh.headSha('main');
+
+      const sha = await commitFiles(
+        REPO,
+        [{ path: 'a.md', content: 'new' }],
+        { message: 'm', author: { name: 'n', email: 'e' } },
+        'tok',
+        head,
+      );
+
+      expect(typeof sha).toBe('string');
+      expect(gh.read('main', 'a.md')).toBe('new');
+      // No retry loop ran: exactly one ref read precedes the commit sequence.
+      const refReads = gh.calls.filter((c) => c.method === 'GET' && /\/git\/ref\/heads\/main$/.test(c.url));
+      expect(refReads).toHaveLength(1);
+    });
+
+    it('throws CommitConflictError without retrying when the head has moved', async () => {
+      const gh = new GithubDouble({ main: { 'a.md': 'old' } });
+      gh.install();
+      const staleHead = gh.headSha('main');
+      // A concurrent commit lands, moving the head off the sha the caller read.
+      gh.commit('main', 'a.md', 'raced');
+      expect(gh.headSha('main')).not.toBe(staleHead);
+
+      await expect(
+        commitFiles(
+          REPO,
+          [{ path: 'a.md', content: 'new' }],
+          { message: 'm', author: { name: 'n', email: 'e' } },
+          'tok',
+          staleHead,
+        ),
+      ).rejects.toBeInstanceOf(CommitConflictError);
+
+      // The conflicting content survived: the fail-closed path never wrote.
+      expect(gh.read('main', 'a.md')).toBe('raced');
+      // Only the single head probe ran, no tree or commit POST.
+      const writes = gh.calls.filter((c) => c.method === 'POST');
+      expect(writes).toHaveLength(0);
+    });
   });
 });

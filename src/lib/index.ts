@@ -121,6 +121,10 @@ export type { RendererOptions } from './render/pipeline.js';
 // GitHub read-and-commit backend (Plan 03).
 export type { RepoRef, RepoFile, CommitAuthor, AppCredentials } from './github/types.js';
 export { CommitConflictError } from './github/types.js';
+// The Backend seam (Contract v2 backend phase): the store interface and its default GitHub provider.
+export { githubApp } from './github/backend.js';
+export type { Backend, BackendProvider, GithubAppProvider, BackendEnv } from './github/backend.js';
+export type { FileChange } from './github/repo.js';
 
 // Nav tree and site-config helpers (Plan 06).
 export {

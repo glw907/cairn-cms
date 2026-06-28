@@ -1,7 +1,7 @@
 import { isRedirect, isHttpError } from '@sveltejs/kit';
 import { env } from 'cloudflare:test';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
-import type { Principal, Role } from '../../lib/auth/types.js';
+import type { Editor, Role } from '../../lib/auth/types.js';
 
 /** Insert an editor row directly. The editor table is the allowlist, so a row is "may sign in". */
 export async function seedEditor(email: string, displayName: string, role: Role, now = Date.now()): Promise<void> {
@@ -51,10 +51,10 @@ export function makeEvent(input: {
   url: string;
   form?: Record<string, string>;
   cookies?: CookieJar;
-  principal?: Principal | null;
+  editor?: Editor | null;
   waitUntil?: (promise: Promise<unknown>) => void;
 }) {
-  const { url, form, cookies = makeCookies(), principal = null, waitUntil } = input;
+  const { url, form, cookies = makeCookies(), editor = null, waitUntil } = input;
   const request = form
     ? new Request(url, { method: 'POST', body: new URLSearchParams(form) })
     : new Request(url);
@@ -62,7 +62,7 @@ export function makeEvent(input: {
     url: new URL(url),
     request,
     cookies,
-    locals: { principal },
+    locals: { editor },
     platform: {
       env: { AUTH_DB: env.AUTH_DB, PUBLIC_ORIGIN: 'https://test.dev' },
       ctx: waitUntil ? { waitUntil } : undefined,

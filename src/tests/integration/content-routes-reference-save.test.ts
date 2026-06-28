@@ -69,7 +69,7 @@ function saveEvent(author: string) {
     url: new URL('https://t.example/admin/posts/my-post'),
     params: { concept: 'posts', id: 'my-post' },
     request: new Request('https://t.example/admin/posts/my-post', { method: 'POST', body }),
-    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }

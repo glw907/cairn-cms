@@ -32,7 +32,7 @@ function loadEvent(search = '') {
     url: new URL(`https://t.example/admin/nav${search}`),
     params: {},
     request: new Request('https://t.example/admin/nav'),
-    locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }

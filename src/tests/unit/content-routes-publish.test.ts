@@ -83,7 +83,7 @@ function actionEvent(id: string, form: Record<string, string> = {}) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -93,7 +93,7 @@ function pagesActionEvent(id: string, form: Record<string, string> = {}) {
     url: new URL(`https://t.example/admin/pages/${id}`),
     params: { concept: 'pages', id },
     request: new Request(`https://t.example/admin/pages/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -384,7 +384,7 @@ describe('publishAllAction', () => {
       url: new URL(`https://t.example/admin/${concept}`),
       params: { concept },
       request: new Request(`https://t.example/admin/${concept}`, { method: 'POST', body: new URLSearchParams() }),
-      locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }

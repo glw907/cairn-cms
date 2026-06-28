@@ -29,8 +29,8 @@ export interface DevBackendOptions {
  * Library fixtures, and creates one fake AUTH_DB and one fake MEDIA_BUCKET for the process lifetime
  * (so editors added through /admin/editors and assets uploaded through /admin persist across
  * requests in the dev session). The returned handle supplies the binding doubles on `platform.env`
- * for /admin and /media requests and mints an admin-tier owner principal on /admin, leaving every
- * other path untouched.
+ * for /admin and /media requests and mints an owner editor on /admin, leaving every other path
+ * untouched.
  * @param options - {@link DevBackendOptions}; `seedContent` is the Part B content-seeding hook.
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
@@ -76,15 +76,11 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       } as unknown as App.Platform;
     }
     if (isAdmin) {
-      // Principal shape: { email, displayName, scopes, tier }, the engine's runtime identity
-      // (src/lib/auth/types.ts). An admin-tier owner principal grants both admin scopes, so local
-      // development matches the new /admin gate (admin tier plus an admin:* scope) without the
-      // magic-link loop.
-      event.locals.principal = {
+      // Editor shape: { email, displayName, role }, the engine's Editor type (src/lib/auth/types.ts).
+      event.locals.editor = {
         email: 'editor@showcase.test',
         displayName: 'Demo Editor',
-        scopes: ['admin:owner', 'admin:editor'],
-        tier: 'admin',
+        role: 'owner',
       };
     }
     return resolve(event);

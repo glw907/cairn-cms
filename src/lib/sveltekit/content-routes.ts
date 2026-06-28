@@ -34,7 +34,6 @@ import Anthropic from '@anthropic-ai/sdk';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
 import { requireSession } from './guard.js';
-import { scopesToRole, hasScope, ADMIN_OWNER } from '../auth/scopes.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { mediaToken } from '../media/reference.js';
@@ -55,7 +54,7 @@ import { planBulkDelete } from '../media/bulk-delete-plan.js';
 import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
-import type { Principal, Role } from '../auth/types.js';
+import type { Editor, Role } from '../auth/types.js';
 // R2Bucket is named only inside uploadAction to cast the raw binding for r2Store. It is a type-only
 // import that never appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
@@ -720,7 +719,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  and the pending entries behind the topbar's publish-all action.
    */
   async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
-    const principal = requireSession(event);
+    const editor = requireSession(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
     const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
@@ -743,14 +742,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     }
     return {
       siteName: runtime.siteName,
-      user: {
-        displayName: principal.displayName,
-        email: principal.email,
-        role: scopesToRole(principal.scopes) ?? 'editor',
-      },
+      user: { displayName: editor.displayName, email: editor.email, role: editor.role },
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
       pathname: event.url.pathname,
-      canManageEditors: hasScope(principal, ADMIN_OWNER),
+      canManageEditors: editor.role === 'owner',
       navLabel: runtime.navMenu?.label ?? null,
       theme,
       collapsedNav,
@@ -1226,7 +1221,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    */
   async function saveToBranch(
     event: ContentEvent,
-    editor: Principal,
+    editor: Editor,
     concept: ConceptDescriptor,
     id: string,
   ): Promise<ReturnType<typeof fail> | SaveHold> {
@@ -1554,7 +1549,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     event: ContentEvent,
     concept: ConceptDescriptor,
     id: string,
-    editor: Principal,
+    editor: Editor,
   ): Promise<ReturnType<typeof fail> | never> {
     const path = `${concept.dir}/${filenameFromId(id)}`;
     const backend = resolveBackend(event);
@@ -1844,9 +1839,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
   async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
-    // Read the principal up front for log attribution; the gate at step 4 enforces its presence. The
+    // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
-    const editor = event.locals.principal ?? null;
+    const editor = event.locals.editor ?? null;
     const refuse = (status: number, reason: string): ReturnType<typeof fail> => {
       log.warn('media.upload_failed', { editor: editor?.email, reason });
       return fail(status, { error: reason });
@@ -2755,7 +2750,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
    *  Returns the merged word list. Throws CommitConflictError (via backend.commit) when the branch
    *  moves under the commit, which the caller catches to retry once.
    */
-  async function mergeAndCommitDictionary(backend: Backend, additions: string[], editor: Principal): Promise<string[]> {
+  async function mergeAndCommitDictionary(backend: Backend, additions: string[], editor: Editor): Promise<string[]> {
     const path = dictionaryFilePath();
     // The existing file as its canonical sorted set, so a no-op add is detected against the same
     // normalization the commit would write (an already-sorted file never re-commits just to reorder).

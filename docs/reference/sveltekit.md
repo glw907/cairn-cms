@@ -23,14 +23,12 @@ name here against them.
 ### `createAuthGuard`
 
 ```ts
-declare function createAuthGuard(config?: { authorize?: Authorize }): ({ event, resolve }: HandleInput) => Promise<Response>;
+declare function createAuthGuard(): ({ event, resolve }: HandleInput) => Promise<Response>;
 ```
 
 Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the admin response
 headers. Wire it in `hooks.server.ts`. A site with its own hook keeps it by sequencing the guard
-last, so the site hook sees every request and the guard owns admin gating. Pass `config.authorize` to
-hand the guard your `authorize` callback for resolving custom scopes on non-admin routes; `/admin` is
-gated on the editor allowlist alone, so the callback never runs to admit an admin request.
+last, so the site hook sees every request and the guard owns admin gating.
 
 ```ts
 // src/hooks.server.ts
@@ -114,26 +112,26 @@ time, so an encoded slash can never escape its segment. Reserved first segments 
 ### `requireSession`
 
 ```ts
-declare function requireSession(event: { locals: { principal?: Principal | null } }): Principal;
+declare function requireSession(event: { locals: { editor?: Editor | null } }): Editor;
 ```
 
-Return the principal the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
-top of a protected `load` or action when you need the signed-in principal. Its parameter is structural
-and asks only for `locals`, so any event shape that carries the guard's principal satisfies it.
+Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
+top of a protected `load` or action when you need the signed-in editor. Its parameter is structural
+and asks only for `locals`, so any event shape that carries the guard's editor satisfies it.
 
 ```ts
 import { requireSession } from '@glw907/cairn-cms/sveltekit';
 
 export const load = (event) => {
-  const principal = requireSession(event);
-  return { displayName: principal.displayName };
+  const editor = requireSession(event);
+  return { displayName: editor.displayName };
 };
 ```
 
 ### `requireOwner`
 
 ```ts
-declare function requireOwner(event: RequestContext): Principal;
+declare function requireOwner(event: RequestContext): Editor;
 ```
 
 Return a signed-in owner, or throw a 403 for an editor. Guards the management surface, such as the

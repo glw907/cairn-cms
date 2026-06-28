@@ -1,8 +1,0 @@
-confirmMagicLink
-forgetPrincipal
-hasScope
-loadPrincipal
-requireAnyScope
-requireScope
-sendMagicLink
-signIn

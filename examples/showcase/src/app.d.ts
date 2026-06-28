@@ -2,7 +2,7 @@
 import type { D1Database, R2Bucket, ExecutionContext } from '@cloudflare/workers-types';
 // AuthEnv ships from the /sveltekit subpath (since 0.51); the app.d.ts Platform block names it there.
 import type { AuthEnv } from '@glw907/cairn-cms/sveltekit';
-// App.Locals.principal (set by the engine's auth guard) ships with the engine.
+// App.Locals.editor (set by the engine's auth guard) ships with the engine.
 import '@glw907/cairn-cms/ambient';
 
 declare global {

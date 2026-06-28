@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { seedEditor, makeEvent, makeCookies, makeRecordingCookies, countRows, expectRedirect } from './_auth-harness.js';
 import { createAuthRoutes } from '../../lib/sveltekit/auth-routes.js';
 import { generateToken, hashToken, sessionCookieName } from '../../lib/auth/crypto.js';
-import { issueToken, createSession, resolvePrincipalRow } from '../../lib/auth/store.js';
+import { issueToken } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
 const routes = createAuthRoutes({ branding: { siteName: 'Test', from: 'noreply@test.dev' }, send: async () => {} });
@@ -17,7 +17,7 @@ async function liveToken(email: string): Promise<string> {
   await seedEditor(email, 'Ed', 'editor');
   const token = generateToken();
   const now = Date.now();
-  await issueToken(db, email, await hashToken(token), 'admin', null, now + 10_000, now);
+  await issueToken(db, email, await hashToken(token), now + 10_000, now);
   return token;
 }
 
@@ -58,56 +58,12 @@ describe('confirm POST (scenarios 1, 3, 4)', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const token = generateToken();
     const now = Date.now();
-    await issueToken(db, 'ed@x.dev', await hashToken(token), 'admin', null, now - 1, now);
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now - 1, now);
     const redirect = await expectRedirect(() =>
       routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token } })),
     );
     expect(redirect.location).toBe('/admin/login?error=expired');
     expect(await countRows('session')).toBe(0);
-  });
-});
-
-describe('confirm POST: tiered token (Task 8)', () => {
-  /** Seed a token carrying an explicit tier and redirect, returning the raw token. */
-  async function tieredToken(email: string, tier: 'admin' | 'member', redirectTo: string | null): Promise<string> {
-    const token = generateToken();
-    const now = Date.now();
-    await issueToken(db, email, await hashToken(token), tier, redirectTo, now + 10_000, now);
-    return token;
-  }
-
-  it('mints a member-tier session and redirects to the validated redirect_to', async () => {
-    const token = await tieredToken('fan@x.dev', 'member', '/account');
-    const cookies = makeRecordingCookies();
-    const redirect = await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies })),
-    );
-    expect(redirect.location).toBe('/account');
-    const set = cookies.sets.find((s) => s.name === sessionCookieName(true));
-    expect((await resolvePrincipalRow(db, set!.value, Date.now()))?.tier).toBe('member');
-  });
-
-  it('falls back to / for a member token with no redirect, and /admin for an admin token', async () => {
-    const memberToken = await tieredToken('fan2@x.dev', 'member', null);
-    const m = await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: memberToken } })),
-    );
-    expect(m.location).toBe('/');
-
-    const adminToken = await tieredToken('boss@x.dev', 'admin', null);
-    const a = await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token: adminToken } })),
-    );
-    expect(a.location).toBe('/admin');
-  });
-
-  it('rotates a prior session for the email on confirm (fixation defense)', async () => {
-    await createSession(db, 'prior', 'rot@x.dev', 'member', Date.now() + 10_000, Date.now());
-    const token = await tieredToken('rot@x.dev', 'member', null);
-    await expectRedirect(() =>
-      routes.confirmAction(makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token } })),
-    );
-    expect(await resolvePrincipalRow(db, 'prior', Date.now())).toBeNull();
   });
 });
 

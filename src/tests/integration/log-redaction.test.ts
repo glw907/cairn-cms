@@ -47,7 +47,7 @@ describe('log redaction', () => {
     // Pin the token by issuing it directly, then confirm with the same value.
     const token = generateToken();
     const now = Date.now();
-    await issueToken(db, 'ed@x.dev', await hashToken(token), 'admin', null, now + TOKEN_TTL_MS, now);
+    await issueToken(db, 'ed@x.dev', await hashToken(token), now + TOKEN_TTL_MS, now);
     const captured = await records(() =>
       routes().confirmAction(
         makeEvent({ url: 'https://test.dev/admin/auth/confirm', form: { token }, cookies: makeCookies() }),
@@ -85,7 +85,7 @@ describe('log redaction', () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
     const id = generateSessionId();
     const now = Date.now();
-    await createSession(db, id, 'ed@x.dev', 'admin', now + SESSION_TTL_MS, now);
+    await createSession(db, id, 'ed@x.dev', now + SESSION_TTL_MS, now);
     const cookies = makeCookies({ [sessionCookieName(true)]: id });
     const captured = await records(() =>
       routes().logoutAction(makeEvent({ url: 'https://test.dev/admin/auth/logout', form: {}, cookies })),

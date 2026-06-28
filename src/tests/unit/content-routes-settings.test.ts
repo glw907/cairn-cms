@@ -40,7 +40,7 @@ function saveEvent(conventionsJson: string) {
     url: new URL('https://t.example/admin/settings'),
     params: {},
     request: new Request('https://t.example/admin/settings', { method: 'POST', body }),
-    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -156,7 +156,7 @@ describe('settingsLoad', () => {
       url: new URL('https://t.example/admin/settings'),
       params: {},
       request: new Request('https://t.example/admin/settings'),
-      locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
       platform: { env },
     };
   }

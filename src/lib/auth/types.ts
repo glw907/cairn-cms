@@ -9,21 +9,6 @@ export interface Editor {
   role: Role;
 }
 
-/** A session's trust tier, set at mint time. See the extensibility spec, "Sessions and the trust-tier partition". */
-export type AuthTier = 'admin' | 'member';
-
-/**
- * The identity the engine reads on any route: an email, a display name, the granted scopes, and the
- * session's trust tier. Replaces `Editor` as the runtime identity; `Editor`/`Role` remain the
- * allowlist-row shape behind editor management.
- */
-export interface Principal {
-  email: string;
-  displayName: string;
-  scopes: string[];
-  tier: AuthTier;
-}
-
 /** Worker bindings and vars the auth layer reads; a structural subset of `Platform.env`. */
 export interface AuthEnv {
   AUTH_DB?: D1Database;

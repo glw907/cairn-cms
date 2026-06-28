@@ -88,7 +88,7 @@ function editEvent(id: string, search = '') {
     url: new URL(`https://t.example/admin/posts/${id}${search}`),
     params: { concept: 'posts', id },
     request: new Request('https://t.example'),
-    locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -417,7 +417,7 @@ describe('editLoad address-collision advisory', () => {
       url: new URL(`https://t.example/admin/pages/${id}${search}`),
       params: { concept: 'pages', id },
       request: new Request('https://t.example'),
-      locals: { principal: { email: 'e@t', displayName: 'E', scopes: ['admin:editor'], tier: 'admin' } },
+      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }

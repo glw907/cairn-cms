@@ -1,6 +1,6 @@
 // Structural subsets of SvelteKit's RequestEvent. A site passes its real event, which has
 // these and more, so the engine never imports a site's generated App.* ambient types.
-import type { AuthEnv, Principal } from '../auth/types.js';
+import type { AuthEnv, Editor } from '../auth/types.js';
 import type { Backend } from '../github/backend.js';
 
 export interface CookieSetOptions {
@@ -35,7 +35,7 @@ export interface EventBase<Env> {
   // `backend` is the per-request content store the dev-backend handle injects; the engine resolves
   // it ahead of the real provider, so typing it here makes the seam a checked contract rather than a
   // cast. A production request leaves it absent and the real `githubApp` provider connects.
-  locals: { principal?: Principal | null; backend?: Backend };
+  locals: { editor?: Editor | null; backend?: Backend };
   platform?: PlatformContext<Env>;
 }
 

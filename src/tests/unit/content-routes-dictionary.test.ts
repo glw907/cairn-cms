@@ -61,7 +61,7 @@ function addEvent(payload: unknown, opts: { csrf?: string; cookieCsrf?: string |
     url,
     params: { concept: 'posts', id: '2026-05-01-hi' },
     request: new Request(url, { method: 'POST', headers, body: JSON.stringify(payload) }),
-    locals: { principal: { email: 'ed@t', displayName: 'Ed Editor', scopes: ['admin:editor'], tier: 'admin' } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: cookieJar('cookieCsrf' in opts ? opts.cookieCsrf : CSRF),
   };

@@ -140,7 +140,13 @@ export function makeGithubBackend(config: GithubAppConfig, getToken: () => strin
  * it) whose connect(env) mints and caches the installation token from the Worker's private-key
  * secret. The missing-secret CairnError stays on first token use, inside connect.
  */
-export function githubApp(config: GithubAppConfig): GithubAppProvider {
+export function githubApp(config: {
+  owner: string;
+  repo: string;
+  branch: string;
+  appId: string;
+  installationId: string;
+}): GithubAppProvider {
   return {
     kind: 'github-app',
     branch: config.branch,

@@ -1,29 +1,18 @@
-// A dev-only GitHub double for the showcase. It intercepts api.github.com so the engine's reads
-// and commits land in an in-memory repo instead of the real API, and records the last commit so
-// the E2E can assert the author, the committer, and the branch the commit landed on. Installed
-// once from hooks.server.ts; never part of the published engine.
+// A dev-only GitHub double for the showcase. It is a conforming `Backend` over an in-memory repo,
+// so the engine's reads and commits land in that repo instead of the real GitHub API, and it
+// records the last commit so the E2E can assert the author, the committer, and the branch the
+// commit landed on. Constructed once from hooks.server.ts (via devBackendHandle); never part of
+// the published engine.
 //
 // The repo is branch-aware for the publish workflow: each branch holds a flat path-to-content
-// map, creating a ref snapshots its source branch's tree (like a real git ref), and the Git Data
-// commit sequence lands on whichever branch its final ref PATCH names.
+// map, creating a branch snapshots its source branch's tree (like a real git ref), and a commit
+// lands on whichever branch it names.
 //
-// URL patterns reconciled against src/lib/github/repo.ts and src/lib/github/branches.ts:
-//   listMarkdown  -> GET    /repos/o/r/git/trees/<branch>?recursive=1
-//   readRaw       -> GET    /repos/o/r/contents/<path>?ref=<branch>, Accept: application/vnd.github.raw
-//   fileSha       -> GET    /repos/o/r/contents/<path>?ref=<branch>, Accept: application/vnd.github+json -> { sha }
-//   commitFile    -> PUT    /repos/o/r/contents/<path>   body: { message, content, branch, author, sha? }
-//                    (single-file path, still used by nav-routes.ts)
-//   branchHeadSha -> GET    /repos/o/r/git/ref/heads/<branch> -> { object: { sha } }, 404 when absent
-//   createBranch  -> POST   /repos/o/r/git/refs               body: { ref, sha }
-//   deleteBranch  -> DELETE /repos/o/r/git/refs/heads/<branch>
-//   listBranches  -> GET    /repos/o/r/git/matching-refs/heads/<prefix>
-//   commitFiles   -> the atomic Git Data sequence (content + manifest in one commit):
-//                    GET /git/ref/heads/<branch>, GET /git/commits/<sha>, POST /git/trees,
-//                    POST /git/commits, PATCH /git/refs/heads/<branch> (applies the staged tree)
-//                    (no committer field; GitHub attributes commits to cairn-cms[bot])
-//
-// Branch names arrive encodeURIComponent'd in ref URLs (cairn%2Fposts%2Fid), so every captured
-// segment decodes before the branch lookup.
+// The store, the lastCommit recorder, and the committedFile/seed accessors are module-level
+// process singletons. createDevBackend returns a thin facade over that one shared store, so a
+// commit on one request is visible to the recorder route on the next.
+import type { Backend, FileChange, RepoFile, CommitAuthor } from '@glw907/cairn-cms';
+import { CommitConflictError } from '@glw907/cairn-cms';
 
 /** The shape the E2E reads from /test/last-commit. */
 export interface RecordedCommit {
@@ -37,17 +26,9 @@ export interface RecordedCommit {
 }
 
 let lastCommit: RecordedCommit | null = null;
-let installed = false;
 
 /** One branch's working tree: repo path to file content. */
 type Tree = Map<string, string>;
-
-/** A Git Trees API change entry: a content write, or a `sha: null` delete. */
-interface TreeChange {
-  path: string;
-  content?: string;
-  sha?: string | null;
-}
 
 // The seeded post path must match the adapter's posts dir plus a valid id filename.
 // cairn.config.ts sets dir: 'src/content/posts'; idFromFilename strips the .md suffix.
@@ -65,21 +46,6 @@ const branches = new Map<string, Tree>([
   ],
 ]);
 const heads = new Map<string, string>([['main', nextSha()]]);
-
-/** Tree-create payloads keyed by their returned sha, applied at ref PATCH time. */
-const stagedTrees = new Map<string, TreeChange[]>();
-/** Commit-create payloads keyed by their returned sha: the tree to apply plus the recorded author. */
-const stagedCommits = new Map<
-  string,
-  { treeSha: string; author: { name: string; email: string }; committer: unknown }
->();
-
-function json(payload: unknown, status = 200): Response {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json' },
-  });
-}
 
 /** Read back the last commit the fake recorded, or null before any commit lands. */
 export function lastRecordedCommit(): RecordedCommit | null {
@@ -404,162 +370,98 @@ export function seedMediaLibrary(): void {
   heads.set(SEED_BRANCH, nextSha());
 }
 
-/** Patch globalThis.fetch so GitHub API calls hit the in-memory repo. Idempotent per process. */
-export function installFakeGitHub(): void {
-  if (installed) return;
-  installed = true;
-  const real = globalThis.fetch;
+/** The basename of a repo path: the segment after the last slash. */
+function basename(path: string): string {
+  return path.slice(path.lastIndexOf('/') + 1);
+}
 
-  globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const url = String(input instanceof Request ? input.url : input);
+/**
+ * Build the dev `Backend`: a thin facade over the module-level in-memory store. Every instance
+ * shares that one singleton store, so a commit on one request is visible to the recorder route on
+ * the next. The seven methods mirror the GitHub backend's contract: an empty change set rejects,
+ * and a supplied `expectedHead` makes the commit fail-closed on a moved head.
+ * @returns a {@link Backend} over the in-memory repo, with `main` as its default branch.
+ */
+export function createDevBackend(): Backend {
+  return {
+    defaultBranch: 'main',
 
-    if (!url.includes('api.github.com')) return real(input, init);
+    async readFile(path: string, ref: string): Promise<string | null> {
+      return branches.get(ref)?.get(path) ?? null;
+    },
 
-    const u = new URL(url);
-    // pathname keeps %2F intact, so an encoded branch name stays one segment until decoded.
-    const route = u.pathname;
-    const method = (init?.method ?? 'GET').toUpperCase();
-    const headers = (init?.headers ?? {}) as Record<string, string>;
-    const accept = headers['Accept'] ?? headers['accept'] ?? '';
-    const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+    async readEntries(dir: string, ref: string): Promise<RepoFile[]> {
+      const tree = branches.get(ref);
+      if (!tree) return [];
+      const clean = dir.replace(/^\/+|\/+$/g, '');
+      const prefix = `${clean}/`;
+      // The markdown entries directly in `dir`, newest id first: the same shape listMarkdown
+      // returns (basename id, no nested files, descending id sort).
+      return [...tree.keys()]
+        .filter((p) => p.startsWith(prefix) && p.endsWith('.md') && !p.slice(prefix.length).includes('/'))
+        .map((p) => {
+          const name = basename(p);
+          return { id: name.replace(/\.md$/, ''), name, path: p };
+        })
+        .sort((a, b) => b.id.localeCompare(a.id));
+    },
 
-    // listBranches: every ref under the prefix (the prefix arrives unencoded, slashes literal).
-    const matching = route.match(/\/git\/matching-refs\/heads\/(.*)$/);
-    if (method === 'GET' && matching) {
-      const prefix = decodeURIComponent(matching[1]);
-      const refs = [...branches.keys()]
-        .filter((name) => name.startsWith(prefix))
-        .sort()
-        .map((name) => ({ ref: `refs/heads/${name}`, object: { sha: heads.get(name) } }));
-      return json(refs);
-    }
+    async branchHead(branch: string): Promise<string | null> {
+      return heads.get(branch) ?? null;
+    },
 
-    // branchHeadSha / commitFiles head read: the single-ref read, 404 when the branch is absent.
-    const refRead = route.match(/\/git\/ref\/heads\/(.+)$/);
-    if (method === 'GET' && refRead) {
-      const branch = decodeURIComponent(refRead[1]);
-      if (!branches.has(branch)) return new Response('Not Found', { status: 404 });
-      return json({ object: { sha: heads.get(branch) } });
-    }
+    async listBranches(prefix: string): Promise<string[]> {
+      return [...branches.keys()].filter((name) => name.startsWith(prefix)).sort();
+    },
 
-    // createBranch: snapshot the source branch's tree (the branch whose head matches the sha).
-    if (method === 'POST' && route.endsWith('/git/refs')) {
-      const name = String(body.ref ?? '').replace(/^refs\/heads\//, '');
-      if (branches.has(name)) return new Response('Reference already exists', { status: 422 });
-      const source = [...heads.entries()].find(([, sha]) => sha === body.sha)?.[0] ?? 'main';
-      branches.set(name, new Map(branches.get(source)));
-      heads.set(name, nextSha());
-      return json({ ref: `refs/heads/${name}` }, 201);
-    }
+    async commit(
+      branch: string,
+      changes: FileChange[],
+      author: CommitAuthor,
+      _message: string,
+      expectedHead?: string,
+    ): Promise<string> {
+      // Mirror the real commitFiles: an empty change set is a programming error, not a no-op.
+      if (changes.length === 0) throw new Error('commitFiles: no changes to commit');
 
-    const refWrite = route.match(/\/git\/refs\/heads\/(.+)$/);
+      // expectedHead is the fail-closed guard the entry and publish paths use: a single attempt
+      // that throws a CommitConflictError-named error (the engine's isConflict matches it) when
+      // the branch head moved since the caller read it.
+      if (expectedHead !== undefined && heads.get(branch) !== expectedHead) {
+        throw new CommitConflictError(`${branch} (head moved)`);
+      }
 
-    // deleteBranch: 404 when already gone (the engine treats that as success).
-    if (method === 'DELETE' && refWrite) {
-      const branch = decodeURIComponent(refWrite[1]);
-      if (!branches.has(branch)) return new Response('Not Found', { status: 404 });
-      branches.delete(branch);
-      heads.delete(branch);
-      return new Response(null, { status: 204 });
-    }
-
-    // The atomic-commit landing: apply the staged tree to the named branch and record the
-    // content file (the .md entry, not the manifest) as the last commit.
-    if (method === 'PATCH' && refWrite) {
-      const branch = decodeURIComponent(refWrite[1]);
-      const tree = branches.get(branch);
-      const staged = stagedCommits.get(String(body.sha ?? ''));
-      const changes = staged ? stagedTrees.get(staged.treeSha) : undefined;
-      if (!tree || !staged || !changes) return new Response('Unprocessable', { status: 422 });
+      const tree = branches.get(branch) ?? new Map<string, string>();
+      branches.set(branch, tree);
       for (const change of changes) {
-        if (change.sha === null) tree.delete(change.path);
-        else if (typeof change.content === 'string') tree.set(change.path, change.content);
+        if (change.content === null) tree.delete(change.path);
+        else tree.set(change.path, change.content);
       }
-      heads.set(branch, String(body.sha));
+      const sha = nextSha();
+      heads.set(branch, sha);
+
+      // Record the content file (the .md entry, not the manifest) so the E2E recorder route can
+      // assert the author and the landing branch. The committer is left null: cairn never sets it,
+      // and GitHub attributes the commit to cairn-cms[bot].
       const fileEntry =
-        changes.find((e) => e.path.endsWith('.md') && typeof e.content === 'string') ??
-        changes.find((e) => typeof e.content === 'string');
-      if (fileEntry) {
-        lastCommit = {
-          path: fileEntry.path,
-          branch,
-          author: staged.author,
-          committer: staged.committer,
-          content: fileEntry.content ?? '',
-        };
+        changes.find((c) => c.path.endsWith('.md') && c.content !== null) ??
+        changes.find((c) => c.content !== null);
+      if (fileEntry && fileEntry.content !== null) {
+        lastCommit = { path: fileEntry.path, branch, author, committer: null, content: fileEntry.content };
       }
-      return json({ object: { sha: body.sha } });
-    }
+      return sha;
+    },
 
-    // listMarkdown: all blobs on the branch, so the engine can filter by dir prefix.
-    const treeList = route.match(/\/git\/trees\/([^/]+)$/);
-    if (method === 'GET' && treeList) {
-      const tree = branches.get(decodeURIComponent(treeList[1]));
-      if (!tree) return new Response('Not Found', { status: 404 });
-      return json({ tree: [...tree.keys()].map((path) => ({ path, type: 'blob' })), truncated: false });
-    }
+    async createBranch(name: string, fromBranch: string): Promise<void> {
+      const source = branches.get(fromBranch);
+      if (!source) throw new CommitConflictError(`${fromBranch} (unreadable source)`);
+      branches.set(name, new Map(source));
+      heads.set(name, nextSha());
+    },
 
-    // Tree create: stage the changes; they apply to a branch only at ref PATCH time.
-    if (method === 'POST' && route.endsWith('/git/trees')) {
-      const sha = nextSha();
-      stagedTrees.set(sha, (body.tree ?? []) as TreeChange[]);
-      return json({ sha });
-    }
-
-    // commitTreeSha: the parent commit's tree (the sha itself stands in for it here).
-    if (method === 'GET' && /\/git\/commits\/[^/]+$/.test(route)) {
-      return json({ tree: { sha: route.split('/').pop() } });
-    }
-
-    // Commit create: stage the tree pointer and the author for the ref PATCH that lands it.
-    if (method === 'POST' && route.endsWith('/git/commits')) {
-      const sha = nextSha();
-      stagedCommits.set(sha, {
-        treeSha: String(body.tree ?? ''),
-        author: body.author as { name: string; email: string },
-        // committer is not set by cairn; record null so the E2E can assert its absence.
-        committer: body.committer ?? null,
-      });
-      return json({ sha });
-    }
-
-    // Contents API: PUT (commitFile) or GET (readRaw / fileSha), honoring ?ref= for any branch.
-    const contentsMatch = route.match(/\/contents\/(.+)$/);
-    const path = contentsMatch ? decodeURIComponent(contentsMatch[1]) : '';
-
-    if (method === 'PUT' && path) {
-      const branch = String(body.branch ?? 'main');
-      const tree = branches.get(branch);
-      if (!tree) return new Response('Not Found', { status: 404 });
-      const encoded = String(body.content ?? '');
-      const decoded =
-        typeof atob === 'function' ? atob(encoded) : Buffer.from(encoded, 'base64').toString('utf-8');
-      tree.set(path, decoded);
-      heads.set(branch, nextSha());
-      lastCommit = {
-        path,
-        branch,
-        author: body.author as { name: string; email: string },
-        committer: body.committer ?? null,
-        content: decoded,
-      };
-      return json({ commit: { sha: heads.get(branch) } });
-    }
-
-    // GET: distinguish readRaw (Accept: application/vnd.github.raw) from fileSha (JSON).
-    if (method === 'GET' && path) {
-      const branch = u.searchParams.get('ref') ?? 'main';
-      const content = branches.get(branch)?.get(path);
-      if (content === undefined) return new Response('Not Found', { status: 404 });
-      if (accept.includes('raw')) return new Response(content, { status: 200 });
-      return json({ sha: 'old-sha', name: path.split('/').pop() });
-    }
-
-    // Fallthrough: installation token exchange and other GitHub API calls.
-    if (url.includes('/access_tokens')) {
-      return json({ token: 'dev-token' }, 201);
-    }
-
-    return new Response('Not Found', { status: 404 });
-  }) as typeof fetch;
+    async deleteBranch(name: string): Promise<void> {
+      branches.delete(name);
+      heads.delete(name);
+    },
+  };
 }

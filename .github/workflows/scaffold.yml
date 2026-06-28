@@ -36,7 +36,7 @@ jobs:
           npm run build
       - name: Assert the dev backend is eliminated from the emitted Worker
         run: |
-          if grep -rl -e 'editor@showcase.test' -e 'installFakeGitHub' -e 'devBackendHandle' -e 'cairn-cms-dev' -e 'dev-token' -e 'sk-showcase-stub' -e 'createFakeAuthDb' -e 'createFakeR2' -e 'createFakeAnthropic' -e 'lastRecordedCommit' /tmp/cairn-emitted/.svelte-kit/cloudflare 2>/dev/null; then
+          if grep -rl -e 'editor@showcase.test' -e 'createDevBackend' -e 'devBackendHandle' -e 'cairn-cms-dev' -e 'dev-token' -e 'sk-showcase-stub' -e 'createFakeAuthDb' -e 'createFakeR2' -e 'createFakeAnthropic' -e 'lastRecordedCommit' -e 'committedFile' /tmp/cairn-emitted/.svelte-kit/cloudflare 2>/dev/null; then
             echo "FAIL: dev-backend artifact in the emitted Worker"; exit 1
           fi
           echo "OK: emitted template builds clean"

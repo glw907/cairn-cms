@@ -8,7 +8,8 @@
 // deployed runtime; the GitHub/R2/D1 doubles only degrade to "saves do not persist." The bypass is
 // why the fence exists; never relax it by analogy to the harmless mock.
 import type { Handle } from '@sveltejs/kit';
-import { installFakeGitHub, seedMediaLibrary, SEED_MEDIA_KEYS } from './fake-github.js';
+import type { Backend } from '@glw907/cairn-cms';
+import { createDevBackend, seedMediaLibrary, SEED_MEDIA_KEYS } from './fake-github.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeR2 } from './fake-r2.js';
 
@@ -34,12 +35,15 @@ export interface DevBackendOptions {
  * @returns a SvelteKit `Handle` that installs the dev backend per request path.
  */
 export function devBackendHandle(options?: DevBackendOptions): Handle {
-  installFakeGitHub();
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
 
-  // One instance each for the server's lifetime, like the fake GitHub's in-memory repo, so editors
-  // added through /admin/editors and an asset uploaded through /admin persist across requests.
+  // One dev Backend over the module-level store, built at handle-build time so every request shares
+  // the same singleton repo (a commit on one request is visible to the recorder route on the next).
+  const backend = createDevBackend();
+
+  // One instance each for the server's lifetime, like the in-memory repo, so editors added through
+  // /admin/editors and an asset uploaded through /admin persist across requests.
   const fakeAuthDb = createFakeAuthDb();
   const fakeR2 = createFakeR2();
 
@@ -52,6 +56,11 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     if (isAdmin || isMedia) {
+      // The dev Backend rides event.locals.backend, the per-request channel the engine resolves
+      // (locals.backend ?? runtime.backend.connect(env)). It replaces the retired global-fetch
+      // patch: the engine's reads and commits hit the in-memory repo through this object.
+      (event.locals as { backend?: Backend }).backend = backend;
+
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
       // ones. The template's App.Platform also declares context and caches, which the dev routes
       // never touch, so this partial value casts through unknown; the engine reads the env

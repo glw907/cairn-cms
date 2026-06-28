@@ -21,12 +21,6 @@ import type { LinkResolve } from '../content/links.js';
 
 export interface RendererOptions {
   /**
-   * Stamp a `data-rise` ordinal (0, 1, 2, …) on each top-level component so a site's
-   *  CSS can drive an entrance-cascade delay off it. Omit for no stagger. The ordinal
-   *  is inert, so a consumer's sanitize floor can keep `data-rise` and drop `style`.
-   */
-  stagger?: boolean;
-  /**
    * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
    *  directive markers and the common benign tags) and returns the schema to use. Add to the
    *  allowlist for the benign HTML a site's content needs; start from the argument so the
@@ -73,7 +67,7 @@ export function createRenderer(
   const rehypePlugins: PluggableList = [
     rehypeRaw,
     ...floor,
-    [rehypeDispatch, registry, options.stagger],
+    [rehypeDispatch, registry],
     rehypeSlug,
     // Name each GFM task-list checkbox from its item text. It runs after the sanitize floor (which
     // does not allow aria-label) so the added attribute survives, and is content-not-sink, so it is

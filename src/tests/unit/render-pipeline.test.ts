@@ -39,7 +39,7 @@ describe('createRenderer', () => {
         },
       ],
     });
-    const { renderMarkdown } = createRenderer(reg, { stagger: true });
+    const { renderMarkdown } = createRenderer(reg);
     const html = await renderMarkdown(':::box\ncontent\n:::');
     expect(html).toContain('class="box"');
     expect(html).toContain('data-rise="0"');

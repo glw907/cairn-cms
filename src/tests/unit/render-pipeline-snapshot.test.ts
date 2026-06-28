@@ -83,13 +83,13 @@ const DOC = [
 
 describe('render pipeline characterization', () => {
   it('produces byte-identical HTML for a representative directive document', async () => {
-    const { renderMarkdown } = createRenderer(registry, { stagger: true });
+    const { renderMarkdown } = createRenderer(registry);
     const html = await renderMarkdown(DOC);
     expect(html).toMatchSnapshot();
   });
 
   it('is stable across renders (no per-run nondeterminism)', async () => {
-    const { renderMarkdown } = createRenderer(registry, { stagger: true });
+    const { renderMarkdown } = createRenderer(registry);
     const a = await renderMarkdown(DOC);
     const b = await renderMarkdown(DOC);
     expect(a).toBe(b);

@@ -69,7 +69,7 @@ export function markFirstList(children: ElementContent[]): Element | undefined {
 
 // Recurse into a node's children, transforming any nested primitive sections
 // (a grid inside a card, panels inside a split). Nested primitives never carry the
-// entrance stagger; only top-level ones do (stamped in the transformer below).
+// entrance ordinal; only top-level ones do (stamped in the transformer below).
 function transformChildren(children: ElementContent[], registry: ComponentRegistry): ElementContent[] {
   return children.map((c) => {
     if (isElement(c) && c.properties?.dataPrimitive) return transformNode(c, registry);
@@ -152,19 +152,19 @@ function transformNode(node: Element, registry: ComponentRegistry): Element {
 
 /**
  * Rehype transformer: dispatch each stamped element through its registry `build`
- *  fn. When `stagger` is on, each top-level primitive gets a `data-rise` attribute
- *  carrying its document-order index (0, 1, 2, …); the site's CSS maps that ordinal
- *  to an entrance delay. The index is inert, so a consumer's sanitize floor can keep
+ *  fn. Each top-level primitive gets a `data-rise` attribute carrying its
+ *  document-order index (0, 1, 2, …); the site's CSS maps that ordinal to an
+ *  entrance delay. The index is inert, so a consumer's sanitize floor can keep
  *  `data-rise` while dropping `style`. Nested primitives never get it. Non-primitive
  *  content (lede, intro paragraphs, the page-toc nav) passes through untouched.
  */
-export function rehypeDispatch(registry: ComponentRegistry, stagger?: boolean) {
+export function rehypeDispatch(registry: ComponentRegistry) {
   return (tree: Root) => {
     let idx = 0;
     tree.children = (tree.children as ElementContent[]).map((child) => {
       if (isElement(child) && child.properties?.dataPrimitive) {
         const el = transformNode(child, registry);
-        if (stagger) el.properties = { ...el.properties, dataRise: String(idx++) };
+        el.properties = { ...el.properties, dataRise: String(idx++) };
         return el;
       }
       if (isElement(child)) child.children = transformChildren(child.children as ElementContent[], registry);

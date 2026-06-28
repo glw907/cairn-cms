@@ -58,7 +58,7 @@ export interface ComponentDef {
   insertTemplate?: string;
   /**
    * Build the final hast element from the component context (attributes plus partitioned
-   *  slots). The engine stamps the entrance-stagger ordinal (`data-rise`) on the top-level
+   *  slots). The engine stamps the entrance ordinal (`data-rise`) on the top-level
    *  result, so a build fn stays free of any motion concern.
    */
   build: (ctx: ComponentContext) => Element;

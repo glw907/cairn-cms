@@ -64,9 +64,13 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
   // parent's base URL, so a clicked fragment or root link could render the admin login inside
   // the frame. Targeting every link at a new tab turns each click into a popup, and the sandbox
   // (which grants no allow-popups) blocks it, so a proofing click goes nowhere.
+  // The marker on the root lets a site scope an entrance animation (driven off [data-rise]) away
+  // from the preview, which shows the resting state of content and runs the same pipeline; without
+  // it, content would re-animate on every debounced render. cairn provides the hook; the site owns
+  // its animation and decides what to suppress under [data-cairn-preview].
   return [
     '<!doctype html>',
-    '<html>',
+    '<html data-cairn-preview>',
     '<head>',
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',

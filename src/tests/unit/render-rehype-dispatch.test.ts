@@ -58,22 +58,12 @@ describe('rehypeDispatch', () => {
         h('div', { dataPrimitive: 'card' }, [h('h2', ['Second'])]),
       ],
     } as Root;
-    rehypeDispatch(reg, true)(tree);
+    rehypeDispatch(reg)(tree);
     const first = tree.children[0] as never as { properties: { dataRise?: string } };
     const second = tree.children[2] as never as { properties: { dataRise?: string } };
     // The index counts primitives only, so the interleaved <p> does not bump it.
     expect(first.properties.dataRise).toBe('0');
     expect(second.properties.dataRise).toBe('1');
-  });
-
-  it('omits data-rise when no stagger is requested', () => {
-    const tree: Root = {
-      type: 'root',
-      children: [h('div', { dataPrimitive: 'card' }, [h('h2', ['T'])])],
-    } as Root;
-    rehypeDispatch(reg)(tree);
-    const section = tree.children[0] as never as { properties: { dataRise?: string } };
-    expect(section.properties.dataRise).toBeUndefined();
   });
 
   it('markFirstList tags the first <ul> with ec-grid', () => {

@@ -44,34 +44,42 @@ plan implements it and the spec is the source of truth for every interface shape
 **New:**
 - `src/lib/github/backend.ts` — the `Backend`, `BackendProvider`, `BackendEnv`, `GithubAppProvider`
   interfaces; `githubApp()`; and `makeGithubBackend()` (the live impl wrapping `repo.ts`/`branches.ts`).
-- `src/lib/github/backend.test.ts` — unit tests for `githubApp`, `connect`, and the live impl against a
+- `src/tests/unit/github-backend.test.ts` — unit tests for `githubApp`, `connect`, and the live impl against a
   `fetch` double.
 
 **Modified (Task 2, the atomic unit):**
-- `src/lib/content/types.ts` — `CairnAdapter.backend` retyped `BackendProvider`; `BackendConfig` removed.
-- `src/lib/sveltekit/compose.ts` (or wherever `composeRuntime` types `runtime.backend`) — carry the
-  provider; default the manifest paths as today.
+- `src/lib/content/types.ts` — `CairnAdapter.backend` (line 200) and `CairnRuntime.backend` (line 347)
+  retyped `BackendProvider`; `BackendConfig` removed.
+- `src/lib/content/compose.ts` — `composeRuntime` carries the provider; manifest paths default as today.
 - `src/lib/github/repo.ts` — delete `commitFile` and `fileSha`; add optional `expectedHead` to
   `commitFiles`; the remaining functions become internal (drop from the barrel).
 - `src/lib/github/branches.ts` — unchanged behavior; `createBranch` head-resolution moves into the impl.
 - `src/lib/github/credentials.ts` — `appCredentials` consumed inside `makeGithubBackend`; `GithubKeyEnv`
   becomes `BackendEnv` (or `BackendEnv` aliases it).
 - `src/lib/sveltekit/content-routes.ts` — resolve `backend` once per handler; pass it down; drop
-  `mintToken` from `ContentRoutesDeps`, add `backend` injection.
-- `src/lib/sveltekit/nav-routes.ts` — use `backend.commit(branch, [change], …, expectedHead)` with the
-  read head; keep the `isConflict` reload-and-reapply branch.
-- `src/lib/sveltekit/cairn-admin.ts`, `src/lib/sveltekit/health.ts` — migrate to `Backend`; `health.ts`
-  narrows the provider on `kind === 'github-app'` for the signing self-test.
-- `src/lib/media/usage.ts`, `src/lib/media/rewrite-plan.ts`, `src/lib/media/naming.ts`,
-  `src/lib/content/reference-index.ts`, `src/lib/content/advisories.ts` — take a `Backend` parameter
-  instead of `(repo, token)`.
+  `mintToken` from `ContentRoutesDeps`, add `backend?` injection; retype `ContentEvent` (line 305)
+  env generic from `GithubKeyEnv` to `BackendEnv`; migrate `settingsSave`'s `commitFile` (line 2854).
+- `src/lib/sveltekit/nav-routes.ts` — drop `NavRoutesDeps.mintToken` and the `appCredentials`/
+  `cachedInstallationToken`/`GithubKeyEnv` imports; resolve `backend`; use
+  `backend.commit(defaultBranch, [change], …, head)`; keep the `isConflict` reload-and-reapply branch.
+- `src/lib/sveltekit/cairn-admin.ts` — retype `AdminEvent` env generic to `BackendEnv`; delete the
+  `mintToken` field on `AdminDeps` (line 47) and its two pass-throughs (lines 86, 92). It makes no
+  backend call itself.
+- `src/lib/sveltekit/health.ts` — narrow the provider on `kind === 'github-app'` for the signing
+  self-test (`signingSelfTest(provider.appId, key)`).
+- `src/lib/media/usage.ts`, `src/lib/media/rewrite-plan.ts`, `src/lib/content/reference-index.ts`,
+  `src/lib/content/advisories.ts` — take a `Backend` parameter instead of `(repo, token)`.
+  (`media/naming.ts` has no backend coupling and is not touched.)
 - `src/lib/vite/index.ts` — `adapterFactsSource` narrows on `kind === 'github-app'` to read
   `backend.owner`/`backend.repo`.
 - `src/lib/doctor/checks-github.ts`, `src/lib/doctor/index.ts` — read identity off the narrowed provider.
-- `src/lib/index.ts` — remove `BackendConfig`, `RepoRef`, `AppCredentials`, `GithubKeyEnv`; add `Backend`,
+- `src/lib/index.ts` — remove `BackendConfig`, `RepoRef`, `AppCredentials`; add `Backend`,
   `BackendProvider`, `GithubAppProvider`, `BackendEnv`, `githubApp`, `FileChange`.
-- The ~30 route tests stubbing `deps.mintToken` and the github unit/fixture tests (commit, atomic-commit,
-  branches, read, double, types) — migrated to inject a fake `Backend`.
+- `src/lib/sveltekit/index.ts` (line 39) — replace the `GithubKeyEnv` re-export with `BackendEnv`.
+- `examples/showcase/src/lib/cairn.config.ts` (line 164) — `backend:` literal → `githubApp({ … })`.
+- `examples/showcase/src/lib/cairn.server.ts` — remove the dead `mintToken = 'dev-token'` stub and its
+  `createCairnAdmin` pass-through (the dev double now rides `locals.backend`).
+- The route tests and the github unit/fixture tests — see Task 2 Step 9 for the seam-accurate surface.
 
 **Modified (Task 3, the dev double):**
 - `packages/cairn-cms-dev/src/fake-github.ts` — a conforming `Backend` over the in-memory store; drop
@@ -86,7 +94,7 @@ plan implements it and the spec is the source of truth for every interface shape
 
 **Files:**
 - Create: `src/lib/github/backend.ts`
-- Create: `src/lib/github/backend.test.ts`
+- Create: `src/tests/unit/github-backend.test.ts`
 - Modify: `src/lib/index.ts` (add the new exports only; remove nothing yet)
 
 **Interfaces:**
@@ -121,11 +129,13 @@ export function githubApp(config: { owner: string; repo: string; branch: string;
   it is supplied, do a single attempt (no retry loop): read the head, throw `new CommitConflictError(
   \`\${repo.branch} (head moved)\`)` if `head !== expectedHead`, then create the tree and commit and PATCH
   the ref; on the ref 422 throw `CommitConflictError`. When it is absent, keep the existing retry loop
-  verbatim. Add a unit test in the existing repo test file asserting both paths (a matching head commits;
-  a moved head throws `CommitConflictError` without retrying).
+  verbatim, so every current 4-arg caller stays green. Add assertions to the existing
+  `src/tests/unit/github-atomic-commit.test.ts` (where `commitFiles` is already exercised against
+  `GithubDouble`) covering both paths: a matching head commits; a moved head throws `CommitConflictError`
+  without retrying.
 
 - [ ] **Step 2: Run the new `commitFiles` test, watch it fail, implement, watch it pass.**
-  Run: `npx vitest run src/lib/github/repo.test.ts -t expectedHead`
+  Run: `npx vitest run src/tests/unit/github-atomic-commit.test.ts -t expectedHead`
   Expected: FAIL, then PASS after the implementation.
 
 - [ ] **Step 3: Write `backend.test.ts` (failing).** Cover: `githubApp(config)` returns a provider with
@@ -137,12 +147,15 @@ export function githubApp(config: { owner: string; repo: string; branch: string;
   `fetch` double on the existing github tests.
 
 - [ ] **Step 4: Run it, verify it fails (module not found).**
-  Run: `npx vitest run src/lib/github/backend.test.ts`
+  Run: `npx vitest run src/tests/unit/github-backend.test.ts`
   Expected: FAIL.
 
-- [ ] **Step 5: Implement `src/lib/github/backend.ts`.** Define the interfaces above.
-  `makeGithubBackend(config, env): Backend` closes over `config` and a lazy token getter
-  `() => cachedInstallationToken(appCredentials(config, env))`, and implements:
+- [ ] **Step 5: Implement `src/lib/github/backend.ts`.** Define the interfaces above. Export
+  `makeGithubBackend(config, getToken: () => string | Promise<string>): Backend` — an injectable token
+  getter, not `env` directly. This is the test seam: `connect(env)` wires the production getter
+  `() => cachedInstallationToken(appCredentials(config, env))`, and a unit test wires
+  `() => 'test-token'` so the GitHub `Backend` still calls `fetch` and the existing `GithubDouble`
+  intercepts it unchanged. The methods `await getToken()` and implement:
   - `defaultBranch: config.branch`
   - `readFile(path, ref)` → `readRaw({ ...config, branch: ref }, path, await token())`
   - `readEntries(dir, ref)` → `listMarkdown({ ...config, branch: ref }, dir, await token())`
@@ -155,10 +168,10 @@ export function githubApp(config: { owner: string; repo: string; branch: string;
     defined, catchable error the save path maps to its 500); else `createBranchRef(config, name, head, tok)`
   - `deleteBranch(name)` → `deleteBranch(config, name, await token())`
   `githubApp(config)` returns `{ kind: 'github-app', branch: config.branch, owner, repo, appId,
-  installationId, connect: (env) => makeGithubBackend(config, env) }`.
+  installationId, connect: (env) => makeGithubBackend(config, () => cachedInstallationToken(appCredentials(config, env))) }`.
 
 - [ ] **Step 6: Run the backend tests, verify they pass.**
-  Run: `npx vitest run src/lib/github/backend.test.ts src/lib/github/repo.test.ts`
+  Run: `npx vitest run src/tests/unit/github-backend.test.ts src/lib/github/repo.test.ts`
   Expected: PASS.
 
 - [ ] **Step 7: Add the new exports (additive).** In `src/lib/index.ts`, add
@@ -174,7 +187,7 @@ export function githubApp(config: { owner: string; repo: string; branch: string;
 - [ ] **Step 9: Commit.**
 
 ```bash
-git add src/lib/github/backend.ts src/lib/github/backend.test.ts src/lib/github/repo.ts src/lib/github/repo.test.ts src/lib/index.ts
+git add src/lib/github/backend.ts src/tests/unit/github-backend.test.ts src/lib/github/repo.ts src/tests/unit/github-atomic-commit.test.ts src/lib/index.ts
 git commit -m "feat(backend): add the Backend interface and githubApp provider
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -220,55 +233,89 @@ final step**; intermediate `check` runs will report errors as consumers are migr
   read the default branch". Call `backend.createBranch(pendingBranch, backend.defaultBranch)` for the
   create; its thrown `CommitConflictError` on an unreadable source is the backstop.
 
-- [ ] **Step 4: Migrate `nav-routes.ts` and keep its conflict detection.** Replace `commitFile(...)` with
-  `const head = await backend.branchHead(backend.defaultBranch)` (the read head) then
-  `await backend.commit(backend.defaultBranch, [{ path, content }], author, message, head ?? undefined)`.
-  Keep the `catch (err) { if (isConflict(err)) … 'The site config changed since you opened it. Reload and
-  reapply your edits.' }` branch unchanged: a moved head now throws `CommitConflictError` via
-  `expectedHead`, preserving the prompt.
+- [ ] **Step 4: Migrate both `commitFile` callers and keep their conflict detection.** There are two:
+  `nav-routes.ts:130` (navSave) and `content-routes.ts:2854` (settingsSave). For each, replace
+  `commitFile(...)` with `const head = await backend.branchHead(backend.defaultBranch)` then
+  `await backend.commit(backend.defaultBranch, [{ path, content }], author, message, head ?? undefined)`,
+  and keep the existing `catch (err) { if (isConflict(err)) … reload-and-reapply prompt }` branch
+  unchanged: a moved head now throws `CommitConflictError` via `expectedHead`, preserving the prompt.
+  In `nav-routes.ts` also drop `NavRoutesDeps.mintToken`, add the `backend?` test seam plus the
+  `locals.backend ?? runtime.backend.connect(env)` resolve at the top of navSave, and remove the
+  `appCredentials`/`cachedInstallationToken`/`GithubKeyEnv` imports.
 
-- [ ] **Step 5: Migrate the cross-branch helpers.** Change `media/usage.ts`, `media/rewrite-plan.ts`,
-  `media/naming.ts`, `content/reference-index.ts`, and `content/advisories.ts` to take `backend: Backend`
-  in place of `(repo: RepoRef, token: string)`, and call `backend.readFile`/`backend.readEntries` with
-  the explicit branch ref each already iterates. Update their callers in `content-routes.ts` to pass
-  `backend`.
+- [ ] **Step 5: Migrate the four cross-branch helpers.** Change `media/usage.ts`,
+  `media/rewrite-plan.ts`, `content/reference-index.ts`, and `content/advisories.ts` to take
+  `backend: Backend` in place of `(repo: RepoRef, token: string)`, calling
+  `backend.readFile`/`backend.readEntries` with the explicit branch ref each already iterates. Update
+  their callers in `content-routes.ts` to pass `backend`. (`media/naming.ts` has no backend coupling;
+  leave it.)
 
-- [ ] **Step 6: Migrate `cairn-admin.ts` and `health.ts`.** `health.ts` narrows the provider:
+- [ ] **Step 6: Migrate `cairn-admin.ts` and `health.ts`.** `cairn-admin.ts` makes no backend call: just
+  retype its `AdminEvent` env generic to `BackendEnv`, delete the `mintToken` field on `AdminDeps`
+  (line 47) and its two pass-throughs (lines 86, 92). `health.ts` narrows the provider:
   `if (runtime.backend.kind === 'github-app') { … signingSelfTest(runtime.backend.appId, key) … }`,
-  leaving a non-github provider with no signing self-test. `cairn-admin.ts` resolves `backend` the same
-  way the content routes do for any backend call it makes.
+  leaving a non-github provider with no signing self-test.
 
 - [ ] **Step 7: Narrow the build-time and doctor readers.** In `src/lib/vite/index.ts` `adapterFactsSource`,
   guard the identity reads on `kind === 'github-app'` before reading `backend.owner`/`backend.repo`. In
   `doctor/checks-github.ts` and `doctor/index.ts`, read the identity off the narrowed provider; the doctor
   keeps its own uncached probe and does not call `connect`.
 
-- [ ] **Step 8: Delete the retired primitives and update the barrel.** Delete `commitFile` and `fileSha`
-  from `repo.ts`. In `src/lib/index.ts` remove `BackendConfig`, `RepoRef`, `AppCredentials`, and the
-  `GithubKeyEnv` re-export; keep `CommitConflictError`/`isConflict`/`RepoFile`/`CommitAuthor` exported
-  (the interface names them). Rename `GithubKeyEnv` to `BackendEnv` at its definition (or alias) and
-  re-export `BackendEnv`.
+- [ ] **Step 8: Delete the retired primitives, retype the env generic, and update both barrels.** Delete
+  `commitFile` and `fileSha` from `repo.ts`. Rename `GithubKeyEnv` to `BackendEnv` at its definition in
+  `credentials.ts` (or define `BackendEnv` and alias). Retype every `EventBase<GithubKeyEnv>` usage
+  (`ContentEvent` at `content-routes.ts:305`, and the `AdminEvent` env generic) to `BackendEnv`. In
+  `src/lib/index.ts` remove `BackendConfig`, `RepoRef`, `AppCredentials`; keep
+  `CommitConflictError`/`isConflict`/`RepoFile`/`CommitAuthor`; add `Backend`/`BackendProvider`/
+  `GithubAppProvider`/`BackendEnv`/`githubApp`/`FileChange` (already added in Task 1 step 7, keep). In
+  `src/lib/sveltekit/index.ts:39` replace the `GithubKeyEnv` re-export with `BackendEnv` (the
+  `ContentRoutesDeps` env-typed members are why it is published from the subpath).
 
-- [ ] **Step 9: Migrate the tests (dispatch to `cairn-implementer`).** Once the engine compiles, dispatch
-  the test migration with a transcription-level spec: replace every `deps.mintToken` stub with a
-  `deps.backend` fake `Backend` (an object literal implementing the seven methods over an in-test map);
-  rewrite the github unit tests (`repo`/`branches`/credentials/double) against the new interface or retire
-  the ones now covered by `backend.test.ts`; update any fixture that constructed a `BackendConfig` to call
-  `githubApp(...)`. The implementer must report (not silently fix) any apparent engine defect, per the
-  dispatch-and-verify rule.
+- [ ] **Step 9: Migrate the showcase consumer.** In `examples/showcase/src/lib/cairn.config.ts:164`,
+  change `backend: { owner, repo, branch, appId, installationId }` to
+  `backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' })`
+  (import `githubApp`). In `examples/showcase/src/lib/cairn.server.ts`, delete the
+  `let mintToken … = async () => 'dev-token'` stub and drop `mintToken` from the `createCairnAdmin(runtime,
+  { mintToken, anthropic })` call; the dev double now rides `locals.backend` via `devBackendHandle`.
 
-- [ ] **Step 10: Full gate (the single green checkpoint).**
+- [ ] **Step 10: Migrate the tests (the dominant workstream; dispatch to `cairn-implementer`).** The real
+  test seam is `src/tests/unit/_github-double.ts`, a stateful `fetch`-level double installed by
+  `vi.stubGlobal('fetch', …)` and imported by ~27 test files, NOT `deps.mintToken`. Because the GitHub
+  `Backend` still calls `fetch`, `GithubDouble` keeps working underneath the interface. The migration:
+  - **Keep `GithubDouble` and `_github-double.ts` as-is** (it lives below the Backend seam).
+  - **The ~21 route tests** that inject `deps.mintToken` AND install `GithubDouble`: replace the
+    `deps.mintToken = () => 'token'` line with `deps.backend = makeGithubBackend(testRepoConfig, () =>
+    'test-token')` (import `makeGithubBackend`). The `GithubDouble.install()` and every fetch-URL
+    assertion stay unchanged, because `makeGithubBackend` fetches the same URLs.
+  - **The 4 cross-branch helper tests** (`media-usage`, `media-rewrite-plan`, `reference-index`,
+    `advisories`) that drive a literal token through `GithubDouble` with no `mintToken`: change the
+    helper call from `(repo, token, …)` to `(makeGithubBackend(repo, () => token), …)`. `GithubDouble`
+    stays.
+  - **The github unit tests:** remove the `commitFile`/`fileSha` cases from `github-commit.test.ts` and
+    `github-read.test.ts` (functions deleted); rework or retire `github-credentials.test.ts` and
+    `github-types.test.ts` (they construct the removed `BackendConfig`/`RepoRef` — fold the
+    `appCredentials` case into `github-backend.test.ts`); `github-double.test.ts`,
+    `github-branches.test.ts`, `github-atomic-commit.test.ts`, `github-signing.test.ts`,
+    `github-token-cache.test.ts` keep testing the unchanged internals.
+  - **Compose/adapter fixtures** that build a `backend` object literal (`compose.test.ts`,
+    `content-compose.test.ts`, and any `_content-fixture`) call `githubApp(...)` instead.
+  Dispatch with this concrete file list; the implementer reports (not silently fixes) any apparent
+  engine defect, per the dispatch-and-verify rule.
+
+- [ ] **Step 11: Full gate (the single green checkpoint).**
   Run: `npm run check && npm test && npm run check:comments`
   Expected: `check` 0/0; `npm test` exit 0; comments clean.
 
-- [ ] **Step 11: Commit.**
+- [ ] **Step 12: Commit.** Remove the stray untracked `examples/showcase/.claude/` first (or gitignore
+  it); commit an explicit file list, never `git add -A` (repo convention).
 
 ```bash
-git add -A
+git rm -r --cached --ignore-unmatch examples/showcase/.claude 2>/dev/null; rm -rf examples/showcase/.claude
+git add src/lib examples/showcase/src/lib/cairn.config.ts examples/showcase/src/lib/cairn.server.ts src/tests
 git commit -m "feat(backend)!: route the engine through the Backend interface
 
 Consumers must: replace the backend object literal with githubApp({...}); drop
-imports of BackendConfig/RepoRef/AppCredentials/GithubKeyEnv.
+imports of BackendConfig/RepoRef/AppCredentials/GithubKeyEnv (use BackendEnv).
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 ```
@@ -280,7 +327,8 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 **Files:**
 - Modify: `packages/cairn-cms-dev/src/fake-github.ts`, `packages/cairn-cms-dev/src/handle.ts`,
   `packages/cairn-cms-dev/src/index.ts`
-- Modify: `packages/cairn-cms-dev/src/fake-github.test.ts`
+- Modify: `packages/cairn-cms-dev/src/fake-github.test.ts`, `packages/cairn-cms-dev/src/index.test.ts`,
+  `packages/cairn-cms-dev/src/handle.test.ts`
 - Modify: `.github/workflows/e2e.yml`, `.github/workflows/scaffold.yml`
 
 **Interfaces:**
@@ -299,7 +347,10 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - [ ] **Step 2: Update the dev-package tests.** Rewrite `fake-github.test.ts` to drive the `Backend`
   methods directly (no `fetch`), asserting the publish-workflow branch semantics it asserted before plus
-  the empty-set rejection and the `expectedHead` conflict.
+  the empty-set rejection and the `expectedHead` conflict. In `index.test.ts`, swap the
+  `installFakeGitHub` re-export assertion for `createDevBackend`. In `handle.test.ts`, drop the
+  fetch-snapshot/restore `beforeEach`/`afterEach` (createDevBackend mutates no global) and assert that
+  `devBackendHandle` sets `event.locals.backend` rather than patching `fetch`.
 
 - [ ] **Step 3: Wire `devBackendHandle`.** In `handle.ts`, drop the `installFakeGitHub()` call and set
   `event.locals.backend = createDevBackend()` on the `/admin` and `/media` paths it already augments
@@ -307,9 +358,12 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
   Seed content/media as today.
 
 - [ ] **Step 4: Update `index.ts` and the dev-fence needles.** Export `createDevBackend`; drop the
-  `installFakeGitHub` export. In `e2e.yml` and `scaffold.yml`, update the `build/`-grep needle list: drop
-  `installFakeGitHub`, add `createDevBackend` (and any other new gated export), so the elimination check
-  still proves no dev-backend symbol reaches the production bundle.
+  `installFakeGitHub` export. In `e2e.yml:33` and `scaffold.yml:39`, edit the grep needle list: remove
+  `-e 'installFakeGitHub'`, add `-e 'createDevBackend'` and `-e 'committedFile'` (the dev-only recorder
+  accessor, closing the asymmetry with `lastRecordedCommit`). The grep target stays the deployable
+  `.svelte-kit/cloudflare` output (not `.svelte-kit/output`), per the
+  `cairn-dev-backend-build-elimination` memory. Keep `devBackendHandle`, `cairn-cms-dev`,
+  `lastRecordedCommit`, `editor@showcase.test`, `sk-showcase-stub`, and the fake-binding needles.
 
 - [ ] **Step 5: Gate the dev package.**
   Run: `npm --prefix packages/cairn-cms-dev test` (or the workspace test) and `npm run check`.
@@ -362,10 +416,11 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
   at merge) with the shipped state and the next action (render-as-component + islands, phase 4). Prune the
   ROADMAP of anything this pass shipped. Refresh the `cairn-site-contract-v2-opportunity` memory.
 
-- [ ] **Step 7: Release commit.**
+- [ ] **Step 7: Release commit.** Stage the explicit release surface (version files, docs, STATUS,
+  ROADMAP), not `git add -A`.
 
 ```bash
-git add -A
+git add package.json package-lock.json examples/showcase/package-lock.json CHANGELOG.md docs ROADMAP.md
 git commit -m "chore(release): cairn-cms 0.74.0 (Contract v2 backend seam)
 
 Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
@@ -377,8 +432,14 @@ Co-Authored-By: Claude Opus 4.8 (1M context) <noreply@anthropic.com>"
 
 - **Spec coverage:** the interface (Task 1), the provider + identity facts (Task 1 + Task 2 step 7), the
   per-request resolve (Task 2 step 2), the non-request readers (Task 2 steps 6-7), the public-surface
-  break (Task 2 step 8), the nav conflict preservation (Task 1 step 1 + Task 2 step 4), the dev double
-  (Task 3), the dev-fence needles (Task 3 step 4), and the release/docs (Task 4) each map to a step.
+  break + both barrels + env-generic retype (Task 2 step 8), the showcase consumer (Task 2 step 9), the
+  nav and settings conflict preservation (Task 1 step 1 + Task 2 step 4), the seam-accurate test
+  migration (Task 2 step 10), the dev double (Task 3), the dev-fence needle delta (Task 3 step 4), and
+  the release/docs (Task 4) each map to a step.
+- **Review folded (2026-06-27):** a 28-agent find→verify over this plan confirmed 20 findings (9 major,
+  0 blocker), all incorporated above. The dominant correction: the real test seam is the fetch-level
+  `GithubDouble`, not `deps.mintToken`; the injectable token getter on `makeGithubBackend` keeps the
+  doubles working, making the migration a `deps.backend` swap rather than a 27-file fetch-script rewrite.
 - **No second backend impl, no `query()`, media unchanged, auth unchanged** — honored by construction.
 - **Type consistency:** `connect(env: BackendEnv)`, `commit(..., expectedHead?)`, `kind: 'github-app'`,
   and `readEntries`/`readFile` names are used identically across Tasks 1-3.

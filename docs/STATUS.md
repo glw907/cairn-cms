@@ -11,23 +11,47 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): tag-management Plan 1 LANDED; Plan 2 (data engine) WRITTEN + adversarially reviewed; NEXT = execute Plan 2 task-by-task
+## Immediate next action (2026-06-29, latest): tag-management Plans 1 + 2 LANDED on a worktree; NEXT = write Plan 3 (admin UI, mockup-first) just-in-time, review, execute
 
-**Plan 2 is written, adversarially reviewed, and committed** at
-`docs/superpowers/plans/2026-06-29-cairn-tag-management-2-data-engine.md` (`b68030c`). The review (one
-Workflow, seven lenses, 20 of 38 findings confirmed) drove a code-grounded redesign: build enforcement
-dropped (the per-entry union makes it a no-op; removes the `createContentIndex` signature change and the
-delist hazard); no fieldset rebuild (`Fieldset` lacks `refine`, so enforcement is a standalone
-`enforceTaxonomy` gate + a `closeTaxonomyField` fields transform with `concept.validate` untouched);
-vocabulary sourced from `runtime.vocabulary` (no per-request config read); save reads only the branch-first
-prior tags for the orphan union; GithubDouble-driven tests. Eight tasks: vocabulary config + `setVocabulary`;
-thread onto `CairnRuntime`; `ManifestEntry.tags` (scalar-coercing); internal `tagUsage`/`buildTagUsageIndex`
-cross-branch; the pure enforcement helpers; SAVE enforcement; EDIT-render picker + orphan chip; docs.
-**NEXT = execute task-by-task** via `cairn-implementer` (Sonnet), main loop reviewing each diff and clearing
-the gate between, watching the seam tasks (5–7) closest. Then Plan 3 (admin UI, mockup-first). The release is
-the first free minor after `0.77.0` publishes.
+**Plan 2 (the data engine) is complete on `worktree-tag-management-1`**, all eight tasks landed
+(`13e6895`→`890f2b4`, plus `df07299` simplifier), each dispatched to `cairn-implementer` (Sonnet),
+test-first, main loop reviewing every diff. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-29-cairn-tag-management-2-data-engine.md`.
 
-## Prior next action (2026-06-29): tag-management Plan 1 (reshape) LANDED on a worktree; NEXT was write Plan 2
+**What shipped.** The `vocabulary` site-config key (`{value,label}`) + `validateVocabulary`/
+`extractVocabulary`/`setVocabulary` (public), threaded onto `CairnRuntime.vocabulary`; `ManifestEntry.tags`
+(scalar-coercing `coerceTags` shared from `taxonomy.ts`); internal `tagUsage` + cross-branch
+`buildTagUsageIndex` (main ∪ open `cairn/*` branches, for Plan 3's delete gate); the pure enforcement
+helpers (`resolveAllowed`/`unlistedTags`/`closeTaxonomyField`/`enforceTaxonomy`); and the save/edit seam —
+the taxonomy field becomes a closed vocabulary-sourced picker, a new value is rejected, an orphan
+(pre-existing out-of-vocab tag) is preserved + flagged "not in your tag list". **Opt-in:** an unadopted
+site (no `vocabulary`) keeps the open creatable field; the build is untouched (tags-as-data identical).
+
+**Key design (review-driven, do not lose).** Build enforcement was DROPPED (the per-entry union
+`vocabulary ∪ prior-tags` always admits an entry's own tags, so build is a no-op; this also avoided a
+`createContentIndex` public-signature change and removed the delist hazard). NO fieldset rebuild
+(`Fieldset` lacks `refine`); enforcement is the standalone `enforceTaxonomy` gate + the `closeTaxonomyField`
+fields transform, with `concept.validate` untouched. Vocabulary read from `runtime.vocabulary` (snapshot),
+not a per-request config read.
+
+**Verified.** `npm run check` 0/0; `npm test` exit 0 (2829); all doc/surface gates; from-scratch consumer
+e2e `CI=1` 44 passed. `code-simplifier` one refinement; `svelte-reviewer` + `daisyui-a11y-reviewer` zero
+blockers/warnings. The adversarial **plan** review (Workflow, seven lenses) folded 20/38 before execution.
+Two low-severity reviewer follow-ups logged in the post-mortem (the `editLoad` create-defaults orphan
+corner; the orphan-flag `aria-describedby`).
+
+**NEXT = write Plan 3 (the admin UI) just-in-time per the spec, adversarially review (Workflow), then
+execute.** Plan 3 = the tag-admin SCREEN (add / rename-label / delete-unused), **mockup-first** (several
+prototypes → adversarial critique → `frontend-design` polish, the gold-standard bar, Warm Stone design
+system), in the `CairnAdminShell` seam with a `vocabularyLoad`/`vocabularySave` route pair (mirror
+`navLoad`/`navSave`); the enable/seed flow with the orphan **checklist** (seed from `allTags()`, gate on
+the vocabulary being a superset of in-use tags); the **size-gated template filter** (showcase, off by
+default, client-side over `ContentSummary.tags`); the live admin smoke + e2e. The delete gate uses
+`buildTagUsageIndex` (cross-branch). Spec: `docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md`
+(Component 2, the migration seed, the UI/UX directive). The release is the first free minor after `0.77.0`
+publishes. Use `cairn-pass` for pass-start/end. See the `cairn-tag-management-initiative` memory.
+
+## Prior next action (2026-06-29): tag-management Plan 1 LANDED; Plan 2 written + reviewed; NEXT was execute Plan 2
 
 **Plan 1 of the tag-management initiative is complete on `worktree-tag-management-1`** (off `main` at
 `adfd5bc`). It reshaped the held, unpublished tag-routing layer before publish: removed the public tag

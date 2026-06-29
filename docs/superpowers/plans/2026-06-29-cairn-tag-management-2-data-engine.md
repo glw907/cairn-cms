@@ -282,3 +282,75 @@ git commit -m "Document the vocabulary config and the enforced taxonomy field"
 - **Type consistency.** `VocabularyEntry` (Task 1) → `CairnRuntime.vocabulary` (Task 2) → the save/edit seam (Tasks 6–7). `resolveAllowed`/`unlistedTags`/`closeTaxonomyField`/`enforceTaxonomy` (Task 5) are the one helper set both call sites use. `coerceTags` is the shared scalar-coercing normalizer in `manifest.ts`/the branch arm/`taxonomy-enforce` call sites (define it once and import, or duplicate the three-line guard consistently — prefer one shared helper).
 - **Forward-safety for Plan 3.** Plan 3 gets `setVocabulary` (add/rename/delete commits), `extractVocabulary`/`runtime.vocabulary` (the screen + the build-time filter options), `buildTagUsageIndex` (the delete-unused cross-branch gate), `ContentSummary.tags` (the size-gated filter, kept by Plan 1), and `allTags()` (the seed). The `vocabularyLoad`/`vocabularySave` admin route pair is deferred to Plan 3 with the screen, coherent because nothing in Plan 2 needs it.
 - **Test harness reality.** Save/edit tests are GithubDouble-driven Node unit tests with a hand-built `CairnRuntime`; only `FieldInput` runs in chromium. The save test seeds the entry's prior file in the double for the branch-first read; no site-config seeding is needed because the vocabulary comes from the constructed runtime, not a committed-config read.
+
+## Post-mortem (2026-06-29, COMPLETE)
+
+All eight tasks landed on `worktree-tag-management-1`, each dispatched to `cairn-implementer` (Sonnet),
+test-first, with the main loop reviewing every diff and clearing the full gate between dispatches.
+Commits: `13e6895` (Task 1), `110a13d` (Task 2), `afd425f` (Task 3), `c95aee8` (Task 4), `7278171`
+(Task 5), `5a1575e` (Task 6), `79ffd32` (Task 7), `890f2b4` (Task 8), plus `df07299` (the code-simplifier
+refinement) and `b68030c`/`1d029c8` (the reviewed plan + STATUS pre-bake).
+
+**Built and verified:**
+- **Task 1** the `vocabulary` site-config key (`VocabularyEntry { value, label }`), `validateVocabulary`
+  (slug charset, non-empty label, no duplicate value), `extractVocabulary`, `setVocabulary` (the commit
+  mutator), barrel-exported, mirroring the tidy pattern.
+- **Task 2** `CairnRuntime.vocabulary` threaded through `composeRuntime` (a required field; the ~26
+  runtime-literal test fan-out absorbed).
+- **Task 3** `ManifestEntry.tags?` projected from raw frontmatter with a shared scalar-coercing
+  `coerceTags` (matching the validator/form layer, not bare `asTags`), normalized like `mediaRefs`
+  across serialize/parse/verify.
+- **Task 4** internal `tagUsage` (pure, mirrors `inboundReferences`) and `buildTagUsageIndex` (the
+  cross-branch union, mirrors `buildReferenceIndex`, keyed on the bare value, throttled); the
+  branch-only-tag case (a tag on an open `cairn/*` branch reads in use) is proven.
+- **Task 5** the pure enforcement helpers `resolveAllowed`/`unlistedTags`/`closeTaxonomyField`/
+  `enforceTaxonomy`, no fieldset rebuild.
+- **Task 6** SAVE enforcement: `resolveBackend` moved up, the opt-in gate, the branch-first prior-tags
+  read (degrade to `[]`), decode through the closed field, `concept.validate` **unchanged** (refine
+  intact), the `enforceTaxonomy` gate; orphan preservation proven (a re-saved prior orphan commits, a
+  brand-new value is rejected).
+- **Task 7** EDIT render: `editLoad` injects the closed field + orphan set onto `EditData` (no extra
+  read), `FieldInput` flags an orphan with the design-system warning ink, threaded through `EditPage`;
+  a chromium component test covers it.
+- **Task 8** docs (the four public exports + the enforced-field behavior in `core.md`), the opt-in
+  non-breaking CHANGELOG/upgrade-guide entry, every doc/surface gate green.
+
+**Verified (final tree):** `npm run check` 0/0; `npm test` exit 0 (2829 tests); all doc/surface gates
+(`check:reference` flagged exactly the four anticipated exports); from-scratch consumer build + e2e
+`CI=1` 44 passed (the `FieldInput.svelte` dist change builds in a consumer; the showcase lockfile is
+reproducible). `code-simplifier` made one idiom-alignment refinement (`coerceTags` ternary → if/else,
+matching `fieldset.ts`). `svelte-reviewer` and `daisyui-a11y-reviewer`: zero blockers, zero warnings;
+the orphan chip is WCAG 2.2 AA conformant.
+
+**Adversarial plan review (pre-execution) drove a redesign.** One Workflow, seven lenses, every finding
+verified: 38 raised, 20 confirmed, folded by restructuring (not patching). The three structural
+corrections, all code-grounded:
+1. **Build enforcement dropped.** The per-entry union always admits an entry's own tags, so a build
+   validate against it is a no-op and `ContentSummary.tags` is identical. This removed a public-signature
+   change to `createContentIndex` (a documented Extension-API export) and the migration-seed delist
+   hazard entirely (the union is the safety net; the Plan-3 seed is picker clarity).
+2. **No fieldset rebuild.** `Fieldset` carries `behavior` but not `refine`, so rebuilding would drop a
+   concept's `refine` validator. Enforcement is the standalone `enforceTaxonomy` gate plus the
+   `closeTaxonomyField` fields transform; `concept.validate` is untouched.
+3. **Vocabulary from `runtime.vocabulary`** (the deployed snapshot, like `tidy`), so no per-request
+   config read and no config-read failure mode; save reads only the branch-first prior tags.
+   Plus: GithubDouble (not miniflare) test harness, scalar-coercing `coerceTags`, `resolveTaxonomyField`
+   returns `null`, `tagUsage`/`buildTagUsageIndex` internal.
+
+**Decisions locked:**
+- Enforcement is opt-in: an empty `runtime.vocabulary` or a no-taxonomy concept falls back to the bare
+  open creatable field at every seam point. Non-breaking for an unadopted site.
+- The enforced field is `options`-set AND `creatable:false` so the validator-vs-`isClosedMultiselect`
+  decode-vs-render all agree on the closed picker; `concept.validate` stays the original open field, so
+  `enforceTaxonomy` is the gate (the friendly "not in your tag list" message, not the generic one).
+- The build path is untouched; tags-as-data is identical.
+
+**Low-severity follow-ups (from the reviewers, logged not fixed):**
+- `editLoad` computes the orphan set from `loadFrontmatter`, which merges schema defaults for a create,
+  while save uses `[]`; a misconfigured taxonomy `default` of out-of-vocabulary values would render
+  flagged on the create form then reject on save. Fix if it ever bites: source `editLoad`'s prior from
+  `parsed.frontmatter[taxField]` (the committed value). Pathological-config corner.
+- The orphan flag `<span>` is visual-only; an `aria-describedby` tie would announce it to a screen
+  reader on the control. Cosmetic; the text is already in the checkbox's accessible name.
+- Documented (this pass): vocabulary enforcement assumes an open/creatable taxonomy field; a field that
+  pre-declares its own `options` is the fixed-list shape, not the vocabulary-sourced one.

@@ -376,7 +376,10 @@ not list, an orphan, the engine preserves rather than silently dropping. It rend
 removable option flagged "not in your tag list." This enforcement is opt-in. A site that configures no `vocabulary`
 leaves the taxonomy field the open creatable multiselect it is by default, and the build-time
 tags-as-data read on `ContentSummary.tags` is identical either way; enforcement is a save-and-edit
-concern, not a build one.
+concern, not a build one. The vocabulary supplies the field's options, so declare the taxonomy field
+as an open creatable multiselect with no literal `options` of its own. A field that pre-declares its
+own `options` enforces those at validation, which is a different, fixed-list shape, not the
+vocabulary-sourced one.
 
 `fields.object({ fields })` groups leaf fields under one frontmatter key, storing a nested object. Its
 `label` is optional, because an `object` inside an `array` is labeled by the array. `fields.array(item,

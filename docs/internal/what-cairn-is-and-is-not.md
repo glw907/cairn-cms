@@ -18,6 +18,15 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   `cairn-scope-opinionated-stack` memory.)
 - **Content is markdown in git**, a fixed set of first-class concepts (Posts, Pages). No runtime content
   database; querying is build-time over a committed manifest.
+- **A cairn site feeds AIs easily.** Making a site's content trivial for a machine to read and organize is
+  a first-class goal, and cairn is well-placed for it: the content is already markdown in git (the cleanest
+  input an LLM can get) over a structured manifest of the whole corpus. The engine builds on that with
+  passive, machine-readable affordances, the raw markdown an agent can request and per-topic feeds chief
+  among them, emitted at build the way feeds and sitemaps are, and invested where machine consumption is
+  actually evidenced rather than where a standard is merely hyped. Two things stay in scope and one stays
+  out: cairn makes content easy for an AI to read, and it may use AI as an optional assist inside the
+  editor (the tidy polisher and spellcheck already do); it does not put AI in the public runtime, where a
+  reader-facing model or generated output is the developer's to build, not the engine's.
 - **A small default identity, owner/editor, on magic-link**, so a content site runs with zero config.
   Owner also manages the editor roster. Auth exists only to gate the admin.
 - **Tuned for a small editorial team, by default.** The zero-config posture assumes one to a handful of

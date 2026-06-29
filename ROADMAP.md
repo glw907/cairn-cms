@@ -15,20 +15,10 @@ here, so this file stays a forward view.
 
 ## Now
 
-- **cairn principle-adherence review (the active pass).** The first extensibility attempt was built on a
-  wrong understanding of cairn's purpose, it grew a principal/scopes/trust-tier/`authorize`/`signIn` identity
-  substrate and a member tier into the engine, which is out of scope. It was reverted (`f8359cc`); `main` is
-  back to a clean `0.76.0`. The corrected purpose is now the canonical charter (`CLAUDE.md` "What cairn is" +
-  `docs/internal/what-cairn-is-and-is-not.md`). This pass reviews the existing engine through that lens,
-  finishes the unwind (removes the pre-existing inert extension scaffolding), runs a whole-engine adherence
-  audit calibrated to remove/simplify toward lean, and corrects the wrong-model docs. Spec:
-  `docs/superpowers/specs/2026-06-28-cairn-principle-adherence-review.md`. No release.
-- **Developer extensibility, redesigned lean (the immediate next pass after the adherence review).** Re-derive
-  extensibility against the charter: a developer extends the admin skeleton and reuses the owner/editor
-  identity, brings their own auth and functionality, and depends on a narrow enforced boundary, with cairn
-  providing thin seams, not features. Done from clean context, ahead of a stable 1.0. The competitive research
-  (`docs/internal/2026-06-28-extensibility-competitive-research.md`) carries forward; the old design spec and
-  phase-1 plan are superseded.
+- **Cut the held `0.77.0` release and cross both production sites.** The developer-extensibility redesign
+  (the custom-admin-screen seam plus the enforced public boundary) is built and verified on `main`, held
+  unpublished at `0.77.0`. The remaining work is the release and the site cutovers: publish `0.77.0`, then
+  mount the shared `/admin/+layout` on ecxc-ski and 907-life and read the shell from `page.data.shell`.
 
 ## Next
 

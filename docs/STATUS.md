@@ -11,7 +11,54 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): extensibility PLAN 1 LANDED on main (held `0.77.0`); NEXT = EXECUTE Plan 2 (enforcement)
+## Immediate next action (2026-06-28, latest): extensibility PLAN 2 (enforcement) LANDED on the worktree; NEXT = merge to `main` + cut the held `0.77.0` release covering both plans
+
+**Developer-extensibility Plan 2 (the enforced public boundary) is complete on the feature worktree**
+(`worktree-extensibility-plan-1`, off `main` at `16c8f5c`), the enforcement half of the redesign. Five
+tasks, each dispatched to `cairn-implementer` (Sonnet) with the main loop reviewing every diff and clearing
+the full gate between dispatches:
+
+- **`check:surface`** (`scripts/check-surface.mjs` + the committed golden `docs/internal/api-surface.md` +
+  a `test.yml` step): a snapshot gate that renders the FULL declared shape of every export per subpath
+  (interfaces member-expanded, type aliases via `InTypeAlias`, `/ambient`'s `declare global`), driven from
+  `package.json` `exports` with no `excludeDts` dedup. Drift fails the gate; regenerate-to-disclose is the
+  workflow.
+- **The `check:reference` tier gate + labels** (`scripts/reference-coverage.mjs` + nine reference pages):
+  every export must carry `Stability tier: Extension API|Scaffold API`, resolved per-export
+  (narrowest-defining-section-wins over h2–h4, or a Types-table `Stability` column), failing an untagged
+  export. Eight Scaffold-API exports; the rest Extension API.
+- **The `cairn-doctor` mount-shape check** (`admin.mount-incomplete`, `warning` severity): best-effort,
+  loose `shellLoad` + `CairnAdminShell` detection, `pass`-or-`skip`-with-guidance, never a deploy-breaking
+  `fail`.
+- **`LayoutData` removed** (dead export): declaration, re-export, and reference row gone, comparative prose
+  reworded, the `0.77.0` `Consumers must` block extended with a breaking-in-0.x banner, the snapshot
+  regenerated to record the drop.
+
+**Verified.** Full gate green: `npm run check` 0/0; `npm test` exit 0 (262 files / 2757 tests);
+`check:comments`, `check:surface`, `check:reference`, `check:reference:signatures`, `check:docs`,
+`check:package`, `check:readiness`, `check:version` all pass. From-scratch consumer build + e2e: 44
+Playwright tests pass against the worktree engine. **Live admin smoke (owed from Plan 1)** against
+`wrangler dev` + a minted local-D1 session: anon `/admin`→login, authed `/admin`→concept, the list renders,
+and the custom `/admin/signups` screen renders the shell, its nav entry, its own APP_DB data, and the CSRF
+field; owner sees the `/admin/editors` link. A fresh-context Opus review of the two logic-dense files caught
+one HIGH (callable type aliases snapshotting as `Name: Name` tautologies, hiding signature drift), fixed by
+resolving the symbol kind before the callable check; a new test locks it.
+
+**Reconciliations:** `createCairnAdmin` is labeled Extension API (it is hand-authored against via
+`shellLoad`, and Plan 1 shipped it so), overriding the plan's Scaffold listing; the doctor check never
+returns `fail` (a `warning` condition that hard-failed would be incoherent), overriding the plan's narrow
+`fail` carve-out.
+
+**NEXT = merge the worktree to `main`, then cut the held `0.77.0` release covering BOTH plans** with
+`gh release create v0.77.0 --target main`: the changelog window since `0.76.0`, every `Consumers must` line
+(the shell-layout mount, the `AdminLayout`→`CairnAdminShell` rename, reading `page.data.shell`, the
+`LayoutData` removal), and the breaking-in-0.x banner. The release fires OIDC trusted publishing. Then the
+site cutovers (ecxc-ski, 907-life): mount the shared `/admin/+layout`, read the shell from
+`page.data.shell`. Canonical artifacts: spec
+`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`; Plan 1 + Plan 2 under
+`docs/superpowers/plans/2026-06-28-cairn-extensibility-{1,2}-*.md` (both COMPLETE, post-mortems appended).
+
+## Prior next action (2026-06-28): extensibility PLAN 1 LANDED on main (held `0.77.0`); NEXT = EXECUTE Plan 2 (enforcement)
 
 **Developer-extensibility Plan 1 (the capability) is complete and merged to `main`.** The custom-admin-screen
 seam ships: a developer adds their own concrete SvelteKit route under `/admin/`, rendered inside the shared

@@ -126,3 +126,67 @@ The release covering Plan 1 + Plan 2 ships after this task. **Sequencing:** Task
 - **Premise check.** Every task is enforcement or cleanup over the existing surface; the one behavioral addition (the doctor check) is a best-effort, non-blocking nudge, cairn's tool, not new developer surface.
 - **Adversarial review folded (2026-06-28, 16 confirmed findings).** The central save: `check:surface` must render full type SHAPES, not just callable signatures (else interface/type drift, the developer's real guarantee, passes silently), via a new `checker.typeToString` branch; subpaths come from `package.json` `exports` (covering `/components/spellcheck-worker` and `/ambient`) with no `excludeDts` dedup (keeping the 39 `/delivery` re-exports); the tier marker works at Types-table-row granularity with the exact `Stability tier: …` token Plan 1 shipped; the doctor check emits `skip`-with-guidance (not a deploy-breaking `fail`), matches `.shellLoad` loosely, and registers a `warning`-severity diagnostics condition with a `docsAnchor`; and the `LayoutData` removal rewords the surviving comparative prose, not just the row. Seven findings were rejected (the attw decision confirmed sound; the charter lens's "Task 3 adds behavior" rejected as a best-effort nudge is cairn's job).
 - **Risk.** Task 2 is the largest (labeling every export and adding the Stability column); mechanical and gate-driven, suitable for a per-page sub-agent dispatch. Task 1's type-shape rendering is the correctness-critical piece; its unit test must prove an interface-field change drifts the snapshot.
+
+---
+
+## Post-mortem (2026-06-28, LANDED on the worktree; merge + release pending)
+
+**What was built.** All five tasks, each dispatched to `cairn-implementer` (Sonnet), the main loop
+reviewing every diff and clearing the full gate between dispatches.
+
+- **Task 1, `check:surface`** (`scripts/check-surface.mjs`, `docs/internal/api-surface.md`, the
+  `test.yml` step, `src/tests/unit/check-surface.test.ts`). The emitter drives subpaths from
+  `package.json` `exports` (every `types` entry, so `/components/spellcheck-worker` and `/ambient` are
+  in) with no `excludeDts` dedup. It renders the FULL declared shape per export: callables via the
+  signatures gate's flags, interfaces member-expanded (`typeToString` prints only an interface's name),
+  type aliases via `InTypeAlias`, and `/ambient` via its `declare global` `App.Locals` augmentation. The
+  pure `diffSurface` reports per-subpath added/removed/changed; regenerate-to-disclose is the workflow.
+- **Task 2, the tier gate + labels** (`scripts/reference-coverage.mjs`, the nine coverage pages, the
+  test). A per-export marker resolver (`hasTierMarker`/`untaggedNames`) fails an untagged export. The
+  plan's two carriers (a `###` section line, a Types-table `Stability` column) did not fit the real docs,
+  which use h2–h4 and grouped sections, so the section carrier became a narrowest-defining-section-wins
+  resolver over h2–h4: a heading match outranks a body declaration/definition match, deeper wins, which
+  stops a broad `## Functions` wrapper from lending its tier to a child export. Eight Scaffold-API exports
+  (`composeRuntime`, `createAuthGuard`, the five route factories, `healthLoad`, `createPublicRoutes`); the
+  rest Extension API.
+- **Task 3, the doctor mount-shape check** (`src/lib/doctor/checks-local.ts`, the `admin.mount-incomplete`
+  condition, `index.ts`, the readiness + reference docs, the test). Best-effort, loose `shellLoad` +
+  `CairnAdminShell` detection across the four-file mount, mirroring `wiresCairnGuard`'s tolerance.
+- **Task 4, `LayoutData` removal** (`content-routes.ts`, `index.ts`, `sveltekit.md`, the regenerated
+  snapshot, `CHANGELOG.md`, `upgrade-cairn.md`). The dead export removed, the comparative prose reworded,
+  the `0.77.0` `Consumers must` block extended (item 5) with a breaking-in-0.x banner.
+
+**Verified (evidence).** Full gate green on the worktree: `npm run check` 0/0; `npm test` exit 0 (262
+files / 2757 tests); `check:comments`, `check:surface`, `check:reference`, `check:reference:signatures`,
+`check:docs`, `check:package` (publint + attw with the muted rules), `check:readiness` (16 conditions),
+`check:version` (minor, `0.77.0`) all pass. From-scratch consumer build + e2e: 44 Playwright tests pass
+against the worktree engine (the showcase node_modules reinstalled to repoint the `file:` deps). The clean
+production build confirmed the dev-backend is eliminated from the worker bundle. **Live admin smoke** (owed
+from Plan 1) against `wrangler dev` + a minted local-D1 session: anon `/admin`→303 login, authed
+`/admin`→307 `/admin/posts`, the list renders, and the custom `/admin/signups` screen renders the
+`cairn-admin` shell, its `adminNav` entry, the developer's own APP_DB row, and the bare `csrf` field; the
+owner sees the `/admin/editors` link. (The signups screen first 500'd because its own APP_DB table was
+absent — the developer's domain data, not engine surface; creating the table cleared it, which is itself a
+charter-boundary confirmation.)
+
+**Decisions locked / reconciliations.**
+- **`createCairnAdmin` is Extension API, not Scaffold.** The plan's classification list named it Scaffold,
+  but Plan 1 already shipped its token as Extension and, post-Plan-1, it is genuinely hand-authored against
+  (a consumer's `/admin/+layout.server.ts` calls `createCairnAdmin(runtime).shellLoad`). Extension is the
+  stricter default and matches shipped reality. `createAuthGuard` (hooks-only, scaffold-generated) stays
+  Scaffold.
+- **The doctor check never returns `fail`.** This overrides the plan's Task 3 Step 3 narrow-`fail`
+  carve-out: `runDoctor` exits 1 on any `fail` regardless of severity, so a `warning`-severity condition
+  that returned `fail` would behave as a blocker. The check returns only `pass` or `skip`-with-guidance,
+  honoring the settled "never a deploy-breaking fail" decision.
+
+**Review gate.** A fresh-context adversarial review (Opus) of the two logic-dense files found one **HIGH**:
+a callable type alias (`type SiteRender = (input) => …`) rendered as the tautology `SiteRender: SiteRender`
+because `renderExport` took the callable branch (flags without `InTypeAlias`) before considering the alias
+kind, hiding the alias's signature drift from both gates. Fixed by resolving the symbol kind first
+(interface/type-alias before the callable check); five exports (`LinkResolve`, `SiteRender`,
+`MediaResolve`, `MakeIcon`, `SendMagicLink`) now snapshot real signatures, and a new test fails on any
+`name: name` tautology across every subpath. The diff round-trip and cross-process determinism were
+verified sound; the doctor check confirmed correct against its never-fail contract.
+
+**Blockers.** None. Pending: merge to `main`, then cut the held `0.77.0` release covering both plans.

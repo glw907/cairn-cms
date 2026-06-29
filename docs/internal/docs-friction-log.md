@@ -126,7 +126,8 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   describe a `mintToken` dep on `createCairnAdmin`/`createContentRoutes` that `CairnAdminDeps` no longer
   carries (the dev backend rides `event.locals.backend`). No doc gate covers this prose. Candidate: a
   reference-prose cleanup pass; the signature gates only check declared types, not surrounding prose.
-- **developer** (`LayoutData` is dead public surface): the retired layout's `LayoutData` interface is now
-  unused but stays exported from `/sveltekit` and documented, replaced by `AdminShellData`. Removing it is
-  a breaking surface change with a reference-doc impact. Assigned to extensibility Plan 2 (the boundary
-  pass), removed there with a `Consumers must` line rather than widening Plan 1.
+- **developer** (`LayoutData` is dead public surface) — RESOLVED in extensibility Plan 2 (`0.77.0`):
+  `LayoutData` was removed from `/sveltekit`, its declaration, re-export, and reference row deleted and the
+  surviving comparative prose reworded, with a `Consumers must` line and a regenerated `check:surface`
+  snapshot recording the drop. The new `check:surface` gate now catches a dead or drifted public type at
+  build time, so this class of friction surfaces loud rather than lingering as documented-but-unused surface.

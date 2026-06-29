@@ -88,9 +88,10 @@ export const admin = createCairnAdmin(runtime);
 ```
 
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
-so most sites pass no deps at all. The showcase passes `{ mintToken: async () => 'dev-token' }`
-to pair with its fake GitHub backend; a deployed site mints real installation tokens and omits
-it.
+so most sites pass no deps at all. The showcase reads markdown through a fake GitHub backend in
+development, which rides `event.locals.backend` from a fenced dev handle rather than through a dep.
+A deployed site connects the real backend and mints installation tokens on demand, so it passes no
+backend dep.
 
 Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
 default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the

@@ -813,3 +813,16 @@ The per-view `AdminData` members no longer carry a `layout` field; the shell pay
 Consumers must: remove any `import type { LayoutData }`. `LayoutData` is removed from
 `@glw907/cairn-cms/sveltekit`; read the admin payload from `AdminShellData` (via `page.data.shell`)
 instead.
+
+## Unreleased: a concept's tags come from a field marked `taxonomy: true` (breaking)
+
+A concept declares its tag field by marking one top-level multiselect `taxonomy: true`. The content
+index reads that marked field's validated value for each entry's tags, and the tag index, the tag
+archives, and the feed categories all read it. The old behavior read a field hardcoded as `tags`, so a
+concept whose tag field has another name no longer produces tags until you mark it. The default tag base
+is the field's name, so a field named `topics` serves its archive under `/topics/<tag>`. This entry
+heads the first free minor after `0.77.0` publishes; the version is set at release time.
+
+Consumers must: add `taxonomy: true` to each concept's top-level tag multiselect. A live site that
+serves `/tags/<tag>` URLs and wants to keep them names that field `tags`, or sets `taxonomyBase` to
+`tags` on the concept. A concept with no tag field needs no change.

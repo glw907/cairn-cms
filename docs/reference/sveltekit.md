@@ -64,8 +64,9 @@ path, and a bare payload that returns early for the public login and auth paths.
 once for the whole `/admin/**` subtree rather than per view. Stability tier: Extension API, a
 versioned seam a site's own `/admin/` route depends on.
 
-`deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps;
-the showcase passes only a `mintToken` stub for its dev backend.
+`deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps. The
+showcase reads through a fake GitHub backend in development, which rides `event.locals.backend` from a
+fenced dev handle rather than through a dep.
 
 `actions` covers the full admin action vocabulary. Each named action parses the pathname the
 same way the load does, throws a 404 when the parsed view does not support it, synthesizes the
@@ -338,8 +339,9 @@ a key that gained a manifest row or a new branch reference since the scan is ski
 unverifiable cross-branch usage read refuses the whole batch (503) and commits nothing. The
 single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaPurge`
 (the purge action's shorter composer name), each gated to the media view, so the Media Library posts
-`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaPurge`. The optional `deps.mintToken` stubs the
-GitHub App token mint, which is how the showcase runs in dev without a real key.
+`?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaPurge`. The showcase runs in dev without a real
+key because its fake GitHub backend rides `event.locals.backend` from a fenced dev handle, so no GitHub
+App token mint runs.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
 the default branch, so the live site stays as it was. `publishAction` publishes what the author
@@ -458,9 +460,10 @@ declare function createNavRoutes(runtime: CairnRuntime, deps?: NavRoutesDeps): {
 
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
 tree and the page options for the URL picker, and `navSave` commits an edited tree to the
-git-committed site-config file. Like the content routes, `deps.mintToken` stubs the token mint.
-The `NavTree` component posts the named `?/save` action, so a hand-mounted route registers
-`navSave` under `save`.
+git-committed site-config file. Like the content routes, a handler resolves its backend from
+`event.locals.backend`, falling back to the runtime's connected backend, so a test injects a
+`deps.backend` double rather than a token-mint stub. The `NavTree` component posts the named `?/save`
+action, so a hand-mounted route registers `navSave` under `save`.
 
 ```ts
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
@@ -605,7 +608,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | Extension API | `interface NavRoutesDeps { backend?: Backend }` | Injectable dependencies for `createNavRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint. |
-| `CairnAdminDeps` | Extension API | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; mintToken?: ContentRoutesDeps['mintToken']; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `mintToken`, `anthropic`, and `tidyTimeoutMs` pass through to the wrapped content routes (the tidy action reads the latter two). |
+| `CairnAdminDeps` | Extension API | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `anthropic` and `tidyTimeoutMs` pass through to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `AdminView` | Extension API | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' \| 'media' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |

@@ -145,6 +145,46 @@ function buildSitemap(urls: SitemapUrl[]): string;
 Build a sitemap XML document from a list of `SitemapUrl` entries, each a `loc` and an optional
 `lastmod` date.
 
+### `feedView`
+
+Stability tier: Extension API.
+
+```ts
+function feedView(
+  site: SiteResolver,
+  descriptors: ConceptDescriptor[],
+  origin: string,
+): FeedItem[];
+```
+
+Project a site's feed-eligible concepts into feed items. It iterates the concepts whose
+`routing.inFeeds` flag is set and maps each entry to a `FeedItem` in the concept's own date order.
+Each item carries the entry's taxonomy values as `tags`, which become the RSS `<category>` and the
+JSON Feed `tags`. Pass `origin` because each `FeedItem.url` is absolute and the engine carries no
+ambient origin.
+
+The view is summary-only. It sets `summary` from the entry excerpt and omits `contentHtml`, the
+full-content body. A full-content feed needs a per-item render and a link-resolver pass, which the
+pure view does not carry. A site that wants full content maps `render` itself, as the `feed.xml`
+showcase route does.
+
+### `sitemapView`
+
+Stability tier: Extension API.
+
+```ts
+function sitemapView(
+  site: SiteResolver,
+  descriptors: ConceptDescriptor[],
+  origin: string,
+): SitemapUrl[];
+```
+
+Project a site's routable concepts into sitemap URLs. It iterates the concepts whose
+`routing.routable` flag is set and maps each entry to a `SitemapUrl`. The `loc` is the
+origin-anchored permalink. The `lastmod` is the entry's `updated` date when present, else its `date`.
+An embedded, non-routable concept never appears. Pass `origin` because each `loc` is absolute.
+
 ### `buildRobots`
 
 Stability tier: Extension API.

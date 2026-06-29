@@ -2,6 +2,31 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+<!-- release-size: minor -->
+
+The taxonomy marker now drives a concept's tags. A concept declares its tag field by marking one
+top-level multiselect `taxonomy: true`, and the content index reads that field's validated value for
+each entry's tags. The tag index, the tag archives, and the feed categories all read the marked field.
+The old behavior read a field hardcoded as `tags`, so a concept whose tag field has another name now
+needs the marker. This version number is the first free minor after `0.77.0` publishes, set at release
+time, and this entry stays under `## Unreleased` until then.
+
+A concept marks at most one top-level field, and the marker is top-level only. The field set
+constructor throws at startup on a second marked field or a marker nested inside an `object` or
+`array`, the mirror of the single-SEO-image rule. An unmarked multiselect named `tags`, `freetags`, or
+`categories` is legal but draws a `taxonomy.unmarked_field` build advisory, since it reads as a tag
+field a site forgot to mark.
+
+The default tag base is the marked field's name. A concept that marks a field named `topics` serves its
+tag archive under `/topics/<tag>`. A site keeping its `/tags` URLs names the marked field `tags`, or
+sets `taxonomyBase` on the concept to pin the base regardless of the field name.
+
+This is breaking. Consumers must: mark each concept's tag field by adding `taxonomy: true` to its
+top-level multiselect. A live site that serves `/tags/<tag>` URLs and wants to keep them names that
+field `tags`, or sets `taxonomyBase` to `tags`. A concept with no tag field needs no change.
+
 ## 0.77.0
 
 <!-- release-size: minor -->

@@ -64,6 +64,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: MEDIA_ON,
+    vocabulary: [],
     ...over,
   };
 }

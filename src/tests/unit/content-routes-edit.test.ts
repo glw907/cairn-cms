@@ -44,6 +44,7 @@ function runtime(): CairnRuntime {
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+    vocabulary: [],
   };
 }
 

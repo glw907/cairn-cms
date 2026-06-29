@@ -30,6 +30,25 @@ describe('composeRuntime', () => {
     };
     expect(composeRuntime({ adapter: withMedia, siteConfig: testSiteConfig }).assets).toEqual({ bucketBinding: 'MEDIA_BUCKET', publicBase: '/media' });
   });
+
+  // The tag vocabulary is the enforcement seam's source: composeRuntime validates the site config's
+  // `vocabulary` key once and threads it onto the runtime, defaulting to an empty list when absent.
+  it('threads the validated vocabulary from the site config onto the runtime', () => {
+    const vocabulary = [{ value: 'a', label: 'A' }];
+    const runtime = composeRuntime({ adapter: testAdapter, siteConfig: { ...testSiteConfig, vocabulary } });
+    expect(runtime.vocabulary).toEqual(vocabulary);
+  });
+
+  it('defaults the runtime vocabulary to an empty list when the config omits the key', () => {
+    expect(composeRuntime({ adapter: testAdapter, siteConfig: testSiteConfig }).vocabulary).toEqual([]);
+  });
+
+  it('fails the build when the site config vocabulary is malformed', () => {
+    expect(() =>
+      // @ts-expect-error a malformed vocabulary is the failure this guards against
+      composeRuntime({ adapter: testAdapter, siteConfig: { ...testSiteConfig, vocabulary: 'not-an-array' } }),
+    ).toThrow();
+  });
 });
 
 describe('composeRuntime URL policy', () => {

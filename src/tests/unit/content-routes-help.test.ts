@@ -29,6 +29,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+    vocabulary: [],
     supportContact: 'help@test.example',
     ...over,
   };

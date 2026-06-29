@@ -372,4 +372,11 @@ export interface CairnRuntime {
    *  fail(503) before any model call.
    */
   tidy?: import('../nav/site-config.js').TidyConfig;
+  /**
+   * The editor-owned tag vocabulary, validated and threaded from the site config's `vocabulary` key.
+   *  Always present (empty when the config omits the key), so the taxonomy enforcement seam reads it
+   *  the same deployed-snapshot way it reads {@link tidy}, with no per-request config read. Empty means
+   *  the taxonomy field stays the open creatable multiselect: enforcement is opt-in.
+   */
+  vocabulary: import('../nav/site-config.js').VocabularyEntry[];
 }

@@ -38,6 +38,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     mediaManifestPath: 'src/content/.cairn/media.json',
     dictionaryPath: DICT_PATH,
     resolvedAssets: { enabled: false },
+    vocabulary: [],
     ...over,
   };
 }

@@ -30,6 +30,7 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+    vocabulary: [],
   };
 }
 

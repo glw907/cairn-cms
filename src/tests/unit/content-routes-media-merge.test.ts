@@ -55,6 +55,7 @@ function runtime(assets: ResolvedAssetConfig): CairnRuntime {
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: assets,
+    vocabulary: [],
   };
 }
 

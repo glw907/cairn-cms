@@ -26,6 +26,7 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+    vocabulary: [],
     navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
     tidy: { enabled: true, model: 'claude-sonnet-4-6' },
     ...over,

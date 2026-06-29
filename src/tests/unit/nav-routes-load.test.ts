@@ -20,6 +20,7 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
     manifestPath: 'src/content/.cairn/index.json',
     mediaManifestPath: 'src/content/.cairn/media.json',
     resolvedAssets: { enabled: false },
+    vocabulary: [],
     navMenu,
   };
 }

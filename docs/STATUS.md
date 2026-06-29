@@ -11,7 +11,42 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): principle-adherence review COMPLETE; NEXT = the lean developer-extensibility redesign
+## Immediate next action (2026-06-28, latest): extensibility redesign SPEC + PLAN 1 written and adversarially reviewed; NEXT = EXECUTE Plan 1
+
+**The lean developer-extensibility redesign is brainstormed, specced, and planned (Plan 1), each hardened by
+an adversarial workflow review. Nothing is implemented yet; `main` stays at `0.76.0`.** Charter-first, the
+redesign is three thin seams, no principal/scopes/member/permissions substrate (the reverted mistake):
+
+1. **Custom admin screen = the developer's own concrete SvelteKit route under `/admin/`**, rendered inside a
+   shared `CairnAdminShell` (cairn's chrome moves out of the internal `AdminLayout` into a `/admin/+layout`
+   the consumer mounts; `CairnAdmin` renders bare inside it). A concrete `/admin/members` wins over the
+   `/admin/[...path]` catch-all and inherits the guard. A data-only `adminNav` config adds the sidebar entry.
+2. **Identity is admin-scoped:** custom `/admin/*` routes inherit the guard, so `locals.editor` (the
+   `./ambient` contract) + the exported `requireSession`/`requireOwner` just work. No non-`/admin` helper
+   (deferred, additive). CSRF reuses the already-shipped bare `<CsrfField/>` (shell provides the token via
+   context).
+3. **Enforced boundary** via a `check:surface` snapshot gate + gated Extension-API/Scaffold-API tiers across
+   the kind-based subpaths (NOT a `./extend` subpath; charter doc reconciled). The attw
+   `internal-resolution-error` un-mute was DROPPED as unfixable (a `svelte-package` limitation, not a leak).
+
+**Canonical artifacts:** spec `docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-redesign-design.md`
+(supersedes the reverted `...-extensibility-design.md`); **Plan 1** (capability)
+`docs/superpowers/plans/2026-06-28-cairn-extensibility-1-admin-shell-and-nav.md` (5 tasks: narrow
+`requireOwner` → relocate chrome to a shared layout → `adminNav` → showcase Signups proof → docs). Both
+folded ~39 + ~34 confirmed adversarial findings (0 charter violations in either; the design is sound, the
+fixes were code-accuracy: the icon-system bug, the dropped attw un-mute, absolute-path global actions, lean
+streamed `shellLoad`, the `data.layout`-removal `EditPage` rewire, `parseAdminPath` as the one collision
+authority, and the showcase e2e needing a fake `APP_DB` double in the `cms-dev` handle since the harness is
+Vite-preview not `wrangler dev`).
+
+**NEXT = EXECUTE Plan 1** task-by-task: dispatch each task to `cairn-implementer` (Sonnet), main loop
+reviews each diff and clears the gate (`npm run check` 0/0 + `npm test`) between dispatches; `npm run
+package` before `npm test` in a worktree. Then **write + execute Plan 2 (enforcement)** just-in-time after
+Plan 1 lands. **Hold the release: one minor bump covers both plans, cut only after Plan 2** (per the spec).
+Use `cairn-pass` for pass-start/end. The DX steer (`cairn-extensibility-dx-steer` memory): cairn must be an
+easy, non-restrictive starting point; DX is weighed first-class WITH the charter premise check.
+
+## Prior next action (2026-06-28): principle-adherence review COMPLETE; NEXT = the lean developer-extensibility redesign
 
 **The cairn principle-adherence review pass is complete and merged to `main` (no release).** It confirmed
 the engine is charter-adherent. A ten-subsystem multi-agent audit through the charter lens, calibrated

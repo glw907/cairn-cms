@@ -59,15 +59,10 @@ describe('createPublicRoutes entryLoad', () => {
   });
 
   it('entries enumerates every entry path across concepts', () => {
-    // The resolver still enumerates the tag-routing paths; Task 2 removes that loop and flips this
-    // expected array to the entry-only ['2026/01/01/b', '2026/02/01/a', 'about'].
     expect(routes.entries().map((e) => e.path).sort()).toEqual([
       '2026/01/01/b',
       '2026/02/01/a',
       'about',
-      'tags',
-      'tags/x',
-      'tags/y',
     ]);
   });
 

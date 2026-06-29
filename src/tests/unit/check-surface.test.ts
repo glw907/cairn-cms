@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { diffSurface } from '../../../scripts/check-surface.mjs';
+
+const SNAPSHOT = resolve(
+  fileURLToPath(new URL('../../../docs/internal/api-surface.md', import.meta.url)),
+);
 
 // Build a one-section snapshot string in the gate's serialized form: a banner, a subpath header, and
 // one `name: shape` line per export. The diff core parses this back, so a crafted snapshot drives
@@ -84,6 +91,20 @@ describe('diffSurface', () => {
       expect(result.drift[0].changed[0].before).toContain('csrf: string');
       expect(result.drift[0].changed[0].after).toContain('csrf: string | null');
     }
+  });
+
+  // A callable export must render its real signature, never its own bare name. A type alias for a
+  // function (`type SiteRender = (input) => …`) once rendered as the tautology `SiteRender:
+  // SiteRender`, which hid every signature drift from both this gate and the signatures gate. This
+  // reads the committed snapshot and fails on any `name: name` line, locking the rendering fix across
+  // every subpath, not only the five aliases that surfaced it.
+  it('the committed snapshot has no tautology (name renders as its own bare name)', () => {
+    const tautologies = readFileSync(SNAPSHOT, 'utf8')
+      .split('\n')
+      .map((line) => line.match(/^- `([^`]+)`: (.+)$/))
+      .filter((m): m is RegExpMatchArray => m !== null && m[1] === m[2].trim())
+      .map((m) => m[1]);
+    expect(tautologies).toEqual([]);
   });
 
   it('reports drift across multiple subpaths', () => {

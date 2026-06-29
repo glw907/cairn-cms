@@ -73,7 +73,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `initialValues`: (fieldset: Fieldset<Record<string, FieldDescriptor>>, now?: Date) => Record<string, unknown>
 - `isValidId`: (id: string) => boolean
-- `LinkResolve`: LinkResolve
+- `LinkResolve`: (ref: CairnRef) => string
 - `LinkTarget`: { concept: string; id: string; permalink: string; title: string; date?: string; draft: boolean }
 - `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string }
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
@@ -111,14 +111,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
 - `SelectField`: { type: "select"; options: readonly string[]; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `SenderConfig`: { from: string; replyTo?: string }
-- `SendMagicLink`: SendMagicLink
+- `SendMagicLink`: (env: AuthEnv, message: MagicLinkMessage) => Promise<void>
 - `serializeComponent`: (def: ComponentDef, values: ComponentValues) => string
 - `serializeManifest`: (manifest: Manifest) => string
 - `serializeMarkdown`: (frontmatter: object, body: string) => string
 - `setMenu`: (raw: string, name: string, tree: NavNode[]) => string
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig }
 - `SiteConfigError`: typeof SiteConfigError
-- `SiteRender`: SiteRender
+- `SiteRender`: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>
 - `SlotDef`: { name: string; label: string; kind: "markdown" | "inline" | "repeatable"; required?: boolean; help?: string; itemFields?: Record<string, FieldDescriptor>; itemLabel?: ((item: Record<string, string | boolean>, index: number) => string) }
 - `SlotKind`: "markdown" | "inline" | "repeatable"
 - `slugFromId`: (id: string, datePrefix: DatePrefix | null) => string
@@ -276,7 +276,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaManifest`: { [x: string]: MediaEntry }
 - `MediaRef`: { slug: string | null; hash: string }
-- `MediaResolve`: MediaResolve
+- `MediaResolve`: (ref: MediaRef) => string
 - `mediaToken`: (ref: MediaRef) => string
 - `normalizeAssets`: (assets: AssetConfig) => ResolvedAssetConfig
 - `parseMediaEntries`: (value: unknown) => MediaEntry[]
@@ -302,7 +302,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `headRow`: (title: ElementContent[], icon?: Element, level?: number) => Element
 - `iconSpan`: (glyphEl: Element, role?: string) => Element
 - `isElement`: (node: ElementContent) => node is Element
-- `MakeIcon`: MakeIcon
+- `MakeIcon`: (name: string, role?: string) => Element
 - `strAttr`: (ctx: ComponentContext, key: string) => string
 
 ## `/sveltekit`

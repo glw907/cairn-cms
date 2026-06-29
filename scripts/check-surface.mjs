@@ -108,9 +108,12 @@ function shapeTypeOf(checker, sym) {
   return checker.getTypeOfSymbolAtLocation(sym, decl);
 }
 
-// Render one export's full declared shape, normalized. A callable export renders through the same
-// flags the signatures gate uses; an interface expands its members; any other non-callable (a type
-// alias, an enum, a const value) renders via `typeToString` with the shape flags. The result passes
+// Render one export's full declared shape, normalized. The symbol KIND is resolved before the
+// callable check, on purpose: an interface expands member-by-member, and a type alias expands with
+// the shape flags (so a callable alias like `type SiteRender = (input) => …` prints its full
+// signature, not its own name). Only a callable VALUE export (a function or const-function) takes
+// the callable branch, where the arrow-style flags match the signatures gate. A non-callable value
+// (a const, the `fields` namespace object) falls through to the shape flags. The result passes
 // through `normalizeSignature` so `import("…")` qualifiers, `| undefined` optional artifacts, and
 // whitespace are canonical and a no-op regenerate is byte-identical.
 /**
@@ -121,10 +124,16 @@ function renderExport(checker, exportSym) {
   const sym = resolveAlias(checker, exportSym);
   const type = shapeTypeOf(checker, sym);
   let rendered;
-  if (type.getCallSignatures().length > 0) {
-    rendered = checker.typeToString(type, undefined, CALLABLE_FLAGS);
-  } else if (sym.flags & ts.SymbolFlags.Interface) {
+  if (sym.flags & ts.SymbolFlags.Interface) {
+    // Before the callable check: a call-signature-bearing interface still records its members.
     rendered = renderInterface(checker, type);
+  } else if (sym.flags & ts.SymbolFlags.TypeAlias) {
+    // Before the callable check: `InTypeAlias` expands the alias to its structure. Without this a
+    // callable alias would hit the callable branch, whose flags omit `InTypeAlias`, and typeToString
+    // would print the alias name, recording the tautology `Name: Name` and hiding all signature drift.
+    rendered = checker.typeToString(type, undefined, SHAPE_FLAGS);
+  } else if (type.getCallSignatures().length > 0) {
+    rendered = checker.typeToString(type, undefined, CALLABLE_FLAGS);
   } else {
     rendered = checker.typeToString(type, undefined, SHAPE_FLAGS);
   }

@@ -11,7 +11,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): taxonomy + tag delivery LANDED on a worktree (held); NEXT = merge to `main`, then cut the held release covering `0.77.0` + this taxonomy minor
+## Immediate next action (2026-06-29, latest): tag-management + editor-vocabulary initiative DESIGNED + adversarially reviewed; NEXT = write Plan 1 (just-in-time), review it, execute
+
+**The next dev initiative is tag management with an editor-owned vocabulary, and its design is complete,
+adversarially reviewed, and committed.** Spec:
+`docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md` (six-lens adversarial workflow, 10 findings
+folded). Evidence: two committed deep-research runs under `docs/internal/research/2026-06-29-tags-*.md`
+(SEO excluded per Geoff; found the AI and human-browsing value of tags weak at cairn's small scale, so the
+admin is justified by **editor self-sufficiency**, not by AI/browsing payoff).
+
+**The design.** An editor-owned, enforced, **global** tag vocabulary, a new key in the committed
+`site.config.yaml` (the family that holds `menus`/`tidy`), entries `{ value, label }` (value = frozen slug,
+label = editable display). Managed through an admin screen (add / rename-label / delete-unused) in the
+`CairnAdminShell` seam, committing via the GitHub-App pipeline. The post-editor multiselect sources its options
+from the vocabulary and enforces it. **Remove the held public tag pages entirely** (a pre-publish reshape of
+the taxonomy work, below). Tags stay data; a **size-gated template filter** (showcase, off by default,
+client-side) is the browsing surface. `markdown-for-agents` and the broader AI-affordances direction are a
+deferred follow-on under the new "feeds AIs easily" charter line.
+
+**Key design points the review forced (do not lose):** enforcement is an **async pre-resolve** step that
+injects the vocabulary as the field's `options` before validate/render/build (the pure sync validator can't
+read an async file); delete-usage needs a new **`ManifestEntry.tags`** projection + a `tagUsage` helper whose
+"in use" **unions `main` + every open `cairn/*` branch** (the media where-used model); a **mandatory migration
+seed** derives the initial vocabulary from `allTags()` and gates enforcement on the vocabulary being a
+**superset** of in-use tags (else a closed field silently delists posts at build); an **orphan tag** (value not
+in the vocabulary) is **preserved and flagged**, never silently dropped on save.
+
+**Plan split:** Plan 1 = reshape (remove the tag-routing layer, keep tags-as-data, regenerate `check:surface`,
+rewrite the held `CHANGELOG` window). Plan 2 = data engine (vocabulary config + parser; `ManifestEntry.tags` +
+`tagUsage` cross-branch; the field options-resolution + enforcement + orphan preservation). Plan 3 = admin UI
+(mockup-first: prototypes → adversarial review → `frontend-design`) + the seed/orphan flow + the size-gated
+template filter + e2e.
+
+**NEXT = write Plan 1 just-in-time per the spec, adversarially review it (Geoff's standing pattern), then
+execute task-by-task** via `cairn-implementer` (Sonnet), main loop reviewing each diff and clearing the gate
+between, on a fresh worktree off `main`. The release covering the whole initiative is the first free minor
+after `0.77.0` publishes; this initiative **reshapes the held taxonomy work before it publishes**, so the held
+release now covers the net (tags-as-data + the vocabulary model, no public tag pages). Charter lines added this
+session: the small-editorial-team default and "a cairn site feeds AIs easily" (both in
+`docs/internal/what-cairn-is-and-is-not.md`). See the `cairn-tag-management-initiative` memory. Use
+`cairn-pass` for pass-start/end.
+
+## Prior next action (2026-06-29): taxonomy + tag delivery LANDED on a worktree (held); reshaped by the tag-management initiative before publish
 
 **The taxonomy and tag-delivery pass is complete on `worktree-taxonomy-1`** (off `main` at `7f23e00`), both
 plans landed: Plan 1 (data layer) and Plan 2 (read path), 10 commits (`9d82078`→`f18f6b4`). Each task was

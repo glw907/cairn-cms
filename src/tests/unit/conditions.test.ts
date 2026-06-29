@@ -78,6 +78,16 @@ describe('condition registry', () => {
 		expect(c.logEvent).toBeUndefined();
 	});
 
+	it('resolves the admin-mount condition (the doctor mount-shape nudge)', () => {
+		const c = condition('admin.mount-incomplete');
+		expect(c.severity).toBe('warning');
+		expect(c.why).toMatch(/CairnAdminShell/);
+		expect(c.why).toMatch(/shellLoad/);
+		expect(c.remediation).toMatch(/createCairnAdmin/);
+		expect(c.docsAnchor).toBe('cloudflare-readiness.md#wire-the-admin-mount');
+		expect(c.logEvent).toBeUndefined();
+	});
+
 	it('resolves the dependency-floors condition (the lockfile floor gains teeth)', () => {
 		const c = condition('config.dependency-floors-unmet');
 		expect(c.severity).toBe('blocker');
@@ -87,11 +97,10 @@ describe('condition registry', () => {
 		expect(c.logEvent).toBeUndefined();
 	});
 
-	it('pins the registry at fifteen entries', () => {
-		// Fourteen through the doctor DX pass's probe addition, plus
-		// config.dependency-floors-unmet for the lockfile floor the 5.56.1 miscompile forced.
-		// Grow this count only with a registry change.
-		expect(allConditions()).toHaveLength(15);
+	it('pins the registry at sixteen entries', () => {
+		// Fifteen through the dependency-floors addition, plus admin.mount-incomplete for the
+		// doctor's best-effort /admin mount-shape nudge. Grow this count only with a registry change.
+		expect(allConditions()).toHaveLength(16);
 	});
 
 	it('carries no logEvent on the config and hsts entries', () => {

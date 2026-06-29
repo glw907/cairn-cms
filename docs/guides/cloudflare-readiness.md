@@ -123,6 +123,14 @@ Condition: `config.csrf-disable-missing`.
 
 Set `csrf: { checkOrigin: false }` in `svelte.config.js`. cairn's guard owns the admin CSRF checks through a uniform double-submit token, and it restores the strict `Origin` check for your non-admin form POSTs, so the framework's global check has to come off for the JS-free sign-in to work. The handoff is a pair: the disable alone leaves the site with no CSRF protection, so `src/hooks.server.ts` must also wire `createAuthGuard`, and the doctor checks both halves. The deploy guide carries the full reasoning under [Hand cairn the admin CSRF authority](./deploy-to-cloudflare.md#disable-checkorigin).
 
+## Wire the admin mount
+
+Condition: `admin.mount-incomplete`.
+
+The `/admin` interface is a four-file mount: a shared `/admin/+layout` that renders `CairnAdminShell` and calls `createCairnAdmin(runtime).shellLoad`, and a `/admin/[...path]` catch-all that renders `CairnAdmin`. The shared layout supplies the chrome (the navigation and the shell data), so a custom admin screen and the stock screens both render inside it. The doctor reads the candidate mount files and looks for two signals: a `shellLoad` call on any identifier (the composer can be renamed) and a `CairnAdminShell` render anywhere under `/admin`. This is a best-effort text read, so an unconventionally wired site can trip it without being broken. The check never fails the run; it skips with guidance when it cannot see the mount, so a site with no custom admin or an unusual layout never goes red.
+
+To wire it, mount the shared `/admin/+layout` that renders `CairnAdminShell` and calls `createCairnAdmin(runtime).shellLoad`, and the `/admin/[...path]` catch-all that renders `CairnAdmin`.
+
 ## Validate the site config
 
 Condition: `config.site-config-invalid`.

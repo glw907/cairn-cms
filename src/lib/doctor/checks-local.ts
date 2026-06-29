@@ -189,6 +189,64 @@ function keyAppearsIn(text: string | null): boolean {
 // new one, so the readiness count holds (the same pattern configMediaBucket uses). A warn here is not a
 // definitive unset claim: it asks the operator to verify the secret, since a wrangler secret is
 // invisible to the CLI.
+// The candidate files of the four-file /admin mount. There is no directory listing in
+// DoctorContext, so the check reads these known paths; a route file can be .ts or .js, so both
+// spellings are probed. Whatever exists is concatenated and scanned for the two mount signals.
+const ADMIN_MOUNT_PATHS = [
+	'src/routes/admin/+layout.server.ts',
+	'src/routes/admin/+layout.server.js',
+	'src/routes/admin/+layout.svelte',
+	'src/routes/admin/[...path]/+page.server.ts',
+	'src/routes/admin/[...path]/+page.server.js',
+	'src/routes/admin/[...path]/+page.svelte',
+];
+
+// The one-line guidance the skip carries: the expected files plus the fix. It also seeds the
+// admin.mount-incomplete condition's remediation, kept here so the skip detail reads on its own.
+const ADMIN_MOUNT_GUIDANCE =
+	'no wired /admin mount detected; mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin(runtime).shellLoad, and the /admin/[...path] catch-all rendering CairnAdmin';
+
+// The mount-shape heuristic, loose like wiresCairnGuard above so a renamed or wrapped composer
+// still reads as wired. A shellLoad member-access on ANY identifier (not a literal admin.shellLoad)
+// proves the layout calls the composer's load; a CairnAdminShell mention anywhere under /admin
+// proves the shared chrome renders. Both signals together is a pass; neither is a skip-with-guidance.
+function wiresAdminShell(text: string): boolean {
+	return /CairnAdminShell/.test(text);
+}
+
+function callsShellLoad(text: string): boolean {
+	return /\.\s*shellLoad\b/.test(text);
+}
+
+// Read every candidate mount file that exists and join their bodies, so the two signals can be
+// found across whichever files the site keeps them in.
+async function readAdminMountText(ctx: DoctorContext): Promise<string | null> {
+	const bodies: string[] = [];
+	for (const path of ADMIN_MOUNT_PATHS) {
+		const text = await ctx.readFile(path);
+		if (text !== null) bodies.push(text);
+	}
+	return bodies.length ? bodies.join('\n') : null;
+}
+
+// A best-effort, non-blocking nudge: it never returns fail. A fail is a hard exit-1 deploy gate
+// (runDoctor exits 1 on any fail regardless of severity), so a warning-severity heuristic that
+// could not see an unconventionally-wired site must skip-with-guidance, never go falsely red. A
+// pass needs both the shellLoad call and the CairnAdminShell render across the mount files.
+export const adminMountShape: DoctorCheck = {
+	id: 'admin.mount-shape',
+	conditionId: 'admin.mount-incomplete',
+	title: 'Custom /admin mount',
+	async run(ctx: DoctorContext): Promise<CheckResult> {
+		const text = await readAdminMountText(ctx);
+		if (text === null) return skip(ADMIN_MOUNT_GUIDANCE);
+		if (callsShellLoad(text) && wiresAdminShell(text)) {
+			return pass('the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)');
+		}
+		return skip(ADMIN_MOUNT_GUIDANCE);
+	},
+};
+
 export const configTidyKey: DoctorCheck = {
 	id: 'config.tidy-key',
 	conditionId: 'config.bindings-missing',

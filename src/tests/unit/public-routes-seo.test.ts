@@ -58,9 +58,16 @@ const routes = createPublicRoutes({
   feeds: { rss: 'https://x.test/feed.xml', json: 'https://x.test/feed.json' },
 });
 
-describe('entryLoad SEO', () => {
+/** Resolve a path through the unified resolver and narrow to the entry kind these tests assert on. */
+async function entry(path: string) {
+  const data = await routes.resolveRoute({ url: new URL(path) });
+  if (data?.kind !== 'entry') throw new Error(`expected an entry at ${path}`);
+  return data;
+}
+
+describe('resolveRoute entry SEO', () => {
   it('builds a seo head with canonical, og:title, and the article type for a dated entry', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/2026/05/14/welcome') });
+    const data = await entry('https://x.test/2026/05/14/welcome');
     expect(data.seo.title).toBe('Welcome');
     expect(data.seo.links).toContainEqual({ rel: 'canonical', href: data.canonicalUrl });
     expect(data.seo.meta).toContainEqual({ property: 'og:title', content: 'Welcome' });
@@ -69,26 +76,26 @@ describe('entryLoad SEO', () => {
   });
 
   it('reads a per-entry image (resolved absolute) and author into the head', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/2026/05/14/welcome') });
+    const data = await entry('https://x.test/2026/05/14/welcome');
     expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://x.test/og/welcome.png' });
     expect(data.seo.meta).toContainEqual({ property: 'article:author', content: 'Ada' });
     expect(data.seo.meta).toContainEqual({ name: 'description', content: 'Hello world' });
   });
 
   it('falls back to the site default image when an entry declares none', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/2026/05/20/plain') });
+    const data = await entry('https://x.test/2026/05/20/plain');
     expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://x.test/og/default.png' });
   });
 
   it('reads a per-entry robots directive into the head', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/secret') });
+    const data = await entry('https://x.test/secret');
     expect(data.seo.meta).toContainEqual({ name: 'robots', content: 'noindex' });
   });
 });
 
-describe('entryLoad feed autodiscovery', () => {
+describe('resolveRoute entry feed autodiscovery', () => {
   it('attaches feed alternate links to a dated entry', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/2026/05/14/welcome') });
+    const data = await entry('https://x.test/2026/05/14/welcome');
     expect(data.seo.links).toContainEqual({
       rel: 'alternate',
       type: 'application/rss+xml',
@@ -104,7 +111,7 @@ describe('entryLoad feed autodiscovery', () => {
   });
 
   it('attaches no feed alternate links to an undated page', async () => {
-    const data = await routes.entryLoad({ url: new URL('https://x.test/secret') });
+    const data = await entry('https://x.test/secret');
     expect(data.seo.links.some((link) => link.rel === 'alternate')).toBe(false);
   });
 });

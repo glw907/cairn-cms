@@ -183,7 +183,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
 - `createContentIndex`: <F = Record<string, unknown>>(files: RawFile[], descriptor: ConceptDescriptor) => ContentIndex<F>
-- `createPublicRoutes`: (deps: PublicRoutesDeps) => { entryLoad: (event: { url: URL }) => Promise<EntryData>; archiveLoad: (conceptId: string) => ListData; tagIndexLoad: (conceptId: string) => TagIndexData; tagLoad: (conceptId: string, event: { params: { tag: string } }) => TagData; entries: () => { path: string }[] }
+- `createPublicRoutes`: (deps: PublicRoutesDeps) => { resolveRoute: (event: { url: URL }) => Promise<ResolvedRouteData>; entries: () => { path: string }[] }
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `createSiteResolver`: (concepts: ConceptIndex[], opts?: { validate?: boolean }) => SiteResolver
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string

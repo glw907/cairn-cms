@@ -20,6 +20,12 @@ an admin skeleton, not a platform: it does one job well and gets out of the way.
   database; querying is build-time over a committed manifest.
 - **A small default identity, owner/editor, on magic-link**, so a content site runs with zero config.
   Owner also manages the editor roster. Auth exists only to gate the admin.
+- **Tuned for a small editorial team, by default.** The zero-config posture assumes one to a handful of
+  editors who share context, not a large or anonymous contributor pool. This is a floor, not a ceiling
+  (the auth and authorization seams let a developer scale past it), but it sets where the defaults sit:
+  feature decisions optimize for a small team that can coordinate informally, so cairn favors light,
+  low-friction tooling over the heavy coordination and governance machinery a many-contributor system
+  needs.
 - **An admin skeleton a developer extends**, built with DaisyUI + Tailwind (the idiom custom admin screens
   follow; see `admin-design-system.md`). Public output stays design-agnostic, each site brings its own
   `render`.

@@ -26,6 +26,8 @@ the matching `/sveltekit` loads, and their snippets show that shape.
 
 ### `CairnAdmin`
 
+Stability tier: Extension API.
+
 ```ts
 let { data, form, render, registry, icons }: {
   data: AdminData;
@@ -61,6 +63,8 @@ the preview, the insert palette, and the icon fields. The showcase mounts it lik
 ```
 
 ### `CairnAdminShell`
+
+Stability tier: Extension API.
 
 ```ts
 let { data, children }: { data: AdminShellData; children: Snippet };
@@ -103,6 +107,8 @@ hides the button rather than showing a stale count.
 
 ### `ConceptList`
 
+Stability tier: Extension API.
+
 ```ts
 let { data }: { data: ListData };
 ```
@@ -125,6 +131,8 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 ```
 
 ### `CairnMediaLibrary`
+
+Stability tier: Extension API.
 
 ```ts
 let { data, form }: { data: MediaLibraryData; form?: ContentFormFailure | null };
@@ -161,6 +169,8 @@ surfaces in the slide-over.
 ```
 
 ### `EditPage`
+
+Stability tier: Extension API.
 
 ```ts
 let { data, registry, render, icons, form }: {
@@ -236,6 +246,8 @@ web-link dialog.
 
 ### `LoginPage`
 
+Stability tier: Extension API.
+
 ```ts
 let { data, form }: {
   data: { siteName: string; error: string | null; csrf: string };
@@ -263,6 +275,8 @@ mounting, register `requestAction` under that name in the unauthed
 
 ### `ConfirmPage`
 
+Stability tier: Extension API.
+
 ```ts
 let { data }: { data: { token: string; siteName: string; error: string | null; csrf: string } };
 ```
@@ -284,6 +298,8 @@ load and a `confirm`-named action.
 ```
 
 ### `ManageEditors`
+
+Stability tier: Extension API.
 
 ```ts
 let { data, form }: {
@@ -311,6 +327,8 @@ actions, registered under the same names.
 
 ### `NavTree`
 
+Stability tier: Extension API.
+
 ```ts
 let { data }: { data: NavLoadData };
 ```
@@ -335,6 +353,8 @@ action.
 
 ### `CairnTidySettings`
 
+Stability tier: Extension API.
+
 ```ts
 let { data }: { data: SettingsData };
 ```
@@ -358,6 +378,8 @@ same committed site-config YAML the nav editor writes.
 ```
 
 ### `HelpHome`
+
+Stability tier: Extension API.
 
 ```ts
 let { data }: { data: HelpData };
@@ -390,6 +412,8 @@ for completeness, and for a site that builds its own admin surface. The snippets
 with the real prop names.
 
 ### `MarkdownEditor`
+
+Stability tier: Extension API.
 
 ```ts
 let { value = $bindable(), name, registerInsert, registerInsertLink, registerInsertImage, onImageIngest, mediaLibrary = {}, registerCaretCoords, registerFocusEditor, registerImagePlaceholders, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, registerSelectRange, completionSources = [], focusMode = false, typewriter = false }: {
@@ -469,6 +493,8 @@ a plain-language hover hint, and native browser spell check.
 
 ### `ComponentInsertDialog`
 
+Stability tier: Extension API.
+
 ```ts
 let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: {
   registry?: ComponentRegistry;
@@ -527,6 +553,8 @@ insert flow as before.
 
 ### `ComponentForm`
 
+Stability tier: Extension API.
+
 ```ts
 let { def, icons, onInsert, values = $bindable(), incomplete = $bindable(), initial, submitLabel = 'Insert' }: {
   def: ComponentDef;
@@ -557,6 +585,8 @@ header now, not in the form, so the component takes no `onBack`. `ComponentInser
 
 ### `IconPicker`
 
+Stability tier: Extension API.
+
 ```ts
 let { icons, value, required, onChange, label = 'Icon' }: {
   icons: IconSet;
@@ -577,6 +607,8 @@ choice is offered, and `onChange` receives the new name. `label` names the group
 ```
 
 ### `LinkPicker`
+
+Stability tier: Extension API.
 
 ```ts
 let { linkTargets, insert, disabled = false, trigger = true }: {
@@ -599,6 +631,8 @@ edit form. `EditPage` composes it.
 ```
 
 ### `DeleteDialog`
+
+Stability tier: Extension API.
 
 ```ts
 let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: {
@@ -628,6 +662,8 @@ navigates; `EditPage` uses it to stand down its unsaved-changes guard. `EditPage
 
 ### `RenameDialog`
 
+Stability tier: Extension API.
+
 ```ts
 let { conceptId, id, label, slug, trigger = true, onsubmitting }: {
   conceptId: string;
@@ -651,6 +687,8 @@ it to stand down its unsaved-changes guard. `EditPage` composes it.
 ```
 
 ### `CsrfField`
+
+Stability tier: Extension API.
 
 ```ts
 let { token }: { token?: string };

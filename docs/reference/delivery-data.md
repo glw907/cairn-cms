@@ -24,6 +24,8 @@ These turn a site's raw markdown into the typed query surfaces a route reads.
 
 ### `createSiteIndexes`
 
+Stability tier: Extension API.
+
 ```ts
 function createSiteIndexes<const A extends CairnAdapter>(
   adapter: A,
@@ -62,6 +64,8 @@ export const posts = indexes.posts;
 
 ### `createSiteResolver`
 
+Stability tier: Extension API.
+
 ```ts
 function createSiteResolver(
   concepts: ConceptIndex[],
@@ -88,6 +92,8 @@ const site = createSiteResolver([
 
 ### `createContentIndex`
 
+Stability tier: Extension API.
+
 ```ts
 function createContentIndex<F = Record<string, unknown>>(
   files: RawFile[],
@@ -109,6 +115,8 @@ calls the builder.
 
 ### `buildRssFeed`
 
+Stability tier: Extension API.
+
 ```ts
 function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string;
 ```
@@ -118,6 +126,8 @@ carries one entry, with `contentHtml` for a full-content feed.
 
 ### `buildJsonFeed`
 
+Stability tier: Extension API.
+
 ```ts
 function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string;
 ```
@@ -125,6 +135,8 @@ function buildJsonFeed(channel: FeedChannel, items: FeedItem[]): string;
 Build a JSON Feed 1.1 document from the same channel and items.
 
 ### `buildSitemap`
+
+Stability tier: Extension API.
 
 ```ts
 function buildSitemap(urls: SitemapUrl[]): string;
@@ -135,6 +147,8 @@ Build a sitemap XML document from a list of `SitemapUrl` entries, each a `loc` a
 
 ### `buildRobots`
 
+Stability tier: Extension API.
+
 ```ts
 function buildRobots(opts: { sitemapUrl: string; disallow?: string[] }): string;
 ```
@@ -142,6 +156,8 @@ function buildRobots(opts: { sitemapUrl: string; disallow?: string[] }): string;
 Build a robots.txt body that points at the sitemap and disallows the given paths.
 
 ### `rssResponse`
+
+Stability tier: Extension API.
 
 ```ts
 function rssResponse(channel: FeedChannel, items: FeedItem[]): Response;
@@ -181,6 +197,8 @@ export const GET: RequestHandler = async () => {
 
 ### `jsonFeedResponse`
 
+Stability tier: Extension API.
+
 ```ts
 function jsonFeedResponse(channel: FeedChannel, items: FeedItem[]): Response;
 ```
@@ -189,6 +207,8 @@ Wrap a JSON Feed 1.1 feed in a `Response`. The showcase `feed.json` route mirror
 calls this responder instead.
 
 ### `sitemapResponse`
+
+Stability tier: Extension API.
 
 ```ts
 function sitemapResponse(urls: SitemapUrl[]): Response;
@@ -211,6 +231,8 @@ export const GET = () => {
 
 ### `robotsResponse`
 
+Stability tier: Extension API.
+
 ```ts
 function robotsResponse(opts: { sitemapUrl: string; disallow?: string[] }): Response;
 ```
@@ -231,6 +253,8 @@ export const GET = () =>
 ## SEO and manifest builders
 
 ### `buildSeoMeta`
+
+Stability tier: Extension API.
 
 ```ts
 function buildSeoMeta(input: SeoInput): SeoMeta;
@@ -255,6 +279,8 @@ const seo = buildSeoMeta({
 
 ### `buildSiteManifest`
 
+Stability tier: Extension API.
+
 ```ts
 function buildSiteManifest<A extends CairnAdapter>(
   adapter: A,
@@ -275,6 +301,8 @@ const manifest = buildSiteManifest(cairn, siteConfig, { posts: postsRaw, pages: 
 
 ### `buildLinkResolver`
 
+Stability tier: Extension API.
+
 ```ts
 function buildLinkResolver(site: SiteResolver): LinkResolve;
 ```
@@ -285,6 +313,8 @@ miss throws, so a dangling `cairn:` token fails the prerender. The feed routes a
 an internal link into an absolute URL.
 
 ### `resolveReferences`
+
+Stability tier: Extension API.
 
 ```ts
 function resolveReferences(
@@ -320,6 +350,8 @@ Small pure functions the builders and the routes share.
 
 ### `deriveExcerpt`
 
+Stability tier: Extension API.
+
 ```ts
 function deriveExcerpt(body: string, opts?: { description?: string; maxChars?: number }): string;
 ```
@@ -329,6 +361,8 @@ body cut at a word boundary near `maxChars` (default 200) with an ellipsis.
 
 ### `wordCount`
 
+Stability tier: Extension API.
+
 ```ts
 function wordCount(body: string): number;
 ```
@@ -336,6 +370,8 @@ function wordCount(body: string): number;
 Count the words in the stripped markdown body.
 
 ### `permalink`
+
+Stability tier: Extension API.
 
 ```ts
 function permalink(
@@ -351,6 +387,8 @@ graph.
 
 ### `fromGlob`
 
+Stability tier: Extension API.
+
 ```ts
 function fromGlob(record: Record<string, string>): RawFile[];
 ```
@@ -358,6 +396,8 @@ function fromGlob(record: Record<string, string>): RawFile[];
 Map a Vite eager `?raw` glob record (`{ path: raw }`) to a `RawFile[]` for `createContentIndex`.
 
 ### `resolveImageUrl`
+
+Stability tier: Extension API.
 
 ```ts
 function resolveImageUrl(image: string, origin: string): string | undefined;
@@ -369,6 +409,8 @@ string returns `undefined` rather than throwing at build.
 
 ### `readSeoFields`
 
+Stability tier: Extension API.
+
 ```ts
 function readSeoFields(frontmatter: Record<string, unknown>): SeoFields;
 ```
@@ -379,6 +421,8 @@ schema to survive the validate-once read.
 
 ### `jsonLdScript`
 
+Stability tier: Extension API.
+
 ```ts
 function jsonLdScript(data: Record<string, unknown>): string;
 ```
@@ -387,6 +431,8 @@ Serialize a JSON-LD object into the inner text of a `<script type="application/l
 the characters that would break out of a script element escaped.
 
 ### `siteDescriptors`
+
+Stability tier: Extension API.
 
 ```ts
 function siteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[];
@@ -399,21 +445,21 @@ descriptors feed `createContentIndex` and `createSiteResolver` when you assemble
 
 ## Types
 
-| Name | Signature | Meaning |
-| --- | --- | --- |
-| `RawFile` | `interface RawFile { path: string; raw: string }` | A raw content file before parsing: the glob key and the file's full markdown text. |
-| `ContentSummary` | `interface ContentSummary { concept; id; slug; permalink; title; date?; updated?; tags: string[]; excerpt; wordCount; draft; fields }` | The cheap plain-data view of one entry, for lists, feeds, and the sitemap. |
-| `ContentEntry` | `interface ContentEntry<F = Record<string, unknown>> extends ContentSummary { frontmatter: F; body: string }` | The detail view: a summary plus the typed frontmatter and the body to render. |
-| `ContentProblem` | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
-| `ContentIndex` | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface that `createContentIndex` returns. |
-| `ConceptIndex` | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteResolver`. |
-| `SiteResolver` | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. |
-| `SiteGlobs` | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
-| `SiteIndexes` | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
-| `FeedChannel` | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |
-| `FeedItem` | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
-| `SitemapUrl` | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
-| `SeoInput` | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
-| `SeoMeta` | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
-| `SeoFields` | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
-| `ResolvedReference` | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
+| Name | Stability | Signature | Meaning |
+| --- | --- | --- | --- |
+| `RawFile` | Extension API | `interface RawFile { path: string; raw: string }` | A raw content file before parsing: the glob key and the file's full markdown text. |
+| `ContentSummary` | Extension API | `interface ContentSummary { concept; id; slug; permalink; title; date?; updated?; tags: string[]; excerpt; wordCount; draft; fields }` | The cheap plain-data view of one entry, for lists, feeds, and the sitemap. |
+| `ContentEntry` | Extension API | `interface ContentEntry<F = Record<string, unknown>> extends ContentSummary { frontmatter: F; body: string }` | The detail view: a summary plus the typed frontmatter and the body to render. |
+| `ContentProblem` | Extension API | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
+| `ContentIndex` | Extension API | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface that `createContentIndex` returns. |
+| `ConceptIndex` | Extension API | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteResolver`. |
+| `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. |
+| `SiteGlobs` | Extension API | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
+| `SiteIndexes` | Extension API | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
+| `FeedChannel` | Extension API | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |
+| `FeedItem` | Extension API | `interface FeedItem { title; url; date?; updated?; summary; contentHtml?; tags? }` | One feed entry; `contentHtml` carries the rendered body for a full-content feed. |
+| `SitemapUrl` | Extension API | `interface SitemapUrl { loc: string; lastmod?: string }` | One sitemap URL; `lastmod` is a YYYY-MM-DD date. |
+| `SeoInput` | Extension API | `interface SeoInput { title; description; canonicalUrl; siteName; type?; published?; modified?; feeds?; image?; imageAlt?; robots?; author? }` | The inputs for the head builder, all URLs absolute. `imageAlt` becomes `twitter:image:alt` when `image` is set. |
+| `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
+| `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
+| `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |

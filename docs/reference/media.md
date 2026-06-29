@@ -32,6 +32,8 @@ const resolveMedia = makeMediaResolver(mediaManifest, normalizeAssets({ bucketBi
 
 ### `normalizeAssets`
 
+Stability tier: Extension API.
+
 ```ts
 declare function normalizeAssets(assets: AssetConfig | undefined): ResolvedAssetConfig;
 ```
@@ -52,6 +54,8 @@ filename) and is the dedup lookup an ingest checks before storing.
 
 ### `parseMediaManifest`
 
+Stability tier: Extension API.
+
 ```ts
 declare function parseMediaManifest(json: unknown): MediaManifest;
 ```
@@ -60,6 +64,8 @@ Parse a committed manifest. Tolerant: an empty, missing, null, or non-object inp
 manifest, so a first ingest into a site with no manifest file reads a clean `{}`.
 
 ### `readCommittedManifest`
+
+Stability tier: Extension API.
 
 ```ts
 declare function readCommittedManifest(globResult: Record<string, unknown>): MediaManifest;
@@ -73,6 +79,8 @@ and this helper extracts the single matched value and parses it.
 
 ### `parseMediaEntries`
 
+Stability tier: Extension API.
+
 ```ts
 declare function parseMediaEntries(value: unknown): MediaEntry[];
 ```
@@ -84,6 +92,8 @@ for the client's optimistic records.
 
 ### `findByHash`
 
+Stability tier: Extension API.
+
 ```ts
 declare function findByHash(manifest: MediaManifest, hash: string): MediaEntry | undefined;
 ```
@@ -92,6 +102,8 @@ The dedup lookup: the entry stored under the content-hash prefix, or `undefined`
 that hash are stored yet.
 
 ### `upsertMediaEntry`
+
+Stability tier: Extension API.
 
 ```ts
 declare function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): MediaManifest;
@@ -102,6 +114,8 @@ is left untouched, so a caller's prior manifest reference stays valid.
 
 ### `removeMediaEntry`
 
+Stability tier: Extension API.
+
 ```ts
 declare function removeMediaEntry(manifest: MediaManifest, hash: string): MediaManifest;
 ```
@@ -110,6 +124,8 @@ Drop the entry under the given hash and return a new manifest. Removing an absen
 that still returns an equivalent new manifest, and the input is left untouched.
 
 ### `serializeMediaManifest`
+
+Stability tier: Extension API.
 
 ```ts
 declare function serializeMediaManifest(manifest: MediaManifest): string;
@@ -127,6 +143,8 @@ at the same key no matter the original filename.
 
 ### `hashBytes`
 
+Stability tier: Extension API.
+
 ```ts
 declare function hashBytes(bytes: Uint8Array<ArrayBufferLike>): Promise<string>;
 ```
@@ -135,6 +153,8 @@ The full lowercase hex sha256 of the bytes, via Web Crypto, hand-formatted to 64
 
 ### `shortHash`
 
+Stability tier: Extension API.
+
 ```ts
 declare function shortHash(full: string): string;
 ```
@@ -142,6 +162,8 @@ declare function shortHash(full: string): string;
 The first 16 characters of a full hex digest, the content-hash prefix a media reference commits to.
 
 ### `slugifyFilename`
+
+Stability tier: Extension API.
 
 ```ts
 declare function slugifyFilename(name: string): string;
@@ -154,6 +176,8 @@ appends `-img` to a slug that would otherwise collide with the bare-hash referen
 
 ### `r2Key`
 
+Stability tier: Extension API.
+
 ```ts
 declare function r2Key(shortHash: string, ext: string): string;
 ```
@@ -163,6 +187,8 @@ characters of the short hash. It throws on a non-hex hash or a non-alphanumeric 
 unvalidated path never reaches R2.
 
 ### `publicPath`
+
+Stability tier: Extension API.
 
 ```ts
 declare function publicPath(
@@ -186,6 +212,8 @@ format directives Cloudflare reads at the edge.
 
 ### `variantUrl`
 
+Stability tier: Extension API.
+
 ```ts
 declare function variantUrl(publicPath: string, spec: VariantSpec): string;
 ```
@@ -195,6 +223,8 @@ comma-joined in a stable order, so the same spec always builds the same URL and 
 it cleanly.
 
 ### `presetUrl`
+
+Stability tier: Extension API.
 
 ```ts
 declare function presetUrl(publicPath: string, presetName: string, variants: Record<string, VariantSpec>): string;
@@ -214,6 +244,8 @@ same bytes resolve no matter where they are stored or what they are named. The c
 
 ### `parseMediaToken`
 
+Stability tier: Extension API.
+
 ```ts
 declare function parseMediaToken(href: string): MediaRef | null;
 ```
@@ -222,6 +254,8 @@ Parse a `media:<slug>.<hash>` href (or the bare `media:<hash>` form), or `null` 
 a malformed token.
 
 ### `mediaToken`
+
+Stability tier: Extension API.
 
 ```ts
 declare function mediaToken(ref: MediaRef): string;
@@ -235,6 +269,8 @@ round trip is stable.
 ## The render resolver
 
 ### `makeMediaResolver`
+
+Stability tier: Extension API.
 
 ```ts
 declare function makeMediaResolver(
@@ -253,6 +289,8 @@ preview-miss backstop. A site threads the resolver through `render` via the `res
 
 ### `manifestMediaResolver`
 
+Stability tier: Extension API.
+
 ```ts
 declare function manifestMediaResolver(
   targets: Record<string, { slug: string; ext: string; contentType: string }>,
@@ -270,11 +308,11 @@ The engine wires this for its own preview pane; a site does not call it directly
 
 ## Types
 
-| Name | Signature | Meaning |
-| --- | --- | --- |
-| `ResolvedAssetConfig` | `type ResolvedAssetConfig = { enabled: false } \| { enabled: true; bucketBinding; publicBase; urlForm; maxUploadBytes; allowedTypes; variants; transformations }` | The resolved media config the engine serves from. An absent `assets` block yields the `{ enabled: false }` variant; otherwise every field is filled from the `AssetConfig` or its default. |
-| `MediaEntry` | `interface MediaEntry { hash; sha256; slug; displayName; originalFilename; alt; ext; contentType; bytes; width; height; createdAt }` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. `width` and `height` are `null` when no dimensions are known. |
-| `MediaManifest` | `type MediaManifest = Record<string, MediaEntry>` | The whole stored-asset record, keyed by the 16-hex content-hash prefix. |
-| `VariantSpec` | `interface VariantSpec { width?; height?; quality?; fit?; gravity?; format? }` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. |
-| `MediaRef` | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
-| `MediaResolve` | `type MediaResolve = (ref: MediaRef) => string \| undefined` | The per-call resolver `render` reads under `resolveMedia`. `undefined` is a preview miss; a resolver that throws is the build backstop. |
+| Name | Stability | Signature | Meaning |
+| --- | --- | --- | --- |
+| `ResolvedAssetConfig` | Extension API | `type ResolvedAssetConfig = { enabled: false } \| { enabled: true; bucketBinding; publicBase; urlForm; maxUploadBytes; allowedTypes; variants; transformations }` | The resolved media config the engine serves from. An absent `assets` block yields the `{ enabled: false }` variant; otherwise every field is filled from the `AssetConfig` or its default. |
+| `MediaEntry` | Extension API | `interface MediaEntry { hash; sha256; slug; displayName; originalFilename; alt; ext; contentType; bytes; width; height; createdAt }` | One stored asset's row: its content hash, its human layer, and its byte and pixel facts. `width` and `height` are `null` when no dimensions are known. |
+| `MediaManifest` | Extension API | `type MediaManifest = Record<string, MediaEntry>` | The whole stored-asset record, keyed by the 16-hex content-hash prefix. |
+| `VariantSpec` | Extension API | `interface VariantSpec { width?; height?; quality?; fit?; gravity?; format? }` | A single image variant: the resize and format directives Cloudflare Images applies to the original bytes. |
+| `MediaRef` | Extension API | `interface MediaRef { slug: string \| null; hash: string }` | A resolved reference to a media asset by its content-hash prefix, with an optional display slug. |
+| `MediaResolve` | Extension API | `type MediaResolve = (ref: MediaRef) => string \| undefined` | The per-call resolver `render` reads under `resolveMedia`. `undefined` is a preview miss; a resolver that throws is the build backstop. |

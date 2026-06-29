@@ -21,6 +21,8 @@ truth, and the export-coverage gate checks every name here against them.
 
 ## `hydrateIslands`
 
+Stability tier: Extension API.
+
 ```ts
 declare function hydrateIslands(islands: IslandRegistry, root?: ParentNode): void;
 ```
@@ -76,6 +78,8 @@ server-rendered content and the other islands still mount.
 ---
 
 ## `IslandRegistry`
+
+Stability tier: Extension API.
 
 ```ts
 type IslandRegistry = Record<string, Component<Record<string, unknown>>>;

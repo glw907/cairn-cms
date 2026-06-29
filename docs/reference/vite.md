@@ -17,6 +17,8 @@ every name here against them.
 
 ## `cairnManifest`
 
+Stability tier: Extension API.
+
 ```ts
 function cairnManifest(opts: CairnManifestOptions): Plugin;
 ```
@@ -48,6 +50,8 @@ CLI, which pairs with this plugin.
 
 ## `CairnManifestOptions`
 
+Stability tier: Extension API.
+
 ```ts
 interface CairnManifestOptions {
   configModule: string;
@@ -73,6 +77,8 @@ them directly.
 
 ### `buildManifestFromVite`
 
+Stability tier: Extension API.
+
 ```ts
 function buildManifestFromVite(opts: CairnManifestOptions, root: string): Promise<string>;
 ```
@@ -82,6 +88,8 @@ resolution. It returns the manifest as a string and writes nothing.
 
 ### `verifyManifestFromVite`
 
+Stability tier: Extension API.
+
 ```ts
 function verifyManifestFromVite(opts: CairnManifestOptions, root: string): Promise<void>;
 ```
@@ -90,6 +98,8 @@ Verify the committed manifest against the corpus from a Vite context, throwing o
 `buildStart` calls this to fail a build whose manifest has gone stale.
 
 ### `writeManifest`
+
+Stability tier: Extension API.
 
 ```ts
 function writeManifest(cwd?: string): Promise<void>;
@@ -102,6 +112,8 @@ and writes the result. The `cairn-manifest` bin calls this.
 
 ### `stripCairnManifest`
 
+Stability tier: Extension API.
+
 ```ts
 function stripCairnManifest(plugins: PluginOption | PluginOption[]): PluginOption[];
 ```
@@ -111,6 +123,8 @@ the nested verify server can never re-enter its own `buildStart`. The verify pat
 spins up a nested Vite server from the consumer's config.
 
 ### `readAdapterFacts`
+
+Stability tier: Extension API.
 
 ```ts
 function readAdapterFacts(cwd?: string): Promise<AdapterFacts | null>;
@@ -124,6 +138,8 @@ plugin, or the adapter module fails to load, it returns `null` instead of throwi
 on the CLI path, never in a Worker.
 
 ### `AdapterFacts`
+
+Stability tier: Extension API.
 
 ```ts
 interface AdapterFacts {

@@ -30,6 +30,8 @@ A SvelteKit site usually imports the shared symbols through this barrel. The `fe
 
 ## `createPublicRoutes`
 
+Stability tier: Scaffold API.
+
 ```ts
 function createPublicRoutes(deps: PublicRoutesDeps): {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;
@@ -77,6 +79,8 @@ the deps.
 
 ### `PublicRoutesDeps`
 
+Stability tier: Extension API.
+
 ```ts
 interface PublicRoutesDeps {
   site: SiteResolver;
@@ -98,6 +102,8 @@ builds the body resolver, and when it is absent no `heroImage` projection is der
 
 ### `ListData`
 
+Stability tier: Extension API.
+
 ```ts
 interface ListData {
   entries: ContentSummary[];
@@ -107,6 +113,8 @@ interface ListData {
 The archive and tag list data: the summaries a list template renders.
 
 ### `TagData`
+
+Stability tier: Extension API.
 
 ```ts
 interface TagData extends ListData {
@@ -118,6 +126,8 @@ A single tag's data plus the tag it filtered on.
 
 ### `TagIndexData`
 
+Stability tier: Extension API.
+
 ```ts
 interface TagIndexData {
   tags: { tag: string; count: number }[];
@@ -127,6 +137,8 @@ interface TagIndexData {
 The tag-index data: every tag with its entry count.
 
 ### `EntryData`
+
+Stability tier: Extension API.
 
 ```ts
 interface EntryData {
@@ -151,6 +163,8 @@ canonical token is left untouched, so `entry.frontmatter.image.src` stays the `m
 ---
 
 ## `CairnHead`
+
+Stability tier: Extension API.
 
 ```ts
 import { CairnHead } from '@glw907/cairn-cms/delivery/head';

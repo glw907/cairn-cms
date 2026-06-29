@@ -10,7 +10,7 @@ import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
 const [posts] = normalizeConcepts({
-  posts: { dir: 'p', routing: 'feed', permalink: '/:year/:month/:day/:slug', datePrefix: 'day', fields: fieldset({}) },
+  posts: { dir: 'p', routing: 'feed', permalink: '/:year/:month/:day/:slug', datePrefix: 'day', fields: fieldset({ tags: fields.multiselect({ label: 'Tags', taxonomy: true }) }) },
 });
 const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
 

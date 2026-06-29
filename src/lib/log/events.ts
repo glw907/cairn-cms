@@ -11,6 +11,7 @@ export type CairnLogEvent =
   | 'commit.succeeded'
   | 'commit.failed'
   | 'config.invalid'
+  | 'taxonomy.unmarked_field'
   | 'entry.published'
   | 'entry.discarded'
   | 'publish.failed'

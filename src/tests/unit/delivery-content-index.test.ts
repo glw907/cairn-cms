@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createContentIndex, fromGlob } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { log } from '../../lib/log/index.js';
 import type { ContentIndex, RawFile } from '../../lib/delivery/content-index.js';
 
 const [posts] = normalizeConcepts({
@@ -12,7 +13,7 @@ const [posts] = normalizeConcepts({
     fields: fieldset({
       title: fields.text({ label: 'Title' }),
       date: fields.date({ label: 'Date' }),
-      tags: fields.multiselect({ label: 'Tags', options: ['a'] }),
+      tags: fields.multiselect({ label: 'Tags', options: ['a'], taxonomy: true }),
       draft: fields.boolean({ label: 'Draft' }),
     }),
   },
@@ -142,6 +143,143 @@ describe('summary fields', () => {
 describe('fromGlob', () => {
   it('maps a Vite eager raw glob record to RawFile[]', () => {
     expect(fromGlob({ '/a/x.md': 'raw-x' })).toEqual([{ path: '/a/x.md', raw: 'raw-x' }]);
+  });
+});
+
+describe('content index reads the taxonomy-marked field', () => {
+  const [marked] = normalizeConcepts({
+    posts: {
+      dir: 'd',
+      routing: 'feed',
+      fields: fieldset({
+        title: fields.text({ label: 'Title' }),
+        date: fields.date({ label: 'Date' }),
+        // An open multiselect (no options) so the validator accepts arbitrary values and coerces a
+        // lone scalar, the two cases the marked-read must honour.
+        topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
+      }),
+    },
+  });
+
+  it('reads tags from the marked field, an array verbatim', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\ntopics: [svelte, kit]\n---\nBody.' }),
+      marked,
+    );
+    expect(index.byId('2026-01-01-a')?.tags).toEqual(['svelte', 'kit']);
+  });
+
+  it('coerces a lone scalar on the marked field to a one-element array (the validated read)', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\ntopics: svelte\n---\nBody.' }),
+      marked,
+    );
+    expect(index.byId('2026-01-01-a')?.tags).toEqual(['svelte']);
+  });
+
+  it('reads the marked field only, never a legacy tags key', () => {
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\ntopics: [a]\ntags: [b]\n---\nBody.' }),
+      marked,
+    );
+    expect(index.byId('2026-01-01-a')?.tags).toEqual(['a']);
+  });
+
+  it('yields no tags when the concept marks no taxonomy field, even with a tags key present', () => {
+    const [unmarked] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+        }),
+      },
+    });
+    const index = createContentIndex(
+      fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\ntags: [b]\n---\nBody.' }),
+      unmarked,
+    );
+    expect(index.byId('2026-01-01-a')?.tags).toEqual([]);
+  });
+});
+
+describe('content index advisory for an unmarked tags-named field', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('warns once when a multiselect named tags is left unmarked', () => {
+    const [unmarked] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+          tags: fields.multiselect({ label: 'Tags' }),
+        }),
+      },
+    });
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    createContentIndex(
+      fromGlob({
+        '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\n---\nBody.',
+        '/d/2026-01-02-b.md': '---\ntitle: B\ndate: 2026-01-02\n---\nBody.',
+      }),
+      unmarked,
+    );
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('taxonomy.unmarked_field', { concept: 'posts', field: 'tags' });
+  });
+
+  it('warns for a freetags or categories named multiselect too', () => {
+    const [unmarked] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+          categories: fields.multiselect({ label: 'Categories' }),
+        }),
+      },
+    });
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    createContentIndex(fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\n---\nBody.' }), unmarked);
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(warn).toHaveBeenCalledWith('taxonomy.unmarked_field', { concept: 'posts', field: 'categories' });
+  });
+
+  it('does not warn when the tags-named field is properly marked', () => {
+    const [marked] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+          tags: fields.multiselect({ label: 'Tags', taxonomy: true }),
+        }),
+      },
+    });
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    createContentIndex(fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\n---\nBody.' }), marked);
+    expect(warn).not.toHaveBeenCalled();
+  });
+
+  it('does not warn when no tags-named multiselect exists', () => {
+    const [plain] = normalizeConcepts({
+      posts: {
+        dir: 'd',
+        routing: 'feed',
+        fields: fieldset({
+          title: fields.text({ label: 'Title' }),
+          date: fields.date({ label: 'Date' }),
+        }),
+      },
+    });
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    createContentIndex(fromGlob({ '/d/2026-01-01-a.md': '---\ntitle: A\ndate: 2026-01-01\n---\nBody.' }), plain);
+    expect(warn).not.toHaveBeenCalled();
   });
 });
 

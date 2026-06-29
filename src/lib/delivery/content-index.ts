@@ -5,7 +5,13 @@
 import { parseMarkdown } from '../content/frontmatter.js';
 import { entryId, entryIdentity, asDate, asString, asTags } from '../content/identity.js';
 import { deriveExcerpt, wordCount } from '../content/excerpt.js';
+import { resolveTaxonomyField } from '../content/taxonomy.js';
+import { log } from '../log/index.js';
 import type { ConceptDescriptor } from '../content/types.js';
+
+// A multiselect literally named like a tag field is the likeliest unmarked taxonomy, so an
+// unmarked one earns a build advisory rather than silently reading as []. Source: the taxonomy spec.
+const TAG_FIELD_NAMES = ['tags', 'freetags', 'categories'];
 
 /** A raw content file before parsing: the glob key and the file's full markdown text. */
 export interface RawFile {
@@ -84,6 +90,16 @@ export function createContentIndex<F = Record<string, unknown>>(
 ): ContentIndex<F> {
   const problems: ContentProblem[] = [];
   const entries: ContentEntry<F>[] = [];
+  // Resolve the taxonomy-marked field once for the whole index. Its validated value is the source
+  // of every summary's tags; there is no implicit `tags` fallback. When the concept marks no field
+  // but carries a multiselect named like a tag field, warn once that the marker is missing.
+  const taxonomyField = resolveTaxonomyField(descriptor.fields);
+  if (taxonomyField === null) {
+    const unmarked = descriptor.fields.find(
+      (f) => f.type === 'multiselect' && TAG_FIELD_NAMES.includes(f.name),
+    );
+    if (unmarked) log.warn('taxonomy.unmarked_field', { concept: descriptor.id, field: unmarked.name });
+  }
   for (const file of files) {
     const { frontmatter: raw, body } = parseMarkdown(file.raw);
     const id = entryId(file.path);
@@ -110,7 +126,7 @@ export function createContentIndex<F = Record<string, unknown>>(
       title: asString(raw.title) ?? id,
       date,
       updated: asDate(raw.updated),
-      tags: asTags(raw.tags),
+      tags: taxonomyField ? asTags(result.data[taxonomyField]) : [],
       excerpt: deriveExcerpt(body, { description: asString(raw.description) }),
       wordCount: wordCount(body),
       draft,

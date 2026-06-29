@@ -21,6 +21,7 @@ redaction stance.
 | `commit.succeeded` | info | A content or nav commit lands. | `concept`, `id`, `editor`, `branch` on a save |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error`, `branch` on a save |
 | `config.invalid` | error | The nav editor's load reads a site config that does not parse or validate, and degrades to an empty tree. | `conditionId`, `error` |
+| `taxonomy.unmarked_field` | warn | A concept marks no `taxonomy: true` field yet declares a multiselect named `tags`, `freetags`, or `categories`, so the tag index reads empty. Fires once per index build. | `concept`, `field` |
 | `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
 | `publish.failed` | warn or error | A publish commit fails, with the `commit.failed` shape. | `concept`, `id`, `editor`, `reason` or `error` |
@@ -61,6 +62,14 @@ out, which makes this record the only sign of the fault; its `conditionId` is al
 `guard.rejected` with `reason: "bindings"`, the Worker deployed without an `AUTH_DB` binding, so
 the guard serves the branded condition page on every admin path, the login page included, instead
 of a sign-in flow that could never succeed; the `conditionId` field is `config.bindings-missing`.
+
+`taxonomy.unmarked_field` fires at index build when a concept declares a multiselect field named
+`tags`, `freetags`, or `categories` but marks none of its fields `taxonomy: true`. cairn reads tags
+from the marked field alone, so an unmarked field of that name produces an empty tag index, archive,
+and feed category set, which this advisory names before the empty surface is mistaken for a bug. The
+record carries the `concept` id and the `field` name. It is advisory, never fatal: a field of that
+name that is deliberately not a taxonomy is legal, so the build proceeds. Add `taxonomy: true` to the
+field to wire it in, or rename it to silence the advisory.
 
 On `guard.rejected` with `reason: "dev_backend_in_prod"`, a deployed runtime carries the
 `CAIRN_DEV_BACKEND` flag. A production build fences out the dev backend (the

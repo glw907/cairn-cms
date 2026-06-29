@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+import type { ResolvedNavEntry } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './CairnAdminShellDeskHarness.svelte';
 
@@ -16,7 +17,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     siteName: 'Test Site',
     user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
     concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
-    customNav: [] as { label: string; iconName: string; href: string; ownerOnly: boolean }[],
+    customNav: [] as ResolvedNavEntry[],
     pathname,
     canManageEditors,
     navLabel,
@@ -328,6 +329,22 @@ describe('CairnAdminShell', () => {
     const form = screen.container.querySelector('form[action="/admin?/logout"]');
     expect(form).not.toBeNull();
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
+  });
+
+  it('renders a custom adminNav entry as a sidebar link to its href', async () => {
+    const customNav: ResolvedNavEntry[] = [
+      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
+    ];
+    const screen = render(CairnAdminShell, { data: { ...data(true), customNav }, children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    await expect.element(sidebar.getByRole('link', { name: 'Signups' })).toBeInTheDocument();
+  });
+
+  it('omits an owner-only custom entry the payload has already role-filtered out', async () => {
+    // The shell receives an already-role-filtered customNav (the server hides an owner-only entry
+    // from a non-owner), so an editor payload simply carries no such entry and the link is absent.
+    const screen = render(CairnAdminShell, { data: data(false), children: child });
+    expect(screen.container.querySelector('a[href="/admin/signups"]')).toBeNull();
   });
 
   it('renders only the children bare for a public payload, with no chrome', async () => {

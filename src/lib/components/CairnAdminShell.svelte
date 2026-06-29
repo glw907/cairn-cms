@@ -28,6 +28,7 @@ discriminant, not the fields, gates the chrome).
   import ImageIcon from '@lucide/svelte/icons/image';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
+  import { ADMIN_NAV_ICONS, ADMIN_NAV_FALLBACK_ICON } from './admin-nav-icons.js';
   import './cairn-admin.css';
 
   interface Props {
@@ -69,6 +70,13 @@ discriminant, not the fields, gates the chrome).
     shell
       ? [
           ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+          // The developer's custom screens, right after the concepts: each resolves its bundled icon
+          // name through the allowlist map, falling back to a list glyph for any unmapped name.
+          ...shell.customNav.map((e) => ({
+            label: e.label,
+            icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON,
+            href: e.href,
+          })),
           // Media is a content peer, immediately after the concepts.
           { label: 'Media', icon: ImageIcon, href: '/admin/media' },
           ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
@@ -228,7 +236,12 @@ discriminant, not the fields, gates the chrome).
     if (segs.length < 2 || segs[0] !== 'admin') return [];
     const conceptId = segs[1];
     const concept = shell?.concepts.find((c) => c.id === conceptId);
-    const out: Crumb[] = [{ label: concept?.label ?? conceptId, href: `/admin/${conceptId}` }];
+    // A custom screen carries no concept, so resolve its href to the developer's nav label too; the
+    // raw segment is the fallback when neither a concept nor a custom entry claims it.
+    const custom = shell?.customNav.find((e) => e.href === `/admin/${conceptId}`);
+    const out: Crumb[] = [
+      { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
+    ];
     if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
     return out;
   });

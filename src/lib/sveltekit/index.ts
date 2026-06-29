@@ -33,6 +33,7 @@ export type {
 export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption, NavRoutesDeps } from './nav-routes.js';
 export { parseAdminPath, type AdminView } from './admin-dispatch.js';
+export type { AdminNavEntry, AdminNavIcon, ResolvedNavEntry } from './admin-nav.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';

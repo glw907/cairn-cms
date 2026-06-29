@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+import type { ResolvedNavEntry } from '../../lib/sveltekit/admin-nav.js';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
@@ -11,7 +12,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     siteName: 'Test Site',
     user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
     concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
-    customNav: [] as { label: string; iconName: string; href: string; ownerOnly: boolean }[],
+    customNav: [] as ResolvedNavEntry[],
     pathname,
     canManageEditors,
     navLabel,

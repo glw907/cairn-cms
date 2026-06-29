@@ -34,6 +34,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
 import { requireSession, isPublicAdminPath } from './guard.js';
+import { normalizeAdminNav, type ResolvedNavEntry } from './admin-nav.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { mediaToken } from '../media/reference.js';
@@ -108,11 +109,8 @@ export type AdminShellData =
       siteName: string;
       user: { displayName: string; email: string; role: Role };
       concepts: NavConcept[];
-      /**
-       * The developer's custom sidebar entries, role-filtered. Task 3 fills this from
-       *  `normalizeAdminNav`; until then it is always empty.
-       */
-      customNav: { label: string; iconName: string; href: string; ownerOnly: boolean }[];
+      /** The developer's custom sidebar entries, validated at construction and role-filtered here. */
+      customNav: ResolvedNavEntry[];
       pathname: string;
       canManageEditors: boolean;
       /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
@@ -697,6 +695,10 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
  *
  */
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
+  // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
+  // or a colliding href throws here rather than per request. The shell payload role-filters this set.
+  const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
+
   /**
    * Resolve the live content backend for one request. A test seam (`deps.backend`) wins, then the
    *  dev double's `event.locals.backend`, then the production `runtime.backend.connect(env)`. The
@@ -794,8 +796,9 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role },
         concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
-        // Task 3 fills customNav from normalizeAdminNav; until then it is always [].
-        customNav: [],
+        // The developer's custom sidebar entries, role-filtered: an owner-only entry is hidden from a
+        // non-owner. The validation already ran at construction, so this is a pure filter.
+        customNav: adminNav.filter((e) => !e.ownerOnly || editor.role === 'owner'),
         pathname: event.url.pathname,
         canManageEditors: editor.role === 'owner',
         navLabel: runtime.navMenu?.label ?? null,

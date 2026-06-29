@@ -17,9 +17,7 @@ export function resolveTaxonomyField(fields: NamedField[]): string | null {
  *  relies on for its delete-safety gate.
  */
 export function coerceTags(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.map(String)
-    : typeof value === 'string' && value.trim() !== ''
-      ? [value.trim()]
-      : [];
+  if (Array.isArray(value)) return value.map(String);
+  if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
+  return [];
 }

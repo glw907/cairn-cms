@@ -1897,6 +1897,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           onuploaded={(record) => (uploadedRecords = [...uploadedRecords, record])}
           onheroneedsalt={(name, n) => (heroNeedsAlt = { ...heroNeedsAlt, [name]: n })}
           {icons}
+          orphanTags={data.orphanTags}
         />
       {/each}
       </fieldset>

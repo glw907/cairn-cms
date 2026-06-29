@@ -39,6 +39,7 @@ function postProps(over = {}) {
       siteDictionary: [],
       tidy: { enabled: false, model: 'claude-sonnet-4-6', conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false } },
       advisories: [] as AdvisoryNotice[],
+      orphanTags: [],
       siteName: 'Test Site',
       ...over,
     },

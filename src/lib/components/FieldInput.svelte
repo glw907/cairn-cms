@@ -54,6 +54,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     onheroneedsalt: (name: string, needsAlt: boolean) => void;
     /** The site's icon set, threaded to the icon arm's picker. Absent when the site ships none. */
     icons?: IconSet;
+    /**
+     * The closed taxonomy picker's orphan values: prior tags no longer in the site vocabulary, which
+     *  this arm renders checked, removable, and flagged "not in your tag list". Absent for every
+     *  other field, and absent on the container recursion (only the top-level taxonomy field gets it).
+     */
+    orphanTags?: string[];
   }
 
   let {
@@ -69,6 +75,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     onuploaded,
     onheroneedsalt,
     icons,
+    orphanTags,
   }: Props = $props();
 
   function str(v: unknown): string {
@@ -176,6 +183,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     {/if}
     <div class="flex flex-wrap gap-2">
       {#each f.options as option (option)}
+        {@const orphan = orphanTags?.includes(option) ?? false}
         <label class="label cursor-pointer justify-start gap-2">
           <input
             class="checkbox checkbox-sm"
@@ -185,6 +193,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
             checked={selected.includes(option)}
           />
           <span class="text-sm">{option}</span>
+          {#if orphan}
+            <!-- A non-blocking flag, never a block: the orphan stays a checked, removable option so
+                 an untouched save preserves it and unchecking it drops it. Warning ink, not the fill
+                 tone, so the small label clears the contrast floor on the light surface. -->
+            <span class="text-xs text-[var(--cairn-warning-ink)]">not in your tag list</span>
+          {/if}
         </label>
       {/each}
     </div>

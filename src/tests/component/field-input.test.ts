@@ -35,3 +35,48 @@ describe('FieldInput name-prefix contract', () => {
     expect(src).not.toBeNull();
   });
 });
+
+describe('FieldInput closed-multiselect orphan flag', () => {
+  // A closed taxonomy picker: options sourced from the vocabulary union the orphan, creatable off.
+  const field: NamedField = {
+    type: 'multiselect',
+    name: 'topics',
+    label: 'Topics',
+    options: ['a', 'legacy'],
+    creatable: false,
+  } as NamedField;
+
+  it('flags an orphan option as a checked, removable, "not in your tag list" checkbox', async () => {
+    render(FieldInput, {
+      field,
+      frontmatter: { topics: ['a', 'legacy'] },
+      orphanTags: ['legacy'],
+      ...shared(),
+    });
+    // The orphan submits under the same name, checked so an untouched save preserves it.
+    const orphan = document.querySelector<HTMLInputElement>('input[type="checkbox"][value="legacy"]');
+    expect(orphan).not.toBeNull();
+    expect(orphan?.name).toBe('topics');
+    expect(orphan?.checked).toBe(true);
+    // Unchecking it is the removal: it stays a real, toggleable checkbox.
+    expect(orphan?.disabled).toBe(false);
+    // The flag text marks it as outside the vocabulary.
+    expect(document.body.textContent).toContain('not in your tag list');
+  });
+
+  it('renders a vocabulary option as a plain checkbox with no orphan flag', async () => {
+    render(FieldInput, {
+      field,
+      frontmatter: { topics: ['a', 'legacy'] },
+      orphanTags: ['legacy'],
+      ...shared(),
+    });
+    const vocab = document.querySelector<HTMLInputElement>('input[type="checkbox"][value="a"]');
+    expect(vocab).not.toBeNull();
+    expect(vocab?.checked).toBe(true);
+    // The plain option's label is just its value, with no flag suffix in its own row.
+    const row = vocab?.closest('label');
+    expect(row?.textContent).toContain('a');
+    expect(row?.textContent).not.toContain('not in your tag list');
+  });
+});

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
-import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes, type EditData } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
@@ -604,5 +604,71 @@ describe('editLoad media targets', () => {
     expect(readsOf(gh, MEDIA_PATH)).toBe(0);
     expect(data.mediaTargets).toEqual({});
     expect(data.mediaLibrary).toEqual({});
+  });
+});
+
+describe('editLoad taxonomy enforcement', () => {
+  const ENTRY_PATH = 'src/content/posts/2026-05-hello.md';
+
+  /** A runtime whose `posts` concept marks a `topics` taxonomy multiselect, with the given
+   *  vocabulary. The entry the test loads carries `topics: ['a', 'legacy']`, so `legacy` is the
+   *  orphan (in the entry, not the vocabulary). */
+  function taxonomyRuntime(vocabulary: { value: string; label: string }[]): CairnRuntime {
+    return {
+      ...runtime(),
+      concepts: [
+        {
+          id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
+          routing: { routable: true, dated: true, inFeeds: true },
+          permalink: '/posts/:slug',
+          datePrefix: 'day',
+          fields: [
+            { type: 'text', name: 'title', label: 'Title', required: true },
+            { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true },
+          ],
+          schema: fieldset({}),
+          summaryFields: [],
+          validate: (fm) => ({ ok: true as const, data: fm }),
+        },
+      ],
+      vocabulary,
+    };
+  }
+
+  function topicsField(data: EditData) {
+    return data.fields.find((f) => f.name === 'topics') as
+      | { type: string; name: string; options?: readonly string[]; creatable?: boolean }
+      | undefined;
+  }
+
+  it('closes the taxonomy field and flags the orphan when the site configures a vocabulary', async () => {
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
+    });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    const topics = topicsField(data);
+    // The closed picker: options = vocabulary union orphan, creatable false.
+    expect(topics?.creatable).toBe(false);
+    expect(topics?.options).toEqual(['a', 'legacy']);
+    // The orphan set is the prior tag that is not in the vocabulary.
+    expect(data.orphanTags).toEqual(['legacy']);
+    // The closed field also drives the form values the picker checks against.
+    expect(data.frontmatter.topics).toEqual(['a', 'legacy']);
+  });
+
+  it('keeps the bare open field and no orphans when the vocabulary is empty (opt-in fallback)', async () => {
+    const gh = new GithubDouble({
+      main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
+    });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([]), deps);
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    const topics = topicsField(data);
+    // The open creatable multiselect is unchanged: no options injected, creatable stays true.
+    expect(topics?.creatable).toBe(true);
+    expect(topics?.options).toBeUndefined();
+    expect(data.orphanTags).toEqual([]);
   });
 });

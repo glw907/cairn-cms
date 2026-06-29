@@ -10,7 +10,7 @@ import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { initialValues } from '../content/fieldset.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
-import { resolveAllowed, closeTaxonomyField, enforceTaxonomy } from '../content/taxonomy-enforce.js';
+import { resolveAllowed, closeTaxonomyField, enforceTaxonomy, unlistedTags } from '../content/taxonomy-enforce.js';
 import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
@@ -213,6 +213,13 @@ export interface EditData {
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
   /** Non-blocking editor advisories built server-side; today the cross-branch address collision. */
   advisories: AdvisoryNotice[];
+  /**
+   * The entry's prior tags that are not in the configured vocabulary, for the closed taxonomy
+   *  picker's "not in your tag list" flag. Empty when the site configures no vocabulary, when the
+   *  concept has no taxonomy field, or when every prior tag is in the vocabulary (the opt-in
+   *  fallback). The picker keeps each orphan checked and removable; an unchecked save drops it.
+   */
+  orphanTags: string[];
 }
 
 /**
@@ -1134,12 +1141,29 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
       mediaLibrary[hash] = mediaLibraryEntry(e);
     }
 
+    // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
+    //  concept marks a taxonomy field. The closed field drives the checkbox picker (options sourced
+    //  from the vocabulary unioned with the entry's own prior tags), and the orphan set flags any
+    //  prior tag not in the vocabulary. There is no extra backend read: the vocabulary is the
+    //  deployed runtime snapshot and the prior tags come from the already-parsed frontmatter.
+    //  Otherwise the bare path runs: the open creatable multiselect an unadopted site has today.
+    const vocabValues = runtime.vocabulary.map((v) => v.value);
+    const taxField = resolveTaxonomyField(concept.fields);
+    let editFields = concept.fields;
+    let orphanTags: string[] = [];
+    if (vocabValues.length > 0 && taxField !== null) {
+      const priorTags = coerceTags(loadFrontmatter[taxField]);
+      const allowed = resolveAllowed(vocabValues, priorTags);
+      orphanTags = unlistedTags(vocabValues, priorTags);
+      editFields = closeTaxonomyField(concept.fields, allowed);
+    }
+
     return {
       conceptId: concept.id,
       id,
       label: concept.label,
-      fields: concept.fields,
-      frontmatter: formValues(concept.fields, loadFrontmatter),
+      fields: editFields,
+      frontmatter: formValues(editFields, loadFrontmatter),
       body: parsed.body,
       title,
       isNew,
@@ -1172,6 +1196,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         conventions: resolveTidyConventions(runtime.tidy?.conventions),
       },
       advisories,
+      orphanTags,
     };
   }
 

@@ -58,14 +58,12 @@ const routes = createPublicRoutes({
   feeds: { rss: 'https://x.test/feed.xml', json: 'https://x.test/feed.json' },
 });
 
-/** Resolve a path through the unified resolver and narrow to the entry kind these tests assert on. */
+/** Resolve a path through the entry loader these tests assert on. */
 async function entry(path: string) {
-  const data = await routes.resolveRoute({ url: new URL(path) });
-  if (data?.kind !== 'entry') throw new Error(`expected an entry at ${path}`);
-  return data;
+  return routes.entryLoad({ url: new URL(path) });
 }
 
-describe('resolveRoute entry SEO', () => {
+describe('entryLoad entry SEO', () => {
   it('builds a seo head with canonical, og:title, and the article type for a dated entry', async () => {
     const data = await entry('https://x.test/2026/05/14/welcome');
     expect(data.seo.title).toBe('Welcome');
@@ -93,7 +91,7 @@ describe('resolveRoute entry SEO', () => {
   });
 });
 
-describe('resolveRoute entry feed autodiscovery', () => {
+describe('entryLoad entry feed autodiscovery', () => {
   it('attaches feed alternate links to a dated entry', async () => {
     const data = await entry('https://x.test/2026/05/14/welcome');
     expect(data.seo.links).toContainEqual({

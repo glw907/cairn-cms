@@ -24,64 +24,43 @@ const site = createSiteResolver([
 
 const routes = createPublicRoutes({ site, render: ({ body }) => Promise.resolve(`<r>${body.trim()}</r>`), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
 
-describe('createPublicRoutes resolveRoute', () => {
-  it('resolves a dated Posts URL to the entry kind by pathname', async () => {
-    const data = await routes.resolveRoute({ url: new URL('https://example.com/2026/02/01/a') });
-    expect(data?.kind).toBe('entry');
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+describe('createPublicRoutes entryLoad', () => {
+  it('resolves a dated Posts URL to its entry by pathname', async () => {
+    const data = await routes.entryLoad({ url: new URL('https://example.com/2026/02/01/a') });
     expect(data.entry.id).toBe('2026-02-01-a');
     expect(data.html).toBe('<r>Body A.</r>');
     expect(data.canonicalUrl).toBe('https://example.com/2026/02/01/a');
   });
 
-  it('resolves a flat Pages URL to the entry kind through the same route', async () => {
-    const data = await routes.resolveRoute({ url: new URL('https://example.com/about') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+  it('resolves a flat Pages URL through the same route', async () => {
+    const data = await routes.entryLoad({ url: new URL('https://example.com/about') });
     expect(data.entry.id).toBe('about');
   });
 
-  it('carries the resolved concept on the entry kind', async () => {
-    const post = await routes.resolveRoute({ url: new URL('https://example.com/2026/02/01/a') });
-    if (post?.kind !== 'entry') throw new Error('expected entry');
+  it('carries the resolved concept on the entry', async () => {
+    const post = await routes.entryLoad({ url: new URL('https://example.com/2026/02/01/a') });
     expect(post.concept).toBe('posts');
-    const page = await routes.resolveRoute({ url: new URL('https://example.com/about') });
-    if (page?.kind !== 'entry') throw new Error('expected entry');
+    const page = await routes.entryLoad({ url: new URL('https://example.com/about') });
     expect(page.concept).toBe('pages');
   });
 
-  it('returns undefined for an unknown path (the route layer throws the 404)', async () => {
-    expect(await routes.resolveRoute({ url: new URL('https://example.com/missing') })).toBeUndefined();
+  it('throws a 404 for an unknown path', async () => {
+    await expect(routes.entryLoad({ url: new URL('https://example.com/missing') })).rejects.toMatchObject({
+      status: 404,
+    });
   });
 
-  it('resolves the taxonomy base to the tag index kind', async () => {
-    const data = await routes.resolveRoute({ url: new URL('https://example.com/tags') });
-    if (data?.kind !== 'tagIndex') throw new Error('expected tagIndex');
-    expect(data.concept).toBe('posts');
-    expect(data.tags).toEqual([{ tag: 'x', count: 1 }, { tag: 'y', count: 1 }]);
-  });
-
-  it('resolves a tag archive path to the tag archive kind', async () => {
-    const data = await routes.resolveRoute({ url: new URL('https://example.com/tags/x') });
-    if (data?.kind !== 'tagArchive') throw new Error('expected tagArchive');
-    expect(data.concept).toBe('posts');
-    expect(data.tag).toBe('x');
-    expect(data.entries.map((e) => e.id)).toEqual(['2026-02-01-a']);
-  });
-
-  it('returns undefined for a tag with no entries', async () => {
-    expect(await routes.resolveRoute({ url: new URL('https://example.com/tags/unknown') })).toBeUndefined();
-  });
-
-  it('no longer exposes the per-concept loaders', () => {
+  it('exposes the entry loader and prerender enumeration only', () => {
     const surface = routes as Record<string, unknown>;
-    expect(surface.entryLoad).toBeUndefined();
     expect(surface.archiveLoad).toBeUndefined();
     expect(surface.tagIndexLoad).toBeUndefined();
     expect(surface.tagLoad).toBeUndefined();
-    expect(Object.keys(routes).sort()).toEqual(['entries', 'resolveRoute']);
+    expect(Object.keys(routes).sort()).toEqual(['entries', 'entryLoad']);
   });
 
-  it('entries enumerates every path across concepts, including the tag index and archives', () => {
+  it('entries enumerates every entry path across concepts', () => {
+    // The resolver still enumerates the tag-routing paths; Task 2 removes that loop and flips this
+    // expected array to the entry-only ['2026/01/01/b', '2026/02/01/a', 'about'].
     expect(routes.entries().map((e) => e.path).sort()).toEqual([
       '2026/01/01/b',
       '2026/02/01/a',
@@ -112,8 +91,7 @@ describe('createPublicRoutes resolveRoute', () => {
       resolveMedia,
     });
 
-    const data = await heroRoutes.resolveRoute({ url: new URL('https://example.com/hero') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
     expect(data.heroImage).toEqual({
       url: '/media/a.0123456789abcdef.webp',
       absoluteUrl: 'https://example.com/media/a.0123456789abcdef.webp',
@@ -141,8 +119,7 @@ describe('createPublicRoutes resolveRoute', () => {
       description: 'Test description.',
       resolveMedia: () => undefined,
     });
-    const a = await unresolved.resolveRoute({ url: new URL('https://example.com/hero') });
-    if (a?.kind !== 'entry') throw new Error('expected entry');
+    const a = await unresolved.entryLoad({ url: new URL('https://example.com/hero') });
     expect(a.heroImage).toBeUndefined();
 
     // Media off: no resolveMedia dep at all, still undefined and no throw.
@@ -153,8 +130,7 @@ describe('createPublicRoutes resolveRoute', () => {
       siteName: 'Test',
       description: 'Test description.',
     });
-    const b = await off.resolveRoute({ url: new URL('https://example.com/hero') });
-    if (b?.kind !== 'entry') throw new Error('expected entry');
+    const b = await off.entryLoad({ url: new URL('https://example.com/hero') });
     expect(b.heroImage).toBeUndefined();
   });
 
@@ -178,8 +154,7 @@ describe('createPublicRoutes resolveRoute', () => {
       resolveMedia,
     });
 
-    const data = await heroRoutes.resolveRoute({ url: new URL('https://example.com/hero') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
     expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://example.com/media/a.0123456789abcdef.webp' });
     expect(data.seo.meta).toContainEqual({ name: 'twitter:image:alt', content: 'A hero photo' });
   });
@@ -201,8 +176,7 @@ describe('createPublicRoutes resolveRoute', () => {
       description: 'Test description.',
     });
 
-    const data = await stringRoutes.resolveRoute({ url: new URL('https://example.com/legacy') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+    const data = await stringRoutes.entryLoad({ url: new URL('https://example.com/legacy') });
     expect(data.seo.meta).toContainEqual({ property: 'og:image', content: 'https://example.com/og/legacy.png' });
     expect(data.seo.meta.some((m) => m.name === 'twitter:image:alt')).toBe(false);
   });
@@ -226,8 +200,7 @@ describe('createPublicRoutes resolveRoute', () => {
         ref.hash === '0123456789abcdef' ? '/media/a.0123456789abcdef.webp' : undefined,
     });
 
-    const data = await coverRoutes.resolveRoute({ url: new URL('https://example.com/cover') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+    const data = await coverRoutes.entryLoad({ url: new URL('https://example.com/cover') });
     expect(data.seo.meta.some((m) => m.property === 'og:image')).toBe(false);
   });
 
@@ -249,8 +222,7 @@ describe('createPublicRoutes resolveRoute', () => {
       resolveMedia: () => undefined,
     });
 
-    const data = await heroRoutes.resolveRoute({ url: new URL('https://example.com/hero') });
-    if (data?.kind !== 'entry') throw new Error('expected entry');
+    const data = await heroRoutes.entryLoad({ url: new URL('https://example.com/hero') });
     expect(data.seo.meta.some((m) => m.property === 'og:image')).toBe(false);
   });
 
@@ -266,11 +238,10 @@ describe('createPublicRoutes resolveRoute', () => {
       return createPublicRoutes({ site: linkSite, render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }), origin: 'https://example.com', siteName: 'Test', description: 'Test description.' });
     }
 
-    const ok = await linkRoutes('[about](cairn:pages/about)').resolveRoute({ url: new URL('https://example.com/home') });
-    if (ok?.kind !== 'entry') throw new Error('expected entry');
+    const ok = await linkRoutes('[about](cairn:pages/about)').entryLoad({ url: new URL('https://example.com/home') });
     expect(ok.html).toContain('href="/about"');
 
-    await expect(linkRoutes('[gone](cairn:pages/missing)').resolveRoute({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
+    await expect(linkRoutes('[gone](cairn:pages/missing)').entryLoad({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
   });
 });
 

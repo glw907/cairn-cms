@@ -33,6 +33,7 @@
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
     "check:reference": "npm run package && node scripts/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/check-reference-signatures.mjs",
+    "check:surface": "npm run package && node scripts/check-surface.mjs",
     "check:readiness": "npm run package && node scripts/check-readiness.mjs",
     "check:docs": "node scripts/docs-links.mjs",
     "check:version": "node scripts/check-version.mjs",

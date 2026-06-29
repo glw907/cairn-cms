@@ -425,6 +425,31 @@ uses a date token and the entry has no valid date. This is the same `permalink` 
 exports, re-exported here so the node-safe builders can resolve a path without the SvelteKit module
 graph.
 
+### `tagSlug`
+
+Stability tier: Extension API.
+
+```ts
+function tagSlug(value: string): string;
+```
+
+Map an arbitrary tag value to a URL-safe segment: lowercase, runs of non-alphanumerics collapse to a
+single hyphen, leading and trailing hyphens trimmed. The mapping is lossy, so the resolver keeps a
+per-concept slug-to-value index and fails the build on a collision. A tag-index page links each tag to
+its archive through this codec.
+
+### `tagArchivePath`
+
+Stability tier: Extension API.
+
+```ts
+function tagArchivePath(base: string, value: string): string;
+```
+
+Build the archive path for a tag value under a taxonomy base: the base, a slash, and the slugified
+value. The base is the concept's resolved `taxonomyBase`. A tag-index page reads each tag's `href` from
+this helper so its links match the routes the resolver enumerates.
+
 ### `fromGlob`
 
 Stability tier: Extension API.

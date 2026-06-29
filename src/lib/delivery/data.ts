@@ -22,4 +22,5 @@ export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { permalink } from '../content/permalink.js';
+export { tagSlug, tagArchivePath } from '../content/url-policy.js';
 export { buildSiteManifest } from './manifest.js';

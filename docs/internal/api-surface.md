@@ -214,8 +214,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; resolveRoute: (path: string) => ResolvedRoute; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
+- `tagArchivePath`: (base: string, value: string) => string
 - `TagData`: { tag: string; entries: ContentSummary[] }
 - `TagIndexData`: { tags: { tag: string; count: number }[] }
+- `tagSlug`: (value: string) => string
 - `wordCount`: (body: string) => number
 
 ## `/delivery/data`
@@ -260,6 +262,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; resolveRoute: (path: string) => ResolvedRoute; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
+- `tagArchivePath`: (base: string, value: string) => string
+- `tagSlug`: (value: string) => string
 - `wordCount`: (body: string) => number
 
 ## `/delivery/head`

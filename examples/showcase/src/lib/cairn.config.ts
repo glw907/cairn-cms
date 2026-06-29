@@ -152,6 +152,10 @@ export const cairn = defineAdapter({
         // A many reference to other posts: array(reference) exercising the chip-list editor arm and
         // the multi-edge extractor, delivered as a list of resolved targets.
         related: fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), { label: 'Related posts' }),
+        // The taxonomy marker: an open, creatable multiselect whose values pool across posts into the
+        // tag index and per-tag archives the engine routes under /topics. One marker per concept feeds
+        // the discriminated resolveRoute; the tag e2e visits a seeded tag's archive end to end.
+        topics: fields.multiselect({ label: 'Topics', creatable: true, taxonomy: true }),
         // A closed select exercising a brand-new v2 scalar arm end to end: the editor renders a
         // <select>, the value round-trips through save and reload (the golden-path e2e pins it).
         status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),

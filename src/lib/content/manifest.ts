@@ -9,6 +9,7 @@ import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import { extractMediaRefs } from './media-refs.js';
 import { extractReferenceEdges, type ReferenceEdge } from './references.js';
+import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 import type { ConceptDescriptor } from './types.js';
 
 /** One entry's projection: its identity, routing, draft flag, and outbound cairn: edges. */
@@ -34,6 +35,12 @@ export interface ManifestEntry {
    *  before this field still parses (absent reads as no edges).
    */
   references?: ReferenceEdge[];
+  /**
+   * The tag values from this entry's marked taxonomy field, the projection the cross-branch tag
+   *  usage index reads. Additive and optional: an entry with no taxonomy field or no tags omits the
+   *  key, and a manifest committed before this field still parses (absent reads as no tags).
+   */
+  tags?: string[];
 }
 
 /** The whole corpus as one committed file. `version` guards a future shape migration. */
@@ -66,6 +73,10 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
   // Set references only when non-empty, mirroring mediaRefs, so a reference-free entry's row stays
   // byte-identical to a manifest committed before this field.
   const references = extractReferenceEdges(frontmatter, descriptor.fields);
+  // Project the marked taxonomy field's tags with scalar coercion, so a lone topics: svelte
+  // projects ['svelte']. A concept with no taxonomy field carries no tags key.
+  const taxField = resolveTaxonomyField(descriptor.fields);
+  const tags = taxField ? coerceTags(frontmatter[taxField]) : [];
   return {
     id,
     concept: descriptor.id,
@@ -79,6 +90,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     links: extractCairnLinks(body),
     ...(mediaRefs.length ? { mediaRefs } : {}),
     ...(references.length ? { references } : {}),
+    ...(tags.length ? { tags } : {}),
   };
 }
 
@@ -113,6 +125,7 @@ export function serializeManifest(manifest: Manifest): string {
     ...(e.references && e.references.length
       ? { references: [...e.references].sort(compareEdge).map((r) => ({ field: r.field, concept: r.concept, id: r.id })) }
       : {}),
+    ...(e.tags && e.tags.length ? { tags: [...e.tags].sort() } : {}),
   }));
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
@@ -148,6 +161,7 @@ export function parseManifest(raw: string): Manifest {
       (e.summary === undefined || typeof e.summary === 'string') &&
       (e.mediaRefs === undefined || Array.isArray(e.mediaRefs)) &&
       (e.references === undefined || Array.isArray(e.references)) &&
+      (e.tags === undefined || Array.isArray(e.tags)) &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
@@ -171,6 +185,16 @@ export function parseManifest(raw: string): Manifest {
         const r = edge as Record<string, unknown> | null;
         if (!r || typeof r !== 'object' || typeof r.field !== 'string' || typeof r.concept !== 'string' || typeof r.id !== 'string') {
           throw new Error(`content manifest: malformed reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)}`);
+        }
+      }
+    }
+    // tags is additive and optional: an entry without it parses (the field reads as absent), so a
+    // manifest committed before this field still builds. When present, validate each element is a
+    // string, mirroring the mediaRefs-element validation, so a hand-edited file fails loudly.
+    if (e.tags !== undefined) {
+      for (const tag of e.tags as unknown[]) {
+        if (typeof tag !== 'string') {
+          throw new Error(`content manifest: malformed tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)}`);
         }
       }
     }
@@ -270,6 +294,14 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
       // (committed carries references) still detects real drift in that field.
       if (entry.references && c && c.references === undefined) {
         const { references: _dropped, ...rest } = entry;
+        entry = rest;
+      }
+      // tags is additive: a site whose committed manifest predates the field must still build, even
+      // when its content carries tag values. Drop the built entry's tags only when the committed
+      // counterpart omits the key, so an un-regenerated site matches while a regenerated one
+      // (committed carries tags) still detects real drift in that field.
+      if (entry.tags && c && c.tags === undefined) {
+        const { tags: _dropped, ...rest } = entry;
         entry = rest;
       }
       return entry;

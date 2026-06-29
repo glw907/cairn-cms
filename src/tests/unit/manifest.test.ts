@@ -87,6 +87,39 @@ describe('manifestEntryFromFile', () => {
     expect(noRefs.references).toBeUndefined();
     expect(serializeManifest({ version: 1, entries: [noRefs] })).not.toContain('references');
   });
+  it('projects tags from the marked taxonomy field, coercing a lone scalar', () => {
+    const taxPosts: ConceptDescriptor = {
+      ...posts,
+      fields: [{ name: 'topics', label: 'Topics', type: 'multiselect', taxonomy: true }],
+    };
+    const arrayTags = manifestEntryFromFile(taxPosts, {
+      path: 'src/content/posts/2026-01-20-tagged.md',
+      raw: '---\ntitle: Tagged\ndate: 2026-01-20\ntopics:\n  - svelte\n  - web-design\n---\n\nBody.\n',
+    });
+    expect(arrayTags.tags).toEqual(['svelte', 'web-design']);
+
+    // A lone scalar coerces to a one-element array, not absent: bare asTags would drop it and
+    // under-report tag usage.
+    const scalarTag = manifestEntryFromFile(taxPosts, {
+      path: 'src/content/posts/2026-01-21-one.md',
+      raw: '---\ntitle: One\ndate: 2026-01-21\ntopics: svelte\n---\n\nBody.\n',
+    });
+    expect(scalarTag.tags).toEqual(['svelte']);
+
+    // No taxonomy field: the key is absent entirely.
+    const noTax = manifestEntryFromFile(posts, file);
+    expect('tags' in noTax).toBe(false);
+
+    // A taxonomy field with no value: the key is absent.
+    const emptyTax = manifestEntryFromFile(taxPosts, {
+      path: 'src/content/posts/2026-01-22-bare.md',
+      raw: '---\ntitle: Bare\ndate: 2026-01-22\n---\n\nBody.\n',
+    });
+    expect('tags' in emptyTax).toBe(false);
+
+    // The serialized row of a tag-free entry carries no tags key.
+    expect(serializeManifest({ version: 1, entries: [noTax] })).not.toContain('tags');
+  });
   it('derives a summary from the description, else the body', () => {
     // A non-dated descriptor, so the slug permalink resolves from the file stem alone.
     const pages: ConceptDescriptor = {
@@ -160,6 +193,19 @@ describe('serializeManifest / parseManifest', () => {
       { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], references: [] },
     ] });
     expect(empty).not.toContain('references');
+  });
+  it('emits a sorted tags block only when non-empty', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['web-design', 'svelte'] },
+    ] });
+    expect(out).toContain('tags');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].tags).toEqual(['svelte', 'web-design']);
+
+    const empty = serializeManifest({ version: 1, entries: [
+      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], tags: [] },
+    ] });
+    expect(empty).not.toContain('tags');
   });
   it('omits an empty summary (no churn) and round-trips a present one', () => {
     const present = parseManifest(serializeManifest({ version: 1, entries: [
@@ -255,6 +301,28 @@ describe('parseManifest hardening', () => {
     const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages' }] }] });
     expect(() => parseManifest(raw)).toThrow(/entry|reference/i);
   });
+  it('leniently accepts an entry with no tags key (a manifest predating the field)', () => {
+    const old = parseManifest(JSON.stringify({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] }));
+    expect(old.entries[0].tags).toBeUndefined();
+  });
+  it('round-trips a present tags and serializes it sorted', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['web-design', 'svelte'] },
+    ] });
+    expect(out).toContain('tags');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].tags).toEqual(['svelte', 'web-design']);
+  });
+  it('rejects a tags element that is not a string', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: [123] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|tags/i);
+  });
+  it('rejects a tags that is not an array', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: 'svelte' }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|tags/i);
+  });
 });
 
 const entryA: ManifestEntry = { id: 'a', concept: 'pages', title: 'A', permalink: '/a', draft: false, links: [] };
@@ -343,6 +411,35 @@ describe('verifyManifest', () => {
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], references: [{ field: 'author', concept: 'pages', id: 'joan' }] },
     ] });
     expect(() => verifyManifest(built, committedWithStaleReferences)).toThrow(/stale/);
+  });
+  it('t.1: does NOT red when the built manifest carries tags but the committed one omits them', () => {
+    // Back-compat: a site whose committed manifest predates tags must build even when its content
+    // carries tag values. The built side carries tags; the committed side has no tags key.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
+    ] };
+    const committedNoTags = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoTags)).not.toThrow();
+  });
+  it('t.2: still reds on real other-field drift even with the tags leniency in place', () => {
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
+    ] };
+    const committedNoTags = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoTags)).toThrow(/stale/);
+  });
+  it('t.3: reds when a regenerated committed manifest drifts in tags', () => {
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['svelte'] },
+    ] };
+    const committedWithStaleTags = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: ['react'] },
+    ] });
+    expect(() => verifyManifest(built, committedWithStaleTags)).toThrow(/stale/);
   });
 });
 

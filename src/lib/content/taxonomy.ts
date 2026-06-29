@@ -8,3 +8,18 @@ export function resolveTaxonomyField(fields: NamedField[]): string | null {
   const marked = fields.find((f) => f.type === 'multiselect' && f.taxonomy === true);
   return marked ? marked.name : null;
 }
+
+/**
+ * A raw taxonomy frontmatter value as a tag array. An array maps each element to a string; a
+ *  non-empty scalar coerces to a one-element array; anything else (absent, empty string) yields
+ *  none. This is the scalar-coercing form the validator and the multiselect form layer use, so a
+ *  lone `topics: svelte` projects `['svelte']` rather than dropping, which the tag-usage index
+ *  relies on for its delete-safety gate.
+ */
+export function coerceTags(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.map(String)
+    : typeof value === 'string' && value.trim() !== ''
+      ? [value.trim()]
+      : [];
+}

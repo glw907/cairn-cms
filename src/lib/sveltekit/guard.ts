@@ -9,10 +9,10 @@ import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
-import type { HandleInput, RequestContext } from './types.js';
+import type { HandleInput } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
-function isPublicAdminPath(pathname: string): boolean {
+export function isPublicAdminPath(pathname: string): boolean {
   return pathname === '/admin/login' || pathname.startsWith('/admin/auth/');
 }
 
@@ -128,8 +128,12 @@ export function requireSession(event: { locals: { editor?: Editor | null } }): E
   return editor;
 }
 
-/** For the management surface: a signed-in owner, or 403 for an editor. */
-export function requireOwner(event: RequestContext): Editor {
+/**
+ * For the management surface: a signed-in owner, or 403 for an editor. The parameter is the same
+ * minimal structural need as `requireSession` (just `locals.editor`), so a custom route's standard
+ * load event satisfies it without the full RequestContext.
+ */
+export function requireOwner(event: { locals: { editor?: Editor | null } }): Editor {
   const editor = requireSession(event);
   if (editor.role !== 'owner') throw error(403, 'Owner access required');
   return editor;

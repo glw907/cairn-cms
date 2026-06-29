@@ -13,6 +13,7 @@ export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
 export { buildSitemap } from './sitemap.js';
 export type { SitemapUrl } from './sitemap.js';
+export { feedView, sitemapView } from './views.js';
 export { buildRobots } from './robots.js';
 export { buildSeoMeta } from './seo.js';
 export type { SeoInput, SeoMeta } from './seo.js';

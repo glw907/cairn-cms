@@ -56,6 +56,12 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
     .map((item) => {
       const content = item.contentHtml ?? item.summary;
       const pubDate = rfc822(item.date);
+      // One <category> per taxonomy tag, after <description>; mirror the JSON builder's guard so an
+      // item with no tags (or an empty array) emits none.
+      const categories =
+        item.tags && item.tags.length
+          ? item.tags.map((tag) => `      <category>${escapeXml(tag)}</category>`)
+          : [];
       return [
         '    <item>',
         `      <title>${escapeXml(item.title)}</title>`,
@@ -63,6 +69,7 @@ export function buildRssFeed(channel: FeedChannel, items: FeedItem[]): string {
         `      <guid isPermaLink="true">${escapeXml(item.url)}</guid>`,
         pubDate ? `      <pubDate>${pubDate}</pubDate>` : '',
         `      <description>${escapeXml(item.summary)}</description>`,
+        ...categories,
         // CDATA cannot contain `]]>`, so split that one sequence rather than escape the body.
         `      <content:encoded><![CDATA[${cdataSafe(content)}]]></content:encoded>`,
         '    </item>',

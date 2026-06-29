@@ -61,6 +61,29 @@ describe('buildRssFeed CDATA safety', () => {
   });
 });
 
+describe('buildRssFeed categories', () => {
+  it('emits one escaped <category> per tag, after the description', () => {
+    const xml = buildRssFeed(channel, [
+      { title: 'T', url: 'https://example.com/posts/t', date: '2026-05-09', summary: 's', tags: ['svelte', 'a & b'] },
+    ]);
+    expect(xml).toContain('<category>svelte</category>');
+    expect(xml).toContain('<category>a &amp; b</category>');
+    const item = xml.slice(xml.indexOf('<item>'), xml.indexOf('</item>'));
+    expect(item.indexOf('<description>')).toBeLessThan(item.indexOf('<category>'));
+  });
+
+  it('emits no <category> for an item with no tags or an empty tags array', () => {
+    const none = buildRssFeed(channel, [
+      { title: 'T', url: 'https://example.com/posts/t', date: '2026-05-09', summary: 's' },
+    ]);
+    expect(none).not.toContain('<category>');
+    const empty = buildRssFeed(channel, [
+      { title: 'T', url: 'https://example.com/posts/t', date: '2026-05-09', summary: 's', tags: [] },
+    ]);
+    expect(empty).not.toContain('<category>');
+  });
+});
+
 describe('feed date guard', () => {
   const undated: FeedItem = { title: 'No date', url: 'https://example.com/posts/x', summary: 's' };
 

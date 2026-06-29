@@ -190,6 +190,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `EntryData`: { concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
+- `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `fromGlob`: (record: Record<string, string>) => RawFile[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
@@ -211,6 +212,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
+- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
 - `TagData`: { tag: string; entries: ContentSummary[] }
 - `TagIndexData`: { tags: { tag: string; count: number }[] }
@@ -236,6 +238,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
+- `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `fromGlob`: (record: Record<string, string>) => RawFile[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
@@ -255,6 +258,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SiteIndexes`: { [K in keyof A["content"]]: ContentIndex<NonNullable<A["content"][K]> extends ConceptConfig<infer S extends Fieldset<Record<string, FieldDescriptor>>> ? InferFieldset<S> : Record<string, unknown>> } & { readonly site: SiteResolver }
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
+- `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
 - `wordCount`: (body: string) => number
 

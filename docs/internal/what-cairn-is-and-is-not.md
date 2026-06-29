@@ -41,10 +41,12 @@ This single rule adjudicates any scope question without an enumerated denylist:
   dues, a directory, is the developer's to build on cairn, in their own routes, data, and auth. cairn
   never names or models a domain actor; it only ever knows owner/editor.
 - **Seam, not feature.** When a real extension need appears, the answer is the thinnest seam that lets the
-  developer build it, plus an enforced, versioned boundary (`./extend`) so their work survives engine
-  updates. cairn provides the frame; the developer provides the functionality.
-- **The contract is stable.** The seams form a narrow, versioned, enforced public surface (`./extend`);
-  cairn evolves its internals freely behind it, so a developer's work survives ordinary updates. A
+  developer build it, plus an enforced, versioned public surface so their work survives engine updates.
+  cairn provides the frame; the developer provides the functionality.
+- **The contract is stable.** The seams form a narrow, versioned, enforced public surface across the
+  kind-based export subpaths, held by a public-surface snapshot gate plus gated Extension-API/Scaffold-API
+  stability tiers (not a single `./extend` subpath; see the 2026-06-28 developer-extensibility redesign
+  design); cairn evolves its internals freely behind it, so a developer's work survives ordinary updates. A
   breaking change to that surface is a deliberate, signposted major-version event, not an everyday
   occurrence. Keeping the surface narrow is what keeps that promise cheap to honor, one more reason the
   answer to a new need is the thinnest seam.
@@ -66,5 +68,5 @@ cairn's job, and is it the leanest form?", runs before the correctness checks, o
 ## How the boundary is held
 
 Machine-checkable boundaries live in gates, not prose (`check:reference`, `check:package`, the dev-fence
-e2e gate, the `./extend` surface snapshot). This doc and the `CLAUDE.md` block carry the conceptual
+e2e gate, the `check:surface` public-surface snapshot). This doc and the `CLAUDE.md` block carry the conceptual
 boundary a gate can't, and are meant to be read first and honored.

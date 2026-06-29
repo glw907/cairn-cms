@@ -330,6 +330,116 @@ describe('saveAction', () => {
   });
 });
 
+describe('saveAction taxonomy enforcement', () => {
+  /** A runtime whose `posts` concept marks a `topics` taxonomy multiselect, with the given
+   *  vocabulary. The validate echoes the decoded frontmatter back as `data`, so the committed
+   *  file carries the posted `topics` (the orphan-survival assertion reads it). */
+  function taxonomyRuntime(vocabulary: { value: string; label: string }[]): CairnRuntime {
+    return {
+      siteName: 'T',
+      concepts: [
+        {
+          id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
+          routing: { routable: true, dated: true, inFeeds: true },
+          permalink: '/posts/:slug',
+          datePrefix: 'day',
+          fields: [
+            { type: 'text', name: 'title', label: 'Title', required: true },
+            { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true },
+          ],
+          schema: fieldset({}),
+          summaryFields: [],
+          validate: (fm) => ({ ok: true, data: fm }),
+        },
+      ],
+      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+      sender: { from: 'cms@test' },
+      render: ({ body }) => Promise.resolve(body),
+      manifestPath: 'src/content/.cairn/index.json',
+      mediaManifestPath: 'src/content/.cairn/media.json',
+      resolvedAssets: { enabled: false },
+      vocabulary,
+    };
+  }
+
+  it('commits a posted tag that is in the vocabulary', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
+    }
+    const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
+    expect(saved).toContain('title: Hi');
+    expect(saved).toContain('a');
+  });
+
+  it('rejects a brand-new tag not in the vocabulary and never commits', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { status: number }).status).toBe(303);
+      expect((e as { location: string }).location).toMatch(/error=.*brandnew/i);
+      expect((e as { location: string }).location).toMatch(/new=1/);
+    }
+    // No commit landed: the branch was never written.
+    expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toBeNull();
+  });
+
+  it('preserves a prior orphan tag re-posted via getAll', async () => {
+    // The committed file on main already carries an orphan `legacy` alongside the in-vocab `a`.
+    const gh = new GithubDouble({
+      main: {
+        'src/content/posts/2026-05-hi.md': "---\ntitle: Old\ntopics:\n  - a\n  - legacy\n---\nold body",
+      },
+    });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const form = new URLSearchParams();
+    form.append('title', 'Hi');
+    form.append('topics', 'a');
+    form.append('topics', 'legacy');
+    form.append('body', 'fresh body');
+    const event = {
+      url: new URL('https://t.example/admin/posts/2026-05-hi'),
+      params: { concept: 'posts', id: '2026-05-hi' },
+      request: new Request('https://t.example/admin/posts/2026-05-hi', { method: 'POST', body: form }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    };
+    try {
+      await routes.saveAction(event as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
+    }
+    const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
+    expect(saved).toContain('legacy');
+    expect(saved).toContain('title: Hi');
+  });
+
+  it('commits a free-form tag with no vocabulary (the opt-in fallback)', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(taxonomyRuntime([]), deps);
+    try {
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' }) as never);
+      throw new Error('should have redirected');
+    } catch (e) {
+      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
+    }
+    const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
+    expect(saved).toContain('anything');
+  });
+});
+
 it('CommitConflictError is importable for the instanceof branch', () => {
   expect(new CommitConflictError('p')).toBeInstanceOf(Error);
 });

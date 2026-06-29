@@ -9,6 +9,8 @@ import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/r
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
 import { initialValues } from '../content/fieldset.js';
+import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
+import { resolveAllowed, closeTaxonomyField, enforceTaxonomy } from '../content/taxonomy-enforce.js';
 import { deriveExcerpt } from '../content/excerpt.js';
 import { asString, entryIdentity } from '../content/identity.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
@@ -1264,14 +1266,55 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const isNew = form.get('new') === '1';
     const suffix = isNew ? '&new=1' : '';
 
-    const result = concept.validate(frontmatterFromForm(concept.fields, form), body);
+    // The backend is resolved up front: the branch-first prior-tags read below (the orphan union)
+    //  needs it before the validate.
+    const backend = resolveBackend(event);
+
+    // Tag-vocabulary enforcement, opt-in: only when the site configures a vocabulary AND this
+    //  concept marks a taxonomy field. Otherwise the bare path runs unchanged (the open creatable
+    //  multiselect an unadopted site has today). When enforced, the allowed set is the vocabulary
+    //  unioned with the entry's own prior committed tags, so a re-saved pre-existing orphan passes
+    //  while a genuinely new value is rejected; the closed field drives the getAll decode.
+    const vocabValues = runtime.vocabulary.map((v) => v.value);
+    const taxField = resolveTaxonomyField(concept.fields);
+
+    let decoded: Record<string, unknown>;
+    let allowed: string[] | null = null;
+    if (vocabValues.length === 0 || taxField === null) {
+      decoded = frontmatterFromForm(concept.fields, form);
+    } else {
+      // Read the entry's prior tags branch-first, mirroring editLoad: the pending branch when its
+      //  head is non-null, else the default branch. A create has no prior tags. A failed read
+      //  degrades to no prior tags so it never blocks the save.
+      let priorTags: string[] = [];
+      if (!isNew) {
+        try {
+          const branch = pendingBranch(concept.id, id);
+          const priorBranch = (await backend.branchHead(branch)) !== null ? branch : backend.defaultBranch;
+          const priorRaw = await backend.readFile(path, priorBranch);
+          if (priorRaw !== null) priorTags = coerceTags(parseMarkdown(priorRaw).frontmatter[taxField]);
+        } catch {
+          priorTags = [];
+        }
+      }
+      allowed = resolveAllowed(vocabValues, priorTags);
+      decoded = frontmatterFromForm(closeTaxonomyField(concept.fields, allowed), form);
+    }
+
+    const result = concept.validate(decoded, body);
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
       throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
     }
 
+    if (allowed !== null && taxField !== null) {
+      const tagError = enforceTaxonomy(coerceTags(decoded[taxField]), allowed);
+      if (tagError) {
+        throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(tagError)}${suffix}`);
+      }
+    }
+
     const markdown = serializeMarkdown(result.data, body);
-    const backend = resolveBackend(event);
 
     // Merge the editor's optimistic media records into the media manifest, gated on media being on
     // and at least one valid record posted. The base is read from the default branch (never the

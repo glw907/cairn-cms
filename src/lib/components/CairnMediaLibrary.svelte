@@ -137,16 +137,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     unused: data.assets.filter((a) => usageCount(a.hash) === 0).length,
   });
 
-  // The type facet (Images, Documents) is a designed-in seam: it stays hidden until the library
-  // holds more than one top-level content type. The delivery route is image-only today, so this is
-  // present without dead UI. (No selection state yet; the seam is the visibility computation.)
-  const distinctTypes = $derived.by(() => {
-    const seen = new Set<string>();
-    for (const a of data.assets) seen.add(a.contentType.split('/')[0] ?? '');
-    return seen;
-  });
-  const showFacet = $derived(distinctTypes.size > 1);
-
   // --- the toolbar state ---
   type Triage = 'all' | 'needs-alt' | 'unused';
   type Density = 'grid' | 'list';
@@ -1345,8 +1335,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     </div>
   </div>
 {:else}
-  <!-- One toolbar row: search (left, flexes), the triage radiogroup, the type facet (seam), and the
-       grid/list density toggle (right). -->
+  <!-- One toolbar row: search (left, flexes), the triage radiogroup, and the grid/list density
+       toggle (right). -->
   <div class="mb-4 flex flex-wrap items-center gap-3">
     <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
@@ -1371,15 +1361,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </button>
       {/each}
     </div>
-
-    {#if showFacet}
-      <!-- The type facet seam, shown only past one distinct stored type. It is presentational in
-           this slice (images-only delivery), so it carries no live filter selection yet. -->
-      <div role="radiogroup" aria-label="Filter by type" class="bg-base-100 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-[0.8125rem] text-[var(--color-muted)]">
-        <span class="text-xs">Type</span>
-        <button type="button" role="radio" aria-checked="true" class="font-medium text-primary">All</button>
-      </div>
-    {/if}
 
     <span class="flex-1"></span>
 

@@ -21,7 +21,6 @@ identical on every host regardless of the site's own theme.
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
   import ImageIcon from '@lucide/svelte/icons/image';
-  import BlocksIcon from '@lucide/svelte/icons/blocks';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
   import './cairn-admin.css';
@@ -45,12 +44,11 @@ identical on every host regardless of the site's own theme.
     document.cookie = `${name}=${value}; path=/admin; max-age=31536000; samesite=lax`;
   }
 
-  // A nav entry. `href` makes it a link; without one it is an inert stub (a developer-tool slot the
-  // extension mechanism has not wired yet).
+  // A nav entry: a labeled, icon-bearing link.
   interface NavItem {
     label: string;
     icon: Component;
-    href?: string;
+    href: string;
   }
 
   // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
@@ -64,20 +62,6 @@ identical on every host regardless of the site's own theme.
     { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
     ...(data.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
   ]);
-
-  // The developer-extension groups: each custom-named, with its own items, collapsible like the core
-  // group. The CairnExtension seam will supply these; until it lands they are inert example stubs that
-  // show the shape, multiple named groups kept visually apart from the core functions.
-  const extensionGroups: { name: string; items: NavItem[] }[] = [
-    { name: 'Marketing', items: [
-      { label: 'Campaigns', icon: BlocksIcon },
-      { label: 'Audiences', icon: BlocksIcon },
-    ] },
-    { name: 'Shop', items: [
-      { label: 'Products', icon: BlocksIcon },
-      { label: 'Orders', icon: BlocksIcon },
-    ] },
-  ];
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -442,42 +426,27 @@ identical on every host regardless of the site's own theme.
                 <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
               </summary>
               <ul class="menu menu-sm mt-1 w-full gap-0.5 p-0">
-                {#each items as item (item.href ?? item.label)}
+                {#each items as item (item.href)}
                   <li>
-                    {#if item.href}
-                      <a
-                        href={item.href}
-                        class={isActive(item.href)
-                          ? 'bg-primary/10 font-semibold text-primary'
-                          : 'font-medium text-[var(--color-subtle)]'}
-                        aria-current={isActive(item.href) ? 'page' : undefined}
-                      >
-                        <item.icon class="h-4 w-4" aria-hidden="true" />
-                        {item.label}
-                      </a>
-                    {:else}
-                      <span
-                        class="cursor-default font-medium text-[var(--color-muted)] opacity-60"
-                        aria-disabled="true"
-                        title="A slot for a site developer's own admin tool. Not wired yet."
-                      >
-                        <item.icon class="h-4 w-4" aria-hidden="true" />
-                        {item.label}
-                      </span>
-                    {/if}
+                    <a
+                      href={item.href}
+                      class={isActive(item.href)
+                        ? 'bg-primary/10 font-semibold text-primary'
+                        : 'font-medium text-[var(--color-subtle)]'}
+                      aria-current={isActive(item.href) ? 'page' : undefined}
+                    >
+                      <item.icon class="h-4 w-4" aria-hidden="true" />
+                      {item.label}
+                    </a>
                   </li>
                 {/each}
               </ul>
             </details>
           {/snippet}
 
-          <!-- Core is the built-in Cairn functions; each developer group sits at the same level. All
-               are peer collapsible sections. The extension groups are inert stubs until the
-               CairnExtension seam supplies them. -->
+          <!-- Core is the built-in Cairn functions, a collapsible section of the content concepts,
+               the nav and settings editors, and the owner-only Editors entry. -->
           {@render navSection('Core', coreItems)}
-          {#each extensionGroups as group (group.name)}
-            {@render navSection(group.name, group.items)}
-          {/each}
         </div>
 
         <!-- Help is a standing utility destination, pinned at the foot of the nav and set apart from

@@ -11,37 +11,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): developer-extensibility phase 1 REVERTED (wrong scope model); NEXT = the cairn principle-adherence review pass
+## Immediate next action (2026-06-28, latest): principle-adherence review COMPLETE; NEXT = the lean developer-extensibility redesign
 
-**The developer-extensibility work was built on a wrong understanding of cairn's purpose and is reverted.**
-The phase-1 "identity foundation" grew a principal/scopes/`admin`|`member`-trust-tier/`authorize`/`signIn`
-identity substrate and a member tier into the engine. That is out of scope: cairn owns a small owner/editor
-identity and gets out of the way; it is not an auth/identity, membership, or permissions platform. The
-phase-1 merge is reverted (`f8359cc`); `main` is back to a clean `0.76.0`. The corrected understanding is now
-the **canonical charter**: the `## What cairn is` block in `CLAUDE.md` and
+**The cairn principle-adherence review pass is complete and merged to `main` (no release).** It confirmed
+the engine is charter-adherent. A ten-subsystem multi-agent audit through the charter lens, calibrated
+remove-only (a finding that proposed adding anything was rejected) with a false-positive guard on the
+deliberate investments, found **zero verified blocker/high drift**; the auth reviewer confirmed the
+reverted phase-1 identity substrate did not creep back. Part A removed the pre-existing inert
+`CairnExtension`/`AdminPanel`/`FieldTypeDef` register-components scaffolding. In-pass fixes cleared the
+clear, safe drift: empty doc stubs became real TSDoc, internal log type re-exports were dropped, the
+`resolveConcepts` identity wrapper was inlined, and the speculative Media Library type-facet was removed.
+Lower-confidence and public-surface-narrowing findings (`MediaStore.get`, `generateComponentReference`,
+`RequestResult.sent`, `PlatformContext.ctx`, the `siteDescriptors` dead param, the `ResolvedReference`
+dual export) are deferred to the report's backlog, since each wants a release + a `Consumers must` line.
+**The prioritized report is `docs/internal/2026-06-28-principle-adherence-audit.md`**; the post-mortem is
+in the pass spec.
+
+**One correction surfaced:** the Media Library's two unwired `Upload` buttons are an unfinished feature,
+not drift (the `?/mediaUpload` action they need already exists). Per Geoff they are filed as a small
+media finish-up, "Wire the Media Library's direct upload" (ROADMAP, Next), not deleted in this remove-only
+pass.
+
+**The canonical charter** is the `## What cairn is` block in `CLAUDE.md` and
 `docs/internal/what-cairn-is-and-is-not.md`. **Read the charter first.**
 
-**NEXT = the cairn principle-adherence review pass**, specced at
-`docs/superpowers/specs/2026-06-28-cairn-principle-adherence-review.md`: (A) finish unwinding the incorrect
-code, including removing the pre-existing inert extension scaffolding (`CairnExtension`/`AdminPanel`/
-`FieldTypeDef`, the `composeRuntime` slots, the sidebar stubs); (B) a whole-engine multi-agent audit of the
-existing code through the charter lens, calibrated to find only things to remove/simplify toward lean (a
-finding that proposes ADDING is itself a violation), producing a prioritized adherence report; (C) finish
-correcting the wrong-model docs. Triage: fix clear drift now, defer the rest. Full gate, merge to `main`,
-**no release**.
-
-**The lean extensibility REDESIGN is the SEPARATE pass that immediately follows this one** (Geoff,
-2026-06-28: redesign extensibility as soon as the adherence pass completes), against the charter and from
-clean context; it is queued and prioritized, but do NOT start it inside the adherence pass. The old
-extensibility design spec
-(`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1 plan are
-**SUPERSEDED** (wrong model) and carry a superseded header; they remain only as history. The
-competitive-extensibility research (`docs/internal/2026-06-28-extensibility-competitive-research.md`) stays
-useful.
+**NEXT = the lean developer-extensibility redesign** (Geoff, 2026-06-28: redesign extensibility as soon as
+the adherence pass completes), against the charter and from clean context. Re-derive the seam charter-first:
+a developer extends the admin skeleton, reads the owner/editor identity through a sanctioned hand-off,
+brings their own auth/functionality/data, and depends on a narrow enforced boundary, with cairn providing
+thin seams, not features. The redesign inputs (persona, the four diagnostic questions, the corrected
+baseline) are in `docs/internal/extending-developer-lens.md`; the competitive research
+(`docs/internal/2026-06-28-extensibility-competitive-research.md`) carries forward. The old extensibility
+design spec (`docs/superpowers/specs/2026-06-28-cairn-developer-extensibility-design.md`) and the phase-1
+plan are **SUPERSEDED** (wrong model) and carry a superseded header; they remain only as history.
 
 **Durable lesson:** the premise check, "is this cairn's job, and is it the leanest form?", runs BEFORE the
 correctness/security checks, on every spec. The member/principal over-build passed correctness, security, and
-plan reviews because each checked the design within the wrong premise. See the charter.
+plan reviews because each checked the design within the wrong premise. The audit confirms the corollary: with
+the premise check applied, the engine carries small residue, not structural drift. See the charter.
 
 ## Prior next action (2026-06-28): Contract v2 COMPLETE, released as 0.76.0 (consolidated rollup); NEXT = developer-extensibility brainstorm
 

@@ -59,8 +59,6 @@ The seams are where your code plugs in:
   form, the validator, and the inferred frontmatter type at once.
 - The `render` method, your one markdown-to-HTML function, which the editor preview and every
   public page call.
-- The `CairnExtension` seam, the typed, build-time-composed way you add nav entries, admin
-  routes, components, field types, or commit hooks without forking the engine.
 
 See [the content model](./content-model.md) for the schema and concept detail, and
 [the core reference](../reference/core.md) for the seam signatures.

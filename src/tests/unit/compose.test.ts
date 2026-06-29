@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { composeRuntime } from '../../lib/content/compose.js';
-import type { CairnAdapter, CairnExtension, PreviewConfig } from '../../lib/content/types.js';
+import type { CairnAdapter, PreviewConfig } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { testSiteConfig } from './_content-fixture.js';
 
@@ -13,24 +13,6 @@ function adapter(): CairnAdapter {
     rendering: { render: ({ body }) => Promise.resolve(body) },
   };
 }
-
-describe('composeRuntime extension carry-through', () => {
-  it('carries extension admin panels and field types onto the runtime', () => {
-    const ext: CairnExtension = {
-      adminPanels: [{ id: 'calendar', label: 'Calendar', component: {} }],
-      fieldTypes: [{ type: 'color' }],
-    };
-    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig, extensions: [ext] });
-    expect(runtime.adminPanels).toEqual([{ id: 'calendar', label: 'Calendar', component: {} }]);
-    expect(runtime.fieldTypes).toEqual([{ type: 'color' }]);
-  });
-
-  it('defaults the carried arrays to empty when no extension contributes', () => {
-    const runtime = composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig, extensions: [] });
-    expect(runtime.adminPanels).toEqual([]);
-    expect(runtime.fieldTypes).toEqual([]);
-  });
-});
 
 describe('composeRuntime preview pass-through', () => {
   it('carries the adapter preview config onto the runtime untouched', () => {

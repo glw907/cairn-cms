@@ -71,12 +71,10 @@ describe('AdminLayout', () => {
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(false);
   });
 
-  it('renders the core group and developer groups as peers', async () => {
+  it('renders the core group with its built-in entries', async () => {
     const screen = render(AdminLayout, { data: data(true), children: child });
     await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
-    // A custom-named developer group sits at the same level as the core group.
-    await expect.element(screen.getByText('Marketing', { exact: true })).toBeInTheDocument();
   });
 
   it('shows the manage-editors link to an owner', async () => {

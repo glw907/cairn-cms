@@ -21,11 +21,8 @@ export type {
   RoutingRule,
   ConceptDescriptor,
   ConceptUrlPolicy,
-  CairnExtension,
   CairnRuntime,
   SiteRender,
-  AdminPanel,
-  FieldTypeDef,
 } from './content/types.js';
 export { normalizeConcepts, findConcept, defineConcept } from './content/concepts.js';
 export { composeRuntime } from './content/compose.js';

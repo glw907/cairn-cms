@@ -146,17 +146,6 @@ export function normalizeConcepts(
   return descriptors;
 }
 
-/**
- * Resolve a site's concept descriptors from its content map. The admin runtime (composeRuntime) and the
- * delivery layer (siteDescriptors) both call this, so the per-concept routing and URL policy are derived
- * once from the concept declarations and the runtime and delivery permalinks cannot diverge.
- */
-export function resolveConcepts(
-  content: Record<string, ConceptConfig | undefined>,
-): ConceptDescriptor[] {
-  return normalizeConcepts(content);
-}
-
 /** Look up a normalized concept by id, or undefined when the site does not enable it. */
 export function findConcept(
   concepts: ConceptDescriptor[],

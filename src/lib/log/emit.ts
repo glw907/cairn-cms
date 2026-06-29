@@ -4,16 +4,16 @@
 // subscriber fan-out inside this module, leaving every call site unchanged.
 import type { CairnLogEvent } from './events.js';
 
-export type LogLevel = 'info' | 'warn' | 'error';
+type LogLevel = 'info' | 'warn' | 'error';
 
-export interface LogRecord {
+interface LogRecord {
   level: LogLevel;
   event: CairnLogEvent;
   timestamp: string;
   [field: string]: unknown;
 }
 
-export interface Logger {
+interface Logger {
   info(event: CairnLogEvent, fields?: Record<string, unknown>): void;
   warn(event: CairnLogEvent, fields?: Record<string, unknown>): void;
   error(event: CairnLogEvent, fields?: Record<string, unknown>): void;

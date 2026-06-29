@@ -52,7 +52,7 @@ function restoreLiteral(node: TextDirective | LeafDirective): PhrasingContent[] 
 // dispatcher rewrites the marked elements once their children are hast.
 // Text and leaf directives are restored to literal text (accidental prose colons).
 /**
- *
+ * Remark plugin that tags each registered directive node so the rehype dispatch can render it, leaving unknown directives untouched.
  */
 export function remarkDirectiveStamp(registry: ComponentRegistry) {
   const known = new Set(registry.names);

@@ -849,11 +849,8 @@ function signatures above reference these.
 | `PreviewConfig` | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
 | `ResolvedPreview` | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat per-entry preview shape `editLoad` ships: the top-level values with the entry's concept override applied. |
 | `AssetConfig` | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the `assets` adapter member above. |
-| `CairnExtension` | `interface CairnExtension` | A future build-time extension that folds in like the adapter. |
-| `CairnRuntime` | `interface CairnRuntime` | The composed runtime the engine serves from (seam 2 output). |
-| `ComposeInput` | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig, extensions. |
-| `AdminPanel` | `interface AdminPanel` | A site-defined admin screen contributed by an extension (Mode 2). |
-| `FieldTypeDef` | `interface FieldTypeDef` | A custom frontmatter field type contributed by an extension (Mode 2). |
+| `CairnRuntime` | `interface CairnRuntime` | The composed runtime the engine serves from. |
+| `ComposeInput` | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
 | `NamedField` | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |
 | `TextField` | `interface TextField` | A single-line text field with length and pattern rules. |
 | `TextareaField` | `interface TextareaField` | A multi-line text field with rows, length, and pattern rules. |

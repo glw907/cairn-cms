@@ -300,53 +300,8 @@ export interface ConceptDescriptor {
 }
 
 /**
- * A site-defined admin screen contributed by an extension (Mode 2). It gains a sidebar entry, the
- * `/admin` guard, and the session, and may commit through the same GitHub pipeline. The dispatch
- * route is built in Plan 09; the `load`/`actions`/`component` members are typed loosely here and
- * tightened when the machinery lands.
- */
-export interface AdminPanel {
-  /** Routes under `/admin/<id>`; also the sidebar key. */
-  id: string;
-  /** Sidebar label. */
-  label: string;
-  /** Owner-gated, like editor management. */
-  owner?: boolean;
-  /** Server load, behind the guard. Typed in Plan 09. */
-  load?: (event: unknown) => unknown;
-  /** Named form actions, which may use the commit pipeline. Typed in Plan 09. */
-  actions?: Record<string, (event: unknown) => Promise<unknown>>;
-  /** The panel UI, rendered inside the admin shell. Typed as a component in Plan 09. */
-  component: unknown;
-}
-
-/**
- * A custom frontmatter field type contributed by an extension (Mode 2): a renderer plus a validator
- * dispatched alongside the built-in field union. The renderer and validator are typed in Plan 09
- * when the form dispatch becomes a registry; the `type` key reserves the discriminator now.
- */
-export interface FieldTypeDef {
-  /** The field-type discriminator, e.g. "color". */
-  type: string;
-}
-
-/**
- * A future build-time extension (seam 2). It folds in the same way the adapter does and
- * contributes the same kinds of things. Reserved and unused in the rebuild; the shape is
- * fixed now so the extension contract is additive later.
- */
-export interface CairnExtension {
-  /** Additional concepts, merged after the adapter's. */
-  content?: Record<string, ConceptConfig>;
-  /** Site-defined admin panels (Mode 2). Carried onto the runtime now; dispatched in Plan 09. */
-  adminPanels?: AdminPanel[];
-  /** Custom field types (Mode 2). Carried onto the runtime now; dispatched in Plan 09. */
-  fieldTypes?: FieldTypeDef[];
-}
-
-/**
- * The composed runtime the engine serves from (seam 2 output). The single aggregation point
- * (`composeRuntime`) folds the adapter and any extensions into this shape.
+ * The composed runtime the engine serves from. The single aggregation point (`composeRuntime`)
+ * folds the adapter into this shape.
  */
 export interface CairnRuntime {
   siteName: string;
@@ -403,8 +358,4 @@ export interface CairnRuntime {
    *  fail(503) before any model call.
    */
   tidy?: import('../nav/site-config.js').TidyConfig;
-  /** Admin panels contributed by extensions (Mode 2). Empty until Plan 09 wires the dispatch route. */
-  adminPanels?: AdminPanel[];
-  /** Field types contributed by extensions (Mode 2). Empty until Plan 09 wires the form dispatch. */
-  fieldTypes?: FieldTypeDef[];
 }

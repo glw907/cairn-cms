@@ -114,20 +114,23 @@ and the per-plan post-mortems, not in the roadmap.
 Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
 
-## The extending-developer lens (standing review dimension)
+## The extending-developer lens (subordinate to the charter)
 
-Developer extensibility is cairn's next major initiative after the Contract v2 rollup, so the
-extending-developer persona is a standing critical lens for every design, spec, and plan review, the same
-way documentation and the roadmap are pass dimensions. The persona: a developer who launches a site fast on
-cairn, then builds custom dashboard features and custom app features that reuse the editor login, and keeps
-pulling cairn updates without rework. Review every substantial change against the four sub-lenses: can a
-developer (1) extend the dashboard through a supported seam, (2) reuse the editor login on their own routes,
-(3) depend on an enforced (not just documented) public boundary, and (4) upgrade across versions without
-hand-applied steps or silent failures? Prefer the choices that make this path easier; flag the ones that
-make it harder. The persona, the sub-lenses, and the current baseline (the seam is reserved-but-inert, auth
-is admin-scoped, the boundary is unenforced) are in
-[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), the starting point
-for the initiative.
+The charter is the governing lens: the premise check, "is this cairn's job, and is it the leanest form?",
+runs before the correctness checks on every spec. The extending-developer persona sits under it as a
+forward diagnostic for the lean extensibility redesign (the next pass), not a co-equal standing dimension
+and not a license to build a platform. The persona: a developer who launches a content-managed site fast on
+cairn, then builds their own functionality on top, and keeps pulling cairn updates without rework. Per the
+charter, cairn serves that developer with thin seams, owner/editor identity they read through a defined
+hand-off, an admin skeleton they extend in the DaisyUI + Tailwind idiom, while they bring their own auth,
+data, and domain logic. The redesign answers four diagnostic questions against that boundary: can a developer
+(1) extend the admin skeleton through a thin supported seam, (2) read the owner/editor identity on their own
+routes without reaching into engine internals, (3) depend on a narrow enforced (not merely documented)
+public boundary, and (4) upgrade across versions without hand-applied steps or silent failures? The persona,
+the questions, and the redesign inputs are in
+[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md); read the charter
+first. The earlier register-components scaffolding (`CairnExtension`/`AdminPanel`/`FieldTypeDef`) was removed
+in the principle-adherence pass, so the redesign starts from a clean engine.
 
 ## Watch items (conditional follow-ups)
 

@@ -32,6 +32,12 @@ here, so this file stays a forward view.
 
 ## Next
 
+- **Wire the Media Library's direct upload.** The Library screen's two `Upload` buttons (header and
+  empty state) are unwired shells, but the `?/mediaUpload` action they need already exists and the
+  replace flow uses it. Connect the buttons (and the empty-state drop target) to `?/mediaUpload` so an
+  author can add an image from the Library, not only by inserting one while editing. A small media
+  finish-up; surfaced by the 2026-06-28 principle-adherence audit, which left it untouched because that
+  pass was remove-only. Drop the stale `TODO(Task 7+)` once wired.
 - **Taxonomy and tag delivery.** Consume the `taxonomy` marker reserved by the reference field so a
   `multiselect` or a reference-shaped tag field drives first-class tag pages and feeds: a tag index, a
   per-tag archive, and tag-aware delivery resolution. The reference pass reserved and documented the marker;

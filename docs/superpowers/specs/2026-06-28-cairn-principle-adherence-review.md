@@ -104,3 +104,48 @@ The lean extensibility **redesign** (the new spec, plan, implementation) is a se
 this one. Do not start it here. But per Geoff (2026-06-28) it is the **immediate next pass** after this one
 completes, against the charter and from clean context. This pass leaves the engine lean and charter-adherent
 and leaves a clear report; the redesign builds directly on that.
+
+## Post-mortem (2026-06-28)
+
+**Outcome.** The engine is charter-adherent. Executed all three parts; merged to `main`, no release.
+
+**Part A (unwind).** The phase-1 revert was verified complete by tree-equality: the current tree differs
+from the pre-phase-1-merge tree (`8b38076^`) only in docs, with no `src/lib` change, so no identity
+substrate remained. The pre-existing inert register-components scaffolding was then removed
+(`CairnExtension`/`AdminPanel`/`FieldTypeDef`, the `composeRuntime` slots and `CairnRuntime` members, the
+`AdminLayout` `extensionGroups` stubs, the dead barrel exports, the stranded tests, and the `core.md`
+rows). Gate green.
+
+**Part B (audit).** A ten-subsystem `Workflow` read each slice through the charter lens, calibrated
+remove-only (a finding proposing to add anything was rejected) with a false-positive guard on the
+deliberate investments. Result: **zero verified blocker/high drift**; the adversarial-verify stage had
+nothing to confirm because no reviewer rated a finding above medium. The auth reviewer confirmed the
+phase-1 substrate did not creep back. The report is `docs/internal/2026-06-28-principle-adherence-audit.md`.
+
+The clear, safe, high-confidence findings were fixed in-pass: three empty doc stubs became real TSDoc, the
+internal log type re-exports were dropped, the `resolveConcepts` identity wrapper was inlined, and the
+speculative Media Library type-facet was removed. The public-surface narrowings (`MediaStore.get`,
+`generateComponentReference`, `RequestResult.sent`, `PlatformContext.ctx`, the `siteDescriptors` dead
+param, the `ResolvedReference` dual export) were deferred to the report's backlog: each wants a release
+and a `Consumers must` line, so they fold into the extensibility redesign's surface review.
+
+**A correction worth recording.** The audit first framed the Media Library's two unwired `Upload` buttons
+as drift to delete. They are not: the `?/mediaUpload` action they need already exists (the replace flow
+uses it), so they are an unfinished feature, not inert scaffolding. Per Geoff, that was filed as a small
+media finish-up (ROADMAP, Next, "Wire the Media Library's direct upload"), not actioned in this
+remove-only pass. The lesson: "inert UI" is drift only when the capability behind it does not exist;
+when the plumbing is present and only the wiring is missing, the answer is to finish, not delete.
+
+**Part C (docs).** The wrong-model footprint was corrected: the `CLAUDE.md` extending-developer-lens
+section was reframed charter-subordinate, `extending-developer-lens.md` was rewritten as charter-governed
+redesign inputs (the "broadly extensible framework" platform framing removed, the baseline corrected for
+the scaffolding removal), and the two published `CairnExtension` doc mentions (architecture, components)
+were dropped. ROADMAP, the superseded headers, and STATUS were already correct from the pre-bake. The
+`cairn-two-extension-modes` memory's register-components mode 2 was corrected.
+
+**Verified.** `npm run check` 1211 0/0; `npm test` 2722 exit 0; `check:comments`, `check:reference`,
+`check:docs`, `check:package` green; `code-simplifier` over the changed source; a Svelte + DaisyUI/a11y
+reviewer fan-out over the two component changes. Executed main-loop orchestrate-and-verify: the audit as a
+`Workflow`, the removals and cleanups as gated `cairn-implementer` dispatches.
+
+**Next.** The lean extensibility redesign, from clean context, against the charter.

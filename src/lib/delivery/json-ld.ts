@@ -6,7 +6,7 @@
 // legal inside a JSON string but unsafe in inline script text, where some parsers read them as
 // line terminators, so an author pasting one into frontmatter would corrupt the JSON-LD block.
 /**
- *
+ * Build the `application/ld+json` script element for `data`, escaping `<` so the JSON cannot terminate the script tag early.
  */
 export function jsonLdScript(data: Record<string, unknown>): string {
   const json = JSON.stringify(data)

@@ -379,8 +379,8 @@ its own.
 ## Composed components
 
 These mount inside `EditPage` and its dialogs, so you don't wire them directly. They appear here
-for completeness, and for a site that builds its own admin surface against the `CairnExtension`
-seam. The snippets are minimal mounts with the real prop names.
+for completeness, and for a site that builds its own admin surface. The snippets are minimal mounts
+with the real prop names.
 
 ### `MarkdownEditor`
 

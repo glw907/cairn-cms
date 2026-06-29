@@ -34,7 +34,7 @@ function nestedSlots(def: ComponentDef): SlotDef[] {
 }
 
 /**
- *
+ * Render a parsed component node back to its `{% name %}` directive source, the inverse of {@link parseComponent}.
  */
 export function serializeComponent(def: ComponentDef, values: ComponentValues): string {
   const fence = COLON.repeat(nestedSlots(def).length > 0 ? 4 : 3);

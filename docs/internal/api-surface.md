@@ -27,9 +27,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `composeDatedId`: (date: string, slug: string, datePrefix: DatePrefix) => string
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
-- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded" | RoutingRule; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
-- `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
-- `ConceptUrlPolicy`: { permalink?: string; datePrefix?: DatePrefix }
+- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded" | RoutingRule; permalink?: string; datePrefix?: DatePrefix; taxonomyBase?: string; summaryFields?: string[] }
+- `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; taxonomyBase?: string; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
+- `ConceptUrlPolicy`: { permalink?: string; datePrefix?: DatePrefix; taxonomyBase?: string }
 - `createRenderer`: (registry?: ComponentRegistry, options?: RendererOptions) => { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string> }
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `dateInputValue`: (value: unknown) => string

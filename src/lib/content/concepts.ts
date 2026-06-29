@@ -4,6 +4,7 @@
 // `content` and declaring its own routing and URL policy, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
 import type { Fieldset } from './fieldset.js';
+import { resolveTaxonomyField } from './taxonomy.js';
 
 /** Re-attach each fieldset record key to its descriptor as `name`, the normalized `NamedField[]`. */
 function namedFields(schema: Fieldset): NamedField[] {
@@ -53,6 +54,8 @@ const KNOWN_TOKENS = new Set(['slug', 'year', 'month', 'day']);
 const DATE_TOKENS = new Set(['year', 'month', 'day']);
 /** The valid date-prefix granularities. A runtime check, since the YAML is untyped. */
 const DATE_PREFIXES = new Set<string>(['year', 'month', 'day']);
+/** A root-relative, URL-safe taxonomy base: a leading slash and `/`-joined unreserved segments. */
+const SAFE_TAXONOMY_BASE = /^(\/[A-Za-z0-9._~-]+)+$/;
 
 /**
  * Validate one concept's URL policy at build, so a misconfigured permalink or datePrefix fails loudly
@@ -81,6 +84,17 @@ export function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: b
     throw new Error(
       `cairn: concept "${id}" datePrefix "${policy.datePrefix}" must be one of year, month, day`,
     );
+  }
+  if (policy.taxonomyBase !== undefined) {
+    const base = policy.taxonomyBase;
+    if (!base.startsWith('/')) {
+      throw new Error(`cairn: concept "${id}" taxonomyBase "${base}" must start with "/"`);
+    }
+    if (!SAFE_TAXONOMY_BASE.test(base)) {
+      throw new Error(
+        `cairn: concept "${id}" taxonomyBase "${base}" must be a root-relative, URL-safe path`,
+      );
+    }
   }
 }
 
@@ -126,8 +140,15 @@ export function normalizeConcepts(
       }
     }
     const conceptRouting = resolveRouting(config.routing);
-    const policy: ConceptUrlPolicy = { permalink: config.permalink, datePrefix: config.datePrefix };
+    const policy: ConceptUrlPolicy = {
+      permalink: config.permalink,
+      datePrefix: config.datePrefix,
+      taxonomyBase: config.taxonomyBase,
+    };
     validateUrlPolicy(id, policy, conceptRouting.dated);
+    const fields = namedFields(fs);
+    const taxonomyField = resolveTaxonomyField(fields);
+    const taxonomyBase = policy.taxonomyBase ?? (taxonomyField ? '/' + taxonomyField : undefined);
     const label = config.label ?? defaultLabel(id);
     descriptors.push({
       id,
@@ -137,7 +158,8 @@ export function normalizeConcepts(
       routing: conceptRouting,
       permalink: policy.permalink ?? defaultPermalink(id),
       datePrefix: policy.datePrefix ?? 'day',
-      fields: namedFields(fs),
+      taxonomyBase,
+      fields,
       schema: fs,
       summaryFields,
       validate: fs.validate,

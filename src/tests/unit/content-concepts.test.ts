@@ -195,6 +195,45 @@ describe('normalizeConcepts URL policy', () => {
   });
 });
 
+describe('normalizeConcepts taxonomyBase', () => {
+  const taxonomyCfg = {
+    dir: 'p',
+    fields: fieldset({
+      title: fields.text({ label: 'Title' }),
+      topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
+    }),
+  };
+
+  it('defaults the base to /<taxonomyFieldName> when a taxonomy field exists', () => {
+    const [posts] = normalizeConcepts({ posts: taxonomyCfg });
+    expect(posts.taxonomyBase).toBe('/topics');
+  });
+
+  it('honors an explicit taxonomyBase over the default', () => {
+    const [posts] = normalizeConcepts({ posts: { ...taxonomyCfg, taxonomyBase: '/tags' } });
+    expect(posts.taxonomyBase).toBe('/tags');
+  });
+
+  it('leaves taxonomyBase undefined when the concept has no taxonomy field', () => {
+    const [pages] = normalizeConcepts({
+      pages: { dir: 'g', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    });
+    expect(pages.taxonomyBase).toBeUndefined();
+  });
+
+  it('throws when taxonomyBase is not root-relative', () => {
+    expect(() => normalizeConcepts({ posts: { ...taxonomyCfg, taxonomyBase: 'tags' } })).toThrow(
+      'cairn: concept "posts" taxonomyBase "tags" must start with "/"',
+    );
+  });
+
+  it('throws when taxonomyBase is not URL-safe', () => {
+    expect(() => normalizeConcepts({ posts: { ...taxonomyCfg, taxonomyBase: '/my topics' } })).toThrow(
+      'cairn: concept "posts" taxonomyBase "/my topics" must be a root-relative, URL-safe path',
+    );
+  });
+});
+
 describe('findConcept', () => {
   it('finds a normalized concept by id, undefined when absent', () => {
     const descriptors = normalizeConcepts(testAdapter.content);

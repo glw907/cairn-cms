@@ -28,10 +28,14 @@ here, so this file stays a forward view.
   author can add an image from the Library, not only by inserting one while editing. A small media
   finish-up; surfaced by the 2026-06-28 principle-adherence audit, which left it untouched because that
   pass was remove-only. Drop the stale `TODO(Task 7+)` once wired.
-- **Taxonomy and tag delivery.** Consume the `taxonomy` marker reserved by the reference field so a
-  `multiselect` or a reference-shaped tag field drives first-class tag pages and feeds: a tag index, a
-  per-tag archive, and tag-aware delivery resolution. The reference pass reserved and documented the marker;
-  this pass wires it into the delivery surface.
+- **Taxonomy and tag delivery (spec'd, planned, QUEUED).** Consume the reserved `taxonomy` marker so a
+  concept's tags drive first-class tag pages and feeds: a tag index, a per-tag archive, tag-aware delivery
+  resolution, and syndication-feed categories, plus closing the `inFeeds`/`routable` feed/sitemap gap. Scope
+  settled to the multiselect marker (the string model; reference-shaped tags deferred); tags slugify;
+  nomenclature taxonomy(field)/tag(value), no "category" concept. Spec
+  `docs/superpowers/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md`, plans
+  `docs/superpowers/plans/2026-06-29-cairn-taxonomy-{1-core-and-feeds,2-tag-routing}.md`, both adversarially
+  reviewed. The next dev pass after the held `0.77.0` publishes.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced

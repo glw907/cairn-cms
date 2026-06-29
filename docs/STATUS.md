@@ -11,7 +11,32 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-28, latest): extensibility PLAN 2 (enforcement) LANDED on the worktree; NEXT = merge to `main` + cut the held `0.77.0` release covering both plans
+## Immediate next action (2026-06-29, latest): extensibility merged to `main` (pushed, `0.77.0` HELD); NEXT dev pass = taxonomy and tag delivery (spec + 2 plans reviewed, QUEUED)
+
+**Developer-extensibility Plans 1 + 2 are merged to `main` and pushed to origin** (fast-forward; `main` ==
+the verified worktree HEAD). The `0.77.0` release is **HELD**, not cut, per Geoff: `main` carries it
+unpublished; cutting `gh release create v0.77.0 --target main` (which fires OIDC trusted publishing) is a
+deliberate later step, and the site cutovers (ecxc-ski, 907-life) follow the publish. `0.77.0` is confirmed
+free on npm.
+
+**NEXT dev pass = taxonomy and tag delivery, QUEUED with a reviewed spec and two plans.** Wire the reserved
+`taxonomy` marker to the existing tag surface (read the marked field, not the hardcoded `tags` key; one
+taxonomy per concept), make tag routing first-class through the catch-all (a discriminated `resolveRoute`
+with a `tagSlug` codec, a `taxonomyBase` URL policy, and a prefix-aware collision throw), populate feed
+categories, and close the `inFeeds`/`routable` feed/sitemap gap. Folds four live friction-log items (URL
+single home, the `mintToken` reference-prose drift, the `delivery-*` cold-import flake, the spellcheck e2e
+flake). Spec `docs/superpowers/specs/2026-06-28-cairn-taxonomy-tag-delivery-design.md` (adversarially
+reviewed, five-lens, 18/30 folded); **Plan 1** (data layer)
+`docs/superpowers/plans/2026-06-29-cairn-taxonomy-1-core-and-feeds.md` and **Plan 2** (read path)
+`docs/superpowers/plans/2026-06-29-cairn-taxonomy-2-tag-routing.md`, both adversarially reviewed (six-lens,
+16/38 folded) and QUEUED. **Execute Plan 1 then Plan 2** on a fresh worktree off `main`, dispatching each
+task to `cairn-implementer` (Sonnet) with the main loop reviewing each diff and clearing the gate between.
+Plan 2 depends on Plan 1; the release covering both is one minor, the first free after `0.77.0` publishes.
+The decided scope (taxonomy = the multiselect marker, the string model; tags slugify; nomenclature
+taxonomy/tag with no "category" as a cairn concept) is in the spec. Use `cairn-pass` for pass-start/end. See
+the `cairn-taxonomy-initiative` memory.
+
+## Prior next action (2026-06-28): extensibility PLAN 2 (enforcement) LANDED on the worktree; NEXT = merge to `main` + cut the held `0.77.0` release covering both plans
 
 **Developer-extensibility Plan 2 (the enforced public boundary) is complete on the feature worktree**
 (`worktree-extensibility-plan-1`, off `main` at `16c8f5c`), the enforcement half of the redesign. Five

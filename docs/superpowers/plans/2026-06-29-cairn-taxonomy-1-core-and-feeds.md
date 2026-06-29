@@ -26,7 +26,7 @@ A pure resolver for the marked field, plus the one-per-concept and no-nested-mar
 **Files:**
 - Create: `src/lib/content/taxonomy.ts` (the pure `resolveTaxonomyField`; Plan 2 adds `tagSlug` here).
 - Modify: `src/lib/content/fieldset.ts` (add `checkTaxonomyMarker`, called from `fieldset()` beside `checkSeoImageFields`; confirm the call site at the existing `fieldset()` constructor).
-- Test: `src/tests/unit/content-taxonomy.test.ts` (the resolver), and extend `src/tests/unit/content-fieldset.test.ts` (the enforcement throw).
+- Test: `src/tests/unit/content-taxonomy.test.ts` (the resolver), and a new `src/tests/unit/fieldset-taxonomy.test.ts` for the enforcement throw, modeled on the existing `src/tests/unit/fieldset-seo.test.ts` (the single-`seo`-image throw test, the closest precedent; note `content-fieldset.test.ts` does NOT exist, the fieldset tests are split by concern).
 
 **Interfaces:**
 - Produces: `resolveTaxonomyField(fields: NamedField[]): string | null` (imported by `NamedField` from `./types.js`), returning the `name` of the single top-level field whose descriptor has `taxonomy === true`, else `null`.
@@ -42,14 +42,15 @@ import { resolveTaxonomyField } from '../../lib/content/taxonomy.js';
 
 describe('resolveTaxonomyField', () => {
   it('returns the name of the single marked top-level field', () => {
+    // NamedField extends FieldBase, so `label` is required on each entry (the type-check gate).
     const fields = [
-      { name: 'title', type: 'text' as const },
-      { name: 'topics', type: 'multiselect' as const, taxonomy: true },
+      { name: 'title', type: 'text' as const, label: 'Title' },
+      { name: 'topics', type: 'multiselect' as const, label: 'Topics', taxonomy: true },
     ];
     expect(resolveTaxonomyField(fields)).toBe('topics');
   });
   it('returns null when no field is marked', () => {
-    expect(resolveTaxonomyField([{ name: 'tags', type: 'multiselect' as const }])).toBeNull();
+    expect(resolveTaxonomyField([{ name: 'tags', type: 'multiselect' as const, label: 'Tags' }])).toBeNull();
   });
 });
 ```
@@ -73,7 +74,7 @@ export function resolveTaxonomyField(fields: NamedField[]): string | null {
 
 - [ ] **Step 4: Run the resolver test; confirm it passes.**
 
-- [ ] **Step 5: Write the failing enforcement test.** In `content-fieldset.test.ts`, mirroring the existing `checkSeoImageFields` throw test: a fieldset with two `taxonomy: true` multiselects throws; one inside an `object`/`array` throws; one marked top-level passes. Use the real `fieldset({...})` constructor. Assert `expect(() => fieldset({ a: fields.multiselect({ taxonomy: true }), b: fields.multiselect({ taxonomy: true }) })).toThrow(/taxonomy/)`.
+- [ ] **Step 5: Write the failing enforcement test.** In the new `fieldset-taxonomy.test.ts`, mirroring `fieldset-seo.test.ts`'s `checkSeoImageFields` throw test: a fieldset with two `taxonomy: true` multiselects throws; one inside an `object`/`array` throws; one marked top-level passes. Use the real `fieldset({...})` constructor, and pass `label` on every field (it is required on `FieldBase`, so omitting it fails the type-check gate). Assert `expect(() => fieldset({ a: fields.multiselect({ label: 'A', taxonomy: true }), b: fields.multiselect({ label: 'B', taxonomy: true }) })).toThrow(/taxonomy/)`.
 
 - [ ] **Step 6: Run it; confirm it fails.**
 
@@ -90,8 +91,10 @@ export function resolveTaxonomyField(fields: NamedField[]): string | null {
 Replace the hardcoded `asTags(raw.tags)` with the taxonomy-marked field's validated value, and emit a build advisory when a `tags`-named multiselect is unmarked.
 
 **Files:**
-- Modify: `src/lib/delivery/content-index.ts` (the `tags:` line at ~113; resolve the field once per index build off `descriptor.fields`; read `result.data[name]`; the advisory).
-- Test: extend `src/tests/unit/delivery-content-index.test.ts`.
+- Modify: `src/lib/delivery/content-index.ts` (the `tags:` line at ~113; resolve the field once per index build off `descriptor.fields`; read `result.data[name]`; the `log.warn` advisory; add the `log` import).
+- Modify: `src/lib/log/events.ts` (add `'taxonomy.unmarked_field'` to the `CairnLogEvent` union).
+- Modify: `docs/reference/log-events.md` (document the new event row, per the repo's log-vocabulary rule and the `check:docs` gate).
+- Test: extend `src/tests/unit/delivery-content-index.test.ts`. **Note the collateral red:** its existing `posts` fixture (~line 8-19) declares `tags: fields.multiselect({ label: 'Tags', options: ['a'] })` with NO `taxonomy: true`, and tests assert `byTag('a')`/`allTags()` off it (~lines 50, 51, 61). The moment the read switches to the marked field, those go red. Step 1 marks that fixture field so they pass as a positive marked-field case; this is an expected pre-existing-test update, not a regression in new code.
 
 **Interfaces:**
 - Consumes: `resolveTaxonomyField` (Task 1).
@@ -99,9 +102,10 @@ Replace the hardcoded `asTags(raw.tags)` with the taxonomy-marked field's valida
 
 **Steps:**
 
-- [ ] **Step 1: Write the failing tests.** In `delivery-content-index.test.ts`, building a descriptor whose fieldset marks `topics` as the taxonomy:
+- [ ] **Step 1a: Update the existing fixture first (own the collateral red).** In the existing `posts` fixture (~line 8-19), mark its `tags` multiselect `taxonomy: true` so the pre-existing `byTag('a')`/`allTags()` assertions (~lines 50, 51, 61) keep passing once the read switches to the marked field. This is an expected update, not a regression.
+- [ ] **Step 1b: Write the failing tests.** In `delivery-content-index.test.ts`, building a descriptor whose fieldset marks `topics` as the taxonomy. Pin `topics` to an OPEN multiselect (`fields.multiselect({ label: 'Topics', taxonomy: true })`, no `options`) so the validator's scalar coercion and arbitrary values are not rejected by a closed option list:
   - a file with `topics: ['svelte','kit']` produces `tags: ['svelte','kit']`;
-  - a file with a scalar `topics: svelte` produces `tags: ['svelte']` (the validator coerces; proves the validated read);
+  - a file with a scalar `topics: svelte` produces `tags: ['svelte']` (the open-multiselect validator coerces a lone scalar to a one-element array; this proves the validated read, not the raw read which would drop the scalar);
   - **a file with `topics: ['a']` AND a legacy `tags: ['b']` key produces `tags: ['a']`, never `['b']`** (proves the hardcoded read is gone, not supplemented);
   - a descriptor with no marked field produces `tags: []` even when the file has a `tags:` key.
 
@@ -117,15 +121,19 @@ tags: taxonomyField ? asTags(result.data[taxonomyField]) : [],
 
 - [ ] **Step 4: Run; confirm passes.**
 
-- [ ] **Step 5: Write the failing advisory test.** A descriptor with no `taxonomy: true` marker but a multiselect field literally named `tags` records a `ContentProblem`-style advisory (or a `log.warn`) at index build naming the concept and field. Decide the surface: prefer routing through the existing `ContentProblem`/aggregator path if a non-fatal channel exists; else `log.warn('taxonomy.unmarked_field', { concept, field })` once per index build. Pin the chosen channel in this step.
+- [ ] **Step 5: Register the event.** Add `'taxonomy.unmarked_field'` to the `CairnLogEvent` union in `src/lib/log/events.ts`. The channel is `log.warn`, not `ContentProblem`: `ContentProblem` is per-entry `{ id, draft, errors }` and `createSiteResolver`/`siteProblems` THROWS the build on any non-draft problem, so it cannot carry a non-fatal concept-level advisory.
 
-- [ ] **Step 6: Run; confirm it fails.**
+- [ ] **Step 6: Write the failing advisory test (logger spy).** A descriptor with no `taxonomy: true` marker but a multiselect field literally named `tags` fires `log.warn('taxonomy.unmarked_field', { concept, field })` once per index build. Spy on the `src/lib/log/` chokepoint (the repo's logging is centralized there); assert the event name and the `{ concept, field }` fields, fired once. A descriptor with no such field, or with a properly marked field, fires nothing.
 
-- [ ] **Step 7: Implement the advisory.** When `taxonomyField === null`, scan `descriptor.fields` for a multiselect named `tags`, `freetags`, or `categories`; if found, emit the advisory once (not per entry, not a throw, since a deliberate non-taxonomy field of that name is legal).
+- [ ] **Step 7: Run; confirm it fails.**
 
-- [ ] **Step 8: Run; confirm passes.**
+- [ ] **Step 8: Implement the advisory.** Import `log` into `content-index.ts`. When `taxonomyField === null`, scan `descriptor.fields` for a multiselect named `tags`, `freetags`, or `categories`; if found, `log.warn('taxonomy.unmarked_field', { concept: descriptor.id, field: <name> })` once at index build (not per entry, not a throw, since a deliberate non-taxonomy field of that name is legal).
 
-- [ ] **Step 9: Full gate.** Commit `content-index.ts` and the test.
+- [ ] **Step 9: Document the event.** Add the `taxonomy.unmarked_field` row to `docs/reference/log-events.md` (trigger and fields), per the log-vocabulary rule and the `check:docs` gate.
+
+- [ ] **Step 10: Run; confirm passes.**
+
+- [ ] **Step 11: Full gate** (`npm run check`, `npm test`, `npm run package` then `check:docs`). Commit `content-index.ts`, `src/lib/log/events.ts`, `docs/reference/log-events.md`, and the test.
 
 ---
 
@@ -141,7 +149,8 @@ Add `feedView`/`sitemapView` projections that filter concepts by `inFeeds`/`rout
 
 **Interfaces:**
 - Consumes: `SiteResolver` (`concept`, `all`), `ConceptDescriptor.routing` (`inFeeds`, `routable`), `resolveTaxonomyField`, `FeedItem`, `FeedChannel`, `buildRssFeed`/`buildJsonFeed`, `buildSitemap`.
-- Produces: `feedView(site, descriptors): FeedItem[]` (items for the `inFeeds` concepts, each with `tags` from its taxonomy field) and `sitemapView(site, descriptors, origin): SitemapUrl[]` (URLs for the `routable` concepts). Confirm `SitemapUrl`'s shape in `sitemap.ts` and reuse it.
+- Produces: `feedView(site, descriptors, origin): FeedItem[]` (items for the `inFeeds` concepts, each with an absolute `url = origin + permalink` and `tags` from its taxonomy field) and `sitemapView(site, descriptors, origin): SitemapUrl[]` (URLs for the `routable` concepts). Both take `origin` because `FeedItem.url`/`SitemapUrl` are absolute and the engine has no ambient origin (`PublicRoutesDeps.origin` is injected). Confirm `SitemapUrl`'s shape in `sitemap.ts` and reuse it.
+- **Scope: `feedView` is summary-only.** It sets `FeedItem.summary` from the entry excerpt and omits `contentHtml` (the full-content `<content:encoded>`/`content_html`), because that needs a per-item render and link-resolver pass the pure view does not carry. A site wanting a full-content feed still maps render itself; `feedView` gives the concept-filtered, category-bearing item set. Note this omission in the reference (Task 4).
 
 **Steps:**
 
@@ -195,4 +204,5 @@ Document the new exports with stability tiers, fix the stale `mintToken` referen
 - **Spec coverage.** Component 1 (`resolveTaxonomyField`, validated read, `fieldset()` enforcement, advisory) → Tasks 1-2; Component 3 (feed categories, `inFeeds`/`routable` views) → Task 3; the `mintToken` reference-prose friction item → Task 4. Plan 2 covers Component 2 (routing).
 - **Premise check.** Every task is content-delivery data work over the committed markdown; no new actor, store, or runtime surface.
 - **Risk.** Task 2's validated-read change is the correctness-critical piece (the breaking-change guarantee); its discriminating test (a `topics`-marked field beside a legacy `tags:` key yields only `topics`) is the lock. Task 3's `feedView` mapping must read the taxonomy field per concept, not a hardcoded key.
-- **Interfaces consistent.** `resolveTaxonomyField(fields: NamedField[]): string | null` is produced in Task 1 and consumed in Tasks 2-3; `feedView`/`sitemapView` are produced in Task 3 and documented in Task 4.
+- **Interfaces consistent.** `resolveTaxonomyField(fields: NamedField[]): string | null` is produced in Task 1 and consumed in Tasks 2-3; `feedView(site, descriptors, origin)`/`sitemapView(site, descriptors, origin)` are produced in Task 3 and documented in Task 4.
+- **Adversarial plan review folded (2026-06-29).** A six-lens workflow confirmed 16 of 38 findings. Folded into Plan 1: the existing `delivery-content-index.test.ts` fixture must be marked `taxonomy: true` first (the change would otherwise turn it red mid-task); the advisory channel is `log.warn('taxonomy.unmarked_field', …)` with the event registered in `events.ts` and `log-events.md`, not the build-fatal `ContentProblem`; the enforcement test lives in a new `fieldset-taxonomy.test.ts` (modeled on `fieldset-seo.test.ts`, not a nonexistent `content-fieldset.test.ts`), with `label` on every fixture field (the type-check gate); the scalar-coerces fixture is an open multiselect; and `feedView` takes `origin` and is summary-only.

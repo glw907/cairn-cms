@@ -79,9 +79,12 @@ marked `taxonomy: true` produces no tags.
   layer knows which field is the taxonomy). But silent loss violates cairn's fail-loud grain (the phase-3b
   `parseSiteConfig` hard-errors a missing `datePrefix` rather than silently shifting URLs), so when
   `resolveTaxonomyField` returns `null` AND the concept declares a `multiselect` field literally named
-  `tags`, `freetags`, or `categories`, the build emits an advisory through the existing `ContentProblem`
-  surface (a warning, not a hard throw, since a deliberate non-taxonomy field of that name stays legal),
-  naming the concept and the unmarked field.
+  `tags`, `freetags`, or `categories`, the build emits `log.warn('taxonomy.unmarked_field', { concept,
+  field })` once per index build (a warning, not a hard throw, since a deliberate non-taxonomy field of that
+  name stays legal). The structured-log channel is the right one: `ContentProblem` is per-entry and
+  fail-loud (`siteProblems` throws the build on any non-draft problem), so it cannot carry a non-fatal
+  concept-level advisory. The new event joins the `CairnLogEvent` vocabulary and the `log-events.md`
+  reference, per the repo's "a diagnosable path gets an event" rule.
 
 ## Component 2 — first-class tag routing (resolve tag URLs through the catch-all)
 

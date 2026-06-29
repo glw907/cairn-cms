@@ -145,3 +145,123 @@ describe('createSiteResolver', () => {
     ).toThrow(/dup/);
   });
 });
+
+// A Posts concept with a `topics` taxonomy and tagged entries, plus a Pages concept, exercises the
+// three resolveRoute kinds and the slug round-trip.
+const [tagPosts] = normalizeConcepts({
+  posts: {
+    dir: 'p',
+    routing: 'feed',
+    permalink: '/posts/:slug',
+    datePrefix: 'day',
+    fields: fieldset({
+      title: fields.text({ label: 'Title' }),
+      date: fields.date({ label: 'Date' }),
+      topics: fields.multiselect({ label: 'Topics', taxonomy: true }),
+    }),
+  },
+});
+const [tagPages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
+
+function taxonomySite() {
+  return createSiteResolver([
+    {
+      descriptor: tagPosts,
+      index: createContentIndex(
+        [
+          {
+            path: '/p/2026-05-31-hello.md',
+            raw: '---\ntitle: Hello\ndate: 2026-05-31\ntopics: [Svelte, "Web Design"]\n---\n\nHello body.',
+          },
+          {
+            path: '/p/2026-05-30-second.md',
+            raw: '---\ntitle: Second\ndate: 2026-05-30\ntopics: [Svelte]\n---\n\nSecond body.',
+          },
+          {
+            path: '/p/2026-05-29-draft.md',
+            raw: '---\ntitle: Draft\ndate: 2026-05-29\ndraft: true\ntopics: [Draftonly]\n---\n\nDraft body.',
+          },
+        ],
+        tagPosts,
+      ),
+    },
+    {
+      descriptor: tagPages,
+      index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], tagPages),
+    },
+  ]);
+}
+
+describe('SiteResolver.resolveRoute', () => {
+  it('resolves an exact entry permalink to the entry kind', () => {
+    const r = taxonomySite().resolveRoute('/posts/hello');
+    expect(r?.kind).toBe('entry');
+    if (r?.kind === 'entry') expect(r.entry.body.trim()).toBe('Hello body.');
+  });
+
+  it('resolves a Pages entry permalink to the entry kind', () => {
+    const r = taxonomySite().resolveRoute('/about');
+    expect(r?.kind).toBe('entry');
+    if (r?.kind === 'entry') expect(r.entry.id).toBe('about');
+  });
+
+  it('resolves the taxonomy base to the tag index with all tags and counts', () => {
+    const r = taxonomySite().resolveRoute('/topics');
+    expect(r?.kind).toBe('tagIndex');
+    if (r?.kind === 'tagIndex') {
+      expect(r.concept).toBe('posts');
+      // Svelte on two non-draft posts, Web Design on one; the draft-only tag is excluded.
+      expect(r.tags).toEqual([
+        { tag: 'Svelte', count: 2 },
+        { tag: 'Web Design', count: 1 },
+      ]);
+    }
+  });
+
+  it('resolves a tag-archive slug back to its canonical value and lists its entries', () => {
+    const r = taxonomySite().resolveRoute('/topics/svelte');
+    expect(r?.kind).toBe('tagArchive');
+    if (r?.kind === 'tagArchive') {
+      expect(r.concept).toBe('posts');
+      expect(r.tag).toBe('Svelte');
+      expect(r.entries.map((e) => e.id).sort()).toEqual(['2026-05-30-second', '2026-05-31-hello']);
+    }
+  });
+
+  it('resolves a multi-word tag slug back to its canonical value', () => {
+    const r = taxonomySite().resolveRoute('/topics/web-design');
+    expect(r?.kind).toBe('tagArchive');
+    if (r?.kind === 'tagArchive') {
+      expect(r.tag).toBe('Web Design');
+      expect(r.entries.map((e) => e.id)).toEqual(['2026-05-31-hello']);
+    }
+  });
+
+  it('returns undefined for an unknown tag slug under the base', () => {
+    expect(taxonomySite().resolveRoute('/topics/nope')).toBeUndefined();
+  });
+
+  it('returns undefined for a tag whose only entries are drafts', () => {
+    // The draft-only tag never reaches allTags, so its slug is unknown; either way it does not render.
+    expect(taxonomySite().resolveRoute('/topics/draftonly')).toBeUndefined();
+  });
+
+  it('returns undefined for a path more than one segment under the base', () => {
+    expect(taxonomySite().resolveRoute('/topics/a/b')).toBeUndefined();
+  });
+
+  it('returns undefined for a path that matches no entry and no taxonomy base', () => {
+    expect(taxonomySite().resolveRoute('/nope')).toBeUndefined();
+  });
+
+  it('enumerates the taxonomy index base and each concrete archive path for prerender, leading slash stripped', () => {
+    const paths = taxonomySite().entries().map((e) => e.path);
+    expect(paths).toContain('topics');
+    expect(paths).toContain('topics/svelte');
+    expect(paths).toContain('topics/web-design');
+    // The draft-only tag never enumerates.
+    expect(paths).not.toContain('topics/draftonly');
+    // Every appended tag path has no leading slash, matching the existing entry paths.
+    expect(paths.every((p) => !p.startsWith('/'))).toBe(true);
+  });
+});

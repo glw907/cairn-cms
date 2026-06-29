@@ -48,8 +48,15 @@ describe('createPublicRoutes', () => {
     await expect(routes.entryLoad({ url: new URL('https://example.com/missing') })).rejects.toMatchObject({ status: 404 });
   });
 
-  it('entries enumerates every path across concepts', () => {
-    expect(routes.entries().map((e) => e.path).sort()).toEqual(['2026/01/01/b', '2026/02/01/a', 'about']);
+  it('entries enumerates every path across concepts, including the tag index and archives', () => {
+    expect(routes.entries().map((e) => e.path).sort()).toEqual([
+      '2026/01/01/b',
+      '2026/02/01/a',
+      'about',
+      'tags',
+      'tags/x',
+      'tags/y',
+    ]);
   });
 
   it('archiveLoad and tagLoad stay per-concept', () => {

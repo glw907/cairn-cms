@@ -11,7 +11,23 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): tag-management Plan 1 (reshape) LANDED on a worktree; NEXT = write Plan 2 (data engine) just-in-time, review, execute
+## Immediate next action (2026-06-29, latest): tag-management Plan 1 LANDED; Plan 2 (data engine) WRITTEN + adversarially reviewed; NEXT = execute Plan 2 task-by-task
+
+**Plan 2 is written, adversarially reviewed, and committed** at
+`docs/superpowers/plans/2026-06-29-cairn-tag-management-2-data-engine.md` (`b68030c`). The review (one
+Workflow, seven lenses, 20 of 38 findings confirmed) drove a code-grounded redesign: build enforcement
+dropped (the per-entry union makes it a no-op; removes the `createContentIndex` signature change and the
+delist hazard); no fieldset rebuild (`Fieldset` lacks `refine`, so enforcement is a standalone
+`enforceTaxonomy` gate + a `closeTaxonomyField` fields transform with `concept.validate` untouched);
+vocabulary sourced from `runtime.vocabulary` (no per-request config read); save reads only the branch-first
+prior tags for the orphan union; GithubDouble-driven tests. Eight tasks: vocabulary config + `setVocabulary`;
+thread onto `CairnRuntime`; `ManifestEntry.tags` (scalar-coercing); internal `tagUsage`/`buildTagUsageIndex`
+cross-branch; the pure enforcement helpers; SAVE enforcement; EDIT-render picker + orphan chip; docs.
+**NEXT = execute task-by-task** via `cairn-implementer` (Sonnet), main loop reviewing each diff and clearing
+the gate between, watching the seam tasks (5–7) closest. Then Plan 3 (admin UI, mockup-first). The release is
+the first free minor after `0.77.0` publishes.
+
+## Prior next action (2026-06-29): tag-management Plan 1 (reshape) LANDED on a worktree; NEXT was write Plan 2
 
 **Plan 1 of the tag-management initiative is complete on `worktree-tag-management-1`** (off `main` at
 `adfd5bc`). It reshaped the held, unpublished tag-routing layer before publish: removed the public tag

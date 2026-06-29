@@ -457,3 +457,71 @@ git commit -m "docs: reference + guide for the custom-admin-screen seam"
 - **Type consistency.** `AdminShellData` (Task 2) mirrors the real `LayoutData` and is consumed by `CairnAdminShell` + the showcase layout; `ResolvedNavEntry`/`customNav` (Task 3) is produced by `normalizeAdminNav` and read in `shellPayload`; `requireOwner`'s narrowed param (Task 1) is used by the showcase screen (Task 4); `AdminNavIcon` names (admin-nav.ts) and the icon map (admin-nav-icons.ts) share the same key set.
 - **Harness reality (folded from the plan review).** The showcase e2e is Vite-preview + the `cms-dev` handle, so the live D1 proof uses a fake `APP_DB` double injected by that handle (Task 4 Steps 1–2), not `wrangler dev` or a migration. The `data.layout` removal rewires `EditPage`'s `siteName` (Task 2 Step 9) and migrates 14 coupled tests (Step 12). The `adminNav` collision check uses `parseAdminPath` as the one authority (catches `media`/`index`), and validation lives in the `/sveltekit` layer to respect the content-layer import rule (Task 3).
 - **Decisions resolved (no placeholders):** the global-action target is `/admin?/<action>` with `'index'` in both allow-sets (verified POST-only, the redirect is GET-only); CSRF is the bare context-backed `<CsrfField />`; `layoutLoad` is deleted (end state, Step 14), not left transitional.
+
+---
+
+## Post-mortem (2026-06-28, landed on the worktree, merged to main)
+
+**Status: COMPLETE.** All five tasks shipped test-first on the `worktree-extensibility-plan-1` branch
+(8 commits, `6c5fe54`..`868d303`), fast-forwarded to `main`. The package version is `0.77.0`, held
+unpublished until Plan 2 (enforcement) lands; the two plans ship as one minor.
+
+### What was built
+
+- **Task 1 (`6c5fe54`).** `requireOwner` narrowed from `RequestContext` to `{ locals: { editor } }`
+  (the same structural param `requireSession` takes), so a custom route's standard load event satisfies
+  it. `isPublicAdminPath` exported from `/sveltekit`. The narrowing is a widening of the accepted
+  argument, so every existing caller still type-checks.
+- **Task 2 (`4490895`).** The core refactor: the admin chrome moved out of `CairnAdmin` into a shared
+  `/admin/+layout.svelte` rendering the renamed `CairnAdminShell`. New `shellLoad`/`shellPayload`
+  produce a discriminated `AdminShellData` (a `{ public: true }` bare payload vs the authed chrome),
+  with `pendingEntries` streamed as a deferred promise (no `listBranches` on the login path or up
+  front). The global logout/publishAll forms post to the absolute `/admin?/...` catch-all (`'index'`
+  added to `authedViews`). `layoutLoad` deleted; 14 coupled tests migrated.
+- **Task 3 (`cc5bbf7`).** `adminNav` data-only sidebar entries: `normalizeAdminNav` validates the icon
+  against a fixed Lucide allowlist and the href against `parseAdminPath` (the one collision authority,
+  catching reserved segments, `media`, `index`, and concept routes), throwing at construction. Threaded
+  adapter → runtime → `createContentRoutes` (validated in the `/sveltekit` layer; the content-layer
+  import is type-only). Rendered in the sidebar, the command palette, and the breadcrumb source.
+- **Task 4 (`c8ea141`, `45b990b`).** The showcase `Signups` custom screen proves the seam end-to-end:
+  a concrete `/admin/signups` route, owner-gated, reading and writing its own `APP_DB` D1 binding (a
+  fake double injected by the `cms-dev` handle, since the e2e harness is Vite-preview, not
+  `wrangler dev`), with a bare `<CsrfField/>` and a registered nav entry. Two e2e specs.
+- **Task 5 (`dc47582`).** Reference pages for every new export, the `add-a-custom-admin-screen.md`
+  guide, the `0.77.0` CHANGELOG entry with the four-step `Consumers must` block, and the version bump.
+  Surfaced and fixed two pre-existing signature drifts (`shellPayload`, a `composeRuntime` param).
+
+### Verified with evidence
+
+- Full gate green at consolidation: `npm run check` 0 errors / 0 warnings (1223 files); `npm test`
+  260 files / 2737 tests, exit 0; `check:comments`, `check:reference`, `check:reference:signatures`,
+  `check:docs` (88 files), `check:package`, `check:version` (minor) all pass.
+- The custom-screen e2e runs against the **worktree** engine (a from-scratch `npm install` in the
+  worktree showcase repointed the `file:` deps off the main checkout) and passes 2/2 under `CI=1`.
+- `code-simplifier` found the seam code already clean (no changes).
+- Reviewer fan-out (svelte, web-auth-security, daisyui-a11y): no blocker, no high. The web-auth review
+  confirmed the two load-bearing claims, the `requireOwner` narrowing is safe and a custom `/admin`
+  POST is genuinely CSRF-protected in production by the path-generic handle guard. Folded fixes
+  (`6f8beff`): sr-only labels + a table header on the canonical example and its guide snippet, a
+  softened e2e comment (the dev handle replaces the real guard, so the e2e proves token plumbing, not
+  the guard's rejection path), and a louder `ownerOnly`-is-cosmetic note.
+
+### Decisions locked
+
+- The shell payload is a discriminated union on `public`, narrowed once in the component via
+  `shell = $derived(data.public ? null : data)` with defensive `shell?.` reads (Svelte evaluates all
+  `$derived` regardless of the rendered branch). The streamed `pendingEntries` wraps `resolveBackend`
+  inside the promise chain so a synchronous token-mint throw degrades to `null`, preserving the old
+  fail-safe.
+- `LayoutData` is now dead but stays exported (removing it is a breaking surface change); deferred to
+  Plan 2 with a `Consumers must` line. The `mintToken` reference-prose drift is filed in the friction
+  log for a later cleanup.
+
+### Carry-forwards
+
+- **Live admin smoke owed before release.** The browser e2e proves the shell + custom screen + CSRF +
+  D1 round-trip; the `wrangler dev` + real-D1 smoke is owed at the Plan-1+2 pre-release point, not per
+  plan, since the release is held.
+- **Plan 2 (enforcement)** is the next pass: `check:surface` `.d.ts` snapshot gate; the `check:reference`
+  tier-marker assertion plus the Scaffold-API labels; the `cairn-doctor` mount-shape heuristic; the
+  breaking-in-0.x release signal; and the `LayoutData` removal. Then the release covering both.

@@ -206,3 +206,31 @@ Document the new exports with stability tiers, fix the stale `mintToken` referen
 - **Risk.** Task 2's validated-read change is the correctness-critical piece (the breaking-change guarantee); its discriminating test (a `topics`-marked field beside a legacy `tags:` key yields only `topics`) is the lock. Task 3's `feedView` mapping must read the taxonomy field per concept, not a hardcoded key.
 - **Interfaces consistent.** `resolveTaxonomyField(fields: NamedField[]): string | null` is produced in Task 1 and consumed in Tasks 2-3; `feedView(site, descriptors, origin)`/`sitemapView(site, descriptors, origin)` are produced in Task 3 and documented in Task 4.
 - **Adversarial plan review folded (2026-06-29).** A six-lens workflow confirmed 16 of 38 findings. Folded into Plan 1: the existing `delivery-content-index.test.ts` fixture must be marked `taxonomy: true` first (the change would otherwise turn it red mid-task); the advisory channel is `log.warn('taxonomy.unmarked_field', …)` with the event registered in `events.ts` and `log-events.md`, not the build-fatal `ContentProblem`; the enforcement test lives in a new `fieldset-taxonomy.test.ts` (modeled on `fieldset-seo.test.ts`, not a nonexistent `content-fieldset.test.ts`), with `label` on every fixture field (the type-check gate); the scalar-coerces fixture is an open multiselect; and `feedView` takes `origin` and is summary-only.
+
+## Post-mortem (2026-06-29, COMPLETE)
+
+All four tasks landed on the `worktree-taxonomy-1` branch (off `main` at `7f23e00`), each dispatched to
+`cairn-implementer` (Sonnet), test-first, with the main loop reviewing every diff and clearing the full gate
+between dispatches. Commits: `9d82078` (Task 1), `ae18de3` (Task 2), `11236da` (Task 3), `3a5861a` (Task 4).
+
+**Built and verified:**
+- **Task 1** `resolveTaxonomyField` (`src/lib/content/taxonomy.ts`) and `checkTaxonomyMarker` in `fieldset()`,
+  a faithful mirror of `checkSeoImageFields` (throws on more than one top-level marker or any nested marker).
+  Discriminating tests in `content-taxonomy.test.ts` + the new `fieldset-taxonomy.test.ts`.
+- **Task 2** the content index reads the marked field's VALIDATED value (`result.data[name]`, not raw), so a
+  scalar coerces and a legacy `tags` key is ignored when another field is marked. The `taxonomy.unmarked_field`
+  advisory fires once per build via `log.warn`. The lock test (`topics: ['a']` beside legacy `tags: ['b']` →
+  `['a']`) holds.
+- **Task 3** `feedView`/`sitemapView` (`src/lib/delivery/views.ts`) filter by `routing.inFeeds`/`routable` and
+  populate `FeedItem.tags`; `buildRssFeed` emits one `<category>` per tag. `feedView` is summary-only.
+- **Task 4** docs: `feedView`/`sitemapView` documented (Extension API), the stale `mintToken` prose fixed, the
+  taxonomy-marker breaking change logged under a `## Unreleased` window (version set at release).
+
+**Verified:** full gate green at each task; final-tree gate `npm run check` 0/0, `npm test` exit 0; all doc gates
+pass. `code-simplifier` found nothing to refine (the code is a clean mirror of reviewed siblings). The pass-end
+adversarial review workflow (six dimensions, each finding verified) confirmed zero defects in this layer.
+
+**Decisions locked:** the advisory is `log.warn`, never `ContentProblem` (build-fatal). The unmarked-field scan
+covers `tags`/`freetags`/`categories`. `feedView` omits `contentHtml` (a full-content feed needs a per-item
+render the pure view does not carry). One expected collateral-red beyond the named files: `public-routes.test.ts`'s
+`tags` fixture also needed marking (the same Step 1a pattern), folded in Task 2's commit.

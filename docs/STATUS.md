@@ -11,7 +11,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): extensibility merged to `main` (pushed, `0.77.0` HELD); NEXT dev pass = taxonomy and tag delivery (spec + 2 plans reviewed, QUEUED)
+## Immediate next action (2026-06-29, latest): taxonomy + tag delivery LANDED on a worktree (held); NEXT = merge to `main`, then cut the held release covering `0.77.0` + this taxonomy minor
+
+**The taxonomy and tag-delivery pass is complete on `worktree-taxonomy-1`** (off `main` at `7f23e00`), both
+plans landed: Plan 1 (data layer) and Plan 2 (read path), 10 commits (`9d82078`→`f18f6b4`). Each task was
+dispatched to `cairn-implementer` (Sonnet), test-first, with the main loop reviewing every diff and clearing the
+full gate between dispatches.
+
+**What shipped.** The reserved `taxonomy` marker now drives a concept's tags: the content index reads the marked
+field's VALIDATED value (not the hardcoded `tags` key), `fieldset()` enforces one top-level marker (no nesting),
+and an unmarked `tags`/`freetags`/`categories` multiselect draws a `taxonomy.unmarked_field` build advisory. Tag
+routing is first-class through the catch-all: a discriminated `SiteResolver.resolveRoute(path)` (entry / tagIndex
+/ tagArchive) with a `tagSlug` codec, a `taxonomyBase` URL policy, a per-concept slug→value index, and a
+prefix-aware build-time collision throw over the full concrete route set; `entries()` enumerates the tag paths for
+prerender. `createPublicRoutes` collapsed its four loaders onto one `resolveRoute`. Feed categories populate from
+the taxonomy field (RSS `<category>` + JSON Feed `tags`), and `feedView`/`sitemapView` close the
+`inFeeds`/`routable` gap. URL shaping consolidated into one `url-policy` home. Four friction items folded: the URL
+single home, the `mintToken` reference-prose drift, the `delivery-data-dist-spawn` cold-import flake (now its own
+non-concurrent Vitest project), and the spellcheck e2e flake (now settle-aware).
+
+**Verified.** Final-tree gate `npm run check` 0/0, `npm test` exit 0 (2809 tests); all doc/surface gates
+(`check:reference`, `check:reference:signatures`, `check:docs`, `check:surface`); from-scratch showcase e2e
+`CI=1` 46 passed (including `golden-path`, the new `tags.spec`, and the settled `spellcheck.spec`).
+`code-simplifier` found nothing to refine. A pass-end adversarial review **Workflow** (six dimensions, every
+finding independently verified) returned **zero confirmed findings** (one refuted: the `tagSlug` public export,
+confirmed spec-mandated and the leanest seam).
+
+**Breaking (both plans, one minor).** Two `Consumers must` changes under the `## Unreleased` CHANGELOG window:
+(1) mark each concept's tag field `taxonomy: true` (the default tag base is the field name, so a site keeping
+`/tags` URLs names the field `tags` or sets `taxonomyBase`); (2) call `resolveRoute` from the catch-all and branch
+`+page.svelte` on `data.kind`. Public exports added: `feedView`, `sitemapView`, `tagSlug`, `tagArchivePath`,
+`ResolvedRoute`, `ResolvedRouteData`. Removed: `entryLoad`, `archiveLoad`, `tagIndexLoad`, `tagLoad`.
+
+**NEXT.** Merge `worktree-taxonomy-1` to `main` (it carries this as further held, unpublished work above the held
+`0.77.0`). The version is the first free minor after `0.77.0` publishes (verify free with `npm view
+@glw907/cairn-cms versions` at cut time); the CHANGELOG entry stays under `## Unreleased` until then. Cutting the
+release(s) — `0.77.0` for extensibility, then the taxonomy minor — fires OIDC trusted publishing and is Geoff's
+deliberate step, same as `0.77.0`. The site cutovers (ecxc-ski, 907-life) follow the publish: mark the taxonomy
+field, branch the catch-all by `data.kind`, and delete any hand-wired tag routes. **Geoff's queued next dev
+direction** (2026-06-29): brainstorm a tag-management interface + per-tag JSON/RSS feeds (likely a git-committed
+or D1 tag manifest); the charter premise check runs first. See the `cairn-taxonomy-initiative` memory and the
+ROADMAP Next entry. Use `cairn-pass` for pass-start/end.
+
+## Prior next action (2026-06-29): extensibility merged to `main` (pushed, `0.77.0` HELD); NEXT dev pass = taxonomy and tag delivery (spec + 2 plans reviewed, QUEUED)
 
 **Developer-extensibility Plans 1 + 2 are merged to `main` and pushed to origin** (fast-forward; `main` ==
 the verified worktree HEAD). The `0.77.0` release is **HELD**, not cut, per Geoff: `main` carries it

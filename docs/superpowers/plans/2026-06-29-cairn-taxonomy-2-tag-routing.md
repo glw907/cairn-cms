@@ -154,3 +154,54 @@ Fold the two delivery-surface friction items, document the reshape, and clear th
 - **Risk.** Task 3 is the correctness-critical piece: the exact-then-prefix algorithm, the prefix-aware collision throw, and the slug→value round-trip. Its collision and precedence tests are the locks. Task 1's consolidation must preserve permalink behavior (the parity tests are the guard). Task 4 removes public exports; the `check:surface` snapshot is the disclosure.
 - **Interfaces consistent.** `tagSlug`/`tagArchivePath`/`parseTagPath` (Task 1) feed Task 3; `taxonomyBase` (Task 2) feeds Task 3's base registration; `resolveRoute`/`ResolvedRoute` (Task 3) feed Task 4 and the showcase (Task 5).
 - **Adversarial plan review folded (2026-06-29).** The same six-lens workflow's confirmed findings, folded into Plan 2: the catch-all rewire (Task 5) must preserve the existing `resolveReferences` glue inside the `kind === 'entry'` branch (else author/related links silently regress, which `golden-path.spec.ts` guards); the "entry-permalink-that-looks-like-a-tag-path wins" runtime-precedence test is dropped as unobservable (the build-time collision throw is the guarantee, since `createSiteResolver` throws on that configuration before `resolveRoute` is callable); and the `entries()` tag-path enumeration applies the same leading-slash strip the existing `entries()` uses so the prerender paths match shape.
+
+## Post-mortem (2026-06-29, COMPLETE)
+
+All six tasks landed on `worktree-taxonomy-1`, each dispatched to `cairn-implementer` (Sonnet), test-first, with
+the main loop reviewing every diff and clearing the full gate between dispatches. Commits: `f08819e` (Task 1),
+`7d0b555` (Task 2), `84c4abf` (Task 3), `0792f43` (Task 4), `9fdf796` (Task 5), `f18f6b4` (Task 6).
+
+**Built and verified:**
+- **Task 1** `src/lib/content/url-policy.ts`: the one home for URL shaping. `permalink()` moved here behind a
+  re-export shim (zero call-site churn, parity tests green). Added the `tagSlug`/`tagArchivePath`/`parseTagPath`
+  codec.
+- **Task 2** `taxonomyBase?: string` on `ConceptConfig`/`ConceptUrlPolicy`/`ConceptDescriptor`, validated
+  root-relative + URL-safe, defaulting to `/<taxonomyFieldName>`.
+- **Task 3 (correctness-critical)** `SiteResolver.resolveRoute(path): ResolvedRoute | undefined`: exact entry
+  permalink wins, then the longest taxonomy-base prefix yields a tag index or a tag archive whose slug
+  round-trips to its canonical value. Build-time: a per-concept slug→value index (throws on a slug collision)
+  and a prefix-aware collision check over the full concrete route set (entry permalinks, bases, concrete archive
+  paths). `entries()` enumerates the tag paths for prerender. Discriminating resolution + collision tests.
+- **Task 4** collapsed `createPublicRoutes` onto one `resolveRoute(event)` returning the discriminated
+  `ResolvedRouteData`; the entry kind folds the old `entryLoad` render/seo/hero body in byte-identical. Removed
+  `entryLoad`/`archiveLoad`/`tagIndexLoad`/`tagLoad`.
+- **Task 5** the showcase catch-all rewired to `resolveRoute`, branching by `data.kind`; the `resolveReferences`
+  glue preserved inside the entry branch (`golden-path.spec.ts` stayed green, proving no reference regression).
+  New `tags.spec.ts` e2e. From-scratch showcase install so its `file:` deps point at the worktree engine.
+- **Task 6** test-infra riders (the `delivery-data-dist-spawn` cold-import spec serialized into its own
+  non-concurrent `unit-dist-spawn` Vitest project; the spellcheck e2e made settle-aware with `toPass`), the
+  loader-reshape reference docs, the promoted `ResolvedRoute`/`ResolvedRouteData` exports, and the second
+  `Consumers must` migration block.
+
+**Verified:** full gate green at each task; final-tree `npm run check` 0/0, `npm test` exit 0 (2809 tests); all
+doc/surface gates; from-scratch showcase e2e `CI=1` 46 passed (including `golden-path` and the new `tags.spec`,
+and the now-settled `spellcheck.spec`). `code-simplifier` found nothing to refine. The pass-end adversarial
+review workflow (six dimensions, every finding verified) returned **zero confirmed findings**.
+
+**Decisions locked:**
+- **`tagSlug` + `tagArchivePath` are public exports.** The spec states "the tag-index page links via tagSlug",
+  so the slug codec is consumer-facing for link construction; `parseTagPath` stays internal (resolution is the
+  engine's job). The review's charter finder questioned this as possible surface creep; the verifier refuted it
+  (spec-mandated, the leanest seam for a consumer to build tag links). Considered and justified.
+- **`slugFromId` was NOT relocated into `url-policy`** (Task 1 deviation, ratified). It is tightly coupled to the
+  id/filename cluster (`composeDatedId`/`renameId`) in `ids.ts`; extracting just the date-prefix stripping would
+  force `ids.ts` to import back from `url-policy` and create worse coupling than it removes. `permalink()` was the
+  genuinely standalone URL-assembly piece, and moving it satisfies the "one home" intent at zero risk.
+- **`archiveLoad` removed, not relocated.** A consumer needing a concept's chronological archive calls
+  `site.concept(id).all()`; the showcase catch-all only ever used `entryLoad`, so no showcase use dropped.
+- The runtime-precedence test stays dropped as unobservable; the build-time collision throw is the guarantee.
+
+**Breaking surface (both plans, one minor):** two `Consumers must` changes under the `## Unreleased` window —
+mark the taxonomy field with `taxonomy: true` (default tag base is the field name), and branch the catch-all by
+`data.kind`. Public exports added: `feedView`, `sitemapView`, `tagSlug`, `tagArchivePath`, `ResolvedRoute`,
+`ResolvedRouteData`. Removed: `entryLoad`, `archiveLoad`, `tagIndexLoad`, `tagLoad`.

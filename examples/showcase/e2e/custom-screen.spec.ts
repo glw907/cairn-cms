@@ -19,7 +19,9 @@ test('a custom admin screen renders in the shell, reads identity, and writes its
   const name = `Ada-${Date.now()}`;
   await page.fill('input[name="name"]', name);
   await page.fill('input[name="email"]', 'ada@test');
-  // The bare CsrfField rides the shell's context token; the guard fail-closes a tokenless POST.
+  // The bare CsrfField renders the shell's context token, so the create form round-trips. The dev
+  // handle replaces the real guard, so this proves the token plumbing, not the guard's rejection
+  // path; the guard's fail-closed CSRF and owner checks are covered in src/tests/unit/guard.test.ts.
   await page.getByRole('button', { name: 'Add' }).click();
   // The row round-trips through the fake APP_DB.
   const row = page.getByRole('row', { name: new RegExp(name) });

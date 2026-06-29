@@ -111,12 +111,17 @@ needs one. The shell hands its token to descendant forms through Svelte context,
 
 <form method="POST" action="?/create" class="my-4 flex gap-2">
   <CsrfField />
-  <input name="name" placeholder="Name" class="input input-bordered" />
-  <input name="email" placeholder="Email" class="input input-bordered" />
+  <label class="sr-only" for="signup-name">Name</label>
+  <input id="signup-name" name="name" placeholder="Name" class="input input-bordered" />
+  <label class="sr-only" for="signup-email">Email</label>
+  <input id="signup-email" name="email" placeholder="Email" class="input input-bordered" />
   <button class="btn btn-primary">Add</button>
 </form>
 
 <table class="table">
+  <thead>
+    <tr><th>Name</th><th>Email</th><th><span class="sr-only">Actions</span></th></tr>
+  </thead>
   <tbody>
     {#each data.signups as s (s.id)}
       <tr>
@@ -137,7 +142,9 @@ needs one. The shell hands its token to descendant forms through Svelte context,
 
 The screen's markup uses the same DaisyUI classes and the Warm Stone admin theme the rest of the admin
 uses, because it renders inside the shell. Stay with those classes and your screen matches the chrome
-around it.
+around it. Give each input a label (the example uses a visually hidden `sr-only` label so a placeholder
+alone never stands in for one), and surface a failed action's `form?.error` in a `role="status"` region
+on a production screen so the result is announced.
 
 ## Register the sidebar entry
 
@@ -158,9 +165,10 @@ throws at startup with the conflicting view named, so a typo fails the build rat
 cairn screen. The entry also appears in the command palette and resolves a breadcrumb label, both from
 the same data.
 
-Set `ownerOnly: true` to hide the link from a non-owner. The flag is cosmetic: it hides the sidebar
-link, nothing more. The route itself must still gate server-side, which is why the load and actions
-above call `requireOwner`.
+Set `ownerOnly: true` to hide the link from a non-owner. The flag does not protect the route. It hides
+the sidebar link, nothing more, so an editor who types the URL still reaches the screen unless you gate
+it. Call `requireOwner` (or `requireSession`) in the load and in every action, as the example above
+does. The nav flag is presentation; the guard call is the authorization.
 
 ## Declare the binding
 

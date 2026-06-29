@@ -9,7 +9,9 @@ All notable changes to this project are recorded here, most recent first.
 The developer-extensibility seam: a site can add its own admin screen as a normal SvelteKit route under
 `/admin/`, rendered inside cairn's chrome, behind the editor login, with a data-only sidebar entry. This
 entry covers Plan 1 (the capability); the boundary-enforcement work (Plan 2) lands under the same `0.77.0`
-and the release ships once both are in, so this version stays unpublished until then.
+and the release ships once both are in, so this version stays unpublished until then. cairn is still `0.x`
+and the contract may change again before a stable 1.0; this release is breaking and applies the "Consumers
+must" steps below.
 
 What changed. cairn's admin chrome moves out of the `CairnAdmin` view switch into a shared
 `/admin/+layout.svelte` that renders the new exported `CairnAdminShell` component. The catch-all
@@ -32,6 +34,8 @@ This is breaking. Consumers must, in order:
 4. No action for `requireOwner`. It now accepts a minimal `{ locals: { editor } }` event, which widens
    the old signature, so existing callers keep working and a custom route can pass its standard load
    event.
+5. Remove any `import type { LayoutData }`. `LayoutData` is removed from `@glw907/cairn-cms/sveltekit`;
+   read the admin payload from `AdminShellData` (via `page.data.shell`) instead.
 
 ## 0.76.0
 

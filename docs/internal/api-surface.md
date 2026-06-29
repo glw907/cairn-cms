@@ -337,7 +337,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `healthLoad`: (event: { platform?: { env?: BackendEnv } }, runtime: CairnRuntime) => Promise<HealthData>
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
 - `isPublicAdminPath`: (pathname: string) => boolean
-- `LayoutData`: { siteName: string; user: { displayName: string; email: string; role: Role }; concepts: NavConcept[]; pathname: string; canManageEditors: boolean; navLabel: string | null; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[]; csrf: string; pendingEntries: { concept: string; id: string }[] | null }
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `MediaAltPropagateFailure`: { error: string }
 - `MediaBulkFailure`: { error: string }

@@ -787,3 +787,29 @@ Consumers must: change the adapter `render` from `(md, opts) => ...` to
 Consumers must: drop any `stagger` option passed to `createRenderer` or the `render` seam. The
 `data-rise` ordinal is now always emitted and is inert without site CSS, so a site that wants the
 entrance cascade keeps its `[data-rise]` rules and a site that does not is unaffected.
+
+## 0.77.0: the admin chrome moves to a shared shell layout (breaking)
+
+cairn's admin chrome moves out of the `CairnAdmin` view switch into a shared `/admin/+layout.svelte`
+that renders the new exported `CairnAdminShell` component, so a site can add its own admin screen as a
+normal SvelteKit route under `/admin/` behind the editor login. The `AdminLayout` component is renamed
+to `CairnAdminShell`, the shell payload moves to `page.data.shell`, and the dead `LayoutData` type is
+removed. Apply each action below; the seam is in
+[Add a custom admin screen](./add-a-custom-admin-screen.md).
+
+Consumers must: add the shell layout mount. Create `src/routes/admin/+layout.server.ts` with
+`export const load = admin.shellLoad;` and `src/routes/admin/+layout.svelte` that renders
+`<CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>`. The chrome no longer rides
+the catch-all load; it rides this layout. Copy the showcase files at
+`examples/showcase/src/routes/admin/`.
+
+Consumers must: rename `AdminLayout` to `CairnAdminShell`. The component export is renamed. A site on
+the canonical single-mount never imported it directly, so this affects only a hand-rolled per-route
+mount.
+
+Consumers must: read `siteName` and the other shell fields from `page.data.shell`, not `data.layout`.
+The per-view `AdminData` members no longer carry a `layout` field; the shell payload is the one source.
+
+Consumers must: remove any `import type { LayoutData }`. `LayoutData` is removed from
+`@glw907/cairn-cms/sveltekit`; read the admin payload from `AdminShellData` (via `page.data.shell`)
+instead.

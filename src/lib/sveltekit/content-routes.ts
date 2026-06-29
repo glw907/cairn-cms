@@ -70,37 +70,14 @@ export interface NavConcept {
   label: string;
 }
 
-/** The admin layout's data: site identity, the signed-in user, the nav, the active path, and theme. */
-export interface LayoutData {
-  siteName: string;
-  user: { displayName: string; email: string; role: Role };
-  concepts: NavConcept[];
-  pathname: string;
-  canManageEditors: boolean;
-  /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
-  navLabel: string | null;
-  /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
-  theme: 'cairn-admin' | 'cairn-admin-dark';
-  /**
-   * The nav group labels the user has collapsed, from the persisted cookie. Read at SSR so a
-   *  collapsed group renders collapsed with no flash. Empty when none are collapsed.
-   */
-  collapsedNav: string[];
-  /** The session's CSRF double-submit token, rendered as a hidden field in every admin form. */
-  csrf: string;
-  /**
-   * Every entry with unpublished edits (a `cairn/` ref), for the topbar's publish-all action.
-   *  Null when GitHub is unreachable, so the topbar hides the action rather than lying.
-   */
-  pendingEntries: { concept: string; id: string }[] | null;
-}
-
 /**
  * The shared admin shell's data, produced by `shellPayload` and consumed by the CairnAdminShell
  *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
- *  carries only the site name and renders bare; an authed path mirrors `LayoutData` field-for-field,
- *  adds the custom-nav entries, and streams the pending-publish set as a deferred promise so a
- *  custom route and the login page never block on a GitHub round-trip up front.
+ *  carries only the site name and renders bare; an authed path carries the full admin payload, the
+ *  site identity, the signed-in editor, the nav, the active path, the CSRF token, and the streamed
+ *  pending entries, adds the developer's custom-nav entries, and streams the pending-publish set as
+ *  a deferred promise so a custom route and the login page never block on a GitHub round-trip up
+ *  front.
  */
 export type AdminShellData =
   | { public: true; siteName: string }

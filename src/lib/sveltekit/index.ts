@@ -7,7 +7,6 @@ export { createContentRoutes } from './content-routes.js';
 export { createMediaRoute } from './media-route.js';
 export type {
   NavConcept,
-  LayoutData,
   AdminShellData,
   EntrySummary,
   ListData,

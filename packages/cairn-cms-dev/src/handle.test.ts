@@ -4,7 +4,7 @@ import { devBackendHandle } from './handle.js';
 // devBackendHandle now mutates no global: it constructs a conforming Backend over the in-memory
 // store and sets event.locals.backend per request, so no fetch snapshot/restore is needed.
 
-test('the handle sets the dev backend, an owner editor, and the AUTH_DB binding on an /admin request', async () => {
+test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_DB bindings on an /admin request', async () => {
   const handle = devBackendHandle();
   const event = {
     url: new URL('http://localhost/admin'),
@@ -26,6 +26,8 @@ test('the handle sets the dev backend, an owner editor, and the AUTH_DB binding 
     role: 'owner',
   });
   expect(event.platform.env.AUTH_DB).toBeTruthy();
+  // APP_DB is the developer-binding example: the custom Signups screen reads and writes its own D1.
+  expect(event.platform.env.APP_DB).toBeTruthy();
 });
 
 test('the handle does not touch a public (non-admin, non-media) request', async () => {

@@ -11,6 +11,7 @@ import type { Handle } from '@sveltejs/kit';
 import type { Backend } from '@glw907/cairn-cms';
 import { createDevBackend, seedMediaLibrary, SEED_MEDIA_KEYS } from './fake-github.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
+import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
 
 /** Options for the dev-backend handle. */
@@ -45,6 +46,7 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
   // One instance each for the server's lifetime, like the in-memory repo, so editors added through
   // /admin/editors and an asset uploaded through /admin persist across requests.
   const fakeAuthDb = createFakeAuthDb();
+  const fakeAppDb = createFakeAppDb();
   const fakeR2 = createFakeR2();
 
   // Seed the R2 bytes for the Media Library fixtures, so each seeded asset's thumbnail resolves
@@ -67,10 +69,12 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       // structurally at runtime. AUTH_DB is admin-only; MEDIA_BUCKET serves both the upload action
       // under /admin and the delivery route under /media. ANTHROPIC_API_KEY is a dummy presence
       // flag: the tidy action refuses before building a client when it is absent, so the value is
-      // set even though the fake client (fake-anthropic.ts) never reads it.
+      // set even though the fake client (fake-anthropic.ts) never reads it. APP_DB is the
+      // developer-binding example: a custom admin screen reads and writes its own D1 binding the
+      // engine never touches, so the dev handle supplies a fake for it the same way it does AUTH_DB.
       event.platform = {
         env: {
-          ...(isAdmin ? { AUTH_DB: fakeAuthDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
+          ...(isAdmin ? { AUTH_DB: fakeAuthDb, APP_DB: fakeAppDb, ANTHROPIC_API_KEY: 'sk-showcase-stub' } : {}),
           MEDIA_BUCKET: fakeR2,
         },
       } as unknown as App.Platform;

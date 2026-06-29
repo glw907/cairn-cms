@@ -11,6 +11,8 @@ declare global {
       env: {
         // cairn-cms self-owned magic-link auth store (editor allowlist, sessions, tokens).
         AUTH_DB: D1Database;
+        // The developer's own D1 binding for the custom Signups admin screen (cairn never reads it).
+        APP_DB: D1Database;
         // Email Sending binding for magic links (arbitrary recipients).
         EMAIL: NonNullable<AuthEnv['EMAIL']>;
         // Canonical origin for magic-link confirmation links (never from a request header).

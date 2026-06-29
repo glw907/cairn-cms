@@ -16,6 +16,11 @@
       "binding": "AUTH_DB",
       "database_name": "cairn-showcase-auth",
       "database_id": "00000000-0000-0000-0000-000000000000"
+    },
+    {
+      "binding": "APP_DB",
+      "database_name": "cairn-showcase-app",
+      "database_id": "00000000-0000-0000-0000-000000000001"
     }
   ],
   // R2 bucket backing the media library; the /media route streams content-addressed bytes from here.

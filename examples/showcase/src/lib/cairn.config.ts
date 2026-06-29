@@ -198,6 +198,9 @@ export const cairn = defineAdapter({
   },
   editor: {
     nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+    // The custom-screen sidebar entry: data-only, a typed Lucide icon name, an unclaimed /admin href.
+    // The /admin/signups route gates server-side; this entry only renders the link in the shell.
+    adminNav: [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
     // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
     // frame links site.css and reproduces that container for a design-accurate proof.
     preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main' },

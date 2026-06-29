@@ -23,6 +23,9 @@ export const MAX_URL_LENGTH = 2048;
 /** Allowlist for safe URL schemes: site-relative, in-page anchors, http(s), mailto, and tel. */
 const SAFE_URL = /^(\/|#|https?:\/\/|mailto:|tel:)/i;
 
+/** A valid vocabulary `value`: lowercase alphanumeric segments joined by single hyphens, the stored token and filter key. */
+const SAFE_TAG_VALUE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
 export class NavValidationError extends Error {
   constructor(message: string) {
     super(message);
@@ -90,7 +93,24 @@ export interface SiteConfig {
    *  the prompt's CONVENTIONS section. The Anthropic API key is a Worker secret, never config.
    */
   tidy?: TidyConfig;
+  /**
+   * The editor-owned tag vocabulary (spec, tag management). Each entry is a frozen slug `value` (the
+   *  stored frontmatter token and the filter key) plus an editable display `label`. Global, not
+   *  per-concept. Absent means the taxonomy field stays the open creatable multiselect (opt-in).
+   */
+  vocabulary?: VocabularyEntry[];
   [key: string]: unknown;
+}
+
+/**
+ * One vocabulary entry: a frozen slug `value` and an editable display `label`. The object stays open
+ * to richer fields later (descriptions, per-concept scope), so this carries only the two locked keys.
+ */
+export interface VocabularyEntry {
+  /** The stored frontmatter token and the filter key. A lowercase hyphenated slug (SAFE_TAG_VALUE). */
+  value: string;
+  /** The editable display name shown in the editor and the tag-admin screen. */
+  label: string;
 }
 
 /**
@@ -335,5 +355,48 @@ export function setTidy(raw: string, conventions: Partial<TidyConventions>): str
     if (value !== undefined) block[key] = value;
   }
   doc.setIn(['tidy', 'conventions'], block);
+  return doc.toString();
+}
+
+/**
+ * Validate and normalize an untrusted value into a VocabularyEntry[]: an array only, each element an
+ * object with a non-empty string `label` and a non-empty string `value` matching SAFE_TAG_VALUE, no
+ * duplicate `value`. Returns the entries in input order. Throws SiteConfigError on any violation. The
+ * committed config is the input, so a malformed vocabulary fails the build the same as a bad menu.
+ */
+export function validateVocabulary(value: unknown): VocabularyEntry[] {
+  if (!Array.isArray(value)) throw new SiteConfigError('Vocabulary must be a list of entries');
+  const seen = new Set<string>();
+  return value.map((raw) => {
+    if (typeof raw !== 'object' || raw === null) throw new SiteConfigError('Each vocabulary entry must be an object');
+    const entry = raw as Record<string, unknown>;
+    if (typeof entry.label !== 'string' || !entry.label.trim()) {
+      throw new SiteConfigError('Each vocabulary entry needs a non-empty label');
+    }
+    if (typeof entry.value !== 'string' || !SAFE_TAG_VALUE.test(entry.value)) {
+      throw new SiteConfigError('Each vocabulary value must be a lowercase hyphenated slug (a-z, 0-9)');
+    }
+    if (seen.has(entry.value)) throw new SiteConfigError(`Duplicate vocabulary value: ${entry.value}`);
+    seen.add(entry.value);
+    return { value: entry.value, label: entry.label };
+  });
+}
+
+/** Extract the tag vocabulary from a parsed config and validate it. Returns [] when the key is absent. */
+export function extractVocabulary(config: SiteConfig): VocabularyEntry[] {
+  return config.vocabulary === undefined ? [] : validateVocabulary(config.vocabulary);
+}
+
+/**
+ * Replace the tag vocabulary in the YAML site-config text and reserialize, preserving every other
+ * top-level key and the file's comments and key order (parseDocument round-trips both, the same
+ * machinery setMenu and setTidy use). Each entry serializes to just `value` and `label`.
+ */
+export function setVocabulary(raw: string, vocab: VocabularyEntry[]): string {
+  const doc = parseDocument(raw);
+  if (doc.get('siteName') === undefined) {
+    throw new SiteConfigError('Site config must be a mapping with a siteName');
+  }
+  doc.setIn(['vocabulary'], vocab.map((v) => ({ value: v.value, label: v.label })));
   return doc.toString();
 }

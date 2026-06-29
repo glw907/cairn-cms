@@ -7,6 +7,9 @@ import {
   extractMenu,
   setMenu,
   setTidy,
+  validateVocabulary,
+  extractVocabulary,
+  setVocabulary,
   dictionaryFileForDialect,
   DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
@@ -221,5 +224,69 @@ describe('setTidy', () => {
 
   it('throws when the root has no siteName', () => {
     expect(() => setTidy('description: x\n', { fixes: true })).toThrow(SiteConfigError);
+  });
+});
+
+describe('validateVocabulary', () => {
+  it('accepts a well-formed vocabulary and returns it in input order', () => {
+    expect(
+      validateVocabulary([
+        { value: 'web-design', label: 'Web Design' },
+        { value: 'svelte', label: 'Svelte' },
+      ]),
+    ).toEqual([
+      { value: 'web-design', label: 'Web Design' },
+      { value: 'svelte', label: 'Svelte' },
+    ]);
+  });
+
+  it('throws on a non-array', () => {
+    expect(() => validateVocabulary({ value: 'a', label: 'A' })).toThrow(SiteConfigError);
+  });
+
+  it('throws on a duplicate value', () => {
+    expect(() =>
+      validateVocabulary([
+        { value: 'web-design', label: 'Web Design' },
+        { value: 'web-design', label: 'Again' },
+      ]),
+    ).toThrow(SiteConfigError);
+  });
+
+  it('throws on an empty label', () => {
+    expect(() => validateVocabulary([{ value: 'web-design', label: '' }])).toThrow(SiteConfigError);
+  });
+
+  it('throws on a non-slug value', () => {
+    for (const bad of ['Web Design', 'WebDesign', 'web design', '-x']) {
+      expect(() => validateVocabulary([{ value: bad, label: 'X' }])).toThrow(SiteConfigError);
+    }
+  });
+});
+
+describe('extractVocabulary', () => {
+  it('parses and returns a well-formed vocabulary from a config', () => {
+    const config = parseSiteConfig('siteName: S\nvocabulary:\n  - value: web-design\n    label: Web Design\n');
+    expect(extractVocabulary(config)).toEqual([{ value: 'web-design', label: 'Web Design' }]);
+  });
+
+  it('returns [] when the key is absent', () => {
+    expect(extractVocabulary(parseSiteConfig('siteName: S\n'))).toEqual([]);
+  });
+});
+
+describe('setVocabulary', () => {
+  it('round-trips the vocabulary while preserving siteName and other keys', () => {
+    const raw = 'siteName: S\ndescription: keep me\nmenus:\n  primary:\n    - label: Home\n      url: /\n';
+    const out = setVocabulary(raw, [{ value: 'a', label: 'A' }]);
+    const reparsed = parseSiteConfig(out);
+    expect(reparsed.siteName).toBe('S');
+    expect(reparsed.description).toBe('keep me');
+    expect(reparsed.menus?.primary).toEqual([{ label: 'Home', url: '/' }]);
+    expect(extractVocabulary(reparsed)).toEqual([{ value: 'a', label: 'A' }]);
+  });
+
+  it('throws when the root has no siteName', () => {
+    expect(() => setVocabulary('description: x\n', [{ value: 'a', label: 'A' }])).toThrow(SiteConfigError);
   });
 });

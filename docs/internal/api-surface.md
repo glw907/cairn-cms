@@ -47,6 +47,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `escapeLinkText`: (text: string) => string
 - `extractCairnLinks`: (body: string) => CairnRef[]
 - `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
+- `extractVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `FieldBehavior`: { validate?: ((value: unknown, siblings: Record<string, unknown>) => string | null); itemLabel?: ((item: Record<string, unknown>, index: number) => string) }
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
 - `fields`: { text: <const O extends Omit<TextField, "type">>(o: O) => TextField & O; textarea: <const O extends Omit<TextareaField, "type">>(o: O) => TextareaField & O; number: <const O extends Omit<NumberField, "type">>(o: O) => NumberField & O; select: <const O extends Omit<SelectField, "type">>(o: O) => SelectField & O; multiselect: <const O extends Omit<MultiselectField, "type">>(o: O) => MultiselectField & O; url: <const O extends Omit<UrlField, "type">>(o: O) => UrlField & O; email: <const O extends Omit<EmailField, "type">>(o: O) => EmailField & O; date: <const O extends Omit<DateField, "type">>(o: O) => DateField & O; datetime: <const O extends Omit<DatetimeField, "type">>(o: O) => DatetimeField & O; boolean: <const O extends Omit<BooleanField, "type">>(o: O) => BooleanField & O; icon: <const O extends Omit<IconField, "type">>(o: O) => IconField & O; image: <const O extends Omit<ImageField, "type">>(o: O) => ImageField & O; object: <const F extends Record<string, FieldDescriptor>, const O extends Omit<ObjectField, "type" | "fields">>(o: { fields: F } & O) => ObjectField & { fields: F } & O; reference: <const O extends Omit<ReferenceField, "type">>(o: O) => ReferenceField & O; array: <const I extends FieldDescriptor, const O extends Omit<ArrayField, "type" | "item">>(item: I, o?: O) => ArrayField & { item: I } & O }
@@ -116,7 +117,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `serializeManifest`: (manifest: Manifest) => string
 - `serializeMarkdown`: (frontmatter: object, body: string) => string
 - `setMenu`: (raw: string, name: string, tree: NavNode[]) => string
-- `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig }
+- `setVocabulary`: (raw: string, vocab: VocabularyEntry[]) => string
+- `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
 - `SiteConfigError`: typeof SiteConfigError
 - `SiteRender`: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>
 - `SlotDef`: { name: string; label: string; kind: "markdown" | "inline" | "repeatable"; required?: boolean; help?: string; itemFields?: Record<string, FieldDescriptor>; itemLabel?: ((item: Record<string, string | boolean>, index: number) => string) }
@@ -131,10 +133,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `UrlField`: { type: "url"; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `validateComponent`: (markdown: string, def: ComponentDef) => Promise<ComponentValidation>
 - `validateNavTree`: (value: unknown, maxDepth: number) => NavNode[]
+- `validateVocabulary`: (value: unknown) => VocabularyEntry[]
 - `ValidationIssue`: { path: (string | number)[]; message: string }
 - `ValidationResult`: { ok: true; data: Record<string, unknown> } | { ok: false; errors: Record<string, string>; issues?: ValidationIssue[] }
 - `verifyManifest`: (built: Manifest, committedRaw: string) => void
 - `verifyReferences`: (manifest: Manifest) => void
+- `VocabularyEntry`: { value: string; label: string }
 
 ## `/ambient`
 

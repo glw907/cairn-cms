@@ -129,8 +129,11 @@ export {
   extractMenu,
   setMenu,
   validateNavTree,
+  validateVocabulary,
+  extractVocabulary,
+  setVocabulary,
   MAX_NAV_NODES,
   NavValidationError,
   SiteConfigError,
 } from './nav/site-config.js';
-export type { NavNode, SiteConfig } from './nav/site-config.js';
+export type { NavNode, SiteConfig, VocabularyEntry } from './nav/site-config.js';

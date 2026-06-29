@@ -2,11 +2,13 @@
 @component
 The single-mount admin page. A site's catch-all `/admin/[...path]` route renders this one
 component for every admin view, feeding it the discriminated `AdminData` from `createCairnAdmin`'s
-load. It is a pure switcher on `data.view`: the public auth pages mount bare, and the authed views
-mount inside `AdminLayout`. No styling or wrapper elements of its own.
+load. It is a pure switcher on `data.view`: every view renders bare, since the shared chrome now
+rides the `/admin/+layout.svelte` shell (CairnAdminShell), not this component. The edit view reads
+its `siteName` from the shell payload on `page.data.shell`. No styling or wrapper elements of its own.
 -->
 <script lang="ts">
-  import AdminLayout from './AdminLayout.svelte';
+  import { page } from '$app/state';
+  import type { AdminShellData } from '../sveltekit/content-routes.js';
   import LoginPage from './LoginPage.svelte';
   import ConfirmPage from './ConfirmPage.svelte';
   import ConceptList from './ConceptList.svelte';
@@ -50,27 +52,30 @@ mount inside `AdminLayout`. No styling or wrapper elements of its own.
   <LoginPage data={data.page} {form} />
 {:else if data.view === 'confirm'}
   <ConfirmPage data={data.page} />
-{:else}
-  <AdminLayout data={data.layout}>
-    {#if data.view === 'list'}
-      <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
-           concept id keys the list: crossing concepts remounts it and drops the old query,
-           sort, page, and dialog state. -->
-      {#key data.page.conceptId}
-        <ConceptList data={data.page} {form} />
-      {/key}
-    {:else if data.view === 'edit'}
-      <EditPage data={{ ...data.page, siteName: data.layout.siteName }} {render} {registry} {icons} {form} />
-    {:else if data.view === 'editors'}
-      <ManageEditors data={data.page} {form} />
-    {:else if data.view === 'nav'}
-      <NavTree data={data.page} />
-    {:else if data.view === 'media'}
-      <CairnMediaLibrary data={data.page} {form} />
-    {:else if data.view === 'settings'}
-      <CairnTidySettings data={data.page} />
-    {:else if data.view === 'help'}
-      <HelpHome data={data.page} />
-    {/if}
-  </AdminLayout>
+{:else if data.view === 'list'}
+  <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
+       concept id keys the list: crossing concepts remounts it and drops the old query,
+       sort, page, and dialog state. -->
+  {#key data.page.conceptId}
+    <ConceptList data={data.page} {form} />
+  {/key}
+{:else if data.view === 'edit'}
+  <!-- siteName rides the shell payload (page.data.shell), an authed member at every edit route. -->
+  <EditPage
+    data={{ ...data.page, siteName: (page.data.shell as AdminShellData & { public: false }).siteName }}
+    {render}
+    {registry}
+    {icons}
+    {form}
+  />
+{:else if data.view === 'editors'}
+  <ManageEditors data={data.page} {form} />
+{:else if data.view === 'nav'}
+  <NavTree data={data.page} />
+{:else if data.view === 'media'}
+  <CairnMediaLibrary data={data.page} {form} />
+{:else if data.view === 'settings'}
+  <CairnTidySettings data={data.page} />
+{:else if data.view === 'help'}
+  <HelpHome data={data.page} />
 {/if}

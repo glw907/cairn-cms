@@ -1,7 +1,7 @@
 <!--
 @component
 The Help home admin screen, the standing place an author comes to get their bearings and look up
-how things work. It renders inside `AdminLayout` (the office shell), so it carries no `data-theme`
+how things work. It renders inside `CairnAdminShell` (the office shell), so it carries no `data-theme`
 wrapper and imports no CSS: the layout owns the theme and `cairn-admin.css`, and this component
 consumes the Warm Stone tokens through its scoped `<style>` block.
 
@@ -335,7 +335,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
 </div>
 
 <style>
-  /* The Help home content column. The styles consume the Warm Stone tokens the AdminLayout theme
+  /* The Help home content column. The styles consume the Warm Stone tokens the CairnAdminShell theme
      root owns; this block never redefines :root or [data-theme]. Ported from the rev.2 polished
      mockup (docs/internal/design/2026-06-23-help-shell-mockup-rev2-polished.html), adapted to the
      three co-equal eyebrow-plus-display sections and the derived getting-started state. */

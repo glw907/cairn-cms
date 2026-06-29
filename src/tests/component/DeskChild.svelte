@@ -1,7 +1,7 @@
 <!--
 @component
-Test stand-in for EditPage's topbar registration: a descendant of AdminLayout that fills the topbar
-holder with a desk snippet, so AdminLayout's desk-route band rendering can be exercised without
+Test stand-in for EditPage's topbar registration: a descendant of CairnAdminShell that fills the
+topbar holder with a desk snippet, so the shell's desk-route band rendering can be exercised without
 mounting the whole editor.
 -->
 <script lang="ts">

@@ -52,12 +52,7 @@ function listEvent(params: Record<string, string>, search = '') {
 
 afterEach(() => vi.restoreAllMocks());
 
-/** Stub fetch with an empty ref listing so layoutLoad's pending-branch scan resolves clean. */
-function stubNoRefs() {
-  vi.stubGlobal('fetch', vi.fn(async () => new Response('[]', { status: 200 })));
-}
-
-/** A layout-load event with a settable editor, path, and cookie jar. */
+/** A shell-payload event with a settable editor, path, and cookie jar. */
 function makeEvent(opts: {
   pathname: string;
   editor: { email: string; displayName: string; role: 'owner' | 'editor' };
@@ -73,62 +68,63 @@ function makeEvent(opts: {
   };
 }
 
-describe('layoutLoad', () => {
-  it('carries the editor email and resolves the theme from the cookie', async () => {
-    stubNoRefs();
+/** Narrow the shell payload to its authed member, failing the test loudly otherwise. */
+function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
+  const { shell } = routes.shellPayload(event as never);
+  if (shell.public) throw new Error('expected authed shell');
+  return shell;
+}
+
+describe('shellPayload', () => {
+  it('carries the editor email and resolves the theme from the cookie', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const event = makeEvent({
+    const shell = authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
       cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
-    });
-    const data = await routes.layoutLoad(event as never);
-    expect(data.user.email).toBe('ed@example.com');
-    expect(data.theme).toBe('cairn-admin-dark');
+    }));
+    expect(shell.user.email).toBe('ed@example.com');
+    expect(shell.theme).toBe('cairn-admin-dark');
   });
 
-  it('defaults the theme to light when no cookie is set', async () => {
-    stubNoRefs();
+  it('defaults the theme to light when no cookie is set', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const event = makeEvent({
+    const shell = authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},
-    });
-    expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
+    }));
+    expect(shell.theme).toBe('cairn-admin');
   });
 
-  it('ignores an unknown cookie value and falls back to light', async () => {
-    stubNoRefs();
+  it('ignores an unknown cookie value and falls back to light', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const event = makeEvent({
+    const shell = authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-theme': 'bogus' },
-    });
-    expect((await routes.layoutLoad(event as never)).theme).toBe('cairn-admin');
+    }));
+    expect(shell.theme).toBe('cairn-admin');
   });
 
-  it('reads the collapsed nav groups from the cookie, url-decoded', async () => {
-    stubNoRefs();
+  it('reads the collapsed nav groups from the cookie, url-decoded', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const event = makeEvent({
+    const shell = authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
-    });
-    expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual(['Core', 'Black & White']);
+    }));
+    expect(shell.collapsedNav).toEqual(['Core', 'Black & White']);
   });
 
-  it('defaults collapsedNav to empty when no cookie is set', async () => {
-    stubNoRefs();
+  it('defaults collapsedNav to empty when no cookie is set', () => {
     const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const event = makeEvent({
+    const shell = authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},
-    });
-    expect((await routes.layoutLoad(event as never)).collapsedNav).toEqual([]);
+    }));
+    expect(shell.collapsedNav).toEqual([]);
   });
 });
 

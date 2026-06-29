@@ -1,5 +1,5 @@
 // editor-help Pass 2 Task 3: the Help home load. helpLoad derives getting-started progress from the
-// committed manifest and the open pending branches (the same fail-safe layoutLoad uses), returns the
+// committed manifest and the open pending branches (the same GitHub fail-safe the shell uses), returns the
 // markdown reference verbatim, and passes the runtime's support contact through. A GitHub failure
 // degrades to an empty corpus (0 of 3) rather than failing the screen.
 import { describe, it, expect, vi, afterEach } from 'vitest';

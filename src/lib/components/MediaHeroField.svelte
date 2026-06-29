@@ -96,7 +96,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     onneedsaltchange,
   }: Props = $props();
 
-  // The CSRF token getter from the admin context (AdminLayout provides it). Undefined outside the
+  // The CSRF token getter from the admin context (CairnAdminShell provides it). Undefined outside the
   // shell, where the empty token fails the guard's check, the intended fail-closed signal.
   const csrf = getContext<(() => string) | undefined>(CSRF_CONTEXT_KEY);
 

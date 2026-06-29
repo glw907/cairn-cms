@@ -24,12 +24,12 @@ function runtime(): CairnRuntime {
   };
 }
 
-function event(pathname: string, role: 'owner' | 'editor') {
+function event(pathname: string, role: 'owner' | 'editor' | null) {
   return {
     url: new URL(`https://test.example${pathname}`),
     params: {},
     request: new Request('https://test.example'),
-    locals: { editor: { email: 'e@test', displayName: 'Ed', role } },
+    locals: { editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role } },
     platform: { env: {} },
     cookies: {
       get: () => undefined,
@@ -41,49 +41,71 @@ function event(pathname: string, role: 'owner' | 'editor') {
 
 afterEach(() => vi.restoreAllMocks());
 
-describe('layoutLoad', () => {
-  it('returns nav concepts, the user, the active path, and owner capability', async () => {
+describe('shellPayload', () => {
+  it('returns nav concepts, the user, the active path, and owner capability for an authed path', () => {
     const routes = createContentRoutes(runtime());
-    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
-    expect(data.siteName).toBe('Test Site');
-    expect(data.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
-    expect(data.concepts).toEqual([
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.siteName).toBe('Test Site');
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.concepts).toEqual([
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },
     ]);
-    expect(data.pathname).toBe('/admin/posts');
-    expect(data.canManageEditors).toBe(true);
-    expect(data.navLabel).toBeNull();
+    expect(shell.pathname).toBe('/admin/posts');
+    expect(shell.canManageEditors).toBe(true);
+    expect(shell.navLabel).toBeNull();
+    // Task 3 fills customNav; until then it is always empty.
+    expect(shell.customNav).toEqual([]);
   });
 
-  it('issues a CSRF token in the layout data', async () => {
+  it('issues a CSRF token in the shell data', () => {
     const routes = createContentRoutes(runtime());
-    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
-    expect(data.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
-  it('denies the manage-editors capability to an editor', async () => {
+  it('denies the manage-editors capability to an editor', () => {
     const routes = createContentRoutes(runtime());
-    const data = await routes.layoutLoad(event('/admin/pages', 'editor') as never);
-    expect(data.canManageEditors).toBe(false);
+    const { shell } = routes.shellPayload(event('/admin/pages', 'editor') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.canManageEditors).toBe(false);
   });
 
-  it('exposes the nav label when a navMenu is configured', async () => {
+  it('exposes the nav label when a navMenu is configured', () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-    const data = await createContentRoutes(rt).layoutLoad(event('/admin/nav', 'editor') as never);
-    expect(data.navLabel).toBe('Primary nav');
+    const { shell } = createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.navLabel).toBe('Primary nav');
   });
 
-  it('lists the pending entries parsed from the cairn refs', async () => {
+  it('returns a bare public payload for a login path and never resolves the backend', async () => {
+    const backend = makeGithubBackend(REPO, async () => 'tok');
+    const spy = vi.spyOn(backend, 'listBranches');
+    const routes = createContentRoutes(runtime(), { backend });
+    const { shell } = routes.shellPayload(event('/admin/login', null) as never);
+    expect(shell.public).toBe(true);
+    if (!shell.public) throw new Error('expected public shell');
+    expect(shell.siteName).toBe('Test Site');
+    // The login page pays no GitHub round-trip.
+    await Promise.resolve();
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('streams the pending entries parsed from the cairn refs (not awaited up front)', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.createBranch('cairn/posts/2026-05-hello', 'main');
     gh.createBranch('cairn/pages/about', 'main');
     gh.createBranch('cairn/oops', 'main'); // malformed: no entry id, dropped by the parser
     gh.install();
-    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
-    expect(data.pendingEntries).toEqual([
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok') });
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    // pendingEntries is a streamed promise, resolved here for the assertion.
+    expect(typeof shell.pendingEntries.then).toBe('function');
+    expect(await shell.pendingEntries).toEqual([
       { concept: 'pages', id: 'about' },
       { concept: 'posts', id: '2026-05-hello' },
     ]);
@@ -95,12 +117,13 @@ describe('layoutLoad', () => {
     gh.createBranch('cairn/widgets/x', 'main'); // concept this site does not configure
     gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
     gh.install();
-    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
-    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
-    expect(data.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
+    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok') });
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
   });
 
-  it('degrades pendingEntries to null and logs github.unreachable when the token mint fails', async () => {
+  it('degrades pendingEntries to null and logs github.unreachable when the token mint throws', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const routes = createContentRoutes(runtime(), {
       backend: makeGithubBackend(REPO, async () => {
@@ -109,17 +132,19 @@ describe('layoutLoad', () => {
         throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
       }),
     });
-    const data = await routes.layoutLoad(event('/admin/posts', 'owner') as never);
-    expect(data.pendingEntries).toBeNull();
-    expect(data.siteName).toBe('Test Site');
-    expect(data.user.email).toBe('e@test');
-    expect(data.concepts).toHaveLength(2);
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.siteName).toBe('Test Site');
+    expect(shell.user.email).toBe('e@test');
+    expect(shell.concepts).toHaveLength(2);
+    // A sync token-mint throw becomes a caught rejection that degrades to null.
+    expect(await shell.pendingEntries).toBeNull();
 
     const records = warnSpy.mock.calls
       .map((c) => c[0] as { event?: string; scope?: string; error?: string })
       .filter((r) => r.event === 'github.unreachable');
     expect(records).toHaveLength(1);
-    expect(records[0].scope).toBe('layout');
+    expect(records[0].scope).toBe('shell');
     expect(records[0].error).toContain('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     expect(records[0].error).not.toContain('BEGIN');
     expect(records[0].error).not.toContain('PRIVATE KEY');

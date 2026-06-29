@@ -96,17 +96,17 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // first when the model is merely slow; this catches a stalled connection past that.
   const TIDY_CLIENT_TIMEOUT_MS = 45_000;
 
-  // The topbar context portal (AdminLayout owns the holder). The desk snippet below carries the
+  // The topbar context portal (CairnAdminShell owns the holder). The desk snippet below carries the
   // document's status and action clusters; this effect registers it into the band on mount and
   // nulls it on teardown, so CairnAdmin's view switch (which unmounts EditPage) clears the band.
-  // The holder is absent only when EditPage renders outside AdminLayout (it always renders inside
+  // The holder is absent only when EditPage renders outside CairnAdminShell (it always renders inside
   // it in the app); the optional chaining keeps that case inert.
   const topbar = useTopbar();
   $effect(() => {
     if (!topbar) return;
     topbar.desk = desk;
-    // Zen drops the band: AdminLayout reads this flag to remove the whole topbar element, so the
-    // desk's clusters and AdminLayout's own chrome (the drawer toggle, the breadcrumb) all slide
+    // Zen drops the band: CairnAdminShell reads this flag to remove the whole topbar element, so the
+    // desk's clusters and CairnAdminShell's own chrome (the drawer toggle, the breadcrumb) all slide
     // away together. The effect tracks `zen`, so a toggle reaches the band live.
     topbar.zen = zen;
     return () => {
@@ -1268,11 +1268,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const detailFields = $derived(data.fields.filter((f) => f !== titleField && f !== draftField));
 </script>
 
-<!-- The desk controls live in the one header band: AdminLayout renders this snippet through the
+<!-- The desk controls live in the one header band: CairnAdminShell renders this snippet through the
      topbar context portal, to the right of the breadcrumb (the way back). Two clusters: the
      document status behind a hairline (status badge, save-state) and the actions split by a
      second hairline into the quiet pair (Details, overflow) and the lifecycle pair
-     (Publish, Save). The breadcrumb itself stays in AdminLayout, so the duplicate is gone. -->
+     (Publish, Save). The breadcrumb itself stays in CairnAdminShell, so the duplicate is gone. -->
 {#snippet desk()}
   <div class="ml-2 flex min-w-0 flex-1 items-center gap-3">
     <!-- The document status, fenced off by a hairline on its left. -->

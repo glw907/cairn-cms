@@ -1,32 +1,36 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { render } from 'vitest-browser-svelte';
 import CairnAdmin from '../../lib/components/CairnAdmin.svelte';
 import { createCairnAdmin, type AdminData } from '../../lib/sveltekit/cairn-admin.js';
 import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
+import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
+import { page } from './app-state.js';
 
-function layout(over = {}) {
+// The authed shell payload the edit view reads its siteName from (page.data.shell). CairnAdmin no
+// longer carries chrome, so only the edit view consults the shell.
+function shell(): AdminShellData {
   return {
+    public: false,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role: 'owner' as const },
+    user: { displayName: 'Ed', email: 'ed@example.com', role: 'owner' },
     concepts: [{ id: 'posts', label: 'Posts' }],
+    customNav: [],
     pathname: '/admin/posts',
     canManageEditors: true,
     navLabel: null,
-    theme: 'cairn-admin' as const,
-    collapsedNav: [] as string[],
+    theme: 'cairn-admin',
+    collapsedNav: [],
     csrf: 'test-csrf',
-    pendingEntries: null,
-    ...over,
+    pendingEntries: Promise.resolve(null),
   };
 }
 
-function listData(layoutOver = {}, pageOver = {}): AdminData {
+function listData(pageOver = {}): AdminData {
   return {
     view: 'list',
-    layout: layout(layoutOver),
     page: {
       conceptId: 'posts',
       label: 'Posts',
@@ -57,7 +61,6 @@ function confirmData(): AdminData {
 function editorsData(): AdminData {
   return {
     view: 'editors',
-    layout: layout({ pathname: '/admin/editors' }),
     page: {
       editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const }],
       self: 'owner@t',
@@ -68,7 +71,6 @@ function editorsData(): AdminData {
 function navData(): AdminData {
   return {
     view: 'nav',
-    layout: layout({ pathname: '/admin/nav', navLabel: 'Navigation' }),
     page: {
       menu: { name: 'primary', label: 'Primary nav', maxDepth: 2 },
       tree: [{ label: 'Home', url: '/' }],
@@ -82,7 +84,6 @@ function navData(): AdminData {
 function settingsData(): AdminData {
   return {
     view: 'settings',
-    layout: layout({ pathname: '/admin/settings' }),
     page: {
       enabled: true,
       tidyEnabled: true,
@@ -99,7 +100,6 @@ function settingsData(): AdminData {
 function editData(): AdminData {
   return {
     view: 'edit',
-    layout: layout({ pathname: '/admin/posts/2026-05-hello' }),
     page: {
       conceptId: 'posts',
       id: '2026-05-hello',
@@ -134,6 +134,11 @@ const chromeNav = (screen: { container: HTMLElement }) =>
   screen.container.querySelector('nav[aria-label="Site content"]');
 
 describe('CairnAdmin', () => {
+  beforeEach(() => {
+    // The edit view reads siteName from the shell on page.data; reset it between tests.
+    page.data = {};
+  });
+
   it('renders the login view bare, with the email form posting ?/request', async () => {
     const screen = render(CairnAdmin, { data: loginData() });
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
@@ -152,47 +157,32 @@ describe('CairnAdmin', () => {
     expect(chromeNav(screen)).toBeNull();
   });
 
-  it('renders the list view inside the admin chrome', async () => {
+  it('renders the list view bare (chrome now rides the shell, not CairnAdmin)', async () => {
     const screen = render(CairnAdmin, { data: listData() });
-    expect(chromeNav(screen)).not.toBeNull();
+    // CairnAdmin no longer wraps the chrome shell; only the view component renders.
+    expect(chromeNav(screen)).toBeNull();
     await expect.element(screen.getByRole('link', { name: 'Hello' })).toHaveAttribute(
       'href',
       '/admin/posts/2026-05-01-hello',
     );
   });
 
-  it('renders the edit view inside the admin chrome with the editor surface', async () => {
+  it('renders the edit view with the editor surface, reading siteName from the shell', async () => {
+    page.data = { shell: shell() };
     const screen = render(CairnAdmin, { data: editData() });
-    expect(chromeNav(screen)).not.toBeNull();
+    expect(chromeNav(screen)).toBeNull();
     await expect.element(screen.getByRole('toolbar')).toBeInTheDocument();
     await expect.element(screen.getByLabelText(/title/i)).toHaveValue('Hello');
   });
 
-  it('renders the editors view inside the admin chrome', async () => {
+  it('renders the editors view bare', async () => {
     const screen = render(CairnAdmin, { data: editorsData() });
-    expect(chromeNav(screen)).not.toBeNull();
     await expect.element(screen.getByText('Owner One')).toBeInTheDocument();
   });
 
-  it('renders the nav view inside the admin chrome', async () => {
+  it('renders the nav view bare', async () => {
     const screen = render(CairnAdmin, { data: navData() });
-    expect(chromeNav(screen)).not.toBeNull();
     await expect.element(screen.getByLabelText('Label')).toHaveValue('Home');
-  });
-
-  it('posts the logout form to the named ?/logout action', async () => {
-    const screen = render(CairnAdmin, { data: listData() });
-    const form = screen.container.querySelector('form[action="?/logout"]');
-    expect(form).not.toBeNull();
-    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
-  });
-
-  it('posts the publish-all form to the named ?/publishAll action', async () => {
-    const data = listData({ pendingEntries: [{ concept: 'posts', id: '2026-05-01-hello' }] });
-    const screen = render(CairnAdmin, { data });
-    const form = screen.container.querySelector('form[action="?/publishAll"]');
-    expect(form).not.toBeNull();
-    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
 
   it('forwards the action result to the rendered view', async () => {
@@ -208,7 +198,7 @@ describe('CairnAdmin', () => {
     // The single mount reuses the page component across /admin/posts -> /admin/pages, so only
     // the {#key data.page.conceptId} remount keeps one concept's query out of the next.
     await screen.rerender({
-      data: listData({ pathname: '/admin/pages' }, { conceptId: 'pages', label: 'Pages', dated: false }),
+      data: listData({ conceptId: 'pages', label: 'Pages', dated: false }),
     });
     await expect.element(screen.getByRole('searchbox', { name: 'Search Pages' })).toHaveValue('');
   });
@@ -252,14 +242,15 @@ describe('form-action contract', () => {
   const views: Array<[AdminData['view'], AdminData]> = [
     ['login', loginData()],
     ['confirm', confirmData()],
-    ['list', listData({ pendingEntries: [{ concept: 'posts', id: '2026-05-01-hello' }] })],
+    ['list', listData()],
     ['edit', editData()],
     ['editors', editorsData()],
     ['nav', navData()],
     ['settings', settingsData()],
   ];
 
-  it.each(views)('the %s view posts only actions the dispatcher defines', async (_view, data) => {
+  it.each(views)('the %s view posts only actions the dispatcher defines', async (view, data) => {
+    if (view === 'edit') page.data = { shell: shell() };
     const screen = render(CairnAdmin, { data });
     const rendered = renderedActionNames(screen.container);
     // A fixture that renders no action form would prove nothing; fail loudly instead.

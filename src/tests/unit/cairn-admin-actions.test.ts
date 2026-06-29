@@ -314,17 +314,16 @@ describe('content actions', () => {
 });
 
 describe('media view load', () => {
-  it('returns the layout plus the media library data', async () => {
+  it('returns the media library data (chrome rides the shell load, not this view load)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/media');
     const data = (await admin.load({ ...event, setHeaders: () => {} } as never)) as {
       view: string;
-      layout: unknown;
       page: { assets: unknown[]; usage: Record<string, unknown>; error: string | null };
     };
     expect(data.view).toBe('media');
-    expect(data.layout).toBeDefined();
+    expect('layout' in data).toBe(false);
     expect(Array.isArray(data.page.assets)).toBe(true);
     expect(data.page.usage).toEqual({});
   });
@@ -510,7 +509,7 @@ describe('settings view (Task 15)', () => {
     await expect(admin.actions.saveSettings(event as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('serves the settings view load: the layout plus the read-only developer facts', async () => {
+  it('serves the settings view load: the read-only developer facts', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(tidyRuntime(), deps);
     const event = actionEvent('/admin/settings', { env: { ANTHROPIC_API_KEY: 'sk-test' } });

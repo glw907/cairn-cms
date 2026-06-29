@@ -8,6 +8,7 @@ export { createMediaRoute } from './media-route.js';
 export type {
   NavConcept,
   LayoutData,
+  AdminShellData,
   EntrySummary,
   ListData,
   EditData,

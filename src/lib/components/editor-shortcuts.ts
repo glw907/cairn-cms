@@ -14,7 +14,7 @@ export type ShortcutRow = { label: string; keys: string };
  * handler that implements it: Save / Publish / Details panel / Zen / Write-Preview / Focus mode and
  * This sheet ride EditPage's window keydown; Bold / Italic / Inline code / Web link / the heading
  * pair / Quote / the list pair ride EditPage's card keydown; Fold / unfold ride editor-folding's
- * CodeMirror keymap; the command palette rides AdminLayout's Ctrl K; Continue list / quote is the
+ * CodeMirror keymap; the command palette rides CairnAdminShell's Ctrl K; Continue list / quote is the
  * built-in markdown keymap on Enter.
  */
 export const editorShortcuts: ShortcutRow[] = [

@@ -11,7 +11,6 @@ import {
   createContentRoutes,
   type ContentEvent,
   type ContentRoutesDeps,
-  type LayoutData,
   type ListData,
   type EditData,
   type MediaLibraryData,
@@ -55,20 +54,20 @@ export interface CairnAdminDeps {
 }
 
 /**
- * One admin view's data, discriminated for the admin page component's switch. The public
- * views (login, confirm) carry no layout; every authed view pairs the shared layout with its
- * page data, the same shapes the per-surface loads have always returned.
+ * One admin view's data, discriminated for the admin page component's switch. Every member
+ * carries just its view's own page data; the shared chrome (nav, user, theme, pending count)
+ * rides the separate shell load served through `/admin/+layout.server.ts`, not this per-view load.
  */
 export type AdminData =
   | { view: 'login'; page: { siteName: string; error: string | null; csrf: string } }
   | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
-  | { view: 'list'; layout: LayoutData; page: ListData }
-  | { view: 'edit'; layout: LayoutData; page: EditData }
-  | { view: 'editors'; layout: LayoutData; page: { editors: Editor[]; self: string } }
-  | { view: 'nav'; layout: LayoutData; page: NavLoadData }
-  | { view: 'media'; layout: LayoutData; page: MediaLibraryData }
-  | { view: 'settings'; layout: LayoutData; page: SettingsData }
-  | { view: 'help'; layout: LayoutData; page: HelpData };
+  | { view: 'list'; page: ListData }
+  | { view: 'edit'; page: EditData }
+  | { view: 'editors'; page: { editors: Editor[]; self: string } }
+  | { view: 'nav'; page: NavLoadData }
+  | { view: 'media'; page: MediaLibraryData }
+  | { view: 'settings'; page: SettingsData }
+  | { view: 'help'; page: HelpData };
 
 /**
  *
@@ -110,8 +109,8 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
 
   /**
    * Serve the admin view the pathname names, or a 404 for any shape the parser refuses.
-   *  The authed views run the layout load and the view load concurrently; both resolve the same
-   *  backend, and the installation-token cache coalesces their lazy mints into one signing.
+   *  Each authed view loads only its own page data; the shared chrome rides the separate shell
+   *  load (`/admin/+layout.server.ts`), so this load no longer re-fetches the nav per view.
    */
   async function load(event: AdminEvent): Promise<AdminData> {
     const view = parseAdminPath(event.url.pathname, runtime.concepts);
@@ -125,42 +124,28 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         return { view: 'confirm', page: auth.confirmLoad(event) };
       case 'list': {
         const delegated = contentEvent(event, { concept: view.concept.id });
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.listLoad(delegated)]);
-        return { view: 'list', layout, page };
+        return { view: 'list', page: await content.listLoad(delegated) };
       }
       case 'edit': {
         const delegated = contentEvent(event, { concept: view.concept.id, id: view.id });
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.editLoad(delegated)]);
-        return { view: 'edit', layout, page };
+        return { view: 'edit', page: await content.editLoad(delegated) };
       }
       case 'editors': {
         // editorsLoad gates itself with requireOwner, so the dispatcher adds no second gate.
-        const [layout, page] = await Promise.all([
-          content.layoutLoad(contentEvent(event, {})),
-          editors.editorsLoad(event),
-        ]);
-        return { view: 'editors', layout, page };
+        return { view: 'editors', page: await editors.editorsLoad(event) };
       }
       case 'nav': {
         if (!nav) throw error(404, 'Not found');
-        const delegated = contentEvent(event, {});
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), nav.navLoad(delegated)]);
-        return { view: 'nav', layout, page };
+        return { view: 'nav', page: await nav.navLoad(contentEvent(event, {})) };
       }
       case 'media': {
-        const delegated = contentEvent(event, {});
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.mediaLibraryLoad(delegated)]);
-        return { view: 'media', layout, page };
+        return { view: 'media', page: await content.mediaLibraryLoad(contentEvent(event, {})) };
       }
       case 'settings': {
-        const delegated = contentEvent(event, {});
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.settingsLoad(delegated)]);
-        return { view: 'settings', layout, page };
+        return { view: 'settings', page: await content.settingsLoad(contentEvent(event, {})) };
       }
       case 'help': {
-        const delegated = contentEvent(event, {});
-        const [layout, page] = await Promise.all([content.layoutLoad(delegated), content.helpLoad(delegated)]);
-        return { view: 'help', layout, page };
+        return { view: 'help', page: await content.helpLoad(contentEvent(event, {})) };
       }
     }
   }
@@ -182,8 +167,10 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     };
   }
 
-  // The topbar posts publishAll from every authed admin page; login and confirm may not.
-  const authedViews = ['list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
+  // The shell posts publishAll from every authed admin page to the absolute /admin?/publishAll, which
+  // parses to the index view, so 'index' is in the set alongside the per-view names; login and confirm
+  // may not.
+  const authedViews = ['index', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
   const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
 
@@ -247,5 +234,12 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     setRole: viewAction(['editors'], (event) => editors.setRoleAction(event)),
   };
 
-  return { load, actions };
+  /**
+   * The shared admin shell's load, wired to `/admin/+layout.server.ts`. It returns the lean shell
+   *  payload (bare for a public path; the authed nav, user, and streamed pending set otherwise),
+   *  so every `/admin/**` route renders inside one chrome without re-loading it per view.
+   */
+  const shellLoad = (event: AdminEvent) => content.shellPayload(contentEvent(event, {}));
+
+  return { load, actions, shellLoad };
 }

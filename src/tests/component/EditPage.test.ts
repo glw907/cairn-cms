@@ -17,7 +17,7 @@ vi.mock('../../lib/components/client-ingest.js', async () => {
 });
 // EditPage's lifecycle controls (Save, Publish, the status badge, the overflow) render into the
 // one header band through the topbar context portal, not in a header of their own. This harness
-// mounts EditPage joined to that band the way CairnAdmin/AdminLayout do, so a standalone render
+// mounts EditPage joined to that band the way CairnAdmin/CairnAdminShell do, so a standalone render
 // still exercises the desk controls. The band carries data-testid="cairn-band".
 import EditPage from './EditPageDesk.svelte';
 import type { NamedField, SiteRender } from '../../lib/content/types.js';
@@ -1361,7 +1361,7 @@ describe('EditPage', () => {
   });
 
   it('carries no second breadcrumb in the page body (the band owns the way back)', async () => {
-    // The breadcrumb is AdminLayout's, rendered once in the topbar. EditPage's body must not
+    // The breadcrumb is the shell's, rendered once in the topbar. EditPage's body must not
     // render its own back link or a second breadcrumb under the one band.
     const screen = render(EditPage, postProps());
     expect(screen.container.querySelector('main a[href="/admin/posts"]')).toBeNull();
@@ -2015,7 +2015,7 @@ describe('EditPage', () => {
       expect(screen.container.querySelector('.cairn-zen-chip')).toBeNull();
       // Enter zen from the footer toggle.
       await screen.getByRole('button', { name: 'Zen', exact: true }).click();
-      // The band element is gone (the harness mirrors AdminLayout's drop, not just an empty band).
+      // The band element is gone (the harness mirrors the shell's drop, not just an empty band).
       await expect.poll(() => screen.container.querySelector('[data-testid="cairn-band"]')).toBeNull();
       // The document title wrap, the toolbar strip, and the footer strip are hidden; the manuscript
       // (the editing surface) stays.

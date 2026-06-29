@@ -90,7 +90,7 @@ describe('public views', () => {
 });
 
 describe('authed views', () => {
-  it('serves the list view with layout and the concept synthesized from the URL', async () => {
+  it('serves the list view with the concept synthesized from the URL', async () => {
     const gh = new GithubDouble({
       main: { 'src/content/posts/2026-05-hello.md': '---\ntitle: Hello\ndate: 2026-05-01\n---\nx' },
     });
@@ -99,8 +99,8 @@ describe('authed views', () => {
     const data = await admin.load(adminEvent('/admin/posts') as never);
     expect(data.view).toBe('list');
     if (data.view !== 'list') throw new Error('narrowing');
-    expect(data.layout.siteName).toBe('Test Site');
-    expect(data.layout.pathname).toBe('/admin/posts');
+    // The chrome rides the separate shell load; this per-view load carries only the page data.
+    expect('layout' in data).toBe(false);
     // The synthesized `concept` param reached the wrapped listLoad.
     expect(data.page.conceptId).toBe('posts');
     expect(data.page.entries).toEqual([
@@ -117,7 +117,7 @@ describe('authed views', () => {
     const data = await admin.load(adminEvent('/admin/posts/2026-05-hello') as never);
     expect(data.view).toBe('edit');
     if (data.view !== 'edit') throw new Error('narrowing');
-    expect(data.layout.pathname).toBe('/admin/posts/2026-05-hello');
+    expect('layout' in data).toBe(false);
     expect(data.page.conceptId).toBe('posts');
     expect(data.page.id).toBe('2026-05-hello');
     expect(data.page.title).toBe('Hello');
@@ -138,7 +138,7 @@ describe('authed views', () => {
     const data = await admin.load(event as never);
     expect(data.view).toBe('editors');
     if (data.view !== 'editors') throw new Error('narrowing');
-    expect(data.layout.canManageEditors).toBe(true);
+    expect('layout' in data).toBe(false);
     expect(data.page.self).toBe('own@t');
     expect(data.page.editors.map((e) => e.email)).toEqual(['ed@t', 'own@t']);
   });
@@ -157,7 +157,7 @@ describe('authed views', () => {
     const data = await admin.load(adminEvent('/admin/nav') as never);
     expect(data.view).toBe('nav');
     if (data.view !== 'nav') throw new Error('narrowing');
-    expect(data.layout.navLabel).toBe('Primary nav');
+    expect('layout' in data).toBe(false);
     expect(data.page.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.page.tree).toEqual([]);
   });

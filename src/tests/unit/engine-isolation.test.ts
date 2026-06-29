@@ -47,7 +47,7 @@ describe('engine isolation', () => {
       .filter((f) => /import\s+['"]\.\/cairn-admin\.css['"]/.test(readFileSync(f, 'utf8')))
       .map((f) => f.slice(f.lastIndexOf('/') + 1))
       .sort();
-    expect(importers).toEqual(['AdminLayout.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte']);
+    expect(importers).toEqual(['CairnAdminShell.svelte', 'ConfirmPage.svelte', 'LoginPage.svelte']);
   });
 
   it('defines a dark Warm Stone palette under the dark theme root', () => {

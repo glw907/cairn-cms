@@ -1,28 +1,33 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
-import AdminLayout from '../../lib/components/AdminLayout.svelte';
-// AdminLayout joined to a descendant that fills the topbar holder, the way EditPage does.
-import AdminLayoutDeskHarness from './AdminLayoutDeskHarness.svelte';
+import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
+// CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
+import CairnAdminShellDeskHarness from './CairnAdminShellDeskHarness.svelte';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
+// The authed shell payload. pendingEntries is a streamed promise now, so a default resolves to null
+// (GitHub unreachable, so the publish-all action hides); the pending-count tests pass a resolved
+// array override.
 function data(canManageEditors: boolean, navLabel: string | null = null, pathname = '/admin/posts') {
   return {
+    public: false as const,
     siteName: 'Test Site',
     user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
     concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
+    customNav: [] as { label: string; iconName: string; href: string; ownerOnly: boolean }[],
     pathname,
     canManageEditors,
     navLabel,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
-    pendingEntries: null,
+    pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
   };
 }
 
-describe('AdminLayout', () => {
+describe('CairnAdminShell', () => {
   beforeEach(() => {
     // Clear any theme cookie a prior test wrote so the no-cookie OS-preference branch and the
     // toggle assertions stay deterministic across tests.
@@ -30,7 +35,7 @@ describe('AdminLayout', () => {
   });
 
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('page body')).toBeInTheDocument();
     // Scope to the sidebar nav: the topbar breadcrumb also renders a concept link at this depth.
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
@@ -40,7 +45,7 @@ describe('AdminLayout', () => {
   });
 
   it('carries a CSRF field in every POST form', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     const postForms = screen.container.querySelectorAll('form[method="POST"]');
     const csrfFields = screen.container.querySelectorAll('form[method="POST"] input[name="csrf"]');
     expect(postForms.length).toBeGreaterThan(0);
@@ -48,12 +53,12 @@ describe('AdminLayout', () => {
   });
 
   it('shows the Cairn brand in the sidebar', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('Cairn', { exact: true })).toBeInTheDocument();
   });
 
   it('opens the command palette from the topbar trigger', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     await expect.element(screen.getByRole('textbox', { name: /search or jump to/i })).toBeInTheDocument();
     // A palette-only command confirms the dialog is open (a nav link like Posts also exists in the sidebar).
@@ -64,7 +69,7 @@ describe('AdminLayout', () => {
     // A destination command is a plain link that navigates; the palette closes itself from the
     // pathname effect after the route changes, rather than racing a close() against the link's own
     // navigation (which cancelled it). Re-rendering with a new pathname stands in for that nav.
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await screen.getByRole('button', { name: /search or jump to/i }).click();
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(true);
     await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
@@ -72,48 +77,48 @@ describe('AdminLayout', () => {
   });
 
   it('renders the core group with its built-in entries', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
   });
 
   it('shows the manage-editors link to an owner', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).toBeInTheDocument();
   });
 
   it('hides the manage-editors link from an editor', async () => {
-    const screen = render(AdminLayout, { data: data(false), children: child });
+    const screen = render(CairnAdminShell, { data: data(false), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).not.toBeInTheDocument();
   });
 
   it('shows the navigation link when a nav menu is configured', async () => {
-    const screen = render(AdminLayout, { data: data(false, 'Primary nav'), children: child });
+    const screen = render(CairnAdminShell, { data: data(false, 'Primary nav'), children: child });
     await expect.element(screen.getByRole('link', { name: 'Primary nav' })).toBeInTheDocument();
   });
 
   it('shows the user identity and a sign-out control in the sidebar', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('ed@example.com')).toBeInTheDocument();
     await expect.element(screen.getByText('Ed', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
   });
 
   it('shows the owner role in the user menu', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText(/owner/i)).toBeInTheDocument();
   });
 
   it('derives breadcrumbs from the path inside an entry route', async () => {
-    const screen = render(AdminLayout, { data: data(true, null, '/admin/posts/2026-05-hello'), children: child });
+    const screen = render(CairnAdminShell, { data: data(true, null, '/admin/posts/2026-05-hello'), children: child });
     await expect.element(screen.getByRole('navigation', { name: /breadcrumb/i })).toBeInTheDocument();
     await expect.element(screen.getByText('2026-05-hello')).toBeInTheDocument();
   });
 
   it('renders the registered desk snippet in the band on a desk route', async () => {
-    // A descendant document fills the topbar holder; AdminLayout renders it after the breadcrumb on
+    // A descendant document fills the topbar holder; the shell renders it after the breadcrumb on
     // a desk route (/admin/<concept>/<id>). DeskChild stands in for EditPage's registration.
-    const screen = render(AdminLayoutDeskHarness, {
+    const screen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     await expect.element(screen.getByTestId('desk-control')).toBeInTheDocument();
@@ -121,8 +126,8 @@ describe('AdminLayout', () => {
 
   it('stands down the palette trigger and the site Publish button on a desk route', async () => {
     const pending = [{ concept: 'posts', id: '2026-05-hello' }];
-    const screen = render(AdminLayoutDeskHarness, {
-      data: { ...data(true, null, '/admin/posts/2026-05-hello'), pendingEntries: pending },
+    const screen = render(CairnAdminShellDeskHarness, {
+      data: { ...data(true, null, '/admin/posts/2026-05-hello'), pendingEntries: Promise.resolve(pending) },
     });
     // The band has one job on a desk route: no command-palette trigger, no site-wide Publish in
     // the topbar (the navbar). The publish-all confirm dialog still exists in the DOM, so scope the
@@ -134,7 +139,7 @@ describe('AdminLayout', () => {
   });
 
   it('keeps the palette trigger and band as is on a list route (the office is unchanged)', async () => {
-    const screen = render(AdminLayoutDeskHarness, { data: data(true) });
+    const screen = render(CairnAdminShellDeskHarness, { data: data(true) });
     // On the office routes the desk snippet never renders, and the palette trigger stays.
     expect(screen.container.textContent ?? '').toContain('Search or jump to');
     expect(screen.container.querySelector('[data-testid="desk-control"]')).toBeNull();
@@ -153,7 +158,7 @@ describe('AdminLayout', () => {
       },
     });
     try {
-      const screen = render(AdminLayout, { data: data(true), children: child });
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
       const root = () => screen.container.querySelector('[data-theme]');
       expect(root()?.getAttribute('data-theme')).toBe('cairn-admin');
       await screen.getByRole('button', { name: /dark mode|light mode|toggle theme/i }).click();
@@ -171,7 +176,7 @@ describe('AdminLayout', () => {
     const spy = vi.spyOn(console, 'error').mockImplementation((...args) => {
       errors.push(args.join(' '));
     });
-    render(AdminLayout, { data: data(true), children: child });
+    render(CairnAdminShell, { data: data(true), children: child });
     await new Promise((resolve) => setTimeout(resolve, 0)); // let onMount run
     spy.mockRestore();
     expect(errors.join(' ')).not.toContain('rendering inside host chrome');
@@ -184,7 +189,7 @@ describe('AdminLayout', () => {
       { concept: 'pages', id: 'about' },
       { concept: 'widgets', id: 'w1' },
     ];
-    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await expect.element(screen.getByRole('button', { name: 'Publish site (4)' })).toBeInTheDocument();
   });
 
@@ -195,7 +200,7 @@ describe('AdminLayout', () => {
       { concept: 'pages', id: 'about' },
       { concept: 'widgets', id: 'w1' },
     ];
-    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (4)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
@@ -208,32 +213,32 @@ describe('AdminLayout', () => {
     expect(text).toContain('2026-05-02-b');
     expect(text).toContain('about');
     expect(text).toContain('w1');
-    // The confirm posts the named action to the current page with the CSRF field.
-    const form = dialog.querySelector('form[action="?/publishAll"]');
+    // The confirm posts the named action to the absolute catch-all with the CSRF field.
+    const form = dialog.querySelector('form[action="/admin?/publishAll"]');
     expect(form).not.toBeNull();
     expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
   });
 
   it('closes the publish-all dialog once a navigation lands', async () => {
     const pending = [{ concept: 'posts', id: '2026-05-01-a' }];
-    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (1)' }).click();
     const dialog = () =>
       screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
     expect(dialog().open).toBe(true);
-    await screen.rerender({ data: { ...data(true, null, '/admin/pages'), pendingEntries: pending }, children: child });
+    await screen.rerender({ data: { ...data(true, null, '/admin/pages'), pendingEntries: Promise.resolve(pending) }, children: child });
     expect(dialog().open).toBe(false);
   });
 
   it('shows the publish-site trigger even when no concepts are configured', async () => {
     // The confirm posts the named ?/publishAll action to the current page, so a stray pending
     // ref with zero configured concepts no longer reads data.concepts[0].
-    const screen = render(AdminLayout, {
-      data: { ...data(true), concepts: [], pendingEntries: [{ concept: 'posts', id: 'a' }] },
+    const screen = render(CairnAdminShell, {
+      data: { ...data(true), concepts: [], pendingEntries: Promise.resolve([{ concept: 'posts', id: 'a' }]) },
       children: child,
     });
     await expect.element(screen.getByRole('button', { name: /publish site/i })).toBeInTheDocument();
-    expect(screen.container.querySelector('form[action="?/publishAll"]')).not.toBeNull();
+    expect(screen.container.querySelector('form[action="/admin?/publishAll"]')).not.toBeNull();
   });
 
   it('associates each pending group list with its eyebrow label', async () => {
@@ -241,7 +246,7 @@ describe('AdminLayout', () => {
       { concept: 'posts', id: '2026-05-01-a' },
       { concept: 'pages', id: 'about' },
     ];
-    const screen = render(AdminLayout, { data: { ...data(true), pendingEntries: pending }, children: child });
+    const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (2)' }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]')!;
     const lists = Array.from(dialog.querySelectorAll('ul[aria-labelledby]'));
@@ -253,9 +258,9 @@ describe('AdminLayout', () => {
   });
 
   it('hides the publish-site trigger when nothing is pending', async () => {
-    const nullScreen = render(AdminLayout, { data: data(true), children: child });
+    const nullScreen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(nullScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
-    const emptyScreen = render(AdminLayout, { data: { ...data(true), pendingEntries: [] }, children: child });
+    const emptyScreen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve([]) }, children: child });
     await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
   });
 
@@ -263,7 +268,7 @@ describe('AdminLayout', () => {
     // An open document recedes the nav: the drawer shell omits lg:drawer-open so the sidebar starts
     // closed at desktop width. The class is conditional in the rendered markup (no effect flips it),
     // so the chrome-free state resolves at SSR and never flashes.
-    const screen = render(AdminLayoutDeskHarness, {
+    const screen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const drawer = screen.container.querySelector('.drawer')!;
@@ -271,7 +276,7 @@ describe('AdminLayout', () => {
   });
 
   it('keeps the persistent nav drawer on a list route', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
   });
@@ -279,13 +284,13 @@ describe('AdminLayout', () => {
   it('shows the drawer toggle at desktop width on a desk route', async () => {
     // On a desk route the toggle loses lg:hidden so it stays visible at desktop and reopens the nav
     // as an overlay. On a list route the persistent sidebar is shown, so the toggle is lg:hidden.
-    const deskScreen = render(AdminLayoutDeskHarness, {
+    const deskScreen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
 
-    const listScreen = render(AdminLayout, { data: data(true), children: child });
+    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
     const listToggleWrap = listScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
   });
@@ -296,7 +301,7 @@ describe('AdminLayout', () => {
     // guards the structure itself, the drawer regions present and correctly nested. data(true) is an
     // owner on the default /admin/posts list route (the persistent office shell). The first arg of
     // data(...) selects owner vs editor; the pathname stays /admin/posts, a list route.
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer).not.toBeNull();
     // :scope > so a regression that flattens or detaches a region (the display:block failure mode)
@@ -311,10 +316,29 @@ describe('AdminLayout', () => {
   });
 
   it('toggles the drawer with Ctrl+B', async () => {
-    const screen = render(AdminLayout, { data: data(true), children: child });
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
     const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;
     const before = toggle().checked;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
     await expect.poll(() => toggle().checked).toBe(!before);
+  });
+
+  it('posts the logout form to the absolute /admin?/logout catch-all', async () => {
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const form = screen.container.querySelector('form[action="/admin?/logout"]');
+    expect(form).not.toBeNull();
+    expect(form!.querySelector('input[name="csrf"]')).not.toBeNull();
+  });
+
+  it('renders only the children bare for a public payload, with no chrome', async () => {
+    const screen = render(CairnAdminShell, {
+      data: { public: true as const, siteName: 'Test Site' },
+      children: child,
+    });
+    await expect.element(screen.getByText('page body')).toBeInTheDocument();
+    // No sidebar nav, no drawer, no logout form: the login/confirm pages render with no chrome.
+    expect(screen.container.querySelector('nav[aria-label="Site content"]')).toBeNull();
+    expect(screen.container.querySelector('.drawer')).toBeNull();
+    expect(screen.container.querySelector('form[action="/admin?/logout"]')).toBeNull();
   });
 });

@@ -1,14 +1,19 @@
 <!--
 @component
-The admin shell: a DaisyUI drawer-and-navbar that wraps every authed admin page. The nav is
-data-driven from the enabled concepts and role-gated (owners see the manage-editors entry). The
-root sets `data-theme` to the resolved light or dark theme (seeded from the SSR'd cookie choice,
-flipped by the topbar toggle) and imports the self-contained Warm Stone theme, so the admin looks
-identical on every host regardless of the site's own theme.
+The admin shell: a DaisyUI drawer-and-navbar that wraps every `/admin/**` route through the shared
+`/admin/+layout.svelte`. It takes the shell payload and a `children` snippet. A public (login/auth)
+payload renders the children bare with no chrome; an authed payload renders the data-driven nav
+(concepts, custom entries, the owner-only manage-editors entry), the topbar, the command palette, and
+the streamed publish-all count. The root sets `data-theme` to the resolved light or dark theme on a
+bare wrapper (never a styled element), so the admin looks identical on every host. It hands descendant
+forms a CSRF-token getter through context, so a bare `<CsrfField />` works tokenless. The two global
+actions (logout, publish-all) post to the absolute `/admin?/...` catch-all, so they resolve from any
+route. Failure mode: a public payload that carried chrome fields would still render bare (the
+discriminant, not the fields, gates the chrome).
 -->
 <script lang="ts">
   import { onMount, setContext, untrack, type Component, type Snippet } from 'svelte';
-  import type { LayoutData } from '../sveltekit/content-routes.js';
+  import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import { provideTopbar, type TopbarHolder } from './topbar-context.js';
@@ -26,17 +31,23 @@ identical on every host regardless of the site's own theme.
   import './cairn-admin.css';
 
   interface Props {
-    /** The layout load's data: site name, user, nav concepts, active path, owner capability. */
-    data: LayoutData;
+    /** The shell payload: bare for a public path, the full authed chrome data otherwise. */
+    data: AdminShellData;
     /** The page body. */
     children: Snippet;
   }
 
   let { data, children }: Props = $props();
 
-  // Hand descendant forms a live getter for the CSRF token layoutLoad issued, so the field stays
-  // correct even if the token ever rotates mid-session.
-  setContext(CSRF_CONTEXT_KEY, () => data.csrf);
+  // The authed member, narrowed once. Every chrome read below goes through `shell`, which is null on
+  // a public payload (the template renders only the children then, so the chrome never reads it). The
+  // authed-branch template guards on `data.public`, so `shell` is non-null wherever the chrome reads.
+  const shell = $derived(data.public ? null : data);
+
+  // Hand descendant forms a live getter for the CSRF token the shell load issued, so the field stays
+  // correct even if the token ever rotates mid-session. A public payload has no token, so the getter
+  // yields the empty string (no descendant form renders on the bare login/confirm pages anyway).
+  setContext(CSRF_CONTEXT_KEY, () => (data.public ? '' : data.csrf));
 
   // Persist an admin preference for a year, path-scoped to /admin so the cookie never reaches the
   // host's own pages.
@@ -53,15 +64,19 @@ identical on every host regardless of the site's own theme.
 
   // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
   // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
-  // the owner-only Editors.
-  const coreItems: NavItem[] = $derived([
-    ...data.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-    // Media is a content peer, immediately after the concepts.
-    { label: 'Media', icon: ImageIcon, href: '/admin/media' },
-    ...(data.navLabel ? [{ label: data.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
-    { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
-    ...(data.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
-  ]);
+  // the owner-only Editors. Empty on a public payload (the nav never renders there).
+  const coreItems: NavItem[] = $derived(
+    shell
+      ? [
+          ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+          // Media is a content peer, immediately after the concepts.
+          { label: 'Media', icon: ImageIcon, href: '/admin/media' },
+          ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
+          { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
+          ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
+        ]
+      : [],
+  );
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -74,15 +89,16 @@ identical on every host regardless of the site's own theme.
     return letters || '?';
   }
 
-  const initials = $derived(initialsOf(data.user.displayName));
+  const initials = $derived(initialsOf(shell?.user.displayName ?? ''));
 
   function isActive(href: string): boolean {
-    return data.pathname === href || data.pathname.startsWith(`${href}/`);
+    const pathname = shell?.pathname ?? '';
+    return pathname === href || pathname.startsWith(`${href}/`);
   }
 
   // Which nav groups are collapsed. Seeded once from the SSR'd cookie (so a collapsed group renders
   // collapsed with no flash), then owned by the toggle below, which mirrors each change to the cookie.
-  let collapsed = $state(new Set(untrack(() => data.collapsedNav)));
+  let collapsed = $state(new Set(untrack(() => (data.public ? [] : data.collapsedNav))));
 
   function onToggleSection(label: string, open: boolean) {
     const next = new Set(collapsed);
@@ -110,7 +126,7 @@ identical on every host regardless of the site's own theme.
   // navigated). Closing the palette here, after the navigation lands, avoids racing a synchronous
   // close() against a result link's own navigation, which would cancel it.
   $effect(() => {
-    data.pathname;
+    shell?.pathname;
     drawerOpen = false;
     paletteDialog?.close();
     publishAllDialog?.close();
@@ -118,10 +134,12 @@ identical on every host regardless of the site's own theme.
 
   // Seed from the SSR'd theme once. The live theme is owned by this state and the toggle, so the
   // initial read of data.theme is intentional and untracked to keep it out of any reactive graph.
-  let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(untrack(() => data.theme));
+  let theme = $state<'cairn-admin' | 'cairn-admin-dark'>(
+    untrack(() => (data.public ? 'cairn-admin' : data.theme)),
+  );
 
   // First mount with no persisted choice follows the OS preference. A returning user's cookie was
-  // already honored by the layout load (data.theme), so this only fires on a first-ever visit.
+  // already honored by the shell load (data.theme), so this only fires on a first-ever visit.
   $effect(() => {
     const hasCookie = document.cookie.split('; ').some((c) => c.startsWith('cairn-admin-theme='));
     if (!hasCookie && window.matchMedia?.('(prefers-color-scheme: dark)').matches) {
@@ -148,20 +166,22 @@ identical on every host regardless of the site's own theme.
   let paletteList = $state<HTMLUListElement>();
   let paletteQuery = $state('');
 
-  // The site-wide publish action. The trigger and its confirm render only while entries are
-  // pending; a null pendingEntries (GitHub unreachable) hides them rather than showing a stale count.
+  // The site-wide publish action. The trigger and its confirm render only while entries are pending;
+  // the count streams as a deferred promise, so the topbar resolves it through an `{#await}` block
+  // rather than a synchronous derived (a null resolution hides the action rather than lying).
   let publishAllDialog = $state<HTMLDialogElement>();
-  const pendingCount = $derived(data.pendingEntries?.length ?? 0);
-  // The pending ids grouped under their concept's nav label, in first-seen order. A ref whose
-  // concept is not in the nav (an unconfigured key) falls back to the raw key.
-  const pendingGroups = $derived.by(() => {
+
+  // Group the pending ids under their concept's nav label, in first-seen order. A ref whose concept
+  // is not in the nav (an unconfigured key) falls back to the raw key. Called from the await block
+  // with the resolved list, so the chrome never reads the promise synchronously.
+  function groupPending(pending: { concept: string; id: string }[]): { label: string; ids: string[] }[] {
     const groups = new Map<string, string[]>();
-    for (const entry of data.pendingEntries ?? []) {
-      const label = data.concepts.find((c) => c.id === entry.concept)?.label ?? entry.concept;
+    for (const entry of pending) {
+      const label = shell?.concepts.find((c) => c.id === entry.concept)?.label ?? entry.concept;
       groups.set(label, [...(groups.get(label) ?? []), entry.id]);
     }
     return [...groups.entries()].map(([label, ids]) => ({ label, ids }));
-  });
+  }
 
   // The bare data-theme wrapper is the admin root the dev chrome-guard measures from.
   let rootEl = $state<HTMLElement>();
@@ -204,10 +224,10 @@ identical on every host regardless of the site's own theme.
   // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
   // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
   const crumbs = $derived.by<Crumb[]>(() => {
-    const segs = data.pathname.split('/').filter(Boolean); // ['admin', concept, id?]
+    const segs = (shell?.pathname ?? '').split('/').filter(Boolean); // ['admin', concept, id?]
     if (segs.length < 2 || segs[0] !== 'admin') return [];
     const conceptId = segs[1];
-    const concept = data.concepts.find((c) => c.id === conceptId);
+    const concept = shell?.concepts.find((c) => c.id === conceptId);
     const out: Crumb[] = [{ label: concept?.label ?? conceptId, href: `/admin/${conceptId}` }];
     if (segs[2]) out.push({ label: decodeURIComponent(segs[2]) });
     return out;
@@ -219,7 +239,7 @@ identical on every host regardless of the site's own theme.
   // A desk route is an open document (/admin/<concept>/<id>): the third path segment is the entry.
   // The band has one job there, so the topbar drops the palette trigger and the site-wide Publish
   // button and renders the document's own desk controls instead.
-  const isDeskRoute = $derived(data.pathname.split('/').filter(Boolean).length > 2);
+  const isDeskRoute = $derived((shell?.pathname ?? '').split('/').filter(Boolean).length > 2);
 
   // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.
   // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
@@ -234,6 +254,9 @@ identical on every host regardless of the site's own theme.
 
 <svelte:window onkeydown={onKeydown} />
 
+{#if data.public}
+  {@render children()}
+{:else}
 <!-- data-theme sits on a bare wrapper, not on the drawer itself: every admin rule is scoped as a
      descendant of the theme root (`:where([data-theme]) .drawer`), so a class on the theme element
      itself never matches. Keeping the drawer and its base/utility classes one level in lets the
@@ -250,7 +273,7 @@ identical on every host regardless of the site's own theme.
     <div class="drawer-content flex flex-col">
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
-           three clusters include AdminLayout-owned chrome (the drawer toggle, the breadcrumb), so
+           three clusters include shell-owned chrome (the drawer toggle, the breadcrumb), so
            emptying the band would leave that chrome behind; the band must be GONE. The manuscript
            and EditPage's own floating zen chip carry on below. -->
       {#if !topbar.zen}
@@ -301,13 +324,15 @@ identical on every host regardless of the site's own theme.
               <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
             </button>
           </div>
-          {#if pendingCount > 0}
-            <div class="flex-none">
-              <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
-                Publish site ({pendingCount})
-              </button>
-            </div>
-          {/if}
+          {#await data.pendingEntries then pending}
+            {#if pending && pending.length > 0}
+              <div class="flex-none">
+                <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                  Publish site ({pending.length})
+                </button>
+              </div>
+            {/if}
+          {/await}
         {/if}
         <div class="flex-none">
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
@@ -373,33 +398,36 @@ identical on every host regardless of the site's own theme.
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
       </dialog>
 
-      {#if pendingCount > 0}
-        <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
-          <div class="modal-box">
-            <div class="mb-3 flex items-center justify-between">
-              <h2 id="cairn-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
-              <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
+      {#await data.pendingEntries then pending}
+        {#if pending && pending.length > 0}
+          {@const groups = groupPending(pending)}
+          <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
+            <div class="modal-box">
+              <div class="mb-3 flex items-center justify-between">
+                <h2 id="cairn-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
+                <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
+              </div>
+              <p class="text-sm">Every entry below goes live in one step.</p>
+              {#each groups as group, i (group.label)}
+                <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
+                <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
+                  {#each group.ids as id (id)}
+                    <li>{id}</li>
+                  {/each}
+                </ul>
+              {/each}
+              <!-- The publishAll named action posts to the absolute /admin catch-all, so the shell's
+                   confirm works from every /admin/** route, not just the office views. -->
+              <form method="POST" action="/admin?/publishAll" class="mt-4 flex justify-end gap-2">
+                <CsrfField token={data.csrf} />
+                <button type="button" class="btn btn-sm" onclick={() => publishAllDialog?.close()}>Cancel</button>
+                <button type="submit" class="btn btn-sm btn-primary">Publish site</button>
+              </form>
             </div>
-            <p class="text-sm">Every entry below goes live in one step.</p>
-            {#each pendingGroups as group, i (group.label)}
-              <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
-              <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
-                {#each group.ids as id (id)}
-                  <li>{id}</li>
-                {/each}
-              </ul>
-            {/each}
-            <!-- The publishAll named action is valid on every authed admin view, so the confirm
-                 posts to the current page and the topbar works from anywhere. -->
-            <form method="POST" action="?/publishAll" class="mt-4 flex justify-end gap-2">
-              <CsrfField token={data.csrf} />
-              <button type="button" class="btn btn-sm" onclick={() => publishAllDialog?.close()}>Cancel</button>
-              <button type="submit" class="btn btn-sm btn-primary">Publish site</button>
-            </form>
-          </div>
-          <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
-        </dialog>
-      {/if}
+            <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
+          </dialog>
+        {/if}
+      {/await}
     </div>
 
     <div class="drawer-side">
@@ -482,7 +510,9 @@ identical on every host regardless of the site's own theme.
               <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
             </div>
           </div>
-          <form method="POST" action="?/logout" class="mt-4">
+          <!-- Logout posts to the absolute /admin catch-all, so the shell signs out from every
+               /admin/** route, not just the office views. -->
+          <form method="POST" action="/admin?/logout" class="mt-4">
             <CsrfField token={data.csrf} />
             <button type="submit" class="btn btn-ghost btn-sm btn-block justify-start">
               <LogOutIcon class="h-4 w-4" /> Sign out
@@ -493,3 +523,4 @@ identical on every host regardless of the site's own theme.
     </div>
   </div>
 </div>
+{/if}

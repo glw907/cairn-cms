@@ -1,10 +1,10 @@
 <!--
 @component
 Test harness: mounts EditPage the way CairnAdmin does, joined to a topbar through the same context
-portal AdminLayout uses. EditPage registers its desk snippet into the shared holder; this harness
+portal CairnAdminShell uses. EditPage registers its desk snippet into the shared holder; this harness
 renders that snippet inside a stand-in band, so a single render tree carries both the document body
 and the band controls (Save, Publish, the status badge, the overflow) the way the running admin
-does. The band is a plain wrapper, not AdminLayout's full chrome, to keep the component tests fast
+does. The band is a plain wrapper, not the shell's full chrome, to keep the component tests fast
 and focused on EditPage's own behavior.
 -->
 <script lang="ts">
@@ -18,7 +18,7 @@ and focused on EditPage's own behavior.
   provideTopbar(holder);
 </script>
 
-<!-- Mirror AdminLayout's zen lever: the whole band element drops when the document registers zen,
+<!-- Mirror the shell's zen lever: the whole band element drops when the document registers zen,
      so a zen test sees the band gone (not merely emptied), the way the running admin does. -->
 {#if !holder.zen}
 <div data-testid="cairn-band" class="navbar">

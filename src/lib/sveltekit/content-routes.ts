@@ -33,7 +33,7 @@ import { buildTidyPrompt } from './tidy-prompt.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { issueCsrfToken, validateCsrfHeader } from './csrf.js';
-import { requireSession } from './guard.js';
+import { requireSession, isPublicAdminPath } from './guard.js';
 import { sniffMediaType, isDeniedUpload, extForMediaType } from '../media/sniff.js';
 import { hashBytes, shortHash, slugifyFilename, r2Key } from '../media/naming.js';
 import { mediaToken } from '../media/reference.js';
@@ -93,6 +93,43 @@ export interface LayoutData {
    */
   pendingEntries: { concept: string; id: string }[] | null;
 }
+
+/**
+ * The shared admin shell's data, produced by `shellPayload` and consumed by the CairnAdminShell
+ *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
+ *  carries only the site name and renders bare; an authed path mirrors `LayoutData` field-for-field,
+ *  adds the custom-nav entries, and streams the pending-publish set as a deferred promise so a
+ *  custom route and the login page never block on a GitHub round-trip up front.
+ */
+export type AdminShellData =
+  | { public: true; siteName: string }
+  | {
+      public: false;
+      siteName: string;
+      user: { displayName: string; email: string; role: Role };
+      concepts: NavConcept[];
+      /**
+       * The developer's custom sidebar entries, role-filtered. Task 3 fills this from
+       *  `normalizeAdminNav`; until then it is always empty.
+       */
+      customNav: { label: string; iconName: string; href: string; ownerOnly: boolean }[];
+      pathname: string;
+      canManageEditors: boolean;
+      /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
+      navLabel: string | null;
+      /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
+      theme: 'cairn-admin' | 'cairn-admin-dark';
+      /** The nav group labels the user has collapsed, from the persisted cookie. Empty when none. */
+      collapsedNav: string[];
+      /** The session's CSRF double-submit token, handed to descendant forms through context. */
+      csrf: string;
+      /**
+       * Every entry with unpublished edits (a `cairn/` ref), streamed so the shell never blocks on
+       *  GitHub. Resolves to null when GitHub is unreachable, so the topbar hides the publish-all
+       *  action rather than lying.
+       */
+      pendingEntries: Promise<{ concept: string; id: string }[] | null>;
+    };
 
 /** One row in a concept's list view. */
 export interface EntrySummary {
@@ -715,10 +752,19 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /**
-   * Layout load for every admin page: the nav, the user, the active path, the resolved theme,
-   *  and the pending entries behind the topbar's publish-all action.
+   * The shared admin shell's payload for one request, served through `/admin/+layout.server.ts`.
+   *  A public (login/auth) path returns the bare `{ public: true }` shape and never resolves the
+   *  backend, so the login page pays no GitHub round-trip. An authed path derives the nav, user,
+   *  theme, and CSRF token synchronously, then streams the pending-publish set: `pendingEntries` is
+   *  an unawaited promise, so the shell renders before the GitHub listing returns and a custom route
+   *  never blocks on it. A synchronous token-mint throw, a network failure, or a non-ok response all
+   *  degrade the promise to null, so the topbar hides the publish-all action rather than showing a
+   *  wrong count.
    */
-  async function layoutLoad(event: ContentEvent): Promise<LayoutData> {
+  function shellPayload(event: ContentEvent): { shell: AdminShellData } {
+    if (isPublicAdminPath(event.url.pathname)) {
+      return { shell: { public: true, siteName: runtime.siteName } };
+    }
     const editor = requireSession(event);
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
@@ -726,38 +772,45 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const collapsedNav = cookieCollapsed
       ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
       : [];
-    // Any failure here (the token mint, the network, a non-ok response) degrades to null rather
-    // than failing the whole admin shell or showing a wrong publish-all count.
-    let pendingEntries: { concept: string; id: string }[] | null = null;
-    try {
-      const backend = resolveBackend(event);
-      const names = await backend.listBranches(PENDING_PREFIX);
-      pendingEntries = names.flatMap((name) => {
-        const entry = pendingEntryOf(name);
-        return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+    // resolveBackend can throw synchronously (the token mint), which a bare `.catch()` would miss.
+    // Defer the resolve into a Promise.resolve().then so a sync throw becomes a caught rejection
+    // that degrades to null, the fail-safe the shell needs so a token or network failure hides the
+    // publish-all action rather than throwing the whole shell.
+    const pendingEntries = Promise.resolve()
+      .then(() => resolveBackend(event).listBranches(PENDING_PREFIX))
+      .then((names) =>
+        names.flatMap((name) => {
+          const entry = pendingEntryOf(name);
+          return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+        }),
+      )
+      .catch((err): { concept: string; id: string }[] | null => {
+        log.warn('github.unreachable', { scope: 'shell', error: String(err) });
+        return null;
       });
-    } catch (err) {
-      pendingEntries = null;
-      log.warn('github.unreachable', { scope: 'layout', error: String(err) });
-    }
     return {
-      siteName: runtime.siteName,
-      user: { displayName: editor.displayName, email: editor.email, role: editor.role },
-      concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
-      pathname: event.url.pathname,
-      canManageEditors: editor.role === 'owner',
-      navLabel: runtime.navMenu?.label ?? null,
-      theme,
-      collapsedNav,
-      csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
-      pendingEntries,
+      shell: {
+        public: false,
+        siteName: runtime.siteName,
+        user: { displayName: editor.displayName, email: editor.email, role: editor.role },
+        concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+        // Task 3 fills customNav from normalizeAdminNav; until then it is always [].
+        customNav: [],
+        pathname: event.url.pathname,
+        canManageEditors: editor.role === 'owner',
+        navLabel: runtime.navMenu?.label ?? null,
+        theme,
+        collapsedNav,
+        csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
+        pendingEntries,
+      },
     };
   }
 
   /**
    * Load the Help home: the getting-started progress derived from the committed manifest and the open
    *  pending branches, the markdown reference, and the runtime's support contact. A GitHub failure
-   *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same fail-safe layoutLoad uses.
+   *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same GitHub fail-safe the shell uses.
    */
   async function helpLoad(event: ContentEvent): Promise<HelpData> {
     requireSession(event);
@@ -3059,7 +3112,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { layoutLoad, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
+  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
 }
 
 /**

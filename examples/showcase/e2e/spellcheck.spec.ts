@@ -33,7 +33,13 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   const editor = page.locator('.cm-content');
   await expect(editor).toBeVisible();
   const underlines = page.locator('.cm-lintRange-info');
-  await expect(underlines).toHaveCount(2, { timeout: 60_000 });
+  // The worker streams the 1.5MB dictionary, then the linter paints the underlines in a later frame.
+  // A bare toHaveCount can resolve against a transient intermediate count as the decorations settle, so
+  // require the count to hold at 2 across consecutive polls. toPass re-runs the inner expect until the
+  // editor is quiescent, which is the settle cue this race needs.
+  await expect(async () => {
+    await expect(underlines).toHaveCount(2);
+  }).toPass({ timeout: 60_000 });
 
   // The underline is the locked amber, wavy: the theme paints --cairn-warning-ink in a wavy style.
   // The admin sheet defines the variable as an oklch color, and the browser reports the computed

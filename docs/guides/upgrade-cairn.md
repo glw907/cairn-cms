@@ -826,3 +826,23 @@ heads the first free minor after `0.77.0` publishes; the version is set at relea
 Consumers must: add `taxonomy: true` to each concept's top-level tag multiselect. A live site that
 serves `/tags/<tag>` URLs and wants to keep them names that field `tags`, or sets `taxonomyBase` to
 `tags` on the concept. A concept with no tag field needs no change.
+
+## Unreleased: the public route loaders collapse into one `resolveRoute` (breaking)
+
+The four per-concept loaders collapse into one resolver. `createPublicRoutes` now returns
+`{ resolveRoute, entries }`. `resolveRoute(event)` returns a discriminated payload, the entry, the tag
+index, or the tag archive, or `undefined` for a miss. The removed loaders are `entryLoad`,
+`archiveLoad`, `tagIndexLoad`, and `tagLoad`. The catch-all `[...path]` route now calls one resolver
+and the page renders by `data.kind`. This entry rides the same release as the preceding taxonomy
+marker.
+
+Consumers must: call `resolveRoute` from the catch-all `+page.server.ts`. Read the payload with
+`const data = await routes.resolveRoute({ url })`, and throw `error(404)` when it returns `undefined`.
+
+Consumers must: branch the catch-all `+page.svelte` on `data.kind`. The value is one of `entry`,
+`tagIndex`, or `tagArchive`. Render the entry kind from its `html`, `seo`, and `entry` fields, the tag
+index from its tag list, and the tag archive from its entries. The old code destructured an `EntryData`
+payload from `entryLoad`; the entry kind now carries the same fields under `data.kind === 'entry'`.
+
+Consumers must: drop any call to `entryLoad`, `archiveLoad`, `tagIndexLoad`, or `tagLoad`. Read a
+concept's chronological archive from `site.concept(id).all()` instead of `archiveLoad`.

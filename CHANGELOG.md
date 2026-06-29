@@ -27,6 +27,18 @@ This is breaking. Consumers must: mark each concept's tag field by adding `taxon
 top-level multiselect. A live site that serves `/tags/<tag>` URLs and wants to keep them names that
 field `tags`, or sets `taxonomyBase` to `tags`. A concept with no tag field needs no change.
 
+The public route loaders collapse into one resolver. `createPublicRoutes` now returns
+`{ resolveRoute, entries }`. `resolveRoute(event)` returns a discriminated payload, the entry, the tag
+index, or the tag archive, or `undefined` for a miss. The four old loaders, `entryLoad`, `archiveLoad`,
+`tagIndexLoad`, and `tagLoad`, are gone. The catch-all `[...path]` route now calls `resolveRoute` and
+the page renders by `data.kind`. A concept's chronological archive is now `site.concept(id).all()`.
+
+This is breaking. Consumers must: call `resolveRoute` from the catch-all `+page.server.ts`, and throw
+`error(404)` when it returns `undefined`. Consumers must: branch the catch-all `+page.svelte` on
+`data.kind`, one of `entry`, `tagIndex`, or `tagArchive`, instead of destructuring an `EntryData`
+payload from `entryLoad`. Consumers must: drop any call to the removed `entryLoad`, `archiveLoad`,
+`tagIndexLoad`, or `tagLoad`, and read a concept's chronological archive from `site.concept(id).all()`.
+
 ## 0.77.0
 
 <!-- release-size: minor -->

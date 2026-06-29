@@ -10,4 +10,5 @@ export type {
   TagData,
   TagIndexData,
   EntryData,
+  ResolvedRouteData,
 } from './public-routes.js';

@@ -200,6 +200,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
+- `ResolvedRoute`: { kind: "entry"; entry: ContentEntry<Record<string, unknown>> } | { kind: "tagIndex"; concept: string; tags: { tag: string; count: number }[] } | { kind: "tagArchive"; concept: string; tag: string; entries: ContentSummary[] }
+- `ResolvedRouteData`: ({ kind: "entry" } & EntryData) | ({ kind: "tagIndex"; concept: string } & TagIndexData) | ({ kind: "tagArchive"; concept: string } & TagData)
 - `resolveImageUrl`: (image: string, origin: string) => string
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
 - `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response
@@ -248,6 +250,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
+- `ResolvedRoute`: { kind: "entry"; entry: ContentEntry<Record<string, unknown>> } | { kind: "tagIndex"; concept: string; tags: { tag: string; count: number }[] } | { kind: "tagArchive"; concept: string; tag: string; entries: ContentSummary[] }
 - `resolveImageUrl`: (image: string, origin: string) => string
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
 - `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response

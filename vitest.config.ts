@@ -22,12 +22,35 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/tests/unit/**/*.test.ts', 'packages/cairn-cms-dev/src/**/*.test.ts'],
+          // The dist cold-import spec spawns a child Node process to import the built barrel. Under the
+          // full run's concurrent IO that spawn starves and its child read flakes, so it runs in its own
+          // single-fork project below; exclude it here so it does not run twice.
+          exclude: ['src/tests/unit/delivery-data-dist-spawn.test.ts'],
           environment: 'node',
           // A few unit tests are CPU-bound (the admin CSS Tailwind+DaisyUI compile, the export
           // enumerator that parses the public surface, a runtime barrel import that vite compiles
           // cold). With the pool capped above they no longer thrash, but a generous ceiling still
           // absorbs a slow cold start without hiding a real failure: an assertion failure fails at
           // once, and a true hang still trips the timeout.
+          testTimeout: 30_000,
+          hookTimeout: 60_000,
+        },
+      },
+      {
+        test: {
+          // The dist cold-import spec spawns a child Node process to cold-import the built barrel, and
+          // that spawn flakes under the full run's concurrent IO. It gets its own non-concurrent project:
+          // a single fork, no file parallelism, so the spawn runs alone. The spec is excluded from the
+          // `unit` project above so it runs here exactly once.
+          name: 'unit-dist-spawn',
+          include: ['src/tests/unit/delivery-data-dist-spawn.test.ts'],
+          environment: 'node',
+          // Vitest 4 retired `poolOptions.forks.singleFork`; a single fork is now `maxWorkers: 1` on a
+          // forks pool, and `fileParallelism: false` keeps the spec off the shared concurrent pool.
+          pool: 'forks',
+          maxWorkers: 1,
+          minWorkers: 1,
+          fileParallelism: false,
           testTimeout: 30_000,
           hookTimeout: 60_000,
         },

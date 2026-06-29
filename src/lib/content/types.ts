@@ -84,11 +84,6 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */
   datePrefix?: DatePrefix;
   /**
-   * The root-relative base path for this concept's tag index and tag archives, e.g. `/topics`.
-   *  Defaults to `/<taxonomyFieldName>` when the concept marks a taxonomy field.
-   */
-  taxonomyBase?: string;
-  /**
    * Frontmatter keys to surface on each `ContentSummary.fields`, so a list card reads an authored
    *  field without a per-entry detail read. Each key should also be declared in `fields`.
    */
@@ -104,8 +99,6 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
 export interface ConceptUrlPolicy {
   permalink?: string;
   datePrefix?: DatePrefix;
-  /** The root-relative base path for the concept's tag index and archives, e.g. `/topics`. */
-  taxonomyBase?: string;
 }
 
 /** Magic-link sender identity for Cloudflare Email Sending. */
@@ -296,11 +289,6 @@ export interface ConceptDescriptor {
   permalink: string;
   /** Filename date-prefix granularity for a dated concept; resolved by `normalizeConcepts`. */
   datePrefix: DatePrefix;
-  /**
-   * The resolved root-relative base for this concept's tag index and archives, present only when the
-   *  concept marks a taxonomy field; `normalizeConcepts` defaults it to `/<taxonomyFieldName>`.
-   */
-  taxonomyBase?: string;
   /**
    * The concept's fields in normalized form: each descriptor with its record key re-attached as
    *  `name`, derived by `normalizeConcepts` from the concept's `fieldset` record. Every consumer

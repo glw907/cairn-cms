@@ -27,9 +27,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `composeDatedId`: (date: string, slug: string, datePrefix: DatePrefix) => string
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
-- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded" | RoutingRule; permalink?: string; datePrefix?: DatePrefix; taxonomyBase?: string; summaryFields?: string[] }
-- `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; taxonomyBase?: string; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
-- `ConceptUrlPolicy`: { permalink?: string; datePrefix?: DatePrefix; taxonomyBase?: string }
+- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded" | RoutingRule; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
+- `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
+- `ConceptUrlPolicy`: { permalink?: string; datePrefix?: DatePrefix }
 - `createRenderer`: (registry?: ComponentRegistry, options?: RendererOptions) => { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string> }
 - `DateField`: { type: "date"; min?: string; max?: string; label: string; help?: string; required?: boolean; default?: string | boolean }
 - `dateInputValue`: (value: unknown) => string
@@ -183,7 +183,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
 - `createContentIndex`: <F = Record<string, unknown>>(files: RawFile[], descriptor: ConceptDescriptor) => ContentIndex<F>
-- `createPublicRoutes`: (deps: PublicRoutesDeps) => { resolveRoute: (event: { url: URL }) => Promise<ResolvedRouteData>; entries: () => { path: string }[] }
+- `createPublicRoutes`: (deps: PublicRoutesDeps) => { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[] }
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
 - `createSiteResolver`: (concepts: ConceptIndex[], opts?: { validate?: boolean }) => SiteResolver
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
@@ -194,14 +194,11 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `fromGlob`: (record: Record<string, string>) => RawFile[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
-- `ListData`: { entries: ContentSummary[] }
 - `permalink`: (descriptor: ConceptDescriptor, entry: { id: string; slug: string; date?: string }) => string
 - `PublicRoutesDeps`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
 - `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
-- `ResolvedRoute`: { kind: "entry"; entry: ContentEntry<Record<string, unknown>> } | { kind: "tagIndex"; concept: string; tags: { tag: string; count: number }[] } | { kind: "tagArchive"; concept: string; tag: string; entries: ContentSummary[] }
-- `ResolvedRouteData`: ({ kind: "entry" } & EntryData) | ({ kind: "tagIndex"; concept: string } & TagIndexData) | ({ kind: "tagArchive"; concept: string } & TagData)
 - `resolveImageUrl`: (image: string, origin: string) => string
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
 - `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response
@@ -215,11 +212,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
-- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; resolveRoute: (path: string) => ResolvedRoute; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
-- `tagArchivePath`: (base: string, value: string) => string
-- `TagData`: { tag: string; entries: ContentSummary[] }
-- `TagIndexData`: { tags: { tag: string; count: number }[] }
-- `tagSlug`: (value: string) => string
+- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
 - `wordCount`: (body: string) => number
 
 ## `/delivery/data`
@@ -250,7 +243,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
-- `ResolvedRoute`: { kind: "entry"; entry: ContentEntry<Record<string, unknown>> } | { kind: "tagIndex"; concept: string; tags: { tag: string; count: number }[] } | { kind: "tagArchive"; concept: string; tag: string; entries: ContentSummary[] }
 - `resolveImageUrl`: (image: string, origin: string) => string
 - `resolveReferences`: (site: SiteResolver, descriptor: ConceptDescriptor, frontmatter: Record<string, unknown>) => Record<string, ResolvedReference | ResolvedReference[]>
 - `robotsResponse`: (opts: { sitemapUrl: string; disallow?: string[] }) => Response
@@ -264,9 +256,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
-- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; resolveRoute: (path: string) => ResolvedRoute; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
-- `tagArchivePath`: (base: string, value: string) => string
-- `tagSlug`: (value: string) => string
+- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
 - `wordCount`: (body: string) => number
 
 ## `/delivery/head`

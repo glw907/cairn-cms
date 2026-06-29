@@ -32,6 +32,21 @@ This is breaking. Consumers must: drop any call to the removed `archiveLoad`, `t
 `tagLoad`; render those surfaces from `site.concept(id).all()` and `ContentSummary.tags` in site code.
 The catch-all keeps calling `entryLoad`; no `data.kind` branching is needed.
 
+A site can now configure an editor-owned tag vocabulary. A new `vocabulary` key in `site.config.yaml`
+lists the allowed tags as `{ value, label }` entries, validated at build through the new public
+`validateVocabulary`, `extractVocabulary`, and `setVocabulary` functions and the `VocabularyEntry` type.
+Once a site configures a vocabulary, the concept's taxonomy field (the multiselect it marks
+`taxonomy: true`) becomes a closed picker on save and on edit: the editor picks from the configured
+tags, and a save of a value that is neither in the vocabulary nor already on the entry is rejected. A
+value already on an entry that the vocabulary does not list, an orphan, is preserved, never silently
+dropped, and renders flagged "not in your tag list." `ManifestEntry.tags` now carries each entry's
+projected tags.
+
+This is opt-in and non-breaking. A site with no `vocabulary` key is unaffected: the taxonomy field
+stays the open creatable multiselect it is today. The build read is unchanged, since tags-as-data is
+identical with or without a vocabulary; enforcement is a save-and-edit concern only. Consumers must:
+nothing.
+
 ## 0.77.0
 
 <!-- release-size: minor -->

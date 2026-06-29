@@ -366,6 +366,18 @@ narrows to that union. A closed `multiselect` (an `options` list) renders as che
 `fields.icon` declares a glyph chosen from the adapter's icon set, and its stored value is the glyph's
 name string.
 
+A concept's tag field, the top-level multiselect it marks `taxonomy: true`, becomes a closed
+vocabulary-sourced picker once the site configures a tag vocabulary (the `vocabulary` key in
+`site.config.yaml`, read onto `CairnRuntime.vocabulary` through `extractVocabulary`). On save and on
+edit, the engine sources the field's options from the vocabulary, so the editor picks from the
+configured tags rather than typing free-form values, and a save of a value that is neither in the
+vocabulary nor already on the entry is rejected. A value already on an entry that the vocabulary does
+not list, an orphan, the engine preserves rather than silently dropping. It renders as a checked,
+removable option flagged "not in your tag list." This enforcement is opt-in. A site that configures no `vocabulary`
+leaves the taxonomy field the open creatable multiselect it is by default, and the build-time
+tags-as-data read on `ContentSummary.tags` is identical either way; enforcement is a save-and-edit
+concern, not a build one.
+
 `fields.object({ fields })` groups leaf fields under one frontmatter key, storing a nested object. Its
 `label` is optional, because an `object` inside an `array` is labeled by the array. `fields.array(item,
 options?)` declares a repeatable list: the `item` is any leaf (a scalar, an `image`, or a `reference`)
@@ -704,6 +716,56 @@ violation.
 const tree = validateNavTree(submitted, 2);
 ```
 
+#### `extractVocabulary`
+
+Stability tier: Extension API.
+
+```ts
+declare function extractVocabulary(config: SiteConfig): VocabularyEntry[];
+```
+
+Read the editor-owned tag vocabulary from a parsed config and validate it. Returns `[]` when the
+`vocabulary` key is absent, so a site that configures no vocabulary stays on the open creatable
+taxonomy field. `composeRuntime` calls this to set `CairnRuntime.vocabulary`, the snapshot the save
+and edit paths read.
+
+```ts
+const vocabulary = extractVocabulary(siteConfig);
+```
+
+#### `validateVocabulary`
+
+Stability tier: Extension API.
+
+```ts
+declare function validateVocabulary(value: unknown): VocabularyEntry[];
+```
+
+Validate an untrusted value into a `VocabularyEntry[]`: an array of objects, each with a non-empty
+`label` and a `value` that is a lowercase hyphenated slug (the stored frontmatter token), no duplicate
+`value`. Returns the entries in input order. Throws `SiteConfigError` on any violation, so a malformed
+vocabulary fails the build the same as a bad menu.
+
+```ts
+const vocabulary = validateVocabulary([{ value: 'web-design', label: 'Web Design' }]);
+```
+
+#### `setVocabulary`
+
+Stability tier: Extension API.
+
+```ts
+declare function setVocabulary(raw: string, vocab: VocabularyEntry[]): string;
+```
+
+Replace the tag vocabulary in the YAML site-config text and reserialize, preserving every other
+top-level key and the file's comments. Each entry serializes to just `value` and `label`. Throws
+`SiteConfigError` when the config has no `siteName`. The tag-admin save path calls it.
+
+```ts
+const updated = setVocabulary(yamlText, [{ value: 'web-design', label: 'Web Design' }]);
+```
+
 #### Id helpers
 
 Stability tier: Extension API.
@@ -958,6 +1020,7 @@ function signatures above reference these.
 | `ReferenceOptions` | Extension API | `interface ReferenceOptions` | The title and summary for `generateComponentReference`. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
+| `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |
 | <a id="role"></a>`Role` | Extension API | `type Role` | An editor's role: owner or editor. |
 | <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. |
 | `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |

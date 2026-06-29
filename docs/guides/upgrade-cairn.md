@@ -836,3 +836,18 @@ site renders an archive from `site.concept(id).all()` and a tag list from the ta
 Consumers must: drop any call to the removed `archiveLoad`, `tagIndexLoad`, or `tagLoad`; render those
 surfaces from `site.concept(id).all()` and `ContentSummary.tags` in site code. The catch-all keeps
 calling `entryLoad`; no `data.kind` branching is needed.
+
+## Unreleased: an opt-in tag vocabulary makes the taxonomy field a closed picker (non-breaking)
+
+A site can configure an editor-owned tag vocabulary through a new `vocabulary` key in
+`site.config.yaml`, a list of `{ value, label }` entries read at build through the new public
+`validateVocabulary`, `extractVocabulary`, and `setVocabulary` functions. With a vocabulary configured,
+the concept's taxonomy field (the multiselect marked `taxonomy: true`) becomes a closed picker on save
+and on edit: the editor picks from the configured tags, and a value that is neither in the vocabulary
+nor already on the entry is rejected. A pre-existing value the vocabulary does not list, an orphan, is
+preserved and renders flagged "not in your tag list," never silently dropped. This entry rides the same
+release as the preceding taxonomy entries.
+
+Consumers must: nothing. The vocabulary is opt-in. A site with no `vocabulary` key keeps the open
+creatable taxonomy field, and the build-time tags-as-data read is unchanged; enforcement is a
+save-and-edit concern only.

@@ -6,7 +6,7 @@
   let { data }: { data: PageData } = $props();
 
   // The resolved author edge: a single reference projects to one ResolvedReference, so the template
-  // reads its title and permalink. Undefined when the entry sets no author or the target is mid-flight.
+  // reads its title and permalink. Undefined when the entry sets no author.
   const author = $derived(data.references.author as ResolvedReference | undefined);
   // The resolved related edges: an array(reference) projects to a list, rendered as links.
   const related = $derived((data.references.related as ResolvedReference[] | undefined) ?? []);

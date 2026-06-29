@@ -315,3 +315,67 @@ git commit -m "Reshape the docs and CHANGELOG window to the entry-only, no-tag-p
 - **Type consistency.** `entryLoad(event: { url: URL }): Promise<EntryData>` (Task 1) is the same name/shape the pre-taxonomy `entryLoad` had and the same the showcase reverts to (Task 4). `EntryData` is unchanged throughout. `SiteResolver` after Task 2 has exactly `byPermalink`/`adjacent`/`entries`/`concept`/`all`, the five the showcase and feeds consume.
 - **No placeholders.** Every removal names exact files and line ranges; the `entryLoad` body and the showcase reverts are reproduced or pinned to exact pre-taxonomy commits; the CHANGELOG rewrite text is given verbatim.
 - **Risk.** Task 1 is the correctness-critical piece (the entry render/seo/hero body must stay byte-identical); the existing entry assertions in `public-routes.test.ts` and the showcase `golden-path.spec.ts` are the guard. Task 2's deletions are mechanical but the `entries()` rewrite must keep the leading-slash strip. Task 5's CHANGELOG window must not name a never-shipped symbol as a consumer action.
+
+## Post-mortem (2026-06-29, COMPLETE)
+
+All five tasks landed on `worktree-tag-management-1` (off `main` at `adfd5bc`), each dispatched to
+`cairn-implementer` (Sonnet), test-first, with the main loop reviewing every diff and clearing the full
+gate between dispatches. Commits: `4f9c0f8` (Task 1), `fdffb1c` (Task 2), `62bec9d` (Task 3), `903d1ec`
+(Task 4), `87a4239` (Task 5), plus `bb9363f` (the reviewed plan) and `890ea6e` (an in-flight plan
+correction, below).
+
+**Built and verified:**
+- **Task 1** reverted `createPublicRoutes` to entry-only `{ entryLoad, entries }`: `entryLoad` resolves via
+  `site.byPermalink` and throws `error(404)` on a miss, the render/seo/hero body byte-identical to the
+  pre-taxonomy entry branch. Removed `ResolvedRouteData`/`ListData`/`TagData`/`TagIndexData`; trimmed the
+  `delivery` barrel to `PublicRoutesDeps`/`EntryData`.
+- **Task 2** removed `resolveRoute`, the `ResolvedRoute` type, and the `TaxonomyRoute` machinery (the
+  per-concept slug→value index, the prefix-aware collision throw, the `routesByLongestBase` sort, the
+  tag-path `entries()` loop) from the site resolver; `entries()` is entry-only; the `data.ts`
+  `ResolvedRoute` re-export dropped.
+- **Task 3** removed the tag URL codec from `url-policy.ts` (the permalink home only), `taxonomyBase` from
+  `ConceptConfig`/`ConceptUrlPolicy`/`ConceptDescriptor` and the `concepts.ts` validation/resolution, plus
+  the code those orphaned (`SAFE_TAXONOMY_BASE`, the `taxonomyField` local, the `resolveTaxonomyField`
+  import). `git rm`'d `content-url-policy.test.ts`; regenerated the surface snapshot (dropped eight
+  exports).
+- **Task 4** reverted the showcase catch-all to the pre-taxonomy entry-only form (`9fdf796^`), reworded the
+  `cairn.config.ts` `topics` comment to tags-as-data (marker kept), deleted `tags.spec.ts`. From-scratch
+  consumer e2e: 44 passed, `golden-path` green, no tag route prerendered.
+- **Task 5** reshaped `delivery.md`/`delivery-data.md` to the entry-only surface and rewrote the held
+  `## Unreleased` CHANGELOG window plus the upgrade guide to the net (tags-as-data and the vocabulary to
+  come, no tag pages; entry-only `entryLoad`; `archiveLoad`/`tagIndexLoad`/`tagLoad` removed as a
+  `Consumers must`). The admin-layer `ListData` (`@glw907/cairn-cms/sveltekit`) was carved out and kept;
+  `sveltekit.md` untouched.
+
+**Verified (final tree):** `npm run check` 0/0; `npm test` exit 0 (2780 tests); all doc/surface gates
+(`check:reference`, `check:reference:signatures`, `check:docs`, `check:surface`, `check:package`,
+`check:comments`); from-scratch showcase e2e `CI=1` 44 passed. `code-simplifier` found no refinements (a
+deletion-heavy revert to previously-reviewed code). `svelte-reviewer` returned zero functional findings;
+its one cosmetic suggestion (a stale "mid-flight" comment in the reverted showcase `+page.svelte`) was
+trimmed.
+
+**Adversarial plan review (pre-execution).** One Workflow, six lenses, every finding independently verified
+against the repo: 18 raised, 12 confirmed and folded. Highest-value folds: the `createPublicRoutes`
+rationale corrected (`v0.76.0` published five loaders, so entry-only is a deliberate published-breaking
+removal, not a rename no-op); `content-url-policy.test.ts` → `git rm` (it has no `permalink` cases, and an
+emptied file fails the Vitest run); two `entries()` tests that assert tag paths without calling
+`resolveRoute` pinned (one in `public-routes.test.ts` would break at the Task 2 gate); `concepts.ts` dead
+code removed; the catch-all doc revert retargeted from `sveltekit.md` to `delivery.md`; the admin-layer
+`ListData` carved out; the CHANGELOG marker sentence corrected; the hard-coded `0.78.0` dropped.
+
+**Execution-surfaced correction.** The review's prescribed `entries()`-flip *timing* was wrong:
+`routes.entries()` delegates to `site.entries()`, whose tag-path enumeration is removed in Task 2, so the
+entry-only expectation can only pass after Task 2. The Task 1 implementer caught it and held the 6-element
+assertion; the plan was corrected (`890ea6e`) so Task 1 keeps it and Task 2 flips it. Lesson: a
+cross-task test assertion's flip belongs to the task that changes the value it asserts, not an earlier one.
+
+**Decisions locked:**
+- `createPublicRoutes` is entry-only `{ entryLoad, entries }`. `archiveLoad`/`tagIndexLoad`/`tagLoad` are
+  **not** restored: a consumer renders an archive from `site.concept(id).all()` and a tag list from the
+  tags-as-data on `ContentSummary.tags`. This is a published-breaking removal vs `0.76.0`, documented in
+  the held CHANGELOG window.
+- Tags-as-data is fully preserved for Plans 2–3: the `taxonomy` marker, `resolveTaxonomyField`,
+  `ContentSummary.tags`, `ContentIndex.byTag`/`allTags`, `feedView`/`sitemapView`, and feed categories are
+  all untouched.
+- The held release covers the net: tags-as-data plus (Plans 2–3) the editor vocabulary, no public tag
+  pages. The version is the first free minor after `0.77.0` publishes, set at cut time.

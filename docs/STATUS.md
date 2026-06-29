@@ -11,7 +11,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): tag-management + editor-vocabulary initiative DESIGNED + adversarially reviewed; NEXT = write Plan 1 (just-in-time), review it, execute
+## Immediate next action (2026-06-29, latest): tag-management Plan 1 (reshape) LANDED on a worktree; NEXT = write Plan 2 (data engine) just-in-time, review, execute
+
+**Plan 1 of the tag-management initiative is complete on `worktree-tag-management-1`** (off `main` at
+`adfd5bc`). It reshaped the held, unpublished tag-routing layer before publish: removed the public tag
+index/archive routing (the `resolveRoute` tag kinds, the tag URL codec `tagSlug`/`tagArchivePath`/`parseTagPath`,
+`taxonomyBase`, the per-concept slug→value index, the prefix-aware collision throw, the tag-path prerender
+enumeration, the promoted `ResolvedRoute`/`ResolvedRouteData` types, and the showcase tag pages) and reverted
+`createPublicRoutes` to entry-only `{ entryLoad, entries }`. Kept tags-as-data (the `taxonomy` marker →
+`ContentSummary.tags`, `byTag`/`allTags`), the `url-policy` permalink home, and feed categories. Plan +
+post-mortem: `docs/superpowers/plans/2026-06-29-cairn-tag-management-1-reshape.md`. Commits `bb9363f`→`87a4239`.
+
+**Verified.** `npm run check` 0/0, `npm test` exit 0 (2780 tests); all doc/surface gates
+(`check:reference`/`:signatures`/`check:docs`/`check:surface`/`check:package`/`check:comments`); from-scratch
+showcase e2e `CI=1` 44 passed (golden-path green, no tag route prerendered). `code-simplifier` found no
+refinements; `svelte-reviewer` zero functional findings (one cosmetic stale comment trimmed). An adversarial
+**plan** review (one Workflow, six lenses, every finding verified, 12/18 folded) ran before execution; the
+load-bearing folds were the `createPublicRoutes` rationale correction (`v0.76.0` published five loaders, so
+entry-only is a deliberate published-breaking removal, not a rename no-op), the `content-url-policy.test.ts`
+`git rm` (no `permalink` cases survive), the cross-task `entries()` test pin, and the admin-layer `ListData`
+carve-out.
+
+**The held CHANGELOG `## Unreleased` window now reads the net:** tags-as-data + (Plans 2–3) the editor
+vocabulary, no public tag pages; entry-only `entryLoad`; `archiveLoad`/`tagIndexLoad`/`tagLoad` removed
+(`Consumers must` render those from `site.concept(id).all()` and `ContentSummary.tags`). No never-shipped
+symbol is named.
+
+**NEXT = write Plan 2 (the data engine) just-in-time per the spec, adversarially review it (Workflow), fold,
+then execute task-by-task** via `cairn-implementer` (Sonnet) on `worktree-tag-management-1`. Plan 2 = the
+vocabulary config key in `site.config.yaml` + parser/validation; the `ManifestEntry.tags` projection +
+`verifyManifest` normalization + a pure `tagUsage(manifest, value)` helper whose "in use" **unions `main` +
+every open `cairn/*` branch** (the media where-used model); and the **async pre-resolve** field options seam at
+save/render/build with enforcement + **orphan preservation**. Spec:
+`docs/superpowers/specs/2026-06-29-cairn-tag-management-design.md` (Plan split + Components 1/3 + the
+load-bearing review folds, all in the `cairn-tag-management-initiative` memory too). The release covering the
+whole initiative is the first free minor after `0.77.0` publishes; this reshapes the held taxonomy work before
+publish. Use `cairn-pass` for pass-start/end.
+
+## Prior next action (2026-06-29): tag-management + editor-vocabulary initiative DESIGNED + adversarially reviewed; Plan 1 (reshape) now LANDED (above)
 
 **The next dev initiative is tag management with an editor-owned vocabulary, and its design is complete,
 adversarially reviewed, and committed.** Spec:

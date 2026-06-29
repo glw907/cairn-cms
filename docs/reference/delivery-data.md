@@ -425,31 +425,6 @@ uses a date token and the entry has no valid date. This is the same `permalink` 
 exports, re-exported here so the node-safe builders can resolve a path without the SvelteKit module
 graph.
 
-### `tagSlug`
-
-Stability tier: Extension API.
-
-```ts
-function tagSlug(value: string): string;
-```
-
-Map an arbitrary tag value to a URL-safe segment: lowercase, runs of non-alphanumerics collapse to a
-single hyphen, leading and trailing hyphens trimmed. The mapping is lossy, so the resolver keeps a
-per-concept slug-to-value index and fails the build on a collision. A tag-index page links each tag to
-its archive through this codec.
-
-### `tagArchivePath`
-
-Stability tier: Extension API.
-
-```ts
-function tagArchivePath(base: string, value: string): string;
-```
-
-Build the archive path for a tag value under a taxonomy base: the base, a slash, and the slugified
-value. The base is the concept's resolved `taxonomyBase`. A tag-index page reads each tag's `href` from
-this helper so its links match the routes the resolver enumerates.
-
 ### `fromGlob`
 
 Stability tier: Extension API.
@@ -518,8 +493,7 @@ descriptors feed `createContentIndex` and `createSiteResolver` when you assemble
 | `ContentProblem` | Extension API | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
 | `ContentIndex` | Extension API | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface that `createContentIndex` returns. |
 | `ConceptIndex` | Extension API | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteResolver`. |
-| `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; resolveRoute; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. `resolveRoute` discriminates a path into an entry, a tag index, or a tag archive. |
-| `ResolvedRoute` | Extension API | `type ResolvedRoute = { kind: 'entry'; entry: ContentEntry } \| { kind: 'tagIndex'; concept: string; tags: { tag: string; count: number }[] } \| { kind: 'tagArchive'; concept: string; tag: string; entries: ContentSummary[] }` | The discriminated result of `SiteResolver.resolveRoute`: an entry, a concept's tag index, or one tag's archive. The engine owns the URL-to-data resolution; the site renders by `kind`. |
+| `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. `byPermalink` resolves one entry by request path. |
 | `SiteGlobs` | Extension API | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
 | `SiteIndexes` | Extension API | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
 | `FeedChannel` | Extension API | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |

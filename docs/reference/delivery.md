@@ -34,25 +34,22 @@ Stability tier: Scaffold API.
 
 ```ts
 function createPublicRoutes(deps: PublicRoutesDeps): {
-  resolveRoute: (event: { url: URL }) => Promise<ResolvedRouteData | undefined>;
+  entryLoad: (event: { url: URL }) => Promise<EntryData>;
   entries: () => { path: string }[];
 };
 ```
 
-Build the public route resolver for a site's unified index. Pass the
+Build the public route loader for a site's unified index. Pass the
 [`PublicRoutesDeps`](#publicroutesdeps): the built site resolver, the render function, the origin, and
-the SEO defaults. The returned object carries `resolveRoute`, the one resolver the catch-all route
-calls, and `entries`, the prerender enumerator. `resolveRoute` discriminates a request path into an
-entry, a tag index, or a tag archive, and the entry kind carries the rendered html, the SEO head, and
-the hero. A resolution miss returns `undefined`; the route layer throws the 404.
+the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
+and `entries`, the prerender enumerator. `entryLoad` resolves one entry by request path and folds in
+the rendered html, the SEO head, and the hero; it throws `error(404)` on a miss.
 
-The showcase wires `resolveRoute` and `entries` into its `[...path]` catch-all server. The
-`+page.server.ts` calls `resolveRoute`, throws `error(404)` on `undefined`, and the `+page.svelte`
-branches on `data.kind`.
+The showcase wires `entryLoad` and `entries` into its `[...path]` catch-all server. The
+`+page.server.ts` calls `entryLoad` and the `+page.svelte` renders the entry directly.
 
 ```ts
 import type { PageServerLoad, EntryGenerator } from './$types';
-import { error } from '@sveltejs/kit';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
 import { cairn, siteConfig } from '$lib/cairn.config';
@@ -72,11 +69,9 @@ const routes = createPublicRoutes({
 export const entries: EntryGenerator = () => routes.entries();
 
 export const load: PageServerLoad = async ({ url }) => {
-  const data = await routes.resolveRoute({ url });
-  if (!data) throw error(404, 'Not found');
-  // Branch by kind: data.kind is 'entry', 'tagIndex', or 'tagArchive'. The entry kind carries the
-  // rendered html, seo, and hero; the tag kinds carry the tag list and the tagged entries.
-  return data;
+  // entryLoad resolves one entry by request path and throws error(404) on a miss. The returned
+  // payload carries the rendered html, the SEO head, and the hero.
+  return routes.entryLoad({ url });
 };
 ```
 
@@ -110,42 +105,6 @@ site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a f
 hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
 builds the body resolver, and when it is absent no `heroImage` projection is derived.
 
-### `ListData`
-
-Stability tier: Extension API.
-
-```ts
-interface ListData {
-  entries: ContentSummary[];
-}
-```
-
-The archive and tag list data: the summaries a list template renders.
-
-### `TagData`
-
-Stability tier: Extension API.
-
-```ts
-interface TagData extends ListData {
-  tag: string;
-}
-```
-
-A single tag's data plus the tag it filtered on.
-
-### `TagIndexData`
-
-Stability tier: Extension API.
-
-```ts
-interface TagIndexData {
-  tags: { tag: string; count: number }[];
-}
-```
-
-The tag-index data: every tag with its entry count.
-
 ### `EntryData`
 
 Stability tier: Extension API.
@@ -164,29 +123,11 @@ interface EntryData {
 ```
 
 One entry's data: the detail entry, its rendered html, its canonical URL, the SEO head, and the
-adjacent entries for prev and next links. `resolveRoute`'s entry kind carries this shape under
-`{ kind: 'entry', ... }`. `heroImage` is a derived projection of the frontmatter `image` field,
-resolved through `resolveMedia`: `url` is the root-relative path for an `<img>` and `absoluteUrl` the
-origin-anchored form for the og:image. The canonical token is left untouched, so
-`entry.frontmatter.image.src` stays the `media:` token, and `heroImage` is undefined when no hero is
-set, media is off, or the reference does not resolve.
-
-### `ResolvedRouteData`
-
-Stability tier: Extension API.
-
-```ts
-type ResolvedRouteData =
-  | ({ kind: 'entry' } & EntryData)
-  | ({ kind: 'tagIndex'; concept: string } & TagIndexData)
-  | ({ kind: 'tagArchive'; concept: string } & TagData);
-```
-
-The discriminated payload `resolveRoute` returns. The catch-all renders it by `kind`. The entry kind
-carries the rendered html, the SEO head, and the hero. The tag-index kind carries every tag with its
-count. The tag-archive kind carries one tag's entries. It is the delivery-layer mirror of the engine's
-[`ResolvedRoute`](./delivery-data.md#types): the engine resolves a path to data, and this layer
-folds in the render. A resolution miss is `undefined`, which the route layer turns into a 404.
+adjacent entries for prev and next links. `entryLoad` returns this shape. `heroImage` is a derived
+projection of the frontmatter `image` field, resolved through `resolveMedia`: `url` is the
+root-relative path for an `<img>` and `absoluteUrl` the origin-anchored form for the og:image. The
+canonical token is left untouched, so `entry.frontmatter.image.src` stays the `media:` token, and
+`heroImage` is undefined when no hero is set, media is off, or the reference does not resolve.
 
 ---
 

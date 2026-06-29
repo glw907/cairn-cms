@@ -817,32 +817,22 @@ instead.
 ## Unreleased: a concept's tags come from a field marked `taxonomy: true` (breaking)
 
 A concept declares its tag field by marking one top-level multiselect `taxonomy: true`. The content
-index reads that marked field's validated value for each entry's tags, and the tag index, the tag
-archives, and the feed categories all read it. The old behavior read a field hardcoded as `tags`, so a
-concept whose tag field has another name no longer produces tags until you mark it. The default tag base
-is the field's name, so a field named `topics` serves its archive under `/topics/<tag>`. This entry
-heads the first free minor after `0.77.0` publishes; the version is set at release time.
+index reads that marked field's validated value for each entry's tags, and the content index and the
+feed categories both read it. The old behavior read a field hardcoded as `tags`, so a concept whose tag
+field has another name no longer produces tags until you mark it. This entry heads the first free minor
+after `0.77.0` publishes; the version is set at release time.
 
-Consumers must: add `taxonomy: true` to each concept's top-level tag multiselect. A live site that
-serves `/tags/<tag>` URLs and wants to keep them names that field `tags`, or sets `taxonomyBase` to
-`tags` on the concept. A concept with no tag field needs no change.
+Consumers must: add `taxonomy: true` to each concept's top-level tag multiselect. A concept with no tag
+field needs no change.
 
-## Unreleased: the public route loaders collapse into one `resolveRoute` (breaking)
+## Unreleased: the public route loaders narrow to one `entryLoad` (breaking)
 
-The four per-concept loaders collapse into one resolver. `createPublicRoutes` now returns
-`{ resolveRoute, entries }`. `resolveRoute(event)` returns a discriminated payload, the entry, the tag
-index, or the tag archive, or `undefined` for a miss. The removed loaders are `entryLoad`,
-`archiveLoad`, `tagIndexLoad`, and `tagLoad`. The catch-all `[...path]` route now calls one resolver
-and the page renders by `data.kind`. This entry rides the same release as the preceding taxonomy
-marker.
+`createPublicRoutes` resolves one entry per request path. It returns `{ entryLoad, entries }`;
+`entryLoad(event)` returns the entry payload and throws `error(404)` on a miss. The pre-`0.77.0`
+`archiveLoad`, `tagIndexLoad`, and `tagLoad` loaders are removed: cairn ships no public tag pages, and a
+site renders an archive from `site.concept(id).all()` and a tag list from the tags-as-data on
+`ContentSummary.tags`. This entry rides the same release as the preceding taxonomy marker.
 
-Consumers must: call `resolveRoute` from the catch-all `+page.server.ts`. Read the payload with
-`const data = await routes.resolveRoute({ url })`, and throw `error(404)` when it returns `undefined`.
-
-Consumers must: branch the catch-all `+page.svelte` on `data.kind`. The value is one of `entry`,
-`tagIndex`, or `tagArchive`. Render the entry kind from its `html`, `seo`, and `entry` fields, the tag
-index from its tag list, and the tag archive from its entries. The old code destructured an `EntryData`
-payload from `entryLoad`; the entry kind now carries the same fields under `data.kind === 'entry'`.
-
-Consumers must: drop any call to `entryLoad`, `archiveLoad`, `tagIndexLoad`, or `tagLoad`. Read a
-concept's chronological archive from `site.concept(id).all()` instead of `archiveLoad`.
+Consumers must: drop any call to the removed `archiveLoad`, `tagIndexLoad`, or `tagLoad`; render those
+surfaces from `site.concept(id).all()` and `ContentSummary.tags` in site code. The catch-all keeps
+calling `entryLoad`; no `data.kind` branching is needed.

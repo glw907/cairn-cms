@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, tagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -553,6 +553,31 @@ describe('inboundReferences', () => {
   });
   it('returns an empty list when nothing references the target', () => {
     expect(inboundReferences(manifest, 'posts', 'nobody')).toEqual([]);
+  });
+});
+
+describe('tagUsage', () => {
+  const manifest = {
+    version: 1 as const,
+    entries: [
+      { id: 'a', concept: 'posts', title: 'Post A', permalink: '/a', draft: false, links: [], tags: ['svelte', 'web-design'] },
+      { id: 'b', concept: 'posts', title: 'Post B', permalink: '/b', draft: false, links: [], tags: ['svelte'] },
+      { id: 'c', concept: 'pages', title: 'Page C', permalink: '/c', draft: false, links: [], tags: ['typescript'] },
+      { id: 'd', concept: 'pages', title: 'Page D', permalink: '/d', draft: false, links: [] },
+    ],
+  };
+  it('returns a row for each entry whose tags include the value', () => {
+    expect(tagUsage(manifest, 'svelte')).toEqual([
+      { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' },
+      { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },
+    ]);
+  });
+  it('returns an empty list when no entry carries the value', () => {
+    expect(tagUsage(manifest, 'nobody')).toEqual([]);
+  });
+  it('never returns an entry lacking the value, including a tagless entry', () => {
+    const ids = tagUsage(manifest, 'typescript').map((r) => r.id);
+    expect(ids).toEqual(['c']);
   });
 });
 

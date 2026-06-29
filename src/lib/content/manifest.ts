@@ -412,6 +412,27 @@ export function inboundReferences(manifest: Manifest, concept: string, id: strin
   return out;
 }
 
+/** One entry that carries a tag value: enough to name it and link to its edit page in the delete gate. */
+export interface TagUsageRow {
+  concept: string;
+  id: string;
+  title: string;
+  permalink: string;
+}
+
+/**
+ * Every published entry whose taxonomy tags include the value, keyed on the bare value (a tag is
+ *  corpus-global, unlike a reference whose key is a concept/id pair, since a value means the same
+ *  thing in every concept). The cross-branch `buildTagUsageIndex` unions this main read with the open
+ *  branches; this pure reader is the published arm and the delete gate's manifest-only query. Pure
+ *  over the manifest, so the request-time delete path and a unit test call it the same way.
+ */
+export function tagUsage(manifest: Manifest, value: string): TagUsageRow[] {
+  return manifest.entries
+    .filter((e) => e.tags?.includes(value))
+    .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
+}
+
 /**
  * A resolver backed by manifest targets, for the admin preview. A miss returns undefined, so the
  *  render step marks the link broken rather than throwing. The build resolver throws instead.

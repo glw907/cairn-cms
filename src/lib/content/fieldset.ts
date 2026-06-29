@@ -330,6 +330,36 @@ function checkSeoImageFields(record: Record<string, FieldDescriptor>): void {
   }
 }
 
+// At most one top-level multiselect feeds a concept's taxonomy, so the tag index, archives, and feed
+// categories read one unambiguous field. A v2 fieldset marks that field with an explicit
+// `taxonomy: true`; there is no field-name default, since the record key is arbitrary. Two markers is
+// a site config error, so fail loudly at declaration (the mirror of the single-seo-image rule). The
+// content index resolves the marked field off the top-level descriptors, so a nested marker cannot
+// resolve at delivery; this forbids taxonomy: true inside any container.
+function checkTaxonomyMarker(record: Record<string, FieldDescriptor>): void {
+  const marked: string[] = [];
+  for (const [key, field] of Object.entries(record)) {
+    if (field.type === 'multiselect' && field.taxonomy === true) marked.push(`"${key}"`);
+    else if (field.type === 'object') {
+      for (const [leafKey, leaf] of Object.entries(field.fields)) {
+        if (leaf.type === 'multiselect' && leaf.taxonomy === true) {
+          throw new Error(`cairn: the field "${key}.${leafKey}" sets taxonomy: true, but the taxonomy marker is top-level only. Put taxonomy: true on a top-level multiselect.`);
+        }
+      }
+    } else if (field.type === 'array') {
+      const item = field.item;
+      const nested = (item.type === 'multiselect' && item.taxonomy === true)
+        || (item.type === 'object' && Object.values(item.fields).some((l) => l.type === 'multiselect' && l.taxonomy === true));
+      if (nested) {
+        throw new Error(`cairn: the array field "${key}" declares a taxonomy marker, but the taxonomy marker is top-level only. Put taxonomy: true on a top-level multiselect.`);
+      }
+    }
+  }
+  if (marked.length > 1) {
+    throw new Error(`cairn: a concept declares at most one taxonomy field, but found ${marked.length} (${marked.join(', ')}). Set taxonomy: false on all but one.`);
+  }
+}
+
 // A leaf is any non-container descriptor. A container (object, array) may hold leaves one level deep only.
 function isLeaf(field: FieldDescriptor): boolean {
   return field.type !== 'object' && field.type !== 'array';
@@ -378,6 +408,7 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
   options: FieldsetOptions = {},
 ): Fieldset<R> {
   checkSeoImageFields(record);
+  checkTaxonomyMarker(record);
   checkContainerNesting(record);
   for (const key of Object.keys(options.behavior ?? {})) {
     if (!(key in record)) throw new Error(`cairn: behavior names "${key}", which is not a declared field.`);

@@ -45,7 +45,6 @@ export interface ResolvedNavEntry {
  *  Throws an actionable error on the first bad entry, so a misconfiguration fails at server start
  *  rather than rendering a broken or shadowing sidebar link. Returns the resolved entries with
  *  `ownerOnly` defaulted to false.
- *
  * @param entries - The raw config, or undefined when the site declares none.
  * @param concepts - The site's concepts, so parseAdminPath can recognize a concept-route href.
  * @returns The validated entries, in declaration order.

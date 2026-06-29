@@ -2,6 +2,37 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## 0.77.0
+
+<!-- release-size: minor -->
+
+The developer-extensibility seam: a site can add its own admin screen as a normal SvelteKit route under
+`/admin/`, rendered inside cairn's chrome, behind the editor login, with a data-only sidebar entry. This
+entry covers Plan 1 (the capability); the boundary-enforcement work (Plan 2) lands under the same `0.77.0`
+and the release ships once both are in, so this version stays unpublished until then.
+
+What changed. cairn's admin chrome moves out of the `CairnAdmin` view switch into a shared
+`/admin/+layout.svelte` that renders the new exported `CairnAdminShell` component. The catch-all
+`/admin/[...path]` route now renders bare inside that shell. A concrete route you add, such as
+`/admin/signups`, wins over the catch-all and inherits the admin guard, so `locals.editor` and the
+exported `requireSession`/`requireOwner` helpers work with no extra wiring. A new `adminNav` config field
+on the adapter's `editor` group adds a sidebar entry as plain data, validated at startup against a typed
+icon allowlist and the built-in routes. See [Add a custom admin screen](docs/guides/add-a-custom-admin-screen.md).
+
+This is breaking. Consumers must, in order:
+
+1. Add the shell layout mount. Create `src/routes/admin/+layout.server.ts` with `export const load =
+   admin.shellLoad;` and `src/routes/admin/+layout.svelte` that renders `<CairnAdminShell
+   data={data.shell}>{@render children()}</CairnAdminShell>`. The chrome no longer rides the catch-all
+   load; it rides this layout. Copy the showcase files at `examples/showcase/src/routes/admin/`.
+2. Rename `AdminLayout` to `CairnAdminShell`. The component export is renamed. A site on the canonical
+   single-mount never imported it directly, so this affects only a hand-rolled per-route mount.
+3. Read `siteName` and other shell fields from `page.data.shell`, not `data.layout`. The per-view
+   `AdminData` members no longer carry a `layout` field; the shell payload is the one source.
+4. No action for `requireOwner`. It now accepts a minimal `{ locals: { editor } }` event, which widens
+   the old signature, so existing callers keep working and a custom route can pass its standard load
+   event.
+
 ## 0.76.0
 
 <!-- release-size: minor -->

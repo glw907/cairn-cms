@@ -11,7 +11,7 @@ public as the advanced seam for a site that mounts routes by hand. For the catch
 import { CairnAdmin } from '@glw907/cairn-cms/components';
 ```
 
-Each component sets `data-theme="cairn-admin"` (or sits inside `AdminLayout`, which does), so the
+Each component sets `data-theme="cairn-admin"` (or sits inside `CairnAdminShell`, which does), so the
 Warm Stone admin theme ships as a CSS side effect of the import. The TypeScript prop types in
 `src/lib/components` are the source of truth, and the export-coverage gate checks every name here
 against them.
@@ -38,12 +38,13 @@ let { data, form, render, registry, icons }: {
 
 The single-mount admin page. Render it from the catch-all `/admin/[...path]` route with the
 discriminated `AdminData` that `createCairnAdmin`'s load returns, and it switches `data.view` to
-mount the right component: the sign-in and confirm pages bare, and the list, edit, editors, and
-nav views wrapped in `AdminLayout` with the load's `layout` data. `form` forwards the route's
-action result to whichever view rendered, so a blocked save reaches `EditPage` and a login
-outcome reaches `LoginPage` through the one prop. `render`, `registry`, and `icons` come from the
-site's adapter and pass through to `EditPage` for the preview, the insert palette, and the icon
-fields. The showcase mounts it like this:
+mount the right component: the sign-in and confirm pages, and the list, edit, editors, and nav
+views. It renders each view bare; the shared chrome rides the separate `/admin/+layout` shell
+(see [`CairnAdminShell`](#cairnadminshell)), not `CairnAdmin`. The edit view reads its `siteName`
+from `page.data.shell`. `form` forwards the route's action result to whichever view rendered, so a
+blocked save reaches `EditPage` and a login outcome reaches `LoginPage` through the one prop.
+`render`, `registry`, and `icons` come from the site's adapter and pass through to `EditPage` for
+the preview, the insert palette, and the icon fields. The showcase mounts it like this:
 
 ```svelte
 <!-- src/routes/admin/[...path]/+page.svelte -->
@@ -59,40 +60,46 @@ fields. The showcase mounts it like this:
 <CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />
 ```
 
-### `AdminLayout`
+### `CairnAdminShell`
 
 ```ts
-let { data, children }: { data: LayoutData; children: Snippet };
+let { data, children }: { data: AdminShellData; children: Snippet };
 ```
 
-The authed admin shell: the sidebar nav, the top bar, and the content slot. `data` is the
-`LayoutData` from the layout load (site name, signed-in user, nav concepts, active path, and
-the owner capability). `CairnAdmin` wraps every authed view in it for you; on the per-route
-mounting it lives at `src/routes/admin/(app)/+layout.svelte` with the page body rendered into its
-default slot. Its sign-out form posts the named `?/logout` action on the current URL.
+The exported admin chrome shell: the sidebar nav, the top bar, the command palette, and the content
+slot. Mount it from a shared `/admin/+layout.svelte` so every `/admin/**` route, the engine's own
+views and any custom screen a site adds, renders inside one chrome. `data` is the `AdminShellData`
+the shell load (`/admin/+layout.server.ts`) returns.
+
+`AdminShellData` is a discriminated union. A `{ public: true }` payload (the login and confirm pages)
+renders the children bare with no chrome; an authed payload renders the full chrome from its
+data-driven nav, user, theme, and streamed publish-all count. The discriminant gates the chrome, so a
+public payload always renders bare.
 
 ```svelte
+<!-- src/routes/admin/+layout.svelte -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import { AdminLayout } from '@glw907/cairn-cms/components';
-  import type { LayoutData } from '@glw907/cairn-cms/sveltekit';
+  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
 
-  let { data, children }: { data: LayoutData; children: Snippet } = $props();
+  let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
 </script>
 
-<AdminLayout {data}>
+<CairnAdminShell data={data.shell}>
   {@render children()}
-</AdminLayout>
+</CairnAdminShell>
 ```
 
-`LayoutData` carries a `csrf` token alongside the shell fields. `AdminLayout` provides that token to
-its descendant forms through context, so an admin form inside the shell mounts `CsrfField` with no
-prop. See [`CsrfField`](#csrffield) for the field itself.
+An authed `AdminShellData` carries a `csrf` token alongside the chrome fields. `CairnAdminShell`
+provides that token to its descendant forms through context, so an admin form inside the shell mounts
+a bare `CsrfField` with no prop, and a custom `/admin/` screen's forms get the token the same way. See
+[`CsrfField`](#csrffield) for the field itself.
 
-When `data.pendingEntries` is non-empty, the topbar shows a "Publish site (N)" button whose confirm
-dialog lists the held entries grouped by concept and posts the named `?/publishAll` action to the
-current page. A null `pendingEntries` (GitHub unreachable) hides the button rather than showing a
-stale count.
+When the authed payload's streamed pending set is non-empty, the topbar shows a "Publish site (N)"
+button whose confirm dialog lists the held entries grouped by concept and posts the named
+`?/publishAll` action to the absolute `/admin` catch-all. A null pending set (GitHub unreachable)
+hides the button rather than showing a stale count.
 
 ### `ConceptList`
 
@@ -361,8 +368,8 @@ The Help home screen, the standing place an author goes to get their bearings. `
 the open edit branches, the markdown reference rows, and the optional support contact. It renders the
 masthead, a derived getting-started checklist (it drops away once the author finishes all three steps,
 and hides per device on request), the formatting reference, and the support hand-off (shown only when
-the adapter sets `supportContact`). It mounts inside `AdminLayout`, so it carries no theme wrapper of
-its own.
+the adapter sets `supportContact`). It mounts inside `CairnAdminShell`, so it carries no theme wrapper
+of its own.
 
 ```svelte
 <script lang="ts">
@@ -651,8 +658,9 @@ let { token }: { token?: string };
 
 A hidden double-submit field that every admin form carries so the guard's CSRF check passes. Pass
 `token` directly, the way `LoginPage` and `ConfirmPage` do from their load data. Omit it inside the
-authed shell, where `AdminLayout` provides the token through context and the field reads it from
-there. A form that renders no `CsrfField` fails the guard's token check, which is the intended
+authed shell, where `CairnAdminShell` provides the token through context and the field reads it from
+there, which is also how a custom `/admin/` screen's forms get the token. A form that renders no
+`CsrfField` fails the guard's token check, which is the intended
 fail-closed signal. `EditPage`, `DeleteDialog`, `RenameDialog`, and the other authed admin forms
 compose it.
 

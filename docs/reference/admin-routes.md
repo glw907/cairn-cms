@@ -10,7 +10,7 @@ This wiring assumes the site sets `csrf: { checkOrigin: false }` in `svelte.conf
 cairn's guard owns CSRF for the admin through a double-submit token. See the
 [deploy guide](../guides/deploy-to-cloudflare.md#disable-checkorigin) for that step.
 
-## The two files plus the composer
+## The route files plus the composer
 
 The catch-all route pair, reproduced from the showcase:
 
@@ -41,6 +41,38 @@ export const actions = admin.actions;
 
 <CairnAdmin {data} {form} render={cairn.rendering.render} registry={cairn.rendering.components} icons={cairn.rendering.icons} />
 ```
+
+The shared shell layout pair wraps the whole `/admin` subtree in cairn's chrome. The catch-all
+`+page.svelte` shown earlier renders bare inside it: the chrome (the sidebar, the top bar, the command palette,
+the theme) moved out of `CairnAdmin` into this `/admin/+layout`, so every `/admin/**` route, the
+engine's views and any custom screen a site adds, renders inside one shell. Reproduced from the
+showcase:
+
+```ts
+// src/routes/admin/+layout.server.ts
+// The shared admin shell's load: the chrome (nav, user, theme, streamed pending count) for every
+// /admin/** route, including a developer's own custom screens.
+import { admin } from '$lib/cairn.server.js';
+
+export const load = admin.shellLoad;
+```
+
+```svelte
+<!-- src/routes/admin/+layout.svelte -->
+<script lang="ts">
+  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
+  import type { Snippet } from 'svelte';
+
+  let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
+</script>
+
+<CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
+```
+
+A site adds its own admin screen by dropping a concrete route under `/admin/` (for example
+`/admin/signups`), which wins over the catch-all and renders inside this same shell. See
+[Add a custom admin screen](../guides/add-a-custom-admin-screen.md) for the worked route.
 
 The composer builds the runtime once, and every server route that needs it (the admin mount,
 `/healthz`) imports it rather than re-running `composeRuntime` per route:
@@ -139,6 +171,7 @@ src/routes/
   (site)/               URL-transparent group; the public URLs do not change
     +layout.svelte      imports app.css, renders the nav, <main>, and footer
     +page.svelte ...    the home page and the public pages, moved in
+  admin/+layout.{server.ts,svelte}   the shared shell that wraps every /admin route
   admin/[...path]/      the catch-all mount; outside the chrome
   feed.xml/ sitemap.xml/ robots.txt/ healthz/   endpoints; no layout, stay at the root
 ```

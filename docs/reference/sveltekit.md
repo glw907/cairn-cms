@@ -10,7 +10,7 @@ site that mounts routes by hand.
 
 ```ts
 import { createAuthGuard, createCairnAdmin, healthLoad } from '@glw907/cairn-cms/sveltekit';
-import type { AdminData, LayoutData, ListData, EditData } from '@glw907/cairn-cms/sveltekit';
+import type { AdminData, AdminShellData, LayoutData, ListData, EditData } from '@glw907/cairn-cms/sveltekit';
 ```
 
 The TypeScript types in `src/lib` are the source of truth, and the export-coverage gate checks every
@@ -44,6 +44,7 @@ export const handle = sequence(theme, createAuthGuard());
 declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps): {
   load: (event: AdminEvent) => Promise<AdminData>;
   actions: Record<string, (event: AdminEvent) => Promise<unknown>>;
+  shellLoad: (event: AdminEvent) => Promise<{ shell: AdminShellData }>;
 };
 ```
 
@@ -52,8 +53,14 @@ factories over the composed runtime and serves every admin view through one `loa
 mounts the whole admin with a single catch-all route instead of a tree of per-route files. The
 load parses `event.url.pathname` with `parseAdminPath` and dispatches: an unrecognized path is a
 404, `/admin` redirects to the first concept's list, the public login and confirm views return
-bare page data, and every authed view returns `{ layout, page }` with the layout and view
-loads run concurrently. The nav view is a 404 unless the runtime configures a `navMenu`.
+bare page data, and every authed view returns its own `page` data. The nav view is a 404 unless
+the runtime configures a `navMenu`.
+
+`shellLoad` is the shared `/admin/+layout.server.ts` load. It returns the lean shell payload that
+[`CairnAdminShell`](./components.md#cairnadminshell) renders: the streamed pending count for an authed
+path, and a bare payload that returns early for the public login and auth paths. The chrome loads
+once for the whole `/admin/**` subtree rather than per view. Stability tier: Extension API, a
+versioned seam a site's own `/admin/` route depends on.
 
 `deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps;
 the showcase passes only a `mintToken` stub for its dev backend.
@@ -131,11 +138,14 @@ export const load = (event) => {
 ### `requireOwner`
 
 ```ts
-declare function requireOwner(event: RequestContext): Editor;
+declare function requireOwner(event: { locals: { editor?: Editor | null } }): Editor;
 ```
 
 Return a signed-in owner, or throw a 403 for an editor. Guards the management surface, such as the
-editor list, where only an owner may act.
+editor list, where only an owner may act. Its parameter is the same minimal structural shape
+`requireSession` asks for (just `locals.editor`), so a custom `/admin/` route's standard load event
+satisfies it: a hand-built admin screen gates itself with one call and needs no engine event type.
+Stability tier: Extension API.
 
 ```ts
 import { requireOwner } from '@glw907/cairn-cms/sveltekit';
@@ -145,6 +155,16 @@ export const load = (event) => {
   return { canManage: true };
 };
 ```
+
+### `isPublicAdminPath`
+
+```ts
+declare function isPublicAdminPath(pathname: string): boolean;
+```
+
+Whether a `/admin` pathname is public: true for the login page (`/admin/login`) and the auth
+endpoints (`/admin/auth/*`), false for every gated admin path. The guard and the shell load use it to
+decide whether a path skips the session gate and the chrome. Stability tier: Extension API.
 
 The four factories below are the advanced per-route seam. `createCairnAdmin` wraps them, so a
 site on the single mount never calls them directly; a site that mounts routes by hand wires each
@@ -224,7 +244,7 @@ export const actions = {
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
-  layoutLoad: (event: ContentEvent) => Promise<LayoutData>;
+  shellPayload: (event: ContentEvent) => { shell: AdminShellData };
   helpLoad: (event: ContentEvent) => Promise<HelpData>;
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
@@ -256,8 +276,10 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
 ```
 
 The core of the admin surface. It takes the composed runtime and returns the loads and actions for
-the authed admin shell, the concept list, and the entry editor. `layoutLoad` backs the authed
-shell, `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
+the authed admin shell, the concept list, and the entry editor. `shellPayload` backs the shared admin
+shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
+lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
+otherwise. `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
@@ -467,6 +489,64 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 
 ---
 
+## The custom admin-nav seam
+
+A site adds a sidebar link to one of its own `/admin/` routes by declaring an `adminNav` entry in its
+adapter. The entries are plain data, validated when the runtime composes, so a bad icon or a colliding
+href fails the build rather than rendering a broken or shadowing link. These three types are the seam.
+Stability tier: Extension API.
+
+### `AdminNavEntry`
+
+```ts
+interface AdminNavEntry {
+  label: string;
+  icon: AdminNavIcon;
+  href: string;
+  ownerOnly?: boolean;
+}
+```
+
+One developer-declared sidebar entry. `label` names the link, `icon` is a name from the bundled
+allowlist (see [`AdminNavIcon`](#adminnavicon)), and `href` points at the site's own `/admin/` route.
+The href must not collide with a built-in admin view; a collision throws at startup with the
+conflicting view named. Set `ownerOnly` to hide the link from a non-owner. The flag is cosmetic, so the
+route itself must still gate server-side.
+
+### `AdminNavIcon`
+
+```ts
+type AdminNavIcon =
+  | 'anchor'
+  | 'calendar'
+  | 'clipboard-list'
+  | 'list'
+  | 'users'
+  | 'package'
+  | 'inbox'
+  | 'table'
+  | 'wrench';
+```
+
+The bundled Lucide icon names an `AdminNavEntry` may use. An icon outside this allowlist throws when
+the runtime composes.
+
+### `ResolvedNavEntry`
+
+```ts
+interface ResolvedNavEntry {
+  label: string;
+  iconName: AdminNavIcon;
+  href: string;
+  ownerOnly: boolean;
+}
+```
+
+The validated shape the shell renders, produced from an `AdminNavEntry`: the icon name resolved and
+`ownerOnly` defaulted to false. The authed shell payload carries the role-filtered set of these.
+
+---
+
 ## Types
 
 These are the route-data and config shapes the factories produce and consume. A `+page.svelte`
@@ -476,6 +556,7 @@ imports the matching `*Data` type to type its `data` prop.
 | --- | --- | --- |
 | `AuthRoutesConfig` | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink }` | The config `createAuthRoutes` takes: the email branding and an optional custom sender. |
 | `LayoutData` | `interface LayoutData { siteName; user: { displayName; email; role }; concepts: NavConcept[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: { concept; id }[] \| null }` | The admin layout's data: site identity, the signed-in user, the nav, the active path, the CSRF token, and the pending entries for the topbar's publish-all (null when GitHub is unreachable, which hides the action). |
+| `AdminShellData` | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role }; concepts: NavConcept[]; customNav: ResolvedNavEntry[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: Promise<{ concept; id }[] \| null> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path mirrors `LayoutData`, adds the developer's role-filtered `customNav`, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. |
 | `NavConcept` | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | `interface ListData { conceptId; label; singular; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). |
@@ -500,7 +581,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavLoadData` | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | `interface NavRoutesDeps { backend?: Backend }` | Injectable dependencies for `createNavRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint. |
 | `CairnAdminDeps` | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; mintToken?: ContentRoutesDeps['mintToken']; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `mintToken`, `anthropic`, and `tidyTimeoutMs` pass through to the wrapped content routes (the tidy action reads the latter two). |
-| `AdminData` | `type AdminData = { view: 'login' \| 'confirm'; page } \| { view: 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media'; layout: LayoutData; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each `page` is the matching per-surface load's return shape (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, the auth page data, or the editor list). |
+| `AdminData` | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `AdminView` | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' \| 'media' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
 | `HealthData` | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `RequestContext` | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |

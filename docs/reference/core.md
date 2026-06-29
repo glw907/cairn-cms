@@ -594,10 +594,10 @@ The runtime folds an adapter and its site-config into the shape the admin and de
 #### `composeRuntime`
 
 ```ts
-declare function composeRuntime({ adapter, siteConfig, extensions }: ComposeInput): CairnRuntime;
+declare function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRuntime;
 ```
 
-Fold an adapter and any extensions into the composed runtime (seam 2). The per-concept URL policy
+Fold an adapter and its site-config into the composed runtime (seam 2). The per-concept URL policy
 is derived from the site-config, the same source delivery uses, so the runtime and delivery
 permalinks cannot diverge.
 
@@ -898,8 +898,8 @@ function signatures above reference these.
 | `ReferenceOptions` | `interface ReferenceOptions` | The title and summary for `generateComponentReference`. |
 | `SiteConfig` | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | `interface NavNode` | One navigation node: label, optional url, optional children. |
-| `Role` | `type Role` | An editor's role: owner or editor. |
-| `Editor` | `interface Editor` | The session shape the whole admin reads: email, displayName, role. |
+| <a id="role"></a>`Role` | `type Role` | An editor's role: owner or editor. |
+| <a id="editor"></a>`Editor` | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. |
 | `AuthEnv` | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
 | `AuthBranding` | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | `interface MagicLinkMessage` | The message a built magic-link email carries. |

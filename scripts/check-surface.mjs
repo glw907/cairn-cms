@@ -90,6 +90,24 @@ function renderInterface(checker, type) {
   return `{ ${parts.join('; ')} }`;
 }
 
+// The type that carries an export's shape. A type-only symbol (an interface, a type alias, an enum
+// with no value side) carries it on the declared type; a value symbol (a const, a function, the
+// `fields` namespace object) carries it on the type at its declaration, falling back to the declared
+// type when no declaration is reachable.
+/**
+ * @param {import('typescript').TypeChecker} checker
+ * @param {import('typescript').Symbol} sym
+ */
+function shapeTypeOf(checker, sym) {
+  const isType = (sym.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)) !== 0;
+  if (isType && (sym.flags & ts.SymbolFlags.Value) === 0) {
+    return checker.getDeclaredTypeOfSymbol(sym);
+  }
+  const decl = sym.valueDeclaration ?? sym.declarations?.[0];
+  if (!decl) return checker.getDeclaredTypeOfSymbol(sym);
+  return checker.getTypeOfSymbolAtLocation(sym, decl);
+}
+
 // Render one export's full declared shape, normalized. A callable export renders through the same
 // flags the signatures gate uses; an interface expands its members; any other non-callable (a type
 // alias, an enum, a const value) renders via `typeToString` with the shape flags. The result passes
@@ -101,16 +119,7 @@ function renderInterface(checker, type) {
  */
 function renderExport(checker, exportSym) {
   const sym = resolveAlias(checker, exportSym);
-  const decl = sym.valueDeclaration ?? sym.declarations?.[0];
-  const isType = (sym.flags & (ts.SymbolFlags.Interface | ts.SymbolFlags.TypeAlias | ts.SymbolFlags.Enum)) !== 0;
-  // A type-only symbol carries its shape on the declared type; a value symbol carries it on the
-  // type at its declaration (this is the const, the function, the `fields` namespace object).
-  const type =
-    isType && (sym.flags & ts.SymbolFlags.Value) === 0
-      ? checker.getDeclaredTypeOfSymbol(sym)
-      : decl
-        ? checker.getTypeOfSymbolAtLocation(sym, decl)
-        : checker.getDeclaredTypeOfSymbol(sym);
+  const type = shapeTypeOf(checker, sym);
   let rendered;
   if (type.getCallSignatures().length > 0) {
     rendered = checker.typeToString(type, undefined, CALLABLE_FLAGS);

@@ -189,6 +189,29 @@ function keyAppearsIn(text: string | null): boolean {
 // new one, so the readiness count holds (the same pattern configMediaBucket uses). A warn here is not a
 // definitive unset claim: it asks the operator to verify the secret, since a wrangler secret is
 // invisible to the CLI.
+export const configTidyKey: DoctorCheck = {
+	id: 'config.tidy-key',
+	conditionId: 'config.bindings-missing',
+	title: 'Tidy API key',
+	async run(ctx: DoctorContext): Promise<CheckResult> {
+		const text = await readSiteConfigText(ctx);
+		if (text === null) return skip('no site.config.yaml found, so tidy enablement is unknown');
+		if (!tidyEnabled(text)) return skip('tidy is not enabled in the site config');
+		const wrangler =
+			(await ctx.readFile('wrangler.jsonc')) ?? (await ctx.readFile('wrangler.toml'));
+		if (keyAppearsIn(wrangler)) {
+			return pass('ANTHROPIC_API_KEY appears in the wrangler vars (verify it is the real key, not a placeholder)');
+		}
+		const devVars = await ctx.readFile('.dev.vars');
+		if (keyAppearsIn(devVars)) {
+			return pass('ANTHROPIC_API_KEY appears in .dev.vars (the local override; verify the Worker secret is set for production)');
+		}
+		return fail(
+			'tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY'
+		);
+	},
+};
+
 // The candidate files of the four-file /admin mount. There is no directory listing in
 // DoctorContext, so the check reads these known paths; a route file can be .ts or .js, so both
 // spellings are probed. Whatever exists is concatenated and scanned for the two mount signals.
@@ -244,28 +267,5 @@ export const adminMountShape: DoctorCheck = {
 			return pass('the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)');
 		}
 		return skip(ADMIN_MOUNT_GUIDANCE);
-	},
-};
-
-export const configTidyKey: DoctorCheck = {
-	id: 'config.tidy-key',
-	conditionId: 'config.bindings-missing',
-	title: 'Tidy API key',
-	async run(ctx: DoctorContext): Promise<CheckResult> {
-		const text = await readSiteConfigText(ctx);
-		if (text === null) return skip('no site.config.yaml found, so tidy enablement is unknown');
-		if (!tidyEnabled(text)) return skip('tidy is not enabled in the site config');
-		const wrangler =
-			(await ctx.readFile('wrangler.jsonc')) ?? (await ctx.readFile('wrangler.toml'));
-		if (keyAppearsIn(wrangler)) {
-			return pass('ANTHROPIC_API_KEY appears in the wrangler vars (verify it is the real key, not a placeholder)');
-		}
-		const devVars = await ctx.readFile('.dev.vars');
-		if (keyAppearsIn(devVars)) {
-			return pass('ANTHROPIC_API_KEY appears in .dev.vars (the local override; verify the Worker secret is set for production)');
-		}
-		return fail(
-			'tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY'
-		);
 	},
 };

@@ -71,6 +71,53 @@ This premise check is the reason the scope is what it is. If the proven-foldable
 out trivially small after Phase 0's audit, the right move is to shrink the sweep, not to invent
 folds to justify it.
 
+## The two goals, and the one discipline that serves both
+
+Two goals govern this work, co-equally:
+
+1. **Be friendly to a developer extending the admin.** A developer building their own admin routes
+   inside `CairnAdminShell` should find a native, copyable reference and a small, documented
+   vocabulary to build against, so their work looks and behaves like the engine's.
+2. **Keep DaisyUI and Tailwind upgrades straightforward.** A framework major should recompile
+   cleanly with little hand-fixing.
+
+One discipline serves both: **shrink the bespoke-and-exposed surface to its lean floor.** Native
+markup is both the thing a developer copies and the thing that recompiles clean. A small documented
+vocabulary is both what a developer learns and what an upgrade revalidates. The enemy of both goals
+is the same: a large bespoke surface, and overrides written against the framework's internals.
+
+They reinforce, with one tension to hold. Publishing a vocabulary for developers is a stability
+obligation: every token name and role utility you expose is something you must keep meaning the same
+across a DaisyUI or Tailwind major, or it is a breaking change for the developer who built on it. So
+the vocabulary must be lean, which is also the charter's answer. Small is the win for both goals at
+once: a developer learns it fast, and you re-validate it cheaply on every bump.
+
+What actually makes an upgrade hard is not custom CSS in general; it is overrides written against the
+framework's internals. The admin's two unlayered rules exist because of DaisyUI's own layer ordering,
+exactly the kind of thing a major can move. So "straightforward upgrades" means three concrete things:
+drive overrides-against-internals to their irreducible floor and document why each survivor exists,
+keep the theme in DaisyUI's own theming mechanism (Warm Stone already is), and let the upgrade
+rehearsal prove both the clean recompile and the still-intact developer vocabulary.
+
+This splits the essential custom by **audience**, which is the right frame for both goals (and
+replaces the earlier "wall it into one CSS section" framing, which solved only an internal
+readability problem):
+
+- The **developer-facing vocabulary** — the Warm Stone theme tokens, the role utilities
+  (`text-muted`/`text-subtle`), and the component recipes — is a documented, versioned contract in
+  `admin-design-system.md`, a seam beside the `CairnAdminShell` custom-route and `adminNav` seams.
+  This is the "home" worth labeling, and it is the deliverable that makes this initiative pay into the
+  extending-developer promise. It stays lean by charter: tokens, role utilities, and recipes, not a
+  component library.
+- The **internal frame** — the embed-anywhere infrastructure (scoping, resets, `@font-face`), the
+  a11y inks, the editor system — is marked "cairn's frame, not your API," organized for
+  maintainability. A developer must not build on it, so an engine change to it breaks no one. Source
+  grouping here is an internal detail, not a contract.
+
+The gate and the rehearsal guard both: the gate holds the bespoke floor and asserts the
+developer-facing vocabulary stays intact (the way `check-public-tokens` already proves the showcase's
+tokens resolve), and the rehearsal re-proves both the clean recompile and the vocabulary on a bump.
+
 ## The custom-surface triage
 
 The custom surface sorts into three tiers. These examples are pulled from
@@ -137,12 +184,13 @@ framework's own choices.
   secondary text uses an opacity utility.
 - **The theme-adaptive elevation pair** `--cairn-shadow` / `--cairn-card-border`. Tier 2.
 
-**The key deliverable for this tier: it lives in one labeled home, with its contrast floors
-co-located, owned on purpose.** Today the essential custom is interleaved through `cairn-admin.css`.
-The pass walls it into a single, clearly labeled home (a partition of the source sheet, or a
-dedicated partial the build concatenates) with each locked contrast value stated beside its token,
-so a reader sees the whole essential floor at once and knows it is deliberate. Tier 2 is the answer
-to "why is there any custom CSS at all," and that answer should be one page, not a scavenger hunt.
+**The deliverable for this tier follows the audience split above.** The part a developer builds
+against (the theme tokens, the role utilities) is published in `admin-design-system.md` as the
+versioned vocabulary contract. The rest of Tier 2 is the internal frame: it carries each locked
+contrast value beside its token and is marked "cairn's frame, not your API," so a reader understands
+it is deliberate and not to be built on. Source-level grouping of the frame is an internal
+maintainability choice, not the contract; the contract lives in the doc and the gate, where an
+upgrade and an extending developer both read it.
 
 ### Tier 3: excessive custom (the proven-foldable remainder; the target)
 
@@ -267,7 +315,10 @@ publishes), and the repo's convention answers an external trigger with a schedul
 always-on CI canary that tests an upgrade nobody is performing. So the rehearsal is two parts:
 
 - **A documented procedure** a human runs at upgrade time: bump DaisyUI/Tailwind, recompile the admin
-  sheet, run the showcase screenshot baseline, read the diff.
+  sheet, run the showcase screenshot baseline, confirm the developer-facing vocabulary still holds (the
+  tokens resolve and the role utilities are present, the `check-public-tokens` discipline applied to the
+  admin), and read the diff. The vocabulary check is what protects the extending developer's contract
+  across the bump, not only the engine's own recompile.
 - **A scheduled watcher** (via the `schedule` skill) that pings only when a new DaisyUI or Tailwind
   major actually publishes, the same pattern CLAUDE.md cites for the SvelteKit `checkOrigin` watch. It
   does not run the bump on every CI pass.
@@ -440,6 +491,9 @@ hardened tests above carry the contract. The full `check:*` family stays green, 
 - No change to the CodeMirror content theme.
 - No invention of folds to justify scope. The sweep targets only the provably-excessive remainder; if that is
   small, the sweep is small.
+- No design-system component library. The developer-facing vocabulary is the theme tokens, the role
+  utilities, and the documented recipes, nothing more. A larger exposed surface is both a worse upgrade
+  obligation and charter scope creep.
 
 ## Success criteria
 
@@ -447,9 +501,12 @@ hardened tests above carry the contract. The full `check:*` family stays green, 
   current and ratcheted to each phase's proven floor. "Tier 3 to its **proven floor**" (retired tokens gone,
   the genuine primitives adopted where chosen, the redundant-override remainder folded), not an absolute zero
   that the investigations may not support.
-- Tier 2 lives in one labeled home with its contrast floors stated and its load-bearing rules pinned by
-  selector, for the admin and the template's owned design; `admin-design-system.md` describes both as native
-  primitives plus that documented floor.
+- The developer-facing vocabulary (the Warm Stone theme tokens, the `text-muted`/`text-subtle` role
+  utilities, the component recipes) is documented and versioned in `admin-design-system.md` as a seam beside
+  the `CairnAdminShell` and `adminNav` seams, and the gate asserts it stays intact. The internal frame (the
+  embed-anywhere infrastructure, the a11y inks, the editor system) carries its contrast floors and its
+  load-bearing rules pinned by selector, and is marked "cairn's frame, not your API." A developer extending
+  the admin can build on the documented vocabulary and recompile across a framework bump without rework.
 - The structural invariants in `admin-css-build.test.ts` are intact (never weakened), the per-phase
   screenshot baselines are committed records of intended drift, the selector-coupled assertions are migrated
   to role/test-id selectors, and the presence-only a11y tests are upgraded to behavioral assertions.

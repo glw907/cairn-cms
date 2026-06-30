@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.78.1
 
 <!-- release-size: patch -->
 

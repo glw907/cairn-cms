@@ -178,13 +178,13 @@ while a site stores images only.
 
   <!-- The combobox: focus stays in this input; aria-activedescendant tracks the active option. -->
   <div class="flex items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
-    <svg class="ec-glyph h-4 w-4 text-[var(--color-muted)]" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+    <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
     <input
       bind:value={query}
       onkeydown={onKeydown}
       type="text"
       role="combobox"
-      class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
+      class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-muted"
       placeholder="Search the media library"
       aria-label="Search the media library"
       aria-expanded={filtered.length > 0}
@@ -210,7 +210,7 @@ while a site stores images only.
   <ul id={listboxId} role="listbox" aria-label="Media library" class="flex max-h-72 flex-col gap-0.5 overflow-auto p-0">
     {#if filtered.length === 0}
       <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
-        <p class="text-sm text-[var(--color-muted)]">
+        <p class="text-sm text-muted">
           {#if entries.length === 0}
             No images in the library yet.
           {:else}

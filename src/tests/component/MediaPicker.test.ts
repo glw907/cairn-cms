@@ -84,10 +84,42 @@ describe('MediaPicker combobox a11y', () => {
     expect(document.activeElement).toBe(input);
   });
 
-  it('has two separate aria-live regions for count and active-row narration', async () => {
+  it('moves only the narration region (not the count) as ArrowDown advances, with the per-row announce text', async () => {
     const screen = render(MediaPicker, { library: IMAGES_ONLY, onselect: () => {} } as never);
-    const live = screen.container.querySelectorAll('[aria-live]');
+    const live = [...screen.container.querySelectorAll('[aria-live]')];
     expect(live.length).toBeGreaterThanOrEqual(2);
+    // The count region is the role="status" live region; the narration region is the other one.
+    const countRegion = live.find((el) => el.getAttribute('role') === 'status')!;
+    const narrationRegion = live.find((el) => el.getAttribute('role') !== 'status')!;
+    expect(countRegion).toBeTruthy();
+    expect(narrationRegion).toBeTruthy();
+
+    const input = screen.container.querySelector('input[role="combobox"]') as HTMLInputElement;
+    input.focus();
+
+    // On mount activeIndex is -1, so the narration region is empty while the count region is filled.
+    const countBefore = countRegion.textContent ?? '';
+    expect((narrationRegion.textContent ?? '').trim()).toBe('');
+    expect(countBefore).toMatch(/2 images/i);
+
+    // Move 1: index 0 is "Blue shoes" (alt-set), narrated as "Blue shoes, 1 of 2".
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await Promise.resolve();
+    const narrationOne = (narrationRegion.textContent ?? '').trim();
+    expect(narrationOne).toBe('Blue shoes, 1 of 2');
+    expect(narrationOne).not.toContain('needs alt text');
+    // Separation: the count region text did not change as the narration moved.
+    expect(countRegion.textContent ?? '').toBe(countBefore);
+
+    // Move 2: index 1 is "Red hat" (alt-empty), narrated with the needs-alt suffix and the position.
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await Promise.resolve();
+    const narrationTwo = (narrationRegion.textContent ?? '').trim();
+    expect(narrationTwo).toContain(', needs alt text');
+    expect(narrationTwo).toContain('2 of 2');
+    // A second in-range move changed the narration again; the count still did not.
+    expect(narrationTwo).not.toBe(narrationOne);
+    expect(countRegion.textContent ?? '').toBe(countBefore);
   });
 });
 

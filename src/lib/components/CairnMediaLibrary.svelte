@@ -1273,13 +1273,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The selected-cue check glyph for the triage radiogroup (WCAG 1.4.1): hue never carries the
   // chosen state alone, the same non-color cue the ConceptList triage uses.
   function segButtonClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${on ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${on ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   function densityButtonClass(on: boolean): string {
-    return `inline-flex items-center justify-center rounded-md p-1.5 ${on ? 'bg-primary/10 text-primary' : 'text-[var(--color-muted)] hover:bg-base-content/[0.06]'}`;
+    return `inline-flex items-center justify-center rounded-md p-1.5 ${on ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
 
-  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
+  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
 </script>
 
 <svelte:window onkeydown={onWindowKeydown} />
@@ -1288,9 +1288,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      the Upload primary action top-right. -->
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
   <div class="flex flex-col gap-0.5">
-    <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Media</span>
+    <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Media</span>
     <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Media library</h1>
-    <p class="text-sm text-[var(--color-muted)]">
+    <p class="text-sm text-muted">
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
   </div>
@@ -1323,11 +1323,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <CairnLogo class="h-12 w-12 text-primary opacity-30" />
     <div class="space-y-1">
       <p class="font-semibold text-base-content font-[family-name:var(--font-display)] text-xl">No media yet</p>
-      <p class="mx-auto max-w-[40ch] text-sm text-[var(--color-muted)]">
+      <p class="mx-auto max-w-[40ch] text-sm text-muted">
         Upload an image and it shows up here, ready to drop into a post or set as a hero.
       </p>
     </div>
-    <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-[var(--color-muted)]">
+    <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
       <button type="button" class="btn btn-primary btn-sm">
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
@@ -1370,7 +1370,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <button
       bind:this={orphanFindButton}
       type="button"
-      class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100 font-normal text-[var(--color-muted)] hover:bg-base-content/[0.06]"
+      class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100 font-normal text-muted hover:bg-base-content/[0.06]"
       aria-haspopup="dialog"
       onclick={openOrphanScan}
     >
@@ -1392,10 +1392,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          naming WHY these are candidates and WHAT cairn cannot see, at the point of action. Never the
          danger family: selecting is not destroying. -->
     <div class="mb-3 flex items-start gap-2.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200 px-3.5 py-2.5">
-      <FileTextIcon class="mt-0.5 h-4 w-4 shrink-0 text-[var(--color-muted)]" aria-hidden="true" />
+      <FileTextIcon class="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
       <p class="text-[0.8125rem] leading-relaxed text-base-content">
         <b class="font-semibold">No reference found in any tracked branch.</b> Nothing on the site or in an open edit points to these.
-        <span class="mt-0.5 block text-xs text-[var(--color-muted)]">
+        <span class="mt-0.5 block text-xs text-muted">
           "No references found" is not the same as unused. cairn cannot see a raw-HTML image or a URL hardcoded into a site template, so check anything you are unsure about before deleting it.
         </span>
       </p>
@@ -1405,8 +1405,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   {#if sorted.length === 0}
     <!-- A filter or search narrowed the set to zero; the assets exist, none match. -->
     <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
-      <SearchIcon class="h-8 w-8 text-[var(--color-subtle)] opacity-40" aria-hidden="true" />
-      <p class="text-sm text-[var(--color-muted)]">No media match this filter.</p>
+      <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
+      <p class="text-sm text-muted">No media match this filter.</p>
     </div>
   {:else if density === 'grid'}
     <!-- The grid: a roving-tabindex multiselectable listbox of tiles. One tabstop; arrows move the
@@ -1446,12 +1446,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    category reads "No references found" (renamed from "Unused"): a found reference is
                    not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--color-muted)]">used {used}</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-muted">used {used}</span>
               {:else}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">No refs</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
-                <span data-cairn-broken class="flex flex-col items-center gap-1 text-[var(--color-subtle)]">
+                <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
                   <ImageOffIcon class="h-7 w-7" aria-hidden="true" />
                   <span class="text-[0.625rem]">Image missing</span>
                 </span>
@@ -1525,14 +1525,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <button type="button" class="flex w-full items-center gap-3 text-left" onclick={(e) => openAsset(asset, e.currentTarget)}>
                   <span class="relative flex h-10 w-14 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
                     {#if brokenHashes.has(asset.hash)}
-                      <ImageOffIcon data-cairn-broken class="h-4 w-4 text-[var(--color-subtle)]" aria-hidden="true" />
+                      <ImageOffIcon data-cairn-broken class="h-4 w-4 text-subtle" aria-hidden="true" />
                     {:else}
                       <img src={thumbSrc(asset)} alt="" aria-hidden="true" class="h-full w-full object-cover" onerror={() => markBroken(asset.hash)} />
                     {/if}
                   </span>
                   <span class="flex min-w-0 flex-col">
                     <span class="cairn-ml-name truncate text-sm font-semibold">{asset.displayName}</span>
-                    <span class="truncate text-[0.75rem] text-[var(--color-muted)] tabular-nums">
+                    <span class="truncate text-[0.75rem] text-muted tabular-nums">
                       {#if dimensions(asset)}{dimensions(asset)}<span class="px-1" aria-hidden="true">&middot;</span>{/if}{formatBytes(asset.bytes)}<span class="px-1" aria-hidden="true">&middot;</span>{typeLabel(asset)}
                     </span>
                   </span>
@@ -1553,10 +1553,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 {#if used > 0}
                   <span class="text-base-content">found in {used}</span>
                 {:else}
-                  <span class="text-[var(--color-muted)]">no references found</span>
+                  <span class="text-muted">no references found</span>
                 {/if}
               </td>
-              <td class="w-24 text-right text-sm tabular-nums text-[var(--color-muted)]">{formatAdded(asset.createdAt)}</td>
+              <td class="w-24 text-right text-sm tabular-nums text-muted">{formatAdded(asset.createdAt)}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4 text-error" />
@@ -1586,7 +1586,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 px-4 py-3 shadow-[var(--cairn-shadow)]"
     >
       <span class="shrink-0 text-[0.9375rem] font-bold tabular-nums">{selectedCount}</span>
-      <span class="min-w-0 text-xs leading-snug text-[var(--color-muted)]">
+      <span class="min-w-0 text-xs leading-snug text-muted">
         <b class="font-semibold text-base-content">{selectedCount} selected</b> in this view<br />
         {selectionScope.noRefs} with no references, {selectionScope.used} still used
       </span>
@@ -1596,7 +1596,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           Select all {visible.length}
         </button>
       {/if}
-      <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 text-[0.8125rem] font-medium text-[var(--color-subtle)]" onclick={clearSelection}>
+      <button type="button" class="whitespace-nowrap rounded-lg border border-base-300 px-2.5 py-2 text-[0.8125rem] font-medium text-subtle" onclick={clearSelection}>
         Clear
       </button>
       <!-- The reversible bulk Delete: a git-tracked removal of manifest rows, so the danger-OUTLINE
@@ -1613,7 +1613,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          polite region carries "Showing N of M". -->
     <div class="sr-only" role="status" aria-live="polite">Showing {visible.length} of {sorted.length} {sorted.length === 1 ? 'image' : 'images'}.</div>
     <div class="mt-4 flex flex-col items-center gap-2">
-      <span class="text-sm text-[var(--color-muted)]">Showing {visible.length} of {sorted.length}</span>
+      <span class="text-sm text-muted">Showing {visible.length} of {sorted.length}</span>
       {#if hasMore}
         <button type="button" class="btn btn-sm" onclick={loadMore}>Load more</button>
       {/if}

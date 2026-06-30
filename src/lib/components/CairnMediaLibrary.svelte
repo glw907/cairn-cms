@@ -1638,7 +1638,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     class="fixed inset-x-0 bottom-0 z-30 flex max-h-[85vh] flex-col rounded-t-2xl border-t border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)] sm:inset-x-auto sm:bottom-0 sm:right-0 sm:top-16 sm:max-h-none sm:w-[22rem] sm:rounded-t-none sm:border-l sm:border-t-0"
   >
     <div class="flex items-center justify-between border-b border-[var(--cairn-card-border)] px-4 py-3.5">
-      <h2 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Asset</h2>
+      <h2 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Asset</h2>
       <button bind:this={closeButton} type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close details" onclick={closePanel}>
         <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
       </button>
@@ -1648,7 +1648,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <!-- The large preview, object-fit contain on the quiet mat, with the broken-image affordance. -->
       <div class="flex aspect-[16/10] items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-200/60">
         {#if brokenHashes.has(asset.hash)}
-          <span data-cairn-broken class="flex flex-col items-center gap-1 text-[var(--color-subtle)]">
+          <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
             <ImageOffIcon class="h-8 w-8" aria-hidden="true" />
             <span class="text-xs">Image missing</span>
           </span>
@@ -1661,7 +1661,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <div class="flex flex-col gap-1.5">
         <span class="text-[1.0625rem] font-semibold leading-tight break-words">{asset.displayName}</span>
         <span class="flex items-center gap-1.5">
-          <code class="min-w-0 break-all font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--color-muted)]">{reference}</code>
+          <code class="min-w-0 break-all font-[family-name:var(--font-editor)] text-[0.6875rem] text-muted">{reference}</code>
           <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Copy reference" onclick={() => copyReference(reference)}>
             <CopyIcon class="h-3.5 w-3.5" aria-hidden="true" />
           </button>
@@ -1690,7 +1690,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
              never strands the field. -->
         <fieldset class="flex flex-col gap-2" aria-describedby="cairn-ml-alt-note">
           <legend class="text-[0.8125rem] font-medium">Default alt text</legend>
-          <p id="cairn-ml-alt-note" class="text-xs text-[var(--color-muted)]">
+          <p id="cairn-ml-alt-note" class="text-xs text-muted">
             The default for the next time this image is placed. It does not change the alt on pages that already use it. You can save without it and add it later.
           </p>
           <input type="hidden" name="alt" value={submittedAlt} />
@@ -1722,26 +1722,26 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <div class="flex items-baseline justify-between">
           <span class={headerLabel}>Where used</span>
           {#if usageEntries(asset.hash).length > 0}
-            <span class="text-xs text-[var(--color-muted)]">{usageEntries(asset.hash).length} {usageEntries(asset.hash).length === 1 ? 'entry' : 'entries'}</span>
+            <span class="text-xs text-muted">{usageEntries(asset.hash).length} {usageEntries(asset.hash).length === 1 ? 'entry' : 'entries'}</span>
           {/if}
         </div>
 
         {#if usageEntries(asset.hash).length === 0}
           <div class="flex items-start gap-2.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
-            <Link2OffIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+            <Link2OffIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span class="text-[0.8125rem] leading-relaxed">No references found. Deleting this changes nothing readers see.</span>
           </div>
         {:else}
           {#if publishedRows(asset.hash).length > 0}
             <div class="flex flex-col gap-1.5">
-              <span class="text-[0.6875rem] font-semibold text-[var(--color-muted)]">Published on the site</span>
+              <span class="text-[0.6875rem] font-semibold text-muted">Published on the site</span>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each publishedRows(asset.hash) as entry (entry.concept + '/' + entry.id)}
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
-                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <span class="min-w-0 flex-1 truncate text-[0.8125rem] font-medium">{entry.title}</span>
-                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)] opacity-60" aria-hidden="true" />
+                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-muted opacity-60" aria-hidden="true" />
                     </a>
                   </li>
                 {/each}
@@ -1750,17 +1750,17 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {/if}
           {#if branchRows(asset.hash).length > 0}
             <div class="flex flex-col gap-1.5">
-              <span class="text-[0.6875rem] font-semibold text-[var(--color-muted)]">In an unpublished edit</span>
+              <span class="text-[0.6875rem] font-semibold text-muted">In an unpublished edit</span>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each branchRows(asset.hash) as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
-                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <FileTextIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <span class="flex min-w-0 flex-1 flex-col">
                         <span class="truncate text-[0.8125rem] font-medium">{entry.title}</span>
                         <span class="truncate font-[family-name:var(--font-editor)] text-[0.625rem] text-[var(--cairn-warning-ink)]">{branchNameOf(entry)}</span>
                       </span>
-                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-[var(--color-muted)] opacity-60" aria-hidden="true" />
+                      <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-muted opacity-60" aria-hidden="true" />
                     </a>
                   </li>
                 {/each}
@@ -1775,14 +1775,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <span class={headerLabel}>Details</span>
         <dl class="mt-2 grid grid-cols-[auto_1fr] gap-x-3.5 gap-y-1.5 text-[0.8125rem]">
           {#if dimensions(asset)}
-            <dt class="text-[var(--color-muted)]">Dimensions</dt>
+            <dt class="text-muted">Dimensions</dt>
             <dd class="m-0 text-right tabular-nums">{dimensions(asset)}</dd>
           {/if}
-          <dt class="text-[var(--color-muted)]">Size</dt>
+          <dt class="text-muted">Size</dt>
           <dd class="m-0 text-right tabular-nums">{formatBytes(asset.bytes)}</dd>
-          <dt class="text-[var(--color-muted)]">Type</dt>
+          <dt class="text-muted">Type</dt>
           <dd class="m-0 text-right">{typeLabel(asset)}</dd>
-          <dt class="text-[var(--color-muted)]">Added</dt>
+          <dt class="text-muted">Added</dt>
           <dd class="m-0 text-right tabular-nums">{formatAdded(asset.createdAt)}</dd>
         </dl>
       </div>
@@ -1800,7 +1800,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           aria-haspopup="dialog"
           onclick={(e) => openReplaceDialog(e.currentTarget)}
         >
-          <RefreshCwIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+          <RefreshCwIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
           Replace image
         </button>
         <button
@@ -1810,7 +1810,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           aria-haspopup="dialog"
           onclick={(e) => openAltDialog(e.currentTarget)}
         >
-          <MegaphoneIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+          <MegaphoneIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
           Push alt to placements
         </button>
         <button type="button" class="btn btn-sm mt-1.5 border-[var(--cairn-error-border)] text-[var(--cairn-error-ink)]" onclick={openDeleteDialog}>
@@ -1838,12 +1838,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     {@const asset = selected}
     <div class="modal-box max-w-lg">
       <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box {deleteInUse ? 'bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]' : 'bg-base-content/[0.07] text-[var(--color-muted)]'}" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box {deleteInUse ? 'bg-[var(--cairn-error-tint)] text-[var(--cairn-error-ink)]' : 'bg-base-content/[0.07] text-muted'}" aria-hidden="true">
           {#if deleteInUse}<TriangleAlertIcon class="h-5 w-5" />{:else}<Trash2Icon class="h-5 w-5" />{/if}
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-delete-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>
-          <p id="cairn-ml-delete-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-delete-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {#if deleteInUse}
               Deleting this breaks the image in {breakingRows.length} {breakingRows.length === 1 ? 'entry' : 'entries'}. Type the name to delete it anyway.
             {:else}
@@ -1861,13 +1861,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </span>
             <ul class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-2">
               {#if deleteBreakingPublished.length > 0}
-                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">Published on the site</li>
+                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-muted">Published on the site</li>
                 {#each deleteBreakingPublished as entry (entry.concept + '/' + entry.id)}
                   <li><a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2 rounded px-1.5 py-1 text-[0.8125rem] font-medium no-underline hover:bg-[var(--cairn-error-ink)]/10">{entry.title}</a></li>
                 {/each}
               {/if}
               {#if deleteBreakingBranch.length > 0}
-                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">In an unpublished edit</li>
+                <li class="px-1.5 pb-0.5 pt-1 text-[0.625rem] font-semibold uppercase tracking-wide text-muted">In an unpublished edit</li>
                 {#each deleteBreakingBranch as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
                   <li>
                     <a href="/admin/{entry.concept}/{entry.id}" class="flex flex-col rounded px-1.5 py-1 no-underline hover:bg-[var(--cairn-error-ink)]/10">

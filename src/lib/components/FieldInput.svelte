@@ -105,7 +105,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 </script>
 
 {#snippet fieldHint(hintName: string, text: string)}
-  <p id={`${hintName}-hint`} class="fld-hint mt-1 text-sm text-[var(--color-muted)]">
+  <p id={`${hintName}-hint`} class="fld-hint mt-1 text-sm text-muted">
     {text}
   </p>
 {/snippet}

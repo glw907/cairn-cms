@@ -107,7 +107,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
   <div class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>
     <button type="button" class="btn btn-sm btn-ghost justify-start" aria-haspopup="dialog" aria-label={field.label} onclick={() => picker?.open()}>
-      {#if singleId}{titleFor(singleId)}{:else}<span class="text-[var(--color-muted)]">Choose {field.label}</span>{/if}
+      {#if singleId}{titleFor(singleId)}{:else}<span class="text-muted">Choose {field.label}</span>{/if}
     </button>
     {#if singleId}
       <input type="hidden" name={field.name} value={singleId} />

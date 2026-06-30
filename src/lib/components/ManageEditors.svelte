@@ -20,7 +20,7 @@ dispatcher defines.
   let { data, form }: Props = $props();
 
   // Eyebrow styling for the table column headers, matching the concept list.
-  const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
+  const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
 </script>
 
 <header class="mb-6">

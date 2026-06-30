@@ -55,21 +55,21 @@
   .prose > h1 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-5);
+    font-size: var(--text-step-5);
     line-height: var(--cairn-leading-tight);
     letter-spacing: var(--cairn-tracking-tight);
     margin: 0;
   }
   .prose > h1 + * {
-    margin-top: var(--cairn-space-m);
+    margin-top: var(--spacing-m);
   }
 
   /* The lead paragraph: step-1, slightly recessed ink, a touch more air above. */
   .prose .lead {
-    font-size: var(--cairn-step-1);
+    font-size: var(--text-step-1);
     line-height: var(--cairn-leading-snug);
     color: color-mix(in oklab, var(--color-base-content) 86%, transparent);
-    --flow-space: var(--cairn-space-m);
+    --flow-space: var(--spacing-m);
   }
 
   /* The heading-binding rhythm: large space ABOVE a heading, tight BELOW it, so a
@@ -77,24 +77,24 @@
   .prose h2 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-3);
+    font-size: var(--text-step-3);
     line-height: var(--cairn-leading-tight);
     letter-spacing: var(--cairn-tracking-tight);
-    --flow-space: var(--cairn-space-xl);
+    --flow-space: var(--spacing-xl);
     margin-bottom: 0;
   }
   .prose h2 + * {
-    margin-top: var(--cairn-space-xs);
+    margin-top: var(--spacing-xs);
   }
   .prose h3 {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-2);
+    font-size: var(--text-step-2);
     line-height: var(--cairn-leading-snug);
-    --flow-space: var(--cairn-space-l);
+    --flow-space: var(--spacing-l);
   }
   .prose h3 + * {
-    margin-top: var(--cairn-space-xs);
+    margin-top: var(--spacing-xs);
   }
   .prose strong {
     font-weight: 650;
@@ -119,20 +119,20 @@
      -------------------------------------------------------------------------- */
   .prose blockquote {
     margin-inline: 0;
-    padding-left: var(--cairn-space-m);
+    padding-left: var(--spacing-m);
     border-left: 3px solid var(--color-primary);
     color: color-mix(in oklab, var(--color-base-content) 88%, transparent);
     font-style: italic;
   }
   .prose blockquote p {
-    font-size: var(--cairn-step-1);
+    font-size: var(--text-step-1);
     line-height: var(--cairn-leading-snug);
   }
   .prose blockquote cite {
     display: block;
     margin-top: 0.6rem;
     font-style: normal;
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     color: var(--cairn-muted);
   }
 
@@ -142,11 +142,11 @@
   .prose .pullquote {
     font-family: var(--font-display);
     font-weight: 500;
-    font-size: var(--cairn-step-3);
+    font-size: var(--text-step-3);
     line-height: var(--cairn-leading-tight);
     letter-spacing: var(--cairn-tracking-tight);
     color: var(--color-base-content);
-    --flow-space: var(--cairn-space-xl);
+    --flow-space: var(--spacing-xl);
   }
   .prose .pullquote::before {
     content: '\201C';
@@ -177,11 +177,11 @@
   .prose pre {
     font-family: var(--font-mono);
     border-radius: var(--radius-box);
-    padding: var(--cairn-space-s) var(--cairn-space-m);
+    padding: var(--spacing-s) var(--spacing-m);
     overflow-x: auto;
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     line-height: 1.6;
-    --flow-space: var(--cairn-space-m);
+    --flow-space: var(--spacing-m);
   }
   .prose pre code {
     font-family: inherit;
@@ -263,8 +263,8 @@
   .prose table {
     width: 100%;
     border-collapse: collapse;
-    font-size: var(--cairn-step--1);
-    --flow-space: var(--cairn-space-m);
+    font-size: var(--text-step--1);
+    --flow-space: var(--spacing-m);
   }
   .prose thead th {
     text-align: left;
@@ -287,7 +287,7 @@
      -------------------------------------------------------------------------- */
   .prose hr {
     border: 0;
-    --flow-space: var(--cairn-space-xl);
+    --flow-space: var(--spacing-xl);
     text-align: center;
   }
   .prose hr::after {
@@ -308,7 +308,7 @@
      figure (frontmatter image) is a leading figure with no placement class.
      -------------------------------------------------------------------------- */
   .prose figure {
-    --flow-space: var(--cairn-space-l);
+    --flow-space: var(--spacing-l);
   }
 
   /* --------------------------------------------------------------------------
@@ -322,11 +322,11 @@
      `.callout-title`; the body is `.callout-body`; the optional points list is a
      sibling `.callout-points` ul, not nested. */
   .prose .callout {
-    --flow-space: var(--cairn-space-m);
+    --flow-space: var(--spacing-m);
     border: var(--border) solid var(--cairn-card-border);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-box);
-    padding: var(--cairn-space-s) var(--cairn-space-m);
+    padding: var(--spacing-s) var(--spacing-m);
     background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100));
   }
   .prose .callout-note {
@@ -358,7 +358,7 @@
     margin: 0;
   }
   .prose .callout-body > * + * {
-    margin-top: var(--cairn-space-2xs);
+    margin-top: var(--spacing-2xs);
   }
   .prose .callout-points {
     margin: 0.5rem 0 0;
@@ -371,7 +371,7 @@
   .prose .alert {
     display: block;
     grid-template-columns: none;
-    --flow-space: var(--cairn-space-m);
+    --flow-space: var(--spacing-m);
     border: var(--border) solid var(--cairn-card-border);
     border-left: 3px solid var(--cairn-info-ink);
     border-radius: var(--radius-box);
@@ -384,7 +384,7 @@
     background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
   }
   .prose .alert .card-body {
-    padding: var(--cairn-space-s) var(--cairn-space-m);
+    padding: var(--spacing-s) var(--spacing-m);
   }
   .prose .alert .ec-head {
     display: flex;
@@ -395,7 +395,7 @@
   .prose .alert .card-title {
     font-family: var(--font-body);
     font-weight: 650;
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
     margin: 0;
     color: var(--cairn-info-ink);
   }
@@ -417,6 +417,6 @@
     margin: 0;
   }
   .prose .alert-body > * + * {
-    margin-top: var(--cairn-space-2xs);
+    margin-top: var(--spacing-2xs);
   }
 }

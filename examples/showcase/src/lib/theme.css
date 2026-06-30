@@ -14,8 +14,9 @@
      3. Secondary, accent, neutral, and the four status hues follow the same
         pattern if you want them on-brand; most owners leave them.
      4. The faces: swap `--font-display` and `--font-body` in the `@theme` block.
-     5. Optional fine-tuning: the one type ratio lives in the `--cairn-step-*`
-        clamps; the one space-scale step in `--cairn-space-*`.
+     5. Optional fine-tuning: the one type ratio lives in the `--text-step-*`
+        clamps; the one space-scale step in `--spacing-*`. Both sit in the `@theme`
+        block (so they also drive the `text-step-*` and spacing utilities).
      6. The status-ink seam. Retuning a status FILL above (the `--color-info`,
         `--color-success`, `--color-warning` in the two `@plugin` blocks) is only
         half of that status: the callout and alert titles and left rules, and the
@@ -52,7 +53,7 @@
        pair (--cairn-cta-*), and the code-highlight binding (pre.shiki plus the engine-owned
        .cairn-tok-* class contract). cairn names the class contract; the site colors it.
      - Tier 3 (the Phase-2 fold target): the design-scale token home. The type scale
-       (--cairn-step-*), the space scale (--cairn-space-*), the faces (--font-*), and the
+       (--text-step-*), the space scale (--spacing-*), the faces (--font-*), and the
        tracking/leading/measure values move from :root into Tailwind 4 `@theme`, where the named
        utilities generate, so the chrome markup stops wrapping them in arbitrary-value brackets. The
        values stay; only the home moves.
@@ -180,6 +181,28 @@
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds.
+     In @theme so Tailwind generates the `text-step-*` utilities the chrome markup folds onto; the
+     vars are still emitted at :root, so prose.css's `var(--text-step-*)` keeps resolving. */
+  --text-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
+  --text-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
+  --text-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
+  --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
+  --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
+  --text-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
+  --text-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
+
+  /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
+     (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */
+  --spacing-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
+  --spacing-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
+  --spacing-xs: clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
+  --spacing-s: clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
+  --spacing-m: clamp(1.5rem, 1.43rem + 0.33vw, 1.69rem);
+  --spacing-l: clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
+  --spacing-xl: clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
+  --spacing-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
 }
 
 /* ----------------------------------------------------------------------------
@@ -198,14 +221,9 @@
   /* The editorial faces live in the @theme block above (so Tailwind generates the font-* utilities);
      @theme re-emits them at :root, so the var(--font-*) references throughout this file resolve. */
 
-  /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds. */
-  --cairn-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
-  --cairn-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
-  --cairn-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
-  --cairn-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
-  --cairn-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
-  --cairn-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
-  --cairn-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
+  /* The fluid type scale lives in the @theme block above (so Tailwind generates the text-step-*
+     utilities); @theme re-emits each --text-step-* at :root, so the var() references throughout this
+     file resolve. */
   --cairn-leading-body: 1.65;
   --cairn-leading-snug: 1.4;
   --cairn-leading-tight: 1.12;
@@ -216,15 +234,8 @@
   --cairn-measure: 44rem;
   --cairn-measure-wide: 58rem;
 
-  /* Fluid space scale (Utopia 3xs to 2xl). */
-  --cairn-space-3xs: clamp(0.31rem, 0.3rem + 0.05vw, 0.34rem);
-  --cairn-space-2xs: clamp(0.5rem, 0.48rem + 0.11vw, 0.56rem);
-  --cairn-space-xs: clamp(0.75rem, 0.72rem + 0.16vw, 0.84rem);
-  --cairn-space-s: clamp(1rem, 0.96rem + 0.22vw, 1.13rem);
-  --cairn-space-m: clamp(1.5rem, 1.43rem + 0.33vw, 1.69rem);
-  --cairn-space-l: clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
-  --cairn-space-xl: clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
-  --cairn-space-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
+  /* The fluid space scale lives in the @theme block above (so Tailwind generates the spacing
+     utilities); @theme re-emits each --spacing-* at :root, so the var() references resolve. */
   /* The single owl-selector rhythm variable; headings, figures, and pre override it locally. */
   --flow-space: 1.35em;
 

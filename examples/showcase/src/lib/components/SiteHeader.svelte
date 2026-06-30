@@ -34,7 +34,7 @@ chrome; the look re-skins from `theme.css` with no edit here.
 
 <header class="site-header sticky top-0 z-20 border-b border-[color:var(--cairn-card-border)]">
   <div
-    class="mx-auto flex max-w-[var(--cairn-measure-wide)] items-center justify-between gap-[var(--cairn-space-m)] px-[var(--cairn-space-m)] py-[var(--cairn-space-xs)]"
+    class="mx-auto flex max-w-[var(--cairn-measure-wide)] items-center justify-between gap-m px-m py-xs"
   >
     <a
       href="/"
@@ -54,13 +54,13 @@ chrome; the look re-skins from `theme.css` with no edit here.
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
       <span
-        class="font-display text-[length:var(--cairn-step-1)] font-semibold tracking-[var(--cairn-tracking-tight)]"
+        class="font-display text-step-1 font-semibold tracking-[var(--cairn-tracking-tight)]"
         >Cairn Showcase</span
       >
     </a>
 
     <nav
-      class="site-nav flex items-center gap-[var(--cairn-space-s)] text-[length:var(--cairn-step--1)]"
+      class="site-nav flex items-center gap-s text-step--1"
       aria-label="Primary"
     >
       {#each nav as item (item.href)}

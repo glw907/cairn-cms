@@ -24,12 +24,12 @@
 /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
    focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
    the gap to the header from the same tokens the header uses (the step-1 wordmark plus its vertical
-   `--cairn-space-xs` padding, plus a 1rem cushion that covers the wordmark's line-height slack and the
+   `--spacing-xs` padding, plus a 1rem cushion that covers the wordmark's line-height slack and the
    brand mark, which runs a touch taller than the text), so the offset re-skins with the type scale.
    At a 1280px desktop viewport the rendered header is about 65px (~4rem) and this resolves to about
    67px (~4.2rem), so a jumped-to or focused heading clears the band with a little air. */
 html {
-  scroll-padding-top: calc(var(--cairn-step-1) + 2 * var(--cairn-space-xs) + 1rem);
+  scroll-padding-top: calc(var(--text-step-1) + 2 * var(--spacing-xs) + 1rem);
 }
 
 /* The centered reading column at the measure. The chrome components hold the wider shell; this caps
@@ -37,7 +37,7 @@ html {
 .site-main {
   max-width: var(--cairn-measure);
   margin: 0 auto;
-  padding: var(--cairn-space-l) var(--cairn-space-m);
+  padding: var(--spacing-l) var(--spacing-m);
 }
 
 /* cairn figure placement: the default reader CSS for the :::figure role classes (media 3a). cairn
@@ -48,7 +48,7 @@ body {
   overflow-x: clip;
 }
 .site-main figure {
-  margin: var(--cairn-space-l) 0;
+  margin: var(--spacing-l) 0;
 }
 .site-main figure img {
   display: block;
@@ -58,7 +58,7 @@ body {
 }
 .site-main figure figcaption {
   margin-top: 0.6rem;
-  font-size: var(--cairn-step--1);
+  font-size: var(--text-step--1);
   line-height: 1.5;
   color: var(--cairn-muted);
 }
@@ -95,7 +95,7 @@ body {
 .site-main .cairn-place-full figcaption {
   max-width: var(--cairn-measure);
   margin-inline: auto;
-  padding: 0 var(--cairn-space-m);
+  padding: 0 var(--spacing-m);
   box-sizing: border-box;
 }
 
@@ -105,7 +105,7 @@ body {
 .island-converter-fallback {
   display: flex;
   align-items: baseline;
-  gap: var(--cairn-space-s, 0.5rem);
+  gap: var(--spacing-s, 0.5rem);
   font-size: 1.125rem;
 }
 .island-converter .field {

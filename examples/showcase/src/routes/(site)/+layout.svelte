@@ -24,7 +24,7 @@
 >
   <a
     href="#main"
-    class="skip-link absolute left-[var(--cairn-space-s)] top-[-3rem] z-50 rounded-[var(--radius-field)] bg-primary px-[0.9rem] py-[0.5rem] font-semibold text-primary-content no-underline focus:top-[var(--cairn-space-s)]"
+    class="skip-link absolute left-s top-[-3rem] z-50 rounded-[var(--radius-field)] bg-primary px-[0.9rem] py-[0.5rem] font-semibold text-primary-content no-underline focus:top-s"
   >
     Skip to content
   </a>

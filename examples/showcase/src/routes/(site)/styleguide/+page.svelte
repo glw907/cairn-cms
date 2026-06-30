@@ -10,7 +10,7 @@ server-side through the adapter `render` and wrapped in `.prose`), and the B2 co
 markdown directive components plus the own-it components a page composes from).
 
 Token-backed throughout: every color reads a DaisyUI role utility or a `var(--color-*)`/`var(--cairn-*)`
-token, every type size reads a `--cairn-step-*` token, so the no-literals gate (`check:public-tokens`)
+token, every type size reads a `--text-step-*` token, so the no-literals gate (`check:public-tokens`)
 stays green over this file. A site owner reads this page to learn what is available and how to adopt
 or extend it; nothing here is a literal a re-skin would miss.
 -->
@@ -61,13 +61,13 @@ or extend it; nothing here is a literal a re-skin would miss.
   /** One type step: the size token to apply, the step name, and a short note on where it is used. */
   type TypeStep = { token: string; label: string; use: string };
   const typeSteps: TypeStep[] = [
-    { token: '--cairn-step-5', label: 'step-5', use: 'h1, masthead' },
-    { token: '--cairn-step-4', label: 'step-4', use: 'section display, stat' },
-    { token: '--cairn-step-3', label: 'step-3', use: 'h2' },
-    { token: '--cairn-step-2', label: 'step-2', use: 'h3, index title' },
-    { token: '--cairn-step-1', label: 'step-1', use: 'lead, h4' },
-    { token: '--cairn-step-0', label: 'step-0', use: 'body' },
-    { token: '--cairn-step--1', label: 'step--1', use: 'caption, meta' },
+    { token: '--text-step-5', label: 'step-5', use: 'h1, masthead' },
+    { token: '--text-step-4', label: 'step-4', use: 'section display, stat' },
+    { token: '--text-step-3', label: 'step-3', use: 'h2' },
+    { token: '--text-step-2', label: 'step-2', use: 'h3, index title' },
+    { token: '--text-step-1', label: 'step-1', use: 'lead, h4' },
+    { token: '--text-step-0', label: 'step-0', use: 'body' },
+    { token: '--text-step--1', label: 'step--1', use: 'caption, meta' },
   ];
 
   /** One labeled face: the font token, the family role name, and what it sets. */
@@ -166,7 +166,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   </section>
 
   <!-- 2. Type scale. Each named step rendered at its size in the display face, with its token name
-       and where it is used, then the three faces labeled. Sizes read the --cairn-step-* tokens. -->
+       and where it is used, then the three faces labeled. Sizes read the --text-step-* tokens. -->
   <section class="sg-section" aria-labelledby="sg-type">
     <h2 id="sg-type" class="sg-h2">Type scale</h2>
     <p class="sg-note">
@@ -334,11 +334,11 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
 
   .sg-masthead {
-    margin-bottom: var(--cairn-space-xl);
+    margin-bottom: var(--spacing-xl);
   }
   .sg-eyebrow {
-    margin: 0 0 var(--cairn-space-2xs);
-    font-size: var(--cairn-step--1);
+    margin: 0 0 var(--spacing-2xs);
+    font-size: var(--text-step--1);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: var(--cairn-tracking-eyebrow);
@@ -348,44 +348,44 @@ or extend it; nothing here is a literal a re-skin would miss.
     margin: 0;
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-5);
+    font-size: var(--text-step-5);
     line-height: var(--cairn-leading-tight);
     letter-spacing: var(--cairn-tracking-tight);
     color: var(--color-base-content);
   }
   .sg-lead {
-    margin: var(--cairn-space-s) 0 0;
+    margin: var(--spacing-s) 0 0;
     max-width: var(--cairn-measure);
-    font-size: var(--cairn-step-1);
+    font-size: var(--text-step-1);
     line-height: var(--cairn-leading-snug);
     color: var(--cairn-muted);
   }
 
   .sg-section {
-    padding-top: var(--cairn-space-xl);
-    margin-top: var(--cairn-space-xl);
+    padding-top: var(--spacing-xl);
+    margin-top: var(--spacing-xl);
     border-top: var(--border) solid var(--color-base-300);
   }
   .sg-h2 {
-    margin: 0 0 var(--cairn-space-xs);
+    margin: 0 0 var(--spacing-xs);
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-3);
+    font-size: var(--text-step-3);
     line-height: var(--cairn-leading-tight);
     letter-spacing: var(--cairn-tracking-tight);
     color: var(--color-base-content);
   }
   .sg-h3 {
-    margin: var(--cairn-space-l) 0 var(--cairn-space-s);
+    margin: var(--spacing-l) 0 var(--spacing-s);
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-1);
+    font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
   .sg-note {
-    margin: 0 0 var(--cairn-space-s);
+    margin: 0 0 var(--spacing-s);
     max-width: var(--cairn-measure);
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
     line-height: var(--cairn-leading-snug);
     color: var(--cairn-muted);
   }
@@ -402,8 +402,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-swatches {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
-    gap: var(--cairn-space-s);
-    margin: 0 0 var(--cairn-space-m);
+    gap: var(--spacing-s);
+    margin: 0 0 var(--spacing-m);
   }
   .sg-swatch {
     margin: 0;
@@ -414,31 +414,31 @@ or extend it; nothing here is a literal a re-skin would miss.
     border: var(--border) solid var(--cairn-card-border);
   }
   .sg-swatch-label {
-    margin-top: var(--cairn-space-3xs);
+    margin-top: var(--spacing-3xs);
     font-family: var(--font-mono);
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     color: var(--cairn-muted);
   }
   .sg-inks {
     display: grid;
-    gap: var(--cairn-space-3xs);
+    gap: var(--spacing-3xs);
   }
   .sg-ink-line {
     margin: 0;
     font-weight: 650;
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
   }
 
   /* Type scale rows: a fixed meta column and the sample at the step's size. */
   .sg-steps {
     display: grid;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
   }
   .sg-step-row,
   .sg-face {
     display: grid;
     grid-template-columns: 9rem 1fr;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
     align-items: baseline;
   }
   .sg-step-meta,
@@ -448,11 +448,11 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-step-name {
     font-family: var(--font-mono);
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     color: var(--color-base-content);
   }
   .sg-step-use {
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     color: var(--cairn-muted);
   }
   .sg-step-sample {
@@ -464,11 +464,11 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-faces {
     display: grid;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
   }
   .sg-face-sample {
     margin: 0;
-    font-size: var(--cairn-step-2);
+    font-size: var(--text-step-2);
     line-height: var(--cairn-leading-snug);
     color: var(--color-base-content);
   }
@@ -478,28 +478,28 @@ or extend it; nothing here is a literal a re-skin would miss.
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: var(--cairn-space-s);
+    gap: var(--spacing-s);
   }
 
   /* The floating card: the elevation pair, never a flat base-300 border (the admin convention). */
   .sg-card {
     max-width: var(--cairn-measure);
-    padding: var(--cairn-space-m);
+    padding: var(--spacing-m);
     border-radius: var(--radius-box);
     border: var(--border) solid var(--cairn-card-border);
     background: var(--color-base-100);
     box-shadow: var(--cairn-shadow);
   }
   .sg-card-title {
-    margin: 0 0 var(--cairn-space-2xs);
+    margin: 0 0 var(--spacing-2xs);
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-1);
+    font-size: var(--text-step-1);
     color: var(--color-base-content);
   }
   .sg-card-body {
-    margin: 0 0 var(--cairn-space-s);
-    font-size: var(--cairn-step-0);
+    margin: 0 0 var(--spacing-s);
+    font-size: var(--text-step-0);
     line-height: var(--cairn-leading-snug);
     color: var(--cairn-muted);
   }
@@ -508,7 +508,7 @@ or extend it; nothing here is a literal a re-skin would miss.
      carries an accent underline; the rest read muted. */
   .sg-tablist {
     display: flex;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
     border-bottom: var(--border) solid var(--color-base-300);
   }
   .sg-tab {
@@ -516,10 +516,10 @@ or extend it; nothing here is a literal a re-skin would miss.
     background: none;
     border: 0;
     border-bottom: 2px solid transparent;
-    padding: var(--cairn-space-2xs) 0;
+    padding: var(--spacing-2xs) 0;
     margin-bottom: -1px;
     font-family: var(--font-body);
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
     font-weight: 500;
     color: var(--cairn-muted);
     cursor: pointer;
@@ -535,8 +535,8 @@ or extend it; nothing here is a literal a re-skin would miss.
     outline-offset: 2px;
   }
   .sg-tabpanel {
-    padding-top: var(--cairn-space-s);
-    font-size: var(--cairn-step-0);
+    padding-top: var(--spacing-s);
+    font-size: var(--text-step-0);
     line-height: var(--cairn-leading-body);
     color: var(--color-base-content);
   }
@@ -545,18 +545,18 @@ or extend it; nothing here is a literal a re-skin would miss.
      motion, the floor the bar requires for every animation. */
   .sg-accordion {
     display: grid;
-    gap: var(--cairn-space-2xs);
+    gap: var(--spacing-2xs);
     max-width: var(--cairn-measure);
   }
   .sg-details {
     border: var(--border) solid var(--color-base-300);
     border-radius: var(--radius-field);
-    padding: var(--cairn-space-xs) var(--cairn-space-s);
+    padding: var(--spacing-xs) var(--spacing-s);
   }
   .sg-summary {
     cursor: pointer;
     font-weight: 600;
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
     color: var(--color-base-content);
     list-style: none;
     display: flex;
@@ -579,8 +579,8 @@ or extend it; nothing here is a literal a re-skin would miss.
     outline-offset: 2px;
   }
   .sg-details-body {
-    margin: var(--cairn-space-2xs) 0 0;
-    font-size: var(--cairn-step-0);
+    margin: var(--spacing-2xs) 0 0;
+    font-size: var(--text-step-0);
     line-height: var(--cairn-leading-snug);
     color: var(--cairn-muted);
   }
@@ -592,28 +592,28 @@ or extend it; nothing here is a literal a re-skin would miss.
     flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
     max-width: var(--cairn-measure);
-    padding: var(--cairn-space-l) var(--cairn-space-m);
+    padding: var(--spacing-l) var(--spacing-m);
     border-radius: var(--radius-box);
     background: var(--cairn-cta-bg);
     color: var(--cairn-cta-content);
     border: var(--border) solid var(--cairn-cta-border);
   }
   .sg-cta-title {
-    margin: 0 0 var(--cairn-space-3xs);
+    margin: 0 0 var(--spacing-3xs);
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-2);
+    font-size: var(--text-step-2);
   }
   .sg-cta-sub {
     margin: 0;
-    font-size: var(--cairn-step-0);
+    font-size: var(--text-step-0);
     opacity: 0.85;
   }
   .sg-cta-btn {
     flex-shrink: 0;
-    padding: var(--cairn-space-2xs) var(--cairn-space-m);
+    padding: var(--spacing-2xs) var(--spacing-m);
     border-radius: var(--radius-field);
     background: var(--cairn-cta-btn-bg);
     color: var(--cairn-cta-btn-content);
@@ -629,7 +629,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-stats {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--cairn-space-xl);
+    gap: var(--spacing-xl);
   }
   .sg-stat {
     display: flex;
@@ -638,13 +638,13 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-stat-num {
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-4);
+    font-size: var(--text-step-4);
     line-height: var(--cairn-leading-tight);
     color: var(--color-primary);
     font-variant-numeric: tabular-nums;
   }
   .sg-stat-label {
-    font-size: var(--cairn-step--1);
+    font-size: var(--text-step--1);
     color: var(--cairn-muted);
   }
 
@@ -659,7 +659,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     .sg-step-row,
     .sg-face {
       grid-template-columns: 1fr;
-      gap: var(--cairn-space-2xs);
+      gap: var(--spacing-2xs);
     }
   }
 </style>

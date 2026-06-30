@@ -18,10 +18,10 @@ this file; the look re-skins from `theme.css`.
 </script>
 
 <footer
-  class="site-footer mt-[var(--cairn-space-2xl)] border-t border-base-300 bg-base-200"
+  class="site-footer mt-2xl border-t border-base-300 bg-base-200"
 >
   <div
-    class="mx-auto flex max-w-[var(--cairn-measure-wide)] flex-wrap items-center justify-between gap-[var(--cairn-space-m)] px-[var(--cairn-space-m)] py-[var(--cairn-space-xl)]"
+    class="mx-auto flex max-w-[var(--cairn-measure-wide)] flex-wrap items-center justify-between gap-m px-m py-xl"
   >
     <a
       href="/"
@@ -39,13 +39,13 @@ this file; the look re-skins from `theme.css`.
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
       <span
-        class="font-display text-[length:var(--cairn-step-1)] font-semibold tracking-[var(--cairn-tracking-tight)]"
+        class="font-display text-step-1 font-semibold tracking-[var(--cairn-tracking-tight)]"
         >Cairn Showcase</span
       >
     </a>
 
     <nav
-      class="site-nav flex gap-[var(--cairn-space-s)] text-[length:var(--cairn-step--1)]"
+      class="site-nav flex gap-s text-step--1"
       aria-label="Footer"
     >
       {#each nav as item (item.href)}
@@ -59,7 +59,7 @@ this file; the look re-skins from `theme.css`.
     </nav>
 
     <p
-      class="w-full border-t border-[color:var(--cairn-card-border)] pt-[var(--cairn-space-s)] text-[length:var(--cairn-step--1)] text-[color:var(--cairn-muted)]"
+      class="w-full border-t border-[color:var(--cairn-card-border)] pt-s text-step--1 text-[color:var(--cairn-muted)]"
     >
       Built with cairn. A self-contained SvelteKit site that consumes the package and proves it.
     </p>

@@ -51,8 +51,8 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
   // The payload the save posts: the live working copy as JSON, in config order.
   const vocabularyJson = $derived(JSON.stringify(working));
 
-  // The label a typed value reads, and the human-readable label a seed candidate's value implies.
-  const newLabel = $state({ value: '' });
+  // The human label typed into the add field. A slug derives from it live, and Add appends both.
+  let newLabel = $state('');
 
   // Derive a slug from a human label: lowercase, non-alphanumeric runs to a single hyphen, trimmed.
   // The result either matches SAFE_TAG_VALUE or is empty (an invalid label).
@@ -71,10 +71,10 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
   }
 
   // The live slug preview for the add field, and whether the current label is addable.
-  const newSlug = $derived(deriveSlug(newLabel.value));
+  const newSlug = $derived(deriveSlug(newLabel));
   const existingValues = $derived(new Set(working.map((e) => e.value)));
   const addError = $derived.by(() => {
-    if (newLabel.value.trim() === '') return '';
+    if (newLabel.trim() === '') return '';
     if (!SAFE_TAG_VALUE.test(newSlug)) return 'That name has no letters or numbers to make a tag from.';
     if (existingValues.has(newSlug)) return `A tag is already stored as “${newSlug}”.`;
     return '';
@@ -90,11 +90,11 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
   }
 
   function add() {
-    const label = newLabel.value.trim();
+    const label = newLabel.trim();
     if (label === '' || !SAFE_TAG_VALUE.test(newSlug) || existingValues.has(newSlug)) return;
     working.push({ value: newSlug, label });
     announce(`Added ${label}.`);
-    newLabel.value = '';
+    newLabel = '';
   }
 
   function remove(value: string) {
@@ -151,7 +151,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
         type="text"
         autocomplete="off"
         placeholder="Snow report"
-        bind:value={newLabel.value}
+        bind:value={newLabel}
         onkeydown={(e) => {
           if (e.key === 'Enter') {
             e.preventDefault();

@@ -261,3 +261,53 @@ styleguide data.
 - **The gate ratchets, never loosens:** each task lowers the showcase budget; the admin tree is untouched.
 - **Open fork:** the re-skin-token rename (the flagged decision) is settled to "rename, idiomatic" in this
   plan; if Geoff prefers keeping `--cairn-*` names, Tasks 2–3 and the recipe change, but the structure holds.
+
+---
+
+## Post-mortem (2026-06-30)
+
+**Phase 2 (template chrome) is complete.** The showcase design-scale tokens now live in Tailwind 4
+`@theme`, the chrome and route markup use the generated named utilities, and the showcase
+`check:custom-surface` `retiredTokenBudget` reached **0** (the floor — every `var(--…)` arbitrary-value
+bracket folded). Geoff opted into a workflow; the fold ran as a six-task sequential `cairn-implementer`
+chain (shared files, strict in-order ratchet) plus a parallel review.
+
+**The ratchet (commit, budget after, baseline):**
+- **Task 1** (`1194680`, 20→19): the faces (`--font-*`) to `@theme`; `font-[family-name:…]` → `font-display`/`-body`. Byte-identical.
+- **Task 2** (`49a9fd7`, 19→16): the type/space scales renamed (`--cairn-step-N` → `--text-step-N`, `--cairn-space-X` → `--spacing-X`) and moved to `@theme`; markup → `text-step-N`/`gap-m`/`px-m`/… Byte-identical.
+- **Task 3** (`06d6f2c`, 16→1): tracking/leading/measure + the color roles renamed (`--cairn-muted` → `--color-muted`, `--cairn-card-border` → `--color-card-border`, `--cairn-measure*` → `--container-measure*`); markup → `tracking-tight`/`leading-snug`/`max-w-measure-wide`/`text-muted`/`border-card-border`. Two styleguide snapshots updated (the ink swatch **label text** `cairn-muted` → `color-muted`, ~0.01 ratio); home byte-identical.
+- **Task 4** (`fcc4c79`, 1→0): `rounded-[var(--radius-field)]` → `rounded-field` (DaisyUI utility); budget at the floor. Byte-identical.
+- **Task 5** (`8e66486`, 0): the `--cairn-rule` dead token → `var(--color-base-300)`; the island-converter is now Tier 2 (owned, theme-tokened). One styleguide snapshot updated (the dark hairline only).
+- **Task 6** (`a1ceb8b`, 0): folded the one pixel-neutral styleguide chrome class (`.sg-row` → `flex flex-wrap items-center gap-s`); rewrote the `theme.css` re-skin recipe to the `@theme` names; updated the ledger (Tier 3 → folded record, Phase-2 sign-off).
+
+**Two forced/deliberate deviations (reviewed, sound):**
+- **Task 3 edited `scripts/check-public-tokens.mjs`** (not in the plan). The dual-gamut AA contrast gate
+  hard-references the muted ink by name, so the rename required teaching it the token's new home: a
+  `themeBlock()` parser was added and the light ink source now concatenates `@theme` with `:root` (the
+  light `--color-muted` moved into `@theme`; the dark value stays in the dark media root). The **4.5:1 AA
+  threshold and the token value are unchanged** — the gate reads the same ink from a new location, not
+  weakened. Verified: `check:public-tokens` PASS (30 pairs AA in sRGB and P3, token-resolution PASS).
+- **The styleguide snapshots drifted by design** (3 updates total): the ink-swatch label text reflecting
+  the renamed token (Task 3, both schemes) and the dark island-converter hairline (Task 5, dark only). The
+  two **site-home snapshots stayed byte-identical through every task**, which is the proof the token fold
+  itself is pixel-neutral; the styleguide is the design-reference surface, so it correctly reflects the new
+  token names and the fixed hairline.
+
+**Verification (cumulative, main-loop):** `check` 0/0 (1245), `npm test` exit 0 (2871),
+`check:custom-surface` PASS both trees (admin 0, showcase 0), `check:public-tokens` PASS (30 pairs AA),
+`check:comments` OK, `check:docs` OK; showcase e2e **12 passed under `CI=1`** with a fresh build
+(`site-visual` + `styleguide` axe + `islands`), the consumer-build proof. No leftover `var(--cairn-*)` for
+any renamed token. Review gate clean: `svelte-reviewer` and `daisyui-a11y-reviewer` both returned zero
+findings.
+
+**Decisions locked:** the `@theme` mapping (the plan's table) is the showcase's idiomatic token home; the
+re-skin recipe documents the new names; `--color-muted`/`--color-card-border` live in `@theme` (so
+`text-muted`/`border-card-border` generate) but keep their Tier-2 role; the island-converter is Tier 2
+(theme-tokened). The showcase tree is at its terminal floor — the gate now blocks any new bracketed/inline
+`var(--…)` in showcase markup.
+
+**Held unpublished** (the showcase template is copied, not imported; no public API or behavior change, no
+`CHANGELOG` entry). **Next:** the docs phase (the final phase of the admin idiomatic re-expression
+initiative) — publish the role vocabulary as the versioned seam in `admin-design-system.md`, document the
+template's owned design and idiomatic chrome the same way, add the upgrade-rehearsal procedure, and wire the
+scheduled DaisyUI/Tailwind-major watcher.

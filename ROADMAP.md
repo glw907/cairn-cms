@@ -59,12 +59,16 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   `check:custom-surface` gate and the frozen `text-muted` / `text-subtle` role vocabulary (Phase 0) plus the
   vocabulary-screen pilot (Phase 1) shipped in `0.78.0`, and Phases 2–6 retired the admin's bespoke
   muted/subtle surface to its terminal floor (`retiredTokenBudget` 0), published as `0.78.1`. The
-  starter-template track has now begun: its **Phase 1 (template foundation) is done** (the showcase
-  Tier-1/2/3 ledger, the walled-and-documented Tier 2, `check:custom-surface` extended to the showcase tree
-  with a per-tree retired-token pattern seeded at 20, and the zero-pixel visual baseline). What remains:
-  **Phase 2 (template chrome)** — fold the showcase chrome and route markup onto Tailwind 4 `@theme`
-  utilities and DaisyUI 5.6 primitives, ratcheting the showcase budget down — then the docs phase (publish
-  the role vocabulary as the versioned seam in `admin-design-system.md`). Spec:
+  starter-template track is now done through the fold: **Phase 1 (template foundation)** (the showcase
+  Tier-1/2/3 ledger, the walled Tier 2, the per-tree `check:custom-surface` seeded at 20, the zero-pixel
+  baseline) and **Phase 2 (template chrome)** (the design-scale tokens moved into Tailwind 4 `@theme`, the
+  chrome and route markup folded onto the generated named utilities, the `--cairn-rule` dead token fixed,
+  the showcase `retiredTokenBudget` ratcheted to its terminal floor 0) are both complete, held on
+  `starter-template-1`. **What remains is the docs phase** (the final phase of the initiative): rewrite
+  `admin-design-system.md` to publish the role vocabulary (the theme tokens, the `text-muted`/`text-subtle`
+  utilities, the recipes) as the versioned seam beside `CairnAdminShell`/`adminNav`, document the template's
+  owned design and idiomatic chrome the same way, add the upgrade-rehearsal runbook, and wire the scheduled
+  DaisyUI/Tailwind-major watcher. Spec:
   `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Next

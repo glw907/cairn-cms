@@ -11,7 +11,51 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): starter-template track Phase 1 (template foundation) COMPLETE on a worktree (held, unmerged); NEXT = Phase 2 (template chrome)
+## Immediate next action (2026-06-30, LATEST): starter-template track Phases 1+2 COMPLETE on a worktree (held, unmerged); NEXT = the docs phase (the final phase of the initiative)
+
+The starter-template track is done through the fold. **Phase 1 (template foundation) and Phase 2 (template
+chrome) are both complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree), **held and not yet merged** (merge to `main` when Geoff asks; the showcase
+template is copied, not imported, so no release). Plans + post-mortems:
+`docs/superpowers/plans/2026-06-30-starter-template-{1-foundation,2-chrome}.md`.
+
+**Phase 2 (template chrome) — the fold, executed via a workflow.** Geoff opted into a workflow; it ran six
+sequential `cairn-implementer` fold tasks (shared files, strict in-order ratchet) plus a parallel review.
+The showcase design-scale tokens moved into Tailwind 4 `@theme` and the chrome/route markup now uses the
+generated named utilities (`font-display`, `text-step-*`, `gap-m`/`px-m`/…, `tracking-tight`, `leading-snug`,
+`max-w-measure*`, `text-muted`, `border-card-border`, `rounded-field`). The tokens **renamed** to Tailwind
+namespaces (`--cairn-step-N` → `--text-step-N`, `--cairn-space-X` → `--spacing-X`, `--cairn-muted` →
+`--color-muted`, `--cairn-card-border` → `--color-card-border`, `--cairn-measure*` → `--container-measure*`;
+Geoff confirmed the idiomatic rename), the re-skin recipe was rewritten to the new names, and the
+`--cairn-rule` dead token was fixed (`var(--color-base-300)`). The showcase `retiredTokenBudget` ratcheted
+**20 → 19 → 16 → 1 → 0 → 0 → 0** to its **terminal floor 0** (every `var(--…)` bracket folded). Commits
+`1194680`..`a1ceb8b`.
+
+**Pixel discipline:** the two site-home snapshots stayed **byte-identical through every task** (the
+token-fold pixel-neutrality proof); three styleguide snapshots updated by design (the ink-swatch label text
+reflecting the renamed token, Task 3; the dark island-converter hairline, Task 5). **Forced deviation
+(reviewed sound):** Task 3 edited `scripts/check-public-tokens.mjs` (added a `themeBlock()` parser and
+renamed the muted-ink reference) because the AA-contrast gate hard-references the ink by name — the 4.5:1
+threshold and the value are unchanged, so the gate reads the same ink from its new `@theme` home, not
+weakened.
+
+**Verified (main-loop, cumulative):** `check` 0/0 (1245), `npm test` exit 0 (2871), `check:custom-surface`
+PASS both trees (admin 0, showcase 0), `check:public-tokens` PASS (30 pairs AA in sRGB+P3), `check:comments`
+/ `check:docs` OK; showcase e2e **12 passed under `CI=1`** fresh build (`site-visual` + `styleguide` axe +
+`islands`). `svelte-reviewer` and `daisyui-a11y-reviewer` both clean.
+
+**NEXT = the docs phase (the final phase of the admin idiomatic re-expression initiative).** Per the spec
+(`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, "Final phase: docs"): rewrite
+`admin-design-system.md` from "bespoke recipes" to "native primitives plus the documented essential floor,"
+publishing the role vocabulary (the Warm Stone theme tokens, the `text-muted`/`text-subtle` utilities, the
+component recipes) as the versioned seam beside `CairnAdminShell`/`adminNav`; document the template's owned
+design and idiomatic chrome the same way; add the upgrade-rehearsal procedure (a documented bump-and-verify
+runbook) and wire the scheduled DaisyUI/Tailwind-major watcher (the `schedule` skill — pings only when an
+upstream major publishes, not an always-on canary). Then the initiative is complete and the whole
+admin-re-expression + starter-template body can batch into one release decision (Geoff's call). Use
+`cairn-pass`. See the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): starter-template track Phase 1 (template foundation) COMPLETE on a worktree (held, unmerged); NEXT = Phase 2 (template chrome)
 
 The starter-template track of the admin idiomatic re-expression has begun, and **Phase 1 (template
 foundation) is complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the

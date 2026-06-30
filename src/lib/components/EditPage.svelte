@@ -455,12 +455,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
   // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+    return `inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+    return `ftr-toggle inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -1258,7 +1258,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
   // The eyebrow legend each sidebar group opens with, one class string for all three.
   const eyebrowClass =
-    'mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
+    'mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
 
   // The sidebar's grouping. The title field hoists above the editor card as the document title,
   // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
@@ -1284,7 +1284,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
            squashes the transition for editors who asked for that. The dot is the quiet unsaved cue. -->
       <span
-        class="cairn-save-state flex items-center gap-1.5 text-xs text-[var(--color-muted)] transition-opacity duration-300"
+        class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
         class:opacity-0={!saveState}
         aria-live="off"
       >
@@ -1295,7 +1295,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
              edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
              chip names it so the author knows the whole tidy is one move back. -->
-        <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-[var(--color-muted)]" data-testid="tidy-undo-chip">
+        <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-muted" data-testid="tidy-undo-chip">
           <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
           <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
         </span>
@@ -1538,7 +1538,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            focus itself. -->
       <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.0625rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
         <input
-          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-[var(--color-muted)] {focusMode ? 'cairn-doc-title-dim' : ''}"
+          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
           value={str(data.frontmatter.title)}
           placeholder={titleField.label}
@@ -1723,20 +1723,20 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
           >
             {#if activeDevice.width !== null}
-              <p class="mb-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">
+              <p class="mb-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">
                 {deviceLabel(activeDevice)}
               </p>
             {/if}
             {#if !data.preview}
-              <p class="mb-2 text-xs text-[var(--color-muted)]">
+              <p class="mb-2 text-xs text-muted">
                 Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.
               </p>
             {/if}
             <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
               {#if previewFailed}
-                <p class="p-4 text-sm text-[var(--color-muted)]">The preview could not render this content.</p>
+                <p class="p-4 text-sm text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}
-                <p class="p-4 text-sm text-[var(--color-muted)]">Nothing to preview yet.</p>
+                <p class="p-4 text-sm text-muted">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
                      scripts and handlers); the empty sandbox is belt and braces on top. The
@@ -1760,7 +1760,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            the top toolbar acts on the text; the toggles live here visible rather than buried in
            an overflow menu. -->
       {#if !zen}
-      <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-[var(--color-muted)]">
+      <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted">
         <span>{wordLabel}</span>
         <div class="flex items-center gap-3.5">
           <!-- The posture pair is one bordered segmented control: the shared border carries the
@@ -1838,7 +1838,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                no border, no fill. -->
           <button
             type="button"
-            class="ftr-link cursor-pointer text-[var(--color-muted)] underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+            class="ftr-link cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
             aria-haspopup="dialog"
             onclick={() => helpDialog?.open()}
           >
@@ -1865,7 +1865,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <!-- The panel header: the Details eyebrow and the close button. The eyebrow is a plain span
          (not a legend), so the three group legends below still read as the only sidebar legends. -->
     <div class="mb-3.5 flex items-center justify-between">
-      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Details</span>
+      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Details</span>
       <button
         bind:this={detailsClose}
         type="button"
@@ -1909,13 +1909,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
           <span class="text-sm">Hidden</span>
         </label>
-        <p class="text-xs text-[var(--color-muted)]">Hidden entries stay off the site's lists and feeds, even when published.</p>
+        <p class="text-xs text-muted">Hidden entries stay off the site's lists and feeds, even when published.</p>
       </fieldset>
       {/if}
       <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
       <legend class={eyebrowClass}>Address</legend>
         <div class="flex items-center justify-between gap-2">
-          <code class="min-w-0 break-all text-xs text-[var(--color-muted)]">/{data.slug}</code>
+          <code class="min-w-0 break-all text-xs text-muted">/{data.slug}</code>
           <button
             type="button"
             class="btn btn-ghost btn-sm shrink-0"
@@ -1935,7 +1935,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
 {#if zen}
-  <div class="cairn-zen-chip fixed right-[1.125rem] top-[0.875rem] z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-[5px] text-xs text-[var(--color-muted)] shadow-[var(--cairn-shadow)]">
+  <div class="cairn-zen-chip fixed right-[1.125rem] top-[0.875rem] z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-[5px] text-xs text-muted shadow-[var(--cairn-shadow)]">
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
       {dirty ? 'Unsaved changes' : 'Saved'}
@@ -1943,7 +1943,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <span class="opacity-50" aria-hidden="true">·</span>
     <button
       type="button"
-      class="ftr-link inline-flex items-center cursor-pointer text-[var(--color-muted)] underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+      class="ftr-link inline-flex items-center cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
       onclick={() => setZen(false)}
     >
       Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline" aria-hidden="true">Esc</kbd>
@@ -2062,7 +2062,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
       <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
-      <p class="max-w-prose text-sm text-[var(--color-muted)]">
+      <p class="max-w-prose text-sm text-muted">
         Claude is reading your draft for a light copy-edit. You will review every change before it lands.
       </p>
       <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
@@ -2081,7 +2081,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
-      <p class="max-w-prose text-sm text-[var(--color-muted)]">Tidy read your text and found nothing to change.</p>
+      <p class="max-w-prose text-sm text-muted">Tidy read your text and found nothing to change.</p>
       <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyNoopDialog?.close()}>Close</button>
     </div>
   </dialog>
@@ -2098,7 +2098,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   >
     <div class="modal-box flex flex-col gap-3">
       <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
-      <p class="text-sm text-[var(--color-muted)]">{tidyMessage}</p>
+      <p class="text-sm text-muted">{tidyMessage}</p>
       <div class="flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
       </div>

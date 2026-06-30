@@ -22,6 +22,16 @@ describe('admin css build', () => {
     expect(css).toContain('.cairn-btn-guarded'); // the unlayered pointer-events restore
   });
 
+  it('keeps the named role utilities resolving to their guaranteed-value vars', () => {
+    // The frozen `text-muted` / `text-subtle` interface (the guaranteed-value branch from
+    // role-layer-contrast.test.ts) is what the sweep migrates the arbitrary `text-[var(--color-muted)]`
+    // references onto. The utilities are `@utility` definitions Tailwind tree-shakes, so a standing guard
+    // (not the one-time Task-2 grep) must confirm they still compile and still point at their vars; a
+    // dropped utility would silently strand every migrated call site with a dead class.
+    expect(css).toMatch(/\.text-muted\s*\{\s*color:\s*var\(--color-muted\)/);
+    expect(css).toMatch(/\.text-subtle\s*\{\s*color:\s*var\(--color-subtle\)/);
+  });
+
   it('ships the DaisyUI components and Tailwind utilities the admin uses', () => {
     for (const cls of ['.btn', '.drawer', '.navbar', '.menu', '.input', '.alert', '.badge', '.checkbox', '.flex', '.min-h-screen', '.p-4']) {
       expect(css, `missing ${cls}`).toContain(cls);

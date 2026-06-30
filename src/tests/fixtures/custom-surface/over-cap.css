@@ -1,0 +1,6 @@
+/* A fixture whose @layer components carries three scoped rules (two in the bare form), over a cap of 2. */
+@layer components {
+  :where([data-theme='cairn-admin']) a { color: inherit; }
+  [data-theme='cairn-admin'] summary { list-style: none; }
+  [data-theme='cairn-admin'] .x { color: red; }
+}

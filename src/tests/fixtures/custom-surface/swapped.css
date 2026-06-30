@@ -1,0 +1,12 @@
+/* A fixture whose unlayered count matches the allowlist (2) but whose second rule is a bespoke SWAP
+   that merely CONTAINS `.cairn-btn-guarded`. The old substring allow passed it; exact set equality
+   must fail it. */
+@layer components {
+  :where([data-theme='cairn-admin']) a { color: inherit; }
+}
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
+  outline: 2px solid var(--color-primary);
+}
+[data-theme='cairn-admin'] .cairn-btn-guarded.evil {
+  color: red;
+}

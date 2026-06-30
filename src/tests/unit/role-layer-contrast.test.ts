@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { parse, converter, interpolate } from 'culori';
 import { dualGamutRatio } from '../../../scripts/check-public-tokens.mjs';
 
@@ -47,6 +50,25 @@ function guaranteedFloor(theme: 'light' | 'dark', role: 'muted' | 'subtle'): num
   const r2 = dualGamutRatio(fg, s.base200);
   return Math.min(r1.srgb, r1.p3, r2.srgb, r2.p3);
 }
+
+// LOCK: the SURFACES and ROLES above are a hardcoded copy of cairn-admin.css. A future sheet edit that
+// retones one of these values would otherwise pass this test against the stale copy, so assert the source
+// sheet still contains each exact oklch literal the math assumes. A retone now fails here, forcing a
+// deliberate update of both the sheet and this test's fixed truth in one change.
+it('matches the oklch literals the source sheet defines', () => {
+  const sheet = readFileSync(
+    resolve(fileURLToPath(new URL('.', import.meta.url)), '../../lib/components/cairn-admin.css'),
+    'utf8',
+  );
+  for (const theme of ['light', 'dark'] as const) {
+    for (const key of ['base100', 'base200', 'content'] as const) {
+      expect(sheet, `${theme}.${key} missing from sheet`).toContain(SURFACES[theme][key]);
+    }
+    for (const role of ['muted', 'subtle'] as const) {
+      expect(sheet, `${theme}.${role} missing from sheet`).toContain(ROLES[theme][role]);
+    }
+  }
+});
 
 // MEASUREMENT: print the table so the implementer can choose alphas. Not an assertion.
 it('prints the role-layer ratio table', () => {

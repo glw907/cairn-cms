@@ -1,0 +1,12 @@
+/* A fixture sheet whose unlayered set is exactly the two sanctioned rules and whose @layer components
+   carries one rule. The evaluate test reads this through the real disk path. The banner below QUOTES
+   @layer components and a :where([data-theme]) selector so the comment-strip pre-pass is exercised. */
+@layer components {
+  :where([data-theme='cairn-admin']) a { color: inherit; }
+}
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
+  outline: 2px solid var(--color-primary);
+}
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
+  pointer-events: auto;
+}

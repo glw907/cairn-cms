@@ -63,26 +63,35 @@ function stripComponentsLayer(source) {
 	return css;
 }
 
+// A scoped rule selector in EITHER authored form: the compiled `:where([data-theme=…])` form and the
+// bare `[data-theme='cairn-admin'] .foo` form a developer types directly (the box-sizing reset and the
+// reduced-motion block both use it). The build's postcss-prefix-selector only normalizes to `:where(…)`
+// at compile time, so a bespoke bare-scoped rule would evade a `:where(`-only signal and ship unguarded.
+// The `:where(` wrapper is optional; the `[data-theme=` anchor is what both forms share.
+const SCOPED_RULE = /(?::where\(\s*)?\[data-theme=[^{]*?\{/g;
+
 /**
- * The unlayered scoped rules (a `:where([data-theme…])` rule NOT inside @layer components), by selector.
+ * The unlayered scoped rules (a scoped rule, in either authored form, NOT inside @layer components), by
+ * selector.
  * @param {string} css
  * @returns {string[]}
  */
 export function pinnedUnlayeredRules(css) {
 	const out = [];
-	for (const m of stripComponentsLayer(css).matchAll(/(:where\(\[data-theme=[^{]*?)\s*\{/g)) {
-		out.push(m[1].trim());
+	for (const m of stripComponentsLayer(css).matchAll(SCOPED_RULE)) {
+		// Drop the trailing brace, keep the selector text.
+		out.push(m[0].slice(0, -1).trim());
 	}
 	return out;
 }
 
 /**
- * Count of scoped rule selectors inside @layer components.
+ * Count of scoped rule selectors inside @layer components, in either authored form.
  * @param {string} css
  * @returns {number}
  */
 export function componentsLayerSelectorCount(css) {
-	return [...componentsLayerBody(css).matchAll(/:where\(\[data-theme=[^{]*?\{/g)].length;
+	return [...componentsLayerBody(css).matchAll(SCOPED_RULE)].length;
 }
 
 /**
@@ -102,12 +111,20 @@ function walk(dir, keep) {
 }
 
 /**
- * Arbitrary retired-token references in `.svelte` markup under a dir.
+ * Arbitrary retired-token references in `.svelte` markup under a dir. The de-customization Rule 2 retires
+ * the parallel-token forms a developer reaches for instead of the named `text-muted` / `text-subtle`
+ * utilities: any arbitrary-value Tailwind utility that wraps the var in square brackets
+ * (`text-[var(--color-muted)]`, `bg-[var(--color-subtle)]`, `decoration-[var(--color-muted)]/55`, the
+ * `[color:var(--color-subtle)]` long form) and an inline `style="…var(--color-muted)…"`. The named
+ * utilities carry no brackets and no `var()`, so they are allowed; a scoped `<style>` block declaration
+ * (`color: var(--color-muted)`) and a JS theme object are idiomatic token consumption, not the markup
+ * anti-pattern, so the bracket/inline-style anchor leaves them out.
  * @param {string} dir
  * @returns {{ file: string, line: number, text: string }[]}
  */
 export function retiredTokenHits(dir) {
-	const pat = /text-\[var\(--color-(?:muted|subtle)\)\]/;
+	const pat =
+		/\[[^\][]*var\(--color-(?:muted|subtle)\)[^\][]*\]|style="[^"]*var\(--color-(?:muted|subtle)\)/;
 	/** @type {{ file: string, line: number, text: string }[]} */
 	const hits = [];
 	for (const file of walk(resolve(ROOT, dir), (n) => n.endsWith('.svelte'))) {
@@ -130,12 +147,17 @@ export function evaluate(tree, budget) {
 	const failures = [];
 	if (tree.adminCss) {
 		const css = readFileSync(resolve(ROOT, tree.adminCss), 'utf8');
-		const unlayered = pinnedUnlayeredRules(css);
-		const allow = budget.unlayeredAllowlist;
+		// Pin the unlayered set by EXACT selector, not substring. A substring allow (`.menu li`) would pass
+		// a swapped rule that merely CONTAINS the sanctioned text; whitespace-normalized set equality is the
+		// tight pin. Normalize runs of whitespace to one space on both sides before comparing.
+		const norm = (/** @type {string} */ s) => s.replace(/\s+/g, ' ').trim();
+		const unlayered = pinnedUnlayeredRules(css).map(norm);
+		const allow = budget.unlayeredAllowlist.map(norm);
 		if (unlayered.length !== allow.length)
 			failures.push(`unlayered rules: found ${unlayered.length}, allowlist has ${allow.length}`);
+		const allowSet = new Set(allow);
 		for (const sel of unlayered)
-			if (!allow.some((e) => sel.includes(e))) failures.push(`unsanctioned unlayered rule: ${sel}`);
+			if (!allowSet.has(sel)) failures.push(`unsanctioned unlayered rule: ${sel}`);
 		const layerCount = componentsLayerSelectorCount(css);
 		if (layerCount > budget.componentsLayerCap)
 			failures.push(`@layer components selectors: ${layerCount} > cap ${budget.componentsLayerCap}`);

@@ -116,10 +116,17 @@ Both fix real shipped bugs. The gate pins the exact set: neither may be deleted 
 without a reviewed allowlist change.
 
 - `.menu li > :is(button, a):focus-visible` — restores the keyboard focus ring DaisyUI's `.menu`
-  quiets (lost menu focus). The gate's allowlist entry is `.menu li`.
+  quiets (lost menu focus).
 - `.btn.cairn-btn-guarded[aria-disabled='true']` — restores `pointer-events: auto` so a guarded
-  toolbar button keeps its explanatory tooltip (a killed tooltip). The gate's allowlist entry is
-  `.cairn-btn-guarded`.
+  toolbar button keeps its explanatory tooltip (a killed tooltip).
+
+The gate now pins the unlayered set by **whole-selector set equality**, not by substring (the Phase 0
+review fix). The allowlist in `scripts/custom-surface-budget.json` therefore holds the full,
+whitespace-normalized text of every sanctioned unlayered scoped rule, which is more than these two
+forced workarounds: the two `[data-theme]` theme-root blocks (Tier 1), the embed-anywhere box-sizing
+reset, and the `prefers-reduced-motion` block also live outside `@layer components` and are legitimate
+floor (six rules total). A swapped rule that merely *contains* `.menu li` or `.cairn-btn-guarded` no
+longer passes; a seventh unlayered rule fails the length check and the set-equality check.
 
 ### The `.btn-primary` lift (resolved: stays Tier 2)
 
@@ -270,6 +277,41 @@ Verified 2026-06-29 in `node_modules/daisyui/components/button.css` (DaisyUI 5.6
 The lift is design intent the native primitive does not express, additive on a depth that is already
 global. It cannot fold onto `--depth`. It stays Tier 2.
 
+## The check:custom-surface gate (mechanism and its limits)
+
+`scripts/check-custom-surface.mjs` scans the **source** partial `src/lib/components/cairn-admin.css`,
+never the compiled `dist/components/cairn-admin.css`. The source sheet isolates cairn's own bespoke
+custom; the compiled sheet inlines all of DaisyUI's and Tailwind's scoped rules, so scanning it would
+count hundreds of framework rules. The gate emits three signals: the unlayered-rule set (pinned by
+whole-selector set equality), a cap on `@layer components` rule selectors, and the markup retired-token
+budget.
+
+**The `stripCssComments` pre-pass.** The Tier-2 wall (Task 3) added a load-bearing-rules banner comment
+that QUOTES both `@layer components` and a `:where([data-theme…])` selector. The brace-matcher finds the
+real block with `indexOf('@layer components')`, which would land on that comment first, so
+`stripCssComments` whitespace-blanks every `/* … */` (preserving byte offsets, so a hit's `file:line`
+stays accurate) before any structural scan. Without it the layer count read 0 and the unlayered set
+swept in every reset rule. The line-based markup retired-token scan leaves comments intact on purpose.
+
+**FIX A: both scoped-selector forms.** The signal matches a scoped rule in either authored form, an
+optionally `:where(`-wrapped `[data-theme=` selector (`/(?::where\(\s*)?\[data-theme=[^{]*?\{/`). The
+compiled sheet normalizes everything to `:where(…)`, but a developer types the bare
+`[data-theme='cairn-admin'] .foo {` form directly (the box-sizing reset and the reduced-motion block
+both do), and postcss-prefix-selector only normalizes at build time, so a `:where(`-only matcher let a
+bespoke bare-scoped rule ship unguarded.
+
+**Residual limitation (NOT closed).** A top-level rule with NO `[data-theme=` substring at all, a fully
+bare `.foo {}` relying solely on the build's prefixer to scope it, is not enumerated by the
+`[data-theme=`-anchored signal. It is backstopped by the cascade-equivalence discipline
+(`admin-css-build.test.ts` asserts the compiled sheet leaks no global selector and scopes every rule)
+and is a non-idiomatic form in a theme-scoped partial that authors `[data-theme=]` selectors directly.
+A later reviewer eyeballs added unscoped top-level rules.
+
+**The `@layer` cap gap.** The second signal is a COUNT cap, not a pinned set. It catches growth (a 15th
+rule fails a cap of 14) but not an equal-count substitution of a sanctioned rule for a bespoke one. A
+reviewer should eyeball any added or changed `@layer components` rule, the same as the unscoped-rule
+gap above.
+
 ## The retired-token seed
 
 The total occurrence count of `text-[var(--color-muted)]` and `text-[var(--color-subtle)]` in
@@ -285,3 +327,16 @@ The 23 files holding them: `MediaHeroField`, `ManageEditors`, `MediaInsertPopove
 `MediaPicker`, `ShortcutsDialog`, `RenameDialog`, `ConfirmPage`, `ConceptList`, `ReferenceField`,
 `MediaCaptureCard`, `ShortcutsGrid`, `CairnAdminShell`, `TidyReview`, `ComponentInsertDialog`,
 `CairnMediaLibrary`, `CairnTidySettings`.
+
+**FIX D (Phase 0 review): the budget broadened from the `text-` utility alone to every parallel-token
+form.** Rule 2 forbids more than `text-[var(--color-muted)]`: any arbitrary-value Tailwind utility that
+wraps the var in square brackets (`bg-[var(--color-muted)]`, `decoration-[var(--color-muted)]/55`, the
+`[color:var(--color-subtle)]` long form) and an inline `style="…var(--color-muted)…"` are the same
+anti-pattern. The pattern now anchors on the bracket or the inline-style attribute, so a scoped `<style>`
+block declaration (`color: var(--color-muted)`) and a JS theme object stay allowed as idiomatic token
+consumption, and the named `text-muted` / `text-subtle` utilities (no brackets, no `var()`) stay allowed.
+Broadening surfaced exactly one extra hit the `text-`-only pattern missed,
+`CairnMediaLibrary.svelte`'s `decoration-[var(--color-muted)]/55` strikethrough on an alt-was diff row.
+There is no named utility for a decoration color (folding it to `text-muted` would change the property),
+so it is not trivially retireable; the sweep retires it with the rest. The admin seed is therefore **235**
+(234 `text-`-utility lines plus that one), measured 2026-06-29.

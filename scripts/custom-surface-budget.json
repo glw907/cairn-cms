@@ -4,9 +4,16 @@
       "adminCss": "src/lib/components/cairn-admin.css",
       "markupDirs": ["src/lib/components"],
       "budget": {
-        "unlayeredAllowlist": [".menu li", ".cairn-btn-guarded"],
+        "unlayeredAllowlist": [
+          "[data-theme='cairn-admin']",
+          "[data-theme='cairn-admin-dark']",
+          "[data-theme='cairn-admin'] *, [data-theme='cairn-admin'] *::before, [data-theme='cairn-admin'] *::after, [data-theme='cairn-admin-dark'] *, [data-theme='cairn-admin-dark'] *::before, [data-theme='cairn-admin-dark'] *::after",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true']",
+          "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *"
+        ],
         "componentsLayerCap": 14,
-        "retiredTokenBudget": 234
+        "retiredTokenBudget": 235
       }
     },
     "showcase": {

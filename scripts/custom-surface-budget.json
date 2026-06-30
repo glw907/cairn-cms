@@ -1,0 +1,18 @@
+{
+  "trees": {
+    "admin": {
+      "adminCss": "src/lib/components/cairn-admin.css",
+      "markupDirs": ["src/lib/components"],
+      "budget": {
+        "unlayeredAllowlist": [".menu li", ".cairn-btn-guarded"],
+        "componentsLayerCap": 14,
+        "retiredTokenBudget": 234
+      }
+    },
+    "showcase": {
+      "adminCss": null,
+      "markupDirs": ["examples/showcase/src"],
+      "budget": { "unlayeredAllowlist": [], "componentsLayerCap": 0, "retiredTokenBudget": 0 }
+    }
+  }
+}

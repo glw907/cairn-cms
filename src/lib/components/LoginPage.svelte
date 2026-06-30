@@ -65,12 +65,12 @@ the allowlist, so the page never leaks membership (spec §7.1).
           <MailCheckIcon class="h-6 w-6" />
         </div>
         <h1 class="mt-5 text-xl font-semibold tracking-tight">Check your email</h1>
-        <p class="mt-2 text-sm leading-relaxed text-[var(--color-muted)]">
+        <p class="mt-2 text-sm leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
-          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-[var(--color-muted)]" />
-          <p class="text-[0.8125rem] leading-relaxed text-[var(--color-subtle)]">
+          <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" />
+          <p class="text-[0.8125rem] leading-relaxed text-subtle">
             No link after a minute or two? Check your spam folder first. If it still hasn't arrived, the
             address may not match the one your site owner added.
           </p>
@@ -86,7 +86,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
-      <p class="mt-1 mb-5 text-center text-sm text-[var(--color-muted)]">Enter your email. We'll send a one-time sign-in link.</p>
+      <p class="mt-1 mb-5 text-center text-sm text-muted">Enter your email. We'll send a one-time sign-in link.</p>
       {#if form?.status === 'send_error'}
         <div role="alert" class="alert alert-warning mb-3 text-sm">
           We're having trouble sending sign-in links right now. Please contact the site owner.
@@ -120,6 +120,6 @@ the allowlist, so the page never leaks membership (spec §7.1).
     {/if}
   </div>
 
-  <p class="text-xs text-[var(--color-muted)]">Powered by Cairn</p>
+  <p class="text-xs text-muted">Powered by Cairn</p>
   </div>
 </div>

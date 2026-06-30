@@ -39,7 +39,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
     {:else}
       <h1 class="text-lg font-semibold">Almost there</h1>
-      <p class="mt-1 mb-5 text-sm text-[var(--color-muted)]">Confirm to finish signing in to {data.siteName}.</p>
+      <p class="mt-1 mb-5 text-sm text-muted">Confirm to finish signing in to {data.siteName}.</p>
       <form method="POST" action="?/confirm">
         <input type="hidden" name="token" value={data.token} />
         <CsrfField token={data.csrf} />
@@ -48,6 +48,6 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
     {/if}
   </div>
 
-  <p class="text-xs text-[var(--color-muted)]">Powered by Cairn</p>
+  <p class="text-xs text-muted">Powered by Cairn</p>
   </div>
 </div>

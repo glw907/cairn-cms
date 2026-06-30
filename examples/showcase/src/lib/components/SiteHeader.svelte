@@ -32,9 +32,9 @@ chrome; the look re-skins from `theme.css` with no edit here.
   }
 </script>
 
-<header class="site-header sticky top-0 z-20 border-b border-[color:var(--cairn-card-border)]">
+<header class="site-header sticky top-0 z-20 border-b border-card-border">
   <div
-    class="mx-auto flex max-w-[var(--cairn-measure-wide)] items-center justify-between gap-m px-m py-xs"
+    class="mx-auto flex max-w-measure-wide items-center justify-between gap-m px-m py-xs"
   >
     <a
       href="/"
@@ -54,7 +54,7 @@ chrome; the look re-skins from `theme.css` with no edit here.
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
       <span
-        class="font-display text-step-1 font-semibold tracking-[var(--cairn-tracking-tight)]"
+        class="font-display text-step-1 font-semibold tracking-tight"
         >Cairn Showcase</span
       >
     </a>
@@ -70,7 +70,7 @@ chrome; the look re-skins from `theme.css` with no edit here.
           aria-current={current ? 'page' : undefined}
           class="px-[0.1rem] py-[0.3rem] no-underline {current
             ? 'font-semibold text-primary'
-            : 'font-medium text-[color:var(--cairn-muted)] hover:text-base-content'}"
+            : 'font-medium text-muted hover:text-base-content'}"
         >
           {item.label}
         </a>

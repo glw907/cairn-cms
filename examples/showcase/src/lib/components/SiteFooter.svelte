@@ -21,14 +21,14 @@ this file; the look re-skins from `theme.css`.
   class="site-footer mt-2xl border-t border-base-300 bg-base-200"
 >
   <div
-    class="mx-auto flex max-w-[var(--cairn-measure-wide)] flex-wrap items-center justify-between gap-m px-m py-xl"
+    class="mx-auto flex max-w-measure-wide flex-wrap items-center justify-between gap-m px-m py-xl"
   >
     <a
       href="/"
-      class="inline-flex items-center gap-[0.55rem] text-[color:var(--cairn-muted)] no-underline"
+      class="inline-flex items-center gap-[0.55rem] text-muted no-underline"
     >
       <svg
-        class="h-[1.4rem] w-[1.4rem] text-[color:var(--cairn-muted)]"
+        class="h-[1.4rem] w-[1.4rem] text-muted"
         viewBox="0 0 24 24"
         fill="currentColor"
         aria-hidden="true"
@@ -39,7 +39,7 @@ this file; the look re-skins from `theme.css`.
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
       <span
-        class="font-display text-step-1 font-semibold tracking-[var(--cairn-tracking-tight)]"
+        class="font-display text-step-1 font-semibold tracking-tight"
         >Cairn Showcase</span
       >
     </a>
@@ -51,7 +51,7 @@ this file; the look re-skins from `theme.css`.
       {#each nav as item (item.href)}
         <a
           href={item.href}
-          class="text-[color:var(--cairn-muted)] no-underline hover:text-base-content"
+          class="text-muted no-underline hover:text-base-content"
         >
           {item.label}
         </a>
@@ -59,7 +59,7 @@ this file; the look re-skins from `theme.css`.
     </nav>
 
     <p
-      class="w-full border-t border-[color:var(--cairn-card-border)] pt-s text-step--1 text-[color:var(--cairn-muted)]"
+      class="w-full border-t border-card-border pt-s text-step--1 text-muted"
     >
       Built with cairn. A self-contained SvelteKit site that consumes the package and proves it.
     </p>

@@ -51,7 +51,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   ];
   /** The on-surface inks: a fill tone fails as small text, so each status word reads its own ink. */
   const inks: Swatch[] = [
-    { token: '--cairn-muted', label: 'cairn-muted' },
+    { token: '--color-muted', label: 'color-muted' },
     { token: '--cairn-success-ink', label: 'cairn-success-ink' },
     { token: '--cairn-warning-ink', label: 'cairn-warning-ink' },
     { token: '--cairn-error-ink', label: 'cairn-error-ink' },
@@ -329,7 +329,7 @@ or extend it; nothing here is a literal a re-skin would miss.
      caps the reading column; the styleguide widens its own sections to the wide measure for the
      swatch grids while the prose block keeps the narrow measure. */
   .sg {
-    max-width: var(--cairn-measure-wide);
+    max-width: var(--container-measure-wide);
     margin-inline: auto;
   }
 
@@ -341,24 +341,24 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-size: var(--text-step--1);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: var(--cairn-tracking-eyebrow);
-    color: var(--cairn-muted);
+    letter-spacing: var(--tracking-eyebrow);
+    color: var(--color-muted);
   }
   .sg-title {
     margin: 0;
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-5);
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     color: var(--color-base-content);
   }
   .sg-lead {
     margin: var(--spacing-s) 0 0;
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
     font-size: var(--text-step-1);
-    line-height: var(--cairn-leading-snug);
-    color: var(--cairn-muted);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   .sg-section {
@@ -371,8 +371,8 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-3);
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     color: var(--color-base-content);
   }
   .sg-h3 {
@@ -384,10 +384,10 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-note {
     margin: 0 0 var(--spacing-s);
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
     font-size: var(--text-step-0);
-    line-height: var(--cairn-leading-snug);
-    color: var(--cairn-muted);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
   .sg-note code {
     font-family: var(--font-mono);
@@ -411,13 +411,13 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-chip {
     height: 4rem;
     border-radius: var(--radius-field);
-    border: var(--border) solid var(--cairn-card-border);
+    border: var(--border) solid var(--color-card-border);
   }
   .sg-swatch-label {
     margin-top: var(--spacing-3xs);
     font-family: var(--font-mono);
     font-size: var(--text-step--1);
-    color: var(--cairn-muted);
+    color: var(--color-muted);
   }
   .sg-inks {
     display: grid;
@@ -453,13 +453,13 @@ or extend it; nothing here is a literal a re-skin would miss.
   }
   .sg-step-use {
     font-size: var(--text-step--1);
-    color: var(--cairn-muted);
+    color: var(--color-muted);
   }
   .sg-step-sample {
     font-family: var(--font-display);
     font-weight: 600;
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     color: var(--color-base-content);
   }
   .sg-faces {
@@ -469,7 +469,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-face-sample {
     margin: 0;
     font-size: var(--text-step-2);
-    line-height: var(--cairn-leading-snug);
+    line-height: var(--leading-snug);
     color: var(--color-base-content);
   }
 
@@ -483,10 +483,10 @@ or extend it; nothing here is a literal a re-skin would miss.
 
   /* The floating card: the elevation pair, never a flat base-300 border (the admin convention). */
   .sg-card {
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
     padding: var(--spacing-m);
     border-radius: var(--radius-box);
-    border: var(--border) solid var(--cairn-card-border);
+    border: var(--border) solid var(--color-card-border);
     background: var(--color-base-100);
     box-shadow: var(--cairn-shadow);
   }
@@ -500,8 +500,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-card-body {
     margin: 0 0 var(--spacing-s);
     font-size: var(--text-step-0);
-    line-height: var(--cairn-leading-snug);
-    color: var(--cairn-muted);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   /* Tabs: the APG pattern (roving tabindex, arrow keys, aria-controls to a panel). The active tab
@@ -521,7 +521,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-family: var(--font-body);
     font-size: var(--text-step-0);
     font-weight: 500;
-    color: var(--cairn-muted);
+    color: var(--color-muted);
     cursor: pointer;
     transition: color 0.15s;
   }
@@ -537,7 +537,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-tabpanel {
     padding-top: var(--spacing-s);
     font-size: var(--text-step-0);
-    line-height: var(--cairn-leading-body);
+    line-height: var(--leading-body);
     color: var(--color-base-content);
   }
 
@@ -546,7 +546,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-accordion {
     display: grid;
     gap: var(--spacing-2xs);
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
   }
   .sg-details {
     border: var(--border) solid var(--color-base-300);
@@ -581,8 +581,8 @@ or extend it; nothing here is a literal a re-skin would miss.
   .sg-details-body {
     margin: var(--spacing-2xs) 0 0;
     font-size: var(--text-step-0);
-    line-height: var(--cairn-leading-snug);
-    color: var(--cairn-muted);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   /* The CTA: its own token pair, so it inverts correctly in dark mode (a recessed bordered panel)
@@ -593,7 +593,7 @@ or extend it; nothing here is a literal a re-skin would miss.
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing-m);
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
     padding: var(--spacing-l) var(--spacing-m);
     border-radius: var(--radius-box);
     background: var(--cairn-cta-bg);
@@ -639,13 +639,13 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-4);
-    line-height: var(--cairn-leading-tight);
+    line-height: var(--leading-tight);
     color: var(--color-primary);
     font-variant-numeric: tabular-nums;
   }
   .sg-stat-label {
     font-size: var(--text-step--1);
-    color: var(--cairn-muted);
+    color: var(--color-muted);
   }
 
   @media (prefers-reduced-motion: reduce) {

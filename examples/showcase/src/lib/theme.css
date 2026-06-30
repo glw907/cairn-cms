@@ -48,15 +48,17 @@
    docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
      - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). The showcase's own
        DaisyUI theme, kept verbatim. Not the admin's Warm Stone.
-     - Tier 2 (owned, the documented floor): the on-surface inks (--cairn-muted and the
-       --cairn-<status>-ink set), the elevation pair (--cairn-card-border, --cairn-shadow), the CTA
+     - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
+       --cairn-<status>-ink set), the elevation pair (--color-card-border, --cairn-shadow), the CTA
        pair (--cairn-cta-*), and the code-highlight binding (pre.shiki plus the engine-owned
-       .cairn-tok-* class contract). cairn names the class contract; the site colors it.
+       .cairn-tok-* class contract). cairn names the class contract; the site colors it. --color-muted
+       and --color-card-border live in @theme (so the text-muted / border-card-border utilities
+       generate) but keep their Tier-2 role; their dark siblings override in the dark block.
      - Tier 3 (the Phase-2 fold target): the design-scale token home. The type scale
        (--text-step-*), the space scale (--spacing-*), the faces (--font-*), and the
-       tracking/leading/measure values move from :root into Tailwind 4 `@theme`, where the named
-       utilities generate, so the chrome markup stops wrapping them in arbitrary-value brackets. The
-       values stay; only the home moves.
+       tracking/leading/measure values (--tracking-*, --leading-*, --container-measure*) move from
+       :root into Tailwind 4 `@theme`, where the named utilities generate, so the chrome markup stops
+       wrapping them in arbitrary-value brackets. The values stay; only the home moves.
    ============================================================================ */
 @import 'tailwindcss';
 
@@ -203,6 +205,30 @@
   --spacing-l: clamp(2rem, 1.91rem + 0.43vw, 2.25rem);
   --spacing-xl: clamp(3rem, 2.83rem + 0.87vw, 3.5rem);
   --spacing-2xl: clamp(4rem, 3.74rem + 1.3vw, 4.75rem);
+
+  /* Leading and tracking. In @theme so Tailwind generates `leading-tight`/`-snug`/`-body` and
+     `tracking-tight`/`tracking-eyebrow`; the values override Tailwind's default leading/tracking
+     utilities, which is intended (the template's own rhythm). The vars still emit at :root for the
+     CSS consumers (prose.css, the routes). */
+  --leading-body: 1.65;
+  --leading-snug: 1.4;
+  --leading-tight: 1.12;
+  --tracking-tight: -0.011em;
+  --tracking-eyebrow: 0.12em;
+
+  /* The reading measure, about 66ch; structural, so figures and pull-quotes break past it. In @theme
+     so Tailwind generates `max-w-measure`/`max-w-measure-wide` (the `--container-*` namespace powers
+     the max-w-* utilities); the vars still emit at :root for the CSS consumers. */
+  --container-measure: 44rem;
+  --container-measure-wide: 58rem;
+
+  /* The muted on-surface ink and the card-border hairline, as color roles so Tailwind generates
+     `text-muted`/`border-muted` and `border-card-border`. These are the light values; the dark
+     siblings override them in the prefers-color-scheme block below. DaisyUI does not define these
+     roles, and the public @theme emits at :root only on the (site) layout, so the admin sheet's own
+     scoped `--color-muted` does not collide. */
+  --color-muted: oklch(46% 0.013 72);
+  --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 }
 
 /* ----------------------------------------------------------------------------
@@ -224,15 +250,9 @@
   /* The fluid type scale lives in the @theme block above (so Tailwind generates the text-step-*
      utilities); @theme re-emits each --text-step-* at :root, so the var() references throughout this
      file resolve. */
-  --cairn-leading-body: 1.65;
-  --cairn-leading-snug: 1.4;
-  --cairn-leading-tight: 1.12;
-  --cairn-tracking-tight: -0.011em;
-  --cairn-tracking-eyebrow: 0.12em;
-
-  /* The reading measure, about 66ch; structural, so figures and pull-quotes break past it. */
-  --cairn-measure: 44rem;
-  --cairn-measure-wide: 58rem;
+  /* The leading, tracking, and measure values live in the @theme block above (so Tailwind generates
+     the leading-*, tracking-*, and max-w-measure* utilities the chrome markup folds onto); @theme
+     re-emits each at :root, so the var() references throughout this file resolve. */
 
   /* The fluid space scale lives in the @theme block above (so Tailwind generates the spacing
      utilities); @theme re-emits each --spacing-* at :root, so the var() references resolve. */
@@ -245,26 +265,29 @@
   --cairn-code-bg: var(--color-base-200);
   --cairn-code-border: var(--color-base-300);
   --cairn-code-ink: var(--color-base-content);
-  --cairn-code-comment: var(--cairn-muted);
+  --cairn-code-comment: var(--color-muted);
   --cairn-code-keyword: var(--color-primary);
   --cairn-code-string: var(--cairn-success-ink);
   --cairn-code-function: var(--cairn-info-ink);
   --cairn-code-number: var(--cairn-warning-ink);
-  --cairn-code-punct: var(--cairn-muted);
+  --cairn-code-punct: var(--color-muted);
 
   /* On-surface inks (light). A fill tone fails as small text, the admin's lesson, so the muted
      text and each status word read a darker ink than the matching `-content` fill pair. Each status
      ink holds its fill's hue (the warning ink at 76, aligned to the warning fill and its dark
      sibling), so the directive titles and the code colours track the fills under a re-skin; the
      re-skin recipe at the top of this file (step 6) names this seam. */
-  --cairn-muted: oklch(46% 0.013 72);
+  /* --color-muted (the muted on-surface ink) lives in the @theme block above so Tailwind generates
+     the text-muted utility; @theme re-emits its light value at :root, and the dark sibling below
+     overrides it. The status inks have no utility and stay here. */
   --cairn-success-ink: oklch(45% 0.1 150);
   --cairn-warning-ink: oklch(52% 0.11 76);
   --cairn-error-ink: oklch(50% 0.17 27);
   --cairn-info-ink: oklch(48% 0.1 235);
 
-  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. */
-  --cairn-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. The
+     hairline (--color-card-border) lives in the @theme block above so Tailwind generates the
+     border-card-border utility; the dark sibling below overrides it. */
   --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
 
@@ -280,14 +303,14 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* On-surface inks (dark) lift with the surface, keeping AA on the dark bases. */
-    --cairn-muted: oklch(70% 0.012 76);
+    --color-muted: oklch(70% 0.012 76);
     --cairn-success-ink: oklch(78% 0.11 150);
     --cairn-warning-ink: oklch(82% 0.12 76);
     --cairn-error-ink: oklch(76% 0.14 27);
     --cairn-info-ink: oklch(80% 0.1 235);
 
     /* Elevation (dark): a defined border carries the card since a shadow barely shows. */
-    --cairn-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
+    --color-card-border: color-mix(in oklab, var(--color-base-content) 16%, transparent);
     --cairn-shadow: 0 1px 2px color-mix(in oklab, black 40%, transparent),
       0 8px 24px -10px color-mix(in oklab, black 55%, transparent);
 

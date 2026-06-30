@@ -35,7 +35,7 @@ html {
 /* The centered reading column at the measure. The chrome components hold the wider shell; this caps
    the article body and is the container the editor preview frame reproduces. */
 .site-main {
-  max-width: var(--cairn-measure);
+  max-width: var(--container-measure);
   margin: 0 auto;
   padding: var(--spacing-l) var(--spacing-m);
 }
@@ -60,7 +60,7 @@ body {
   margin-top: 0.6rem;
   font-size: var(--text-step--1);
   line-height: 1.5;
-  color: var(--cairn-muted);
+  color: var(--color-muted);
 }
 
 /* center: a below-measure image, centered in the column. for a portrait or a detail shot. */
@@ -75,7 +75,7 @@ body {
 /* wide: break past the measure to a wider band, centered on the viewport. always at most
    100vw - 3rem, so it never adds a scrollbar. */
 .site-main .cairn-place-wide {
-  width: min(var(--cairn-measure-wide), 100vw - 3rem);
+  width: min(var(--container-measure-wide), 100vw - 3rem);
   position: relative;
   left: 50%;
   transform: translateX(-50%);
@@ -93,7 +93,7 @@ body {
   border-radius: 0;
 }
 .site-main .cairn-place-full figcaption {
-  max-width: var(--cairn-measure);
+  max-width: var(--container-measure);
   margin-inline: auto;
   padding: 0 var(--spacing-m);
   box-sizing: border-box;

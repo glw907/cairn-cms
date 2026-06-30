@@ -41,7 +41,7 @@
      headings, the lead, figures, code, tables, and the hr override it locally.
      -------------------------------------------------------------------------- */
   .prose {
-    max-width: var(--cairn-measure);
+    max-width: var(--container-measure);
   }
   .prose > * + * {
     margin-top: var(--flow-space);
@@ -56,8 +56,8 @@
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-5);
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     margin: 0;
   }
   .prose > h1 + * {
@@ -67,7 +67,7 @@
   /* The lead paragraph: step-1, slightly recessed ink, a touch more air above. */
   .prose .lead {
     font-size: var(--text-step-1);
-    line-height: var(--cairn-leading-snug);
+    line-height: var(--leading-snug);
     color: color-mix(in oklab, var(--color-base-content) 86%, transparent);
     --flow-space: var(--spacing-m);
   }
@@ -78,8 +78,8 @@
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-3);
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     --flow-space: var(--spacing-xl);
     margin-bottom: 0;
   }
@@ -90,7 +90,7 @@
     font-family: var(--font-display);
     font-weight: 600;
     font-size: var(--text-step-2);
-    line-height: var(--cairn-leading-snug);
+    line-height: var(--leading-snug);
     --flow-space: var(--spacing-l);
   }
   .prose h3 + * {
@@ -126,14 +126,14 @@
   }
   .prose blockquote p {
     font-size: var(--text-step-1);
-    line-height: var(--cairn-leading-snug);
+    line-height: var(--leading-snug);
   }
   .prose blockquote cite {
     display: block;
     margin-top: 0.6rem;
     font-style: normal;
     font-size: var(--text-step--1);
-    color: var(--cairn-muted);
+    color: var(--color-muted);
   }
 
   /* A hanging pull-quote on the display face. On wide screens the whole quote
@@ -143,8 +143,8 @@
     font-family: var(--font-display);
     font-weight: 500;
     font-size: var(--text-step-3);
-    line-height: var(--cairn-leading-tight);
-    letter-spacing: var(--cairn-tracking-tight);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
     color: var(--color-base-content);
     --flow-space: var(--spacing-xl);
   }
@@ -154,7 +154,7 @@
   }
   @media (min-width: 64rem) {
     .prose .pullquote {
-      width: calc(var(--cairn-measure) + 4.5rem);
+      width: calc(var(--container-measure) + 4.5rem);
       margin-left: -4.5rem;
       text-align: left;
     }
@@ -275,7 +275,7 @@
   }
   .prose tbody td {
     padding: 0.55rem 0.7rem;
-    border-bottom: var(--border) solid var(--cairn-card-border);
+    border-bottom: var(--border) solid var(--color-card-border);
   }
   .prose tbody tr:nth-child(even) {
     background: color-mix(in oklab, var(--color-base-200) 60%, transparent);
@@ -323,7 +323,7 @@
      sibling `.callout-points` ul, not nested. */
   .prose .callout {
     --flow-space: var(--spacing-m);
-    border: var(--border) solid var(--cairn-card-border);
+    border: var(--border) solid var(--color-card-border);
     border-left: 3px solid var(--color-primary);
     border-radius: var(--radius-box);
     padding: var(--spacing-s) var(--spacing-m);
@@ -372,7 +372,7 @@
     display: block;
     grid-template-columns: none;
     --flow-space: var(--spacing-m);
-    border: var(--border) solid var(--cairn-card-border);
+    border: var(--border) solid var(--color-card-border);
     border-left: 3px solid var(--cairn-info-ink);
     border-radius: var(--radius-box);
     padding: 0;

@@ -335,7 +335,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {/if}
         <div class="min-w-0 flex-1">
           {#if picked}
-            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
+            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
             <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">{picked.label}</h2>
           {:else}
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
@@ -358,12 +358,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               </div>
               <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
                 <div class="flex items-baseline justify-between gap-2">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Preview</span>
+                  <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Preview</span>
                   <!-- A silent visual cue, never an announcement: it re-rendered on every debounced
                        keystroke, so a screen reader read "Settling"/"Settled" aloud on each edit. The
                        incomplete and render-failed conditions reach assistive tech through the
                        per-field role="alert" errors and the failed panel text, so nothing is lost. -->
-                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 text-[0.7rem] text-[var(--color-muted)]">
+                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 text-[0.7rem] text-muted">
                     {#if formIncomplete}
                       Incomplete
                     {:else if previewState === 'failed'}
@@ -391,7 +391,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
                   <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-box border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
                     <p class="text-sm font-semibold">Preview could not render</p>
-                    <p class="text-xs text-[var(--color-muted)]">Your settings are kept. You can still insert and check it on the page.</p>
+                    <p class="text-xs text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
                   <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -408,10 +408,10 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
       {:else}
         {#if showSearch}
           <div class="mb-3 flex flex-none items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-100 px-3 py-2">
-            <svg class="ec-glyph h-4 w-4 text-[var(--color-muted)]" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
+            <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
-              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
+              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-muted"
               placeholder="Search components"
               aria-label="Search components"
               bind:value={query}
@@ -427,7 +427,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {#if filtered.length === 0}
           <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-            <p class="text-sm text-[var(--color-muted)]">No components match <span class="font-medium text-base-content">"{query.trim()}"</span>.</p>
+            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">"{query.trim()}"</span>.</p>
             <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}
@@ -438,7 +438,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             {#each groups as group (group.heading)}
               <div class="mt-3 first:mt-0">
                 {#if group.heading}
-                  <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.heading}</div>
+                  <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{group.heading}</div>
                 {/if}
                 <ul class="menu w-full p-0">
                   {#each group.defs as def (def.name)}
@@ -451,8 +451,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                         {/if}
                         <span class="flex flex-col items-start gap-0.5">
                           <span data-testid="cairn-pk-row-label" class="text-sm font-medium">{def.label}</span>
-                          {#if def.description}<span class="text-xs text-[var(--color-muted)]">{def.description}</span>{/if}
-                          {#if def.use}<span class="text-xs text-[var(--color-subtle)]">{def.use}</span>{/if}
+                          {#if def.description}<span class="text-xs text-muted">{def.description}</span>{/if}
+                          {#if def.use}<span class="text-xs text-subtle">{def.use}</span>{/if}
                         </span>
                       </button>
                     </li>

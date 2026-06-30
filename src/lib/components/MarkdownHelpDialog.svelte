@@ -29,8 +29,8 @@ open(), so the component renders no trigger of its own.
     <table class="table table-sm">
       <thead>
         <tr>
-          <th class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">Type this</th>
-          <th class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">What it makes</th>
+          <th class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Type this</th>
+          <th class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">What it makes</th>
         </tr>
       </thead>
       <tbody>

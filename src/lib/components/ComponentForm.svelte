@@ -332,7 +332,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       {#each ids as id, i (id)}
         {@const label = rowLabel(slot, items[i] ?? '', i)}
         <div class="flex items-center gap-2">
-          <span class="flex-none text-xs text-[var(--color-muted)]">{label}</span>
+          <span class="flex-none text-xs text-muted">{label}</span>
           <input
             class="input input-sm flex-1"
             aria-label={`${slot.label} ${i + 1}`}

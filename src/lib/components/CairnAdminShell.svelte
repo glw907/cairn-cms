@@ -26,6 +26,7 @@ discriminant, not the fields, gates the chrome).
   import SettingsIcon from '@lucide/svelte/icons/settings';
   import UsersIcon from '@lucide/svelte/icons/users';
   import ImageIcon from '@lucide/svelte/icons/image';
+  import TagIcon from '@lucide/svelte/icons/tag';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
   import { ADMIN_NAV_ICONS, ADMIN_NAV_FALLBACK_ICON } from './admin-nav-icons.js';
@@ -79,6 +80,8 @@ discriminant, not the fields, gates the chrome).
           })),
           // Media is a content peer, immediately after the concepts.
           { label: 'Media', icon: ImageIcon, href: '/admin/media' },
+          // Tags is the shared tag-vocabulary screen, after Media.
+          { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
           ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
           { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
           ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),

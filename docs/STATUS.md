@@ -11,7 +11,33 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, LATEST): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
+## Immediate next action (2026-06-30, LATEST): admin re-expression Phase 2 (office chrome) plan WRITTEN + adversarially REVIEWED; EXECUTING
+
+Phase 2 of the admin idiomatic re-expression sweep (office chrome). Plan:
+`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`, on branch/worktree
+`admin-reexpr-2-office-chrome` (off `main` at `b31c8a8`, in the `extensibility-plan-1` worktree dir).
+
+**Shape (census-grounded):** Phase 2 is a **near-mechanical token-retirement ratchet**, not a redesign. The
+office-chrome census found the only foldable surface is the arbitrary `text-[var(--color-muted)]` /
+`text-[var(--color-subtle)]` references — 37 lines across 8 of 13 components, every one a trivial 1:1 swap to the
+named `text-muted` / `text-subtle` utilities. **No** native-primitive adoption (no hand-rolled status dot or tab
+strip; `floating-label` deferred as a redesign addition, to Phase 3 / a dedicated pass), **no** `@layer` fold (all
+Tier-2 infra; cap stays 14), **no** presence-only a11y test to upgrade (all behavioral), **no** selector-coupled
+test to migrate (ConceptList's `.badge`/`.alert` test native classes the phase keeps). Zero pixel change, so the
+office-shell baseline stays byte-identical (the regression proof).
+
+**Method:** 4 task-clusters — A (shell+nav+list, budget 235→211), B (auth, 211→204), C (dialogs/pickers, 204→198),
+D (extend the visual baseline: byte-identical office shell + new auth captures). Strictly sequential A→B→C (shared
+tree-wide budget file), each a red-green budget ratchet. Adversarial plan review (4-lens workflow) done, findings
+folded (M1: drop the unnecessary showcase reinstall — symlinked `file:` dep + zero new exports; M2: gate can't catch
+a placeholder compile fail, office baseline does; M3: ShortcutsDialog is mount-only; plus budget-path/sequencing
+nits). Executing clusters A–C via a `cairn-implementer` workflow, then the baseline + reviewer verify in the main
+loop. **Hold unpublished — no version bump, no release** (admin internals a consumer never imports; cadence below).
+
+If resuming cold: the gate is green at `b31c8a8` (seed 235), `dist` is built, `node_modules` is real in this
+worktree. Read the plan in full, then execute task-by-task; the plan's red-green steps are exact.
+
+## Immediate next action (2026-06-29, prior): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 
 Phase 1 (the vocabulary-screen pilot) is built, reviewed, and merged; the held tag-management release is cut as
 **0.78.0** on `worktree-tag-management-1`. Plan + post-mortem:

@@ -28,7 +28,11 @@
 
    The whole file is @layer components, the same layer theme.css uses, so the
    `.prose` scope is what wins over DaisyUI, not a layer race.
-   ============================================================================ */
+
+   TIER: the whole sheet is Tier 2 (owned design, the documented floor; the starter-template
+   custom-surface ledger, docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md). It is
+   the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
+   reads the theme roles and the cairn tokens; a re-skin recolors it with no edit here. */
 @layer components {
   /* --------------------------------------------------------------------------
      The column and the rhythm. The measure is capped structurally on the

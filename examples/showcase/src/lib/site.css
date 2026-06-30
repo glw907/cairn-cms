@@ -12,7 +12,14 @@
    the figure rules below are scoped to `.site-main` for that reason. A static `import './site.css'`
    in the layout would fold the sheet into the layout's CSS chunk, whose basename differs between the
    client and server builds, so the server-resolved ?url would 404 in the browser. Referenced only as
-   an asset, both builds emit site.<hash>.css under one content hash, and the URL holds. */
+   an asset, both builds emit site.<hash>.css under one content hash, and the URL holds.
+
+   TIER MAP (docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
+     - Tier 2 (owned): the `.site-main` reading column and the `.cairn-place-center/wide/full` figure
+       contract. cairn defines the figure class contract; the site owns the pixels by styling them.
+     - Tier 3 (the Phase-2 fold target): the `.island-converter*` demo block below, including the
+       `--cairn-rule` bug (it is defined nowhere, so it always renders its hardcoded hex fallback).
+       Phase 2 folds the demo onto theme tokens and removes the dead token. */
 
 /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
    focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
@@ -110,6 +117,8 @@ body {
   width: 5rem;
   min-height: 2.25rem;
   padding: 0.25rem 0.5rem;
+  /* Tier-3 (Phase-2): --cairn-rule is undefined, so this always renders the hardcoded hex fallback.
+     Phase 2 folds it onto a theme token (--color-base-300) and drops the dead token. */
   border: 1px solid var(--cairn-rule, #b8b0a4);
   border-radius: 0.25rem;
   font: inherit;

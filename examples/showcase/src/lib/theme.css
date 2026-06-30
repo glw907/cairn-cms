@@ -42,6 +42,20 @@
    the reader and the author see the same surface. The token grammar matches the
    admin's Warm Stone system (`src/lib/components/cairn-admin.css`); only the
    palette differs.
+
+   TIER MAP (the starter-template custom-surface ledger,
+   docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md):
+     - Tier 1: the two `@plugin "daisyui/theme"` blocks (cairn, cairn-dark). The showcase's own
+       DaisyUI theme, kept verbatim. Not the admin's Warm Stone.
+     - Tier 2 (owned, the documented floor): the on-surface inks (--cairn-muted and the
+       --cairn-<status>-ink set), the elevation pair (--cairn-card-border, --cairn-shadow), the CTA
+       pair (--cairn-cta-*), and the code-highlight binding (pre.shiki plus the engine-owned
+       .cairn-tok-* class contract). cairn names the class contract; the site colors it.
+     - Tier 3 (the Phase-2 fold target): the design-scale token home. The type scale
+       (--cairn-step-*), the space scale (--cairn-space-*), the faces (--font-*), and the
+       tracking/leading/measure values move from :root into Tailwind 4 `@theme`, where the named
+       utilities generate, so the chrome markup stops wrapping them in arbitrary-value brackets. The
+       values stay; only the home moves.
    ============================================================================ */
 @import 'tailwindcss';
 

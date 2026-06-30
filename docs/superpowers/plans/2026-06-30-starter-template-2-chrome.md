@@ -4,15 +4,12 @@
 > test-first; the main loop reviews each diff and clears the full gate (including the `site-visual`
 > baseline and `check:custom-surface`) before the next task. Steps use checkbox (`- [ ]`) syntax.
 
-> **⚑ KEY DECISION FOR GEOFF (confirm before executing).** This plan folds the showcase's design-scale
-> tokens out of `:root` and into Tailwind 4 `@theme`, which **requires renaming** them to Tailwind's
-> utility namespaces (`--cairn-step-1` → `--text-step-1`, `--cairn-space-m` → `--spacing-m`,
-> `--cairn-muted` → `--color-muted`, …) so the named utilities generate. That changes the template's
-> **documented re-skin surface** (the recipe at the top of `theme.css` that a site owner edits). The
-> rename is the idiomatic, upgrade-resilient form the initiative's thesis calls for, and the re-skin
-> recipe is rewritten to the new names so it stays a documented edit surface. The alternative is to keep
-> the `--cairn-*` names and accept arbitrary-value bracket utilities in the markup (stable re-skin API,
-> non-idiomatic, the gate never reaches its floor). This plan commits to the rename; the call is Geoff's.
+> **⚑ KEY DECISION — CONFIRMED (Geoff, 2026-06-30).** This plan folds the showcase's design-scale tokens
+> out of `:root` and into Tailwind 4 `@theme`, **renaming** them to Tailwind's utility namespaces
+> (`--cairn-step-1` → `--text-step-1`, `--cairn-space-m` → `--spacing-m`, `--cairn-muted` → `--color-muted`,
+> …) so the named utilities generate. This changes the template's documented re-skin surface, so the recipe
+> at the top of `theme.css` is rewritten to the new names (Task 6) and stays a documented edit surface.
+> Geoff confirmed the idiomatic rename over keeping `--cairn-*` names. Do not relitigate.
 
 **Goal:** Re-express the showcase starter template's chrome and route markup in native DaisyUI 5.6 /
 Tailwind 4: move the design-scale tokens into `@theme` so named utilities generate, fold the arbitrary-value

@@ -264,6 +264,8 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
   settingsLoad: (event: ContentEvent) => SettingsData;
   settingsSave: (event: ContentEvent) => Promise<never>;
+  vocabularyLoad: (event: ContentEvent) => Promise<VocabularyLoadData>;
+  vocabularySave: (event: ContentEvent) => Promise<never>;
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
   saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
@@ -355,6 +357,18 @@ admin topbar posts it as the named `?/publishAll` action from any admin page. `d
 deletes the pending branch, returning to the edit page for a published entry (`?discarded=1`) or
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
+
+`settingsLoad` and `settingsSave` back the tidy settings screen, and `vocabularyLoad` and
+`vocabularySave` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
+`VocabularyLoadData` the screen renders: the committed `{ value, label }` vocabulary in config order
+(`vocabulary`), each value's cross-branch in-use count (`usage`, keyed by value over the default
+branch unioned with every open `cairn/*` branch), and the in-use-but-unlisted tags with their counts
+(`unlisted`, the seed candidates). The usage overlay is best-effort: a failed read degrades `usage` to
+`{}` and `unlisted` to `[]` while the committed `vocabulary` stays visible, since the strict gate lives
+on the save, not the load. `vocabularySave` validates the posted vocabulary JSON, gates a delete on
+that strict cross-branch usage (an in-use value cannot be removed, failing closed), then
+read-modify-commits the `vocabulary` key into the same committed `src/lib/site.config.yaml` the tidy
+settings write, head-guarded and bouncing a stale-head conflict back to the screen.
 
 The editor copy-edit adds two more actions, both fetch-style on the upload transport. `addDictionaryWord`
 commits an editor's personal-dictionary additions, and `tidyAction` runs the language-model tidy.
@@ -608,8 +622,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `NavRoutesDeps` | Extension API | `interface NavRoutesDeps { backend?: Backend }` | Injectable dependencies for `createNavRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint. |
+| `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[] }` | The tag-vocabulary screen's load data, returned by `vocabularyLoad`: the committed `{ value, label }` entries in config order, each value's cross-branch in-use count (`usage`), and the in-use-but-unlisted tags with their counts (`unlisted`, the seed candidates). The usage overlay degrades to an empty `usage`/`unlisted` on a failed read while the committed `vocabulary` stays visible. |
 | `CairnAdminDeps` | Extension API | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `anthropic` and `tidyTimeoutMs` pass through to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
-| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
+| `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `AdminView` | Extension API | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' \| 'media' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `RequestContext` | Extension API | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |

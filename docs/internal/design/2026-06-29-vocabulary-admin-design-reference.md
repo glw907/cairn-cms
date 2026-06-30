@@ -47,8 +47,8 @@ A single centered column (`max-w-3xl`) inside the office shell, top to bottom:
    inline-editable input for rename), Stored as (the immutable slug in the editor font), In use (the
    cross-branch count or "Unused"), and a trailing delete control.
 5. **The seed section ("Already on your posts").** A dashed-border card listing each unlisted tag with its
-   usage count and an "Add to list" button, plus an "Add both" / "Add all" shortcut. Rendered only when the
-   `unlisted` set is non-empty.
+   usage count and an "Add to list" button. Rendered only when the `unlisted` set is non-empty. (The pilot
+   ships per-candidate seeding only; a bulk "Add all" shortcut is a deferred nicety, not built.)
 6. **The save footer.** A hairline-topped row with a one-line reassurance ("Saving commits your tag list to
    the site config, so every editor shares it.") and the primary "Save changes" submit.
 
@@ -82,7 +82,7 @@ A single centered column (`max-w-3xl`) inside the office shell, top to bottom:
   count column ("8 posts" vs "Unused") is the non-color signal that pairs with the guard. This mirrors the
   route's strict cross-branch delete gate, so the screen never offers a delete the route would reject.
 - **Seed.** Each unlisted tag's "Add to list" button appends its `{ value, label }` to the working copy and
-  announces it; the row leaves the seed section. "Add all" seeds the whole set at once. Seeding is a UX
+  announces it; the row leaves the seed section. Seeding is a UX
   affordance, not a safety gate (Plan 2's per-entry union already prevents any build delist).
 - **Save.** The working copy posts as a hidden `vocabulary` JSON field with `<CsrfField />` to
   `?/saveVocabulary`, which commits to `site.config.yaml` through the head-guarded GitHub-App pipeline.

@@ -851,3 +851,16 @@ release as the preceding taxonomy entries.
 Consumers must: nothing. The vocabulary is opt-in. A site with no `vocabulary` key keeps the open
 creatable taxonomy field, and the build-time tags-as-data read is unchanged; enforcement is a
 save-and-edit concern only.
+
+## Unreleased: an admin screen curates the tag vocabulary (non-breaking)
+
+A new `vocabulary` admin view at `/admin/vocabulary`, with a `saveVocabulary` action, lets an editor
+curate the vocabulary from the admin: add a tag, rename a tag's label, delete an unused tag, and seed
+the list from tags already in use but absent from the vocabulary. Deleting a tag in use across the
+default branch or any open edit branch is rejected, failing closed. The screen commits the curated
+list to the `vocabulary` key in `site.config.yaml`. The size-gated archive tag filter is a showcase and
+template surface over `ContentSummary.tags`; cairn ships no public filter component. This entry rides
+the same release as the preceding taxonomy entries.
+
+Consumers must: nothing. The screen mounts with the rest of the admin and writes only when an editor
+saves.

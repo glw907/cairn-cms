@@ -27,6 +27,7 @@ Task-oriented guides for a returning adopter. Each answers one question and link
 - [Write in the editor](./write-in-the-editor.md): the toolbar, links, layout blocks, Preview, and saving, from an editor's seat.
 - [Add an image](./add-an-image.md): paste, drag, or insert an image, write its alt text, and publish it with the post.
 - [Manage the media library](./manage-the-media-library.md): find an image, read where it is used, fix its name and default alt, and delete it safely.
+- [Manage your tag vocabulary](./manage-your-tag-vocabulary.md): add a tag, rename its label, delete an unused tag, and seed the list from tags already on your posts.
 - [Publish and discard](./publish-and-discard.md): the editor-facing flow, from a held save to the live site.
 
 ## Maintain

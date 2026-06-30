@@ -47,6 +47,18 @@ stays the open creatable multiselect it is today. The build read is unchanged, s
 identical with or without a vocabulary; enforcement is a save-and-edit concern only. Consumers must:
 nothing.
 
+An editor can now curate the vocabulary from the admin. A new `vocabulary` admin view at
+`/admin/vocabulary`, with a `saveVocabulary` action, lets an editor add a tag, rename a tag's label,
+delete an unused tag, and seed the list from tags already in use on posts but absent from the
+vocabulary. Deleting a tag that is in use across the default branch or any open edit branch is
+rejected, failing closed, so a tag stays until the posts that use it drop it. The screen commits the
+curated list to the `vocabulary` key in `site.config.yaml`. The size-gated archive tag filter is a
+showcase and template surface, the site's own design over `ContentSummary.tags`; cairn ships no public
+filter component.
+
+This is opt-in and non-breaking. The screen appears for any site, and edits it only when an editor
+saves; a site that configures no vocabulary simply curates an empty list. Consumers must: nothing.
+
 ## 0.77.0
 
 <!-- release-size: minor -->

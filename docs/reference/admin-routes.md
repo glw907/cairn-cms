@@ -113,6 +113,7 @@ The one route answers every admin URL. `createCairnAdmin`'s load parses `event.u
 | `/admin/nav` | nav | The nav tree editor. A 404 unless the adapter configures `editor.nav`. |
 | `/admin/media` | media | The media library. |
 | `/admin/settings` | settings | The tidy settings screen. |
+| `/admin/vocabulary` | vocabulary | The tag-vocabulary editor: add, rename, delete an unused tag, and seed from tags already in use. |
 | `/admin/help` | help | The Help home: getting started, the formatting reference, and the support hand-off. |
 
 Any other shape is a 404, and one trailing slash is tolerated. Logout has no URL of its own; the
@@ -136,6 +137,7 @@ so a `save` posted to a list URL refuses rather than misfiring:
 | `rename` | edit | the entry rename |
 | `delete` | edit, list | the entry delete (id from the path, or from the form body on a list) |
 | `publishAll` | list, edit, editors, nav | the site-wide publish |
+| `saveVocabulary` | vocabulary | the tag-vocabulary commit, with the cross-branch delete gate failing closed |
 | `addEditor`, `removeEditor`, `setRole` | editors | the owner-gated editor management |
 
 The engine's components post these names, so an action-adding release reaches a site through the

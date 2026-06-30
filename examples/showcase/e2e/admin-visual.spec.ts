@@ -133,3 +133,28 @@ test('admin media library — dark', async ({ page, context, baseURL }) => {
   await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
   await expect(page).toHaveScreenshot('admin-media-dark.png', { fullPage: true });
 });
+
+// The media library slide-over detail panel (CairnMediaLibrary), swept in Phase 6. The panel is the
+// non-modal labelled `region` that opens when an asset is selected, so the static browse baseline never
+// reaches it; this pair is the reference for the swept slide-over/dialog surface. The triage radiogroup
+// settles the grid, clicking the first `option` tile opens the panel, and the `region` (named "… details")
+// settles the DOM before the screenshot.
+test('admin media detail panel — light', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/media');
+  await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
+  await page.getByRole('option').first().click();
+  await expect(page.getByRole('region', { name: /details$/ })).toBeVisible();
+  await expect(page).toHaveScreenshot('admin-media-detail-light.png', { fullPage: true });
+});
+
+test('admin media detail panel — dark', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/admin/media');
+  await expect(page.getByRole('radiogroup', { name: 'Filter assets' })).toBeVisible();
+  await page.getByRole('option').first().click();
+  await expect(page.getByRole('region', { name: /details$/ })).toBeVisible();
+  await expect(page).toHaveScreenshot('admin-media-detail-dark.png', { fullPage: true });
+});

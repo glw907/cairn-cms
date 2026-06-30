@@ -131,10 +131,18 @@ describe('RepeatableField', () => {
     expect(document.querySelector<HTMLInputElement>('input[name="aliases.1"]')!.value).toBe('two');
   });
 
-  it('mounts a polite live region', async () => {
+  it('announces add and remove through the polite live region', async () => {
     render(RepeatableField, { field: faq, name: 'faq', rows: [], ...shared() });
     const region = document.querySelector('[role="status"][aria-live="polite"]');
     expect(region).not.toBeNull();
+    // Mounted empty so the first add is a genuine text change a screen reader re-announces.
+    expect(region!.textContent).toBe('');
+
+    await page.getByRole('button', { name: /add faq/i }).click();
+    await expect.poll(() => region!.textContent).toBe('Row added');
+
+    document.querySelector<HTMLButtonElement>('[data-cairn-row-remove]')!.click();
+    await expect.poll(() => region!.textContent).toBe('Row removed');
   });
 });
 

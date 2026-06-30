@@ -6,6 +6,17 @@
    scripts/build-admin-css.mjs after compile (so the woff2 url stays relative to the shipped sheet,
    not the source tree). */
 
+/* ===== TIER 2: ESSENTIAL CUSTOM (the documented floor) =====
+   This section is the single home for the admin's essential custom surface, the part that has no
+   native DaisyUI 5.6 equivalent and so must stay. It carries the accessible ink families, the editor
+   color system, the named secondary-text tones, and the soft-elevation pair, each pinned to a measured
+   contrast floor in its co-located comment. The load-bearing rules below (the embed-anywhere reset, the
+   cascade-layered overrides, and the two unlayered rules) are part of the same floor. This section may
+   only SHRINK, and only with a matching update to docs/internal/design/2026-06-29-custom-surface-ledger.md;
+   it is never extended ad hoc. check:custom-surface guards the same floor structurally. Each token's
+   declaration stays inside the theme-root block it themes (light here, dark below); the two theme blocks
+   are the Tier-1 home, and the Tier-2 vars cluster at the end of each. */
+
 /* Warm Stone: the cairn admin theme. Self-contained, since DaisyUI v5 reads these vars at point
    of use, so this fully overrides the host's theme with no @plugin and no host build step. */
 [data-theme='cairn-admin'] {
@@ -18,6 +29,7 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
+  /* Tier 1: the DaisyUI theme variables (surfaces, brand, status fills, radii). */
   --color-base-100: oklch(99% 0.004 75);
   --color-base-200: oklch(96.5% 0.006 75);
   --color-base-300: oklch(89% 0.011 75);
@@ -31,6 +43,68 @@
      tint (4.75:1); 58% failed the tint at 4.04:1. A locked margin, like the dark nav pair. */
   --color-accent: oklch(54% 0.16 300);
   --color-accent-content: oklch(98% 0.012 300);
+
+  --color-neutral: oklch(32% 0.012 75);
+  --color-neutral-content: oklch(96% 0.004 75);
+
+  /* The info, success, and error tones sit dark enough for >= 4.5:1 white text (WCAG AA) on the
+     badge and alert fills. Measured: info 5.12:1, success 4.94:1, error 4.83:1. */
+  --color-info: oklch(52% 0.12 240);
+  --color-info-content: oklch(98% 0.012 240);
+  --color-success: oklch(52% 0.12 150);
+  --color-success-content: oklch(98% 0.012 150);
+  --color-warning: oklch(75% 0.15 70);
+  --color-warning-content: oklch(26% 0.05 70);
+  --color-error: oklch(56% 0.2 25);
+  --color-error-content: oklch(98% 0.012 25);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+
+  /* --- Tier 2 (light): the essential custom tokens, clustered at the end of the theme block so they
+     stay in their Tier-1 home (a var must live in the block it themes) while reading as one section. --- */
+
+  /* The on-surface warning INK, for small warning TEXT (the needs-alt label and the editor chip's
+     needs-alt marker). --color-warning is tuned as a FILL behind dark content, so as small text on a
+     light surface it sits near 2.2:1, well under the 4.5:1 AA floor (WCAG 1.4.3). This darker ink is
+     the readable text counterpart, mirroring how --color-accent is locked for on-surface text.
+     Locked pair: on base-100 measures 5.98:1, on the 8% accent chip tint the source chip uses 5.59:1.
+     Do not lighten without re-checking both. */
+  --cairn-warning-ink: oklch(50% 0.13 70);
+  /* The on-surface POSITIVE ink, for small confirming TEXT (the hero field's "Described" alt-status
+     chip). The green counterpart to the warning ink, tuned as readable small text on a light surface
+     rather than a fill. Locked pair: on base-100 measures ~4.9:1, clearing the 4.5:1 AA floor (WCAG
+     1.4.3). Do not lighten without re-checking. */
+  --color-positive-ink: oklch(48% 0.12 150);
+  /* The danger family for the safe-delete dialog: the on-surface error INK (the "these would break"
+     label and the danger-soft Delete button text), a soft error TINT (the break-list surface), and a
+     danger BORDER (the tint's hairline and the type-to-confirm input). --color-error is tuned as a
+     button fill, so the ink is the readable small-text counterpart. Locked: the ink on base-100
+     measures ~5.2:1 and on the error tint ~4.9:1, clearing the 4.5:1 AA floor (WCAG 1.4.3). Do not
+     lighten the ink or darken the tint without re-checking both. */
+  --cairn-error-ink: oklch(50% 0.19 25);
+  --cairn-error-tint: oklch(96% 0.03 25);
+  --cairn-error-border: oklch(85% 0.06 25);
+
+  /* The tidy review diff tints (TidyReview). A deletion row and an insertion row each carry a faint
+     full-row tint, with a stronger run-highlight on the changed span; the changed-run TEXT is drawn in
+     --cairn-error-ink (deletion) or --color-positive-ink (insertion). Those inks were locked only
+     against base-100 and the fixed error/positive tints, never against the run-highlight stacked over
+     the row tint, so a self-mixed highlight pushed the text below 4.5:1 (WCAG 1.4.3). These are explicit
+     locked tones, not an ink-mix, so the stacked background is fixed and measurable. Locked (light):
+     deletion ink on the run tint measures 5.08:1 and on the row tint 5.81:1; insertion ink on the run
+     tint 4.98:1 and on the row tint 5.56:1. Do not lighten an ink or darken a tint without re-checking.
+     The +/- gutter glyph keeps the non-color cue, so hue is never the only signal. */
+  --cairn-tidy-del-row: oklch(96% 0.025 25);
+  --cairn-tidy-del-run: oklch(92% 0.05 25);
+  --cairn-tidy-add-row: oklch(96% 0.03 150);
+  --cairn-tidy-add-run: oklch(92% 0.06 150);
 
   /* The editor's nested-directive depth scale: fence and content rows share a 2px inset accent
      rail stepped by nesting depth, and a fence line's name and label take a depth-stepped ink
@@ -72,67 +146,11 @@
   --cairn-focus-dim-rail-2: 28%;
   --cairn-focus-dim-rail-3: 32%;
   --cairn-focus-dim-rail-active: 36%;
-  --color-neutral: oklch(32% 0.012 75);
-  --color-neutral-content: oklch(96% 0.004 75);
 
-  /* The info, success, and error tones sit dark enough for >= 4.5:1 white text (WCAG AA) on the
-     badge and alert fills. Measured: info 5.12:1, success 4.94:1, error 4.83:1. */
-  --color-info: oklch(52% 0.12 240);
-  --color-info-content: oklch(98% 0.012 240);
-  --color-success: oklch(52% 0.12 150);
-  --color-success-content: oklch(98% 0.012 150);
-  --color-warning: oklch(75% 0.15 70);
-  --color-warning-content: oklch(26% 0.05 70);
-  /* The on-surface warning INK, for small warning TEXT (the needs-alt label and the editor chip's
-     needs-alt marker). --color-warning is tuned as a FILL behind dark content, so as small text on a
-     light surface it sits near 2.2:1, well under the 4.5:1 AA floor (WCAG 1.4.3). This darker ink is
-     the readable text counterpart, mirroring how --color-accent is locked for on-surface text.
-     Locked pair: on base-100 measures 5.98:1, on the 8% accent chip tint the source chip uses 5.59:1.
-     Do not lighten without re-checking both. */
-  --cairn-warning-ink: oklch(50% 0.13 70);
-  /* The on-surface POSITIVE ink, for small confirming TEXT (the hero field's "Described" alt-status
-     chip). The green counterpart to the warning ink, tuned as readable small text on a light surface
-     rather than a fill. Locked pair: on base-100 measures ~4.9:1, clearing the 4.5:1 AA floor (WCAG
-     1.4.3). Do not lighten without re-checking. */
-  --color-positive-ink: oklch(48% 0.12 150);
-  --color-error: oklch(56% 0.2 25);
-  --color-error-content: oklch(98% 0.012 25);
-  /* The danger family for the safe-delete dialog: the on-surface error INK (the "these would break"
-     label and the danger-soft Delete button text), a soft error TINT (the break-list surface), and a
-     danger BORDER (the tint's hairline and the type-to-confirm input). --color-error is tuned as a
-     button fill, so the ink is the readable small-text counterpart. Locked: the ink on base-100
-     measures ~5.2:1 and on the error tint ~4.9:1, clearing the 4.5:1 AA floor (WCAG 1.4.3). Do not
-     lighten the ink or darken the tint without re-checking both. */
-  --cairn-error-ink: oklch(50% 0.19 25);
-  --cairn-error-tint: oklch(96% 0.03 25);
-  --cairn-error-border: oklch(85% 0.06 25);
-
-  /* The tidy review diff tints (TidyReview). A deletion row and an insertion row each carry a faint
-     full-row tint, with a stronger run-highlight on the changed span; the changed-run TEXT is drawn in
-     --cairn-error-ink (deletion) or --color-positive-ink (insertion). Those inks were locked only
-     against base-100 and the fixed error/positive tints, never against the run-highlight stacked over
-     the row tint, so a self-mixed highlight pushed the text below 4.5:1 (WCAG 1.4.3). These are explicit
-     locked tones, not an ink-mix, so the stacked background is fixed and measurable. Locked (light):
-     deletion ink on the run tint measures 5.08:1 and on the row tint 5.81:1; insertion ink on the run
-     tint 4.98:1 and on the row tint 5.56:1. Do not lighten an ink or darken a tint without re-checking.
-     The +/- gutter glyph keeps the non-color cue, so hue is never the only signal. */
-  --cairn-tidy-del-row: oklch(96% 0.025 25);
-  --cairn-tidy-del-run: oklch(92% 0.05 25);
-  --cairn-tidy-add-row: oklch(96% 0.03 150);
-  --cairn-tidy-add-run: oklch(92% 0.06 150);
-
-  /* Accessible muted text tones: >= 4.5:1 contrast on base-100/base-200. */
+  /* Named secondary-text tones (the guaranteed-value branch backing text-muted/text-subtle).
+     Accessible muted text tones: >= 4.5:1 contrast on base-100/base-200. */
   --color-muted: oklch(48% 0.01 75);
   --color-subtle: oklch(42% 0.01 75);
-
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
 
   /* Soft, layered elevation: a close contact shadow plus a wide, diffuse one, warm-tinted. The cards
      float gently instead of sitting in hard boxes, which reads more current than a flat border. */
@@ -155,7 +173,8 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 
-  /* Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
+  /* Tier 1: the DaisyUI theme variables, dark.
+     Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
      background (base-200, the deepest tone), with base-300 borders lighter still for a visible edge.
      The wider base-100-to-base-200 gap is what reads as depth on dark, since shadows barely show. */
   --color-base-100: oklch(24% 0.01 75);
@@ -172,6 +191,58 @@
   --color-secondary-content: oklch(20% 0.008 75);
   --color-accent: oklch(70% 0.14 300);
   --color-accent-content: oklch(20% 0.04 300);
+
+  --color-neutral: oklch(80% 0.01 75);
+  --color-neutral-content: oklch(22% 0.008 75);
+
+  --color-info: oklch(72% 0.12 240);
+  --color-info-content: oklch(20% 0.04 240);
+  --color-success: oklch(70% 0.12 150);
+  --color-success-content: oklch(20% 0.04 150);
+  --color-warning: oklch(80% 0.14 70);
+  --color-warning-content: oklch(24% 0.05 70);
+  --color-error: oklch(70% 0.18 25);
+  --color-error-content: oklch(20% 0.04 25);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.625rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+
+  /* --- Tier 2 (dark): the essential custom tokens, clustered at the end of the theme block (a var
+     must live in the block it themes), mirroring the light root's Tier-2 cluster above. --- */
+
+  /* The on-surface warning INK on dark, for small warning TEXT (the needs-alt label and the editor
+     chip's marker). The dark warning fill already reads on its dark surfaces, so this ink keeps a
+     value near it. Locked pair: on dark base-100 measures 8.61:1, on the 8% accent chip tint 6.20:1.
+     Do not darken without re-checking both. */
+  --cairn-warning-ink: oklch(80% 0.14 70);
+  /* The on-surface POSITIVE ink on dark, for the hero field's "Described" alt-status chip. The dark
+     counterpart to the warning ink. Locked pair: on dark base-100 measures ~7:1. Do not darken
+     without re-checking. */
+  --color-positive-ink: oklch(78% 0.12 150);
+  /* The danger family on dark, the counterpart to the light root's. The ink reads as small danger
+     text on the dark bases and on the dark error tint; the tint and border carry the safe-delete
+     dialog's surfaces. Locked: the ink on dark base-100 measures ~7:1 and on the dark error tint
+     ~5.3:1. Do not darken the ink or lighten the tint without re-checking both. */
+  --cairn-error-ink: oklch(78% 0.15 25);
+  --cairn-error-tint: oklch(28% 0.06 25);
+  --cairn-error-border: oklch(40% 0.09 25);
+
+  /* The tidy review diff tints on dark, the counterpart to the light root's. On dark the inks are light,
+     so a self-mixed highlight lightens the row toward the ink and collapses contrast (the run text
+     measured ~2.7:1, well under the 4.5:1 floor); these explicit low-lightness tones keep the row dark
+     and the light ink readable. Locked (dark): deletion ink on the run tint measures 5.89:1 and on the
+     row tint 7.12:1; insertion ink on the run tint 6.48:1 and on the row tint 8.01:1. Do not darken an
+     ink or lighten a tint without re-checking. */
+  --cairn-tidy-del-row: oklch(26% 0.05 25);
+  --cairn-tidy-del-run: oklch(32% 0.07 25);
+  --cairn-tidy-add-row: oklch(26% 0.045 150);
+  --cairn-tidy-add-run: oklch(32% 0.06 150);
 
   /* The nested-directive label inks on dark lighten with depth so a deeper fence's name reads
      stronger on base-100 (the tinted bands are gone). Locked pairs (label ink on base-100):
@@ -206,63 +277,25 @@
   --cairn-focus-dim-rail-2: 25%;
   --cairn-focus-dim-rail-3: 29%;
   --cairn-focus-dim-rail-active: 33%;
-  --color-neutral: oklch(80% 0.01 75);
-  --color-neutral-content: oklch(22% 0.008 75);
 
-  --color-info: oklch(72% 0.12 240);
-  --color-info-content: oklch(20% 0.04 240);
-  --color-success: oklch(70% 0.12 150);
-  --color-success-content: oklch(20% 0.04 150);
-  --color-warning: oklch(80% 0.14 70);
-  --color-warning-content: oklch(24% 0.05 70);
-  /* The on-surface warning INK on dark, for small warning TEXT (the needs-alt label and the editor
-     chip's marker). The dark warning fill already reads on its dark surfaces, so this ink keeps a
-     value near it. Locked pair: on dark base-100 measures 8.61:1, on the 8% accent chip tint 6.20:1.
-     Do not darken without re-checking both. */
-  --cairn-warning-ink: oklch(80% 0.14 70);
-  /* The on-surface POSITIVE ink on dark, for the hero field's "Described" alt-status chip. The dark
-     counterpart to the warning ink. Locked pair: on dark base-100 measures ~7:1. Do not darken
-     without re-checking. */
-  --color-positive-ink: oklch(78% 0.12 150);
-  --color-error: oklch(70% 0.18 25);
-  --color-error-content: oklch(20% 0.04 25);
-  /* The danger family on dark, the counterpart to the light root's. The ink reads as small danger
-     text on the dark bases and on the dark error tint; the tint and border carry the safe-delete
-     dialog's surfaces. Locked: the ink on dark base-100 measures ~7:1 and on the dark error tint
-     ~5.3:1. Do not darken the ink or lighten the tint without re-checking both. */
-  --cairn-error-ink: oklch(78% 0.15 25);
-  --cairn-error-tint: oklch(28% 0.06 25);
-  --cairn-error-border: oklch(40% 0.09 25);
-
-  /* The tidy review diff tints on dark, the counterpart to the light root's. On dark the inks are light,
-     so a self-mixed highlight lightens the row toward the ink and collapses contrast (the run text
-     measured ~2.7:1, well under the 4.5:1 floor); these explicit low-lightness tones keep the row dark
-     and the light ink readable. Locked (dark): deletion ink on the run tint measures 5.89:1 and on the
-     row tint 7.12:1; insertion ink on the run tint 6.48:1 and on the row tint 8.01:1. Do not darken an
-     ink or lighten a tint without re-checking. */
-  --cairn-tidy-del-row: oklch(26% 0.05 25);
-  --cairn-tidy-del-run: oklch(32% 0.07 25);
-  --cairn-tidy-add-row: oklch(26% 0.045 150);
-  --cairn-tidy-add-run: oklch(32% 0.06 150);
-
-  /* Accessible muted text tones on the dark bases. */
+  /* Named secondary-text tones on the dark bases (the guaranteed-value branch backing
+     text-muted/text-subtle). Accessible muted text tones on the dark bases. */
   --color-muted: oklch(72% 0.01 75);
   --color-subtle: oklch(80% 0.008 75);
-
-  --radius-selector: 0.5rem;
-  --radius-field: 0.625rem;
-  --radius-box: 1rem;
-  --size-selector: 0.25rem;
-  --size-field: 0.25rem;
-  --border: 1px;
-  --depth: 1;
-  --noise: 0;
 
   /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards. */
   --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
   /* On dark the shadow does little, so the card keeps a visible border for definition. */
   --cairn-card-border: oklch(30% 0.014 75);
 }
+
+/* ----- Load-bearing rules (break these and the admin renders wrong) -----
+   These rules are the structural half of the Tier-2 floor. The embed-anywhere reset substitutes for the
+   omitted global Preflight; the @layer components block carries the anchor reset, the focus ring, and the
+   primary-button lift below the utilities layer so a utility still wins; the two UNLAYERED rules at the end
+   (`.menu li > :is(button, a):focus-visible` and `.btn.cairn-btn-guarded[aria-disabled='true']`) are the only
+   sanctioned unlayered scoped rules, pinned by exact selector in admin-css-build.test.ts and check:custom-surface.
+   Each rule below names the bug it prevents; do not delete or relayer one without a ledger update. */
 
 /* The scoped reset that replaces global Preflight (which the admin sheet omits). It applies only
    inside the admin theme roots, so it never reaches the host's pages. The dark root has no variables
@@ -388,7 +421,9 @@
    utilities is the last layer. This override is deliberately UNLAYERED (the same mechanism that
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
-   inside the item, clear of the menu panel's clipped corners. */
+   inside the item, clear of the menu panel's clipped corners.
+   PINNED unlayered rule 1 of 2 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
@@ -399,7 +434,9 @@
    while unavailable but keep their title tooltip, which names why the control is off, and their click
    handler already guards inertness; pointer-events:none would kill that tooltip. Restore it for a
    marked guarded button. Deliberately UNLAYERED, the same mechanism as the .menu focus override above:
-   no layered rule can outrank daisyUI's utilities-layer rule. */
+   no layered rule can outrank daisyUI's utilities-layer rule.
+   PINNED unlayered rule 2 of 2 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   toolbar button losing its why-it-is-off tooltip to pointer-events:none. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
   pointer-events: auto;
 }

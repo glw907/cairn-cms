@@ -12,6 +12,16 @@ describe('admin css build', () => {
     css = await buildAdminCss();
   }, 60_000);
 
+  // INVARIANT DISCIPLINE (do not weaken). The assertions in this suite guard the embed-anywhere and
+  // cascade-layer contracts. As the sheet shrinks, a present-class LIST may lose an entry, but no
+  // invariant assertion may be removed or relaxed. Dropping a `not.toMatch` re-opens a real shipped bug
+  // (the drawer display:block, the auth-page centering). check:custom-surface guards the same rules
+  // structurally; this test guards the compiled output.
+  it('keeps the two load-bearing unlayered rules by exact selector', () => {
+    expect(css).toContain('.menu li');           // the unlayered :focus-visible focus ring
+    expect(css).toContain('.cairn-btn-guarded'); // the unlayered pointer-events restore
+  });
+
   it('ships the DaisyUI components and Tailwind utilities the admin uses', () => {
     for (const cls of ['.btn', '.drawer', '.navbar', '.menu', '.input', '.alert', '.badge', '.checkbox', '.flex', '.min-h-screen', '.p-4']) {
       expect(css, `missing ${cls}`).toContain(cls);

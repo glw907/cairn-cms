@@ -114,6 +114,37 @@ and the per-plan post-mortems, not in the roadmap.
 Two production sites depend on the package, so a stale doc costs real users. Treat the docs update as
 part of the work, not a chore after it. See the `docs-is-a-pass-dimension` memory.
 
+## Releases (cadence and scheme)
+
+**A pass does not end with a version bump or a publish.** That is the default, and it is the opposite of
+what the ritual used to imply. A finished pass finalizes its `CHANGELOG.md` entry under `## Unreleased`,
+leaves `package.json` untouched, and stops. No `npm version`, no `gh release create`, no publish, unless a
+release is independently warranted. New versions are meaningful, not a per-pass reflex; churning out a
+release for every small change is exactly what to avoid.
+
+**Publishing is a separate, deliberate act with two triggers, never a calendar or a finished pass.** Cut a
+release only when (1) a consumer site needs the change now (which also resolves the publish-before-push
+ordering), or (2) a coherent capability or initiative has landed and is worth making available, at its
+natural boundary. Default to holding: `main` is always releasable, so completed passes accumulate
+unpublished, and breaking changes batch so a site upgrades across one `Consumers must:` list, not five. The
+admin re-expression sweep is the live example: it changes the admin's internal CSS and components, which a
+consumer never imports, so it holds unpublished until consumer-facing work accumulates with it, and may
+warrant no release of its own.
+
+**When a release is cut, the number tracks the publish, not the passes.** One publish, one increment, sized
+to what the window actually contains. Keep the work under `## Unreleased` and set the number only at the cut
+(pre-numbering a held pass produces phantoms, as `0.77.0` did when it rolled into `0.78.0`). The scheme is
+SemVer, not CalVer; in `0.x` a minor is a new subsystem or public surface and everything else is a patch,
+and the number signals scale, not compatibility (the changelog carries compatibility via `Consumers must:`).
+Published numbers are immutable and every sub-`0.68` number is taken, so verify the next number is free with
+`npm view @glw907/cairn-cms versions --json` before promising it. The release body is the changelog window
+since the last published tag, carrying every `Consumers must:` line, cut with `gh release create v<x.y.z>
+--target main` (which fires the OIDC publish workflow).
+
+The path to `1.0` and its readiness checklist live in [`ROADMAP.md`](ROADMAP.md) ("Toward 1.0"); the full
+scheme, the 0.x-vs-1.0 reasoning, and the comparables are in the `cairn-release-process-and-versioning`
+memory.
+
 ## The extending-developer lens (subordinate to the charter)
 
 The charter is the governing lens: the premise check, "is this cairn's job, and is it the leanest form?",

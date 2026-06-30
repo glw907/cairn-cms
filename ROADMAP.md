@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.68.0`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.78.0`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
@@ -13,12 +13,53 @@ live tiers, and a pass that surfaces a new direction files it into the right tie
 updates its reference docs. Shipped history lives in `docs/STATUS.md` and the per-plan post-mortems, not
 here, so this file stays a forward view.
 
+## Toward 1.0
+
+cairn is `0.x` on purpose: it still breaks public seams between minors while the core lands, and SemVer
+reserves `0.x` for exactly that. `1.0` is not a maturity badge; it is the commitment that breaking a public
+seam becomes a major-version (`2.0`) event, which the charter already calls "a deliberate major-version
+event, not an everyday one." Cut it when the surface stops moving, not on a date. Readiness checklist:
+
+- [ ] **The public seams have held across an initiative or two with no breaking change**: the adapter and
+  field schema, `render`, the admin mount (`createCairnAdmin`, the `CairnAdminShell` custom-route seam, the
+  data-only `adminNav`), the route factories (`createContentRoutes`, `createPublicRoutes`), the admin design
+  vocabulary (the `text-muted` / `text-subtle` role layer), and the log event names.
+- [ ] **No known breaking change is pending** on the public surface, or each is consciously deferred to the
+  first post-1.0 major. The SvelteKit `checkOrigin` removal (kit#15992) is the standing example: decide
+  whether its fallback lands before 1.0 or becomes the first 2.0 driver.
+- [ ] **Both production sites run the latest published cairn on the v2 adapter**, with their URL policies
+  transcribed onto `defineConcept` (the per-site cutover watch items), so the real surface is exercised and
+  needs no engine break to serve them.
+- [ ] **The enforced boundary is green and complete**: `check:surface`, `check:reference`,
+  `check:reference:signatures`, and `check:package` pass, and the surface they enumerate is the whole
+  intended public API with nothing accidental.
+- [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
+  extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
+  contract a developer builds on.
+- [ ] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression sweep is done, so the
+  surface a developer copies is native, not bespoke.
+- [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
+  showcase. (Weigh whether this gates 1.0 or rides the first 1.x.)
+- [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
+  "closely held until the core lands" condition is the same condition as 1.0.
+
+When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
+scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
+major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
+`cairn-release-process-and-versioning` memory.
+
 ## Now
 
-- **Cut the held `0.77.0` release and cross both production sites.** The developer-extensibility redesign
-  (the custom-admin-screen seam plus the enforced public boundary) is built and verified on `main`, held
-  unpublished at `0.77.0`. The remaining work is the release and the site cutovers: publish `0.77.0`, then
-  mount the shared `/admin/+layout` on ecxc-ski and 907-life and read the shell from `page.data.shell`.
+- **Cross both production sites onto `0.78.0`.** The developer-extensibility seam and the editor tag
+  vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`). The remaining work is the site cutovers:
+  mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
+  the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
+- **The admin idiomatic re-expression sweep (Phases 2–6), the starter-template track, then docs.** Phase 0
+  (the `check:custom-surface` gate plus the frozen `text-muted` / `text-subtle` role vocabulary) and Phase 1
+  (the vocabulary-screen pilot) landed in `0.78.0`. The remaining phases re-express the admin's internal
+  CSS and components in native DaisyUI 5.6 / Tailwind 4, so they change nothing a consumer imports and hold
+  unpublished until consumer-facing work accumulates with them. Spec:
+  `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Next
 
@@ -28,15 +69,6 @@ here, so this file stays a forward view.
   author can add an image from the Library, not only by inserting one while editing. A small media
   finish-up; surfaced by the 2026-06-28 principle-adherence audit, which left it untouched because that
   pass was remove-only. Drop the stale `TODO(Task 7+)` once wired.
-- **Tag management and per-tag feeds (brainstorm next).** Builds on the landed taxonomy pass: a tag-management
-  interface in `/admin` and per-tag JSON/RSS feeds (`/topics/<tag>/feed`), which likely needs a tag manifest
-  (git-committed or D1). Per-tag feeds are squarely cairn's job (pure delivery over the existing content index).
-  The tag-admin screen and the manifest brush the charter boundary, so the premise check runs first: is a
-  tag-admin screen cairn's job, and is a manifest the leanest form? Today the tag surface is glob-built at build
-  time with no stored state, so weigh a git-committed tag manifest (stays in the markdown-in-git grain, no
-  runtime store) against a D1-backed one (justified only if an admin "what's tagged X" query or editor-managed
-  tag metadata genuinely needs runtime state). All three were deliberately scoped out of the taxonomy pass. Run
-  `superpowers:brainstorming` first; bring the manifest options with a recommendation.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced

@@ -38,3 +38,41 @@ test('admin vocabulary screen — dark', async ({ page, context, baseURL }) => {
   await page.goto('/admin/vocabulary');
   await expect(page).toHaveScreenshot('vocabulary-dark.png', { fullPage: true });
 });
+
+// The auth surfaces, swept in Phase 2 (office chrome). Both are public (isPublicAdminPath) and render
+// unconditionally in the showcase: the dev backend mints locals.editor directly, so the seeded session is
+// inert for these pathname-gated routes and there is no redirect to defend against. The login form is the
+// unauthenticated entry; the confirm page renders its static "Almost there" state for any token (a GET
+// consumes nothing, only the POST verifies), so the token reaches only a hidden input and the screenshot
+// is deterministic. The role assertion settles the DOM before the screenshot.
+test('admin login page — light', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/login');
+  await expect(page.getByRole('button', { name: 'Send sign-in link' })).toBeVisible();
+  await expect(page).toHaveScreenshot('auth-login-light.png', { fullPage: true });
+});
+
+test('admin login page — dark', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/admin/login');
+  await expect(page.getByRole('button', { name: 'Send sign-in link' })).toBeVisible();
+  await expect(page).toHaveScreenshot('auth-login-dark.png', { fullPage: true });
+});
+
+test('admin confirm page — light', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/auth/confirm?token=preview-token');
+  await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
+  await expect(page).toHaveScreenshot('auth-confirm-light.png', { fullPage: true });
+});
+
+test('admin confirm page — dark', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/admin/auth/confirm?token=preview-token');
+  await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
+  await expect(page).toHaveScreenshot('auth-confirm-dark.png', { fullPage: true });
+});

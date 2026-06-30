@@ -133,21 +133,28 @@ cannot fold onto the theme's native `--depth`; see the resolved investigation be
 | `--cairn-shadow` | elevation — the layered card shadow, warm-tinted, theme-adaptive |
 | `--cairn-card-border` | elevation — the faint hairline that carries card definition where the shadow does not |
 
-### The muted/subtle pair (pending the ratio table — likely Tier 2)
+### The muted/subtle pair (RESOLVED Task 2: Tier 2, guaranteed-value branch)
 
 | Token | Reason |
 | --- | --- |
-| `--color-muted` | muted-subtle-pending — desaturated hue-shifted secondary-text tone, >= 4.5:1 on base-100/200 |
-| `--color-subtle` | muted-subtle-pending — the stronger secondary-text role, hue-shifted, the dark theme inverts which reads stronger |
+| `--color-muted` | muted-subtle-guaranteed — desaturated hue-shifted secondary-text tone, >= 4.5:1 on base-100/200 |
+| `--color-subtle` | muted-subtle-guaranteed — the stronger secondary-text role, hue-shifted, lighter than muted on dark |
 
-These are desaturated, hue-shifted tones, not opacity steps, and the dark theme inverts which reads
-stronger (`subtle` is the stronger role yet sits lighter than `muted` on dark). One
-`base-content/NN` opacity step cannot reproduce "subtle stronger than muted" on both themes, and
-opacity over the non-opaque base-200 composites differently than over base-100. Task 2 publishes
-the measured per-theme, per-surface ratio table and decides the fold-or-guaranteed-value branch.
-The realistic expectation is they stay Tier 2 with guaranteed values; either way the named role
-utilities `text-muted` / `text-subtle` become the frozen interface the pilot consumes, and the
-arbitrary `text-[var(--color-muted)]` / `text-[var(--color-subtle)]` references leave the markup.
+These are desaturated, hue-shifted tones, not opacity steps, and the dark theme paints `subtle`
+lighter than `muted` (80% L vs 72% L) while it still reads as the stronger contrast role. Task 2
+published the measured per-theme, per-surface ratio table (`role-layer-contrast.test.ts`,
+`prints the role-layer ratio table`) and took the **guaranteed-value branch**.
+
+The measured table: a single `base-content` opacity step over both surfaces in both themes clears
+4.5 only at `>= 80%` alpha (light 50% -> 3.71 .. 100% -> 14.05; dark 50% -> 1.50 .. 75% -> 4.05 ..
+80% -> 5.14 .. 100% -> 13.39). An 80%/85% fold technically clears AA, but it cannot reproduce the
+design: more alpha over a dark surface paints darker, so an opacity step cannot make `subtle` both
+stronger-contrast AND lighter than `muted` on dark. The hue-shifted guaranteed values express a tone
+the fold cannot, so `--color-muted` / `--color-subtle` stay Tier-2 vars and the named role utilities
+`text-muted` / `text-subtle` (in `scripts/admin-css.input.css`) point at them. The utilities are the
+frozen interface the pilot consumes, and the arbitrary `text-[var(--color-muted)]` /
+`text-[var(--color-subtle)]` references leave the markup (Phase 0 retired the pilot-adjacent
+`CairnTidySettings.svelte`; the sweep ratchets the rest to zero).
 
 ## Tier 3: the proven-foldable remainder (the target)
 

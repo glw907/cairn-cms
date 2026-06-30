@@ -147,10 +147,13 @@ published the measured per-theme, per-surface ratio table (`role-layer-contrast.
 
 The measured table: a single `base-content` opacity step over both surfaces in both themes clears
 4.5 only at `>= 80%` alpha (light 50% -> 3.71 .. 100% -> 14.05; dark 50% -> 1.50 .. 75% -> 4.05 ..
-80% -> 5.14 .. 100% -> 13.39). An 80%/85% fold technically clears AA, but it cannot reproduce the
-design: more alpha over a dark surface paints darker, so an opacity step cannot make `subtle` both
-stronger-contrast AND lighter than `muted` on dark. The hue-shifted guaranteed values express a tone
-the fold cannot, so `--color-muted` / `--color-subtle` stay Tier-2 vars and the named role utilities
+80% -> 5.14 .. 100% -> 13.39). An 80%/85% fold technically clears AA, but a single shared
+alpha pair cannot reproduce the design across both themes. Tone is fixed by alpha over one ink: more
+alpha makes the text darker over the light surface and lighter over the dark surface. So no one
+`(muted, subtle)` alpha pair can make `subtle` read darker than `muted` on light (where stronger
+means darker) while reading lighter than `muted` on dark (where stronger means lighter). The
+hue/chroma-shifted guaranteed values express a tone a single opacity ramp over one ink cannot, so
+`--color-muted` / `--color-subtle` stay Tier-2 vars and the named role utilities
 `text-muted` / `text-subtle` (in `scripts/admin-css.input.css`) point at them. The utilities are the
 frozen interface the pilot consumes, and the arbitrary `text-[var(--color-muted)]` /
 `text-[var(--color-subtle)]` references leave the markup (Phase 0 retired the pilot-adjacent
@@ -272,7 +275,7 @@ global. It cannot fold onto `--depth`. It stays Tier 2.
 The total occurrence count of `text-[var(--color-muted)]` and `text-[var(--color-subtle)]` in
 `src/lib/components/**/*.svelte`, measured 2026-06-29:
 
-**281 occurrences across 23 files.**
+**281 matching lines (282 token occurrences — one line carries both tokens) across 23 files.**
 
 Task 4 seeds the `check:custom-surface` admin `retiredTokenBudget` at the post-Task-2 remainder
 (this 281 minus the references Task 2 retires in the pilot-adjacent files). Each sweep phase lowers

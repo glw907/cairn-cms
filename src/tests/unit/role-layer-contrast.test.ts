@@ -11,15 +11,17 @@ const SURFACES = {
   dark: { base100: 'oklch(24% 0.01 75)', base200: 'oklch(15.5% 0.009 75)', content: 'oklch(93% 0.006 75)' },
 };
 
-/** base-content at `alpha` over a surface, matching Tailwind's color-mix(in oklab, …, transparent),
- * then alpha-composited over the surface, returned as an `rgb(...)` string for dualGamutRatio. */
+/** The opaque colour a translucent ink renders as over a surface, returned as an `rgb(...)` string for
+ * dualGamutRatio. The ink is base-content faded to `alpha` the way Tailwind fades it, color-mix(in
+ * oklab, fg, transparent), and the result is that faded ink alpha-composited over the surface. */
 function compositeOver(fg: string, bg: string, alpha: number): string {
-  const mixed = interpolate([fg, 'transparent'], 'oklab')(1 - alpha);
-  const a = mixed.alpha ?? 1;
-  const m = toRgb(mixed)!;
-  const b = toRgb(parse(bg)!)!;
-  const ch = (c: 'r' | 'g' | 'b') => (m[c] * a + b[c] * (1 - a)) * 255;
-  return `rgb(${ch('r')} ${ch('g')} ${ch('b')})`;
+  const ink = interpolate([fg, 'transparent'], 'oklab')(1 - alpha);
+  const inkAlpha = ink.alpha ?? 1;
+  const inkRgb = toRgb(ink)!;
+  const surfaceRgb = toRgb(parse(bg)!)!;
+  const channel = (c: 'r' | 'g' | 'b') =>
+    (inkRgb[c] * inkAlpha + surfaceRgb[c] * (1 - inkAlpha)) * 255;
+  return `rgb(${channel('r')} ${channel('g')} ${channel('b')})`;
 }
 
 /** The minimum dual-gamut ratio of base-content at `alpha` over base-100 and base-200, in one theme. */

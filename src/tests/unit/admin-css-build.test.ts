@@ -18,7 +18,7 @@ describe('admin css build', () => {
   // (the drawer display:block, the auth-page centering). check:custom-surface guards the same rules
   // structurally; this test guards the compiled output.
   it('keeps the two load-bearing unlayered rules by exact selector', () => {
-    expect(css).toContain('.menu li');           // the unlayered :focus-visible focus ring
+    expect(css).toContain('.menu li > :is(button, a):focus-visible'); // the unlayered focus ring (full selector: a Preflight-substitute rule also starts `.menu li`)
     expect(css).toContain('.cairn-btn-guarded'); // the unlayered pointer-events restore
   });
 

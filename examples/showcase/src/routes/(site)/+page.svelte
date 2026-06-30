@@ -17,6 +17,27 @@
     [...data.posts].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')),
   );
 
+  // The archive grows past this count before the tag filter earns its place. Below it the control
+  // is off entirely: a short list narrows nothing worth the chrome (the spec's size gate). Do not
+  // lower this to make a smaller archive show the filter.
+  const TAG_FILTER_MIN_ENTRIES = 12;
+
+  // The selected tag value, empty for "all". Off by default; a click sets it, the All reset clears
+  // it.
+  let selected = $state('');
+
+  // The archive narrowed to the selected tag, or the whole archive when nothing is selected. The
+  // tag values ride each summary's `tags`, the validated taxonomy field the index projects.
+  const filtered = $derived(
+    selected ? entries.filter((p) => p.tags?.includes(selected)) : entries,
+  );
+
+  // The filter options: the committed vocabulary entries whose value is actually in use across the
+  // archive, so the control never offers a tag no post carries. Each option pairs the editor-facing
+  // label with the slug value the filter matches on.
+  const inUse = $derived(new Set(entries.flatMap((p) => p.tags ?? [])));
+  const tagOptions = $derived(data.vocabulary.filter((entry) => inUse.has(entry.value)));
+
   const dateFmt = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -58,12 +79,38 @@
       Writing
     </p>
     <span class="index__count">
-      {entries.length}
-      {entries.length === 1 ? 'entry' : 'entries'}
+      {filtered.length}
+      {filtered.length === 1 ? 'entry' : 'entries'}
     </span>
   </div>
 
-  {#each entries as post (post.id)}
+  <!-- The size-gated tag filter: rendered only once the archive grows past the threshold, where a
+       per-tag narrowing earns its chrome. The All reset clears the selection; each option is a
+       vocabulary label over an in-use slug value. -->
+  {#if entries.length > TAG_FILTER_MIN_ENTRIES && tagOptions.length > 0}
+    <div class="tag-filter" role="group" aria-label="Filter by tag">
+      <button
+        type="button"
+        class="tag-filter__option"
+        aria-pressed={selected === ''}
+        onclick={() => (selected = '')}
+      >
+        All
+      </button>
+      {#each tagOptions as option (option.value)}
+        <button
+          type="button"
+          class="tag-filter__option"
+          aria-pressed={selected === option.value}
+          onclick={() => (selected = option.value)}
+        >
+          {option.label}
+        </button>
+      {/each}
+    </div>
+  {/if}
+
+  {#each filtered as post (post.id)}
     <article class="entry" class:entry--undated={!post.date}>
       {#if post.date}
         <div class="entry__date">{formatDate(post.date)}</div>
@@ -98,6 +145,34 @@
     font-size: var(--cairn-step--1);
     color: var(--cairn-muted);
     font-variant-numeric: tabular-nums;
+  }
+
+  /* The size-gated tag filter: a row of pill toggles over the index, reading the showcase tokens.
+     The pressed option carries the primary ink so the active narrowing is visible without color
+     alone (the aria-pressed state backs assistive tech). */
+  .tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--cairn-space-2xs);
+    padding: var(--cairn-space-s) 0;
+  }
+  .tag-filter__option {
+    font-size: var(--cairn-step--1);
+    line-height: var(--cairn-leading-snug);
+    padding: 0.25rem 0.7rem;
+    border: var(--border) solid var(--cairn-card-border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--cairn-muted);
+    cursor: pointer;
+  }
+  .tag-filter__option:hover {
+    color: var(--color-base-content);
+  }
+  .tag-filter__option[aria-pressed='true'] {
+    border-color: var(--color-primary);
+    color: var(--color-primary-content);
+    background: var(--color-primary);
   }
 
   .entry {

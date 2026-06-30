@@ -3,6 +3,17 @@ menus:
   primary:
     - label: Home
       url: /
+vocabulary:
+  - value: trail-reports
+    label: Trail Reports
+  - value: gear
+    label: Gear
+  - value: weather
+    label: Weather
+  - value: routes
+    label: Routes
+  - value: season-notes
+    label: Season Notes
 spellcheck:
   dialect: en-US
 tidy:

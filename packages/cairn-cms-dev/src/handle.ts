@@ -9,7 +9,7 @@
 // why the fence exists; never relax it by analogy to the harmless mock.
 import type { Handle } from '@sveltejs/kit';
 import type { Backend } from '@glw907/cairn-cms';
-import { createDevBackend, seedMediaLibrary, SEED_MEDIA_KEYS } from './fake-github.js';
+import { createDevBackend, seedMediaLibrary, seedVocabulary, SEED_MEDIA_KEYS } from './fake-github.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
@@ -38,6 +38,11 @@ export interface DevBackendOptions {
 export function devBackendHandle(options?: DevBackendOptions): Handle {
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
+
+  // Seed the tag-vocabulary fixtures (a committed site config, in-use tags, an unlisted seed
+  // candidate) so /admin/vocabulary renders populated rather than empty. Runs after the media seed
+  // because it patches `tags:` onto the manifest that seed writes.
+  seedVocabulary();
 
   // One dev Backend over the module-level store, built at handle-build time so every request shares
   // the same singleton repo (a commit on one request is visible to the recorder route on the next).

@@ -26,6 +26,22 @@
       ],
       "mediaRefs": [
         "00112233445566aa"
+      ],
+      "references": [
+        {
+          "field": "author",
+          "concept": "pages",
+          "id": "about"
+        },
+        {
+          "field": "related",
+          "concept": "posts",
+          "id": "2026-02-20-second"
+        }
+      ],
+      "tags": [
+        "Markdown",
+        "Svelte"
       ]
     },
     {
@@ -36,7 +52,11 @@
       "permalink": "/posts/second",
       "summary": "Proving the archive and feed list more than one entry.",
       "draft": false,
-      "links": []
+      "links": [],
+      "tags": [
+        "Cloudflare",
+        "Svelte"
+      ]
     },
     {
       "id": "2026-03-10-callout",
@@ -61,6 +81,151 @@
           "concept": "pages",
           "id": "about"
         }
+      ],
+      "references": [
+        {
+          "field": "author",
+          "concept": "pages",
+          "id": "about"
+        }
+      ]
+    },
+    {
+      "id": "2026-05-01-spring-thaw",
+      "concept": "posts",
+      "title": "Spring thaw on the lower loop",
+      "date": "2026-05-01",
+      "permalink": "/posts/spring-thaw",
+      "summary": "Snowmelt opens the lower loop early this year.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "trail-reports",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-05-08-boot-fit",
+      "concept": "posts",
+      "title": "Getting your boot fit right",
+      "date": "2026-05-08",
+      "permalink": "/posts/boot-fit",
+      "summary": "A quick checklist for dialing in a comfortable boot.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear"
+      ]
+    },
+    {
+      "id": "2026-05-15-ridge-route",
+      "concept": "posts",
+      "title": "The ridge route, end to end",
+      "date": "2026-05-15",
+      "permalink": "/posts/ridge-route",
+      "summary": "A full traverse of the ridge with notes on the cruxes.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-05-22-layering",
+      "concept": "posts",
+      "title": "Layering for shoulder season",
+      "date": "2026-05-22",
+      "permalink": "/posts/layering",
+      "summary": "What to wear when the mornings bite and the afternoons bake.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-05-29-first-frost",
+      "concept": "posts",
+      "title": "Reading the first frost",
+      "date": "2026-05-29",
+      "permalink": "/posts/first-frost",
+      "summary": "Early-season frost and what it tells you about the snowpack.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-06-05-valley-loop",
+      "concept": "posts",
+      "title": "The valley loop in a morning",
+      "date": "2026-06-05",
+      "permalink": "/posts/valley-loop",
+      "summary": "A relaxed loop you can finish before lunch.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes"
+      ]
+    },
+    {
+      "id": "2026-06-12-pack-list",
+      "concept": "posts",
+      "title": "A pack list that travels light",
+      "date": "2026-06-12",
+      "permalink": "/posts/pack-list",
+      "summary": "Trimming the kit down to what actually earns its weight.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-06-19-storm-window",
+      "concept": "posts",
+      "title": "Catching the storm window",
+      "date": "2026-06-19",
+      "permalink": "/posts/storm-window",
+      "summary": "Timing a route around an incoming weather window.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "routes",
+        "weather"
+      ]
+    },
+    {
+      "id": "2026-06-26-late-season",
+      "concept": "posts",
+      "title": "Late-season notes from the high col",
+      "date": "2026-06-26",
+      "permalink": "/posts/late-season",
+      "summary": "What changes up high as the season turns over.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "season-notes",
+        "trail-reports"
+      ]
+    },
+    {
+      "id": "2026-07-03-trail-mix",
+      "concept": "posts",
+      "title": "On trail mix and small comforts",
+      "date": "2026-07-03",
+      "permalink": "/posts/trail-mix",
+      "summary": "The little rituals that keep a long day pleasant.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "gear",
+        "season-notes"
       ]
     }
   ]

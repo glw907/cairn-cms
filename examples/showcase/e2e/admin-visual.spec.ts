@@ -21,3 +21,20 @@ test('admin office shell — dark', async ({ page, context, baseURL }) => {
   await page.goto('/admin/posts');
   await expect(page).toHaveScreenshot('admin-office-dark.png', { fullPage: true });
 });
+
+// The vocabulary screen, the idiomatic-re-expression pilot. The Step-1 dev seed populates it (the
+// listed tags, the in-use counts, the guarded delete, the unlisted seed section), so the baseline
+// is the reviewed record of the populated screen, not a blank state.
+test('admin vocabulary screen — light', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/vocabulary');
+  await expect(page).toHaveScreenshot('vocabulary-light.png', { fullPage: true });
+});
+
+test('admin vocabulary screen — dark', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/admin/vocabulary');
+  await expect(page).toHaveScreenshot('vocabulary-dark.png', { fullPage: true });
+});

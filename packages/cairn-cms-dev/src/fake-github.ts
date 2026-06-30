@@ -370,6 +370,115 @@ export function seedMediaLibrary(): void {
   heads.set(SEED_BRANCH, nextSha());
 }
 
+// --- the tag-vocabulary seed ---
+//
+// The vocabulary-admin E2E (vocabulary-admin.spec.ts) and the pilot visual baseline drive the real
+// /admin/vocabulary screen, which reads the committed `site.config.yaml` vocabulary, the content
+// manifest's per-entry tags (the in-use count, through buildTagUsageIndex over main), and every open
+// cairn/* branch's tagged markdown (the in-use-but-unlisted seed candidates). The bare seed tree and
+// the media seed carry no `site.config.yaml` and no `tags:` on any entry, so without this the screen
+// loads an empty list, finds no usage, and the first save 404s on a missing config (the route's
+// `throw error(404, 'Site config not found')`). seedVocabulary writes a realistic vocabulary into the
+// in-memory repo so the screen renders the populated states the spec and the baseline assert.
+//
+// It must run AFTER seedMediaLibrary (which writes the whole content manifest), so this reads that
+// manifest back and patches `tags:` onto its entries rather than racing the rewrite.
+
+/**
+ * The site-config path the vocabulary route reads and commits. It mirrors the showcase adapter's
+ * `editor.nav.configPath`, the default the route resolves through `runtime.navMenu?.configPath`.
+ */
+const SEED_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
+
+/**
+ * The seeded vocabulary, exported so the spec asserts against the real slugs. `trail-reports` and
+ * `gear` are in use on main (their delete is guarded); `archive` is listed with zero usage (the
+ * spec deletes it). `weather-notes` is deliberately absent: it rides one open branch as the in-use
+ * unlisted seed candidate.
+ */
+export const SEED_VOCABULARY = {
+  /** In use on the seed post: the guarded-delete listed tag. */
+  inUse: { value: 'trail-reports', label: 'Trail Reports' },
+  /** Also in use (on a Pass B entry): a second guarded-delete listed tag. */
+  inUseGear: { value: 'gear', label: 'Gear' },
+  /** Listed but used by nothing: the deletable listed tag. */
+  unused: { value: 'archive', label: 'Archive' },
+  /** In use on one open branch, NOT in the vocabulary: the seed-section candidate. */
+  unlisted: { value: 'weather-notes' },
+} as const;
+
+/**
+ * The open branch carrying the unlisted-but-in-use tag. A dedicated id distinct from the media seed
+ * branch and every per-run spec entry, so its `topics:` never perturbs the media fixtures.
+ */
+const SEED_VOCAB_BRANCH = 'cairn/posts/2026-05-vocab-seed';
+const SEED_VOCAB_BRANCH_ENTRY = 'src/content/posts/2026-05-vocab-seed.md';
+
+let vocabularySeeded = false;
+
+/**
+ * Seed the tag-vocabulary fixtures into the in-memory repo. Idempotent, like seedMediaLibrary, so a
+ * reused dev server (the Playwright reuseExistingServer path) seeds once per process. Writes a
+ * `site.config.yaml` vocabulary on main, patches `tags:` onto two manifest entries so the usage
+ * index reports in-use counts for two listed tags, and seeds one open branch whose tagged markdown
+ * carries an in-use-but-unlisted tag (the seed candidate).
+ */
+export function seedVocabulary(): void {
+  if (vocabularySeeded) return;
+  vocabularySeeded = true;
+
+  const main = branches.get('main');
+  if (!main) return;
+
+  // The committed site config carrying the vocabulary block, mirroring a real site.config.yaml. The
+  // route reads this on main, validates it, and commits the edited vocabulary back to the same path.
+  const v = SEED_VOCABULARY;
+  main.set(
+    SEED_SITE_CONFIG_PATH,
+    [
+      'siteName: Cairn Showcase (dev backend)',
+      'vocabulary:',
+      `  - value: ${v.inUse.value}`,
+      `    label: ${v.inUse.label}`,
+      `  - value: ${v.inUseGear.value}`,
+      `    label: ${v.inUseGear.label}`,
+      `  - value: ${v.unused.value}`,
+      `    label: ${v.unused.label}`,
+      '',
+    ].join('\n'),
+  );
+
+  // Patch `tags:` onto two manifest entries on main so buildTagUsageIndex reports usage: the seed
+  // post carries the in-use listed tag, and a Pass B entry carries the second. `archive` stays off
+  // every entry so its usage is zero (the deletable listed tag). Read the manifest the media seed
+  // wrote, add the tags, and rewrite it.
+  const manifestRaw = main.get('src/content/.cairn/index.json');
+  if (manifestRaw) {
+    const manifest = JSON.parse(manifestRaw) as {
+      version: number;
+      entries: { id: string; tags?: string[]; [key: string]: unknown }[];
+    };
+    for (const entry of manifest.entries) {
+      if (entry.id === SEED_POST_ID) entry.tags = [v.inUse.value];
+      if (entry.id === PASS_B_ENTRIES.emptyAlt.id) entry.tags = [v.inUse.value, v.inUseGear.value];
+    }
+    main.set('src/content/.cairn/index.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  heads.set('main', nextSha());
+
+  // One open branch whose entry markdown carries the unlisted-but-in-use tag through the posts
+  // concept's `topics:` field (the marked taxonomy field). The branch arm of buildTagUsageIndex
+  // reconstructs this path from the branch name, reads the file, and coerces `topics`, so the value
+  // surfaces in the load's `unlisted` set as a real seed candidate.
+  const branchTree: Tree = new Map(main);
+  branchTree.set(
+    SEED_VOCAB_BRANCH_ENTRY,
+    `---\ntitle: Weather notes draft\ndate: 2026-05-18\ntopics:\n  - ${v.unlisted.value}\n---\nA draft tagged with a value not yet in the vocabulary.\n`,
+  );
+  branches.set(SEED_VOCAB_BRANCH, branchTree);
+  heads.set(SEED_VOCAB_BRANCH, nextSha());
+}
+
 /** The basename of a repo path: the segment after the last slash. */
 function basename(path: string): string {
   return path.slice(path.lastIndexOf('/') + 1);

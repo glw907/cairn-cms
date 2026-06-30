@@ -107,7 +107,7 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
     aria-describedby="cairn-capture-alt-note"
   >
     <legend class="text-sm font-medium">Alt text</legend>
-    <p id="cairn-capture-alt-note" class="text-xs text-[var(--color-muted)]">
+    <p id="cairn-capture-alt-note" class="text-xs text-muted">
       Describe the image for screen readers, or mark it decorative. You can insert without alt text
       and add it later.
     </p>

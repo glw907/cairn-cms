@@ -100,7 +100,7 @@ own name.
       aria-describedby="cairn-figure-caption-hint"
       bind:value={captionValue}
     />
-    <p id="cairn-figure-caption-hint" class="text-xs text-[var(--color-muted)]">
+    <p id="cairn-figure-caption-hint" class="text-xs text-muted">
       Shown under the image, for everyone. This is not the alt text.
     </p>
   </div>
@@ -134,7 +134,7 @@ own name.
       </span>
     {:else}
       <span
-        class="inline-flex items-center gap-1 text-[var(--color-muted)]"
+        class="inline-flex items-center gap-1 text-muted"
         data-cairn-alt-status="described"
         aria-label="Alt text: described"
       >
@@ -176,7 +176,7 @@ own name.
           tabindex={index === activeIndex ? 0 : -1}
           class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal {index > 0
             ? 'border-l border-[var(--cairn-card-border)]'
-            : ''} {pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}"
+            : ''} {pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}"
           onclick={() => pickRole(option.value)}
           onkeydown={(e) => onSegmentKeydown(e, index)}
         >
@@ -198,7 +198,7 @@ own name.
         </button>
       {/each}
     </div>
-    <p class="text-xs text-[var(--color-muted)]">
+    <p class="text-xs text-muted">
       Center suits an image narrower than the text column. Measure keeps it at the column width.
     </p>
   </div>

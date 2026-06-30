@@ -404,7 +404,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
               <span>Needs alt</span>
             </span>
           {:else}
-            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--color-muted)]">
+            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-muted">
               <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
               <span>Decorative</span>
             </span>
@@ -420,14 +420,14 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </button>
       </div>
       {#if committedCaption.trim() !== ''}
-        <p class="pl-[3.875rem] text-xs italic text-[var(--color-muted)]">{committedCaption}</p>
+        <p class="pl-[3.875rem] text-xs italic text-muted">{committedCaption}</p>
       {:else}
-        <p class="pl-[3.875rem] text-xs text-[var(--color-muted)] opacity-80">No caption</p>
+        <p class="pl-[3.875rem] text-xs text-muted opacity-80">No caption</p>
       {/if}
       {#if committedStatus === 'decorative' && committedCaption.trim() !== ''}
         <!-- The one state worth a gentle note: a decorative hero with a caption. A soft inline line,
              never a block. (Defensive; the resting empty-caption branch above usually wins.) -->
-        <p class="pl-[3.875rem] text-xs text-[var(--color-muted)]">
+        <p class="pl-[3.875rem] text-xs text-muted">
           This hero is marked decorative, so screen readers skip it; the caption still shows to everyone.
         </p>
       {/if}
@@ -448,11 +448,11 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       </span>
       <span class="flex min-w-0 flex-col gap-px">
         <span class="text-[0.8125rem] font-medium">Add {field.label.toLowerCase()}</span>
-        <span class="text-[0.6875rem] text-[var(--color-muted)]">Drop an image here, or pick from the library</span>
+        <span class="text-[0.6875rem] text-muted">Drop an image here, or pick from the library</span>
       </span>
     </button>
     {#if lead}
-      <p class="text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+      <p class="text-[0.6875rem] leading-snug text-muted">
         This image leads the page, and it is the picture shown when the post is shared.
       </p>
     {/if}
@@ -485,7 +485,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     {#if upload.kind === 'uploading'}
       <div class="flex flex-col items-center gap-3 py-8" role="status">
         <span class="loading loading-spinner loading-md text-[var(--color-primary)]"></span>
-        <p class="text-sm text-[var(--color-muted)]">Adding your image...</p>
+        <p class="text-sm text-muted">Adding your image...</p>
       </div>
     {:else if upload.kind === 'failed'}
       <div class="flex flex-col gap-2" role="alert">
@@ -505,7 +505,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <!-- Replace and Remove are quiet text controls beneath the preview, never floated on it. -->
         <div class="flex gap-3.5">
           <button type="button" class="bg-transparent p-0 text-xs font-medium text-[var(--color-primary)] underline underline-offset-2" onclick={replace}>Replace</button>
-          <button type="button" class="bg-transparent p-0 text-xs font-medium text-[var(--color-muted)] underline underline-offset-2" onclick={remove}>Remove</button>
+          <button type="button" class="bg-transparent p-0 text-xs font-medium text-muted underline underline-offset-2" onclick={remove}>Remove</button>
         </div>
 
         <!-- Alt as a describe-or-decorative radiogroup (the MediaCaptureCard model). The radios share a
@@ -534,18 +534,18 @@ popover's runUpload but resolves to this field, not an editor placeholder.
               bind:value={workAltText}
             />
           {/if}
-          <p id={altNoteId} class="text-xs text-[var(--color-muted)]">
+          <p id={altNoteId} class="text-xs text-muted">
             A short description for screen readers. You can save without it and add it later.
           </p>
         </fieldset>
 
         <label class="flex flex-col gap-1">
-          <span class="text-sm font-medium">Caption <span class="font-normal text-[var(--color-muted)]">(optional)</span></span>
+          <span class="text-sm font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
           <input class="input input-sm w-full" bind:value={workCaption} aria-label="Caption" />
-          <span class="text-xs text-[var(--color-muted)]">Shown under the hero if the template uses it. This is not the alt text.</span>
+          <span class="text-xs text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
         </label>
 
-        <p class="text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+        <p class="text-[0.6875rem] leading-snug text-muted">
           This image is also the picture shown when the post is shared to social.
         </p>
 
@@ -557,7 +557,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     {:else}
       <!-- The chooser: upload first, the picker combobox below. -->
       <div class="flex flex-col gap-3">
-        <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-base-300 px-4 py-4 text-center text-[var(--color-muted)]">
+        <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-base-300 px-4 py-4 text-center text-muted">
           <span class="text-[var(--color-primary)]" aria-hidden="true">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
           </span>
@@ -573,7 +573,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
             onchange={onChosenFile}
           />
         </div>
-        <p class="text-center text-[0.6875rem] uppercase tracking-[0.08em] text-[var(--color-muted)]">or pick from the library</p>
+        <p class="text-center text-[0.6875rem] uppercase tracking-[0.08em] text-muted">or pick from the library</p>
         <MediaPicker library={mediaLibrary} onselect={onPick} />
       </div>
     {/if}

@@ -403,7 +403,7 @@ rule). The CSRF token is read from the admin context.
             onchange={onChosenFile}
           />
         </div>
-        <p class="text-center text-xs text-[var(--color-muted)]">or reuse an image</p>
+        <p class="text-center text-xs text-muted">or reuse an image</p>
         <MediaPicker {library} onselect={onPick} />
       </div>
     {/if}

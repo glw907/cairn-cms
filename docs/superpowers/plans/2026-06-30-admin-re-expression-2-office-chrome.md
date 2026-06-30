@@ -139,6 +139,75 @@ git commit -m "Baseline the swept auth surfaces; confirm the office shell unchan
 
 ---
 
-## Post-mortem
+## Post-mortem (2026-06-30)
 
-(Appended at pass end.)
+Phase 2 swept the office chrome onto the frozen role idiom. It confirmed the spec's honest premise: the
+foldable surface here was **only** the retired muted/subtle token references — a near-mechanical phase, not
+a redesign. No native primitive was adopted, no CSS rule folded, no test migrated, no a11y test upgraded.
+The admin `retiredTokenBudget` ratcheted 235 → 198, and the retirement moved zero pixels.
+
+### What was built (commits on `admin-reexpr-2-office-chrome`)
+
+- **Plan + review (`e91396d`).** The just-in-time plan, then a four-lens adversarial review (charter/scope,
+  gate/budget, a11y/test-net, sequencing/verification) run as a Workflow. The review verified every
+  load-bearing claim against code and returned "ready with small edits"; all findings folded (drop the
+  unneeded showcase reinstall — symlinked `file:` dep + zero new exports; the gate cannot catch a placeholder
+  compile failure, the office-shell baseline does; ShortcutsDialog is mount-only; the budget JSON path and an
+  out-of-order tripwire).
+- **Cluster A (`f49f7db`).** Shell + concept list: 24 swaps in `CairnAdminShell.svelte` (incl. the
+  `placeholder:text-muted` variant) and `ConceptList.svelte`; budget 235 → 211. `NavTree` swept by
+  confirmation (no retired tokens).
+- **Cluster B (`0a0f2cb`).** Auth: 7 swaps in `LoginPage.svelte` / `ConfirmPage.svelte`; budget 211 → 204. The
+  `--color-success` references left intact.
+- **Cluster C (`4f45fa5`).** Dialogs/pickers: 6 swaps in `EntryPicker`/`RenameDialog`/`ShortcutsDialog`/
+  `ShortcutsGrid`; budget 204 → 198. `DeleteDialog`/`WebLinkDialog`/`LinkPicker`/`IconPicker` swept by
+  confirmation. The terminal floor reached: zero muted/subtle bracket references remain in the office-chrome set.
+- **Task 4 — visual baseline (`6620617`).** Added the login and confirm baselines (light + dark); the
+  office-shell and vocabulary baselines passed byte-identical (the zero-pixel proof). Both new snapshots were
+  inspected and render the real pages.
+
+### Method
+
+Clusters A–C executed via a `cairn-implementer` Workflow (sequential, shared tree-wide budget; each cleared
+the full gate per dispatch), with `svelte-reviewer` + `daisyui-a11y-reviewer` verifying the diff (both clean).
+Task 4 and the pass-end ritual ran in the main loop, so the binary snapshot artifacts and the byte-identical
+check were inspected by hand.
+
+### Verified (evidence)
+
+- Each cluster: `npm run check` 0/0 (1245 files), `npm test` exit 0 (271 files, 2867 tests), `check:custom-surface`
+  PASS both trees at the cluster's ratcheted budget. Final admin `retiredTokenBudget` = 198, `componentsLayerCap`
+  unchanged at 14, `cairn-admin.css` untouched.
+- The diff is a symmetric 38 insertions / 38 deletions across 8 component files + the budget number — pure
+  class-attribute renames, no logic.
+- Showcase admin-visual e2e: 8/8 pass on a single attempt (office shell + vocabulary byte-identical; the four
+  new auth baselines stable). `placeholder:text-muted` compiled into the dist admin sheet (variant composition
+  confirmed).
+- Pass-end gates: `check:comments` OK, `check:custom-surface` PASS, svelte-check 0/0. code-simplifier over the
+  diff: a confirmed no-op (a mechanical class rename has nothing to simplify).
+
+### Decisions and deviations (recorded so a reader does not relitigate)
+
+- **`floating-label` deferred, not adopted.** It would be a redesign addition at the labeled inputs, not a fold of
+  an existing control; adopting it mid-de-customization-sweep is the "invent a fold to justify scope" error the
+  spec's non-goals forbid. A floating-label decision, if ever taken, belongs in the forms phase (Phase 3) or a
+  dedicated design pass, applied consistently across all inputs.
+- **No coupled-test migration, no a11y upgrade.** Reconciled in the plan: ConceptList's `.badge`/`.alert`
+  assertions test native classes the phase keeps (not fold targets), and every office-chrome a11y test is already
+  behavioral. The ConceptList triage control is a `role="group"` + `aria-pressed` toggle-button group, recorded in
+  the ledger so a later phase does not mis-migrate it toward an ARIA radiogroup.
+- **No release.** Phase 2 changes admin internals a consumer never imports (zero behavior change, no public-API
+  change), so it holds unpublished per the sweep's hold-and-batch cadence; no CHANGELOG entry (nothing
+  consumer-notable). The `admin-design-system.md` recipe text still cites the old `text-[var(--color-muted)]` form;
+  rewriting it is the final docs phase's job, deliberately deferred.
+
+### Carried follow-ups
+
+- **Next: Phase 3 (forms and settings)** — `FieldInput`, `ReferenceField`, `ObjectGroupField`, `RepeatableField`,
+  `CairnTidySettings`, `ManageEditors`, `HelpHome`. A just-in-time plan, test-first, ratcheting the budget from 198.
+  Phase 3 is the natural home for the deferred `floating-label` decision across the field family.
+- **Deferred live admin smoke** (carried from Phase 1): a `wrangler dev` + D1-session smoke at a site cutover; not
+  separately warranted for a zero-behavior token rename (the showcase admin e2e renders the swept admin).
+- **CI-vs-local baseline drift** (standing watch): the auth baselines were generated locally; if the CI image renders
+  differently, regenerate them on CI (the sanctioned record of intended drift), as the office-shell baselines were in
+  Phase 1.

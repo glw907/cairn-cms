@@ -11,11 +11,23 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): admin re-expression Phase 2 (office chrome) plan WRITTEN + adversarially REVIEWED; EXECUTING
+## Immediate next action (2026-06-30, LATEST): admin re-expression Phase 2 (office chrome) COMPLETE + held; NEXT = Phase 3 (forms and settings)
 
-Phase 2 of the admin idiomatic re-expression sweep (office chrome). Plan:
-`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`, on branch/worktree
-`admin-reexpr-2-office-chrome` (off `main` at `b31c8a8`, in the `extensibility-plan-1` worktree dir).
+Phase 2 of the admin idiomatic re-expression sweep (office chrome) is **complete and held unpublished** on
+branch/worktree `admin-reexpr-2-office-chrome` (off `main` at `b31c8a8`, in the `extensibility-plan-1`
+worktree dir). Plan + post-mortem:
+`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`. **Not yet merged to `main`** (the
+sweep accumulates unpublished; merge with the batch or when a consumer needs it).
+
+**Landed (commits `e91396d`..`6620617`):** the office-chrome token retirement — 37 arbitrary
+`text-[var(--color-muted|subtle)]` references swapped to the named `text-muted`/`text-subtle` utilities
+across 8 of 13 components, admin `retiredTokenBudget` ratcheted **235 → 198** across three sequential
+red-green clusters (A shell+list, B auth, C dialogs/pickers), plus the visual baseline extended (new login +
+confirm captures; office-shell + vocabulary byte-identical). `cairn-admin.css` untouched, `componentsLayerCap`
+unchanged at 14. **Gate (confirmed green):** `check` 0/0 (1245 files), `npm test` exit 0 (271 files, 2867
+tests) per cluster, `check:custom-surface` PASS both trees at budget 198, `check:comments` OK, showcase
+admin-visual e2e 8/8 (single attempt). 4-lens plan review + `svelte`/`daisyui-a11y` diff reviewers all clean;
+code-simplifier a no-op (mechanical rename).
 
 **Shape (census-grounded):** Phase 2 is a **near-mechanical token-retirement ratchet**, not a redesign. The
 office-chrome census found the only foldable surface is the arbitrary `text-[var(--color-muted)]` /
@@ -26,16 +38,22 @@ Tier-2 infra; cap stays 14), **no** presence-only a11y test to upgrade (all beha
 test to migrate (ConceptList's `.badge`/`.alert` test native classes the phase keeps). Zero pixel change, so the
 office-shell baseline stays byte-identical (the regression proof).
 
-**Method:** 4 task-clusters — A (shell+nav+list, budget 235→211), B (auth, 211→204), C (dialogs/pickers, 204→198),
-D (extend the visual baseline: byte-identical office shell + new auth captures). Strictly sequential A→B→C (shared
-tree-wide budget file), each a red-green budget ratchet. Adversarial plan review (4-lens workflow) done, findings
-folded (M1: drop the unnecessary showcase reinstall — symlinked `file:` dep + zero new exports; M2: gate can't catch
-a placeholder compile fail, office baseline does; M3: ShortcutsDialog is mount-only; plus budget-path/sequencing
-nits). Executing clusters A–C via a `cairn-implementer` workflow, then the baseline + reviewer verify in the main
-loop. **Hold unpublished — no version bump, no release** (admin internals a consumer never imports; cadence below).
+**Held — no version bump, no release** (admin internals a consumer never imports; zero behavior change; cadence
+below). No CHANGELOG entry (nothing consumer-notable). The `admin-design-system.md` recipe text still cites the old
+`text-[var(--color-muted)]` form; rewriting it is the final docs phase's job (deferred, not drift).
 
-If resuming cold: the gate is green at `b31c8a8` (seed 235), `dist` is built, `node_modules` is real in this
-worktree. Read the plan in full, then execute task-by-task; the plan's red-green steps are exact.
+**NEXT = Phase 3 (forms and settings):** `FieldInput`, `ReferenceField`, `ObjectGroupField`, `RepeatableField`,
+`CairnTidySettings`, `ManageEditors`, `HelpHome` — a just-in-time plan, test-first, ratcheting the budget from 198.
+Phase 3 is the natural home for the **deferred `floating-label` decision** across the field family (Phase 2 declined
+to adopt it on the auth field in isolation — it would be a redesign addition, not a fold). Census the cluster first
+(retired tokens, any genuine native-primitive fold, coupled tests, presence-only a11y), write + adversarially review
+the plan, then execute. The Phase 2 plan is the template; the office-chrome census method worked well.
+
+If resuming cold to start Phase 3: this `admin-reexpr-2-office-chrome` worktree holds Phase 2 (gate green at budget
+198, `dist` built, `node_modules` real). Either continue the sweep on this branch (one worktree per pass is the
+convention, but the cwd is pinned here, so a new branch off this tip in the same worktree is simplest), or merge
+Phase 2 to `main` first if batching. Read the Phase 2 plan's post-mortem and the ledger's Phase 2 sign-off, plus the
+`cairn-admin-design-modernization` memory.
 
 ## Immediate next action (2026-06-29, prior): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 

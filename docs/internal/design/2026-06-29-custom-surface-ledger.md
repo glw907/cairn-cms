@@ -361,3 +361,25 @@ Phase 0 gate, independently confirmed green 2026-06-29: `check` 0/0 (1242 files)
 `check:custom-surface` PASS both trees, `check:comments` OK, `check:prose` clean, `npm test` 2855
 passed (270 files), showcase e2e 46 passed (the two new admin visual baselines included), and the gate
 bite-test (a planted bare `[data-theme] .evil {}` rule fails, removed passes).
+
+## Phase 2 sign-off: office chrome retired (admin budget 235 → 198)
+
+Phase 2 (office chrome) is complete (2026-06-30, plan
+`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`). The census found the only
+foldable office-chrome surface was the retired muted/subtle references — 37 lines across 8 of the 13
+components, every one a trivial 1:1 swap to the named `text-muted` / `text-subtle` utilities. No native
+primitive was adopted (none is hand-rolled here; `floating-label` would be a redesign addition, deferred
+to the forms phase or a dedicated pass), no `@layer` rule folded (every office-chrome rule is Tier-2
+infra; `cairn-admin.css` is untouched and `componentsLayerCap` stays 14), no presence-only a11y test
+needed hardening (all behavioral), and no selector-coupled test migrated (ConceptList's `.badge`/`.alert`
+assertions test native classes the phase keeps). The admin `retiredTokenBudget` ratcheted 235 → 211 →
+204 → 198 across three sequential clusters (shell+list, auth, dialogs/pickers); 198 is the residual in
+the later-phase files (media, forms, desk chrome). The retirement is a zero-pixel change, confirmed by the
+office-shell and vocabulary visual baselines passing byte-identical; the swept auth surfaces (login,
+confirm) gained their own baselines.
+
+**Terminology note for later phases (a11y review nit):** the ConceptList publish-state triage control is a
+**toggle-button group** (`role="group"` with per-button `aria-pressed`), not an ARIA `radiogroup`. It is a
+correct, valid WCAG pattern for a multi-state filter. A later phase must not "modernize" it toward
+`role="radiogroup"`/`role="radio"`, which would change its keyboard semantics (1.3.1, 4.1.2). The
+segmented / check-and-tint control stays hand-rolled (no native 5.6 primitive), per the spec.

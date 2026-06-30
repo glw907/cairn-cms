@@ -18,8 +18,21 @@ const outPath = fileURLToPath(new URL('dist/components/cairn-admin.css', repoRoo
 // scoped utilities never outrank a host rule on equal class names.
 const SCOPE = ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])";
 
-export async function buildAdminCss() {
-  const input = readFileSync(inputPath, 'utf8');
+/**
+ * @param {object} [options] build options
+ * @param {string[]} [options.extraSources] extra Tailwind `@source` globs to scan for utility
+ *   classes, relative to the input CSS (scripts/). The shipped `package` build passes none, so its
+ *   output is unchanged; the design-mockup build passes the design-HTML glob so a mockup authored in
+ *   the real DaisyUI/Tailwind utility classes compiles those classes into a preview sheet.
+ * @returns {Promise<string>} the compiled, scoped admin stylesheet
+ */
+export async function buildAdminCss({ extraSources = [] } = {}) {
+  const base = readFileSync(inputPath, 'utf8');
+  // Append any extra @source globs so a caller can widen the class scan without editing the shipped
+  // input. Order does not matter: @source only tells Tailwind where to find used classes.
+  const input = extraSources.length
+    ? `${base}\n${extraSources.map((glob) => `@source "${glob}";`).join('\n')}\n`
+    : base;
   // Stage 1: Tailwind and DaisyUI compile. `from` is the input path so @source and @import resolve
   // relatively and the plugins resolve from the repo's node_modules.
   const compiled = await postcss([tailwind()]).process(input, { from: inputPath });

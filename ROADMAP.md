@@ -129,3 +129,6 @@ here, so this file stays a forward view.
 
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.
+- **A strong/gentle CTA pair in the starter template (DaisyUI Aura).** The template could offer a
+  developer two call-to-action treatments to choose from: a strong one using DaisyUI's Aura animated glow
+  and a gentle one without. Template only. The admin interface stays restrained and never uses Aura.

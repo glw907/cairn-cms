@@ -51,7 +51,8 @@
     "test:integration": "vitest run --project integration",
     "test:component": "vitest run --project component",
     "emit-template": "node scripts/emit-template.mjs",
-    "test:emit": "node --test scripts/emit-template.test.mjs"
+    "test:emit": "node --test scripts/emit-template.test.mjs",
+    "design:mockup-css": "npm run package && node scripts/build-mockup-css.mjs"
   },
   "exports": {
     ".": {

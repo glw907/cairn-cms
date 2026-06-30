@@ -1,8 +1,12 @@
 # Cairn admin design system (agent reference)
 
-The approved reference for the admin's polish grade is
-`docs/internal/design/2026-06-12-editor-shell-gold-standard.html` (see the README beside it);
-when a judgment call here feels ambiguous, match that artifact. Read this before any work on the
+The polish bar is the live admin components rendered on the showcase, not a static file: they are the
+most-recent version by construction and authored in the real DaisyUI/Tailwind utility classes, so a hand
+twin can never represent them faithfully (the old `2026-06-12-editor-shell-gold-standard.html` is a
+superseded historical record). When a judgment call here feels ambiguous, match the live components and
+the recipes below. The design README beside that file has the capture recipe for the bar and the rule for
+mockups (a new screen with no component yet gets a utility-class HTML mockup, built with
+`npm run design:mockup-css`, never hand-rolled token CSS). Read this before any work on the
 `/admin` interface (`src/lib/components/*.svelte` and
 `src/lib/components/cairn-admin.css`). It is the convention set that keeps the admin consistent. It is
 written for an implementing agent, so it leads with the rules that are easy to break and not visible in
@@ -592,7 +596,13 @@ same bar.
 
 ## Adding a new admin surface
 
-Wrap it in a `data-theme` wrapper (or render it inside `AdminLayout`, which already provides one), import
-`./cairn-admin.css`, build it from the recipes above (the card, the eyebrow, the type vars, the
-theme-adaptive border and shadow), and preview on the showcase. Add component or unit tests for new
-behavior and keep `npm run check` 0/0 and `npm test` exit 0.
+Mock it first, in component-idiomatic utility classes. A surface worth designing gets an HTML mockup
+under `docs/internal/design/` authored in the same DaisyUI/Tailwind utility classes the component will
+carry (never hand-rolled token CSS), built and served with `npm run design:mockup-css` (the design
+README has the recipe). That keeps the screenshot honest to what ships and the Svelte port a
+transcription. Ground the mockup in the closest live component, since the live components are the bar.
+
+Then build the component: wrap it in a `data-theme` wrapper (or render it inside `AdminLayout`, which
+already provides one), import `./cairn-admin.css`, build it from the recipes above (the card, the eyebrow,
+the type vars, the theme-adaptive border and shadow), and preview on the showcase. Add component or unit
+tests for new behavior and keep `npm run check` 0/0 and `npm test` exit 0.

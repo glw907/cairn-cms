@@ -253,18 +253,10 @@
    pass adds a [data-theme] scope for these.)
    ---------------------------------------------------------------------------- */
 :root {
-  /* The editorial faces live in the @theme block above (so Tailwind generates the font-* utilities);
-     @theme re-emits them at :root, so the var(--font-*) references throughout this file resolve. */
+  /* The design-scale tokens (the faces, the type and space scales, the leading, tracking, and
+     measure values) live in the @theme block above, where Tailwind generates their named utilities.
+     @theme re-emits each at :root, so the var() references throughout this file resolve unchanged. */
 
-  /* The fluid type scale lives in the @theme block above (so Tailwind generates the text-step-*
-     utilities); @theme re-emits each --text-step-* at :root, so the var() references throughout this
-     file resolve. */
-  /* The leading, tracking, and measure values live in the @theme block above (so Tailwind generates
-     the leading-*, tracking-*, and max-w-measure* utilities the chrome markup folds onto); @theme
-     re-emits each at :root, so the var() references throughout this file resolve. */
-
-  /* The fluid space scale lives in the @theme block above (so Tailwind generates the spacing
-     utilities); @theme re-emits each --spacing-* at :root, so the var() references resolve. */
   /* The single owl-selector rhythm variable; headings, figures, and pre override it locally. */
   --flow-space: 1.35em;
 

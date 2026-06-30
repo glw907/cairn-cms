@@ -49,11 +49,24 @@ floor). Census the six a11y models in the slide-over/safe-delete region, write +
 `decoration/55` special-case), execute via a `cairn-implementer` workflow, pass-end. After Phase 6 the admin tree is at
 its proven floor; then the serialized starter-template track, then the docs phase.
 
-If resuming cold to start Phase 6: Phases 2–5 are merged to `main` (budget at 125). Branch a Phase 6 worktree off
-`main`, then census the `CairnMediaLibrary` slide-over/safe-delete region plus the four other media components, write +
-review the plan, and execute. Read the Phase 4/5 post-mortems and the ledger's Phase 4+5 sign-off, plus the
-`cairn-admin-design-modernization` memory. A drafted Phase 6 plan, if one exists under `docs/superpowers/plans/`,
-supersedes this pointer.
+**The Phase 6 plan is WRITTEN, REVIEWED, and QUEUED** at
+`docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md` (on `main`, and on branch
+`admin-reexpr-6-media-pt2`). Census + single-agent adversarial review done; findings folded. It is ready to **execute**
+(not yet executed — this is where the session prepped a clear). **The one decision to confirm before Task 2:** the
+`decoration-[var(--color-muted)]/55` strikethrough at `CairnMediaLibrary:2322` cannot fold to `text-muted`; the plan
+recommends **(b)** rewriting it to the existing sanctioned `decoration-[color-mix(in_oklab,currentColor_55%,transparent)]`
+idiom (leaner, reaches 0, a tiny recorded color drift), with **(a)** a named `@utility decoration-muted-faint` as the
+pixel-exact alternative — Geoff's call.
+
+**Resume prompt for the fresh session** (launch in the cairn-cms main checkout `~/Projects/cairn-cms`):
+> Execute Phase 6 (the final phase) of the admin idiomatic re-expression sweep. Create a feature worktree off `main`
+> (Phases 2–5 are merged; budget 125). The plan is written and reviewed at
+> `docs/superpowers/plans/2026-06-30-admin-re-expression-6-media-part-2.md` — read it, the ledger's Phase 4+5 sign-off,
+> and the `cairn-admin-design-modernization` memory first. Confirm the `:2322` decoration treatment (the plan
+> recommends option b). Execute task-by-task via a `cairn-implementer` workflow (the four retirement clusters ratchet
+> the budget 125 → 0, the terminal floor), add the slide-over/dialog visual baseline, run the pass-end ritual, and
+> **merge to `main` + push** (held unpublished — no release). After Phase 6 the admin tree is at its proven floor; then
+> the serialized starter-template track, then the docs phase.
 
 ## Immediate next action (2026-06-29, prior): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 

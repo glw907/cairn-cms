@@ -285,12 +285,12 @@ must never make, so no such count exists.
       </span>
       <div class="min-w-0 flex-1">
         <div id="cairn-tidy-title" class="text-lg font-bold leading-tight">Review tidy</div>
-        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-[var(--color-muted)]">
+        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
           <span><b class="text-base-content">{hunks.length} {hunks.length === 1 ? 'change' : 'changes'}</b> to <b class="text-base-content">{title}</b></span>
           <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 text-[0.6875rem] font-semibold">{model}</span>
         </div>
       </div>
-      <span class="hidden flex-none items-center gap-1.5 text-[0.6875rem] text-[var(--color-muted)] sm:inline-flex" aria-hidden="true">
+      <span class="hidden flex-none items-center gap-1.5 text-[0.6875rem] text-muted sm:inline-flex" aria-hidden="true">
         <kbd class="kbd kbd-xs">j</kbd><kbd class="kbd kbd-xs">k</kbd> move
         <kbd class="kbd kbd-xs">a</kbd><kbd class="kbd kbd-xs">r</kbd> accept / reject
       </span>
@@ -301,7 +301,7 @@ must never make, so no such count exists.
 
     <!-- the bulk bar: the live tally (role=status, bulk-only) + Accept fixes / Reject all -->
     <div class="flex items-center gap-3 border-b border-[var(--cairn-card-border)] bg-base-200 px-4 py-2.5">
-      <span class="inline-flex flex-wrap items-center gap-2 text-sm text-[var(--color-muted)]" data-testid="tidy-tally">
+      <span class="inline-flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="tidy-tally">
         <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">
           <CheckIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{keptCount}</span> kept
         </span>
@@ -349,7 +349,7 @@ must never make, so no such count exists.
             <span
               class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold {isJudgment
                 ? 'bg-[color-mix(in_oklab,var(--cairn-warning-ink)_11%,transparent)] text-[var(--cairn-warning-ink)]'
-                : 'bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)] text-[var(--color-muted)]'}"
+                : 'bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)] text-muted'}"
             >
               {h.label}
             </span>
@@ -360,7 +360,7 @@ must never make, so no such count exists.
             {/if}
             <button
               type="button"
-              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono text-[0.6875rem] text-[var(--color-muted)] underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
+              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono text-[0.6875rem] text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
               title="Show this line in the editor"
               onclick={() => showInText(h)}
             >
@@ -373,7 +373,7 @@ must never make, so no such count exists.
                 class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'kept'
                   ? 'bg-[color-mix(in_oklab,var(--color-positive-ink)_13%,transparent)] text-[var(--color-positive-ink)]'
-                  : 'text-[var(--color-muted)]'}"
+                  : 'text-muted'}"
                 aria-pressed={decided === 'kept'}
                 onclick={() => acceptHunk(h)}
               >
@@ -384,7 +384,7 @@ must never make, so no such count exists.
                 class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'rejected'
                   ? 'bg-[color-mix(in_oklab,var(--cairn-error-ink)_12%,transparent)] text-[var(--cairn-error-ink)]'
-                  : 'text-[var(--color-muted)]'}"
+                  : 'text-muted'}"
                 aria-pressed={decided === 'rejected'}
                 onclick={() => rejectHunk(h)}
               >
@@ -397,8 +397,8 @@ must never make, so no such count exists.
           <div class="font-mono text-[0.8125rem] leading-relaxed">
             {#if h.contextBefore}
               <div class="flex items-baseline">
-                <span class="w-6 flex-none select-none text-center text-[var(--color-muted)] opacity-60" aria-hidden="true">&nbsp;</span>
-                <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5 text-[var(--color-muted)]">{h.contextBefore}</span>
+                <span class="w-6 flex-none select-none text-center text-muted opacity-60" aria-hidden="true">&nbsp;</span>
+                <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5 text-muted">{h.contextBefore}</span>
               </div>
             {/if}
             <div class="flex items-baseline bg-[var(--cairn-tidy-del-row)]">
@@ -420,8 +420,8 @@ must never make, so no such count exists.
             </div>
             {#if h.contextAfter}
               <div class="flex items-baseline">
-                <span class="w-6 flex-none select-none text-center text-[var(--color-muted)] opacity-60" aria-hidden="true">&nbsp;</span>
-                <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5 text-[var(--color-muted)]">{h.contextAfter}</span>
+                <span class="w-6 flex-none select-none text-center text-muted opacity-60" aria-hidden="true">&nbsp;</span>
+                <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5 text-muted">{h.contextAfter}</span>
               </div>
             {/if}
           </div>
@@ -429,7 +429,7 @@ must never make, so no such count exists.
           {#if h.because}
             <!-- the mandatory because-line: names ONLY the config setting that authorized this hunk -->
             <div
-              class="flex items-start gap-2 border-t border-dashed border-[var(--cairn-card-border)] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_5%,transparent)] px-3 py-2 text-xs leading-snug text-[var(--color-subtle)]"
+              class="flex items-start gap-2 border-t border-dashed border-[var(--cairn-card-border)] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_5%,transparent)] px-3 py-2 text-xs leading-snug text-subtle"
               data-testid="tidy-because"
             >
               <LightbulbIcon class="mt-px size-3 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
@@ -442,7 +442,7 @@ must never make, so no such count exists.
 
     <!-- the review footer: the commit note + Cancel + the one-transaction Apply -->
     <div class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)] px-4 py-3.5">
-      <span class="flex flex-1 items-center gap-1.5 text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+      <span class="flex flex-1 items-center gap-1.5 text-[0.6875rem] leading-snug text-muted">
         <CheckIcon class="size-3 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
         Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.
       </span>

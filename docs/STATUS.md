@@ -60,10 +60,20 @@ island-converter demo CSS and the `--cairn-rule` dead token; ratchet the showcas
 for the Phase-2 brainstorm:** the `@theme` namespace mapping and naming (e.g. `--cairn-step-1` →
 `--text-step-1` → `text-step-1`; `--cairn-space-m` → a `--spacing-*` step → `gap-m`/`px-m`); which tokens
 get named utilities vs stay bare CSS consumption; whether the figure/code Tier-2 contracts need any utility
-exposure. Write the just-in-time Phase 2 plan (brainstorm the naming first), adversarially review it, then
-execute task-by-task via `cairn-implementer` with the full gate per task, on this worktree. Then the docs
-phase (publish the role vocabulary as the versioned seam in `admin-design-system.md`). Use `cairn-pass`. See
-the `cairn-admin-design-modernization` memory.
+exposure. **The Phase 2 plan is WRITTEN + QUEUED** at
+`docs/superpowers/plans/2026-06-30-starter-template-2-chrome.md` (committed, not executed). It commits to
+the idiomatic `@theme` mapping (the table in the plan) and structures the fold as six tasks (faces →
+type/space scales → tracking/leading/measure/colors → radius+floor → island-converter+`--cairn-rule` →
+styleguide+recipe+ledger), each pixel-neutral and guarded by the `site-visual` baseline, ratcheting the
+showcase budget from 20 toward its floor. **⚑ ONE DECISION PENDING GEOFF before executing:** the fold
+**renames** the template's design-scale tokens to Tailwind namespaces (`--cairn-step-1` → `--text-step-1`,
+`--cairn-space-m` → `--spacing-m`, `--cairn-muted` → `--color-muted`, …) so the named utilities generate,
+which changes the template's documented re-skin surface (the recipe is rewritten to the new names). The plan
+commits to the rename (idiomatic, the gate reaches its floor); the alternative keeps `--cairn-*` names and
+accepts bracket utilities (stable re-skin API, non-idiomatic, gate never reaches floor). Confirm or redirect,
+then adversarially review the plan and execute task-by-task via `cairn-implementer` with the full gate per
+task. Then the docs phase (publish the role vocabulary as the versioned seam in `admin-design-system.md`).
+Use `cairn-pass`. See the `cairn-admin-design-modernization` memory.
 
 ## Immediate next action (2026-06-30, prior): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; starter-template track NEXT (now Phase 1 done, above)
 

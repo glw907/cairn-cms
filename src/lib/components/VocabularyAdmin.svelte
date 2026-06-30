@@ -160,6 +160,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
         }}
         class="input input-sm min-w-0 flex-1"
         aria-describedby="vocab-new-help"
+        aria-invalid={addError ? 'true' : undefined}
       />
       <button type="button" class="btn btn-primary btn-sm flex-none" onclick={add}>
         <PlusIcon class="h-4 w-4" aria-hidden="true" />Add tag
@@ -167,7 +168,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
     </div>
     <div id="vocab-new-help" class="mt-2 text-[0.8125rem] leading-relaxed">
       {#if addError}
-        <span class="text-[var(--cairn-error-ink)]">{addError}</span>
+        <span role="alert" class="text-[var(--cairn-error-ink)]">{addError}</span>
       {:else if newSlug}
         <span class="text-muted"
           >Stored as
@@ -216,7 +217,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
               : ''}"
           >
             <input
-              aria-label="Name for {entry.label}"
+              aria-label="Tag name ({entry.value})"
               type="text"
               bind:value={entry.label}
               class="input input-sm min-w-0"

@@ -112,6 +112,13 @@ deviation, not an oversight.
    larger mutation the count alone does not voice, so the announcement narrates the specific change.
 3. **The non-color signal pairs with the delete state.** The In-use column ("N posts" vs "Unused") and the
    `aria-disabled` state, not color alone, distinguish a guarded delete from an active one (WCAG 1.4.1).
+4. **The add-field error is announced and programmatically tied to the field** (WCAG 3.3.1 / 4.1.3). The
+   add input sets `aria-invalid="true"` while a label is invalid or colliding, and the error text carries
+   `role="alert"` so a screen-reader editor hears it as they type, not only sighted users. The input keeps
+   its `aria-describedby` help association at rest.
+5. **The rename input's accessible name is stable.** It is named from the immutable slug
+   (`aria-label="Tag name (<slug>)"`), not the live label, so the name does not churn character by
+   character as the editor types a new label.
 
 ## Empty state
 

@@ -30,10 +30,22 @@ function postedVocabulary(container: Element): { value: string; label: string }[
 describe('VocabularyAdmin', () => {
   it('renders each entry with its label and its in-use count', async () => {
     const screen = render(VocabularyAdmin, { data: data() });
-    // The labels ride editable rename inputs; the in-use count reads on the in-use row.
-    await expect.element(screen.getByLabelText('Name for Snow report')).toHaveValue('Snow report');
-    await expect.element(screen.getByLabelText('Name for Gear')).toHaveValue('Gear');
+    // The labels ride editable rename inputs, named by the immutable slug so the accessible name is
+    // stable mid-edit; the in-use count reads on the in-use row.
+    await expect.element(screen.getByLabelText('Tag name (snow-report)')).toHaveValue('Snow report');
+    await expect.element(screen.getByLabelText('Tag name (gear)')).toHaveValue('Gear');
     expect(screen.container.textContent).toContain('8 posts');
+  });
+
+  it('flows a rename into the posted vocabulary JSON (the deep bind:value path)', async () => {
+    const screen = render(VocabularyAdmin, { data: data() });
+    const rename = screen.container.querySelector<HTMLInputElement>(
+      'input[aria-label="Tag name (gear)"]',
+    )!;
+    await userEvent.fill(rename, 'Equipment');
+    const posted = postedVocabulary(screen.container);
+    // The slug stays immutable; only the label changes, and it reaches the posted payload.
+    expect(posted).toContainEqual({ value: 'gear', label: 'Equipment' });
   });
 
   it('guards the in-use delete with aria-disabled (not native disabled), names the count, and does not remove the row', async () => {
@@ -102,6 +114,10 @@ describe('VocabularyAdmin', () => {
     await userEvent.click(seed);
     const posted = postedVocabulary(screen.container);
     expect(posted).toContainEqual({ value: 'trip-reports', label: 'Trip reports' });
+    // A seeded candidate leaves the seed section (seedCandidates shrinks).
+    await expect
+      .poll(() => screen.container.querySelector('button[data-seed="trip-reports"]'))
+      .toBeNull();
   });
 
   it('posts the working copy as a hidden vocabulary JSON field with a CSRF field to ?/saveVocabulary', async () => {

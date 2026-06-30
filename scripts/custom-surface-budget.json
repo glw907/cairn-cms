@@ -21,7 +21,7 @@
       "adminCss": null,
       "markupDirs": ["examples/showcase/src"],
       "retiredTokenPattern": "\\[[^\\][]*var\\(--[^\\][]*\\]|style=\"[^\"]*var\\(--",
-      "budget": { "unlayeredAllowlist": [], "componentsLayerCap": 0, "retiredTokenBudget": 1 }
+      "budget": { "unlayeredAllowlist": [], "componentsLayerCap": 0, "retiredTokenBudget": 0 }
     }
   }
 }

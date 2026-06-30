@@ -20,7 +20,7 @@ worktree dir). Plan + post-mortem:
 sweep accumulates unpublished; merge with the batch or when a consumer needs it).
 
 **Landed (commits `e91396d`..`6620617`):** the office-chrome token retirement — 37 arbitrary
-`text-[var(--color-muted|subtle)]` references swapped to the named `text-muted`/`text-subtle` utilities
+`var(--color-(muted|subtle))` bracket references swapped to the named `text-muted`/`text-subtle` utilities
 across 8 of 13 components, admin `retiredTokenBudget` ratcheted **235 → 198** across three sequential
 red-green clusters (A shell+list, B auth, C dialogs/pickers), plus the visual baseline extended (new login +
 confirm captures; office-shell + vocabulary byte-identical). `cairn-admin.css` untouched, `componentsLayerCap`

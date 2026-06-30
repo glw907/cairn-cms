@@ -120,10 +120,10 @@ dialog's a11y conventions.
     />
 
     {#if groups.length === 0}
-      <p class="text-sm text-[var(--color-muted)]">{emptyText}</p>
+      <p class="text-sm text-muted">{emptyText}</p>
     {:else}
       {#each groups as group (group.concept)}
-        <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-[var(--color-muted)] uppercase">{group.heading}</h3>
+        <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>
         <ul class="menu w-full">
           {#each group.items as target (`${target.concept}/${target.id}`)}
             <li>
@@ -135,7 +135,7 @@ dialog's a11y conventions.
               >
                 <span class="flex flex-col items-start">
                   <span class="font-medium">{target.title}</span>
-                  <span class="text-xs text-[var(--color-muted)]">
+                  <span class="text-xs text-muted">
                     {#if isSelected(target)}<span class="badge badge-ghost badge-sm mr-1">Selected</span>{/if}
                     {#if target.draft}<span class="badge badge-ghost badge-sm mr-1">Draft</span>{/if}
                     {#if target.date}{target.date}{/if}

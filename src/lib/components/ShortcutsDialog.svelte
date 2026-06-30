@@ -29,7 +29,7 @@ native behavior.
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <ShortcutsGrid />
-    <p class="mt-3 text-xs text-[var(--color-muted)]">{shortcutsClosingLine}</p>
+    <p class="mt-3 text-xs text-muted">{shortcutsClosingLine}</p>
   </div>
   <form method="dialog" class="modal-backdrop">
     <button tabindex="-1" aria-label="Close">close</button>

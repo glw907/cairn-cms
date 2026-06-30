@@ -68,7 +68,7 @@ DeleteDialog a11y conventions.
         <span class="text-sm font-medium">URL slug</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
-      <p class="text-xs text-[var(--color-muted)]">
+      <p class="text-xs text-muted">
         Links from other pages update automatically, so nothing breaks. The new URL slug will be
         <code class="text-xs">{nextSlug}</code>.
       </p>

@@ -13,7 +13,7 @@
           "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *"
         ],
         "componentsLayerCap": 14,
-        "retiredTokenBudget": 204
+        "retiredTokenBudget": 198
       }
     },
     "showcase": {

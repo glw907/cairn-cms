@@ -12,7 +12,7 @@ editor-shortcuts source. The host wraps it with its own heading and any closing 
   {#each editorShortcuts as row (row.label)}
     <div class="flex items-baseline justify-between gap-4">
       <span>{row.label}</span>
-      <span class="font-mono text-[0.75rem] text-[var(--color-muted)]">{row.keys}</span>
+      <span class="font-mono text-[0.75rem] text-muted">{row.keys}</span>
     </div>
   {/each}
 </div>

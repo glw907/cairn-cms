@@ -100,11 +100,11 @@ describe('evaluate', () => {
 	});
 });
 
-describe('retiredTokenHits — per-tree pattern', () => {
-	// The showcase signal: any arbitrary-value bracket utility or inline style wrapping a literal
-	// var(--…). Mirrors the admin pattern's two branches, generalized off muted/subtle to any token.
-	const showcasePattern = '\\[[^\\][]*var\\(--[^\\][]*\\]|style="[^"]*var\\(--';
+// The showcase signal: any arbitrary-value bracket utility or inline style wrapping a literal
+// var(--…). Mirrors the admin pattern's two branches, generalized off muted/subtle to any token.
+const showcasePattern = '\\[[^\\][]*var\\(--[^\\][]*\\]|style="[^"]*var\\(--';
 
+describe('retiredTokenHits — per-tree pattern', () => {
 	it('flags bracket and inline var(--…) refs but not the dynamic var({…}) swatch', () => {
 		const hits = retiredTokenHits('src/tests/fixtures/retired-token-showcase', showcasePattern);
 		expect(hits.length).toBe(2);
@@ -117,7 +117,6 @@ describe('retiredTokenHits — per-tree pattern', () => {
 });
 
 describe('evaluate — showcase-shaped tree', () => {
-	const showcasePattern = '\\[[^\\][]*var\\(--[^\\][]*\\]|style="[^"]*var\\(--';
 	const tree = {
 		adminCss: null,
 		markupDirs: ['src/tests/fixtures/retired-token-showcase'],

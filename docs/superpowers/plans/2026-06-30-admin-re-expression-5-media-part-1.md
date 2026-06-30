@@ -108,6 +108,24 @@ git commit -m "Baseline the media library browse view; existing shells unchanged
 
 ---
 
-## Post-mortem
+## Post-mortem (2026-06-30)
 
-(Appended at pass end.)
+Phase 5 swept the Phase-5 half of `CairnMediaLibrary` (the browse view below the slide-over) plus `MediaPicker`: 24
+tokens retired, budget 149 → 125, zero pixels moved, and the one ledger-enumerated presence-only a11y test hardened.
+
+**What landed (commits on `admin-reexpr-4-desk-chrome`):** Cluster A `CairnMediaLibrary` browse view (`f64b7f8`, 21
+tokens on lines `< 1627`, 149→128; the slide-over/dialogs `≥ 1627` untouched — grep-verified the Phase-6 count stayed
+**105**); Cluster B `MediaPicker` (`441fc7c`, the presence-only test hardened to behavioral, then 3 tokens retired,
+128→125). Media-library visual baseline (`57e20e8`).
+
+**Verified:** `check` 0/0, `npm test` 2867, `check:custom-surface` PASS at 125, the Phase-6 region intact at 105
+tokens; e2e 14/14; both reviewers clean. The `MediaPicker` hardening asserts the narration region mutates per ArrowDown
+("Blue shoes, 1 of 2" then a string containing ", needs alt text" and "2 of 2") while the count region stays unchanged,
+and excludes the boundary-clamp re-announce (the picker's deliberate wiring). No native primitive adopted (the needs-alt
+markers are labelled chips; the triage is a true `role=radiogroup` that stays). The `headerLabel` const spans both halves,
+but only its definition carries the token and the swap is pixel-neutral, so the four Phase-6 labels render identically and
+need no Phase-6 action.
+
+**Sequencing note.** Phase 5 executed in the same pass as Phase 4 (the budget ratchet 195→149→125 is one clean
+sequence). The one non-trivial media form, `decoration-[var(--color-muted)]/55` at `:2322` (a decoration-color with an
+opacity suffix and no named utility), is in the Phase-6 half and is deferred to Phase 6.

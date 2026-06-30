@@ -11,48 +11,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): admin re-expression Phases 2 + 3 COMPLETE, merged to `main` + pushed (held unpublished); NEXT = Phase 4 (desk chrome)
+## Immediate next action (2026-06-30, LATEST): admin re-expression Phases 2–5 COMPLETE + merged + pushed (held); NEXT = Phase 6 (media part 2), the LAST sweep phase
 
-The admin idiomatic re-expression **sweep Phases 2 (office chrome) and 3 (forms and settings) are complete**, merged
-to `main` and pushed, held unpublished per the hold-and-batch cadence. Branch `admin-reexpr-2-office-chrome` carried
-both. Plans + post-mortems:
-`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md` and
-`...-3-forms.md`.
+The admin idiomatic re-expression **sweep Phases 2 (office chrome), 3 (forms), 4 (desk chrome), and 5 (media part 1)
+are complete**, merged to `main` and pushed, held unpublished per the hold-and-batch cadence. Plans + post-mortems are
+under `docs/superpowers/plans/2026-06-30-admin-re-expression-{2,3,4,5}-*.md`; the ledger
+(`docs/internal/design/2026-06-29-custom-surface-ledger.md`) carries the per-phase sign-offs.
 
-**Both phases were near-mechanical token retirements, not redesigns** (the spec's premise check holds: the foldable
-surface is small). Phase 2 retired 37 office-chrome references (budget 235 → 198, 8 of 13 components) and added the
-login/confirm visual baselines. Phase 3 retired 3 forms references (budget 198 → **195**: `FieldInput`,
-`ReferenceField`, `ManageEditors`), hardened the one presence-only `RepeatableField` live-region test to behavioral,
-and baselined `/admin/editors`. Across both: **no** native-primitive adoption, **no** `@layer` fold (`cairn-admin.css`
-untouched, `componentsLayerCap` 14), zero pixel change (every prior baseline byte-identical). Gate green throughout
-(`check` 0/0, `npm test` 2867, `check:custom-surface` PASS at 195, `npm run package` green, e2e 10/10); reviewers
-clean; code-simplifier no-op both passes.
+**All four were near-mechanical token retirements (the spec's premise check holds).** The admin `retiredTokenBudget`
+ratcheted **235 → 198 → 195 → 149 → 125**. Phase 2 (office, 37) + login/confirm baselines. Phase 3 (forms, 3) +
+hardened the `RepeatableField` live-region test + `/admin/editors` baseline. Phase 4 (desk chrome, 46:
+`EditPage`/`TidyReview`/component-insert dialogs) — kept the Write/Preview `tab` strip and the save-state `status` dot
+hand-rolled (both fail Rule 3 on a11y grounds) + edit-page baseline. Phase 5 (media pt1, 24: `CairnMediaLibrary` browse
+view `< 1627` + `MediaPicker`) — hardened `MediaPicker.test.ts:90` + media-library baseline; the Phase-6 region
+(`≥ 1627`, 105 tokens) left untouched. Across all four: **no** native-primitive adoption, **no** `@layer` fold
+(`cairn-admin.css` untouched, `componentsLayerCap` 14), the CodeMirror content theme walled, zero pixel change (all 14
+baselines byte-identical to their generation). Gate green throughout (`check` 0/0, `npm test` 2867,
+`check:custom-surface` PASS at 125, e2e 14/14); reviewers clean; code-simplifier no-op every pass.
 
-**`floating-label` is CLOSED (decided against), not deferred.** Geoff's call (keep persistent labels). The census
-proved it is a redesign addition (every admin input uses the native persistent stacked-label / `fieldset` idiom; no
-hand-rolled label-floating mechanism to fold), at ~10 sites with an a11y-migration cost and zero de-customization
-benefit. Not pursued, not logged. A later phase must not re-raise it.
+**Decisions locked (do not relitigate):** `floating-label` CLOSED (Geoff: keep persistent labels). `tab`/`status`
+KEEP hand-rolled (a11y). The CodeMirror editing surface is a SEPARATE future pass, framed in
+`docs/internal/cm-editing-surface-alignment.md` + ROADMAP "Later" (not part of this sweep).
 
-**Gotcha that bit (third time):** a Phase 2 STATUS prose line wrote the token as the alternation shorthand with a
-`|` inside the square brackets; Tailwind v4's doc scan compiled it to invalid CSS and broke `npm run package`.
-Write the parenthesized `var(--color-(muted|subtle))` form in prose, and run `npm run check:custom-surface` (which
-repackages, scanning docs) at pass-end, not only the bare check script. See `tailwind-scans-docs-bad-candidate`.
+**Gotcha — bit a FOURTH time, from a plan-prose line.** Writing the token in any `text-[…]`-wrapped form that carries a
+`|` alternation inside the brackets (with or without parentheses around it) breaks `npm run package` (Tailwind doc-scan
+compiles it to invalid CSS). Always write the **bare** `var(--color-(muted|subtle))`, never inside a `text-[…]` wrapper,
+in any doc. Run `npm run check:custom-surface` (repackages, scans docs) at pass-end. See `tailwind-scans-docs-bad-candidate`.
 
-**Held — no version bump, no release** (admin internals a consumer never imports; zero behavior change). No CHANGELOG
-entry. The `admin-design-system.md` recipe text still cites the old bracket form; the final docs phase rewrites it.
+**Held — no version bump, no release** (admin internals a consumer never imports; zero behavior change). No CHANGELOG.
 
-**NEXT = Phase 4 (desk chrome):** the `EditPage` chrome (the topbar context portal, the slide-overs, the headless
-dialogs), `EditorToolbar`, the footer environment strip. **Not** the CodeMirror content theme (walled, confirmed
-untouched). Ratchets the budget from 195. The edit-page forms get their visual baseline here. Same method: census
-the cluster, write + (proportionately) review the plan, execute via a `cairn-implementer` workflow, then pass-end.
-Watch: `EditPage.test.ts` couples to `.alert`/`.badge`/`.cairn-save-state .bg-warning` (the ledger's pre-declared
-selector-decoupling list) — Phase 4 must check whether those classes actually fold before migrating, the same
-reconciliation Phase 2 applied to ConceptList.
+**NEXT = Phase 6 (media part 2), the FINAL sweep phase.** Residual budget **125**, all media:
+`CairnMediaLibrary`'s slide-over + dialogs (the `≥ 1627` region, 105 tokens — incl. the one non-trivial form,
+`decoration-[var(--color-muted)]/55` at `:2322`, a decoration-color with an opacity suffix that has NO named utility
+and CANNOT fold to `text-muted`; it needs a guaranteed-value or bespoke treatment, not a role swap), `MediaHeroField`
+(14), `MediaFigureControl` (4), `MediaCaptureCard` (1), `MediaInsertPopover` (1). Ratchets 125 → **0** (the terminal
+floor). Census the six a11y models in the slide-over/safe-delete region, write + review the plan (mind the
+`decoration/55` special-case), execute via a `cairn-implementer` workflow, pass-end. After Phase 6 the admin tree is at
+its proven floor; then the serialized starter-template track, then the docs phase.
 
-If resuming cold to start Phase 4: Phases 2 + 3 are merged to `main` (budget at 195). Branch a Phase 4 worktree off
-`main`, then census the desk-chrome cluster, write + review the plan, and execute. Read the Phase 2/3 post-mortems and
-the ledger's Phase 2/3 sign-offs, plus the `cairn-admin-design-modernization` memory. A drafted Phase 4 plan, if one
-exists under `docs/superpowers/plans/`, supersedes this pointer.
+If resuming cold to start Phase 6: Phases 2–5 are merged to `main` (budget at 125). Branch a Phase 6 worktree off
+`main`, then census the `CairnMediaLibrary` slide-over/safe-delete region plus the four other media components, write +
+review the plan, and execute. Read the Phase 4/5 post-mortems and the ledger's Phase 4+5 sign-off, plus the
+`cairn-admin-design-modernization` memory. A drafted Phase 6 plan, if one exists under `docs/superpowers/plans/`,
+supersedes this pointer.
 
 ## Immediate next action (2026-06-29, prior): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 

@@ -130,6 +130,26 @@ git commit -m "Baseline the edit page (desk chrome); existing shells unchanged"
 
 ---
 
-## Post-mortem
+## Post-mortem (2026-06-30)
 
-(Appended at pass end.)
+Phase 4 swept the desk chrome: 46 muted/subtle tokens retired, budget 195 → 149, zero pixels moved. Both genuine
+native-primitive candidates resolved to KEEP on a11y grounds, and the CodeMirror content theme stayed walled.
+
+**What landed (commits on `admin-reexpr-4-desk-chrome`):** Cluster A `EditPage` (`8fcb0a0`, 20 tokens, 195→175, the
+entangled `segButtonClass`/`ftrToggleClass` false-arms + the two ftr-link lines handled token-scoped); Cluster B
+`TidyReview` (`347f609`, 13, 175→162, the ternary false-arms with sanctioned-ink true arms left intact); Cluster C
+the component-insert dialogs (`5a3c902`, 13, 162→149). Edit-page visual baseline (`57e20e8`, `.cm-content` masked as
+the walled subject).
+
+**Verified:** each cluster `check` 0/0, `npm test` 2867, `check:custom-surface` PASS at its budget; showcase
+admin-visual e2e 14/14 single-attempt (the 10 prior baselines byte-identical); both reviewers clean; code-simplifier
+a no-op. `tab` and `status` kept hand-rolled (DaisyUI `.tabs` drops the ARIA/roving contract; the save-state dot is an
+`aria-hidden` decoration), `cairn-admin.css` untouched, no coupled-test migration (the `.alert`/`.badge`/`.cairn-save-state`
+assertions test native/kept classes).
+
+**Lesson (the gotcha bit a fourth time, from my own prose).** The Cluster A implementer found `npm run package` failing
+on a clean tree: my committed Phase 5 plan wrote the token in a `text-[…]`-wrapped form with a `|` alternation inside the
+brackets, which Tailwind's doc-scan compiled to invalid CSS. It fixed the plan prose to the bare `var(--color-(muted|subtle))`
+form (`89face6`) and confirmed that even parenthesizing the alternation inside the brackets still breaks. I keep
+reintroducing this in plan prose; the rule is to write the **bare** `var(--color-(muted|subtle))`, never any
+`text-[…]`-wrapped token carrying a `|`, in any doc.

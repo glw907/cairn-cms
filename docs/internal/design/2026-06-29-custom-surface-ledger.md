@@ -412,3 +412,31 @@ that class-shaped string into invalid CSS and broke `npm run package`. Write the
 form `var(--color-(muted|subtle))` in prose, never the bracketed alternation. The pass-end gate must run
 `npm run check:custom-surface` (which prepends `npm run package`, scanning docs), not only the bare
 `node scripts/check-custom-surface.mjs` (which reads source and misses a doc-scan break).
+
+## Phase 4 + 5 sign-off: desk chrome (195 → 149) and media part 1 (149 → 125)
+
+Phases 4 (desk chrome) and 5 (media part 1) are complete (2026-06-30, executed in one pass; plans
+`...-4-desk-chrome.md` and `...-5-media-part-1.md`). The admin `retiredTokenBudget` ratcheted 195 → 149 → **125**.
+
+**Phase 4 (desk chrome, 46 tokens):** `EditPage` (20), `TidyReview` (13), the component-insert dialogs (13);
+`EditorToolbar` swept by confirmation (0). Two native-primitive candidates evaluated and **kept hand-rolled**: the
+Write/Preview `tab` strip (a true ARIA `role=tablist`/`tab`/`tabpanel` + roving-tabindex hybrid; DaisyUI `.tabs` is
+styling-only, no roles, no keyboard model, so folding drops the contract) and the save-state `status` dot (an
+`aria-hidden` decoration beside visible text; `.status` would only churn the test selectors). The CodeMirror content
+theme (`MarkdownEditor.svelte` + `editor-*.ts`) is the walled hard floor and was not touched.
+
+**Phase 5 (media part 1, 24 tokens):** `CairnMediaLibrary`'s browse view — the grid/listbox, the density table, the
+triage radiogroup, the action bar (lines `< 1627`, 21 tokens) — plus `MediaPicker` (3). The Phase-6 half (the
+slide-over + dialogs, lines `≥ 1627`, **105 tokens**) was left untouched, verified by grep after the sweep. The
+triage filter is a true `role="radiogroup"` (pick-one, `aria-checked`) and stays hand-rolled; the needs-alt/Described
+markers are labelled chips, not bare dots, so `status` was not adopted. The `MediaPicker.test.ts:90` presence-only
+live-region test (the one ledger-enumerated gap) was hardened to behavioral. The `headerLabel` const is interpolated
+in both halves, but only its definition carries the token and the swap is pixel-neutral. The one non-trivial media
+form, `decoration-[var(--color-muted)]/55` at `:2322` (a decoration-color with an opacity suffix, no named utility),
+is in the Phase-6 half — **deferred to Phase 6**.
+
+**Residual: 125 tokens**, all in the media files: `CairnMediaLibrary` Phase-6 region (105) + `MediaHeroField` (14) +
+`MediaFigureControl` (4) + `MediaCaptureCard` (1) + `MediaInsertPopover` (1). These are Phase 6 (media part 2). No
+`@layer` fold, no coupled-test migration in either phase (the `.alert`/`.badge`/`.cairn-save-state` and the media-test
+role selectors all test native/kept classes). Visual baselines added: the edit page (chrome; `.cm-content` masked) and
+the media library browse view; the prior 10 baselines stayed byte-identical (the zero-pixel proof for both passes).

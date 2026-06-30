@@ -61,6 +61,27 @@ their identity and upgrade seams. Framing: `docs/internal/cm-editing-surface-ali
 "Later"; the sweep deliberately walled the CM theme out of scope. Recorded in the
 `cairn-codemirror-integration-pass` memory.
 
+**Resume prompt for the next pass (the starter-template track, phase 1: template foundation).** Launch in
+the cairn-cms **main checkout** (`~/Projects/cairn-cms`, so hooks and memory load), create a feature
+worktree off `main` per `superpowers:using-git-worktrees`, then:
+
+> Start the starter-template track of the admin idiomatic re-expression initiative, phase 1 (template
+> foundation). The admin sweep (Phases 0–6) is complete and published as `0.78.1`, so the admin primitives
+> are stable and the showcase builds against them through the `file:../..` dep (`npm run package` carries
+> the dist). Read the spec
+> `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the "## The starter
+> template" section and the "### The starter-template track" phasing), the ledger
+> `docs/internal/design/2026-06-29-custom-surface-ledger.md`, and the `cairn-admin-design-modernization`
+> memory first. Use `cairn-pass`. The phase: audit `examples/showcase` into its own Tier-1/2/3 ledger;
+> wall and document its owned design (`prose.css`, the `.cairn-place-*` contract, the brand styling) as the
+> template's Tier 2; extend `check:custom-surface` to the showcase tree with its own seeded budget (the
+> showcase tree in `scripts/custom-surface-budget.json` currently holds a placeholder seed of 0 / cap 0
+> with `adminCss: null` — re-seed it at the audited values). The showcase keeps its OWN DaisyUI theme
+> (Tier 1, NOT Warm Stone); no redesign. Brainstorm the open decisions, write the just-in-time plan
+> (test-first), then execute task-by-task via `cairn-implementer` with the full gate per task. Then the
+> template-chrome phase (`SiteHeader`/`SiteFooter`/the `(site)` layouts/the `styleguide` route), then the
+> docs phase. Hold-and-batch for releases unless a consumer-facing trigger warrants a cut.
+
 ## Immediate next action (2026-06-30, prior): admin re-expression Phases 2–5 COMPLETE + merged + pushed (held); NEXT = Phase 6 (media part 2), the LAST sweep phase
 
 The admin idiomatic re-expression **sweep Phases 2 (office chrome), 3 (forms), 4 (desk chrome), and 5 (media part 1)

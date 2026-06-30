@@ -11,7 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): tag-management Plans 1 + 2 LANDED on a worktree; NEXT = write Plan 3 (admin UI, mockup-first) just-in-time, review, execute
+## Immediate next action (2026-06-29, latest): tag-management Plans 1 + 2 LANDED, Plan 3 (admin UI) WRITTEN + adversarially reviewed; NEXT = execute Plan 3 in a FRESH SESSION
+
+**Plan 3 is written, adversarially reviewed, and committed** at
+`docs/superpowers/plans/2026-06-29-cairn-tag-management-3-admin-ui.md` (`35e6e17`). The review (one
+Workflow, six lenses, 5 of 14 confirmed) folded: `vocabularyLoad` wraps the manifest read +
+`buildTagUsageIndex` in the `mediaLibraryLoad` best-effort degrade (a transient `listBranches`/manifest
+failure must not 500 the screen); the mockup-first design task (Task 2) produces **rendered HTML mockups +
+a design-reference markdown** under `docs/internal/design/` (the design-pass methodology), not a prose note;
+the size gate gets a named `TAG_FILTER_MIN_ENTRIES = 12` threshold, seeded above for the showcase; the live
+smoke is re-scoped to a pre-publish showcase e2e (the dev-backend `/test/*` doubles) plus a deferred
+post-publish live smoke; the held CHANGELOG window reconciliation preserves both breaking consumer-action
+blocks. Five tasks: the route pair + cross-branch delete gate; the mockup-first design; the
+`VocabularyAdmin.svelte` screen + mount; the size-gated showcase filter + e2e; the smoke + docs +
+held-release consolidation.
+
+**EXECUTE IN A FRESH SESSION** (the engine work — Plans 1 + 2 — is done and shippable; Plan 3 is the
+editor-facing UI and benefits from a focused `frontend-design` mockup pass). Launch a fresh session in the
+worktree `~/Projects/cairn-cms/.claude/worktrees/extensibility-plan-1` (so the repo's `CLAUDE.md`, hooks, and
+memory load), on branch `worktree-tag-management-1`. Resume prompt:
+
+> Execute tag-management Plan 3 (`docs/superpowers/plans/2026-06-29-cairn-tag-management-3-admin-ui.md`) on
+> branch `worktree-tag-management-1`. Plans 1 + 2 of the initiative have landed and are green. Use the
+> `cairn-pass` skill. Execute task-by-task via `cairn-implementer` (Sonnet), reviewing each diff and clearing
+> the full gate between, EXCEPT Task 2 (the mockup-first design stage) which is main-loop `frontend-design`
+> work producing HTML mockups + a design-reference markdown that Task 3 ports. Do not re-introduce a
+> superset-enforcement gate (Plan 2's per-entry union already prevents any build delist; the seed is a UX
+> affordance). See the `cairn-tag-management-initiative` memory.
+
+After Plan 3 lands, the whole initiative is one held minor (first free after `0.77.0` publishes; verify with
+`npm view` at cut time); cutting the release is Geoff's deliberate step. Use `cairn-pass` for pass-start/end.
+
+## Prior next action (2026-06-29): tag-management Plans 1 + 2 LANDED; NEXT was write Plan 3
 
 **Plan 2 (the data engine) is complete on `worktree-tag-management-1`**, all eight tasks landed
 (`13e6895`→`890f2b4`, plus `df07299` simplifier), each dispatched to `cairn-implementer` (Sonnet),

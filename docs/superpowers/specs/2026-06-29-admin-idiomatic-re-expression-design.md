@@ -236,9 +236,11 @@ gate is instead defined on enumerable, unambiguous signals:
   both loss and proliferation.
 - **A hard cap on `@layer components` rule selectors** in `cairn-admin.css`, excluding the named Tier-2
   infrastructure rules (the resets), which are themselves pinned by selector.
-- **Retired-token detection in markup:** any `text-[var(--color-muted)]` / `text-[var(--color-subtle)]`
-  (and peers, once the role set is fixed) in `*.svelte` is a fail. This doubles as the migration tracker:
-  the gate goes green exactly when the retirement is complete.
+- **A retired-token budget that ratchets to zero:** the count of `text-[var(--color-muted)]` /
+  `text-[var(--color-subtle)]` (and peers, once the role set is fixed) in `*.svelte`, seeded per-tree at
+  the current count and lowered by each sweep phase as it retires its cluster's tokens. The migration is
+  complete when the budget reaches zero. (Phase 0 retires only the pilot-adjacent files, so the budget
+  starts below the raw total, not at it.)
 - **A frozen Tier-2 allowlist, by exact token name, not by category.** Adding to it requires a
   one-line charter-premise note, so the "justify into Tier 2" escape hatch cannot become a silent
   regrowth path.

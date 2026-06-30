@@ -76,3 +76,21 @@ test('admin confirm page — dark', async ({ page, context, baseURL }) => {
   await expect(page.getByRole('button', { name: 'Confirm sign-in' })).toBeVisible();
   await expect(page).toHaveScreenshot('auth-confirm-dark.png', { fullPage: true });
 });
+
+// The editors page (ManageEditors), swept in Phase 3 (forms). The dev backend seeds the session owner
+// plus one editor, so the table renders real rows; the heading settles the DOM before the screenshot.
+test('admin editors page — light', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/editors');
+  await expect(page.getByRole('heading', { level: 1, name: 'Editors' })).toBeVisible();
+  await expect(page).toHaveScreenshot('admin-editors-light.png', { fullPage: true });
+});
+
+test('admin editors page — dark', async ({ page, context, baseURL }) => {
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin-dark', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.goto('/admin/editors');
+  await expect(page.getByRole('heading', { level: 1, name: 'Editors' })).toBeVisible();
+  await expect(page).toHaveScreenshot('admin-editors-dark.png', { fullPage: true });
+});

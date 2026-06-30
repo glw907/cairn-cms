@@ -226,14 +226,14 @@ or extend it; nothing here is a literal a re-skin would miss.
     </p>
 
     <h3 class="sg-h3">Buttons</h3>
-    <div class="sg-row">
+    <div class="flex flex-wrap items-center gap-s">
       <button class="btn btn-primary">Primary</button>
       <button class="btn btn-outline">Outline</button>
       <button class="btn btn-ghost">Ghost</button>
     </div>
 
     <h3 class="sg-h3">Tags and a badge</h3>
-    <div class="sg-row">
+    <div class="flex flex-wrap items-center gap-s">
       <span class="badge badge-outline">Markdown</span>
       <span class="badge badge-outline">Cloudflare</span>
       <span class="badge badge-primary">New</span>
@@ -246,7 +246,7 @@ or extend it; nothing here is a literal a re-skin would miss.
         A card uses the elevation pair (a hairline border plus a soft shadow), never a flat border.
         It groups related content without a heavy box.
       </p>
-      <div class="sg-row">
+      <div class="flex flex-wrap items-center gap-s">
         <button class="btn btn-primary btn-sm">Read more</button>
       </div>
     </div>
@@ -471,14 +471,6 @@ or extend it; nothing here is a literal a re-skin would miss.
     font-size: var(--text-step-2);
     line-height: var(--leading-snug);
     color: var(--color-base-content);
-  }
-
-  /* Components. A horizontal flow row for inline samples (buttons, tags). */
-  .sg-row {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--spacing-s);
   }
 
   /* The floating card: the elevation pair, never a flat base-300 border (the admin convention). */

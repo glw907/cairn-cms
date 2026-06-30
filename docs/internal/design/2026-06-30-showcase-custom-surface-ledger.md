@@ -82,7 +82,7 @@ DaisyUI roles.
 
 | Token | Reason |
 | --- | --- |
-| `--cairn-muted` | secondary-text ink; the captions, meta, and the code comment/punct ramp read it |
+| `--color-muted` | secondary-text ink; the captions, meta, and the code comment/punct ramp read it. Renamed from `--cairn-muted` in Phase 2 and moved to `@theme` so the `text-muted` utility generates; keeps its Tier-2 role |
 | `--cairn-success-ink` | on-surface status ink (code string; callout-tip) |
 | `--cairn-warning-ink` | on-surface status ink (code number; callout/alert caution) |
 | `--cairn-error-ink` | on-surface status ink |
@@ -92,7 +92,7 @@ DaisyUI roles.
 
 | Token | Reason |
 | --- | --- |
-| `--cairn-card-border` | the faint hairline that carries card definition, theme-adaptive (9% light, 16% dark) |
+| `--color-card-border` | the faint hairline that carries card definition, theme-adaptive (9% light, 16% dark). Renamed from `--cairn-card-border` in Phase 2 and moved to `@theme` so the `border-card-border` utility generates; keeps its Tier-2 role |
 | `--cairn-shadow` | the soft floating-card shadow, warm-tinted light, near-absent dark |
 
 ### The CTA panel pair
@@ -123,34 +123,61 @@ owns what:
   and space scales, the reading surface in `prose.css`, the brand styling, the CTA pair. The re-skin
   recipe at the top of `theme.css` is the documented entry point.
 
-## Tier 3: the Phase-2 fold target
+## Tier 3: folded (Phase 2, template chrome — DONE)
 
-A candidate is Tier 3 only where a native Tailwind 4 or DaisyUI 5.6 primitive provably replaces it
-without losing an accessibility cue or a design intent. Phase 1 records these; Phase 2 (template chrome)
-folds them.
+A candidate was Tier 3 only where a native Tailwind 4 or DaisyUI 5.6 primitive provably replaced it
+without losing an accessibility cue or a design intent. Phase 1 recorded these; Phase 2 (template chrome,
+Tasks 1 through 6) folded them. **Final showcase `retiredTokenBudget`: 0 (the floor).** The record:
 
-- **The arbitrary-value bracket utilities and inline `var(--…)` styles in the chrome and route markup.**
-  `SiteHeader.svelte`, `SiteFooter.svelte`, `(site)/+layout.svelte`, and `(site)/+page.svelte` reach for
-  the cairn token layer through arbitrary-value utilities (`text-[length:var(--cairn-step-1)]`,
-  `gap-[var(--cairn-space-m)]`, `font-[family-name:var(--font-display)]`, `text-[color:var(--cairn-muted)]`,
+- **The arbitrary-value bracket utilities and inline `var(--…)` styles in the chrome and route markup
+  (FOLDED).** `SiteHeader.svelte`, `SiteFooter.svelte`, `(site)/+layout.svelte`, and `(site)/+page.svelte`
+  reached for the cairn token layer through arbitrary-value utilities
+  (`text-[length:var(--cairn-step-1)]`, `gap-[var(--cairn-space-m)]`,
+  `font-[family-name:var(--font-display)]`, `text-[color:var(--cairn-muted)]`,
   `tracking-[var(--cairn-tracking-tight)]`, `max-w-[var(--cairn-measure-wide)]`,
-  `border-[color:var(--cairn-card-border)]`, `rounded-[var(--radius-field)]`) because no named utility
-  exists yet. This is the showcase's analog of the admin's retired `text-[var(--color-muted)]`. Rule 2
-  retires them to named utilities.
-- **The design-scale token home.** The type scale (`--cairn-step-*`), the space scale
-  (`--cairn-space-*`), the faces (`--font-display/body/mono`), and the
-  `--cairn-tracking-*`/`--cairn-leading-*`/`--cairn-measure*` values are declared on `:root`. Phase 2
-  moves them into Tailwind 4's `@theme` block, where Tailwind generates the named utilities
-  (`font-display`, `text-step-1`, the spacing scale, `tracking-*`, `leading-*`) that the markup above will
-  consume. The scale *values* are owned design that stays; only the home and the markup references change.
-  This is the enabling fold: the bracket utilities cannot retire to named utilities until the tokens live
-  where Tailwind reads them.
-- **The island-converter demo CSS** (`site.css`, the `.island-converter*` block). Minimal bespoke
-  styling for the styleguide's island demo, with magic numbers (`font-size: 1.125rem`, `gap: 0.25rem`,
-  `opacity: 0.6`) and one bug: line 113 reads `border: 1px solid var(--cairn-rule, #b8b0a4)`, but
-  `--cairn-rule` is defined nowhere, so it always renders the hardcoded `#b8b0a4` fallback (a dead token
-  and a magic hex). Phase 2 folds the demo onto theme tokens and removes the dead token. **Not fixed in
-  Phase 1** (it would change a pixel).
+  `border-[color:var(--cairn-card-border)]`, `rounded-[var(--radius-field)]`). Tasks 1 through 4 folded
+  each onto its named utility (`font-display`, `text-step-1`, `gap-m`, `tracking-tight`,
+  `max-w-measure-wide`, `text-muted`, `border-card-border`, `rounded-field`). The retired-token count went
+  20 → 16 (Task 1) → 1 (Tasks 2 and 3) → 0 (Task 4). Pixel-neutral: each rename resolves to the same value,
+  guarded by the `site-visual` baseline.
+- **The design-scale token home (MOVED + RENAMED).** The type scale, the space scale, the faces, and the
+  tracking/leading/measure values moved from `:root` into Tailwind 4's `@theme` block and were RENAMED to
+  Tailwind's utility namespaces (`--cairn-step-N` → `--text-step-N`, `--cairn-space-X` → `--spacing-X`,
+  `--cairn-tracking-*` → `--tracking-*`, `--cairn-leading-*` → `--leading-*`, `--cairn-measure*` →
+  `--container-measure*`, `--cairn-muted` → `--color-muted`, `--cairn-card-border` → `--color-card-border`;
+  the `--font-*` faces kept their names). Tailwind now generates the named utilities the chrome consumes,
+  and re-emits each token at `:root` so the `var()` consumers in `theme.css`, `prose.css`, and `site.css`
+  keep resolving. The scale *values* are owned design that stayed; only the home and the names changed.
+  This was the enabling fold. The rename is now the template's documented re-skin surface (the recipe at
+  the top of `theme.css`, rewritten in Task 6 to name the `@theme` tokens and note they drive utilities).
+- **The island-converter demo CSS (FIXED, Task 5).** `site.css`'s `.island-converter*` block carried a
+  dead token: `border: 1px solid var(--cairn-rule, #b8b0a4)`, where `--cairn-rule` was defined nowhere, so
+  it always rendered the hardcoded `#b8b0a4` fallback (a dead token and a magic hex). Task 5 replaced it
+  with `var(--color-base-300)` (the theme's light `-300` step, the closest stone gray). This is the one
+  **deliberate, reviewed pixel change** in the phase: the dark `styleguide-dark` snapshot shifted by the
+  now-visible hairline and was regenerated in the same commit. The demo's remaining magic numbers (the
+  `0.25rem` gap, the `1.125rem` font-size, the `0.25rem` padding) do not map cleanly to the scale tokens
+  (`--spacing-3xs` is ~0.31rem, `--text-step-0` is a clamp, not 1.125rem), so they stay as genuine
+  demo-specific values, not a forced fold.
+
+### The styleguide `.sg-*` chrome (Task 6)
+
+The styleguide route (`(site)/styleguide/+page.svelte`) carries its own scoped `.sg-*` layout chrome in a
+`<style>` block. These are CSS-consumed rules, not markup brackets, so they never counted against the
+retired-token budget. Task 6 folded the one class that maps provably and pixel-neutrally to native
+utilities, `.sg-row` (`flex flex-wrap items-center gap-s`), onto those utilities at its three call sites
+and removed the rule. The remaining `.sg-*` classes (the swatch and step grids with `minmax()` columns,
+the masthead and section typography, the card, tabs, accordion, CTA, and stat treatments) are bespoke
+layout with no clean one-to-one primitive; folding them would risk a cascade or pixel change on the
+design-reference surface, so they stay as scoped, tokenized design (Tier 2 in spirit: the page reads the
+theme tokens, so it re-skins with the rest).
+
+**Sanctioned residual (stays, by design).** The styleguide swatch styles paint each token dynamically:
+`style="background: var({s.token})"`, `style="color: var({s.token})"`, `style="font-size: var({step.token})"`,
+`style="font-family: var({face.token})"`. These use a Svelte interpolation (`var({…})`), not a literal
+`var(--…)`, so the retired-token signal does not match them. They are the template's analog of the admin's
+live-components bar, the one surface that must read tokens dynamically to demonstrate them. They are
+sanctioned and stay; the `sanctionedTokens` allowlist remains empty (nothing forced a bad fold).
 
 ## Call-site census (the retired-token surface)
 
@@ -211,3 +238,17 @@ Phase 1 (template foundation) is recorded here:
 
 Phase 1 made **no pixel change**. The fold (the markup migration to named utilities, the token-home move
 to `@theme`, the island-converter and `--cairn-rule` fix) is Phase 2 (template chrome).
+
+## Phase 2 sign-off (template chrome — DONE)
+
+Phase 2 (Tasks 1 through 6) is recorded in "Tier 3: folded" above. In summary:
+
+- The design-scale tokens moved into `@theme` and were renamed to Tailwind's utility namespaces, so the
+  named utilities generate; the chrome markup folded its arbitrary-value brackets onto them.
+- The retired-token budget ratcheted **20 → 0 (the floor)** and the showcase `check:custom-surface` tree
+  passes at 0.
+- Tasks 1 through 4 were pixel-neutral (renames to identical values). Task 5 made the one deliberate,
+  reviewed pixel change (the `--cairn-rule` fix), recorded in the `styleguide-dark` baseline. Task 6 folded
+  `.sg-row` and rewrote the re-skin recipe and this ledger; it is pixel-neutral.
+- The re-skin recipe at the top of `theme.css` now documents the `@theme` token names and notes they drive
+  named utilities, so the rename is the template's documented re-skin surface.

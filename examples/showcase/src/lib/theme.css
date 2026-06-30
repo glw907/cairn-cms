@@ -14,9 +14,18 @@
      3. Secondary, accent, neutral, and the four status hues follow the same
         pattern if you want them on-brand; most owners leave them.
      4. The faces: swap `--font-display` and `--font-body` in the `@theme` block.
-     5. Optional fine-tuning: the one type ratio lives in the `--text-step-*`
-        clamps; the one space-scale step in `--spacing-*`. Both sit in the `@theme`
-        block (so they also drive the `text-step-*` and spacing utilities).
+     5. Optional fine-tuning of the design scale, all of it in the `@theme` block:
+        the type ratio lives in the `--text-step-*` clamps, the space-scale steps in
+        `--spacing-*`, the rhythm in `--leading-*` and `--tracking-*`, and the reading
+        column in `--container-measure` and `--container-measure-wide`. The muted ink
+        and the card hairline are color roles in the same block, `--color-muted` and
+        `--color-card-border`. Because each of these sits in `@theme`, Tailwind also
+        emits a NAMED UTILITY for it (`text-step-*`, the spacing utilities such as
+        `gap-m`/`px-m`/`mt-2xl`, `leading-*`, `tracking-*`, `max-w-measure` and
+        `max-w-measure-wide`, `font-display`/`font-body`/`font-mono`, `text-muted`,
+        and `border-card-border`), which the chrome markup uses instead of an
+        arbitrary-value bracket. Editing one token here re-tunes both the `var()`
+        consumers and the utility, so the whole surface tracks the change.
      6. The status-ink seam. Retuning a status FILL above (the `--color-info`,
         `--color-success`, `--color-warning` in the two `@plugin` blocks) is only
         half of that status: the callout and alert titles and left rules, and the

@@ -47,7 +47,24 @@ then the serialized starter-template track, then the docs phase (publishes the r
 **Release cadence for the sweep: hold and batch, do not cut a release per phase** (Geoff, 2026-06-29). The sweep
 phases + the template track + the docs phase accumulate UNPUBLISHED on `main`, each finalizing its `## Unreleased`
 CHANGELOG entry, and publish as ONE window at the end of the initiative (or a meaningful bundle). The next published
-version is the first free minor after `0.78.0`, set at the cut. See `cairn-release-process-and-versioning`.
+version is the first free minor after `0.78.0`, set at the cut. The release scheme is codified in `CLAUDE.md`
+("Releases") and the `cairn-release-process-and-versioning` memory; a pass no longer ends with a version bump.
+
+**Resume prompt for the next pass (Phase 2 — office chrome).** Launch in the cairn-cms main checkout
+(`~/Projects/cairn-cms`, so hooks and memory load), create a feature worktree off `main` per
+`superpowers:using-git-worktrees`, then:
+
+> Start Phase 2 of the admin idiomatic re-expression sweep (office chrome): the `AdminLayout`/shell,
+> `NavTree`, `ConceptList`, `LoginPage`/`ConfirmPage`, the empty states, and the dialog family. Read the spec
+> `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (the Phase 2 list, the five
+> de-customization rules, the verification section), the ledger
+> `docs/internal/design/2026-06-29-custom-surface-ledger.md`, and the `cairn-admin-design-modernization`
+> memory first. Use `cairn-pass`. Write the Phase 2 plan just-in-time (test-first; pre-declare the
+> selector-coupled test migrations and upgrade any presence-only a11y test in the cluster before re-expressing;
+> lower the phase's `check:custom-surface` caps to its post-sweep count), adversarially review it, then execute
+> task-by-task via `cairn-implementer` with the main loop reviewing each diff and clearing the gate. Extend the
+> per-phase visual baseline over the swept surfaces. **Hold unpublished — no version bump, no release at the end
+> of the pass** (the sweep changes admin internals a consumer never imports; see the cadence above).
 
 ## Immediate next action (2026-06-29, prior): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
 

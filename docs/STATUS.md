@@ -11,7 +11,44 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, latest): tag-management Plans 1 + 2 LANDED, Plan 3 (admin UI) WRITTEN + adversarially reviewed; NEXT = execute Plan 3 in a FRESH SESSION
+## Immediate next action (2026-06-29, LATEST): admin design modernization underway; PIVOT to a fresh-UI brainstorm in a clean session
+
+An admin design-system modernization pass emerged mid tag-management Plan 3 and is partly landed on
+`worktree-tag-management-1`. Plan + decisions:
+`docs/superpowers/plans/2026-06-29-cairn-admin-design-modernization.md`; memory
+`cairn-admin-design-modernization`.
+
+**Landed (committed on the worktree):**
+- `815d343` — the polish **bar is now the live components** (the static gold standard is retired/demoted),
+  plus idiomatic mockup tooling (`npm run design:mockup-css`, so a new-screen mockup is authored in real
+  DaisyUI/Tailwind utility classes).
+- `8e0bda1` — **DaisyUI bumped to 5.6.6, Tailwind to 4.3.2** (root + showcase + lockfiles); full gate green
+  (check 0/0, `npm test` 2838, showcase e2e 44), no test changes needed.
+- `c25a72c` — a 5.6 regression fix: 5.6's `.btn[aria-disabled]` adds `pointer-events:none`, so the editor's
+  guarded Figure button now keeps its tooltip via a `cairn-btn-guarded` marker + an unlayered override. The
+  `aria-disabled` "adoption" was investigated and **declined** (it costs a tooltip, not a fit for cairn).
+
+**The pivot (Geoff):** after the bump, **start the admin UI fresh** rather than patch incrementally. The
+vision: the cairn admin is a **restrained DaisyUI showcase** — idiomatic, current DaisyUI 5.6 layout, within
+the cairn sensibility (Warm Stone restraint). This is a major initiative; the session that reached here ran
+long and noisy, so we cleared context to brainstorm it fresh.
+
+**NEXT (fresh session):** launch in the worktree
+`~/Projects/cairn-cms/.claude/worktrees/extensibility-plan-1` (branch `worktree-tag-management-1`), and run
+`superpowers:brainstorming` to scope the fresh restrained-DaisyUI-5.6 admin. Resume prompt:
+
+> Brainstorm the fresh admin UI for cairn-cms: a restrained, idiomatic, current DaisyUI 5.6 showcase within
+> the Warm Stone sensibility. The 5.6 bump and the live-components bar already landed (see
+> `docs/superpowers/plans/2026-06-29-cairn-admin-design-modernization.md` and the
+> `cairn-admin-design-modernization` memory). Use `superpowers:brainstorming` to scope what "start the UI
+> fresh" means (full component rebuild vs. fresh shell/layout keeping logic; how Warm Stone is re-expressed
+> in idiomatic 5.6; sequencing vs. the held tag-management Plan 3, whose vocabulary screen should be built
+> in the new idiom). The polish bar is now the live components, not a static file.
+
+Tag-management Plan 3 (the vocabulary admin UI) is **PAUSED** behind this; its route engine (Task 1) already
+landed (`9ba8791`). The held release window stays held until the admin direction settles.
+
+## Immediate next action (2026-06-29, prior): tag-management Plans 1 + 2 LANDED, Plan 3 (admin UI) WRITTEN + adversarially reviewed; NEXT = execute Plan 3 in a FRESH SESSION
 
 **Plan 3 is written, adversarially reviewed, and committed** at
 `docs/superpowers/plans/2026-06-29-cairn-tag-management-3-admin-ui.md` (`35e6e17`). The review (one

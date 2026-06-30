@@ -11,6 +11,29 @@
 genuinely serves an existing job. Leanness governs: the marquee new components do not fit cairn and are
 declined on purpose.
 
+## Status and pivot (2026-06-29)
+
+The plan below was written before a reframe; read this first.
+
+- **Task A — DONE** (`815d343`): the live-components bar + the idiomatic mockup tooling.
+- **Task B — DONE** (`8e0bda1`): bumped to DaisyUI 5.6.6 / Tailwind 4.3.2 (root + showcase + lockfiles),
+  recompiled, full gate green (check 0/0, `npm test` 2838, showcase e2e 44), no test changes needed.
+- **Task C — RESOLVED, adoption declined** (`c25a72c`): 5.6's `.btn[aria-disabled]` sets
+  `pointer-events: none`, which costs a tooltip rather than helping, so there is no beneficial
+  `aria-disabled` adoption for cairn. The one button it affected (the editor's guarded Figure button) was
+  defended with a `cairn-btn-guarded` marker + an unlayered override so its tooltip survives the bump.
+- **Tasks D/E — SUPERSEDED by the pivot below.** Do not execute the incremental card-selectable /
+  floating-label adoption as written.
+
+**The pivot (Geoff, 2026-06-29):** after the 5.6 bump, split the effort and likely **start the admin UI
+fresh** rather than patch incrementally. The vision: the cairn admin should be a **restrained DaisyUI
+showcase** — an idiomatic, current DaisyUI 5.6 layout, kept within the cairn sensibility (the Warm Stone
+restraint, the quiet polish). This is a major effort and its own initiative; it needs a **fresh-context
+brainstorm** to scope (what "fresh" means: a full component rebuild vs. a fresh shell/layout keeping logic;
+how the Warm Stone design system is re-expressed in idiomatic 5.6; sequencing vs. the held tag-management
+Plan 3, whose vocabulary screen should be built in the new idiom). The next session opens that brainstorm
+with a clean slate. The tag-management Plan 3 UI (Tasks 2-5) is PAUSED behind this direction.
+
 ## Why this exists (the decisions, so they survive a context loss)
 
 Geoff steered this in conversation on 2026-06-29 while Plan 3 was starting:

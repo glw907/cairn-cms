@@ -1653,7 +1653,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                pointer-events: none and would suppress the title tooltip a mouse user reads for the why. -->
           <button
             type="button"
-            class="btn btn-sm btn-ghost btn-square"
+            class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
             class:opacity-50={!figureAvailable}
             class:cursor-not-allowed={!figureAvailable}
             aria-haspopup="dialog"

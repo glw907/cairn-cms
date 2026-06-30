@@ -394,6 +394,16 @@
   outline-offset: -2px;
 }
 
+/* DaisyUI 5.6 added [aria-disabled="true"] to the .btn disabled selector with pointer-events:none,
+   in the utilities layer. The admin's guarded toolbar buttons (the Figure button) carry aria-disabled
+   while unavailable but keep their title tooltip, which names why the control is off, and their click
+   handler already guards inertness; pointer-events:none would kill that tooltip. Restore it for a
+   marked guarded button. Deliberately UNLAYERED, the same mechanism as the .menu focus override above:
+   no layered rule can outrank daisyUI's utilities-layer rule. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
+  pointer-events: auto;
+}
+
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's
    own hover transitions otherwise animate regardless. Scoped to the admin roots, so it never
    reaches the host's pages. */

@@ -77,3 +77,25 @@ it). Start with a brainstorm to settle the writing-surface/chrome line and the p
 popover, then a spec. The locked amber underline token (`--cairn-warning-ink`, reserved so it never collides
 with tidy's `--cairn-error-ink` red) and the deliberate, documented choice of `@codemirror/lint` as the
 surfacing *mechanism* both stay; only the un-recipe'd visual finish and the internal-class coupling change.
+
+## Geoff's steer (2026-06-30): the goal, the three constraints, and prior-art first
+
+Geoff framed this pass as a deliberate initiative, not a finish-up. The goal holds three constraints that
+pull against each other, and holding all three is the work:
+
+- **Full integration and a shared design language.** From the end-user's view the editor should feel like a
+  fully integrated part of cairn and share its design language (the Warm Stone admin look), not a bolted-on
+  third-party widget.
+- **Easy to upgrade.** CodeMirror is mature and battle-tested, so the work must leave it easy to upgrade:
+  narrow seams against CodeMirror's public extension points, not deep overrides against its internal
+  `.cm-*` classes. This is the same upgrade-resilience discipline the admin re-expression sweep applied to
+  DaisyUI and Tailwind.
+- **Do not subvert CodeMirror's editing UX for design purity.** Leverage CodeMirror's accumulated UI/UX
+  lessons; do not trade a quality editing experience for theoretically perfect design consistency. Where
+  consistency would degrade editing, consistency yields.
+
+**Method: prior-art review first.** The design must START with a careful review of how other systems have
+successfully integrated CodeMirror while preserving their own visual identity and keeping the seams such
+that CodeMirror stays easy to upgrade. Route the visual and taste decisions through the frontend-design
+loop with explicit criteria rather than main-loop web research. Prior art, then brainstorm, then spec. The
+`cairn-codemirror-integration-pass` memory carries this steer for a cold session.

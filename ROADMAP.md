@@ -54,11 +54,14 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`). The remaining work is the site cutovers:
   mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
   the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
-- **The admin idiomatic re-expression sweep (Phases 2–6), the starter-template track, then docs.** Phase 0
-  (the `check:custom-surface` gate plus the frozen `text-muted` / `text-subtle` role vocabulary) and Phase 1
-  (the vocabulary-screen pilot) landed in `0.78.0`. The remaining phases re-express the admin's internal
-  CSS and components in native DaisyUI 5.6 / Tailwind 4, so they change nothing a consumer imports and hold
-  unpublished until consumer-facing work accumulates with them. Spec:
+- **The starter-template track, then the docs phase** (the admin re-expression sweep is done). The admin
+  sweep (Phases 0–6) re-expressed every admin component in native DaisyUI 5.6 / Tailwind 4: the
+  `check:custom-surface` gate and the frozen `text-muted` / `text-subtle` role vocabulary (Phase 0) plus the
+  vocabulary-screen pilot (Phase 1) shipped in `0.78.0`, and Phases 2–6 retired the admin's bespoke
+  muted/subtle surface to its terminal floor (`retiredTokenBudget` 0), published as `0.78.1`. What remains:
+  the starter-template track (re-express the showcase template in the same native idiom, now that the admin
+  primitives have published into the showcase `file:` dep), then the docs phase (publish the role vocabulary
+  as the versioned seam in `admin-design-system.md`). Spec:
   `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Next
@@ -95,8 +98,16 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   classes, which is what makes a CodeMirror major expensive. Keep the writing surface (content, syntax, the
   directive rails, the fold gutter, the lint underline) themed via `.cm-content`; just tune the underline.
   Separate from the admin de-customization sweep, which walls the CodeMirror theme. Framing:
-  [`docs/internal/cm-editing-surface-alignment.md`](docs/internal/cm-editing-surface-alignment.md). Start with a
-  brainstorm and a spec.
+  [`docs/internal/cm-editing-surface-alignment.md`](docs/internal/cm-editing-surface-alignment.md).
+
+  Geoff's steer (2026-06-30) sets the goal and the method. The goal holds three constraints that pull
+  against each other: the editor should feel like a fully integrated part of cairn and share its design
+  language; CM is mature and battle-tested, so the work must keep it easy to upgrade through narrow seams,
+  not deep overrides against internals; and it must leverage CM's accumulated UI/UX lessons rather than
+  subvert a quality editing experience for theoretically perfect design consistency. The design must START
+  with a careful prior-art review of how other systems integrated CM while preserving their own visual
+  identity and keeping CM upgrade-easy, then move to a brainstorm and a spec. Recorded in the
+  `cairn-codemirror-integration-pass` memory.
 - **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
   so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
   `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward

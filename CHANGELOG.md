@@ -2,6 +2,20 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+<!-- release-size: patch -->
+
+The admin interface is re-expressed in native DaisyUI 5.6 and Tailwind 4. The idiomatic re-expression
+sweep (Phases 2 through 6) retired the admin's bespoke arbitrary-token color classes (the
+`var(--color-muted)` and `var(--color-subtle)` references a component wrapped in square brackets) to the
+named `text-muted` and `text-subtle` role utilities across every admin component, ending at a zero
+retired-token floor that a `check:custom-surface` gate now holds. The work changes only the admin's
+internal styling, which a consumer never imports.
+
+The public API and runtime behavior are unchanged, so an upgrading site needs no action. Phases 0 and 1
+of the same sweep (the gate and the role vocabulary, and the vocabulary-screen pilot) shipped in `0.78.0`.
+
 ## 0.78.0
 
 <!-- release-size: minor -->

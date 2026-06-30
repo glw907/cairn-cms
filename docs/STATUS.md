@@ -11,7 +11,43 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, LATEST): admin idiomatic re-expression brainstormed + spec'd + Phase 0 plan written (both adversarially reviewed); NEXT = execute Phase 0
+## Immediate next action (2026-06-29, LATEST): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
+
+Phase 0 (the foundation) is built, twice-reviewed, and gate-green on `worktree-tag-management-1`
+(commits `e918a2a`..`00b9f1a`). Executed via two background workflows (segment 1 = audit/role/wall,
+segment 2 = gate/visual-baseline/four-lens-review), each task implemented by `cairn-implementer` and
+adversarially verified, plus an opus gate-hardening pass folding the review's three majors.
+
+**What landed:**
+- The **Tier-1/2/3 ledger** (`docs/internal/design/2026-06-29-custom-surface-ledger.md`): every custom
+  token classified, the call-site census, the verification-gap inventories, the resolved investigations
+  (theme-as-plugin → keep the raw block for the co-located contrast comments; `.btn-primary` lift →
+  stays Tier 2, native `--depth` can't reproduce it), and the Phase 0 sign-off.
+- The **frozen developer-facing role interface**: `text-muted` / `text-subtle` named `@utility` classes
+  (guaranteed-value branch — the contrast fold failed as the spec expected), resolving to the Tier-2
+  `--color-muted` / `--color-subtle` vars. A standing test asserts they stay compiled.
+- **Tier 2 walled** in `cairn-admin.css` (cascade-equivalent, byte-frozen), the load-bearing rules pinned.
+- **`check:custom-surface`** ratchet gate, per-tree, seeded at current (admin: unlayered allowlist of 6
+  pinned-by-exact-selector rules, `componentsLayerCap` 14, `retiredTokenBudget` 235; showcase 0). Hardened
+  against bare-`[data-theme]`-selector evasion and substring-allowlist gaming; the gate bites a planted rule.
+- The **per-phase Playwright visual baseline** over the admin shell (light + dark), committed.
+
+**Gate (independently confirmed):** `check` 0/0, `check:custom-surface` PASS both trees, `check:comments`/
+`check:prose` clean, `npm test` 2855 passed, showcase e2e 46 passed.
+
+**NEXT = Phase 1: the vocabulary-screen pilot + ship the held release.** With the scoped foundation already
+built, the earlier release-sequencing worry is moot: write the Phase 1 plan just-in-time (the vocab admin
+screen = tag-management Plan 3, built on the frozen role interface, near-twin of `CairnTidySettings`), add
+the size-gated showcase filter + e2e + seed/orphan flow, then **cut the held tag-management release** (first
+free minor after `0.77.0`; verify with `npm view`). Then Phases 2–6 (the sweep) + the starter-template track
++ the docs phase (which publishes the role vocabulary as the versioned seam in `admin-design-system.md`).
+
+**Watch items:** (1) the first CI showcase-e2e run may need the two admin visual baselines regenerated on the
+CI image if headless rendering drifts (plan-sanctioned). (2) Gotcha: `buildAdminCss`'s Tailwind content scan
+reaches tracked `docs/*.md`, so a prose `text-[var(...)]`-shaped shorthand in an admin doc compiles to
+malformed CSS and breaks the build — use the real token in admin docs (memory `tailwind-scans-docs-bad-candidate`).
+
+## Immediate next action (2026-06-29, prior): admin idiomatic re-expression brainstormed + spec'd + Phase 0 plan written (both adversarially reviewed); NEXT = execute Phase 0
 
 The fresh-UI brainstorm ran and reframed the pivot. The outcome is **not** "start fresh": Geoff corrected
 it to "the admin isn't bad, it's just excessively custom." The initiative is an **idiomatic re-expression

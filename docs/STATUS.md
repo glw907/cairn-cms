@@ -11,7 +11,30 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, LATEST): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
+## Immediate next action (2026-06-29, LATEST): admin re-expression Phase 1 plan WRITTEN + adversarially reviewed; EXECUTING the vocab pilot, then cut the held release
+
+The Phase 1 plan is `docs/superpowers/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`. It reconciles
+tag-management Plan 3 Tasks 2–5 with the frozen Phase 0 idiom: build `VocabularyAdmin.svelte` natively on the
+`text-muted`/`text-subtle` role interface (near-twin of `CairnTidySettings`), add the size-gated showcase filter +
+the e2e pair + the seed/orphan flow, extend the per-phase visual baseline to the pilot screen, then cut the held
+tag-management release (first free minor after `0.77.0`, verified with `npm view`).
+
+A four-lens adversarial review (charter/idiom, feasibility, gate, a11y) ran via workflow and folded five majors:
+(1) narrowed the Rule-2 constraint to forbid only the retired muted/subtle bracket forms while permitting the
+sanctioned Tier-2 AA inks (`text-[var(--cairn-error-ink)]` etc.) the error/guard text needs; (2) added a
+**dev-backend seed** (`seedVocabulary()` in `packages/cairn-cms-dev`) as a hard prerequisite — without a seeded
+`site.config.yaml` + tagged manifest entries the admin e2e 404s on the first save and the visual baselines
+screenshot a blank screen; (3) the delete guard is `aria-disabled`, never native `disabled`; (4) an always-present
+`role="status"` region narrates add/remove/seed list mutations; (5) the count-only delete presentation is a
+recorded, deliberate Component-2 deviation (the landed load carries a usage count, not blocking-entry identities).
+
+**Method:** task-by-task. Task 1 (design, mockup-first) and Tasks 4–5 (docs, release) are main-loop; Tasks 2–3
+(the screen + the showcase track) execute via the segmented-workflow approach Phase 0 used (each task implemented
+by `cairn-implementer` + adversarially verified), on `worktree-tag-management-1`. The full gate plus
+`check:custom-surface` (the admin `retiredTokenBudget` must stay 235 — the pilot's day-one-idiom proof) clears
+before each task is done.
+
+## Immediate next action (2026-06-29, prior): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
 
 Phase 0 (the foundation) is built, twice-reviewed, and gate-green on `worktree-tag-management-1`
 (commits `e918a2a`..`00b9f1a`). Executed via two background workflows (segment 1 = audit/role/wall,

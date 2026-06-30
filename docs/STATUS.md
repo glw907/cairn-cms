@@ -11,49 +11,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): admin re-expression Phase 2 (office chrome) COMPLETE + held; NEXT = Phase 3 (forms and settings)
+## Immediate next action (2026-06-30, LATEST): admin re-expression Phases 2 + 3 COMPLETE, merged to `main` + pushed (held unpublished); NEXT = Phase 4 (desk chrome)
 
-Phase 2 of the admin idiomatic re-expression sweep (office chrome) is **complete and held unpublished** on
-branch/worktree `admin-reexpr-2-office-chrome` (off `main` at `b31c8a8`, in the `extensibility-plan-1`
-worktree dir). Plan + post-mortem:
-`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md`. **Not yet merged to `main`** (the
-sweep accumulates unpublished; merge with the batch or when a consumer needs it).
+The admin idiomatic re-expression **sweep Phases 2 (office chrome) and 3 (forms and settings) are complete**, merged
+to `main` and pushed, held unpublished per the hold-and-batch cadence. Branch `admin-reexpr-2-office-chrome` carried
+both. Plans + post-mortems:
+`docs/superpowers/plans/2026-06-30-admin-re-expression-2-office-chrome.md` and
+`...-3-forms.md`.
 
-**Landed (commits `e91396d`..`6620617`):** the office-chrome token retirement — 37 arbitrary
-`var(--color-(muted|subtle))` bracket references swapped to the named `text-muted`/`text-subtle` utilities
-across 8 of 13 components, admin `retiredTokenBudget` ratcheted **235 → 198** across three sequential
-red-green clusters (A shell+list, B auth, C dialogs/pickers), plus the visual baseline extended (new login +
-confirm captures; office-shell + vocabulary byte-identical). `cairn-admin.css` untouched, `componentsLayerCap`
-unchanged at 14. **Gate (confirmed green):** `check` 0/0 (1245 files), `npm test` exit 0 (271 files, 2867
-tests) per cluster, `check:custom-surface` PASS both trees at budget 198, `check:comments` OK, showcase
-admin-visual e2e 8/8 (single attempt). 4-lens plan review + `svelte`/`daisyui-a11y` diff reviewers all clean;
-code-simplifier a no-op (mechanical rename).
+**Both phases were near-mechanical token retirements, not redesigns** (the spec's premise check holds: the foldable
+surface is small). Phase 2 retired 37 office-chrome references (budget 235 → 198, 8 of 13 components) and added the
+login/confirm visual baselines. Phase 3 retired 3 forms references (budget 198 → **195**: `FieldInput`,
+`ReferenceField`, `ManageEditors`), hardened the one presence-only `RepeatableField` live-region test to behavioral,
+and baselined `/admin/editors`. Across both: **no** native-primitive adoption, **no** `@layer` fold (`cairn-admin.css`
+untouched, `componentsLayerCap` 14), zero pixel change (every prior baseline byte-identical). Gate green throughout
+(`check` 0/0, `npm test` 2867, `check:custom-surface` PASS at 195, `npm run package` green, e2e 10/10); reviewers
+clean; code-simplifier no-op both passes.
 
-**Shape (census-grounded):** Phase 2 is a **near-mechanical token-retirement ratchet**, not a redesign. The
-office-chrome census found the only foldable surface is the arbitrary `text-[var(--color-muted)]` /
-`text-[var(--color-subtle)]` references — 37 lines across 8 of 13 components, every one a trivial 1:1 swap to the
-named `text-muted` / `text-subtle` utilities. **No** native-primitive adoption (no hand-rolled status dot or tab
-strip; `floating-label` deferred as a redesign addition, to Phase 3 / a dedicated pass), **no** `@layer` fold (all
-Tier-2 infra; cap stays 14), **no** presence-only a11y test to upgrade (all behavioral), **no** selector-coupled
-test to migrate (ConceptList's `.badge`/`.alert` test native classes the phase keeps). Zero pixel change, so the
-office-shell baseline stays byte-identical (the regression proof).
+**`floating-label` is CLOSED (decided against), not deferred.** Geoff's call (keep persistent labels). The census
+proved it is a redesign addition (every admin input uses the native persistent stacked-label / `fieldset` idiom; no
+hand-rolled label-floating mechanism to fold), at ~10 sites with an a11y-migration cost and zero de-customization
+benefit. Not pursued, not logged. A later phase must not re-raise it.
 
-**Held — no version bump, no release** (admin internals a consumer never imports; zero behavior change; cadence
-below). No CHANGELOG entry (nothing consumer-notable). The `admin-design-system.md` recipe text still cites the old
-`text-[var(--color-muted)]` form; rewriting it is the final docs phase's job (deferred, not drift).
+**Gotcha that bit (third time):** a Phase 2 STATUS prose line wrote the token as the alternation shorthand with a
+`|` inside the square brackets; Tailwind v4's doc scan compiled it to invalid CSS and broke `npm run package`.
+Write the parenthesized `var(--color-(muted|subtle))` form in prose, and run `npm run check:custom-surface` (which
+repackages, scanning docs) at pass-end, not only the bare check script. See `tailwind-scans-docs-bad-candidate`.
 
-**NEXT = Phase 3 (forms and settings):** `FieldInput`, `ReferenceField`, `ObjectGroupField`, `RepeatableField`,
-`CairnTidySettings`, `ManageEditors`, `HelpHome` — a just-in-time plan, test-first, ratcheting the budget from 198.
-Phase 3 is the natural home for the **deferred `floating-label` decision** across the field family (Phase 2 declined
-to adopt it on the auth field in isolation — it would be a redesign addition, not a fold). Census the cluster first
-(retired tokens, any genuine native-primitive fold, coupled tests, presence-only a11y), write + adversarially review
-the plan, then execute. The Phase 2 plan is the template; the office-chrome census method worked well.
+**Held — no version bump, no release** (admin internals a consumer never imports; zero behavior change). No CHANGELOG
+entry. The `admin-design-system.md` recipe text still cites the old bracket form; the final docs phase rewrites it.
 
-If resuming cold to start Phase 3: this `admin-reexpr-2-office-chrome` worktree holds Phase 2 (gate green at budget
-198, `dist` built, `node_modules` real). Either continue the sweep on this branch (one worktree per pass is the
-convention, but the cwd is pinned here, so a new branch off this tip in the same worktree is simplest), or merge
-Phase 2 to `main` first if batching. Read the Phase 2 plan's post-mortem and the ledger's Phase 2 sign-off, plus the
-`cairn-admin-design-modernization` memory.
+**NEXT = Phase 4 (desk chrome):** the `EditPage` chrome (the topbar context portal, the slide-overs, the headless
+dialogs), `EditorToolbar`, the footer environment strip. **Not** the CodeMirror content theme (walled, confirmed
+untouched). Ratchets the budget from 195. The edit-page forms get their visual baseline here. Same method: census
+the cluster, write + (proportionately) review the plan, execute via a `cairn-implementer` workflow, then pass-end.
+Watch: `EditPage.test.ts` couples to `.alert`/`.badge`/`.cairn-save-state .bg-warning` (the ledger's pre-declared
+selector-decoupling list) — Phase 4 must check whether those classes actually fold before migrating, the same
+reconciliation Phase 2 applied to ConceptList.
+
+If resuming cold to start Phase 4: Phases 2 + 3 are merged to `main` (budget at 195). Branch a Phase 4 worktree off
+`main`, then census the desk-chrome cluster, write + review the plan, and execute. Read the Phase 2/3 post-mortems and
+the ledger's Phase 2/3 sign-offs, plus the `cairn-admin-design-modernization` memory. A drafted Phase 4 plan, if one
+exists under `docs/superpowers/plans/`, supersedes this pointer.
 
 ## Immediate next action (2026-06-29, prior): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 

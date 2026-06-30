@@ -383,3 +383,32 @@ confirm) gained their own baselines.
 correct, valid WCAG pattern for a multi-state filter. A later phase must not "modernize" it toward
 `role="radiogroup"`/`role="radio"`, which would change its keyboard semantics (1.3.1, 4.1.2). The
 segmented / check-and-tint control stays hand-rolled (no native 5.6 primitive), per the spec.
+
+## Phase 3 sign-off: forms and settings retired (admin budget 198 → 195)
+
+Phase 3 (forms and settings) is complete (2026-06-30, plan
+`docs/superpowers/plans/2026-06-30-admin-re-expression-3-forms.md`). The census found the foldable surface
+tiny: 3 retired references (`FieldInput`, `ReferenceField`, the `ManageEditors` column-header class const),
+swapped 1:1 to `text-muted`; budget ratcheted 198 → 195. No native primitive adopted, no `@layer` fold
+(`cairn-admin.css` untouched), no coupled-test migration. `CairnTidySettings` (retired in Phase 0) and
+`HelpHome` (scoped-`<style>` token consumption) carried zero retired markup tokens; `ObjectGroupField` and
+`RepeatableField` delegate inputs to `FieldInput` and carry none.
+
+**`floating-label` is closed (decided against), not deferred.** The census proved every admin input uses the
+native persistent stacked-label / `fieldset` idiom, so adopting `floating-label` would be a redesign addition
+at ~10 sites (an a11y-migration cost, the inputs named via explicit `aria-label`) with zero de-customization
+benefit. Geoff's call (2026-06-30): keep persistent labels. Not pursued, not logged as a future pass. A later
+phase must not re-raise it.
+
+**Presence-only a11y gap closed.** The census surfaced a presence-only live-region test in this cluster
+(`repeatable-field.test.ts`, the analogue of the ledger's `MediaPicker.test.ts:90` gap). Since no later phase
+re-expresses `RepeatableField`, Phase 3 (its owning cluster) hardened it to behavioral: it asserts the
+`role="status"` region text mutates to the add/remove announcement (WCAG 4.1.3). `MediaPicker` (Phase 5)
+remains the one ledger-enumerated presence-only gap.
+
+**Gotcha, third occurrence (durable).** A Phase 2 STATUS prose line wrote the retired token as the
+alternation shorthand with a `|` inside the square brackets; Tailwind v4's tracked-tree doc scan compiled
+that class-shaped string into invalid CSS and broke `npm run package`. Write the parenthesized non-utility
+form `var(--color-(muted|subtle))` in prose, never the bracketed alternation. The pass-end gate must run
+`npm run check:custom-surface` (which prepends `npm run package`, scanning docs), not only the bare
+`node scripts/check-custom-surface.mjs` (which reads source and misses a doc-scan break).

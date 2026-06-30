@@ -99,6 +99,56 @@ git commit -m "Baseline /admin/editors; confirm office/vocab/auth shells unchang
 
 ---
 
-## Post-mortem
+## Post-mortem (2026-06-30)
 
-(Appended at pass end.)
+Phase 3 swept the forms-and-settings cluster. As the census predicted, the foldable surface was tiny: 3 muted-token
+swaps and nothing else. The admin `retiredTokenBudget` ratcheted 198 to 195, zero pixels moved, and the one named
+decision (`floating-label`) was resolved as not-adopted.
+
+### What was built (commits on `admin-reexpr-2-office-chrome`)
+
+- **Plan (`c837666`).** The just-in-time plan, executed via a `cairn-implementer` workflow with a `svelte` + `daisyui-a11y`
+  diff verify (both clean). No separate heavy plan-review workflow this time: the mechanism was validated and adversarially
+  reviewed in Phase 2, and a 4-lens review of 3 token swaps would be disproportionate.
+- **Task 1 retirement (`97adf8b`).** 3 swaps to `text-muted`: `FieldInput` (the field-hint snippet), `ReferenceField` (the
+  "Choose…" placeholder span), `ManageEditors` (the column-header class const). Budget 198 to 195.
+- **Build-blocker fix (`81e3d6a`).** The implementer found `npm run package` failing on the clean branch HEAD, independent
+  of the swaps: my Phase 2 STATUS prose (`695573a`) wrote the token as the alternation shorthand with a `|` inside the
+  brackets, and Tailwind v4's doc-scan compiled that class-shaped string into invalid CSS, breaking `build-admin-css.mjs`.
+  Fixed by writing the parenthesized non-utility form. This is the Tailwind-scans-docs gotcha, third occurrence; the
+  `tailwind-scans-docs-bad-candidate` memory was generalized to the `|`-alternation case.
+- **Task 2 a11y hardening (`521f570`).** `RepeatableField` carries no token (swept by confirmation), but the census surfaced
+  a presence-only live-region test in the cluster. Hardened it to behavioral: it now asserts the `[role="status"]
+  [aria-live="polite"]` region's text mutates to "Row added"/"Row removed" on add/remove (a real WCAG 4.1.3 status-message
+  check). The component already behaved correctly; the test now proves it. No later phase re-expresses `RepeatableField`, so
+  Phase 3 (its owning cluster) was the place to close the gap.
+- **Task 3 baseline (`ad08dbf`).** Baselined `/admin/editors` (the one swept office-route surface), light and dark; the
+  eight existing baselines (office shell, vocabulary, login, confirm) passed byte-identical. The new snapshot was inspected
+  and renders the real editors page.
+
+### Verified (evidence)
+
+- `npm run check` 0/0 (1245 files), `npm test` exit 0 (271 files, 2867 tests), `npm run check:custom-surface` PASS both trees
+  at budget 195, `npm run package` exit 0 (the doc-scan gate, now green). `cairn-admin.css` untouched, `componentsLayerCap`
+  14. Showcase admin-visual e2e 10/10 on a single attempt. Both reviewers clean. code-simplifier a no-op.
+
+### Decisions and lessons
+
+- **`floating-label` closed, not adopted.** Geoff's call (keep persistent labels). The census proved it is a redesign
+  addition (every admin input uses the native persistent stacked-label / `fieldset` idiom; no hand-rolled label-floating
+  mechanism exists to fold), at ~10 sites with an a11y-migration cost and zero de-customization benefit. Beyond the charter,
+  persistent top-labels are the better pattern for this forms-heavy non-technical-editor audience. Not pursued, not logged.
+- **Lesson: run the package-inclusive gate at pass-end.** Phase 2's pass-end ran the bare `node scripts/check-custom-surface.mjs`,
+  which reads source and does not repackage, so it missed the broken-package state my own STATUS prose introduced. The fix is
+  to run `npm run check:custom-surface` (which prepends `npm run package`, scanning docs) AFTER committing the pass-end prose,
+  not only the bare check script. Applied this phase.
+- **No CHANGELOG, no release.** Zero consumer-notable change; held per the sweep's hold-and-batch cadence.
+
+### Carried follow-ups
+
+- **Next: Phase 4 (desk chrome)** — `EditPage` chrome (the topbar context portal, the slide-overs, the headless dialogs),
+  `EditorToolbar`, the footer environment strip. Not the CodeMirror content theme. Ratchets the budget from 195. The
+  edit-page forms (`FieldInput`/`ReferenceField`) get their visual baseline there.
+- **Deferred live admin smoke** (carried): a `wrangler dev` + D1-session smoke at a site cutover.
+- **CI-vs-local baseline drift** (standing watch): the editors baseline was generated locally; regenerate on CI if its image
+  renders differently.

@@ -11,7 +11,52 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, LATEST): admin design modernization underway; PIVOT to a fresh-UI brainstorm in a clean session
+## Immediate next action (2026-06-29, LATEST): admin idiomatic re-expression brainstormed + spec'd + Phase 0 plan written (both adversarially reviewed); NEXT = execute Phase 0
+
+The fresh-UI brainstorm ran and reframed the pivot. The outcome is **not** "start fresh": Geoff corrected
+it to "the admin isn't bad, it's just excessively custom." The initiative is an **idiomatic re-expression
+for upgrade-resilience** — re-express the admin (and the showcase starter template) in native DaisyUI 5.6 /
+Tailwind 4 primitives, keep the Warm Stone theme verbatim, wall the essential custom, and install a gate
+that holds the line. The look stays; behavior is ported under the existing tests.
+
+**Artifacts (committed on `worktree-tag-management-1`):**
+- **Spec:** `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md` (`b74d3ae`, adversarial
+  review folded `e9b1787`). Four-lens review disproved three folds (muted/subtle opacity, btn-primary depth,
+  theme-as-plugin), reclassified them to Tier 2, redefined the gate on enumerable signals, decoupled the held
+  release from the full foundation, closed the sweep into Phases 2–6, and hardened verification.
+- **Phase 0 plan:** `docs/superpowers/plans/2026-06-29-admin-re-expression-0-foundation.md` (`4bdd6a1`, plan
+  review folded `d2bcc37`). Two-lens review ran the plan's code and fixed real bugs (oklab not sRGB contrast
+  math; cascade-equivalence not byte-diff; brace-matched gate parsing + measured seed; showcase e2e dir +
+  dark-theme cookie timing). Phase 0 = the Tier-1/2/3 ledger, the contrast-locked role layer (frozen pilot
+  interface), Tier 2 walled, `check:custom-surface` seeded per-tree, the Playwright visual baseline, and a
+  closing adversarial-review task.
+
+**The shape:** Tier 1 (the Warm Stone DaisyUI theme) stays verbatim. Tier 2 (a11y inks, the editor system,
+embed-anywhere infra, the two unlayered rules, the btn-primary lift, muted/subtle pending the ratio table) is
+walled into one labeled home with its contrast floors. Tier 3 (the provably-foldable remainder) goes to its
+proven floor. `check:custom-surface` ratchets per-tree so it cannot regrow. Phase 0 → vocab-screen pilot →
+**cut the held tag-management release** → the sweep (Phases 2–6) + the serialized starter-template track →
+docs.
+
+**NEXT = execute Phase 0** in this worktree (`~/Projects/cairn-cms/.claude/worktrees/extensibility-plan-1`,
+branch `worktree-tag-management-1`), via `cairn-pass`, task-by-task through `cairn-implementer` (Sonnet), main
+loop reviewing each diff and clearing the gate, except Task 1 (the ledger, main-loop analysis) and Task 6 (the
+adversarial-review gate). Resume prompt:
+
+> Execute Phase 0 of the admin idiomatic re-expression
+> (`docs/superpowers/plans/2026-06-29-admin-re-expression-0-foundation.md`) on branch
+> `worktree-tag-management-1`. Read the spec
+> (`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`) and the
+> `cairn-admin-design-modernization` memory first. Use `cairn-pass`. Execute task-by-task via
+> `cairn-implementer` (Sonnet), reviewing each diff and clearing the gate between.
+
+**FLAGGED FOR GEOFF (a sequencing change he should ratify):** the spec scopes Phase 0 to only the pilot's
+needs so the held tag-management release is not hostage to the full foundation. The original choice was
+"foundation-first, vocab as pilot"; the review flagged that coupling (one lens as a blocker). If a faster
+release matters more than building the vocab screen once on the new idiom, the alternative is to ship
+tag-management Plan 3 on the current idiom now and re-express it during the sweep. **This call is open.**
+
+## Immediate next action (2026-06-29, prior): admin design modernization underway; PIVOT to a fresh-UI brainstorm in a clean session
 
 An admin design-system modernization pass emerged mid tag-management Plan 3 and is partly landed on
 `worktree-tag-management-1`. Plan + decisions:

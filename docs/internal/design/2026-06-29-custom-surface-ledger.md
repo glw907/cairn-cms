@@ -340,3 +340,24 @@ Broadening surfaced exactly one extra hit the `text-`-only pattern missed,
 There is no named utility for a decoration color (folding it to `text-muted` would change the property),
 so it is not trivially retireable; the sweep retires it with the rest. The admin seed is therefore **235**
 (234 `text-`-utility lines plus that one), measured 2026-06-29.
+
+## Phase 0 sign-off: the role interface is frozen
+
+Phase 0 is complete and adversarially reviewed in two rounds: a per-task verification inside the
+execution workflow (segments 1 and 2), then a four-lens review (gate-integrity, embed-anywhere,
+role-layer contract, a11y) over the whole result. The review folded three majors and several minors,
+most importantly hardening the gate against bare-selector evasion and adding the standing role-interface
+guard; the residual gate limits are recorded in the gate section above.
+
+The **developer-facing role interface is frozen**: the named utilities `text-muted` and `text-subtle`
+(guaranteed-value branch, resolving to the Tier-2 `--color-muted` / `--color-subtle` vars) are the
+contract the vocabulary pilot (Phase 1) and every later sweep cluster build against. A standing test
+(`admin-css-build.test.ts`) asserts both stay compiled and keep pointing at their vars, so a tree-shake
+or a rename fails the gate. No later investigation reshapes these names. The Tier-1 theme tokens, these
+two role utilities, and the documented recipes are the lean, versioned developer vocabulary the final
+docs phase publishes in `admin-design-system.md`.
+
+Phase 0 gate, independently confirmed green 2026-06-29: `check` 0/0 (1242 files),
+`check:custom-surface` PASS both trees, `check:comments` OK, `check:prose` clean, `npm test` 2855
+passed (270 files), showcase e2e 46 passed (the two new admin visual baselines included), and the gate
+bite-test (a planted bare `[data-theme] .evil {}` rule fails, removed passes).

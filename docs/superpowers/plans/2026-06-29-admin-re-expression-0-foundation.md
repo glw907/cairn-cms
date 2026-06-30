@@ -369,7 +369,7 @@ Expected: FAIL (module not found).
 // floor on enumerable signals (not line counts, which are gameable and would flag sanctioned patterns):
 //   (1) the unlayered-rule set, pinned by exact selector — neither deletable nor extendable without an
 //       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a retired-token
-//       budget (text-[var(--color-muted|subtle)] references in markup) that ratchets to zero across the
+//       budget (retired muted/subtle bracket references in markup) that ratchets to zero across the
 //       sweep. Budgets and the by-name Tier-2 allowlist live in scripts/custom-surface-budget.json,
 //       seeded at current values. Wired as `npm run check:custom-surface`.
 import { readFileSync, readdirSync, statSync } from 'node:fs';

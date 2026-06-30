@@ -171,3 +171,81 @@ The first free minor after `0.77.0`, verified free at cut time. This publishes t
 - **The pilot proves the idiom.** A new screen with no bespoke legacy, built only on primitives and the two role utilities, must pass `check:custom-surface` with the budget unchanged. That is the proof the frozen vocabulary is sufficient to build a real screen — the initiative's central claim.
 - **Engine screen, not the custom seam.** The screen mounts through the built-in view switch (mirroring settings), not the `adminNav` seam, which is for site-owned routes and rejects an engine-claimed href.
 - **Risk.** Task 1 must finish before Task 2 (the screen ports the design verbatim). Task 2's day-one gate pass (the `retiredTokenBudget` unchanged at 235) is the load-bearing claim; it rides on the retired muted/subtle forms only, since the sanctioned AA inks the error/guard text needs are bracket tokens the gate does not count. If a secondary-text effect cannot be expressed without a retired bracket reference or a scoped override, that is a finding to escalate, not to wave through with a budget bump. **Task 3's Step 1 dev-backend seed is a hard prerequisite** for its e2e and visual baselines — without it both are hollow (a 404 on the first add, a blank-state screenshot), so Step 1 lands and reads back before any admin e2e is written. Task 3's size gate must be genuinely off below the threshold. The delete guard is `aria-disabled`, never native `disabled`. The count-only delete presentation is a recorded, deliberate Component-2 deviation, not an oversight. Task 5's version must be verified free with `npm view`, not assumed.
+
+---
+
+## Post-mortem (2026-06-29)
+
+Phase 1 landed the vocabulary-screen pilot and rolled the held tag-management release. The pilot
+proved the initiative's central claim: a real admin screen built only on native DaisyUI 5.6 /
+Tailwind 4 primitives and the frozen `text-muted` / `text-subtle` role utilities passes
+`check:custom-surface` with the admin `retiredTokenBudget` unchanged at 235 on day one. The frozen
+role interface was sufficient to build a non-trivial screen with zero new bespoke surface.
+
+### What was built (commits on `worktree-tag-management-1`)
+
+- **Task 1 — design (`36c4e36`).** Refined the carried-forward "ledger" mockup to the frozen idiom
+  (migrated every retired muted/subtle bracket reference to the named utilities, added
+  the always-present `role="status"` mutation region and the add-validation error state in the
+  sanctioned AA error ink), validated by screenshot in both themes, and froze
+  `docs/internal/design/2026-06-29-vocabulary-admin-design-reference.md`. Also fixed a latent
+  build-breaker the Phase 0 watch item predicted: an arbitrary-value class with an ASCII-ellipsis
+  placeholder in doc prose compiled to invalid CSS and broke `npm run package` (Tailwind v4 scans the
+  whole tracked tree); reworded to the concrete token.
+- **Task 2 — the screen (`a85f8e1`, review fold `6533196`, simplify `c4dad72`).**
+  `VocabularyAdmin.svelte`, a near-twin of `CairnTidySettings`, mounted as the engine `vocabulary`
+  view with a Tags sidebar item. The `daisyui-a11y` and `svelte` reviewers ran (both clean, no
+  blockers); folded the add-field error into `aria-invalid` + `role="alert"`, the stable rename
+  accessible name, and two test gaps (rename-into-JSON, seed-leaves-section). code-simplifier reduced
+  the add-field label state to a plain string.
+- **Task 3 — the showcase track (`a152e5b`).** The load-bearing dev-backend `seedVocabulary()` (without
+  it the admin e2e 404s and the baselines are blank), the size-gated archive filter
+  (`TAG_FILTER_MIN_ENTRIES = 12`), the `tag-filter` and `vocabulary-admin` e2e specs, and the pilot
+  visual baseline (light + dark). The office-shell baselines were regenerated for the sanctioned Tags-
+  item height drift; the showcase manifest was regenerated for the 10 new seeded posts.
+- **Task 4 — docs (`7af8ad7`).** The `vocabulary` view + `saveVocabulary` action in the sveltekit and
+  admin-routes reference, the `manage-your-tag-vocabulary` editor guide, the CHANGELOG and upgrade-
+  guide entries, and the guides-index link. Corrected the guide and design reference to the shipped
+  per-candidate seeding (the bulk "Add all" shortcut was deferred, not built).
+
+### Verified (evidence)
+
+- `npm run check` 0/0 (1245 files); `npm test` exit 0, 2867 passed; `check:custom-surface` PASS both
+  trees, admin `retiredTokenBudget` unchanged at 235; `check:comments` OK.
+- Showcase e2e `CI=1`: 50 passed, including the new `tag-filter` and `vocabulary-admin` specs and the
+  vocabulary visual baselines.
+- The four doc gates (`check:reference`, `check:reference:signatures`, `check:docs`, `check:package`)
+  pass; the documented signatures match the landed types.
+- The committed `vocabulary-light` baseline was inspected visually: the live admin renders real seeded
+  data (three listed tags with in-use counts, the guarded vs active delete states, the unlisted seed
+  section), confirming the dev seed feeds the admin load.
+
+### Decisions and deviations (recorded so a reader does not relitigate)
+
+- **Engine view, not the `adminNav` seam.** Taxonomy is cairn's own job; the landed route reserves and
+  resolves `vocabulary` as an engine view. Supersedes the tag-management spec's Component-2 `adminNav`
+  placement line.
+- **Count-only delete presentation.** The landed `VocabularyLoadData` carries a usage count, not
+  blocking-entry identities; the screen shows the count and the guarded delete, the lean charter-
+  correct surface. A deliberate Component-2 deviation, not an oversight.
+- **Seed label derived from the value.** `unlisted` carries only `{ value, count }`, so the screen
+  derives a readable label by un-slugging the value.
+- **Per-candidate seeding only.** The bulk "Add all" shortcut from the design reference was not built;
+  per-candidate "Add to list" is sufficient and shipped. The guide and reference were corrected to
+  match.
+
+### Carried follow-ups
+
+- **Deferred live admin smoke.** A live `wrangler dev` + D1-session admin smoke against a real consumer
+  Worker is not runnable pre-publish (no deployed consumer); the showcase `vocabulary-admin.spec.ts` is
+  the pre-publish gate. Run the live smoke at a site cutover onto the published minor.
+- **Next: the sweep (Phases 2–6) + the serialized starter-template track + the docs phase**, per the
+  initiative spec.
+
+### The release
+
+Cut as **0.78.0**, the first free minor after `0.77.0` (verified free via `npm view`; latest published
+was `0.76.0`). Because `0.77.0` (the developer-extensibility seam) was held and never published, the
+`0.78.0` publish rolls both held minors into one release: the GitHub release notes cover the whole
+`v0.76.0..v0.78.0` window and carry every `Consumers must` line from both the `0.77.0` and `0.78.0`
+sections.

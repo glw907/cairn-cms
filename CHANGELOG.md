@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.78.0
 
 <!-- release-size: minor -->
 
@@ -10,8 +10,8 @@ The taxonomy marker now drives a concept's tags. A concept declares its tag fiel
 top-level multiselect `taxonomy: true`, and the content index reads that field's validated value for
 each entry's tags. The content index and the feed categories both read the marked field.
 The old behavior read a field hardcoded as `tags`, so a concept whose tag field has another name now
-needs the marker. This version number is the first free minor after `0.77.0` publishes, set at release
-time, and this entry stays under `## Unreleased` until then.
+needs the marker. Released as `0.78.0`, the first free minor after the held `0.77.0`; since `0.77.0`
+was never published, this publish rolls both windows for a site upgrading from `0.76.0`.
 
 A concept marks at most one top-level field, and the marker is top-level only. The field set
 constructor throws at startup on a second marked field or a marker nested inside an `object` or

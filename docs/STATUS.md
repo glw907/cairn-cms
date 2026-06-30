@@ -11,28 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-29, LATEST): admin re-expression Phase 1 plan WRITTEN + adversarially reviewed; EXECUTING the vocab pilot, then cut the held release
+## Immediate next action (2026-06-29, LATEST): admin re-expression Phase 1 COMPLETE + tag-management release 0.78.0 cut; NEXT = the sweep (Phases 2–6) + the template track
 
-The Phase 1 plan is `docs/superpowers/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`. It reconciles
-tag-management Plan 3 Tasks 2–5 with the frozen Phase 0 idiom: build `VocabularyAdmin.svelte` natively on the
-`text-muted`/`text-subtle` role interface (near-twin of `CairnTidySettings`), add the size-gated showcase filter +
-the e2e pair + the seed/orphan flow, extend the per-phase visual baseline to the pilot screen, then cut the held
-tag-management release (first free minor after `0.77.0`, verified with `npm view`).
+Phase 1 (the vocabulary-screen pilot) is built, reviewed, and merged; the held tag-management release is cut as
+**0.78.0** on `worktree-tag-management-1`. Plan + post-mortem:
+`docs/superpowers/plans/2026-06-29-admin-re-expression-1-vocab-pilot.md`.
 
-A four-lens adversarial review (charter/idiom, feasibility, gate, a11y) ran via workflow and folded five majors:
-(1) narrowed the Rule-2 constraint to forbid only the retired muted/subtle bracket forms while permitting the
-sanctioned Tier-2 AA inks (`text-[var(--cairn-error-ink)]` etc.) the error/guard text needs; (2) added a
-**dev-backend seed** (`seedVocabulary()` in `packages/cairn-cms-dev`) as a hard prerequisite — without a seeded
-`site.config.yaml` + tagged manifest entries the admin e2e 404s on the first save and the visual baselines
-screenshot a blank screen; (3) the delete guard is `aria-disabled`, never native `disabled`; (4) an always-present
-`role="status"` region narrates add/remove/seed list mutations; (5) the count-only delete presentation is a
-recorded, deliberate Component-2 deviation (the landed load carries a usage count, not blocking-entry identities).
+**What landed (Tasks 1–5):** `VocabularyAdmin.svelte`, a tag-vocabulary admin screen built natively on the frozen
+`text-muted`/`text-subtle` role interface (a near-twin of `CairnTidySettings`, mounted as the engine `vocabulary`
+view). It **proved the initiative's central claim**: a real screen on the frozen idiom passes `check:custom-surface`
+with the admin `retiredTokenBudget` unchanged at 235 — zero new bespoke surface. Plus the dev-backend `seedVocabulary()`
+fixture, the size-gated showcase archive filter (`TAG_FILTER_MIN_ENTRIES = 12`), the `tag-filter` and `vocabulary-admin`
+e2e specs, and the pilot visual baseline (light + dark). A four-lens plan review + `daisyui-a11y`/`svelte` reviewers
+ran; findings folded (the `aria-disabled` delete guard, the `role="status"` mutation region, the `aria-invalid`/`role=alert`
+add error, the dev-seed prerequisite, the count-only Component-2 deviation).
 
-**Method:** task-by-task. Task 1 (design, mockup-first) and Tasks 4–5 (docs, release) are main-loop; Tasks 2–3
-(the screen + the showcase track) execute via the segmented-workflow approach Phase 0 used (each task implemented
-by `cairn-implementer` + adversarially verified), on `worktree-tag-management-1`. The full gate plus
-`check:custom-surface` (the admin `retiredTokenBudget` must stay 235 — the pilot's day-one-idiom proof) clears
-before each task is done.
+**Gate (release-confirmed):** `check` 0/0 (1245 files), `npm test` 2867 passed (271 files), `check:custom-surface` PASS
+both trees (budget 235), `check:comments` OK, the four doc gates pass, showcase e2e 50 passed (`CI=1`).
+
+**The release.** `0.78.0` is the first free minor after `0.77.0` (verified via `npm view`; latest published was `0.76.0`).
+Because `0.77.0` (the developer-extensibility seam) was held and never published, the `0.78.0` publish **rolls both held
+minors into one**: the GitHub release notes cover `v0.76.0..v0.78.0` and carry every `Consumers must` line from both the
+`0.77.0` and `0.78.0` sections.
+
+**Carried follow-ups:** (1) the deferred live admin smoke (`wrangler dev` + a D1 session) against a real consumer Worker,
+tied to a site cutover onto `0.78.0` — the showcase `vocabulary-admin.spec.ts` was the pre-publish gate. (2) The Tailwind-
+scans-docs gotcha bit twice this pass (an ASCII-ellipsis and a pipe inside a `text-[…]` doc candidate both broke
+`npm run package`); consider a cheap grep tripwire over `docs/` for a bracketed-utility candidate with `|`, `*`, or `...`.
+
+**NEXT = the sweep (Phases 2–6)** of the admin idiomatic re-expression (office chrome, forms, desk chrome, media ×2),
+then the serialized starter-template track, then the docs phase (publishes the role vocabulary as the versioned seam in
+`admin-design-system.md`). Each phase is a just-in-time plan, test-first, ratcheting its `check:custom-surface` caps; see
+`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Immediate next action (2026-06-29, prior): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
 

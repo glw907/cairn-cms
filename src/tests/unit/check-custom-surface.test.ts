@@ -99,3 +99,47 @@ describe('evaluate', () => {
 		expect(failures.join(' ')).toContain('@layer components selectors');
 	});
 });
+
+describe('retiredTokenHits — per-tree pattern', () => {
+	// The showcase signal: any arbitrary-value bracket utility or inline style wrapping a literal
+	// var(--…). Mirrors the admin pattern's two branches, generalized off muted/subtle to any token.
+	const showcasePattern = '\\[[^\\][]*var\\(--[^\\][]*\\]|style="[^"]*var\\(--';
+
+	it('flags bracket and inline var(--…) refs but not the dynamic var({…}) swatch', () => {
+		const hits = retiredTokenHits('src/tests/fixtures/retired-token-showcase', showcasePattern);
+		expect(hits.length).toBe(2);
+	});
+
+	it('the default (admin) pattern ignores the showcase tokens', () => {
+		const hits = retiredTokenHits('src/tests/fixtures/retired-token-showcase');
+		expect(hits.length).toBe(0);
+	});
+});
+
+describe('evaluate — showcase-shaped tree', () => {
+	const showcasePattern = '\\[[^\\][]*var\\(--[^\\][]*\\]|style="[^"]*var\\(--';
+	const tree = {
+		adminCss: null,
+		markupDirs: ['src/tests/fixtures/retired-token-showcase'],
+		retiredTokenPattern: showcasePattern,
+	};
+
+	it('passes at or above the count and skips the admin-only signals when adminCss is null', () => {
+		const { pass } = evaluate(tree, {
+			unlayeredAllowlist: [],
+			componentsLayerCap: 0,
+			retiredTokenBudget: 2,
+		});
+		expect(pass).toBe(true);
+	});
+
+	it('fails below the count', () => {
+		const { pass, failures } = evaluate(tree, {
+			unlayeredAllowlist: [],
+			componentsLayerCap: 0,
+			retiredTokenBudget: 1,
+		});
+		expect(pass).toBe(false);
+		expect(failures.join(' ')).toContain('retired tokens');
+	});
+});

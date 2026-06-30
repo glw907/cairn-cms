@@ -1,10 +1,12 @@
 // cairn-cms: the custom-surface ratchet gate. Holds the admin and showcase trees to their de-customized
 // floor on enumerable signals (not line counts, which are gameable and would flag sanctioned patterns):
 //   (1) the unlayered-rule set, pinned by exact selector, neither deletable nor extendable without an
-//       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a retired-token
-//       budget (text-[var(--color-muted|subtle)] references in markup) that ratchets to zero across the
-//       sweep. Budgets and the by-name Tier-2 allowlist live in scripts/custom-surface-budget.json,
-//       seeded at current values. Wired as `npm run check:custom-surface`.
+//       allowlist change; (2) a cap on @layer components rule selectors per tree; (3) a per-tree
+//       retired-token budget. The admin counts the muted and subtle parallel tokens wrapped in a bracket
+//       utility or an inline style; the showcase counts any bracketed or inline custom-property reference.
+//       The budget ratchets to zero across the sweep. Budgets, the per-tree retired-token pattern, and the
+//       by-name Tier-2 allowlist live in scripts/custom-surface-budget.json, seeded at current values.
+//       Wired as `npm run check:custom-surface`.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -110,6 +112,17 @@ function walk(dir, keep) {
 	return out;
 }
 
+// The admin retired-token pattern (muted/subtle only): the default when a tree names no pattern, so the
+// admin tree's signal is unchanged. A tree may override it (the showcase generalizes off muted/subtle to
+// any var(--…) token; see scripts/custom-surface-budget.json). Defined as a regex literal and read via
+// .source: build-admin-css.mjs runs Tailwind, whose auto-content scan reaches scripts/, and an
+// arbitrary-value bracket form written as a raw string here would be extracted as a utility candidate and
+// could compile to malformed CSS (see the tailwind-scans-docs-bad-candidate gotcha). A regex literal is
+// inert to that scan, and .source yields the same source string a hand-written constant would.
+const DEFAULT_RETIRED_TOKEN_PATTERN =
+	/\[[^\][]*var\(--color-(?:muted|subtle)\)[^\][]*\]|style="[^"]*var\(--color-(?:muted|subtle)\)/
+		.source;
+
 /**
  * Arbitrary retired-token references in `.svelte` markup under a dir. The de-customization Rule 2 retires
  * the parallel-token forms a developer reaches for instead of the named `text-muted` / `text-subtle`
@@ -120,11 +133,13 @@ function walk(dir, keep) {
  * (`color: var(--color-muted)`) and a JS theme object are idiomatic token consumption, not the markup
  * anti-pattern, so the bracket/inline-style anchor leaves them out.
  * @param {string} dir
+ * @param {string} patternSource A regex-source string anchored on the arbitrary-value bracket or the
+ *   inline-style attribute. Defaults to the admin muted/subtle pattern; the showcase tree passes the
+ *   generalized any-token form (see scripts/custom-surface-budget.json).
  * @returns {{ file: string, line: number, text: string }[]}
  */
-export function retiredTokenHits(dir) {
-	const pat =
-		/\[[^\][]*var\(--color-(?:muted|subtle)\)[^\][]*\]|style="[^"]*var\(--color-(?:muted|subtle)\)/;
+export function retiredTokenHits(dir, patternSource = DEFAULT_RETIRED_TOKEN_PATTERN) {
+	const pat = new RegExp(patternSource);
 	/** @type {{ file: string, line: number, text: string }[]} */
 	const hits = [];
 	for (const file of walk(resolve(ROOT, dir), (n) => n.endsWith('.svelte'))) {
@@ -139,7 +154,8 @@ export function retiredTokenHits(dir) {
 
 /**
  * Evaluate one tree against its budget.
- * @param {{ adminCss: string | null, markupDirs: string[] }} tree
+ * @param {{ adminCss: string | null, markupDirs: string[], retiredTokenPattern?: string }} tree The tree's
+ *   optional `retiredTokenPattern` overrides the default admin muted/subtle pattern for its markup scan.
  * @param {{ unlayeredAllowlist: string[], componentsLayerCap: number, retiredTokenBudget: number }} budget
  * @returns {{ pass: boolean, failures: string[] }}
  */
@@ -163,7 +179,7 @@ export function evaluate(tree, budget) {
 			failures.push(`@layer components selectors: ${layerCount} > cap ${budget.componentsLayerCap}`);
 	}
 	let retired = 0;
-	for (const dir of tree.markupDirs) retired += retiredTokenHits(dir).length;
+	for (const dir of tree.markupDirs) retired += retiredTokenHits(dir, tree.retiredTokenPattern).length;
 	if (retired > budget.retiredTokenBudget)
 		failures.push(`retired tokens: ${retired} > budget ${budget.retiredTokenBudget}`);
 	return { pass: failures.length === 0, failures };

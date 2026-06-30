@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vocabulary admin — variant A, the ledger</title>
+<link rel="stylesheet" href="./cairn-admin.css" />
+<style>
+  /* Mockup chrome only (NOT shipped): the page frame around the screen. Everything inside the
+     data-theme wrapper is authored in the real DaisyUI/Tailwind utility classes the component carries. */
+  body { margin: 0; background: #c9c5bf; font: 400 13px/1.5 system-ui; }
+  .mock-label { font: 600 12px/1.4 system-ui; letter-spacing: .08em; text-transform: uppercase; color: #44403c; padding: 24px 20px 8px; }
+  .screen { margin: 0 16px 40px; box-shadow: 0 2px 18px rgba(0,0,0,.1); border-radius: 8px; overflow: hidden; }
+  /* the office shell, mirrored from the gold standard so the screen reads in context */
+  .shell { display: flex; min-height: 720px; background: var(--color-base-200); color: var(--color-base-content); font-family: var(--font-body); -webkit-font-smoothing: antialiased; }
+  .side { width: 14rem; flex: none; background: var(--color-base-100); border-right: 1px solid var(--cairn-card-border); padding: 14px 12px; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 4px 6px 16px; }
+  .brand-tile { height: 32px; width: 32px; border-radius: 12px; background: var(--color-primary); color: var(--color-primary-content); display: inline-flex; align-items: center; justify-content: center; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .brand-word { font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; letter-spacing: -.01em; }
+  .nav-eyebrow { font-size: .6875rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--color-muted); padding: 10px 8px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 7px 8px; border-radius: 8px; font-size: .875rem; font-weight: 500; color: var(--color-subtle); text-decoration: none; }
+  .nav-item svg { width: 17px; height: 17px; flex: none; }
+  .nav-item.active { background: color-mix(in oklab, var(--color-primary) 10%, transparent); color: var(--color-primary); font-weight: 600; }
+  .main { flex: 1; min-width: 0; }
+  .band { display: flex; align-items: center; height: 64px; background: var(--color-base-100); border-bottom: 1px solid var(--cairn-card-border); padding: 0 20px; gap: 8px; }
+  .crumb { display: flex; align-items: center; gap: 7px; font-size: .875rem; color: var(--color-muted); }
+  .crumb-here { font-weight: 550; color: var(--color-base-content); }
+  .grow { flex: 1; }
+  .body-scroll { padding: 28px 26px 48px; }
+</style>
+</head>
+<body>
+
+<div class="mock-label">Variant A · the ledger — light</div>
+<div class="screen">
+<div data-theme="cairn-admin">
+  <div class="shell">
+    <aside class="side">
+      <div class="brand">
+        <span class="brand-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 4 13h4l-3 8 7-7h-3l5-5h-3l4-6z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-eyebrow">Content</div>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Media</a>
+      <div class="nav-eyebrow">Manage</div>
+      <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Tags</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>Navigation</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>Settings</a>
+    </aside>
+    <div class="main">
+      <div class="band">
+        <nav class="crumb"><span class="crumb-here">Tags</span></nav>
+        <div class="grow"></div>
+      </div>
+      <div class="body-scroll">
+
+        <!-- ============ THE SCREEN (real utility classes; this is what ports to Svelte) ============ -->
+        <div class="mx-auto max-w-3xl px-2 py-2">
+          <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Tags</h1>
+          <p class="mt-1.5 max-w-prose text-[0.9375rem] leading-relaxed text-muted">
+            Tags are the labels editors pick from when they write. Add one, rename it, or remove a tag
+            nothing uses. Your choices are shared across the whole site.
+          </p>
+
+          <!-- MUTATION ANNOUNCEMENT: always present so AT re-announces an add / remove / seed. Shown
+               populated here as the visual record; empty at rest. -->
+          <p role="status" aria-live="polite" class="mt-3 flex items-center gap-1.5 text-[0.8125rem] text-muted">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Added Snow report.
+          </p>
+
+          <!-- ADD AFFORDANCE: label in, derived slug previewed, one Add -->
+          <section class="mt-6">
+            <div class="rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-3.5 shadow-[var(--cairn-shadow)]">
+              <label for="lg-new" class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Add a tag</label>
+              <div class="mt-2 flex items-start gap-2.5">
+                <div class="min-w-0 flex-1">
+                  <input id="lg-new" class="input input-sm w-full" placeholder="e.g. Backcountry" value="Snow report" />
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                    Stored as
+                    <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-[family-name:var(--font-editor)] text-[0.9em] text-base-content">snow-report</code>
+                    <span class="opacity-50" aria-hidden="true">·</span>
+                    editors see the name, posts keep the slug
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm flex-none">Add tag</button>
+              </div>
+              <!-- VALIDATION: when the typed name can't become a slug, the preview line becomes an
+                   error message in the AA error ink (sanctioned Tier-2 bracket token, not a retired
+                   role). The Add button is inert until it clears; nothing is appended on reject. -->
+              <p class="mt-2 flex items-center gap-1.5 text-xs text-[var(--cairn-error-ink)]">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                That name is already a tag. Pick a different one.
+              </p>
+            </div>
+          </section>
+
+          <!-- THE LIST -->
+          <section class="mt-6">
+            <div class="mb-3 flex items-end gap-3 px-0.5">
+              <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+                Your tags
+                <span class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">6</span>
+              </h2>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+              <div class="flex items-center gap-4 border-b border-[var(--cairn-card-border)] bg-base-content/[0.015] px-3.5 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">
+                <span class="flex-1">Name</span>
+                <span class="w-32">Stored as</span>
+                <span class="w-24 text-right">In use</span>
+                <span class="w-7" aria-hidden="true"></span>
+              </div>
+
+              <!-- in-use rows: count shown, delete guarded -->
+              <div class="flex items-center gap-4 px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Grooming" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">grooming</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">8 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Grooming is used on 8 posts, so it can't be removed" title="Used on 8 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Trail report" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">trail-report</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">5 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Trail report is used on 5 posts, so it can't be removed" title="Used on 5 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Backcountry" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">backcountry</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">3 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Backcountry is used on 3 posts, so it can't be removed" title="Used on 3 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+
+              <!-- unused rows: delete active -->
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Gear" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">gear</code>
+                <span class="w-24 text-right text-[0.8125rem] text-muted">Unused</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-error hover:bg-error/10" aria-label="Remove Gear">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Lessons" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">lessons</code>
+                <span class="w-24 text-right text-[0.8125rem] text-muted">Unused</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-error hover:bg-error/10" aria-label="Remove Lessons">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- SEED: tags on posts not in the list yet (a calm reconcile, not an alarm) -->
+          <section class="mt-6">
+            <div class="mb-3 flex items-end gap-3 px-0.5">
+              <div class="min-w-0 flex-1">
+                <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+                  Already on your posts
+                  <span class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">2</span>
+                </h2>
+                <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">These tags are on posts but not in your list. Add them so editors can pick them too.</p>
+              </div>
+              <button type="button" class="flex-none px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary">Add both</button>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-dashed border-[var(--cairn-card-border)] bg-base-100">
+              <div class="flex items-center gap-4 px-3.5 py-2.5">
+                <code class="flex-1 font-[family-name:var(--font-editor)] text-[0.8125rem] text-base-content">waxing</code>
+                <span class="text-[0.8125rem] text-muted">on 4 posts</span>
+                <button type="button" class="btn btn-xs btn-ghost border border-[var(--cairn-card-border)]">Add to list</button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2.5">
+                <code class="flex-1 font-[family-name:var(--font-editor)] text-[0.8125rem] text-base-content">race-results</code>
+                <span class="text-[0.8125rem] text-muted">on 2 posts</span>
+                <button type="button" class="btn btn-xs btn-ghost border border-[var(--cairn-card-border)]">Add to list</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- SAVE FOOTER -->
+          <div class="mt-7 flex items-center gap-3 border-t border-[var(--cairn-card-border)] pt-4">
+            <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              Saving commits your tag list to the site config, so every editor shares it.
+            </span>
+            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </div>
+        <!-- ============ /THE SCREEN ============ -->
+
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="mock-label">Variant A · the ledger — dark</div>
+<div class="screen">
+<div data-theme="cairn-admin-dark">
+  <div class="shell">
+    <aside class="side">
+      <div class="brand">
+        <span class="brand-tile"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 4 13h4l-3 8 7-7h-3l5-5h-3l4-6z"/></svg></span>
+        <span class="brand-word">cairn</span>
+      </div>
+      <div class="nav-eyebrow">Content</div>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Posts</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Pages</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>Media</a>
+      <div class="nav-eyebrow">Manage</div>
+      <a class="nav-item active" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.42 0l6.58-6.58a2.426 2.426 0 0 0 0-3.42z"/><circle cx="7.5" cy="7.5" r=".5" fill="currentColor"/></svg>Tags</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>Navigation</a>
+      <a class="nav-item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6"/></svg>Settings</a>
+    </aside>
+    <div class="main">
+      <div class="band">
+        <nav class="crumb"><span class="crumb-here">Tags</span></nav>
+        <div class="grow"></div>
+      </div>
+      <div class="body-scroll">
+
+        <!-- ============ THE SCREEN (real utility classes; this is what ports to Svelte) ============ -->
+        <div class="mx-auto max-w-3xl px-2 py-2">
+          <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Tags</h1>
+          <p class="mt-1.5 max-w-prose text-[0.9375rem] leading-relaxed text-muted">
+            Tags are the labels editors pick from when they write. Add one, rename it, or remove a tag
+            nothing uses. Your choices are shared across the whole site.
+          </p>
+
+          <!-- MUTATION ANNOUNCEMENT: always present so AT re-announces an add / remove / seed. Shown
+               populated here as the visual record; empty at rest. -->
+          <p role="status" aria-live="polite" class="mt-3 flex items-center gap-1.5 text-[0.8125rem] text-muted">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+            Added Snow report.
+          </p>
+
+          <!-- ADD AFFORDANCE: label in, derived slug previewed, one Add -->
+          <section class="mt-6">
+            <div class="rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-3.5 shadow-[var(--cairn-shadow)]">
+              <label for="lg-new" class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">Add a tag</label>
+              <div class="mt-2 flex items-start gap-2.5">
+                <div class="min-w-0 flex-1">
+                  <input id="lg-new" class="input input-sm w-full" placeholder="e.g. Backcountry" value="Snow report" />
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-muted">
+                    Stored as
+                    <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-[family-name:var(--font-editor)] text-[0.9em] text-base-content">snow-report</code>
+                    <span class="opacity-50" aria-hidden="true">·</span>
+                    editors see the name, posts keep the slug
+                  </div>
+                </div>
+                <button type="button" class="btn btn-primary btn-sm flex-none">Add tag</button>
+              </div>
+              <!-- VALIDATION: when the typed name can't become a slug, the preview line becomes an
+                   error message in the AA error ink (sanctioned Tier-2 bracket token, not a retired
+                   role). The Add button is inert until it clears; nothing is appended on reject. -->
+              <p class="mt-2 flex items-center gap-1.5 text-xs text-[var(--cairn-error-ink)]">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+                That name is already a tag. Pick a different one.
+              </p>
+            </div>
+          </section>
+
+          <!-- THE LIST -->
+          <section class="mt-6">
+            <div class="mb-3 flex items-end gap-3 px-0.5">
+              <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+                Your tags
+                <span class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">6</span>
+              </h2>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+              <div class="flex items-center gap-4 border-b border-[var(--cairn-card-border)] bg-base-content/[0.015] px-3.5 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">
+                <span class="flex-1">Name</span>
+                <span class="w-32">Stored as</span>
+                <span class="w-24 text-right">In use</span>
+                <span class="w-7" aria-hidden="true"></span>
+              </div>
+
+              <!-- in-use rows: count shown, delete guarded -->
+              <div class="flex items-center gap-4 px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Grooming" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">grooming</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">8 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Grooming is used on 8 posts, so it can't be removed" title="Used on 8 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Trail report" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">trail-report</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">5 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Trail report is used on 5 posts, so it can't be removed" title="Used on 5 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Backcountry" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">backcountry</code>
+                <span class="w-24 text-right text-[0.8125rem] text-subtle">3 posts</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-muted opacity-40" aria-disabled="true" aria-label="Backcountry is used on 3 posts, so it can't be removed" title="Used on 3 posts. Remove it from those posts first.">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+
+              <!-- unused rows: delete active -->
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Gear" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">gear</code>
+                <span class="w-24 text-right text-[0.8125rem] text-muted">Unused</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-error hover:bg-error/10" aria-label="Remove Gear">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2">
+                <input class="input input-sm flex-1" value="Lessons" aria-label="Tag name" />
+                <code class="w-32 truncate font-[family-name:var(--font-editor)] text-[0.8125rem] text-muted">lessons</code>
+                <span class="w-24 text-right text-[0.8125rem] text-muted">Unused</span>
+                <button type="button" class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg text-error hover:bg-error/10" aria-label="Remove Lessons">
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                </button>
+              </div>
+            </div>
+          </section>
+
+          <!-- SEED: tags on posts not in the list yet (a calm reconcile, not an alarm) -->
+          <section class="mt-6">
+            <div class="mb-3 flex items-end gap-3 px-0.5">
+              <div class="min-w-0 flex-1">
+                <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+                  Already on your posts
+                  <span class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">2</span>
+                </h2>
+                <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">These tags are on posts but not in your list. Add them so editors can pick them too.</p>
+              </div>
+              <button type="button" class="flex-none px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary">Add both</button>
+            </div>
+            <div class="overflow-hidden rounded-2xl border border-dashed border-[var(--cairn-card-border)] bg-base-100">
+              <div class="flex items-center gap-4 px-3.5 py-2.5">
+                <code class="flex-1 font-[family-name:var(--font-editor)] text-[0.8125rem] text-base-content">waxing</code>
+                <span class="text-[0.8125rem] text-muted">on 4 posts</span>
+                <button type="button" class="btn btn-xs btn-ghost border border-[var(--cairn-card-border)]">Add to list</button>
+              </div>
+              <div class="flex items-center gap-4 border-t border-[var(--cairn-card-border)] px-3.5 py-2.5">
+                <code class="flex-1 font-[family-name:var(--font-editor)] text-[0.8125rem] text-base-content">race-results</code>
+                <span class="text-[0.8125rem] text-muted">on 2 posts</span>
+                <button type="button" class="btn btn-xs btn-ghost border border-[var(--cairn-card-border)]">Add to list</button>
+              </div>
+            </div>
+          </section>
+
+          <!-- SAVE FOOTER -->
+          <div class="mt-7 flex items-center gap-3 border-t border-[var(--cairn-card-border)] pt-4">
+            <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              Saving commits your tag list to the site config, so every editor shares it.
+            </span>
+            <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
+          </div>
+        </div>
+        <!-- ============ /THE SCREEN ============ -->
+
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+</body>
+</html>

@@ -66,9 +66,10 @@ free minor after `0.77.0`; verify with `npm view`). Then Phases 2–6 (the sweep
 + the docs phase (which publishes the role vocabulary as the versioned seam in `admin-design-system.md`).
 
 **Watch items:** (1) the first CI showcase-e2e run may need the two admin visual baselines regenerated on the
-CI image if headless rendering drifts (plan-sanctioned). (2) Gotcha: `buildAdminCss`'s Tailwind content scan
-reaches tracked `docs/*.md`, so a prose `text-[var(...)]`-shaped shorthand in an admin doc compiles to
-malformed CSS and breaks the build — use the real token in admin docs (memory `tailwind-scans-docs-bad-candidate`).
+CI image if headless rendering drifts (plan-sanctioned). (2) Gotcha: Tailwind v4's tree-wide content scan
+reaches tracked docs, so an arbitrary-value class written in doc prose with a non-value placeholder inside the
+brackets (an ASCII triple-dot or a `*`) compiles to malformed CSS and breaks the build — always write the
+concrete token, e.g. the real `text-[var(--color-muted)]` (memory `tailwind-scans-docs-bad-candidate`).
 
 ## Immediate next action (2026-06-29, prior): admin idiomatic re-expression brainstormed + spec'd + Phase 0 plan written (both adversarially reviewed); NEXT = execute Phase 0
 

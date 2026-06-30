@@ -2466,7 +2466,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Delete {bulkHashes.length} selected {bulkHashes.length === 1 ? 'image' : 'images'}?</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'has' : 'have'} no references and will be deleted.
             {#if bulkWillSkip.length > 0}{bulkWillSkip.length} {bulkWillSkip.length === 1 ? 'is' : 'are'} still used and will be skipped. {/if}Each one is checked again at delete time, so nothing in use is removed.
           </p>
@@ -2480,10 +2480,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <!-- The scope strip: the explicit count plus the safety-floor disclosure, timed at execution. -->
         <div class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
           <span class="inline-flex items-start gap-2">
-            <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+            <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span><b class="font-semibold">{bulkHashes.length} {bulkHashes.length === 1 ? 'image' : 'images'} selected</b> in the current view.</span>
           </span>
-          <span class="inline-flex items-start gap-2 text-[var(--color-muted)]">
+          <span class="inline-flex items-start gap-2 text-muted">
             <ClockIcon class="mt-0.5 h-4 w-4 flex-none" aria-hidden="true" />
             <span>The usage shown here came from a quick read. cairn checks each image again the moment it deletes it, and skips any that turns out to be in use.</span>
           </span>
@@ -2492,7 +2492,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         {#if bulkWillDelete.length > 0}
           <!-- WILL BE DELETED: the no-reference items, each with its slug and the "no references" tag. -->
           <div>
-            <span class="mb-2 inline-flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">
+            <span class="mb-2 inline-flex items-center gap-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">
               Will be deleted <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 tabular-nums">{bulkWillDelete.length}</span>
             </span>
             <ul class="flex max-h-44 list-none flex-col gap-1 overflow-y-auto rounded-box border border-[var(--cairn-card-border)] p-2">
@@ -2500,9 +2500,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <li class="flex items-center gap-2.5 rounded px-1.5 py-1">
                   <div class="min-w-0 flex-1">
                     <div class="truncate text-[0.8125rem] font-semibold">{asset.displayName}</div>
-                    <div class="truncate font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--color-muted)]">{asset.slug}.{asset.hash}</div>
+                    <div class="truncate font-[family-name:var(--font-editor)] text-[0.6875rem] text-muted">{asset.slug}.{asset.hash}</div>
                   </div>
-                  <span class="flex-none text-[0.6875rem] font-semibold text-[var(--color-muted)]">no references found</span>
+                  <span class="flex-none text-[0.6875rem] font-semibold text-muted">no references found</span>
                 </li>
               {/each}
             </ul>
@@ -2518,7 +2518,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
               <div class="text-[0.8125rem] leading-relaxed">
                 <b class="font-semibold text-[var(--cairn-warning-ink)]">{bulkWillSkip.length} will be skipped, still in use</b>
-                <span class="mt-0.5 block text-[0.75rem] text-[var(--color-muted)]">A bulk delete never removes an image that is still referenced. To delete one of these, open it and use Delete with the typed confirm, where you can see and confirm what breaks.</span>
+                <span class="mt-0.5 block text-[0.75rem] text-muted">A bulk delete never removes an image that is still referenced. To delete one of these, open it and use Delete with the typed confirm, where you can see and confirm what breaks.</span>
               </div>
             </div>
             <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
@@ -2540,7 +2540,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </div>
 
         <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
             <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
           </span>
           <button bind:this={bulkCancelButton} type="button" class="btn btn-sm" onclick={closeBulkDialog}>Cancel</button>
@@ -2560,14 +2560,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Deleting images</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">Checking each one against a fresh read and removing the ones with no references. This can take a moment across branches.</p>
+          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Checking each one against a fresh read and removing the ones with no references. This can take a moment across branches.</p>
         </div>
       </div>
       <div class="flex flex-col items-center gap-3 py-4">
-        <RefreshCwIcon class="h-6 w-6 animate-spin text-[var(--color-muted)]" aria-hidden="true" />
-        <span class="text-[0.8125rem] text-[var(--color-muted)]">Checking and deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'image' : 'images'}...</span>
+        <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
+        <span class="text-[0.8125rem] text-muted">Checking and deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'image' : 'images'}...</span>
       </div>
-      <div class="mt-2 border-t border-[var(--cairn-card-border)] pt-3.5 text-[0.75rem] text-[var(--color-muted)]">Please keep this open until it finishes.</div>
+      <div class="mt-2 border-t border-[var(--cairn-card-border)] pt-3.5 text-[0.75rem] text-muted">Please keep this open until it finishes.</div>
       <div class="sr-only" role="status" aria-live="polite">Deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'asset' : 'assets'}...</div>
     {:else if bulkPhase === 'done' && bulkResult}
       {@const res = bulkResult}
@@ -2580,7 +2580,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
           </p>
         </div>
@@ -2593,15 +2593,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
             <div class="text-xl font-bold tabular-nums text-[var(--color-positive-ink)]">{res.deleted.length}</div>
-            <div class="text-[0.6875rem] uppercase tracking-wide text-[var(--color-muted)]">Deleted</div>
+            <div class="text-[0.6875rem] uppercase tracking-wide text-muted">Deleted</div>
           </div>
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
             <div class="text-xl font-bold tabular-nums text-[var(--cairn-warning-ink)]">{res.skipped.length}</div>
-            <div class="text-[0.6875rem] uppercase tracking-wide text-[var(--color-muted)]">Skipped</div>
+            <div class="text-[0.6875rem] uppercase tracking-wide text-muted">Skipped</div>
           </div>
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
             <div class="text-xl font-bold tabular-nums text-[var(--cairn-error-ink)]">{res.failed.length}</div>
-            <div class="text-[0.6875rem] uppercase tracking-wide text-[var(--color-muted)]">Failed</div>
+            <div class="text-[0.6875rem] uppercase tracking-wide text-muted">Failed</div>
           </div>
         </div>
 
@@ -2614,7 +2614,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               {#each res.skipped as skip (skip.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
                   <span class="min-w-0 flex-1 truncate text-[0.8125rem] font-semibold">{bulkAssetName(skip.hash)}</span>
-                  <span class="flex-none text-[0.6875rem] text-[var(--color-muted)]">{bulkSkipReason(skip)}</span>
+                  <span class="flex-none text-[0.6875rem] text-muted">{bulkSkipReason(skip)}</span>
                 </li>
               {/each}
             </ul>
@@ -2638,7 +2638,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         {/if}
 
         <div class="flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
             <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
           </span>
           <button type="button" class="btn btn-sm btn-primary" onclick={() => void finishBulkDelete()}>Done</button>
@@ -2654,7 +2654,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">The delete did not run</h2>
-          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">Nothing was deleted. You can close this and try again.</p>
+          <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Nothing was deleted. You can close this and try again.</p>
         </div>
       </div>
       <div role="alert" class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-3 text-[0.8125rem] leading-relaxed text-[var(--cairn-error-ink)]">
@@ -2691,17 +2691,17 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <!-- LOADING: a polite live region announces the scan is running. The scan is far heavier than the
            loaded index (an R2 list plus a cross-branch reconcile), so it is on demand, never instant. -->
       <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-[var(--color-muted)]" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Scanning storage</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">Listing every stored file and checking it against the library across the site and every open edit. This can take a moment.</p>
+          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Listing every stored file and checking it against the library across the site and every open edit. This can take a moment.</p>
         </div>
       </div>
       <div class="flex flex-col items-center gap-3 py-6">
-        <RefreshCwIcon class="h-6 w-6 animate-spin text-[var(--color-muted)]" aria-hidden="true" />
-        <span class="text-[0.8125rem] text-[var(--color-muted)]">Scanning storage for orphaned files...</span>
+        <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
+        <span class="text-[0.8125rem] text-muted">Scanning storage for orphaned files...</span>
       </div>
       <div class="sr-only" role="status" aria-live="polite">Scanning storage for orphaned files...</div>
     {:else if orphanPhase === 'blocked'}
@@ -2711,12 +2711,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
            returns a generic message, so the framing names an unreadable open edit without naming the
            specific branch (naming it is a known carry-forward). -->
       <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-[var(--color-muted)]" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">The scan could not finish</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
+          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeOrphanScan}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -2730,11 +2730,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           A file looks orphaned only if no record on any branch points to it. One open edit would not load, so cairn cannot be sure. It will not show a list of files to purge that it might be wrong about.
         </p>
         {#if orphanBlockedError}
-          <p class="text-[var(--color-muted)]">{orphanBlockedError}</p>
+          <p class="text-muted">{orphanBlockedError}</p>
         {/if}
       </div>
       <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">No file was changed.</span>
+        <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">No file was changed.</span>
         <button type="button" class="btn btn-sm" onclick={closeOrphanScan}>Close</button>
         <button type="button" class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100" onclick={() => void runOrphanScan()}>
           <RefreshCwIcon class="h-3.5 w-3.5" aria-hidden="true" /> Check again
@@ -2750,14 +2750,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Done. {res.purged.length} purged{res.skippedClaimed.length > 0 ? `, ${res.skippedClaimed.length} kept` : ''}</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             The {res.purged.length} {res.purged.length === 1 ? 'file is' : 'files are'} gone for good.{#if res.skippedClaimed.length > 0} {res.skippedClaimed.length} {res.skippedClaimed.length === 1 ? 'was' : 'were'} kept because the file was claimed by a record since the scan.{/if}
           </p>
         </div>
       </div>
       {#if res.skippedClaimed.length > 0}
         <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)]">
-          <div class="bg-base-200/60 p-2.5 text-[0.75rem] font-semibold text-[var(--color-muted)]">Kept, the file was claimed since the scan</div>
+          <div class="bg-base-200/60 p-2.5 text-[0.75rem] font-semibold text-muted">Kept, the file was claimed since the scan</div>
           <ul class="flex max-h-36 list-none flex-col overflow-y-auto">
             {#each res.skippedClaimed as key (key)}
               <li class="border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 font-[family-name:var(--font-editor)] text-[0.75rem] first:border-t-0">{key}</li>
@@ -2794,7 +2794,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
+          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={cancelOrphanPurge}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
@@ -2851,12 +2851,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <!-- THE TWO-SECTION RESULT: an "Orphaned files" purge surface and a read-only "Broken references"
            data-integrity readout. -->
       <div class="mb-4 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-[var(--color-muted)]" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-200 text-muted" aria-hidden="true">
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Orphaned files and broken references</h2>
-          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             A scan of stored files against the library across every tracked branch. It found {orphanBytes.length} stored {orphanBytes.length === 1 ? 'file' : 'files'} with no record, and {orphanBroken.length} {orphanBroken.length === 1 ? 'record whose file is' : 'records whose files are'} gone.
           </p>
         </div>
@@ -2871,10 +2871,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <div class="mb-2 flex items-baseline justify-between gap-2">
             <span class="inline-flex items-center gap-2 text-[0.8125rem] font-semibold">Orphaned files <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 text-[0.6875rem] tabular-nums">{orphanBytes.length}</span></span>
           </div>
-          <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">Stored files with no record in the library. No <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.6875rem]">media:</code> reference can point to these, so nothing on the site uses them through cairn.</p>
+          <p class="mb-2 text-[0.75rem] leading-relaxed text-muted">Stored files with no record in the library. No <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.6875rem]">media:</code> reference can point to these, so nothing on the site uses them through cairn.</p>
           {#if orphanBytes.length === 0}
             <!-- The calm empty state: a clean scan, no purge control. -->
-            <div class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] text-[var(--color-muted)]">
+            <div class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] text-muted">
               <CheckIcon class="h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" /> No orphaned files found. Every stored file has a record.
             </div>
           {:else}
@@ -2892,7 +2892,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   aria-label="Select all orphaned files"
                   onchange={toggleOrphanAll}
                 />
-                <span class="text-[0.75rem] font-semibold text-[var(--color-muted)]">{orphanBytes.length} {orphanBytes.length === 1 ? 'file' : 'files'} in storage with no record</span>
+                <span class="text-[0.75rem] font-semibold text-muted">{orphanBytes.length} {orphanBytes.length === 1 ? 'file' : 'files'} in storage with no record</span>
               </div>
               <!-- A plain list of labelled native checkboxes, NOT a listbox. The rows carry no roving
                    tabindex or key handler, so the listbox role would have been decorative and would
@@ -2912,7 +2912,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                     <span class="h-6 w-8 flex-none rounded border border-[var(--cairn-card-border)] bg-base-200 [background-image:linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%),linear-gradient(45deg,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_25%,transparent_25%,transparent_75%,color-mix(in_oklab,var(--color-base-content)_7%,transparent)_75%)] [background-position:0_0,4px_4px] [background-size:8px_8px]" aria-hidden="true"></span>
                     <div class="min-w-0 flex-1">
                       <div class="truncate font-[family-name:var(--font-editor)] text-[0.75rem]">{byte.key}</div>
-                      <div class="text-[0.6875rem] text-[var(--color-muted)]">No library record</div>
+                      <div class="text-[0.6875rem] text-muted">No library record</div>
                     </div>
                   </li>
                 {/each}
@@ -2920,9 +2920,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </div>
             <!-- The per-section action: a selection note plus the SOLID-danger Purge (never a warning fill). -->
             <div class="mt-3 flex items-center gap-2.5">
-              <span class="inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+              <span class="inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
                 {orphanSelectedCount} of {orphanBytes.length} selected
-                {#if orphanSelectedCount > 0}<button type="button" class="link text-[var(--color-muted)]" onclick={clearOrphanSelection}>Clear</button>{/if}
+                {#if orphanSelectedCount > 0}<button type="button" class="link text-muted" onclick={clearOrphanSelection}>Clear</button>{/if}
               </span>
               <span class="flex-1"></span>
               <button
@@ -2944,18 +2944,18 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <div class="mb-2 flex items-baseline justify-between gap-2">
               <span class="inline-flex items-center gap-2 text-[0.8125rem] font-semibold">Broken references <span class="rounded-full bg-base-content/[0.07] px-1.5 py-0.5 text-[0.6875rem] tabular-nums">{orphanBroken.length}</span></span>
             </div>
-            <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload or remove the reference from the entries below.</p>
+            <p class="mb-2 text-[0.75rem] leading-relaxed text-muted">A record points at a file that is no longer in storage. This is not something to delete here. Re-upload or remove the reference from the entries below.</p>
             <ul class="flex list-none flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] p-0">
               {#each orphanBroken as ref (ref.hash)}
                 <li class="flex items-center gap-2.5 border-t border-[color-mix(in_oklab,var(--cairn-card-border)_70%,transparent)] px-3 py-2 first:border-t-0">
-                  <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-[var(--color-muted)]" aria-hidden="true">
+                  <span class="flex h-7 w-9 flex-none items-center justify-center rounded border border-[var(--cairn-card-border)] bg-base-200 text-muted" aria-hidden="true">
                     <ImageOffIcon class="h-3.5 w-3.5" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="truncate text-[0.8125rem] font-semibold">{ref.slug || ref.hash}</div>
-                    <div class="truncate font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--color-muted)]">file missing in storage</div>
+                    <div class="truncate font-[family-name:var(--font-editor)] text-[0.6875rem] text-muted">file missing in storage</div>
                   </div>
-                  <span class="flex-none text-[0.6875rem] font-semibold text-[var(--color-muted)]">{brokenWhereUsed(ref.usage.length)}</span>
+                  <span class="flex-none text-[0.6875rem] font-semibold text-muted">{brokenWhereUsed(ref.usage.length)}</span>
                 </li>
               {/each}
             </ul>
@@ -2964,7 +2964,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
 
       <div class="mt-5 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-        <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+        <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
           <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> Scanned across the site and every open edit
         </span>
         <button type="button" class="btn btn-sm" onclick={closeOrphanScan}>Close</button>

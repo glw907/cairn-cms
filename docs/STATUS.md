@@ -44,6 +44,11 @@ then the serialized starter-template track, then the docs phase (publishes the r
 `admin-design-system.md`). Each phase is a just-in-time plan, test-first, ratcheting its `check:custom-surface` caps; see
 `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
+**Release cadence for the sweep: hold and batch, do not cut a release per phase** (Geoff, 2026-06-29). The sweep
+phases + the template track + the docs phase accumulate UNPUBLISHED on `main`, each finalizing its `## Unreleased`
+CHANGELOG entry, and publish as ONE window at the end of the initiative (or a meaningful bundle). The next published
+version is the first free minor after `0.78.0`, set at the cut. See `cairn-release-process-and-versioning`.
+
 ## Immediate next action (2026-06-29, prior): admin idiomatic re-expression Phase 0 COMPLETE + adversarially hardened; NEXT = Phase 1 (vocab pilot) + ship the held release
 
 Phase 0 (the foundation) is built, twice-reviewed, and gate-green on `worktree-tag-management-1`

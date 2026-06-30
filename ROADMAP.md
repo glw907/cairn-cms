@@ -86,6 +86,17 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Later
 
+- **Align the CodeMirror editing surface to the design language.** The in-editor surfaces that act as chrome
+  (the spellcheck `@codemirror/lint` suggestion popover first, then autocomplete and the search/replace panel)
+  are CodeMirror's stock widgets skinned with thin `EditorView.theme` patches, so they inherit CodeMirror's
+  default layout, button chrome, and the mono face and read as a different design language than the admin.
+  Align them by rendering cairn's own recipe DOM through CodeMirror's public extension points (the
+  `Tooltip`/`showTooltip` API, the lint `renderMessage` hook) rather than styling CodeMirror's internal `.cm-*`
+  classes, which is what makes a CodeMirror major expensive. Keep the writing surface (content, syntax, the
+  directive rails, the fold gutter, the lint underline) themed via `.cm-content`; just tune the underline.
+  Separate from the admin de-customization sweep, which walls the CodeMirror theme. Framing:
+  [`docs/internal/cm-editing-surface-alignment.md`](docs/internal/cm-editing-surface-alignment.md). Start with a
+  brainstorm and a spec.
 - **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
   so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
   `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward

@@ -119,11 +119,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   // A segment of the bordered publish-state control: the shared group border carries the pick-one
   // semantics, so a segment stays borderless; the active one tints and bolds.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
   function hiddenToggleClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-[var(--color-muted)]'}`;
+    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   // Hidden is a row treatment: a draft row de-emphasizes its TITLE by opacity (the title is
   // high-contrast base-content, so it stays above the AA text floor when dimmed). The already-muted
@@ -190,7 +190,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
-  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]';
+  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
   const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
 
   // The publish-all flash. A racing second admin can publish first, leaving this redirect
@@ -318,7 +318,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
     <CairnLogo class="h-12 w-12 text-primary opacity-30" />
     <div class="space-y-1">
       <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
-      <p class="text-sm text-[var(--color-muted)]">Stack your first one and it will show up here.</p>
+      <p class="text-sm text-muted">Stack your first one and it will show up here.</p>
     </div>
     <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
@@ -330,12 +330,12 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <!-- A filter or a search narrowed the list to zero; the entries exist, none match. Offer the
            way back: a search query clears, a filter is named in the copy. -->
       <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
-        <SearchIcon class="h-8 w-8 text-[var(--color-subtle)] opacity-40" aria-hidden="true" />
+        <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
         {#if query.trim()}
-          <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
+          <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
           <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
         {:else}
-          <p class="text-sm text-[var(--color-muted)]">No {data.label.toLowerCase()} match this filter.</p>
+          <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
         {/if}
       </div>
     {:else}
@@ -372,15 +372,15 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
-                  <span class="mt-0.5 inline-flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-[var(--color-muted)]">
+                  <span class="mt-0.5 inline-flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
                     <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
                   </span>
                 {/if}
                 {#if entry.summary}
-                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-[var(--color-muted)]">{entry.summary}</div>
+                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-muted">{entry.summary}</div>
                 {/if}
               </td>
-              {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-[var(--color-muted)] sm:table-cell">{formatDate(entry.date)}</td>{/if}
+              {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
               <td class="w-28">
                 {#if entry.status === 'new'}<span class="badge badge-info badge-sm font-medium">New</span>
                 {:else if entry.status === 'edited'}<span class="badge badge-sm border-transparent bg-primary/10 font-medium text-primary">Edited</span>
@@ -416,7 +416,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
 
 {#if data.entries.length > 0}
   <div class="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm">
-    <span role="status" class="text-[var(--color-muted)]">{sorted.length} of {data.entries.length}</span>
+    <span role="status" class="text-muted">{sorted.length} of {data.entries.length}</span>
     <div class="flex items-center gap-2">
       <label class="flex items-center gap-1">
         <span class="sr-only">Rows per page</span>

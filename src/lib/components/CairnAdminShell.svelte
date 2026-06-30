@@ -333,7 +333,7 @@ discriminant, not the fields, gates the chrome).
             <button
               type="button"
               onclick={openPalette}
-              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-[var(--color-muted)] transition-colors hover:bg-base-200 hover:text-base-content"
+              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               <span class="truncate">Search or jump to&hellip;</span>
@@ -365,13 +365,13 @@ discriminant, not the fields, gates the chrome).
       <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
         <div class="modal-box max-w-xl self-start p-0 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
-            <SearchIcon class="h-4 w-4 shrink-0 text-[var(--color-muted)]" aria-hidden="true" />
+            <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
               bind:value={paletteQuery}
               type="text"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
-              class="w-full bg-transparent py-3.5 text-sm outline-hidden placeholder:text-[var(--color-muted)]"
+              class="w-full bg-transparent py-3.5 text-sm outline-hidden placeholder:text-muted"
               onkeydown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -394,13 +394,13 @@ discriminant, not the fields, gates the chrome).
                       rel={cmd.external ? 'noopener' : undefined}
                       onclick={cmd.external ? () => paletteDialog?.close() : undefined}
                     >
-                      <cmd.icon class="h-4 w-4 text-[var(--color-muted)]" aria-hidden="true" />
+                      <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
                       {cmd.label}
                       {#if cmd.external}<ExternalLinkIcon class="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden="true" />{/if}
                     </a>
                   {:else}
                     <button type="button" onclick={() => runCommand(cmd)}>
-                      <cmd.icon class="h-4 w-4 text-[var(--color-muted)]" aria-hidden="true" />
+                      <cmd.icon class="h-4 w-4 text-muted" aria-hidden="true" />
                       {cmd.label}
                     </button>
                   {/if}
@@ -408,7 +408,7 @@ discriminant, not the fields, gates the chrome).
               {/each}
             </ul>
           {:else}
-            <p class="px-4 py-6 text-center text-sm text-[var(--color-muted)]">No matches for "{paletteQuery}".</p>
+            <p class="px-4 py-6 text-center text-sm text-muted">No matches for "{paletteQuery}".</p>
           {/if}
         </div>
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
@@ -425,7 +425,7 @@ discriminant, not the fields, gates the chrome).
               </div>
               <p class="text-sm">Every entry below goes live in one step.</p>
               {#each groups as group, i (group.label)}
-                <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]">{group.label}</p>
+                <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{group.label}</p>
                 <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
                   {#each group.ids as id (id)}
                     <li>{id}</li>
@@ -458,14 +458,14 @@ discriminant, not the fields, gates the chrome).
               <CairnLogo class="h-5 w-5" />
             </span>
             <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
-            <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-[var(--color-muted)]">CMS</span>
+            <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>
         </div>
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           {#snippet navSection(label: string, items: NavItem[])}
             <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)] transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
+              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
                 <span class="truncate">{label}</span>
                 <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
               </summary>
@@ -476,7 +476,7 @@ discriminant, not the fields, gates the chrome).
                       href={item.href}
                       class={isActive(item.href)
                         ? 'bg-primary/10 font-semibold text-primary'
-                        : 'font-medium text-[var(--color-subtle)]'}
+                        : 'font-medium text-subtle'}
                       aria-current={isActive(item.href) ? 'page' : undefined}
                     >
                       <item.icon class="h-4 w-4" aria-hidden="true" />
@@ -503,7 +503,7 @@ discriminant, not the fields, gates the chrome).
                 href="/admin/help"
                 class={isActive('/admin/help')
                   ? 'bg-primary/10 font-semibold text-primary'
-                  : 'font-medium text-[var(--color-subtle)]'}
+                  : 'font-medium text-subtle'}
                 aria-current={isActive('/admin/help') ? 'page' : undefined}
               >
                 <HelpCircleIcon class="h-4 w-4" aria-hidden="true" />
@@ -522,8 +522,8 @@ discriminant, not the fields, gates the chrome).
             </div>
             <div class="min-w-0 flex-1">
               <div class="truncate text-sm font-medium">{data.user.displayName}</div>
-              <div class="truncate text-xs text-[var(--color-muted)]">{data.user.email}</div>
-              <div class="text-xs capitalize text-[var(--color-subtle)]">{data.user.role}</div>
+              <div class="truncate text-xs text-muted">{data.user.email}</div>
+              <div class="text-xs capitalize text-subtle">{data.user.role}</div>
             </div>
           </div>
           <!-- Logout posts to the absolute /admin catch-all, so the shell signs out from every

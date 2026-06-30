@@ -1941,7 +1941,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               Replace {asset.displayName}
             {/if}
           </h2>
-          <p id="cairn-ml-replace-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-replace-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {#if replaceStep === 'review'}
               The new file replaces the stored image. Every published entry that uses it is repointed in one commit to main, and readers see the change once the build finishes.
             {:else if replaceStep === 'blocked'}
@@ -1963,15 +1963,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <div class="flex items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/60 p-3">
             <span class="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
               {#if brokenHashes.has(asset.hash)}
-                <ImageOffIcon class="h-5 w-5 text-[var(--color-subtle)]" aria-hidden="true" />
+                <ImageOffIcon class="h-5 w-5 text-subtle" aria-hidden="true" />
               {:else}
                 <img src={thumbSrc(asset)} alt="" aria-hidden="true" class="h-full w-full object-cover" onerror={() => markBroken(asset.hash)} />
               {/if}
             </span>
             <span class="flex min-w-0 flex-col gap-0.5">
-              <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">Replacing</span>
+              <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-muted">Replacing</span>
               <span class="text-sm font-semibold">{asset.displayName}</span>
-              <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-[var(--color-muted)] tabular-nums">
+              <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-muted tabular-nums">
                 {#if dimensions(asset)}{dimensions(asset)}<span class="px-1" aria-hidden="true">&middot;</span>{/if}{formatBytes(asset.bytes)}
               </span>
             </span>
@@ -1985,12 +1985,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <button type="button" class="btn btn-sm" onclick={replaceUpload.retry}>Try another file</button>
             </div>
           {:else if replaceUpload.kind === 'working'}
-            <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-[var(--color-muted)]">
+            <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
               <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
               <span class="text-[0.8125rem]">Preparing the new file...</span>
             </div>
           {:else}
-            <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-[var(--color-muted)]">
+            <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
               <UploadIcon class="h-6 w-6 text-primary" aria-hidden="true" />
               <span class="text-[0.875rem] font-medium text-base-content">Drop the new image, or upload</span>
               <span class="text-xs">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
@@ -2018,12 +2018,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if newRec}
             <div class="grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/60 p-3">
               <div class="flex min-w-0 flex-col gap-0.5">
-                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">Current</span>
-                <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-[var(--color-muted)] tabular-nums line-through">.{asset.hash}</span>
+                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-muted">Current</span>
+                <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-muted tabular-nums line-through">.{asset.hash}</span>
               </div>
-              <ArrowRightIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+              <ArrowRightIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
               <div class="flex min-w-0 flex-col gap-0.5">
-                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-[var(--color-muted)]">New file</span>
+                <span class="text-[0.625rem] font-semibold uppercase tracking-[0.06em] text-muted">New file</span>
                 <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-primary tabular-nums">.{newRec.hash}</span>
               </div>
               <div class="col-span-3 flex items-start gap-2 border-t border-[var(--cairn-card-border)] pt-2.5">
@@ -2036,7 +2036,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <div>
             <div class="mb-2 flex items-baseline justify-between">
               <span class={headerLabel}>Published entries that will be repointed</span>
-              <span class="text-xs tabular-nums text-[var(--color-muted)]">{replaceEntries.length}</span>
+              <span class="text-xs tabular-nums text-muted">{replaceEntries.length}</span>
             </div>
             <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100">
               <ul bind:this={replaceEntriesList} id="cairn-ml-replace-entries" class="flex max-h-56 list-none flex-col gap-1 overflow-y-auto p-2">
@@ -2046,10 +2046,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                        does not see through the per-row conditional that selects which row carries it. -->
                   <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
                   <li class="flex items-start gap-2.5 rounded px-1.5 py-1.5" tabindex={i === REPLACE_ROW_CAP ? -1 : undefined}>
-                    <FileTextIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                    <FileTextIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
                     <span class="flex min-w-0 flex-col">
                       <span class="truncate text-[0.8125rem] font-medium">{entry.title}</span>
-                      <span class="truncate text-[0.6875rem] text-[var(--color-muted)]">{replaceWhereUsed(entry)}</span>
+                      <span class="truncate text-[0.6875rem] text-muted">{replaceWhereUsed(entry)}</span>
                     </span>
                   </li>
                 {/each}
@@ -2075,11 +2075,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                  Calm dashed base-200, never the danger register. -->
             <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
               <div class="mb-1.5 flex items-center gap-2">
-                <GitBranchIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                <GitBranchIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
                 <span class="text-[0.8125rem] font-semibold">Open edits still on the old file</span>
-                <span class="text-xs tabular-nums text-[var(--color-muted)]">{replacePlan?.branchDelta.length ?? 0}</span>
+                <span class="text-xs tabular-nums text-muted">{replacePlan?.branchDelta.length ?? 0}</span>
               </div>
-              <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
+              <p class="mb-2 text-[0.75rem] leading-relaxed text-muted">These edits are on their own branches and are not touched. Each keeps the old file until it is published again.</p>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each replacePlan?.branchDelta ?? [] as delta (delta.branch)}
                   <li class="font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--cairn-warning-ink)]">{delta.branch}</li>
@@ -2111,7 +2111,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <input type="hidden" name="newHash" value={replaceRecord?.hash ?? ''} />
           <input type="hidden" name="confirmSlug" value={replaceConfirmInput} />
           <input type="hidden" name="media" value={replaceRecord ? JSON.stringify([replaceRecord]) : '[]'} />
-          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
             <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
           </span>
           <button type="button" class="btn btn-sm" onclick={closeReplaceDialog}>Cancel</button>
@@ -2156,7 +2156,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           </div>
         </div>
         <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto text-[0.75rem] text-[var(--color-muted)]">No file was changed.</span>
+          <span class="mr-auto text-[0.75rem] text-muted">No file was changed.</span>
           <button type="button" class="btn btn-sm" onclick={closeReplaceDialog}>Cancel</button>
         </div>
       {/if}
@@ -2197,7 +2197,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               Fill alt on {altCounts.willFill} {altCounts.willFill === 1 ? 'placement' : 'placements'}
             {/if}
           </h2>
-          <p id="cairn-ml-alt-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-[var(--color-muted)]">
+          <p id="cairn-ml-alt-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {#if altStep === 'blocked'}
               cairn could not read every place this image is used, so it will not write alt where it cannot see. Nothing was changed.
             {:else}
@@ -2228,7 +2228,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="text-[0.8125rem] font-semibold">Will fill the gap</div>
-                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">These placements have no alt today. The default alt is written in.</div>
+                    <div class="mt-px text-[0.6875rem] leading-snug text-muted">These placements have no alt today. The default alt is written in.</div>
                   </div>
                   <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-primary">{altFillRows.length}</span>
                 </div>
@@ -2238,15 +2238,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                          (tabindex -1). svelte-ignore: as above, the conditional hides the literal -1. -->
                     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
                     <li class="flex items-start gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2.5 first:border-t-0" tabindex={i === ALT_ROW_CAP ? -1 : undefined}>
-                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate text-[0.8125rem] font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">{row.kind}</span>
+                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 text-[0.75rem] leading-snug">
-                          <span class="italic text-[var(--color-muted)]">(no alt)</span>
-                          <ArrowRightIcon class="h-3 w-3 flex-none text-[var(--color-muted)] opacity-65" aria-hidden="true" />
+                          <span class="italic text-muted">(no alt)</span>
+                          <ArrowRightIcon class="h-3 w-3 flex-none text-muted opacity-65" aria-hidden="true" />
                           <span class="font-medium text-primary">{row.after}</span>
                         </div>
                       </div>
@@ -2285,7 +2285,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="text-[0.8125rem] font-semibold">Already has custom alt</div>
-                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">
+                    <div class="mt-px text-[0.6875rem] leading-snug text-muted">
                       {altOverwrite ? 'You chose to overwrite these.' : 'Left alone by default. You can overwrite these too.'}
                     </div>
                   </div>
@@ -2311,21 +2311,21 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <ul class="flex max-h-44 list-none flex-col overflow-y-auto p-0">
                   {#each altCustomRows as row (row.key)}
                     <li class="flex items-start gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2.5 first:border-t-0">
-                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                      <FileTextIcon class="mt-0.5 h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <div class="flex min-w-0 flex-1 flex-col gap-0.5">
                         <div class="flex items-center gap-1.5">
                           <span class="truncate text-[0.8125rem] font-semibold">{row.title}</span>
-                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--color-muted)]">{row.kind}</span>
+                          <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 text-[0.75rem] leading-snug">
                           {#if altOverwrite}
-                            <span data-cairn-alt-was class="text-base-content line-through decoration-[var(--color-muted)]/55">{`“${row.before}”`}</span>
-                            <ArrowRightIcon class="h-3 w-3 flex-none text-[var(--color-muted)] opacity-65" aria-hidden="true" />
+                            <span data-cairn-alt-was class="text-base-content line-through decoration-[color-mix(in_oklab,currentColor_55%,transparent)]">{`“${row.before}”`}</span>
+                            <ArrowRightIcon class="h-3 w-3 flex-none text-muted opacity-65" aria-hidden="true" />
                             <span class="font-medium text-primary">{altPushed}</span>
                           {:else}
                             <span class="text-base-content">{`“${row.before}”`}</span>
-                            <span class="text-[var(--color-muted)] opacity-65" aria-hidden="true">&middot;</span>
-                            <span class="text-[var(--color-muted)]">kept</span>
+                            <span class="text-muted opacity-65" aria-hidden="true">&middot;</span>
+                            <span class="text-muted">kept</span>
                           {/if}
                         </div>
                       </div>
@@ -2339,18 +2339,18 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {#if altSkipRows.length > 0}
               <div data-cairn-alt-skip class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 opacity-90">
                 <div class="flex items-center gap-2.5 p-3">
-                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-[var(--color-muted)]" aria-hidden="true">
+                  <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-muted" aria-hidden="true">
                     <ImageOffIcon class="h-3.5 w-3.5" />
                   </span>
                   <div class="min-w-0 flex-1">
                     <div class="text-[0.8125rem] font-semibold">Marked decorative, skipped</div>
-                    <div class="mt-px text-[0.6875rem] leading-snug text-[var(--color-muted)]">A hero set as decorative on purpose. It is left without alt.</div>
+                    <div class="mt-px text-[0.6875rem] leading-snug text-muted">A hero set as decorative on purpose. It is left without alt.</div>
                   </div>
-                  <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-[var(--color-muted)]">{altSkipRows.length}</span>
+                  <span class="flex-none text-[0.8125rem] font-bold tabular-nums text-muted">{altSkipRows.length}</span>
                 </div>
                 <ul class="flex list-none flex-col border-t border-[var(--cairn-card-border)] p-0">
                   {#each altSkipRows as row (row.key)}
-                    <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 text-[0.75rem] text-[var(--color-muted)] first:border-t-0">
+                    <li class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)]/70 px-3 py-2 text-[0.75rem] text-muted first:border-t-0">
                       <span class="truncate">{row.title}</span>
                       <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide">{row.kind}</span>
                     </li>
@@ -2364,11 +2364,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <!-- The report-only branch delta: open cairn/* edits keep their own alt until they publish. -->
             <div class="rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-200/40 p-3">
               <div class="mb-1.5 flex items-center gap-2">
-                <GitBranchIcon class="h-4 w-4 flex-none text-[var(--color-muted)]" aria-hidden="true" />
+                <GitBranchIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
                 <span class="text-[0.8125rem] font-semibold">Open edits not touched</span>
-                <span class="text-xs tabular-nums text-[var(--color-muted)]">{altPlan?.branchDelta.length ?? 0}</span>
+                <span class="text-xs tabular-nums text-muted">{altPlan?.branchDelta.length ?? 0}</span>
               </div>
-              <p class="mb-2 text-[0.75rem] leading-relaxed text-[var(--color-muted)]">These edits are on their own branches and are not changed. Each keeps its alt as the author has it there.</p>
+              <p class="mb-2 text-[0.75rem] leading-relaxed text-muted">These edits are on their own branches and are not changed. Each keeps its alt as the author has it there.</p>
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each altPlan?.branchDelta ?? [] as delta (delta.branch)}
                   <li class="font-[family-name:var(--font-editor)] text-[0.6875rem] text-[var(--cairn-warning-ink)]">{delta.branch}</li>
@@ -2394,7 +2394,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <!-- The opt-in checkbox lives beside the customized rows (outside the form), so its bound
                state is mirrored here as the posted flag. The server reads form.get('overwrite') === 'on'. -->
           <input type="hidden" name="overwrite" value={altOverwrite ? 'on' : ''} />
-          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-[var(--color-muted)]">
+          <span class="mr-auto inline-flex items-center gap-1.5 text-[0.75rem] text-muted">
             <GitBranchIcon class="h-3.5 w-3.5" aria-hidden="true" /> One commit to main
           </span>
           <button type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
@@ -2430,7 +2430,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           </div>
         </div>
         <div class="mt-4 flex items-center justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
-          <span class="mr-auto text-[0.75rem] text-[var(--color-muted)]">No alt was changed.</span>
+          <span class="mr-auto text-[0.75rem] text-muted">No alt was changed.</span>
           <button type="button" class="btn btn-sm" onclick={closeAltDialog}>Cancel</button>
         </div>
       {/if}

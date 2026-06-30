@@ -39,7 +39,7 @@ this file; the look re-skins from `theme.css`.
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
       <span
-        class="font-[family-name:var(--font-display)] text-[length:var(--cairn-step-1)] font-semibold tracking-[var(--cairn-tracking-tight)]"
+        class="font-display text-[length:var(--cairn-step-1)] font-semibold tracking-[var(--cairn-tracking-tight)]"
         >Cairn Showcase</span
       >
     </a>

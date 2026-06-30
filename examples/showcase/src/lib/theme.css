@@ -13,7 +13,7 @@
         (ink), plus the `-200`/`-300` steps, light and dark.
      3. Secondary, accent, neutral, and the four status hues follow the same
         pattern if you want them on-brand; most owners leave them.
-     4. The faces: swap `--font-display` and `--font-body` in the :root block.
+     4. The faces: swap `--font-display` and `--font-body` in the `@theme` block.
      5. Optional fine-tuning: the one type ratio lives in the `--cairn-step-*`
         clamps; the one space-scale step in `--cairn-space-*`.
      6. The status-ink seam. Retuning a status FILL above (the `--color-info`,
@@ -171,6 +171,17 @@
   --noise: 0;
 }
 
+/* The editorial faces, moved into @theme so Tailwind 4 generates the `font-display`/`font-body`/
+   `font-mono` utilities the chrome markup folds onto. @theme still emits each token at :root, so
+   every `var(--font-display)` reference in prose.css and below keeps resolving unchanged. The
+   `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
+   own face). */
+@theme {
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+}
+
 /* ----------------------------------------------------------------------------
    The cairn-authored token layer. DaisyUI's theme blocks above hold only the
    role and geometry tokens; these custom properties add what DaisyUI does not
@@ -184,12 +195,8 @@
    pass adds a [data-theme] scope for these.)
    ---------------------------------------------------------------------------- */
 :root {
-  /* The editorial pairing, self-hosted (the @import rules at the top of this file). Fontsource
-     registers each variable family as "<Name> Variable"; these names match it exactly, with the
-     metrics-near system fallbacks that hold during the swap. */
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* The editorial faces live in the @theme block above (so Tailwind generates the font-* utilities);
+     @theme re-emits them at :root, so the var(--font-*) references throughout this file resolve. */
 
   /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds. */
   --cairn-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */

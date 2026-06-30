@@ -20,7 +20,7 @@
 </svelte:head>
 
 <div
-  class="min-h-screen bg-base-100 font-[family-name:var(--font-body)] text-base-content"
+  class="min-h-screen bg-base-100 font-body text-base-content"
 >
   <a
     href="#main"

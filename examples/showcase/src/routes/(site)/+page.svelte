@@ -58,7 +58,7 @@
     A cairn site
   </p>
   <h1
-    class="m-0 mb-[var(--cairn-space-s)] font-[family-name:var(--font-display)] text-[length:var(--cairn-step-5)] font-semibold leading-[var(--cairn-leading-tight)] tracking-[var(--cairn-tracking-tight)]"
+    class="m-0 mb-[var(--cairn-space-s)] font-display text-[length:var(--cairn-step-5)] font-semibold leading-[var(--cairn-leading-tight)] tracking-[var(--cairn-tracking-tight)]"
   >
     Notes, stacked one stone at a time.
   </h1>

@@ -11,7 +11,61 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; NEXT = the starter-template track, then docs
+## Immediate next action (2026-06-30, LATEST): starter-template track Phase 1 (template foundation) COMPLETE on a worktree (held, unmerged); NEXT = Phase 2 (template chrome)
+
+The starter-template track of the admin idiomatic re-expression has begun, and **Phase 1 (template
+foundation) is complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree). Plan + post-mortem:
+`docs/superpowers/plans/2026-06-30-starter-template-1-foundation.md`. Held unpublished, **not yet merged**
+(merge to `main` when Geoff asks; admin + showcase internals a consumer never imports, no public surface or
+behavior change, no release).
+
+**What shipped (4 tasks + simplify, commits `f8cfce3`..`8f83894`).** The showcase Tier-1/2/3 **ledger**
+(`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`): Tier 1 = the showcase's own DaisyUI
+theme (the two `@plugin "daisyui/theme"` blocks, kept verbatim, **not** Warm Stone); Tier 2 = the owned
+design (the `prose.css` reading surface, the `.cairn-place-*` figure contract + `.site-main`, the
+`--cairn-muted`/`--cairn-*-ink` inks, the elevation and CTA pairs, the `pre.shiki`/`.cairn-tok-*`
+code-highlight binding), walled and documented with the frame-vs-owned split; Tier 3 = the Phase-2 fold
+target. The **gate** (`check:custom-surface`) extended to the showcase tree: a **per-tree retired-token
+pattern** (admin keeps `var(--color-muted|subtle)` byte-for-byte at budget 0; the showcase counts any
+bracketed or inline `var(--…)` in markup), **seeded at 20** across the 4 chrome/route files. Comment-only
+**Tier markers** in the three CSS files. The showcase **visual baseline** (`e2e/site-visual.spec.ts` + 4
+`-linux` snapshots: home + styleguide, light + dark), the Phase-2 zero-pixel floor. Gate green: `check`
+0/0 (1245), `npm test` exit 0 (2871), `check:custom-surface` PASS both trees, `check:comments`/`check:docs`
+OK, `site-visual` e2e 4/4 stable.
+
+**Decisions locked (do not relitigate):** the showcase gate signal = any bracketed/inline `var(--…)` (the
+admin pattern unchanged, its AA inks still sanctioned-and-uncounted); the styleguide's dynamic `var({token})`
+swatches are sanctioned (the design-reference tool); the showcase keeps its own theme (Tier 1, no Warm
+Stone); `prose.css` is Tier 2 in full; Phase 1 is **zero-pixel** (the `--cairn-rule` bug, the
+island-converter CSS, and the design-scale token-home move are Tier-3, deferred to Phase 2). Task-1
+deviation: `DEFAULT_RETIRED_TOKEN_PATTERN` is a regex literal's `.source` (not a raw string) so the
+repo-wide Tailwind scan cannot extract it as a breaking candidate; `.source` equals the intended string.
+
+**Discovered, triaged (NOT this phase):** the shipped compiled admin sheet carries foreign rules.
+`scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with no content config, so auto-detection scans
+the whole repo on top of the explicit components `@source`; `dist/components/cairn-admin.css` compiles
+stray candidates from `examples/showcase/src` and `docs/` (including `text-[var(--color-muted)]` bracket
+forms whose only surviving origin is the docs that discuss them, since admin source retired them). Valid
+no-op CSS (bloat, not breakage), and the mechanism behind the four `tailwind-scans-docs-bad-candidate`
+breaks. Logged in ROADMAP "Next" and the friction log: scope the admin build's content to the components
+glob + a test asserting no foreign token in the sheet.
+
+**NEXT = Phase 2 (template chrome).** Fold the showcase chrome and route markup (`SiteHeader`,
+`SiteFooter`, the `(site)` layouts/pages: the 20 retired-token lines) onto **Tailwind 4 `@theme` named
+utilities** and DaisyUI 5.6 primitives; move the design-scale token home (`--cairn-step-*`/`--cairn-space-*`/
+`--font-*`/tracking/leading/measure) from `:root` into `@theme` so the utilities generate; fix the
+island-converter demo CSS and the `--cairn-rule` dead token; ratchet the showcase `retiredTokenBudget` from
+20 toward its floor, with the `site-visual` baseline as the reviewed drift record. **Open design decisions
+for the Phase-2 brainstorm:** the `@theme` namespace mapping and naming (e.g. `--cairn-step-1` →
+`--text-step-1` → `text-step-1`; `--cairn-space-m` → a `--spacing-*` step → `gap-m`/`px-m`); which tokens
+get named utilities vs stay bare CSS consumption; whether the figure/code Tier-2 contracts need any utility
+exposure. Write the just-in-time Phase 2 plan (brainstorm the naming first), adversarially review it, then
+execute task-by-task via `cairn-implementer` with the full gate per task, on this worktree. Then the docs
+phase (publish the role vocabulary as the versioned seam in `admin-design-system.md`). Use `cairn-pass`. See
+the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; starter-template track NEXT (now Phase 1 done, above)
 
 The admin idiomatic re-expression **sweep is complete**. Phase 6 (media part 2), the final sweep phase,
 retired the last 125 muted/subtle bracket tokens across the five media files and ratcheted the admin

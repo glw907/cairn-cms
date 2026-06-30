@@ -453,3 +453,65 @@ git commit -m "test(e2e): baseline the showcase site home and styleguide (the Ph
   no pixel.
 - **Type consistency:** `retiredTokenHits(dir, patternSource?)`, `tree.retiredTokenPattern`, and the JSON
   `retiredTokenPattern` key are used consistently across Task 1.
+
+---
+
+## Post-mortem (2026-06-30)
+
+**Phase 1 (template foundation) is complete.** The starter-template track of the admin idiomatic
+re-expression now has its showcase audit, its walled-and-documented Tier 2, its gate, and its zero-pixel
+baseline. The showcase tree starts at `retiredTokenBudget: 20`. No pixel change; the fold is Phase 2.
+
+**What was built (commit, executor):**
+- **Task 1** (`f8cfce3`, `cairn-implementer`): the per-tree retired-token pattern. `retiredTokenHits(dir,
+  patternSource?)` and `evaluate` now forward `tree.retiredTokenPattern`; the admin keeps its
+  `var(--color-muted|subtle)` pattern (still budget 0), the showcase counts any bracketed or inline
+  `var(--…)` in markup, seeded at the measured 20 across the 4 chrome/route files. New fixture + 2 test
+  blocks (red→green). Both trees PASS; `check` 0/0; `npm test` exit 0 (2871).
+- **Task 2** (`0d98ed6`, main loop): the showcase Tier-1/2/3 ledger
+  (`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`), the audit artifact, with the
+  frame-vs-owned split and the sanctioned-styleguide-swatch note. `check:docs` OK.
+- **Task 3** (`a42a84b`, main loop): comment-only Tier markers in `theme.css`/`site.css`/`prose.css`, plus
+  an inline marker on the `--cairn-rule` bug. Zero pixel (CSS comments stripped at build).
+- **Task 4** (`8686adc`, main loop): the showcase visual baseline (`e2e/site-visual.spec.ts` + 4
+  `-linux` snapshots: home and styleguide, light and dark), the Phase-2 zero-pixel floor. Generated against
+  a fresh build, re-run stable, the home snapshot inspected (real chrome + masthead + post list, not a
+  blank state).
+- **Pass-end** (`8f83894`, `code-simplifier`): hoisted the duplicated `showcasePattern` test constant.
+  One-line refinement; the gate script was left as-is (the `.source` form is constraint-protected).
+
+**Decisions locked (do not relitigate):**
+- The showcase gate signal generalizes the admin's muted/subtle rule to **any bracketed or inline
+  `var(--…)`** in `.svelte` markup. The admin pattern is unchanged (its AA inks stay sanctioned and
+  uncounted). The styleguide's dynamic `var({token})` swatches are sanctioned (they do not match the
+  literal `var(--` and are the template's design-reference tool, the analog of the admin live-components bar).
+- The showcase keeps its **own** DaisyUI theme (Tier 1), not Warm Stone. No redesign.
+- `prose.css` is Tier 2 in full (the owned reading surface; not a fold target).
+- The `--cairn-rule` undefined-token bug, the island-converter demo CSS, and the design-scale token-home
+  move to `@theme` are **Tier 3, deferred to Phase 2** — recorded, not fixed (Phase 1 is zero-pixel).
+
+**Discovered (out of scope, logged):** the shipped compiled admin sheet (`dist/components/cairn-admin.css`)
+is not as clean as the source. `scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with no content
+config, so its auto-detection scans the whole repo on top of the explicit components `@source`, and the
+sheet compiles foreign utility candidates from `examples/showcase/src` and `docs/` — including
+`text-[var(--color-muted)]` bracket forms whose only surviving origin is the docs that discuss them (admin
+source retired them). Valid no-op CSS, so bloat not breakage, but it is the mechanism behind the four
+`tailwind-scans-docs-bad-candidate` build breaks. Triaged to ROADMAP "Next" and the friction log: scope the
+admin build's content to the components glob and add a test asserting no foreign token in the sheet.
+
+**Deviation:** Task 1's `DEFAULT_RETIRED_TOKEN_PATTERN` is defined from a regex literal's `.source` rather
+than the plan's draft raw string, because the raw bracket string is a candidate the repo-wide scan extracts
+and compiles to invalid CSS (the gotcha above). The `.source` equals the intended string byte-for-byte, so
+the admin signal is unchanged. The safer form; recorded in the constant's comment.
+
+**Gate (pass-end):** `check` 0/0 (1245); `npm test` exit 0 (2871); `check:custom-surface` PASS both trees
+(admin 0, showcase 20); `check:comments` OK; `check:docs` OK; showcase `site-visual` e2e 4/4 stable.
+Reviewer fan-out skipped by design: Phase 1 touched a Node gate script, tests, docs, comment-only CSS, and
+a Playwright baseline — nothing in the Svelte/DaisyUI-a11y/Workers/auth reviewers' domain (no UI markup, no
+component, no auth). `code-simplifier` ran. **Held unpublished** (admin + showcase internals a consumer
+never imports; no public surface or behavior change; no `CHANGELOG` entry).
+
+**Next:** Phase 2 (template chrome) — fold the showcase chrome and route markup onto Tailwind 4 `@theme`
+named utilities and DaisyUI 5.6 primitives, move the design-scale token home into `@theme`, fix the
+island-converter and `--cairn-rule`, and ratchet the showcase `retiredTokenBudget` down from 20 toward its
+floor, with the `site-visual` baseline as the regression record. Then the docs phase.

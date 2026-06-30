@@ -131,3 +131,17 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   surviving comparative prose reworded, with a `Consumers must` line and a regenerated `check:surface`
   snapshot recording the drop. The new `check:surface` gate now catches a dead or drifted public type at
   build time, so this class of friction surfaces loud rather than lingering as documented-but-unused surface.
+
+### From the starter-template track, Phase 1 (2026-06-30)
+
+- **developer** (the shipped admin CSS sheet carries foreign, doc-derived rules): the admin idiomatic
+  re-expression drove the admin's bespoke *source* surface to zero, but the shipped *compiled* sheet is not
+  actually clean. `scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with no content config, so its
+  automatic source detection scans the whole repo on top of the explicit components `@source`, and the
+  compiled `dist/components/cairn-admin.css` carries utility rules scanned from `examples/showcase/src` and
+  `docs/`, including `text-[var(--color-muted)]` bracket forms whose only surviving origin is the docs that
+  discuss them (the admin source retired them to `text-muted`). The rules are valid no-op CSS, so this is
+  bloat not breakage, but it is the same scan that has broken `npm run package` four times on a doc-side bad
+  candidate. Triaged to ROADMAP "Next" (scope the admin build's content to the components glob; add a test
+  asserting no foreign token in the sheet). Until then the bare-token-forms-in-docs discipline
+  (`tailwind-scans-docs-bad-candidate`) stays the workaround.

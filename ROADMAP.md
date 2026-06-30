@@ -58,10 +58,13 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   sweep (Phases 0–6) re-expressed every admin component in native DaisyUI 5.6 / Tailwind 4: the
   `check:custom-surface` gate and the frozen `text-muted` / `text-subtle` role vocabulary (Phase 0) plus the
   vocabulary-screen pilot (Phase 1) shipped in `0.78.0`, and Phases 2–6 retired the admin's bespoke
-  muted/subtle surface to its terminal floor (`retiredTokenBudget` 0), published as `0.78.1`. What remains:
-  the starter-template track (re-express the showcase template in the same native idiom, now that the admin
-  primitives have published into the showcase `file:` dep), then the docs phase (publish the role vocabulary
-  as the versioned seam in `admin-design-system.md`). Spec:
+  muted/subtle surface to its terminal floor (`retiredTokenBudget` 0), published as `0.78.1`. The
+  starter-template track has now begun: its **Phase 1 (template foundation) is done** (the showcase
+  Tier-1/2/3 ledger, the walled-and-documented Tier 2, `check:custom-surface` extended to the showcase tree
+  with a per-tree retired-token pattern seeded at 20, and the zero-pixel visual baseline). What remains:
+  **Phase 2 (template chrome)** — fold the showcase chrome and route markup onto Tailwind 4 `@theme`
+  utilities and DaisyUI 5.6 primitives, ratcheting the showcase budget down — then the docs phase (publish
+  the role vocabulary as the versioned seam in `admin-design-system.md`). Spec:
   `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Next
@@ -86,6 +89,20 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
   warts a dogfood found), then Part B3 (defaults) and B4 (options plus first-run), then the Part C
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
+- **Scope the admin CSS build's content detection (the shipped sheet carries foreign rules).** Surfaced
+  during the starter-template Phase 1 audit: `scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with
+  no explicit content config, so its automatic source detection walks up from `scripts/admin-css.input.css`
+  to the repo root and scans the **whole tree** (`examples/showcase/src`, `docs/`, `scripts/`) on top of the
+  explicit `@source "../src/lib/components/**"`. The shipped `dist/components/cairn-admin.css` therefore
+  compiles stray utility candidates it finds anywhere, including `text-[var(--color-muted)]` forms that the
+  admin sweep retired from source (so their only remaining origin is the docs that discuss them) and the
+  showcase's `--cairn-step/space/measure` tokens. The rules are valid no-op CSS (they reference vars
+  undefined in the admin theme), so this is bloat, not breakage, but it undercuts the de-customization
+  North Star and is the mechanism behind the `tailwind-scans-docs-bad-candidate` build breaks. Fix: restrict
+  the admin build's content to the components glob (Tailwind v4 `source(none)` plus the explicit `@source`,
+  or a content config on the postcss plugin), and add a test asserting the compiled sheet contains no
+  foreign token (`--cairn-step`, `--cairn-measure`, a bracket muted/subtle form). This also retires the
+  "write bare token forms in docs" workaround once the scan no longer reaches docs.
 
 ## Later
 

@@ -15,6 +15,7 @@ import {
   type EditData,
   type MediaLibraryData,
   type SettingsData,
+  type VocabularyLoadData,
   type HelpData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
@@ -67,6 +68,7 @@ export type AdminData =
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
+  | { view: 'vocabulary'; page: VocabularyLoadData }
   | { view: 'help'; page: HelpData };
 
 /**
@@ -144,6 +146,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
       case 'settings': {
         return { view: 'settings', page: await content.settingsLoad(contentEvent(event, {})) };
       }
+      case 'vocabulary': {
+        return { view: 'vocabulary', page: await content.vocabularyLoad(contentEvent(event, {})) };
+      }
       case 'help': {
         return { view: 'help', page: await content.helpLoad(contentEvent(event, {})) };
       }
@@ -170,9 +175,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   // The shell posts publishAll from every authed admin page to the absolute /admin?/publishAll, which
   // parses to the index view, so 'index' is in the set alongside the per-view names; login and confirm
   // may not.
-  const authedViews = ['index', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
+  const authedViews = ['index', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
   // An editor signs out from wherever they are, so logout accepts any parsed view.
-  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'help'] as const;
+  const anyView = ['index', 'login', 'confirm', 'list', 'edit', 'editors', 'nav', 'media', 'settings', 'vocabulary', 'help'] as const;
 
   /**
    * The full admin action vocabulary, one named async function per action, so a site's
@@ -194,6 +199,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
     saveSettings: viewAction(['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
+    // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
+    // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
+    saveVocabulary: viewAction(['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
     upload: viewAction(['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),

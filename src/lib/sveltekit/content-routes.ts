@@ -24,8 +24,9 @@ import { deriveGettingStarted, type GettingStarted } from '../content/getting-st
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
-import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions, parseSiteConfig, setTidy, validateTidyConventions, TidyConventionsError } from '../nav/site-config.js';
-import type { TidyConventions } from '../nav/site-config.js';
+import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions, parseSiteConfig, setTidy, validateTidyConventions, TidyConventionsError, extractVocabulary, setVocabulary, validateVocabulary } from '../nav/site-config.js';
+import type { TidyConventions, VocabularyEntry } from '../nav/site-config.js';
+import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
@@ -309,6 +310,20 @@ export interface SettingsData {
  */
 export interface SettingsSaveFailure {
   error: string;
+}
+
+/**
+ * The vocabulary admin screen's data: the committed tag vocabulary, a per-value cross-branch usage
+ *  count, and the in-use-but-unlisted seed set. The usage overlay is best-effort, so it degrades to
+ *  an empty `usage`/`unlisted` while the committed `vocabulary` stays visible when a read fails.
+ */
+export interface VocabularyLoadData {
+  /** The committed `{ value, label }` entries, in config order. */
+  vocabulary: VocabularyEntry[];
+  /** Each vocabulary value to its cross-branch in-use count (main plus open cairn/* branches). */
+  usage: Record<string, number>;
+  /** Tags in use but absent from the vocabulary, with their count, sorted: the seed candidates. */
+  unlisted: { value: string; count: number }[];
 }
 
 /**
@@ -2975,6 +2990,137 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /**
+   * Load the tag-vocabulary admin screen (Plan 3): the committed vocabulary plus a per-value
+   *  cross-branch usage count and the in-use-but-unlisted seed set. The committed list is read on the
+   *  default branch and degrades to `[]` on a read or parse failure, mirroring navLoad, so the screen
+   *  still opens. The usage overlay is best-effort and separate, mirroring mediaLibraryLoad: the
+   *  manifest read and the non-strict buildTagUsageIndex share one try/catch that degrades `usage` to
+   *  `{}` and `unlisted` to `[]` on any failure, keeping the committed vocabulary visible. The safety
+   *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
+   */
+  async function vocabularyLoad(event: ContentEvent): Promise<VocabularyLoadData> {
+    requireSession(event);
+    const backend = resolveBackend(event);
+
+    let vocabulary: VocabularyEntry[] = [];
+    let raw: string | null = null;
+    try {
+      raw = await backend.readFile(siteConfigPath(), backend.defaultBranch);
+    } catch {
+      // An unreadable config degrades to an empty vocabulary; the first save writes a clean list.
+      raw = null;
+    }
+    if (raw !== null) {
+      try {
+        vocabulary = extractVocabulary(parseSiteConfig(raw));
+      } catch (err) {
+        // A malformed config keeps the same degrade rather than failing the screen closed; the
+        // swallow names the operator fault in the log, as navLoad does.
+        log.error('config.invalid', {
+          conditionId: 'config.site-config-invalid',
+          error: String(err),
+        });
+        vocabulary = [];
+      }
+    }
+
+    // The usage overlay is best-effort: a transient manifest or branch-list failure must keep the
+    // committed vocabulary visible, never 500 the whole screen (the dispatcher has no load-level
+    // try/catch, and the non-strict index still rethrows a listBranches failure). The strict gate on
+    // the save is the safety boundary, not this read.
+    let usage: Record<string, number> = {};
+    let unlisted: { value: string; count: number }[] = [];
+    try {
+      const manifestRaw = await backend.readFile(runtime.manifestPath, backend.defaultBranch);
+      const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+      const usageIndex = await buildTagUsageIndex(backend, runtime.concepts, manifest, {});
+      const listed = new Set(vocabulary.map((entry) => entry.value));
+      usage = Object.fromEntries(vocabulary.map((entry) => [entry.value, usageIndex.get(entry.value)?.length ?? 0]));
+      unlisted = [...usageIndex]
+        .filter(([value]) => !listed.has(value))
+        .map(([value, rows]) => ({ value, count: rows.length }))
+        .sort((a, b) => a.value.localeCompare(b.value));
+    } catch {
+      usage = {};
+      unlisted = [];
+    }
+
+    return { vocabulary, usage, unlisted };
+  }
+
+  /**
+   * Save the tag vocabulary (Plan 3): validate the posted list, gate a delete on cross-branch usage
+   *  failing closed, then read-modify-commit the `vocabulary` key into the same committed YAML the
+   *  nav and settings saves write. The transport is settingsSave's exactly: a form POST carrying the
+   *  vocabulary JSON, a head-guarded backend.commit, and a stale-head isConflict bounced back as a
+   *  reload prompt. The delete gate is the safety boundary: a removed value still in use anywhere the
+   *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
+   *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
+   */
+  async function vocabularySave(event: ContentEvent): Promise<never> {
+    const editor = requireSession(event);
+
+    const form = await event.request.formData();
+    let posted: VocabularyEntry[];
+    try {
+      posted = validateVocabulary(JSON.parse(String(form.get('vocabulary') ?? '[]')));
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Invalid vocabulary';
+      throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+    }
+
+    const path = siteConfigPath();
+    const backend = resolveBackend(event);
+    // Read the head BEFORE the content, so this expectedHead is at-or-before the bytes the commit
+    // merges. The vocabulary write lands on the default branch and triggers a deploy, so it is
+    // fail-closed: a concurrent commit to the config moves the head off this value and the commit
+    // throws a conflict, surfacing the reload-and-reapply prompt below rather than a last-writer-wins.
+    const head = await backend.branchHead(backend.defaultBranch);
+    const raw = await backend.readFile(path, backend.defaultBranch);
+    if (raw === null) throw error(404, 'Site config not found');
+
+    // The delete gate: any value in the current vocabulary but absent from the posted one is being
+    // removed, and a removed value still in use anywhere the strict index reads must block the save.
+    const current = extractVocabulary(parseSiteConfig(raw));
+    const postedValues = new Set(posted.map((entry) => entry.value));
+    const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
+    if (removed.length > 0) {
+      const manifestRaw = await backend.readFile(runtime.manifestPath, backend.defaultBranch);
+      const manifest = manifestRaw === null ? emptyManifest() : parseManifest(manifestRaw);
+      // strict: a transient branch-read failure must not read a still-used value as free, so it
+      // rethrows and the save fails rather than deleting an in-use tag.
+      const usageIndex = await buildTagUsageIndex(backend, runtime.concepts, manifest, { strict: true });
+      const inUse = removed.find((value) => (usageIndex.get(value)?.length ?? 0) > 0);
+      if (inUse !== undefined) {
+        const message = `The tag "${inUse}" is still in use, so it cannot be deleted. Remove it from your content first.`;
+        throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+      }
+    }
+
+    const commitFields = { concept: 'vocabulary', id: 'site-config', editor: editor.email };
+    try {
+      await backend.commit(
+        backend.defaultBranch,
+        [{ path, content: setVocabulary(raw, posted) }],
+        { name: editor.displayName, email: editor.email },
+        'Update tag vocabulary',
+        head ?? undefined,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      if (isConflict(err)) {
+        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
+        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
+        throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
+      }
+      log.error('commit.failed', { ...commitFields, error: String(err) });
+      throw err;
+    }
+
+    throw redirect(303, '/admin/vocabulary?saved=1');
+  }
+
+  /**
    * Add a word (or batch) to the git-committed personal dictionary (spec 1.6). The transport mirrors
    *  the media raw-body actions exactly: a `text/plain` POST, the CSRF token in `X-Cairn-CSRF` validated
    *  by validateCsrfHeader (CSRF first, then the session), and a small JSON body `{ word }` or
@@ -3160,7 +3306,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
+  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, vocabularyLoad, vocabularySave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
 }
 
 /**

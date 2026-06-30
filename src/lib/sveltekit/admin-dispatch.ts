@@ -18,6 +18,7 @@ export type AdminView =
   | { view: 'nav' }
   | { view: 'media' }
   | { view: 'settings' }
+  | { view: 'vocabulary' }
   | { view: 'help' };
 
 /**
@@ -28,7 +29,7 @@ export type AdminView =
  * deeper path (or a future concept claiming the segment) can never reach the two-segment edit
  * branch through them.
  */
-const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings', 'help']);
+const RESERVED_SEGMENTS = new Set(['login', 'auth', 'editors', 'nav', 'settings', 'vocabulary', 'help']);
 
 /**
  * Parse a raw `URL.pathname` (the caller passes `event.url.pathname`, never a SvelteKit rest
@@ -69,6 +70,9 @@ export function parseAdminPath(
     // settings is its own view, a peer of editors and nav. /admin/settings/<anything> 404s naturally
     // (the two-segment branch never matches settings), which is the correct shape.
     if (head === 'settings') return { view: 'settings' };
+    // vocabulary is its own view (the tag-admin screen), a peer of settings. It is also in the
+    // reserved set so /admin/vocabulary/<anything> 404s and no concept can claim the segment.
+    if (head === 'vocabulary') return { view: 'vocabulary' };
     // help is its own view (the Help home, editor-help Pass 2), decided here like settings. It is
     // also in the reserved set so /admin/help/<anything> 404s and no concept can claim the segment.
     if (head === 'help') return { view: 'help' };

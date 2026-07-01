@@ -298,11 +298,12 @@ test('direct upload: the header Upload button opens the capture dialog, and the 
   await expect(dialog).toBeVisible();
   await expect(dialog.getByRole('heading', { name: 'Upload an image' })).toBeVisible();
 
-  // Name it and submit; MediaCaptureCard's submit reads "Insert image" regardless of its host.
+  // Name it and submit. The Library passes MediaCaptureCard submitLabel="Upload image" (the shared
+  // card defaults to "Insert image" for the editor insert flow).
   const displayName = 'Teal checker';
   const slug = 'teal-checker';
   await dialog.locator('input').first().fill(displayName);
-  await dialog.getByRole('button', { name: 'Insert image' }).click();
+  await dialog.getByRole('button', { name: 'Upload image' }).click();
 
   // The upload commits and redirects to the uploaded flash; the new asset appears in the grid.
   await expect(page).toHaveURL(/\/admin\/media\?uploaded=1/);

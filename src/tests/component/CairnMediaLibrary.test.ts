@@ -14,6 +14,7 @@ import type {
 } from '../../lib/sveltekit/content-routes.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
+import { gotoCalls } from './app-navigation.js';
 
 // The Replace upload step reuses the 2b ingest helpers. ESM namespaces are not configurable in the
 // browser pool, so the helpers cannot be spied directly: mock the module so ingestFile and sendUpload
@@ -793,6 +794,50 @@ describe('CairnMediaLibrary Replace fail-closed surface', () => {
     // No specific cairn/* branch in the failure, so the honest generic line stands in.
     expect(dialog.textContent ?? '').toMatch(/an edit branch would not load/i);
     expect([...dialog.querySelectorAll('button')].some((b) => /check usage again/i.test(b.textContent ?? ''))).toBe(true);
+  });
+});
+
+describe('CairnMediaLibrary direct upload', () => {
+  it('uploads a chosen file from the Upload button and refreshes', async () => {
+    stubUpload(newRecord({ slug: 'trailhead', hash: 'ffff222233334444' }));
+    const gotoCallsBefore = gotoCalls.length;
+    const screen = render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+
+    // The header Upload button (exact accessible name, distinct from the empty-state "Upload an
+    // image" CTA) opens the native file chooser through the hidden input.
+    await screen.getByRole('button', { name: /^upload$/i }).click();
+    const fileInput = screen.container.querySelector('input[type="file"]') as HTMLInputElement;
+    const file = new File([PNG_BYTES], 'trailhead.png', { type: 'image/png' });
+    Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
+    fileInput.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const dialog = screen.container.querySelector('[data-testid="cairn-library-upload-dialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+
+    // Fill the capture card's name, then submit.
+    const nameInput = dialog.querySelector('input') as HTMLInputElement;
+    nameInput.value = 'Trailhead sign';
+    nameInput.dispatchEvent(new Event('input', { bubbles: true }));
+    const submit = [...dialog.querySelectorAll('button')].find((b) => b.getAttribute('type') === 'submit') as HTMLButtonElement;
+    submit.click();
+
+    await expect.poll(() => vi.mocked(ingest.sendUpload).mock.calls.length).toBe(1);
+    expect(vi.mocked(ingest.sendUpload).mock.calls[0][0]).toBe('?/mediaLibraryUpload');
+    await expect.poll(() => gotoCalls.length).toBe(gotoCallsBefore + 1);
+    expect(gotoCalls[gotoCalls.length - 1]).toBe('/admin/media?uploaded=1');
+  });
+
+  it('accepts a dropped file on the page dropzone', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    const file = new File([PNG_BYTES], 'trailhead.png', { type: 'image/png' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    window.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+
+    const dialog = screen.container.querySelector('[data-testid="cairn-library-upload-dialog"]') as HTMLDialogElement;
+    await expect.poll(() => dialog.open).toBe(true);
+    // MediaCaptureCard renders (its own form, not a status/failed treatment).
+    expect(dialog.querySelector('form')).not.toBeNull();
   });
 });
 

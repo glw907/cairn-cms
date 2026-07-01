@@ -691,8 +691,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       return;
     }
 
-    // Inserted: close the capture dialog and land on the uploaded flash so the loader re-runs and the
-    // new asset shows up in the grid.
+    // Success: navigate to the flash URL rather than invalidateAll, so the loader re-runs AND sets the
+    // uploaded flash (invalidateAll alone would refresh the grid but leave the flash unset).
     closeLibraryUpload();
     await goto('/admin/media?uploaded=1');
   }

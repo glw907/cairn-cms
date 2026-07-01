@@ -97,7 +97,10 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
 - Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.18 293)`). Use it for
   the active state, the primary action, links-on-hover, the brand. `primary-content` reverses out on it.
 - Secondary text: `--color-muted` (labels, dates, hints) and `--color-subtle` (nav item text). Subtle is
-  the stronger of the two. Reference them as `text-[var(--color-muted)]` / `text-[var(--color-subtle)]`.
+  the stronger of the two. Reference them through the named role utilities `text-muted` / `text-subtle`,
+  never an arbitrary bracket wrapper. The utilities are defined in `scripts/admin-css.input.css` and are
+  the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
+  keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
 - Radii: `--radius-field: 0.625rem` (inputs, buttons, badges), `--radius-box: 1rem` (cards, modals).
 - Elevation: `--cairn-shadow` (soft layered shadow) and `--cairn-card-border` (the theme-adaptive
   hairline). Both are set per theme root.
@@ -133,7 +136,7 @@ Recipes:
 
 - Page heading: `text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]`.
 - Eyebrow (sidebar group headers and table column labels):
-  `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-[var(--color-muted)]`.
+  `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`.
 - Nav item: `text-sm` (the lists use `menu-sm`), `font-medium` inactive, `font-semibold` active.
 - Brand wordmark: `text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]`.
 
@@ -142,7 +145,7 @@ Recipes:
 - **Floating card:** `rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]`.
   Use for the list table, the editor panes, the auth card. Do not use a flat `base-300` border.
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
-  `font-medium text-[var(--color-subtle)]`.
+  `font-medium text-subtle`.
 - **Collapsible group:** a native `<details>` per group with `bind:open` seeded from `data.collapsedNav`
   (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash). The `<summary>` is
   the eyebrow plus a gentle band (`bg-base-content/[0.04] hover:bg-base-content/[0.08]`) and a
@@ -609,3 +612,106 @@ Then build the component: wrap it in a `data-theme` wrapper (or render it inside
 already provides one), import `./cairn-admin.css`, build it from the recipes above (the card, the eyebrow,
 the type vars, the theme-adaptive border and shadow), and preview on the showcase. Add component or unit
 tests for new behavior and keep `npm run check` 0/0 and `npm test` exit 0.
+
+## The developer-facing vocabulary (the versioned seam)
+
+An extending developer builds a custom admin screen in the same idiom as the built-in admin. The parts
+they build on are a stable, versioned contract. A breaking change to any of them is a major-version event,
+not an everyday one, so a developer's screen survives an engine update.
+
+The contract is three things:
+
+- **The Warm Stone theme tokens.** The DaisyUI 5 role variables in the two `[data-theme]` blocks: the
+  `base-*` surfaces, `base-content`, `primary` and its `-content`, the status pairs, and the geometry
+  (`--radius-field`, `--radius-box`). A screen reads them the DaisyUI way, through `bg-base-100`,
+  `text-primary`, and the rest, so it recolors with the theme.
+- **The `text-muted` / `text-subtle` role utilities.** The two named secondary-text roles, defined in
+  `scripts/admin-css.input.css` and frozen as the role interface. Use them for labels, dates, hints
+  (`text-muted`) and nav-item text (`text-subtle`). A standing test keeps them compiled and pointing at
+  their vars.
+- **The documented component recipes.** The card, the eyebrow, the active nav item, the empty state, the
+  dialog, the segmented check-and-tint control, and the rest of the recipes above. Match them, so a custom
+  screen reads as part of the admin, not a bolt-on.
+
+Not everything in `cairn-admin.css` is the contract. Some of it is cairn's own internal frame, which the
+engine may change between versions without a major bump. A screen should not build on these:
+
+- **The accessibility text inks** (`--cairn-warning-ink`, `--color-positive-ink`, the `--cairn-error-*`
+  family). These are on-surface ink counterparts to the DaisyUI fill tones, at locked, measured contrast.
+  The admin uses them for its own status words and markers; they are frame, not a public palette.
+- **The theme-adaptive elevation pair** (`--cairn-shadow`, `--cairn-card-border`). A custom card gets the
+  same lift through the floating-card recipe, which names them; the tokens themselves are cairn's.
+- **The embed-anywhere infrastructure** (the box-sizing reset, the bare-button Preflight replacement, the
+  anchor and `summary` resets, the focus-ring rule). These exist because the admin self-styles on any host
+  with no host Preflight. They are the frame that makes the sheet portable, not an API.
+- **The editor (CodeMirror) system** (the directive rails, the fold gutter, the syntax highlight, the
+  `--cairn-directive-*` and `--cairn-focus-dim-*` tokens). This is a settled design in the editor's
+  `EditorView.theme` territory, walled out of the sweep on purpose.
+- **The two unlayered forced workarounds** (the `.menu` focus-visible restore and the
+  `.cairn-btn-guarded` pointer-events restore). Both fix real shipped bugs and are pinned by exact
+  selector.
+
+The split is recorded token by token in the admin custom-surface ledger
+(`docs/internal/design/2026-06-29-custom-surface-ledger.md`), which classifies every custom property into
+Tier 1 (the theme), Tier 2 (the documented floor), and Tier 3 (the folded remainder, now at zero). The
+`check:custom-surface` gate holds the line: it caps the `@layer components` rules, pins the unlayered set
+by whole-selector equality, and keeps the retired-token budget at zero, so a new arbitrary
+`text-[var(--color-muted)]` bracket in the admin markup fails the build.
+
+## The starter template's design
+
+The showcase (`examples/showcase`) is the starter template a scaffolded site copies. Its design is the
+site's own, not the admin's, so its tokens live with the site and a developer restyles them freely. The
+showcase custom-surface ledger (`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`)
+records the tiers.
+
+- **Tier 1 is the template's own DaisyUI theme, not Warm Stone.** `examples/showcase/src/lib/theme.css`
+  holds two `@plugin "daisyui/theme"` blocks, `cairn` (light) and `cairn-dark` (under
+  `prefers-color-scheme: dark`), a warm stone pairing that is the showcase's brand and distinct from the
+  admin's Warm Stone. The public output stays design-agnostic by charter, so the template does not impose
+  the admin theme.
+- **The design-scale tokens live in Tailwind 4 `@theme`, so the named utilities generate.** The type scale,
+  the space scale, the faces, the rhythm, the reading measure, the muted ink, and the card hairline sit in
+  the `@theme` block. Tailwind emits a named utility for each, so the chrome markup writes `text-step-*`,
+  the spacing utilities (`gap-m`, `px-m`, `mt-2xl`), `font-display`, `tracking-*`, `leading-*`,
+  `max-w-measure` / `max-w-measure-wide`, `text-muted`, and `border-card-border`, never an arbitrary-value
+  bracket. `@theme` re-emits each token at `:root`, so the `var()` consumers in `theme.css`, `prose.css`,
+  and `site.css` keep resolving. Editing one token re-tunes both the `var()` reference and the utility.
+- **The owned Tier 2 is the site's design, walled and documented.** The reading surface (`prose.css`, the
+  hand-authored article typography), the `.cairn-place-*` figure-placement contract in `site.css`, the
+  on-surface status inks (`--cairn-<status>-ink`), the elevation pair, the CTA pair, and the code-highlight
+  binding (`pre.shiki` plus the engine-owned `.cairn-tok-*` class contract). cairn names the class
+  contracts (`.cairn-place-*`, `.cairn-tok-*`); the site colors them.
+- **The re-skin recipe sits at the top of `theme.css`.** It names the two theme blocks to edit for a new
+  accent and paper-and-ink, the `@theme` tokens to retune the scale, and the status-ink seam to keep in
+  step with the fills. About fourteen role values cover the brand-and-base headline change most owners
+  make. The `check:public-tokens` gate proves the re-skinned theme still clears AA in both sRGB and P3.
+
+## Rehearsing a DaisyUI or Tailwind upgrade
+
+A DaisyUI or Tailwind major can shift a value or drop a class the admin sheet and the template both
+compile against. A maintainer rehearses the bump against the visual baselines and the gates before taking
+it, so an upstream change surfaces as a reviewed screenshot diff, never a silent regression. The scheduled
+watcher (a `schedule` routine) pings when a new major publishes; it points here.
+
+The runbook:
+
+1. Bump the dependency (`daisyui` or `tailwindcss`) to the new major.
+2. Recompile the admin sheet: `npm run package`. This rebuilds `dist/components/cairn-admin.css` from the
+   partial plus the new DaisyUI/Tailwind, and it also runs the doc-tree scan, so a bad doc candidate shows
+   up here.
+3. Run the visual baselines in `examples/showcase`: `CI=1 npx playwright test admin-visual site-visual`.
+   These render the admin chrome and the public site in light and dark against the committed screenshots.
+4. Run the vocabulary and contrast gates: `npm run check:custom-surface` (both trees, so the retired-token
+   budget and the layer cap still hold) and `npm run check:public-tokens` (the theme still clears AA in
+   both gamuts).
+5. Confirm the role utilities still resolve. The `admin-css-build.test.ts` unit test asserts `text-muted`
+   and `text-subtle` compile into the sheet and keep pointing at their vars, so a Tailwind change that
+   tree-shakes or renames a `@utility` fails here.
+6. Read the screenshot diff. A pixel change is either an upstream regression to work around or an intended
+   shift to accept. When it is intended, update the committed baselines
+   (`npx playwright test --update-snapshots` for the affected specs) so the new screenshots are the
+   reviewed record of the drift, and note the reason in the commit.
+
+A clean run across all six steps is the evidence the bump is safe. A red gate or an unexplained diff is the
+signal to hold the upgrade and investigate.

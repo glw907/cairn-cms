@@ -8,6 +8,7 @@
   "enumeratedFiles": [
     "src/lib/components/spellcheck.ts",
     "src/lib/components/MarkdownEditor.svelte",
-    "src/lib/components/EditPage.svelte"
+    "src/lib/components/EditPage.svelte",
+    "src/lib/components/editor-suggestion-popover.ts"
   ]
 }

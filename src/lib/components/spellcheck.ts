@@ -16,6 +16,7 @@ import type { EditorView } from '@codemirror/view';
 import { frontmatterSpan, fenceTokens } from './markdown-directives.js';
 import { parseMediaToken } from '../media/reference.js';
 import { objectiveErrors, type ObjectiveError } from './objective-errors.js';
+import { cairnSuggestionPopover } from './editor-suggestion-popover.js';
 
 /** An absolute character range in the document. */
 export interface Range {
@@ -740,5 +741,12 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);
   }, { tooltipFilter: suppressTooltip });
 
-  return [source, objectiveSource, lockedUnderlineTheme(EditorView)];
+  return [
+    source,
+    objectiveSource,
+    lockedUnderlineTheme(EditorView),
+    // The recipe popover: cairn's own DOM through the public showTooltip facet, replacing the built-in
+    // lint tooltip (suppressed above via tooltipFilter). The module handles are non-null at the return.
+    cairnSuggestionPopover({ view: viewMod!, state: stateMod!, lint: lintMod! }),
+  ];
 }

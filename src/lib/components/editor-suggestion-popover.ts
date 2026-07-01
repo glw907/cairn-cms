@@ -1,0 +1,110 @@
+// cairn-cms: the recipe suggestion popover. Renders cairn's own DOM through CodeMirror's public showTooltip
+// facet for the diagnostic under the caret, instead of skinning @codemirror/lint's built-in tooltip. A pure
+// StateField maps the caret onto the diagnostic (via the public forEachDiagnostic) and provides the Tooltip;
+// the DOM is a generic renderer over Diagnostic.message + Diagnostic.actions, so it serves both the
+// spellcheck and objective-error diagnostics. The keyboard model (Alt-Enter) and the polite announcement
+// live in the exports Task 4 adds.
+import type { Extension } from '@codemirror/state';
+import type { EditorView, Tooltip } from '@codemirror/view';
+import type { EditorState } from '@codemirror/state';
+import type { Diagnostic } from '@codemirror/lint';
+
+/** The already-loaded CodeMirror modules the editor hands in, so the popover never value-imports at module scope. */
+export interface PopoverModules {
+  view: typeof import('@codemirror/view');
+  state: typeof import('@codemirror/state');
+  lint: typeof import('@codemirror/lint');
+}
+
+/** The diagnostic under the caret with its live range, or null when the caret sits outside every diagnostic. */
+export function diagnosticAtCaret(
+  state: EditorState,
+  forEachDiagnostic: typeof import('@codemirror/lint').forEachDiagnostic,
+): { diagnostic: Diagnostic; from: number; to: number } | null {
+  const head = state.selection.main.head;
+  let hit: { diagnostic: Diagnostic; from: number; to: number } | null = null;
+  forEachDiagnostic(state, (diagnostic, from, to) => {
+    if (!hit && head >= from && head <= to) hit = { diagnostic, from, to };
+  });
+  return hit;
+}
+
+/**
+ * Build the recipe popover DOM for one diagnostic. `role="group"` (non-modal, labeled): shown without
+ * taking focus; Alt-Enter (Task 4) moves focus into these native buttons; Escape returns focus here.
+ */
+export function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number, to: number): HTMLElement {
+  const dom = document.createElement('div');
+  dom.className = 'cairn-cm-suggest';
+  dom.setAttribute('role', 'group');
+  dom.setAttribute('aria-label', diagnostic.message);
+
+  const message = document.createElement('p');
+  message.className = 'cairn-cm-suggest__msg';
+  message.textContent = diagnostic.message;
+  dom.appendChild(message);
+
+  const actions = document.createElement('div');
+  actions.className = 'cairn-cm-suggest__actions';
+  for (const action of diagnostic.actions ?? []) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'btn btn-sm';
+    button.textContent = action.name;
+    button.addEventListener('click', () => {
+      // CodeMirror's own actions take the diagnostic's live range; use the field's from/to so a suggestion
+      // never overwrites the wrong span after an edit. Return focus to the editor after any action (add and
+      // ignore close the popover, so the focused button would otherwise vanish and drop focus to <body>).
+      action.apply(view, from, to);
+      view.focus();
+    });
+    actions.appendChild(button);
+  }
+  dom.appendChild(actions);
+
+  // Escape must be a NATIVE listener here, not a CodeMirror keymap: CM's keydown handler lives on
+  // contentDOM, and this popover DOM is outside .cm-content, so a CM keymap would never see the Escape
+  // pressed while focus is on a button.
+  dom.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      view.focus();
+    }
+  });
+  return dom;
+}
+
+/**
+ * The suggestion-popover extension: a StateField that provides the caret diagnostic's Tooltip through the
+ * public showTooltip facet, so cairn's recipe DOM replaces the built-in lint tooltip.
+ */
+export function cairnSuggestionPopover(modules: PopoverModules): Extension {
+  const { showTooltip } = modules.view;
+  const { StateField } = modules.state;
+  const { forEachDiagnostic } = modules.lint;
+
+  function tooltipFor(state: EditorState): Tooltip | null {
+    const hit = diagnosticAtCaret(state, forEachDiagnostic);
+    if (!hit) return null;
+    return {
+      pos: hit.from,
+      end: hit.to,
+      above: true,
+      create: (view) => ({ dom: buildPopoverDom(view, hit.diagnostic, hit.from, hit.to) }),
+    };
+  }
+
+  const popoverField = StateField.define<Tooltip | null>({
+    create: (state) => tooltipFor(state),
+    // Recompute on selection/doc changes AND on effect-bearing transactions: @codemirror/lint publishes
+    // fresh diagnostics via a setDiagnostics EFFECT with no doc/selection change, so without `tr.effects`
+    // the popover would go stale after add/ignore and miss first paint under a resting caret. A focus-loss
+    // blur dispatches an empty update (no doc/selection/effects), so it returns the prior value and the
+    // mounted, focused popover is preserved (CM reuses the view when the Tooltip value is unchanged).
+    update: (value, tr) => (tr.docChanged || tr.selection || tr.effects.length ? tooltipFor(tr.state) : value),
+    provide: (f) => showTooltip.from(f),
+  });
+
+  return [popoverField];
+}

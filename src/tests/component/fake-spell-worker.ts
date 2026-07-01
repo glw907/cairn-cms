@@ -21,6 +21,10 @@ export interface FakeWorkerConfig {
  *  message listener the lint source registers, so the source's seq matching and re-lint run unchanged. */
 export function makeFakeWorker(config: FakeWorkerConfig): { create: () => SpellWorker; added: Set<string> } {
   const added = new Set<string>();
+  // Session-ignored words: the real worker marks an ignored word correct for the session the same way it
+  // marks an added word correct, so the fake mirrors that. Kept separate from `added` (the personal-set
+  // handle the tests read) so an ignore never reads as a dictionary addition.
+  const ignored = new Set<string>();
   const wrong = new Set(config.wrong.map((w) => w.toLowerCase()));
   const listeners = new Set<(event: MessageEvent) => void>();
 
@@ -29,7 +33,8 @@ export function makeFakeWorker(config: FakeWorkerConfig): { create: () => SpellW
     for (const listener of listeners) listener(event);
   };
 
-  const isCorrect = (word: string) => added.has(word.toLowerCase()) || !wrong.has(word.toLowerCase());
+  const isCorrect = (word: string) =>
+    added.has(word.toLowerCase()) || ignored.has(word.toLowerCase()) || !wrong.has(word.toLowerCase());
 
   const worker: SpellWorker = {
     postMessage(message: unknown) {
@@ -54,6 +59,10 @@ export function makeFakeWorker(config: FakeWorkerConfig): { create: () => SpellW
       }
       if (msg.type === 'addWord' && typeof msg.word === 'string') {
         added.add(msg.word.toLowerCase());
+        return;
+      }
+      if (msg.type === 'ignoreWord' && typeof msg.word === 'string') {
+        ignored.add(msg.word.toLowerCase());
         return;
       }
     },

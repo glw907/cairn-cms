@@ -3,6 +3,8 @@ import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './fake-spell-worker.js';
+import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('editor accessible name', () => {
   it('gives the .cm-content textbox an accessible name', async () => {
@@ -55,5 +57,31 @@ describe('fold-control disclosure semantics', () => {
     expect(btn.getAttribute('aria-expanded')).toBe('true'); // expanded at rest
     const label = btn.getAttribute('aria-label') ?? '';
     expect(label.toLowerCase()).not.toMatch(/fold|unfold|show/); // state-neutral, names the block
+  });
+});
+
+describe('autocomplete ARIA regression guard', () => {
+  it("link-completion inherits CodeMirror's combobox ARIA", async () => {
+    const targets: LinkTarget[] = [
+      { concept: 'pages', id: 'about', permalink: '/about', title: 'About Us', draft: false },
+    ];
+    const { container } = render(MarkdownEditor, {
+      value: '',
+      name: 'body',
+      completionSources: [cairnLinkCompletionSource(targets)],
+    });
+    await expect.poll(() => container.querySelector('.cm-content'), COLD_START).toBeTruthy();
+    const content = container.querySelector<HTMLElement>('.cm-content')!;
+    content.focus();
+    // userEvent.keyboard treats [ as a key-descriptor opener, so a literal [ is escaped as [[.
+    await userEvent.keyboard('[[[[Ab');
+    await expect
+      .poll(() => container.querySelector('.cm-tooltip-autocomplete [role="listbox"]'), COLD_START)
+      .toBeTruthy();
+    expect(content.getAttribute('aria-autocomplete')).toBe('list');
+    expect(content.getAttribute('aria-controls')).toBeTruthy();
+    const listbox = container.querySelector('.cm-tooltip-autocomplete [role="listbox"]')!;
+    expect(listbox.getAttribute('aria-label')).toBeTruthy();
+    expect(listbox.querySelector('[role="option"]')).toBeTruthy();
   });
 });

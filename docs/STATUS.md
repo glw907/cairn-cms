@@ -51,12 +51,21 @@ by the merge.
   backticks into the `aria-label`; parse to `<code>`/emphasis in the message string in `spellcheck.ts`, a
   future editor-copy refinement.
 
-**NEXT development pass = the next CodeMirror integration surface**, a brainstorm-first initiative (prior-art
-review, then brainstorm, then spec, per `docs/internal/cm-editing-surface-alignment.md` "What remains
-deferred" and the ROADMAP "Later" tier): the deferred chrome surfaces (autocomplete look, find/replace
-panel) and editor a11y hardening. Reuse the identity-through-facets pattern this pass proved: recipe DOM
-through a public CM extension point plus the internal-class allowlist ratchet. Do NOT auto-write its plan;
-it needs the brainstorm.
+**IN EXECUTION (2026-06-30): CM integration Pass 2 = editor accessibility hardening**, on the
+`editor-a11y-hardening` worktree (off `main` @ `5fd1314`). Brainstorm settled scope with Geoff
+(find/replace and the autocomplete tint both DEFERRED); spec written and adversarially hardened (12
+verified findings folded in); plan written. Executing test-first via a background workflow of
+`cairn-implementer` tasks with per-task adversarial verification, then a main-loop full gate + reviewer
+fan-out + merge. Spec: `docs/superpowers/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`; plan:
+`docs/superpowers/plans/2026-06-30-cairn-editor-a11y-hardening.md`; memory:
+`cairn-codemirror-integration-pass`. Scope: a diagnostics-summary announcer, `F8`/`Shift-F8` traversal
+(stock `nextDiagnostic`/`previousDiagnostic`, never `lintKeymap`), fold-control disclosure semantics, an
+editor-textbox accessible name (WCAG 4.1.2, caught by the review), an autocomplete-ARIA regression guard,
+and WCAG 1.4.13 assertions. Announce-plus-traverse over inline ARIA; `check:cm-internals` floor unchanged.
+
+**Deferred to a later CM pass** (in `ROADMAP.md` `## Considering`): a recipe-built find/replace panel on
+`@codemirror/search` `createPanel`, and the autocomplete popup tint. Reuse the identity-through-facets
+pattern when either is scoped.
 
 **Resume prompt for the next session** (launch in the cairn-cms **main checkout**, `~/Projects/cairn-cms`,
 so hooks and memory load):

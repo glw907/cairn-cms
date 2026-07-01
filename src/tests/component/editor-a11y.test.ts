@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './fake-spell-worker.js';
 
@@ -25,5 +26,22 @@ describe('diagnostics-summary announcer', () => {
     await expect
       .poll(() => container.querySelector('[aria-live="polite"].cairn-cm-diagnostics-live')?.textContent, COLD_START)
       .toContain('spelling');
+  });
+});
+
+describe('diagnostic traversal', () => {
+  it('F8 selects the next diagnostic and opens the popover, not the stock tooltip', async () => {
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the', 'ten'] });
+    const { container } = render(MarkdownEditor, {
+      value: 'teh cat teh dog', name: 'body', spellcheck: true,
+      spellcheckTest: { createWorker: fake.create, assumeReady: true },
+    });
+    await expect.poll(() => container.querySelector('.cm-lintRange-info'), COLD_START).toBeTruthy();
+    await userEvent.click(container.querySelector('.cm-content')!); // focus the editor, caret at start
+    await userEvent.keyboard('{F8}');
+    // The recipe popover appears (caret landed in a diagnostic range); the stock lint tooltip never mounts.
+    await expect.poll(() => container.querySelector('.cairn-cm-suggest'), COLD_START).toBeTruthy();
+    expect(container.querySelector('.cm-tooltip-lint')).toBeNull();
+    expect(document.querySelector('.cm-diagnosticAction')).toBeNull();
   });
 });

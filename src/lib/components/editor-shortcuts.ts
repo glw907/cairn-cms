@@ -13,9 +13,10 @@ export type ShortcutRow = { label: string; keys: string };
  * The shortcut vocabulary, in the mockup's reading order. Each entry is verified against the
  * handler that implements it: Save / Publish / Details panel / Zen / Write-Preview / Focus mode and
  * This sheet ride EditPage's window keydown; Bold / Italic / Inline code / Web link / the heading
- * pair / Quote / the list pair ride EditPage's card keydown; Fold / unfold ride editor-folding's
- * CodeMirror keymap; the command palette rides CairnAdminShell's Ctrl K; Continue list / quote is the
- * built-in markdown keymap on Enter.
+ * pair / Quote / the list pair ride EditPage's card keydown; Fold / unfold and Next / previous issue
+ * ride MarkdownEditor's own CodeMirror keymap (the latter binds the stock `\@codemirror/lint`
+ * `nextDiagnostic` / `previousDiagnostic` commands); the command palette rides CairnAdminShell's
+ * Ctrl K; Continue list / quote is the built-in markdown keymap on Enter.
  */
 export const editorShortcuts: ShortcutRow[] = [
   { label: 'Save', keys: 'Ctrl S' },
@@ -33,6 +34,7 @@ export const editorShortcuts: ShortcutRow[] = [
   { label: 'Command palette', keys: 'Ctrl K (global)' },
   { label: 'Bulleted / numbered list', keys: 'Ctrl Shift 8 / 7' },
   { label: 'Fold / unfold', keys: 'Ctrl Shift [ / ]' },
+  { label: 'Next / previous issue', keys: 'F8 / Shift F8' },
   { label: 'This sheet', keys: 'Ctrl /' },
   { label: 'Continue list / quote', keys: 'Enter' },
 ];

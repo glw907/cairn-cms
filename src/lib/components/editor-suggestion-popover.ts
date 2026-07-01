@@ -5,9 +5,8 @@
 // spellcheck and objective-error diagnostics. Alt-Enter moves focus into the popover, a native Escape
 // listener returns it to the editor, and a polite live region announces availability, so the caret-in-range
 // popover gains the keyboard and screen-reader path the built-in lint tooltip never had.
-import type { Extension } from '@codemirror/state';
-import type { EditorView, Tooltip } from '@codemirror/view';
-import type { EditorState } from '@codemirror/state';
+import type { Extension, EditorState } from '@codemirror/state';
+import type { EditorView, Tooltip, ViewUpdate } from '@codemirror/view';
 import type { Diagnostic } from '@codemirror/lint';
 
 /** The already-loaded CodeMirror modules the editor hands in, so the popover never value-imports at module scope. */
@@ -32,7 +31,7 @@ export function diagnosticAtCaret(
 
 /**
  * Build the recipe popover DOM for one diagnostic. `role="group"` (non-modal, labeled): shown without
- * taking focus; Alt-Enter (Task 4) moves focus into these native buttons; Escape returns focus here.
+ * taking focus; Alt-Enter moves focus into these native buttons; Escape returns focus here.
  */
 export function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number, to: number): HTMLElement {
   const dom = document.createElement('div');
@@ -136,7 +135,7 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
         view.dom.appendChild(this.dom);
         this.announce(view);
       }
-      update(update: import('@codemirror/view').ViewUpdate): void {
+      update(update: ViewUpdate): void {
         if (update.docChanged || update.selectionSet || update.transactions.some((tr) => tr.effects.length))
           this.announce(update.view);
       }

@@ -2,7 +2,7 @@
 
 The second CodeMirror integration pass. It finishes the identity-through-facets accessibility discipline the
 suggestion-popover pass established, extending it to the surfaces the popover pass left untouched. The pass
-is deliberately narrow: no find/replace, no autocomplete restyle, no gate machinery. It closes four concrete
+is deliberately narrow: no find/replace, no autocomplete restyle, no gate machinery. It closes the concrete
 accessibility gaps in the markdown editor, all through CodeMirror's public extension points.
 
 Provenance: brainstormed 2026-06-30 after the suggestion-popover pass merged to `main`. Prior-art review and
@@ -37,7 +37,8 @@ markers (WCAG 1.4.1). Focus returns to the editor after every popover action. Li
 CodeMirror's stock completion UI, which carries CodeMirror 6's APG combobox ARIA for free. One editor-scoped
 live region exists today (the popover's), so a new announcer must not duplicate it.
 
-The pass does not touch any of that. It closes the four gaps the map surfaced.
+The pass does not touch any of that. It closes the gaps the map surfaced, plus one the map itself omitted:
+the editing surface's own accessible name.
 
 ## Scope
 
@@ -53,6 +54,9 @@ The pass does not touch any of that. It closes the four gaps the map surfaced.
    future custom render cannot silently break them.
 5. A WCAG 1.4.13 and focus-discipline audit of the suggestion popover, converting its load-bearing
    expectations into assertions (the watch-becomes-failing-test standard).
+6. An accessible name on the editor's own text surface. The live `.cm-content` (a `role="textbox"`) carries
+   no accessible name today, a WCAG 4.1.2 (Level A) gap the map missed. One line via
+   `EditorView.contentAttributes` closes it.
 
 **Out of scope (deferred, with reasons)**
 
@@ -106,17 +110,22 @@ A new editor extension, `editor-diagnostics-announcer.ts`, that owns a single vi
   Backtick handling mirrors the popover's known friction (literal backticks in messages), so the summary
   counts, it does not read message bodies.
 - **A separate region from the popover's.** The popover's `.cairn-cm-suggest-live` region announces the
-  specific word on caret entry; this announcer's region (a distinct `cm-cairn-`-prefixed, visually hidden
-  element) announces the document-level count on settle. The two speak different things at different moments
-  (settle-after-typing versus caret-move), so they do not race in practice; the debounce keeps the summary off
-  the caret-move path.
+  specific word; this announcer's region (a distinct `cm-cairn-`-prefixed, visually hidden element) announces
+  the document-level count. They carry different content, not a duplicate. On the caret-move and
+  `F8`-traversal path they are cleanly separate: a pure selection change carries no `setDiagnostics` effect,
+  so the summary never fires there, and that is the load-bearing guarantee. On the type-a-word-then-pause path
+  they share one settle: the `setDiagnostics` effect that lands a fresh diagnostic under the resting caret
+  fires the popover region immediately (the word) and the summary region on its ~1s debounce (the count), so
+  the author hears the word, then the count, sequentially and as complementary information. Both are
+  `aria-live="polite"`, so they queue rather than clobber; the design adds no cross-region coordination, which
+  would be over-engineering for two polite, different-content regions.
 - **Lifecycle.** The region mounts once at plugin construction and is removed on destroy, matching the
   popover's pattern. No focus is taken; the region is `aria-live="polite"`, `aria-atomic="true"`, and
   visually hidden by the existing sr-only technique.
 
 ### 2. Diagnostic traversal
 
-`F8` and `Shift-F8` move the caret between diagnostics, bound through the editor's keymap facet. Verified
+`F8` and `Shift-F8` move between diagnostics, bound through the editor's keymap facet. Verified
 against the installed `@codemirror/lint` 6.9.7: it exports `nextDiagnostic` and `previousDiagnostic` as
 standalone `Command`s, and `forEachDiagnostic(state, (d, from, to) => …)` for a hand-rolled alternative.
 
@@ -125,16 +134,18 @@ standalone `Command`s, and `forEachDiagnostic(state, (d, from, to) => …)` for 
   suggestion-popover pass spent its effort avoiding. So the pass binds the two individual commands
   (`nextDiagnostic`, `previousDiagnostic`) to `F8`/`Shift-F8` and never installs `lintKeymap` or the panel.
   This reuses CodeMirror's tested traversal (including its wrap behavior) rather than re-implementing it.
-- **Verify the commands compose, fall back only if they do not.** `nextDiagnostic` also tries to surface the
-  diagnostic's tooltip. cairn suppresses the built-in lint tooltip through `tooltipFilter` (returns `null`),
-  and the popover shows on caret-in-range, so landing a caret via `nextDiagnostic` should trigger cairn's
-  popover and its per-word announcement, not the stock tooltip. The implementer confirms this composes
-  test-first; only if the stock commands force the built-in tooltip or otherwise fight the popover does the
-  pass fall back to two cairn-owned commands built on `forEachDiagnostic` (same keys, same behavior, full
-  control of wrap and the landed state). The exported commands are the default; the hand-rolled pair is the
-  contingency.
-- **Behavior.** `F8` moves the caret to the next diagnostic range after the caret and wraps at the end;
-  `Shift-F8` moves to the previous and wraps backward. Landing inside a range triggers the existing popover:
+- **Verify the commands compose, fall back only if they do not.** Two behaviors of the stock commands are
+  checked test-first. First, `nextDiagnostic` calls `activateHover`, which tries to surface the diagnostic's
+  tooltip; cairn suppresses the built-in lint tooltip through `tooltipFilter` (returns `null`), and the
+  popover shows on caret-in-range, so the stock command should trigger cairn's popover, not the stock tooltip.
+  Second, `nextDiagnostic` / `previousDiagnostic` dispatch a *selection* spanning the range (`anchor` at the
+  start, `head` at the end), not a collapsed caret; because `head` equals the range end the caret-in-range
+  check still matches and the popover composes, but the flagged word ends up selected. The exported commands
+  are the default. The pass falls back to a cairn-owned `forEachDiagnostic` pair (same keys, full control of
+  wrap and a collapsed landed caret) only if the stock tooltip is not suppressed or the select-the-word
+  behavior proves unwanted in the composition test.
+- **Behavior.** `F8` selects the next diagnostic range after the caret and wraps at the end; `Shift-F8`
+  selects the previous and wraps backward. Landing inside a range triggers the existing popover:
   `F8` to reach a flagged word, hear it announced, `Alt-Enter` to open the suggestions. With no diagnostics
   present the commands are a no-op, and the announcer's "No issues" summary already conveys the state.
 - **Discoverability.** `F8` / `Shift-F8` join the `Ctrl+/` shortcuts sheet so a sighted keyboard user finds
@@ -144,14 +155,23 @@ standalone `Command`s, and `forEachDiagnostic(state, (d, from, to) => …)` for 
 
 ### 3. Fold-control disclosure semantics
 
-The directive-fold control in `editor-folding.ts` is a disclosure widget with no `aria-expanded`. Give it the
-standard disclosure contract:
+The directive-fold control in `editor-folding.ts` is a disclosure widget with no `aria-expanded`. Both fold
+controls already carry an `aria-label` (the gutter button says "Fold this section" / "Unfold this section";
+the folded-row pill says "Show N hidden lines"), so the label is not missing. The gaps are `aria-expanded` and
+a state-neutral name. Give the control the standard disclosure contract:
 
 - `aria-expanded` reflects state: `true` when the block is expanded (content visible), `false` when folded
-  (content hidden). Both visual forms of the control, the gutter chevron and the folded-row "Show N hidden
-  lines" pill, carry consistent disclosure semantics for the same block.
-- `aria-label` names the target so the control is not an unlabeled button: it identifies the directive block
-  it folds (for example the directive name), rather than a bare glyph.
+  (content hidden), on both visual forms of the control (the gutter chevron and the folded-row pill) for the
+  same block. It is feasible in `FoldMarker.toDOM` via `setAttribute` keyed on the marker's `folded` flag,
+  which `eq` already rebuilds on a fold-state flip. When folded, both the chevron and the pill read
+  `aria-expanded="false"` for the block; that redundancy is intended and coherent.
+- The `aria-label` becomes state-neutral and names the block. Replace the state-verb label ("Fold this
+  section" / "Unfold this section", "Show N hidden lines") with a name for the block itself (for example the
+  directive name), so `aria-expanded` is the sole state signal rather than double-signalling against a verb
+  label. Implementation note: the marker carries only line numbers (`FoldMarker.container` is a
+  `ContainerRange` of `{ fromLine, toLine, depth }`), so `toDOM` must read the opener line's text from
+  `view.state` to derive the name, and the pill's `placeholderDOM(view, onclick, lines)` has no
+  `ContainerRange` at all and needs that plumbing added to name its block.
 - No `.cm-*` chrome class is added; the attributes land on the existing `cm-cairn-fold-btn` DOM via
   `setAttribute`, so `check:cm-internals` is unaffected.
 
@@ -176,9 +196,22 @@ discipline, and lock the load-bearing expectations as tests so they cannot regre
 - **No focus theft.** The popover does not grab focus on caret entry (assert focus stays on `.cm-content`
   until `Alt-Enter`).
 - **Overlapping diagnostics.** Add the missing case the map flagged: when two diagnostics overlap a caret
-  position, assert the popover and the announcer behave deterministically (the caret's innermost or
-  first-published diagnostic wins, matching the popover field's current mapping), with a single announcement,
-  not two racing ones.
+  position, assert that the popover and the announcer resolve to the *same* diagnostic and that exactly one
+  announcement fires. Derive the expected winner from what `diagnosticAtCaret` / `forEachDiagnostic` actually
+  yields over the fixture, not from an "innermost" model: `forEachDiagnostic` documents no ordering contract,
+  so the test asserts agreement and a single announcement, never a hardcoded emission order that a CodeMirror
+  upgrade could shift.
+
+### 6. An accessible name on the editing surface
+
+The live `.cm-content` node is a `role="textbox"` with no accessible name: the only `aria-label` in
+`MarkdownEditor.svelte` sits on the SSR-fallback `<textarea>`, which is removed on hydration, and
+`EditPage.svelte`'s `aria-label="Editor"` labels the wrapping `role="group"` card, not the inner textbox. A
+screen reader lands in an unnamed multiline text box (WCAG 4.1.2 Name, Role, Value, Level A). Close it by
+adding `EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' })` to `MarkdownEditor`'s extensions
+array, reusing the exact string the SSR-fallback textarea already carries so the SSR-to-hydrated swap stays
+consistent. `contentAttributes` is a public facet, so this adds no CodeMirror-internal coupling and does not
+move the `check:cm-internals` floor. A component test asserts `.cm-content` exposes the name.
 
 ## Architecture and isolation
 
@@ -188,27 +221,40 @@ Each unit is small, single-purpose, and public-API-bound:
   diagnostic set via `forEachDiagnostic`. Output: a polite announcement. Depends only on `@codemirror/view`,
   `@codemirror/lint`'s public `forEachDiagnostic`, and cairn's sr-only styling. Testable headless (drive
   `setDiagnostics`, read the region's text).
-- `editor-diagnostic-traversal.ts` (new, or a small addition beside the announcer): two `Command`s plus the
-  keymap binding. Input: state and selection. Output: a selection move. Depends only on
-  `@codemirror/state`/`view` and `forEachDiagnostic`. Testable at the command level (assert the caret lands on
-  the expected range, including wrap).
-- `editor-folding.ts` (edit): add the two ARIA attributes to the existing fold button; no structural change.
-- Wiring: `MarkdownEditor.svelte` adds the announcer extension and the traversal keymap to its extensions
-  array, beside the existing popover and spellcheck extensions. The behaviors are on by default and carry no
-  new prop; accessibility is not opt-in.
+- The traversal keymap: a small addition beside the announcer that binds the exported `nextDiagnostic` /
+  `previousDiagnostic` to `F8` / `Shift-F8`. Only if the test-first composition check fails does the pass add
+  a cairn-owned `forEachDiagnostic` pair (in an `editor-diagnostic-traversal.ts`); that module is the
+  documented contingency, not the default artifact.
+- `editor-folding.ts` (edit): add `aria-expanded` and the state-neutral name to the existing fold controls;
+  no structural change.
+- `MarkdownEditor.svelte` (edit): add the `contentAttributes` accessible name (section 6).
+- Wiring: the announcer extension and the traversal keymap are added at the top level of
+  `MarkdownEditor.svelte`'s extensions array, on by default with no new prop. They are a *general*
+  diagnostics-a11y surface keyed off `forEachDiagnostic` (any lint source), which is why they sit at the top
+  level rather than inside the spellcheck bundle. The spellcheck-specific suggestion popover, by contrast,
+  lives inside `cairnSpellcheck`'s returned array within `spellcheckCompartment`, so it is gated by the
+  spellcheck toggle. With spellcheck off there are no diagnostics, so the always-mounted announcer is silent
+  and the traversal keys are a harmless no-op: inert by design, not incoherent. Top-level placement also
+  avoids re-announcing the count each time the spellcheck compartment reconstructs.
 
-The `@codemirror/state` singleton hazard the prior art flagged does not apply: cairn ships a single bundled
-CodeMirror instance, so `forEachDiagnostic`'s `instanceof` checks see one `@codemirror/state`.
+The `@codemirror/state` singleton hazard the prior art flagged is handled by cairn bundling a single instance
+of both packages. One `@codemirror/state` keeps the extension-install `instanceof` checks intact so `linter()`
+installs `lintState`; one `@codemirror/lint` keeps that `lintState` identity shared between the `linter()`
+that installed it and the `forEachDiagnostic` that reads it. A duplicate copy of either would break the
+install, not merely the read.
 
 ## Testing
 
 The suite is the acceptance contract, test-first per task. The layers:
 
 - **Component (real browser, vitest-browser-svelte):** the announcer's region text after a debounced settle;
-  the summary changing and clearing; `F8`/`Shift-F8` landing the caret on the expected diagnostic and opening
-  the popover on arrival; the fold control's `aria-expanded`/`aria-label` across fold and unfold; the
-  autocomplete ARIA chain on the open `[[` popup; the 1.4.13 assertions (Escape dismiss + focus return, no
-  focus theft, persistence under a background lint effect, overlapping-diagnostic determinism).
+  the summary changing and clearing; `.cm-content` exposing the `Markdown source` accessible name;
+  `F8`/`Shift-F8` selecting the expected diagnostic range (assert the landed selection, since the stock
+  commands select rather than collapse) and opening the popover on arrival; the fold control's `aria-expanded`
+  and state-neutral `aria-label` across fold and unfold; the autocomplete ARIA chain on the open `[[` popup;
+  the settle-under-resting-caret case (the popover word, then the debounced count, sequential, one each); the
+  1.4.13 assertions (Escape dismiss + focus return, no focus theft, persistence under a background lint
+  effect, overlapping-diagnostic agreement with a single announcement).
 - **Unit (node):** the two traversal commands over a fixture diagnostic set (next, previous, wrap, empty); the
   announcer's debounce/dedupe logic (same summary says nothing, changed summary announces once); extend
   `codemirror-public-api.test.ts` to assert `forEachDiagnostic` and any newly relied-on public export stay on
@@ -243,10 +289,16 @@ waits.
 
 - Announce-plus-traverse is the diagnostic-exposure model; no inline `aria-invalid`/`aria-describedby` on the
   underline spans.
-- Traversal is two cairn-owned commands on `forEachDiagnostic`, bound to `F8`/`Shift-F8`; `lintKeymap` and its
-  `openLintPanel` are never wired.
+- Traversal binds CodeMirror's exported `nextDiagnostic` / `previousDiagnostic` to `F8` / `Shift-F8` by
+  default; `lintKeymap` and its `openLintPanel` are never wired. A cairn-owned `forEachDiagnostic` pair is the
+  test-first contingency, used only if the stock commands fight the popover or their select-the-range behavior
+  proves unwanted.
+- The announcer and traversal are general, keyed off `forEachDiagnostic`, and wired at the top level of
+  `MarkdownEditor`; the spellcheck-specific popover stays inside the spellcheck compartment.
+- The editor's `.cm-content` gets an accessible name via `contentAttributes` (WCAG 4.1.2), an in-scope item
+  added after the adversarial review.
 - The diagnostics-summary region is separate from the popover's per-caret region, polite, debounced, and
-  deduped.
+  deduped; no cross-region coordination is added.
 - `check:cm-internals` is not modified; the floor stays at `.cm-tooltip`; the theme-scope clarification is
   documented, not coded.
 - Find/replace and the autocomplete tint stay deferred in `ROADMAP.md`.
@@ -255,5 +307,5 @@ waits.
 
 - The exact debounce interval and the exact summary copy (countable, admin-voice) are settled during
   implementation against the prose gate and a quick read of how the announcement feels in the browser test.
-- Whether the two traversal commands live in the announcer module or a sibling file is an implementation
-  organization call; both are single-purpose and public-API-bound.
+- Whether the stock select-the-range traversal is kept or the collapsed-caret `forEachDiagnostic` contingency
+  is taken is decided by the test-first composition check, not pre-committed here.

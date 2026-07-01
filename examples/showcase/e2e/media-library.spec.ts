@@ -33,6 +33,14 @@ const MEDIA_JSON_PATH = 'src/content/.cairn/media.json';
 const USED_HASH = 'aa00bb11cc22dd33';
 const ORPHAN_HASH = '1111222233334444';
 
+// A real, decodable 8x8 RGBA PNG for the direct-upload spec, distinct from every other fixture's
+// bytes (a new content hash) so it never collides with the seeded assets or the other specs' branch
+// uploads on the shared backend. The client ingest runs createImageBitmap, so the bytes must decode;
+// a 1x1 PNG is too small for this headless Chromium build's createImageBitmap.
+const UPLOAD_PNG_BASE64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAHElEQVR4nGMQ6Vnw/1mF3H9cNAM+SRDNMCxMAADWK5dBjSjqrgAAAABJRU5ErkJggg==';
+const UPLOAD_PNG_BUFFER = Buffer.from(UPLOAD_PNG_BASE64, 'base64');
+
 /** Read main's committed media.json through the fixture endpoint. */
 async function readMainMedia(request: APIRequestContext) {
   const res = await request.get(
@@ -267,4 +275,46 @@ test('the in-use refusal: the dialog lists the breaking entry and gates Delete, 
   const media = await readMainMedia(request);
   expect(media[USED_HASH]).toBeTruthy();
   expect(media[USED_HASH].slug).toBe(USED.slug);
+});
+
+test('direct upload: the header Upload button opens the capture dialog, and the new asset commits to main and shows in the grid', async ({
+  page,
+  request,
+}) => {
+  await page.goto('/admin/media');
+
+  // The header Upload button. A file input carries an implicit ARIA "button" role too (the hidden
+  // input behind it, accessible name "Upload an image"), so match the header button's name exactly.
+  await page.getByRole('button', { name: 'Upload', exact: true }).click();
+
+  // The click opens the OS file chooser via the hidden input behind both Upload buttons; hand it the
+  // fixture directly rather than driving a native file dialog.
+  await page
+    .locator('input[type="file"][aria-label="Upload an image"]')
+    .setInputFiles({ name: 'teal-checker.png', mimeType: 'image/png', buffer: UPLOAD_PNG_BUFFER });
+
+  // The capture dialog opens over the chosen file.
+  const dialog = page.getByTestId('cairn-library-upload-dialog');
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('heading', { name: 'Upload an image' })).toBeVisible();
+
+  // Name it and submit; MediaCaptureCard's submit reads "Insert image" regardless of its host.
+  const displayName = 'Teal checker';
+  const slug = 'teal-checker';
+  await dialog.locator('input').first().fill(displayName);
+  await dialog.getByRole('button', { name: 'Insert image' }).click();
+
+  // The upload commits and redirects to the uploaded flash; the new asset appears in the grid.
+  await expect(page).toHaveURL(/\/admin\/media\?uploaded=1/);
+  await expect(page.locator('.alert-success')).toHaveText('Asset uploaded.');
+  const grid = page.getByRole('listbox', { name: 'Media library' });
+  await expect(grid.getByText(displayName, { exact: true })).toBeVisible();
+
+  // The commit landed on main: the new row carries the filename-derived slug and the typed name.
+  await expect(async () => {
+    const uploadedMedia = await readMainMedia(request);
+    const row = Object.values(uploadedMedia).find((r) => r.displayName === displayName);
+    expect(row).toBeTruthy();
+    expect(row!.slug).toBe(slug);
+  }).toPass({ timeout: 15_000 });
 });

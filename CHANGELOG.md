@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.78.2
 
 <!-- release-size: patch -->
 
@@ -27,6 +27,14 @@ fold state instead of a verb-shaped label. The editing surface itself (`.cm-cont
 accessible name, "Markdown source", closing a WCAG 4.1.2 gap the surface had from the start.
 
 The public API is unchanged and every addition is on by default with no new prop, so an upgrading
+site needs no action.
+
+The showcase starter template is re-expressed in the same native DaisyUI 5.6 and Tailwind 4 idiom as
+the admin. Its design-scale tokens moved into Tailwind's `@theme` namespaces (`--text-step-*`,
+`--spacing-*`, `--color-muted`), its chrome folded onto named utilities, and its bespoke custom
+surface reached the same zero floor the admin holds, gated by `check:custom-surface` on both trees.
+The developer-facing role vocabulary is now published as the versioned seam in
+`docs/internal/admin-design-system.md`. The template governs newly scaffolded sites; an upgrading
 site needs no action.
 
 The Media Library gains direct image upload. Its two Upload buttons and a drop target that accepts a

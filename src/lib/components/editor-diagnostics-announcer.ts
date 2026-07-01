@@ -72,9 +72,12 @@ export function cairnDiagnosticsAnnouncer(modules: DiagnosticsAnnouncerModules):
       }
       announce(view: EditorView): void {
         const counts: DiagnosticCounts = { spelling: 0, style: 0 };
+        // Classify explicitly by known source, so a future third lint source is never miscounted as
+        // spelling (the earlier if/else fallback would have done exactly that); only cairn-objective
+        // and cairn-spellcheck are summarized today, and anything else is silently dropped.
         forEachDiagnostic(view.state, (diagnostic) => {
           if (diagnostic.source === 'cairn-objective') counts.style += 1;
-          else counts.spelling += 1;
+          else if (diagnostic.source === 'cairn-spellcheck') counts.spelling += 1;
         });
         const summary = summarizeDiagnostics(counts);
         const next = summary || (this.prevAnnounced ? 'No issues' : '');

@@ -91,7 +91,9 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   the admin build's content to the components glob (Tailwind v4 `source(none)` plus the explicit `@source`,
   or a content config on the postcss plugin), and add a test asserting the compiled sheet contains no
   foreign token (`--cairn-step`, `--cairn-measure`, a bracket muted/subtle form). This also retires the
-  "write bare token forms in docs" workaround once the scan no longer reaches docs.
+  "write bare token forms in docs" workaround once the scan no longer reaches docs. **Plan written and
+  queued:** `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` (test-first, one task, the
+  `admin-visual` baseline as the no-utility-dropped proof).
 
 ## Later
 

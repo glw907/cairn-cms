@@ -47,9 +47,16 @@ upgrade path. Gate green (`check:docs` OK, `check:reference` unaffected, Vale 0 
    consumer never imports, so it can hold and batch with the next consumer-facing change, or cut a release
    if a coherent boundary warrants it (Geoff's call per the cadence). Verify the next version free with
    `npm view @glw907/cairn-cms versions` at cut time.
-3. **Carried follow-up (unrelated to a cut):** scope the admin CSS build's content detection so the shipped
-   sheet stops compiling foreign rules from `examples/showcase` and `docs/` (ROADMAP "Next"; the friction
-   log has the detail). And the standing deferred live admin smoke at a site cutover onto `0.78.x`.
+3. **Carried follow-ups (unrelated to a cut), now planned:**
+   - **Scope the admin CSS build's content detection** so the shipped sheet stops compiling foreign rules
+     from `examples/showcase` and `docs/`. Plan WRITTEN + QUEUED:
+     `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` (a test-first single task: disable
+     Tailwind's automatic source detection with `source(none)`, keep the explicit `@source`, lock it with a
+     no-foreign-token invariant in `admin-css-build.test.ts`, prove it with the byte-identical `admin-visual`
+     baseline). ROADMAP "Next"; the friction log has the detail. Execute via `cairn-implementer`.
+   - **The deferred live admin smoke** at a site cutover onto `0.78.x` — NOT a standalone plan (no code to
+     build). It is a triggered run of the documented procedure (`docs/internal/admin-smoke-test.md`),
+     contingent on an ecxc-ski or 907-life cutover, and rides that site's pass. Kept visible here only.
 
 Use `cairn-pass` for the next dev initiative. See the `cairn-admin-design-modernization` memory.
 

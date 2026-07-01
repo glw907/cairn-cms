@@ -11,7 +11,38 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): CM suggestion-popover pass COMPLETE + held on `cm-suggestion-popover`; NEXT = Geoff merge/release call, then the next CM integration surface (brainstorm-first)
+## Immediate next action (2026-07-01, LATEST): execute the Media Library direct-upload pass, fresh session, worktree off `main`
+
+CM integration Passes 1 + 2 are COMPLETE + MERGED + pushed (`origin/main` @ `a3c9a1b`), release HELD. The
+next pass is **the Media Library direct upload** (ROADMAP `## Next`): brainstormed and scope-approved, spec +
+plan committed on `main` (`e25785f`), NOT yet executed. Execute test-first on a FRESH worktree off `main`, in
+a NEW session (a deliberate context clear after a long planning session).
+
+- Spec: `docs/superpowers/specs/2026-06-30-cairn-media-library-upload-design.md`
+- Plan (6 tasks): `docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`
+- Memory: `cairn-image-gallery-initiative-placement`
+
+Scope: wire the Library's two `Upload` buttons + the empty-state drop target to a single-file upload that
+stores bytes AND commits the `media.json` row to `main` in ONE new `mediaLibraryUpload` action. The client
+posts only the file; the server derives and commits the record (factor `uploadAction`'s store-and-derive into
+a shared `ingestAndStore` helper). Reuse `MediaCaptureCard` + the Replace transport. Single-file only (batch
+deferred). Idempotent on a duplicate hash. Additive, non-breaking, release held.
+
+**Resume prompt for the fresh session** (launch in the cairn-cms main checkout, `~/Projects/cairn-cms`):
+
+> Execute the Media Library direct-upload plan
+> (`docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`), spec
+> `docs/superpowers/specs/2026-06-30-cairn-media-library-upload-design.md`. Use `cairn-pass`; create a feature
+> worktree off `main` per `superpowers:using-git-worktrees` and run `npm install && npm run package` in it
+> first (the worktree needs `node_modules` + `dist`). Execute the six tasks test-first via `cairn-implementer`
+> (or a workflow with per-task adversarial verification if I opt in), the main loop reviewing each diff and
+> the full gate between. Then the review-gate fan-out (svelte + daisyui-a11y + cloudflare-workers + an Opus
+> correctness pass), fold fixes, merge to `main` `--no-ff`, hold the release. Memory
+> `cairn-image-gallery-initiative-placement` carries the media substrate.
+
+---
+
+## Immediate next action (2026-06-30, superseded): CM suggestion-popover pass COMPLETE + held on `cm-suggestion-popover`; NEXT = Geoff merge/release call, then the next CM integration surface (brainstorm-first)
 
 The CodeMirror suggestion-popover pass is **complete**: all 8 plan tasks plus a review-fix committed on the
 `cm-suggestion-popover` worktree branch (off `main` @ `18b519b`), **held unmerged, no publish**. The

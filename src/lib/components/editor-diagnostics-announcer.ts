@@ -19,6 +19,9 @@ export interface DiagnosticCounts {
   style: number;
 }
 
+/** How long the announcement waits after the last edit, so a typing burst never chatters the region. */
+const DEBOUNCE_MS = 1000;
+
 /** Pluralize a counted noun: `1 issue` vs `2 issues`. */
 function pluralize(count: number, noun: string): string {
   return `${count} ${noun}${count === 1 ? '' : 's'}`;
@@ -65,12 +68,12 @@ export function cairnDiagnosticsAnnouncer(modules: DiagnosticsAnnouncerModules):
       }
       schedule(view: EditorView): void {
         if (this.timer) clearTimeout(this.timer);
-        this.timer = setTimeout(() => this.announce(view), 1000);
+        this.timer = setTimeout(() => this.announce(view), DEBOUNCE_MS);
       }
       announce(view: EditorView): void {
         const counts: DiagnosticCounts = { spelling: 0, style: 0 };
-        forEachDiagnostic(view.state, (d) => {
-          if (d.source === 'cairn-objective') counts.style += 1;
+        forEachDiagnostic(view.state, (diagnostic) => {
+          if (diagnostic.source === 'cairn-objective') counts.style += 1;
           else counts.spelling += 1;
         });
         const summary = summarizeDiagnostics(counts);

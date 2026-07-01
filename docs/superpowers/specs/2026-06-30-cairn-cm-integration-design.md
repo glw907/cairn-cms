@@ -1,248 +1,267 @@
-# CodeMirror integration: aligning the editor chrome to cairn (design)
+# CodeMirror integration: the suggestion popover (design)
 
-> Design spec for the CodeMirror integration pass. The goal is that the editor reads as a fully
-> integrated part of cairn and shares the Warm Stone admin design language, while CodeMirror stays
-> cheap to upgrade and its editing UX is left intact. Provenance: Geoff's steer (2026-06-30) reframed
-> this as a deliberate initiative that must **start with a prior-art review**; that review is done and
-> its conclusion is baked in below. Pre-spec framing:
-> `docs/internal/cm-editing-surface-alignment.md`. Memory: `cairn-codemirror-integration-pass`.
+> Design spec for the CodeMirror integration pass. The pass converts the editor's spellcheck and
+> objective-error suggestion popover from a skinned `@codemirror/lint` tooltip into cairn's own recipe
+> DOM rendered through CodeMirror's public API, and gives it the keyboard and screen-reader model it has
+> never had. Provenance: Geoff's steer (2026-06-30) mandated a prior-art review first; that review ran,
+> then a four-way adversarial review (CM API, accessibility, scope, testability) narrowed the pass from
+> a three-surface sweep to this one surface and corrected several load-bearing errors. This document is
+> the post-review design. Framing history: `docs/internal/cm-editing-surface-alignment.md`. Memory:
+> `cairn-codemirror-integration-pass`.
 
 ## Goal and the three constraints
 
-The pass holds three constraints that pull against each other. Holding all three is the work.
+The editor is cairn's core job, so investing in its integration is in-scope per the charter. The pass
+holds three constraints that pull against each other.
 
-1. **Full integration, shared design language.** From the editor's point of view, its chrome
-   (suggestion popovers, autocomplete, a search panel) should read as cairn admin surfaces, not
-   bolted-on third-party widgets.
-2. **Easy to upgrade.** Keep narrow seams against CodeMirror's public extension points, not deep
-   overrides against its internal `.cm-*` classes. This is the upgrade-resilience discipline the admin
-   re-expression sweep applied to DaisyUI and Tailwind.
-3. **Do not subvert CodeMirror's editing UX for design purity.** Leverage CodeMirror's accumulated
-   UI/UX lessons. Where design consistency would degrade editing (match-highlighting, keyboard
-   navigation, IME, selection), consistency yields.
+1. **Full integration, shared design language.** The suggestion popover should read as a cairn admin
+   surface (Warm Stone tokens, the popover recipe), not a third-party widget wearing CodeMirror's
+   default button chrome and mono face.
+2. **Easy to upgrade.** Bind to CodeMirror's public extension points, not its internal `.cm-*` classes.
+   This is the upgrade-resilience discipline the admin re-expression sweep applied to DaisyUI and
+   Tailwind.
+3. **Do not subvert CodeMirror's editing UX.** Navigation, selection, and IME stay on CodeMirror's
+   defaults. Where design consistency would degrade editing, consistency yields.
 
-Two production sites depend on the package, and the editor is cairn's core job, so investing in its
-integration is in-scope per the charter. The seam stays narrow.
+A fourth goal surfaced during review and is now first-class: **the popover gains a keyboard and
+screen-reader path it does not have today.** The current lint tooltip is pointer-only, so this pass is
+not preserving an accessibility baseline, it is creating one.
+
+## Scope: the suggestion popover only
+
+**In scope:** the spellcheck and objective-error suggestion popover (both flow through
+`@codemirror/lint` `Diagnostic` objects today), and a tune of the writing-surface underline.
+
+**Cut, with reasons recorded so they are not relitigated:**
+
+- **Autocomplete alignment — cut.** The editor themes zero completion classes today. CodeMirror offers
+  no public replacement for the dropdown container, so "aligning" it would *introduce* coupling to
+  internal completion classes on a low-frequency link-completion surface. A pass whose metric is
+  shrinking the fragility surface must not grow it for cosmetics. The dropdown stays a plain CodeMirror
+  default, a known third-party surface rarely seen. It also carries its own selected-state contrast risk
+  (WCAG 1.4.1 / 1.4.11) not worth taking on here.
+- **Find/replace search panel — deferred as its own feature decision.** Search is not in the editor
+  today, so adding it is new capability, not chrome alignment. It drags in `@codemirror/search`, a
+  `searchKeymap` that also wires a stock (un-themed) `gotoLine` panel and multi-cursor bindings, and a
+  five-point a11y contract of its own. cairn edits typically short Posts and Pages, and the browser
+  already finds visible text. If find/replace is wanted, it earns its own small decision later, not a
+  rider on this pass.
+- **A shared `editor-chrome` seam — dropped.** With one consumer (the popover), a shared
+  tooltip+panel abstraction is premature generality. Ship one plain `recipeTooltip` helper colocated
+  with the popover.
 
 ## Prior art (the conclusion that drives the design)
 
-Two research lines were run off the main loop: CodeMirror's own documentation and how major CM6
-adopters integrate it. They converge on one pattern.
+Two research lines ran off the main loop (CodeMirror's own docs, and major CM6 adopters). CodeMirror's
+documentation establishes the pattern, and adopters corroborate it at the architecture level:
+**identity-through-facets** — render cairn's own DOM *through* CodeMirror's public extension points, and
+theme only the documented writing-surface classes. This satisfies all three constraints at once.
 
-**Identity-through-facets.** Render cairn's own design-system DOM *through* CodeMirror's public
-extension points (`showTooltip` / `hoverTooltip`, `showPanel` / `createPanel`, the completion
-`info` / `addToOptions` hooks). Theme only the *documented* writing-surface classes. This is the
-single approach that satisfies all three constraints at once: it preserves identity (full DOM
-control), keeps upgrades cheap (facet contracts ride the official `^6.0.0` stability promise), and
-stays additive rather than overriding CodeMirror's editing.
-
-Load-bearing evidence:
-
-- **Replit** renders "custom React components… in place of critical parts of the editor like the
-  search panel, autocomplete tooltips, and context menu" by "passing in a function that returns a DOM
-  node", and did it specifically to stop forking CodeMirror. Narrow seam, not deep fork.
-- **A Svelte spellcheck demo on discuss.codemirror.net** is the closest precedent to cairn's stack:
-  its suggestion popovers are "**not** CodeMirror Linter tooltips… Instead, they're **Svelte
-  components** wrapped to function as standard DOM elements." The author (Marijn Haverbeke) raised only
-  a correctness refinement: extract text from the syntax tree, not by stripping markup.
-- **Obsidian** is the counter-example: because it *is* the app, it skins `.cm-*` internals via CSS, and
-  its CM5→CM6 migration guide is the documented cost of that coupling. A redistributable library must
-  avoid it.
-- **Sourcegraph / Sandpack** confirm the writing-surface half: feed shared CSS variables into a
-  `theme`, targeting only documented classes.
-
-Two API limits are locked into the design because CodeMirror enforces them:
-
-- The lint tooltip's outer scaffold (`.cm-tooltip-lint`) and its action buttons are internal.
-  `Diagnostic.renderMessage` returns the message body only, not custom action DOM. A fully-recipe
-  suggestion popover therefore means **driving our own `hoverTooltip` off the diagnostic state and
-  suppressing the built-in lint tooltip** (the Svelte precedent's exact move).
-- Autocomplete's dropdown container resists full structural replacement. Marijn deliberately blocks a
-  per-option render override to protect match-highlighting. The sanctioned path is `tooltipClass` /
-  `optionClass` / `addToOptions` / a custom `info` node, plus theming the container through an attached
-  class. Autocomplete keeps a small, bounded internal-class dependency; it does not go to zero.
+The load-bearing evidence for the popover specifically is a Svelte spellcheck demo on
+discuss.codemirror.net whose suggestion popovers are "**not** CodeMirror Linter tooltips… Instead,
+they're **Svelte components** wrapped to function as standard DOM elements." Obsidian is the
+counter-example: because it *is* the app, it skins `.cm-*` internals, and its CM5→CM6 migration guide is
+the documented cost of that coupling. A redistributable library avoids it.
 
 ## The organizing rule (classify once)
 
 Every in-editor CodeMirror surface is exactly one of:
 
-- **Writing surface** — legitimately CodeMirror's text world. Theme it via `EditorView.theme` against
-  the documented content classes (`.cm-content`, `.cm-line`, `.cm-cursor`, the gutters), plus cairn's
-  own namespaced decoration classes (`.cm-cairn-*`, which are cairn's, not CodeMirror's). Keep the
-  current approach; it is idiomatic and stable.
-- **Chrome** — popovers, dropdowns, panels, hover cards. Render cairn's own recipe DOM through the
-  public extension points. Do not skin CodeMirror's built-in widget internals.
+- **Writing surface** — CodeMirror's text world. Theme it via `EditorView.theme` against the documented
+  content classes (`.cm-content`, `.cm-line`, `.cm-cursor`, the gutters), plus cairn's own namespaced
+  decoration classes (`.cm-cairn-*`, which are cairn's, not CodeMirror's). Keep the current approach.
+- **Chrome** — the suggestion popover. Render cairn's own recipe DOM through the public API. Do not skin
+  CodeMirror's built-in widget internals.
 
-Draw the line once and the whole editing surface gets one rule.
+## The design
 
-## Surface-by-surface design
+### The mechanism: `showTooltip` facet + caret `StateField`, not `hoverTooltip`
 
-### 1. Spellcheck and objective-error popover → recipe `hoverTooltip` (flagship)
+`hoverTooltip` is pointer-only (its plugin watches `mousemove` with a hover delay; it has no caret code
+path), so it cannot drive a caret-reachable popover. The flagship is built on the **`showTooltip`
+facet**, fed by a `StateField` that maps `state.selection.main.head` onto the diagnostic under the
+caret and produces a `Tooltip` whose `create(view)` returns the recipe DOM. The `StateField` reads the
+lint state through the public **`forEachDiagnostic(state, f)`** export, so it never touches lint
+internals. A second, separate `hoverTooltip` source may provide the pointer-hover affordance; one
+primitive does not cover both triggers.
 
-Today `buildSpellDiagnostic` and `buildObjectiveDiagnostic` hand CodeMirror an `actions` array, and
-CodeMirror renders the tooltip buttons itself (`spellcheck.ts:233`, "no custom popover code"). The
-theme then patches `.cm-tooltip.cm-tooltip-lint`, `.cm-diagnostic-info`, and
-`.cm-diagnosticAction:focus-visible` (`spellcheck.ts:487-498`). That is the drift: a stock widget in a
-thin theme patch, wearing CodeMirror's layout, button chrome, and (until patched) its mono face.
+Keep `@codemirror/lint` as the underline and diagnostic mechanism (the `linter()` sources at
+`spellcheck.ts:692` and `725` still produce the diagnostics). **Suppress only the built-in tooltip** via
+the `linter()` `tooltipFilter` option: `tooltipFilter: () => []` is sufficient because every diagnostic
+in this editor is cairn's. `tooltipFilter` filters only the tooltip; `markerFilter` (the underline) and
+the gutter are untouched. This drives the lint-*specific* classes (`.cm-tooltip-lint`,
+`.cm-diagnostic-info`, `.cm-diagnosticAction`) out of the theme entirely.
 
-Change:
+### The recipe DOM: copy the visual recipe, not the modal behavior
 
-- **Keep `@codemirror/lint` as the underline/marker mechanism.** The `linter()` sources
-  (`spellcheck.ts:692`, `725`) still produce the diagnostics that drive the wavy underline and the
-  focus rail. That locked decision holds.
-- **Suppress the built-in lint tooltip** for these diagnostics (via the `linter()` `tooltipFilter`, or
-  by not routing them to the lint tooltip) and **render cairn's own popover** through `hoverTooltip`
-  (and a caret-in-range trigger so the popover is reachable without a pointer, preserving the current
-  reachability). The tooltip source reads the diagnostic state for the range under the cursor and
-  returns a `Tooltip` whose `create(view)` builds the recipe DOM.
-- **Recipe DOM** matches `MediaInsertPopover.svelte`, the recipe sibling: `role="dialog"`,
-  `--font-body`, DaisyUI `.btn` for the actions (suggestion, "Add to dictionary", "Ignore"),
-  `--cairn-card-border`, `--cairn-shadow`, `--radius-box`. The action handlers dispatch the same view
-  transactions the current actions do (apply the replacement, add the word, ignore the range).
-- **Result:** the lint-tooltip internal classes (`.cm-tooltip-lint`, `.cm-diagnostic-info`,
-  `.cm-diagnosticAction`) drop out of the theme entirely. This surface goes to **zero** internal-class
-  coupling.
+The popover DOM matches the *look* of `MediaInsertPopover.svelte` (the recipe sibling): `--font-body`,
+DaisyUI `.btn` for the actions (a suggestion, "Add to dictionary", "Ignore"), `--cairn-card-border`,
+`--cairn-shadow`, `--radius-box`. The action handlers dispatch the same view transactions the current
+lint actions do.
 
-### 2. Autocomplete dropdown → align via public hooks (honestly bounded)
+It must **not** copy `MediaInsertPopover`'s behavior. That component is `aria-modal="true"` with a
+hand-rolled Tab focus trap, correct for a modal that deliberately parks the editor. On a popover sitting
+over live text the user is mid-sentence in, a modal trap tells assistive tech the document is gone and
+prevents returning to typing. The popover is non-modal.
 
-`autocompletion({ override: completionSources })` is wired for link completions
-(`MarkdownEditor.svelte:660`). The dropdown renders with CodeMirror defaults today.
+### The keyboard and screen-reader model (first-class)
 
-Change:
+The current lint tooltip is pointer-only and announces nothing (the underline is bare
+`text-decoration`). This pass builds the path that never existed. Two triggers share one DOM with two
+different focus contracts:
 
-- Attach a cairn class to the dropdown via `tooltipClass`, and to each row via `optionClass`, then
-  style through that scoped wrapper so the dropdown reads as cairn chrome (font, surface, border,
-  shadow, selected-row treatment).
-- Supply a custom `info` node if we show an info panel, and shape rows through `displayLabel` /
-  `addToOptions` rather than overriding the option renderer.
-- **Keep CodeMirror's match-highlighting and the completion keymap.** This is constraint 3 in action:
-  do not trade the battle-tested completion UX for a purer DOM.
-- **Residual coupling, documented:** a small set of completion classes stays in the theme because
-  CodeMirror offers no public DOM replacement for the dropdown container. These are inventoried and
-  held to a budget (see the gate), not driven to zero. Honesty over fake purity.
+- **Pointer hover → presentation, no focus move.** Satisfies WCAG 1.4.13: the card is *hoverable* (no
+  dead gap; moving the pointer onto it keeps it open), *persistent* (stays until the trigger is left or
+  invalidated), and *dismissable* (`Escape` closes it without moving the pointer). Configure the
+  tooltip's `hideOn` accordingly. Interactive buttons in a pure hover card are an anti-pattern, so this
+  path *shows* the fix; it is not the only way to operate it.
+- **Deliberate key → action dialog, focus moves in.** When the caret is in a diagnostic range, an
+  explicit keybinding (match the "Quick Fix" idiom, `Mod-.`) opens the action surface as
+  `role="dialog"` with **`aria-modal="false"`**, moves focus to the first suggestion, and on `Escape`
+  restores focus to the prior selection in `.cm-content`. Role follows focus: a `role="dialog"` that
+  never receives focus is never announced, so the dialog role is used only on this focus-taking path.
 
-### 3. Find/replace search panel → recipe panel on `showPanel` (new capability)
+Caret-in-range must **not** auto-open-and-focus the dialog (that is a WCAG 3.2.1 / 2.4.3 violation and
+subverts navigation, constraint 3). Instead, when the caret enters a diagnostic range, announce
+availability through a **polite** `aria-live` region: the word, that suggestions exist, and the key that
+opens them ("misspelled: teh; 3 suggestions; press Ctrl+period"). Polite, not assertive, because a
+spelling flag is not an interruption. This announcement is the screen-reader half of the caret trigger,
+and without it a screen-reader user never learns the popover exists.
 
-Search is not currently in the editor. Geoff chose to add it in this pass, which also gives the
-recipe-panel primitive a real consumer.
+### The writing surface: keep the theme, tune the underline
 
-- Add `@codemirror/search`. Wire `searchKeymap` into the editor keymap.
-- Provide `createPanel` so the panel is **cairn recipe DOM from day one**, never the stock `.cm-search`
-  panel. Keep CodeMirror's search *state and commands* (`findNext`, `findPrevious`, `replaceNext`,
-  `replaceAll`, the query effects). The one contract to honor: tag the focus field `main-field=true`.
-- Recipe DOM: find and replace inputs, DaisyUI `.btn` controls (next / previous / replace /
-  replace-all / close), the case-sensitive / whole-word / regex toggles, and a match-count readout, all
-  in the admin design language.
-- **Accessibility:** focus the main field on open; `Escape` closes and returns focus to `.cm-content`;
-  label the controls; a live region announces the match count.
+The wavy underline is locked to `--cairn-warning-ink` (`spellcheck.ts:469`, `482`), reserved so it never
+collides with tidy's `--cairn-error-ink` red. Keep the token; tune only its color and weight. No
+re-architecture.
 
-### 4. Writing surface → keep the theme, tune the underline
+### Token resolution: a documented dependency, not a bug
 
-The wavy underline is locked to `--cairn-warning-ink` (`spellcheck.ts:469`, `482`), reserved so it
-never collides with tidy's `--cairn-error-ink` red. Keep the token; tune only the underline's color
-and weight so it reads intentionally. No re-architecture of the writing-surface theme.
+`var(--cairn-*)` resolves inside the tooltip DOM today because CodeMirror parents tooltips to the
+`.cm-editor` root, which sits inside the themed `data-theme` wrapper, so the custom properties inherit
+down the DOM. This works by default. It would break only if a future change sets
+`tooltips({ parent: document.body })` to escape a clipping container, which portals the DOM out of the
+themed subtree. Document the dependency on the default `.cm-editor` parent and the clip-versus-theme
+tension; do not change anything now.
 
-## The reusable seam
+## The coupling metric and the `check:cm-internals` gate
 
-A small internal `editor-chrome` module holds the two recipe primitives, so the popover and the search
-panel share one pattern and one a11y contract:
+The honest metric: the lint-*specific* classes go to **zero**, and the popover carries one irreducible
+override of `.cm-tooltip` (CodeMirror adds that class to every tooltip and paints its border and
+background, so a recipe surface must neutralize it). The floor is `.cm-tooltip`, not zero.
 
-- **`recipeTooltip`** — builds a cairn recipe popover as a `TooltipView` (`{dom, mount, destroy}`) from
-  a render function, for the suggestion popover (and any future hover card).
-- **`recipePanel`** — wraps `showPanel` / `createPanel` with recipe DOM and the panel a11y contract,
-  for the search panel (and any future panel).
+Convert the watch into a failing gate, `check:cm-internals`, taking the *allowlist* half of
+`check-custom-surface.mjs` (set-equality by name, `check-custom-surface.mjs:156-160`), not its numeric
+budget. Design requirements, each closing a false-green path the review found:
 
-Because CodeMirror prescribes no ARIA for developer-supplied DOM, the seam **owns the a11y contract
-explicitly**: role, keyboard access to actions, dismissal, focus discipline (hover cards do not steal
-focus from `.cm-content`; panels focus their tagged main field on open and restore focus on close).
-The module is internal (exported from no package subpath), so its API is free to grow; the observable
-behavior is the contract.
+1. **Allowlist by name, not a count.** Fail on any chrome `.cm-*` token not in {documented
+   writing-surface set} ∪ {`.cm-cairn-*`} ∪ {`.cm-tooltip`, the popover floor}, and report the offender
+   by name (`unsanctioned chrome class: .cm-panel`). A count launders coupling (drop one class, add a
+   worse one, count unchanged); a by-name set does not.
+2. **Scan an enumerated file set for the raw token `\.cm-[a-zA-Z-]+`,** not by detecting theme calls.
+   `spellcheck.ts` builds its theme via `EditorViewMod.theme` (a function parameter), so a scanner that
+   greps `EditorView.theme` never opens the flagship file and certifies "0" by blindness. Enumerate the
+   editor theme sources explicitly, and **fail if any editor file contains `.cm-` and is not in the
+   set**, so the set cannot silently go stale.
+3. **Split composite keys** (`.cm-tooltip.cm-tooltip-lint`, comma lists, descendant selectors mixing a
+   `.cm-cairn-*` class with a writing-surface class) into individual `.cm-*` tokens before checking.
+4. **Ban dynamically-composed chrome selectors** (`` `.cm-${name}` ``). The gate refuses to reason about
+   a selector it cannot read statically; treat interpolation in a chrome selector as a hard error.
+5. Scan `.svelte` `<style>` blocks and `querySelector` strings too, not only JS theme objects.
 
-## Fragility inventory and the `check:cm-internals` gate
+The gate proves the theme *source* no longer names the lint classes. It cannot prove the built-in
+tooltip does not *render*. Close that gap with a runtime assertion (see Testing): a stock
+`.cm-tooltip-lint` element is absent while the recipe popover is present.
 
-Convert the watch into a failing test, the gold standard this repo already favors
-(`check:custom-surface`, `check:reference`).
+## Upgrade tripwire
 
-1. **Inventory** every internal `.cm-*` selector the editor theme touches, split into writing-surface
-   (documented, legitimate) and chrome (the fragility surface).
-2. **`scripts/check-cm-internals.mjs`** (mirroring `scripts/check-custom-surface.mjs`) scans the editor
-   theme sources for chrome `.cm-*` selectors and holds them to a **seeded budget**. It fails if the
-   count grows. The popover conversion seeds the lint-tooltip classes at **0**. Autocomplete's residual
-   classes are the documented, budgeted remainder. Cairn's own `.cm-cairn-*` classes and the documented
-   writing-surface classes are allow-listed, not counted.
-3. Wire it into the `check:*` script family and the pass gate.
+Prose in a backlog is the weakest form and gets skipped. Use the repo's own watch taxonomy:
 
-The success metric is the chrome budget trending toward only the content classes: lint tooltip 0,
-autocomplete a small named set, everything else routed through recipe DOM.
-
-## Upgrade rehearsal
-
-Mirror the admin sweep's rehearsal. A checked step bumps `@codemirror/lint`, `@codemirror/autocomplete`,
-`@codemirror/search`, and `@codemirror/view` independently (they version separately) and re-validates
-the public-API calls and the recipe surfaces (popover, autocomplete alignment, search panel). This is
-the tripwire for the one thing that can break: a public-API shift, which is far rarer than an
-internal-class shift and is covered by the `^6.0.0` promise.
+- **A committed public-API-shape test** (code condition, can't be forgotten): import the specific public
+  symbols the popover leans on (`showTooltip`, `forEachDiagnostic`, the `linter` `tooltipFilter` config,
+  `Diagnostic`, `EditorView.theme`) and assert their shape and callability. A major bump that renames or
+  drops one then fails `npm test` deterministically.
+- **A `schedule` routine** (external trigger): periodically bump the `@codemirror/*` ranges in a
+  throwaway branch, run `npm run check` + `npm test`, and ping only on break, mirroring the kit#15992
+  watcher the repo already runs.
 
 ## Visual finalization through frontend-design
 
-Route the three visual artifacts through the frontend-design loop with explicit criteria, not main-loop
-web research (`design-taste-research-via-frontend-design`):
-
-- the suggestion popover composition,
-- the aligned autocomplete dropdown (row, selected state, info panel),
-- the search/replace panel layout.
-
-**Criteria:** match `MediaInsertPopover.svelte` and the `admin-design-system.md` recipes; use only the
-Warm Stone tokens; `data-theme` on a bare wrapper; scoped overrides in `@layer components`; preserve
-CodeMirror's editing affordances. This is the first implementation step for each surface, so the plan
-carries an approved visual target before the code.
+One visual artifact: the suggestion popover composition. Route it through the frontend-design loop with
+explicit criteria at its implementation phase (not front-loaded), per
+`design-taste-research-via-frontend-design`. Criteria: match the `MediaInsertPopover.svelte` visual
+recipe and the `admin-design-system.md` popover recipe; Warm Stone tokens only; `data-theme` on a bare
+wrapper; scoped overrides in `@layer components`; the selected/hover states carry a non-color cue and
+clear the contrast floors; preserve CodeMirror's editing affordances.
 
 ## Testing
 
-- **Unit:** the diagnostic→tooltip bridge (a diagnostic at a range yields the recipe popover with the
-  right actions; the actions dispatch the right transactions); the search query wiring (panel inputs
-  drive `setSearchQuery`; the commands run); the a11y contract (focus, dismissal).
-- **e2e / visual:** new admin-visual baselines for the popover, the aligned autocomplete, and the search
-  panel, the same discipline Phase 6 used. Existing editor baselines regenerate; any pixel change is
-  intended and reviewed.
+Verify in the **chromium component vitest project** (which mounts `MarkdownEditor` in a pinned
+container), driven by the existing fake-Worker seam (`spellcheckTest: { createWorker, assumeReady }`,
+`MarkdownEditor.svelte:115`), so the tests are deterministic without the 1.5 MB dictionary. Assert
+**computed structure and tokens** (role, the button set, `--font-body`, the `--cairn-*` border and
+shadow resolving) over pixels, the technique the current spellcheck e2e already uses for the underline
+color. A full-editor screenshot of an async, viewport-positioned tooltip is the wrong tool (the existing
+spellcheck e2e already needs a 90-second timeout and two retries). If a pixel baseline is wanted for the
+frontend-design sign-off, scope it to the popover locator with animations disabled, never a full-page
+shot.
+
+The load-bearing assertions, each a "button fired ≠ property held" trap:
+
+- **Add-to-dictionary state:** the word is added, the underline clears, and it survives a re-lint (the
+  current test's three-part assertion, not a click-only check).
+- **Ignore scope:** the ignore action suppresses only that range, not the word globally.
+- **Escape restores focus:** `document.activeElement` is back in `.cm-content` after dismissal.
+- **Keyboard trigger:** the caret-in-range keybinding opens the dialog (test the keyboard path, not
+  `hover`).
+- **Announcement:** the polite live region carries the word, the suggestion count, and the key.
+- **Built-in tooltip suppressed:** stock `.cm-tooltip-lint` is absent while the recipe popover renders
+  (the runtime half of the coupling metric).
 
 ## Scope boundary and non-goals
 
-- **No editing-UX override.** Selection, IME, key handling, and completion match-highlighting stay on
-  CodeMirror's defaults. Design consistency yields to editing quality.
-- **The writing-surface theme stays.** Only the underline is tuned.
-- **Leanness.** The seam is two small primitives with real consumers (popover, search panel). No
-  general chrome framework, no speculative primitives without a consumer.
+- No editing-UX override. Navigation, selection, IME stay on CodeMirror's defaults. No auto-focus on
+  caret movement. No modal trap over live text.
+- The writing-surface theme stays; only the underline is tuned.
+- One plain `recipeTooltip` helper, colocated with the popover. No shared seam, no speculative
+  primitives.
+- Autocomplete and search stay out (see Scope).
 
 ## Documentation (a pass dimension)
 
-- Update `docs/internal/admin-design-system.md` if the popover / panel recipes gain an editor variant.
-- Record the CodeMirror seam (the writing-surface / chrome rule, the public-API hooks, the fragility
-  budget, the upgrade rehearsal) as the durable internal reference; fold or retire
-  `cm-editing-surface-alignment.md` once this ships.
-- If any surface gains a diagnosable code path, give it a log event and update the reference table.
+- Record the CodeMirror seam (the writing-surface / chrome rule, the `showTooltip` + `forEachDiagnostic`
+  pattern, `tooltipFilter` suppression, the a11y model, the `check:cm-internals` allowlist, the upgrade
+  tripwire) as the durable internal reference; fold or retire `cm-editing-surface-alignment.md` on ship.
+- Update `admin-design-system.md` if the popover recipe gains an editor variant.
+- Give the popover-render path a log event only if it becomes diagnosable; update the reference table if
+  so.
 - Prune the ROADMAP "Later" CM item on ship.
 
-## Rough phasing (for the plan, written just-in-time)
+## Phasing (for the just-in-time plan)
 
-0. Inventory the `.cm-*` surface; land `check:cm-internals` with the seeded budget; run the
-   frontend-design loop for the three visual targets.
-1. Build the `editor-chrome` seam (`recipeTooltip`) and convert the spellcheck/objective popover; drive
-   the lint-tooltip budget to 0.
-2. Align the autocomplete dropdown; seed its residual-class budget.
-3. Add `@codemirror/search` and the recipe search panel (`recipePanel`); commit the regenerated
-   showcase and root lockfiles in the same commit (dep-graph change).
-4. Tune the underline; wire the upgrade rehearsal; update docs; prune the roadmap.
+0. Inventory the `.cm-*` surface across the enumerated editor files; land `check:cm-internals` (allowlist
+   by name, raw-token scan, dynamic-selector ban) seeded to the current state.
+1. Build the `recipeTooltip` helper on the `showTooltip` facet + caret `StateField` + `forEachDiagnostic`,
+   with the two-trigger keyboard/screen-reader model and the polite live region. Run the frontend-design
+   loop for the popover here. Suppress the built-in tooltip via `tooltipFilter`. Drive the lint-specific
+   classes to zero; the allowlist tightens to the `.cm-tooltip` floor.
+2. Tune the underline. Add the public-API-shape test and the `schedule` upgrade routine. Update docs;
+   prune the roadmap.
 
 Each phase clears the full gate (`check` 0/0, `npm test`, `check:cm-internals`, `check:custom-surface`,
-`check:comments`, showcase e2e) before the next, per the cairn method: dispatch each well-specified task
-to `cairn-implementer`, review the diff, verify the gate.
+`check:comments`, the component tests) before the next, per the cairn method: dispatch each
+well-specified task to `cairn-implementer`, review the diff, verify the gate.
 
-## Self-review notes
+## What the adversarial review changed (self-review)
 
-- Adding `@codemirror/search` is a dependency-graph change; the same-commit lockfile discipline
-  (`cairn-root-lockfile-drift-npm-ci`, `cairn-worktree-stale-node-modules`) applies.
-- The autocomplete budget is deliberately non-zero. If review finds the residual classes are actually
-  avoidable through `addToOptions`, tighten the budget; do not pretend zero is reachable up front.
-- The popover trigger must preserve keyboard reachability (caret-in-range), not only pointer hover, or
-  it regresses accessibility relative to the current lint tooltip.
+- The mechanism was wrong: `hoverTooltip` cannot do caret display. Rebased on `showTooltip` +
+  `forEachDiagnostic`.
+- "Zero coupling" was false: `.cm-tooltip` is an irreducible floor; the gate counts it.
+- The gate would have been blind to `spellcheck.ts` (`EditorViewMod.theme`) and gameable as a count.
+  Rebuilt as an allowlist-by-name over an enumerated raw-token file scan.
+- The a11y contract was a contradictory footnote (no-focus + dialog + interactive buttons) that would
+  have copied a modal focus trap onto live text. Rewritten as a first-class two-trigger model with a
+  polite announcement, since the current tooltip has no keyboard or screen-reader path at all.
+- Scope narrowed from three surfaces to one: autocomplete grew the coupling the pass exists to shrink,
+  and search is a separate feature. Both cut, which also dissolved the premature shared seam.
+- Token resolution is fine today (default `.cm-editor` parent); downgraded from a fix to a documented
+  dependency.

@@ -288,6 +288,14 @@ describe('mediaLibraryLoad flash flags', () => {
     expect(data.flashError).toBeNull();
   });
 
+  it('reads the uploaded flash from ?uploaded=1', async () => {
+    gh();
+    const routes = createContentRoutes(runtime(), deps);
+    const data = await routes.mediaLibraryLoad(libraryEvent('?uploaded=1') as never);
+    expect(data.flash).toBe('uploaded');
+    expect(data.flashError).toBeNull();
+  });
+
   it('reads the conflict error from ?error= into flashError, not the load error slot', async () => {
     gh();
     const routes = createContentRoutes(runtime(), deps);

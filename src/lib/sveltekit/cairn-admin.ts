@@ -226,6 +226,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // applies the repoint. Alt propagation previews and applies the alt fill. The preview pair are 2a
     // fetch actions; the apply pair are form posts. All gate on the media view.
     mediaUpload: viewAction(['media'], (event) => content.uploadAction(contentEvent(event, {}))),
+    mediaLibraryUpload: viewAction(['media'], (event) => content.mediaLibraryUpload(contentEvent(event, {}))),
     mediaReplacePreview: viewAction(['media'], (event) => content.mediaReplacePreview(contentEvent(event, {}))),
     mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApply(contentEvent(event, {}))),
     mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreview(contentEvent(event, {}))),

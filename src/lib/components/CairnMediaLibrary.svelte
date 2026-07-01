@@ -111,6 +111,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     altPropagated: 'Alt text applied.',
     bulkDeleted: 'Assets deleted.',
     orphansPurged: 'Orphans purged.',
+    uploaded: 'Asset uploaded.',
   } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 

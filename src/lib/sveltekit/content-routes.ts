@@ -252,10 +252,10 @@ export interface MediaLibraryData {
   /**
    * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
    *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`,
-   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, null otherwise.
-   *  The component renders a polite success strip for each.
+   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, `uploaded` from
+   *  `?uploaded=1`, null otherwise. The component renders a polite success strip for each.
    */
-  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | null;
+  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | 'uploaded' | null;
   /**
    * A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
    *  its own slot rather than the degraded-load `error` above, so the two never collide.
@@ -969,6 +969,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     else if (event.url.searchParams.get('altPropagated') === '1') flash = 'altPropagated';
     else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
     else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
+    else if (event.url.searchParams.get('uploaded') === '1') flash = 'uploaded';
     const flashError = event.url.searchParams.get('error');
     const backend = resolveBackend(event);
 

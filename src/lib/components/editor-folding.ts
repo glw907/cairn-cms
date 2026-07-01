@@ -259,6 +259,35 @@ function safetyExtender(): Extension {
   });
 }
 
+// The folded pill's name is frozen at fold time: codeFolding calls preparePlaceholder only when a
+// fold is (re)created, never on a later, unrelated edit that just maps the fold's position forward.
+// A directive renamed in place on its still-visible opener line (":::note" -> ":::warning") while the
+// block stays folded would otherwise strand the pill on the old name, since nothing else re-derives
+// it. This transactionExtender re-derives each folded range's name on every doc change and, when it
+// drifted from what the fold was created with, forces a refold (unfold, then fold, in the SAME
+// transaction) so codeFolding recomputes preparePlaceholder against the post-edit text. The identity
+// fix (making the name part of what invalidates the widget) has to be this active, since codeFolding
+// exposes no other hook to recompute a placeholder already on screen.
+function placeholderRefreshExtender(): Extension {
+  return EditorState.transactionExtender.of((tr) => {
+    if (!tr.docChanged) return null;
+    const startFolds = foldedRanges(tr.startState);
+    if (startFolds.size === 0) return null;
+    const effects: StateEffect<unknown>[] = [];
+    startFolds.between(0, tr.startState.doc.length, (from, to) => {
+      const before = blockName(tr.startState.doc.lineAt(from).text);
+      const mappedFrom = tr.changes.mapPos(from, 1);
+      const mappedTo = tr.changes.mapPos(to, -1);
+      const after = blockName(tr.state.doc.lineAt(mappedFrom).text);
+      if (before !== after) {
+        const span = { from: mappedFrom, to: mappedTo };
+        effects.push(unfoldEffect.of(span), foldEffect.of(span));
+      }
+    });
+    return effects.length ? { effects } : null;
+  });
+}
+
 // The folded-row wash plugin: a line decoration on each folded opener row, square and full-row so
 // folded spots read in a scan. Rebuilds on doc change (the container set moves), viewport change,
 // and any fold change (a fold adds a wash, an unfold removes it). The chevron lives in the gutter
@@ -334,6 +363,11 @@ class FoldMarker extends GutterMarker {
     readonly container: ContainerRange,
     readonly folded: boolean,
     readonly active: boolean,
+    // The resolved block name, computed once by the caller (lineMarker) from the opener line's
+    // current text. Carried as its own identity field, not re-derived in toDOM, so a directive
+    // renamed in place (same span, same fold state) is not mistaken for the same marker by eq
+    // and does not reuse cached DOM carrying the old name.
+    readonly name: string,
   ) {
     super();
   }
@@ -343,21 +377,21 @@ class FoldMarker extends GutterMarker {
       other.container.fromLine === this.container.fromLine &&
       other.container.toLine === this.container.toLine &&
       other.folded === this.folded &&
-      other.active === this.active
+      other.active === this.active &&
+      other.name === this.name
     );
   }
   toDOM(view: EditorView) {
     const btn = document.createElement('button');
     btn.type = 'button';
     const title = this.folded ? 'Unfold this section' : 'Fold this section';
-    const openerText = view.state.doc.line(this.container.fromLine + 1).text;
     btn.className =
       'cm-cairn-fold-btn' +
       (this.folded ? ' cm-cairn-fold-folded' : '') +
       (this.active ? ' cm-cairn-fold-active' : '');
     // aria-expanded is the sole state signal; the label names the block instead of repeating it.
     btn.setAttribute('aria-expanded', this.folded ? 'false' : 'true');
-    btn.setAttribute('aria-label', blockName(openerText));
+    btn.setAttribute('aria-label', this.name);
     btn.title = title + (this.folded ? UNFOLD_KEY_HINT : FOLD_KEY_HINT);
     btn.appendChild(chevronSvg());
     btn.addEventListener('mousedown', (e) => e.preventDefault());
@@ -382,7 +416,8 @@ function foldGutterColumn(): Extension {
       const span = foldCharRange(view.state, range);
       if (!span) return null;
       const folded = foldExists(view.state, span.from, span.to);
-      return new FoldMarker(range, folded, caretInside(view.state, range));
+      const name = blockName(view.state.doc.line(range.fromLine + 1).text);
+      return new FoldMarker(range, folded, caretInside(view.state, range), name);
     },
     lineMarkerChange(update) {
       return (
@@ -412,6 +447,7 @@ export function cairnFolding(): Extension {
     codeFolding({ preparePlaceholder, placeholderDOM }),
     flashField,
     safetyExtender(),
+    placeholderRefreshExtender(),
     foldPlugin(),
     foldGutterColumn(),
     foldKeymap,

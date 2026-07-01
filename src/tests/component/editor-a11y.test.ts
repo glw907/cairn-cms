@@ -60,6 +60,56 @@ describe('fold-control disclosure semantics', () => {
   });
 });
 
+describe('fold-control name stays in sync with an in-place directive rename', () => {
+  it('updates the gutter aria-label when the opener directive is renamed in place', async () => {
+    const doc = ':::note\nbody line one\nbody line two\n:::\n';
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const { container } = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
+        replace = fn;
+      },
+    });
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
+    const before = container.querySelector('.cm-cairn-fold-btn')!.getAttribute('aria-label');
+    expect(before).toBe('note section');
+    await expect.poll(() => typeof replace).toBe('function');
+    // Rename the opener in place: same span, same fold state, caret lands on the opener line.
+    const from = doc.indexOf('note');
+    replace!(from, from + 'note'.length, 'warning');
+    await expect
+      .poll(() => container.querySelector('.cm-cairn-fold-btn')?.getAttribute('aria-label'), COLD_START)
+      .toBe('warning section');
+  });
+});
+
+describe('folded pill name stays in sync with an in-place directive rename', () => {
+  it('updates the folded pill aria-label when the opener directive is renamed while folded', async () => {
+    const doc = ':::note\nbody line one\nbody line two\n:::\n';
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const { container } = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
+        replace = fn;
+      },
+    });
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
+    await userEvent.click(container.querySelector<HTMLButtonElement>('.cm-cairn-fold-btn')!);
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeTruthy();
+    const before = container.querySelector('.cm-cairn-fold-pill')!.getAttribute('aria-label') ?? '';
+    expect(before.startsWith('note section,')).toBe(true);
+    await expect.poll(() => typeof replace).toBe('function');
+    // Rename the opener while the block stays folded; the opener line is always visible.
+    const from = doc.indexOf('note');
+    replace!(from, from + 'note'.length, 'warning');
+    await expect
+      .poll(() => container.querySelector('.cm-cairn-fold-pill')?.getAttribute('aria-label'), COLD_START)
+      .toBe(before.replace('note section,', 'warning section,'));
+  });
+});
+
 describe('autocomplete ARIA regression guard', () => {
   it("link-completion inherits CodeMirror's combobox ARIA", async () => {
     const targets: LinkTarget[] = [

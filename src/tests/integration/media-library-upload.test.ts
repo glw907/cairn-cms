@@ -183,4 +183,77 @@ describe('mediaLibraryUpload (Task 2)', () => {
     expect(res.data?.error).toBe('csrf');
     expect(gh.calls.some((c) => c.method === 'PATCH' && c.url.endsWith('/git/refs/heads/main'))).toBe(false);
   });
+
+  it('threads the head read before the manifest into commit as expectedHead', async () => {
+    // media.json has no regenerate-from-files backstop, so the commit must be fail-closed on the
+    // head read BEFORE the manifest read, mirroring settingsSave/vocabularySave. Spy on a fresh
+    // backend so the guarded commit's 5th argument is directly observable.
+    const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
+    gh.install();
+    const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
+    const commitSpy = vi.spyOn(backend, 'commit');
+    const routes = createContentRoutes(runtime(), { backend });
+    const head = gh.headSha('main');
+
+    await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }));
+
+    expect(commitSpy).toHaveBeenCalledWith(
+      'main',
+      expect.any(Array),
+      expect.any(Object),
+      expect.any(String),
+      head,
+    );
+  });
+
+  it('returns fail(409) and commits nothing when the manifest head moves before the guarded commit (a concurrent uploader)', async () => {
+    const raceHash = shortHash(await hashBytes(PNG_2));
+    const raceRow: MediaEntry = {
+      hash: raceHash,
+      sha256: await hashBytes(PNG_2),
+      slug: 'racer',
+      displayName: 'racer',
+      originalFilename: 'racer.png',
+      alt: '',
+      ext: 'png',
+      contentType: 'image/png',
+      bytes: PNG_2.length,
+      width: null,
+      height: null,
+      createdAt: '2026-06-01T00:00:00.000Z',
+    };
+    const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
+    gh.install();
+    // Wrap the double's fetch: on the FIRST ref-heads GET (the action's own head read, mirroring the
+    // settingsSave conflict test's pattern), land a concurrent uploader's commit out of band, moving
+    // the head off the sha the action just read. The SECOND ref-heads GET is commitFiles' own
+    // expectedHead check inside the guarded commit, which then sees the moved head and conflicts.
+    const doubleFetch = globalThis.fetch as typeof fetch;
+    let refReads = 0;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input instanceof Request ? input.url : input);
+        const method = (init?.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+        if (method === 'GET' && /\/git\/ref\/heads\//.test(url)) {
+          refReads += 1;
+          // Resolve THIS read with the head as it stood when the request was made, then move the
+          // head, so the read after it (commitFiles' own expectedHead check) sees the new value.
+          const res = await doubleFetch(input, init);
+          if (refReads === 1) gh.commit('main', MEDIA_PATH, mediaManifest(raceRow));
+          return res;
+        }
+        return doubleFetch(input, init);
+      }),
+    );
+    const routes = createContentRoutes(runtime(), deps);
+
+    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
+
+    expect(res.status).toBe(409);
+    expect(res.data?.error).toMatch(/changed since you opened/i);
+    // The concurrent uploader's row survived untouched: this upload's row never landed.
+    const committed = parseMediaManifest(JSON.parse(gh.read('main', MEDIA_PATH)!));
+    expect(Object.keys(committed)).toEqual([raceHash]);
+  });
 });

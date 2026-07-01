@@ -40,9 +40,13 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
     file: File;
     /** Emit the captured record to the host on insert. */
     oncapture: (record: CaptureRecord) => void;
+    /** The submit button's label. Defaults to "Insert image" (the insert-popover and hero-field
+     *  register); the Library's standalone upload dialog overrides it to "Upload image" so the
+     *  action matches the dialog it appears in. */
+    submitLabel?: string;
   }
 
-  let { file, oncapture }: Props = $props();
+  let { file, oncapture, submitLabel = 'Insert image' }: Props = $props();
 
   // The proposed display name for this file, computed once. A real stem pre-fills the field and shows
   // the Suggested tag; a generic stem yields null, leaving the field empty, required, and untagged.
@@ -130,6 +134,6 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
   </fieldset>
 
   <div class="flex justify-end">
-    <button type="submit" class="btn btn-sm btn-primary">Insert image</button>
+    <button type="submit" class="btn btn-sm btn-primary">{submitLabel}</button>
   </div>
 </form>

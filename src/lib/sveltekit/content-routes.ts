@@ -2091,6 +2091,10 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
     const backend = resolveBackend(event);
 
+    // Read the head BEFORE the manifest, so this expectedHead is at-or-before the bytes the commit
+    // sends; media.json has no regenerate-from-files backstop, so a concurrent upload fails closed
+    // rather than last-writer-wins dropping a row.
+    const head = await backend.branchHead(backend.defaultBranch);
     const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
     if (manifest[result.record.hash]) return result; // Bytes and row already committed: nothing to do.
 
@@ -2101,6 +2105,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
         [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, result.record)) }],
         { name: editor.displayName, email: editor.email },
         `Upload media: ${result.record.slug}`,
+        head ?? undefined,
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {

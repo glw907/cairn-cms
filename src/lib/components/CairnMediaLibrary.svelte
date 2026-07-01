@@ -616,11 +616,18 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // handlers live on the window rather than one element. They stand down while the Replace dialog or
   // this capture dialog is already open, so a drop never fights with an in-progress upload.
   function libraryDropBusy(): boolean {
-    return replaceDialog?.open === true || uploadDialog?.open === true;
+    // Any open native dialog, not just Replace/Upload, so a drop while the delete, alt, bulk, or
+    // orphan dialog is open never stacks the capture dialog over it. Testing for the open attribute
+    // directly stays correct as dialogs are added, unlike enumerating them by name.
+    return document.querySelector('dialog[open]') !== null;
   }
   function onPageDragover(e: DragEvent) {
     if (libraryDropBusy()) return;
-    if (e.dataTransfer && firstImageFile(e.dataTransfer)) guardDropTarget(e);
+    // dataTransfer.files is empty during dragover (the HTML DnD spec's protected mode), so
+    // firstImageFile(...) never matches here; only dataTransfer.types is readable at this stage.
+    // Gate on the 'Files' type instead, so preventDefault actually runs and the window becomes a
+    // valid drop target (without it, drop never fires and the browser navigates to the raw file).
+    if (e.dataTransfer?.types.includes('Files')) guardDropTarget(e);
   }
   function onPageDrop(e: DragEvent) {
     if (libraryDropBusy()) return;
@@ -691,10 +698,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       return;
     }
 
-    // Success: navigate to the flash URL rather than invalidateAll, so the loader re-runs AND sets the
-    // uploaded flash (invalidateAll alone would refresh the grid but leave the flash unset).
+    // Success: navigate to the flash URL rather than plain invalidateAll, so the loader re-runs AND
+    // sets the uploaded flash (invalidateAll alone would refresh the grid but leave the flash unset).
+    // { invalidateAll: true } is still required alongside the URL: a second upload in the same
+    // session lands on the identical ?uploaded=1 URL, which goto() treats as a no-op navigation
+    // without it, so the loader never re-runs and the new asset never appears.
     closeLibraryUpload();
-    await goto('/admin/media?uploaded=1');
+    await goto('/admin/media?uploaded=1', { invalidateAll: true });
   }
 
   // --- the Push-alt flow: a one-step review dialog (the everyday register) over the selected asset ---
@@ -1455,6 +1465,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   accept="image/*"
   class="sr-only"
   aria-label="Upload an image"
+  tabindex="-1"
   onchange={onUploadFileChosen}
 />
 
@@ -3129,10 +3140,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   </div>
 </dialog>
 
-<!-- The Library upload dialog: a standard modal <dialog> (the Dialog recipe, light dismiss allowed,
-     since choosing or naming a new asset is not destructive). It hosts MediaCaptureCard on a chosen
-     or dropped file; a typed ingest/upload failure or an expired session shows the Replace flow's
-     retry-card treatment without losing the file. -->
+<!-- The Library upload dialog: a standard modal <dialog>. NO light dismiss (no method="dialog"
+     backdrop form, matching the Replace/Alt siblings): a backdrop click does nothing, and only
+     Escape or the Cancel button closes it. It hosts MediaCaptureCard on a chosen or dropped file; a
+     typed ingest/upload failure or an expired session shows the Replace flow's retry-card treatment
+     without losing the file. -->
 <!-- svelte-ignore a11y_no_redundant_roles -->
 <!-- The explicit role="dialog" is the native <dialog> default, but it is stated to mark the everyday
      register against the Replace dialog's role="alertdialog" sibling, matching the Push-alt dialog. -->
@@ -3179,7 +3191,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <span class="text-[0.8125rem]">Uploading...</span>
         </div>
       {:else}
-        <MediaCaptureCard file={uploadCaptureFile} oncapture={runLibraryUpload} />
+        <MediaCaptureCard file={uploadCaptureFile} oncapture={runLibraryUpload} submitLabel="Upload image" />
       {/if}
     </div>
   {/if}

@@ -14,7 +14,7 @@ import type {
 } from '../../lib/sveltekit/content-routes.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
-import { gotoCalls } from './app-navigation.js';
+import { gotoCalls, gotoOptsCalls } from './app-navigation.js';
 
 // The Replace upload step reuses the 2b ingest helpers. ESM namespaces are not configurable in the
 // browser pool, so the helpers cannot be spied directly: mock the module so ingestFile and sendUpload
@@ -825,6 +825,9 @@ describe('CairnMediaLibrary direct upload', () => {
     expect(vi.mocked(ingest.sendUpload).mock.calls[0][0]).toBe('?/mediaLibraryUpload');
     await expect.poll(() => gotoCalls.length).toBe(gotoCallsBefore + 1);
     expect(gotoCalls[gotoCalls.length - 1]).toBe('/admin/media?uploaded=1');
+    // invalidateAll: true rides alongside the flash URL, so a second upload landing on the
+    // identical ?uploaded=1 URL still forces the loader to re-run rather than a no-op navigation.
+    expect(gotoOptsCalls[gotoOptsCalls.length - 1]).toEqual({ invalidateAll: true });
   });
 
   it('accepts a dropped file on the page dropzone', async () => {
@@ -838,6 +841,19 @@ describe('CairnMediaLibrary direct upload', () => {
     await expect.poll(() => dialog.open).toBe(true);
     // MediaCaptureCard renders (its own form, not a status/failed treatment).
     expect(dialog.querySelector('form')).not.toBeNull();
+  });
+
+  it('prevents the browser default on a page dragover carrying a file, not just on drop', async () => {
+    // dataTransfer.files is empty during a real dragover (the HTML DnD spec's protected mode); only
+    // dataTransfer.types is readable at that stage. A script-constructed DragEvent's DataTransfer does
+    // not reproduce that restriction (items.add() populates .files too), so a plain Event with a
+    // stubbed dataTransfer models the real browser shape: types carries 'Files', files does not exist.
+    render(CairnMediaLibrary, { data: fixture({ assets: [], usage: {} }) } as never);
+    const event = new Event('dragover', { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'dataTransfer', { value: { types: ['Files'] }, configurable: true });
+    window.dispatchEvent(event);
+
+    expect(event.defaultPrevented).toBe(true);
   });
 });
 

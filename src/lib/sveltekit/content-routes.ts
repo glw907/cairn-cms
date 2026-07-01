@@ -252,10 +252,10 @@ export interface MediaLibraryData {
   /**
    * The success flash a redirected action carries: `deleted` from `?deleted=1`, `updated` from
    *  `?updated=1`, `replaced` from `?replaced=1`, `altPropagated` from `?altPropagated=1`,
-   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, null otherwise.
-   *  The component renders a polite success strip for each.
+   *  `bulkDeleted` from `?bulkDeleted=1`, `orphansPurged` from `?orphansPurged=1`, `uploaded` from
+   *  `?uploaded=1`, null otherwise. The component renders a polite success strip for each.
    */
-  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | null;
+  flash: 'deleted' | 'updated' | 'replaced' | 'altPropagated' | 'bulkDeleted' | 'orphansPurged' | 'uploaded' | null;
   /**
    * A redirected action's conflict error read from `?error=` (a commit-conflict bounce). Kept in
    *  its own slot rather than the degraded-load `error` above, so the two never collide.
@@ -969,6 +969,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     else if (event.url.searchParams.get('altPropagated') === '1') flash = 'altPropagated';
     else if (event.url.searchParams.get('bulkDeleted') === '1') flash = 'bulkDeleted';
     else if (event.url.searchParams.get('orphansPurged') === '1') flash = 'orphansPurged';
+    else if (event.url.searchParams.get('uploaded') === '1') flash = 'uploaded';
     const flashError = event.url.searchParams.get('error');
     const backend = resolveBackend(event);
 
@@ -1934,27 +1935,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /**
-   * Ingest an uploaded image: the JSON/fetch endpoint with the untrusted-input contract (spec piece
-   * 2, decisions 1 to 3). The body is the raw file bytes, read once; the human metadata travels in
-   * percent-encoded `X-Cairn-*` request headers. The server owns every committed field and trusts no
-   * client value: it sniffs the real type, screens the engine deny-list, re-hashes, re-derives the
-   * ext and slug, caps and sanitizes the human fields, and clamps the advisory dimensions. It stores
-   * put-first to R2 with content-addressed dedup (no second put for identical bytes, no
-   * compensating delete) and commits nothing to git.
-   *
-   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
-   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
-   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
-   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
-   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
-   * `media.uploaded` on success.
+   * Ingest an uploaded image: the shared store-and-derive body for the upload endpoint (spec piece
+   * 2, decisions 1 to 3) and, later, the Media Library's direct-upload action. The body is the raw
+   * file bytes, read once; the human metadata travels in percent-encoded `X-Cairn-*` request
+   * headers. The server owns every committed field and trusts no client value: it sniffs the real
+   * type, screens the engine deny-list, re-hashes, re-derives the ext and slug, caps and sanitizes
+   * the human fields, and clamps the advisory dimensions. It stores put-first to R2 with
+   * content-addressed dedup (no second put for identical bytes, no compensating delete) and commits
+   * nothing to git; a caller that wants a git-committed row derives one from the returned record.
    *
    * Session authority: behind `createAuthGuard` the guard is the production session gate. An
    * unauthenticated admin POST is redirected 303 by the guard before this action runs (an opaque,
    * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session-expired')`
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
-  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function ingestAndStore(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
     const editor = event.locals.editor ?? null;
@@ -2066,6 +2061,62 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     log.info('media.uploaded', { editor: editor.email, hash, bytes: bytes.length, contentType: sniffed, reused });
     return { reference, record, reused, mismatch };
+  }
+
+  /**
+   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
+   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
+   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
+   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
+   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
+   * `media.uploaded` on success. Delegates to `ingestAndStore`, the shared store-and-derive body.
+   */
+  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+    return ingestAndStore(event);
+  }
+
+  /**
+   * Upload straight into the Library: store the bytes and derive the record via `ingestAndStore`
+   *  (the editor upload's shared body), then commit the row to `main` in the same step, since a
+   *  Library-direct upload has no entry and no Save to ride. The client posts only the file; the
+   *  server derives and commits every field, trusting nothing client-posted (`ingestAndStore`'s
+   *  contract). A hash already present in the manifest is an idempotent no-op: the asset (and its
+   *  row) already exist, so the upload commits nothing and still returns the success envelope.
+   *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
+   *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
+   */
+  async function mediaLibraryUpload(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+    const result = await ingestAndStore(event);
+    if (!('record' in result)) return result;
+    const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
+    const backend = resolveBackend(event);
+
+    // Read the head BEFORE the manifest, so this expectedHead is at-or-before the bytes the commit
+    // sends; media.json has no regenerate-from-files backstop, so a concurrent upload fails closed
+    // rather than last-writer-wins dropping a row.
+    const head = await backend.branchHead(backend.defaultBranch);
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
+    if (manifest[result.record.hash]) return result; // Bytes and row already committed: nothing to do.
+
+    const commitFields = { concept: 'media', id: result.record.hash, editor: editor.email };
+    try {
+      await backend.commit(
+        backend.defaultBranch,
+        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, result.record)) }],
+        { name: editor.displayName, email: editor.email },
+        `Upload media: ${result.record.slug}`,
+        head ?? undefined,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      if (!isConflict(err)) {
+        log.error('commit.failed', { ...commitFields, error: String(err) });
+        throw err;
+      }
+      log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
+      return fail(409, { error: 'The media manifest changed since you opened it. Reload and try again.' });
+    }
+    return result;
   }
 
   /** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */
@@ -3306,7 +3357,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, vocabularyLoad, vocabularySave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
+  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, vocabularyLoad, vocabularySave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaLibraryUpload, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
 }
 
 /**

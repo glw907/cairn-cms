@@ -34,7 +34,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 <script lang="ts">
   import { flushSync, getContext, tick } from 'svelte';
   import { deserialize } from '$app/forms';
-  import { invalidateAll } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
   import type { MediaLibraryEntry } from '../media/library-entry.js';
   import type {
     MediaLibraryData,
@@ -62,11 +62,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     sendUpload,
     ingestFailureKind,
     failureCard,
+    firstImageFile,
+    guardDropTarget,
     type IngestFailureCard,
   } from './client-ingest.js';
   import { uploadOutcome, type UploadEnvelope } from './media-upload-outcome.js';
   import CsrfField from './CsrfField.svelte';
   import CairnLogo from './CairnLogo.svelte';
+  import MediaCaptureCard from './MediaCaptureCard.svelte';
   import {
     SearchIcon,
     UploadIcon,
@@ -111,6 +114,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     altPropagated: 'Alt text applied.',
     bulkDeleted: 'Assets deleted.',
     orphansPurged: 'Orphans purged.',
+    uploaded: 'Asset uploaded.',
   } as const;
   const flashMessage = $derived(data.flash ? FLASH_MESSAGE[data.flash] : '');
 
@@ -264,7 +268,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // native Escape-to-clear: the selection clear fires only when focus is NOT in the search input.
   function onWindowKeydown(e: KeyboardEvent) {
     if (e.key !== 'Escape') return;
-    if (deleteDialog?.open || replaceDialog?.open || altDialog?.open || bulkDialog?.open || orphanDialog?.open) return;
+    if (deleteDialog?.open || replaceDialog?.open || altDialog?.open || bulkDialog?.open || orphanDialog?.open || uploadDialog?.open) return;
     if (selected && panelEl?.contains(document.activeElement)) {
       e.preventDefault();
       closePanel();
@@ -547,6 +551,161 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     const match = replaceFailure?.error.match(/cairn\/[^\s.]+/);
     return match ? match[0] : null;
   });
+
+  // --- the Library upload flow: choose or drop a file, capture its name and alt, then upload and
+  // commit it as a new asset. Reuses the Replace flow's ingest/upload transport and MediaCaptureCard
+  // verbatim, overriding only the target action, since the Library has no entry to upload into. ---
+  const LIBRARY_UPLOAD_URL = '?/mediaLibraryUpload';
+  const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please sign in again to upload the image.';
+
+  /** The record MediaCaptureCard emits on submit; matches its own local (unexported) shape. */
+  interface CaptureRecord {
+    file: File;
+    displayName: string;
+    alt: string;
+    decorative: boolean;
+  }
+
+  let uploadFileInput = $state<HTMLInputElement | null>(null);
+  let uploadDialog = $state<HTMLDialogElement | null>(null);
+  // The button that opened the dialog (a header/empty-state Upload click, or null for a page drop),
+  // so focus restores to it on close; a null origin (the drop case) falls back to the active element.
+  let uploadOrigin: HTMLElement | null = null;
+  // The dialog's own Cancel control, the initial focus on open (the Replace/Alt dialog recipe).
+  let uploadCancelButton = $state<HTMLButtonElement | null>(null);
+  let uploadCaptureFile = $state<File | null>(null);
+  type LibraryUploadStatus =
+    | { kind: 'idle' }
+    | { kind: 'working' }
+    | { kind: 'failed'; message: string; retry: () => void };
+  let uploadStatus = $state<LibraryUploadStatus>({ kind: 'idle' });
+
+  /** Open the capture dialog on a chosen or dropped file. */
+  function openLibraryUpload(file: File, origin: HTMLElement | null) {
+    uploadOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    uploadCaptureFile = file;
+    uploadStatus = { kind: 'idle' };
+    void tick().then(() => {
+      uploadDialog?.showModal();
+      uploadCancelButton?.focus();
+    });
+  }
+  function closeLibraryUpload() {
+    uploadDialog?.close();
+    uploadCaptureFile = null;
+    uploadStatus = { kind: 'idle' };
+    uploadOrigin?.focus();
+    uploadOrigin = null;
+  }
+  /** Either Upload button: pin the clicked button as the focus-restore origin, then open the native
+   *  file chooser through the shared hidden input. A programmatic .click() does not focus its target,
+   *  so the origin is captured explicitly here, exactly as openReplaceDialog does. */
+  function onUploadButtonClick(e: MouseEvent) {
+    uploadOrigin = e.currentTarget as HTMLElement;
+    uploadFileInput?.click();
+  }
+  function onUploadFileChosen(e: Event) {
+    const input = e.currentTarget as HTMLInputElement;
+    const file = input.files?.[0];
+    // Reset so choosing the same file again still fires a change event.
+    input.value = '';
+    if (file) openLibraryUpload(file, uploadOrigin);
+  }
+
+  // The page-wide drop target: the empty-state copy promises a drop anywhere on the page, so the
+  // handlers live on the window rather than one element. They stand down while the Replace dialog or
+  // this capture dialog is already open, so a drop never fights with an in-progress upload.
+  function libraryDropBusy(): boolean {
+    // Any open native dialog, not just Replace/Upload, so a drop while the delete, alt, bulk, or
+    // orphan dialog is open never stacks the capture dialog over it. Testing for the open attribute
+    // directly stays correct as dialogs are added, unlike enumerating them by name.
+    return document.querySelector('dialog[open]') !== null;
+  }
+  function onPageDragover(e: DragEvent) {
+    if (libraryDropBusy()) return;
+    // dataTransfer.files is empty during dragover (the HTML DnD spec's protected mode), so
+    // firstImageFile(...) never matches here; only dataTransfer.types is readable at this stage.
+    // Gate on the 'Files' type instead, so preventDefault actually runs and the window becomes a
+    // valid drop target (without it, drop never fires and the browser navigates to the raw file).
+    if (e.dataTransfer?.types.includes('Files')) guardDropTarget(e);
+  }
+  function onPageDrop(e: DragEvent) {
+    if (libraryDropBusy()) return;
+    const file = e.dataTransfer ? firstImageFile(e.dataTransfer) : null;
+    if (!file) return;
+    guardDropTarget(e);
+    openLibraryUpload(file, null);
+  }
+
+  // The capture-to-commit loop: ingest the bytes, build the upload request (overriding the target to
+  // the media-scoped ?/mediaLibraryUpload action, which stores and commits in one step), send it, and
+  // route the envelope. A typed failure or an expired session shows a retry card in the dialog without
+  // losing the file; success closes the dialog and navigates to the flash-carrying URL so the loader
+  // re-runs and the new asset appears (invalidateAll alone would not set the flash).
+  async function runLibraryUpload(record: CaptureRecord) {
+    uploadStatus = { kind: 'working' };
+    const fail = (message: string) => {
+      uploadStatus = { kind: 'failed', message, retry: () => void runLibraryUpload(record) };
+    };
+
+    let ingested: Awaited<ReturnType<typeof ingestFile>>;
+    try {
+      ingested = await ingestFile(record.file);
+    } catch (err) {
+      fail(failureCard(ingestFailureKind(err)).message);
+      return;
+    }
+
+    const built = buildUploadRequest({
+      conceptId: '',
+      id: '',
+      bytes: ingested.blob,
+      contentType: ingested.contentType,
+      csrf: csrf?.() ?? '',
+      filename: record.file.name,
+      alt: record.alt,
+      displayName: record.displayName,
+      width: ingested.width,
+      height: ingested.height,
+    });
+
+    let res: Response;
+    try {
+      res = await sendUpload(LIBRARY_UPLOAD_URL, built.init);
+    } catch (err) {
+      fail(failureCard(ingestFailureKind(err)).message);
+      return;
+    }
+    // The guard's expired-session 303 under redirect:'manual' surfaces as an opaque, status-0 response.
+    if (res.type === 'opaqueredirect' || res.status === 0) {
+      fail(SESSION_EXPIRED_MESSAGE);
+      return;
+    }
+
+    let outcome: ReturnType<typeof uploadOutcome>;
+    try {
+      outcome = uploadOutcome(deserialize(await res.text()) as UploadEnvelope);
+    } catch {
+      fail(GENERIC_UPLOAD_MESSAGE);
+      return;
+    }
+    if (outcome.kind === 'session-expired') {
+      fail(SESSION_EXPIRED_MESSAGE);
+      return;
+    }
+    if (outcome.kind === 'failed') {
+      fail(outcome.failure === 'generic' ? GENERIC_UPLOAD_MESSAGE : failureCard(outcome.failure).message);
+      return;
+    }
+
+    // Success: navigate to the flash URL rather than plain invalidateAll, so the loader re-runs AND
+    // sets the uploaded flash (invalidateAll alone would refresh the grid but leave the flash unset).
+    // { invalidateAll: true } is still required alongside the URL: a second upload in the same
+    // session lands on the identical ?uploaded=1 URL, which goto() treats as a no-op navigation
+    // without it, so the loader never re-runs and the new asset never appears.
+    closeLibraryUpload();
+    await goto('/admin/media?uploaded=1', { invalidateAll: true });
+  }
 
   // --- the Push-alt flow: a one-step review dialog (the everyday register) over the selected asset ---
   // Alt propagation pushes the asset's default alt into published placements that lack it, with one
@@ -1282,7 +1441,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
 </script>
 
-<svelte:window onkeydown={onWindowKeydown} />
+<svelte:window onkeydown={onWindowKeydown} ondragover={onPageDragover} ondrop={onPageDrop} />
 
 <!-- The office header recipe: the Media eyebrow, the display-face heading, a live count line, and
      the Upload primary action top-right. -->
@@ -1294,13 +1453,21 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
   </div>
-  <!-- TODO(Task 7+): wire a real Library upload (no media-only upload action exists in 3c; the 2b
-       upload commits to an entry's branch at save). This is a working, focusable button shell, never
-       a faked upload. -->
-  <button type="button" class="btn btn-primary btn-sm shrink-0">
+  <button type="button" class="btn btn-primary btn-sm shrink-0" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
   </button>
 </header>
+
+<!-- The hidden file input behind both Upload buttons and their shared capture dialog below. -->
+<input
+  bind:this={uploadFileInput}
+  type="file"
+  accept="image/*"
+  class="sr-only"
+  aria-label="Upload an image"
+  tabindex="-1"
+  onchange={onUploadFileChosen}
+/>
 
 <!-- The action feedback strip (the office flash grammar). A persistent polite live region carries
      the success message, so an inserted-fresh element is announced reliably; the visible alert below
@@ -1328,7 +1495,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </p>
     </div>
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-primary btn-sm">
+      <button type="button" class="btn btn-primary btn-sm" onclick={onUploadButtonClick}>
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
       <span class="text-xs">or drop a file anywhere on this page</span>
@@ -2971,4 +3138,61 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
     {/if}
   </div>
+</dialog>
+
+<!-- The Library upload dialog: a standard modal <dialog>. NO light dismiss (no method="dialog"
+     backdrop form, matching the Replace/Alt siblings): a backdrop click does nothing, and only
+     Escape or the Cancel button closes it. It hosts MediaCaptureCard on a chosen or dropped file; a
+     typed ingest/upload failure or an expired session shows the Replace flow's retry-card treatment
+     without losing the file. -->
+<!-- svelte-ignore a11y_no_redundant_roles -->
+<!-- The explicit role="dialog" is the native <dialog> default, but it is stated to mark the everyday
+     register against the Replace dialog's role="alertdialog" sibling, matching the Push-alt dialog. -->
+<dialog
+  bind:this={uploadDialog}
+  data-testid="cairn-library-upload-dialog"
+  class="modal"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="cairn-ml-upload-title"
+  aria-describedby="cairn-ml-upload-sub"
+  oncancel={closeLibraryUpload}
+>
+  {#if uploadCaptureFile}
+    <div class="modal-box max-w-md">
+      <div class="mb-3 flex items-start gap-3">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-primary/10 text-primary" aria-hidden="true">
+          <UploadIcon class="h-5 w-5" />
+        </span>
+        <div class="flex-1">
+          <h2 id="cairn-ml-upload-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+            Upload an image
+          </h2>
+          <p id="cairn-ml-upload-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
+            Name it and, if you like, describe it. You can add the description later.
+          </p>
+        </div>
+        <button bind:this={uploadCancelButton} type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeLibraryUpload}>
+          <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
+        </button>
+      </div>
+
+      {#if uploadStatus.kind === 'failed'}
+        <!-- A typed ingest/upload failure or an expired session: an assertive alert with a Retry,
+             matching the Replace flow's failed-card treatment. -->
+        <div role="alert" class="flex flex-col items-center gap-2.5 rounded-box border border-[var(--cairn-error-border)] bg-[var(--cairn-error-tint)] p-4 text-center">
+          <TriangleAlertIcon class="h-6 w-6 text-[var(--cairn-error-ink)]" aria-hidden="true" />
+          <span class="text-[0.8125rem] text-[var(--cairn-error-ink)]">{uploadStatus.message}</span>
+          <button type="button" class="btn btn-sm" onclick={uploadStatus.retry}>Try another file</button>
+        </div>
+      {:else if uploadStatus.kind === 'working'}
+        <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
+          <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
+          <span class="text-[0.8125rem]">Uploading...</span>
+        </div>
+      {:else}
+        <MediaCaptureCard file={uploadCaptureFile} oncapture={runLibraryUpload} submitLabel="Upload image" />
+      {/if}
+    </div>
+  {/if}
 </dialog>

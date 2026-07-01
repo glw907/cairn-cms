@@ -18,3 +18,16 @@ export const invalidateAllCalls = { count: 0 };
 export async function invalidateAll(): Promise<void> {
   invalidateAllCalls.count += 1;
 }
+
+/** Every URL goto() was called with, oldest first, so a test can assert a redirect-and-refresh flow. */
+export const gotoCalls: string[] = [];
+
+/** Every options object goto() was called with, index-aligned with gotoCalls, so a test can assert a
+ *  caller passed { invalidateAll: true } to force the loader to re-run on an identical URL. */
+export const gotoOptsCalls: unknown[] = [];
+
+/** Records the call. The real implementation navigates client-side and re-runs the target's load. */
+export async function goto(url: string, opts?: unknown): Promise<void> {
+  gotoCalls.push(url);
+  gotoOptsCalls.push(opts);
+}

@@ -2,9 +2,9 @@
 
 The Media Library is its own screen in the admin, beside Posts and Pages under Content. Open it and
 you see every image your site has, whether it is live or still riding along with an unpublished
-edit. The screen does one job: it manages your media. You find an image, check where it is used,
-fix its name and its description, and delete one you no longer need. This page walks through it from
-an editor's seat.
+edit. The screen does one job: it manages your media. You upload a new image, find one you already
+have, check where it is used, fix its name and its description, and delete one you no longer need.
+This page walks through it from an editor's seat.
 
 ## Finding an image
 
@@ -20,6 +20,22 @@ Beside search is a grid-or-list toggle. The grid is best for spotting an image b
 the list for scanning by name and date, or when you want to sort. The list shows each image as a row
 with its name, when it was added, its alt-text status, and where it is used, and you can sort by the
 Added column. Your pick of grid or list is remembered for next time.
+
+## Uploading an image
+
+You can add an image to the Library directly, without opening a post first. Two Upload buttons do
+it, one in the header and one in the empty state you see before any media exists. You can also drop
+a file anywhere on the page. Each path takes one image at a time.
+
+Choosing or dropping a file opens a card that asks you to name the image. The name fills in from the
+filename, so usually you just confirm it. You can write the alt text here as well, or mark the image
+decorative, but neither is required. An image uploaded without alt lands with its description still
+owed, and you can add it later from the details panel. Submit the card, and cairn stores the file
+and commits its record, so the new image shows up in the grid.
+
+A freshly uploaded image is not placed anywhere yet, so its where-used reads "no references found"
+until you use it in a page. That is a normal resting state rather than a problem. Uploading the same
+file twice does no harm, because cairn recognizes the bytes and keeps the one copy it already has.
 
 ## Where an image is used
 
@@ -160,6 +176,6 @@ once at upgrade. The unpublished-edit half works without it.
 
 ## Where this fits
 
-The Library manages images that are already in your site. Adding one happens in the editor, covered
-by [Add an image](./add-an-image.md). Saving and publishing an entry, image and all, is in
-[Publish and discard](./publish-and-discard.md).
+The Library manages the images in your site, and now adds them too. You can also add an image while
+you write, by inserting it into a post, covered by [Add an image](./add-an-image.md). Saving and
+publishing an entry, image and all, is in [Publish and discard](./publish-and-discard.md).

@@ -66,12 +66,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Next
 
-- **Wire the Media Library's direct upload.** The Library screen's two `Upload` buttons (header and
-  empty state) are unwired shells, but the `?/mediaUpload` action they need already exists and the
-  replace flow uses it. Connect the buttons (and the empty-state drop target) to `?/mediaUpload` so an
-  author can add an image from the Library, not only by inserting one while editing. A small media
-  finish-up; surfaced by the 2026-06-28 principle-adherence audit, which left it untouched because that
-  pass was remove-only. Drop the stale `TODO(Task 7+)` once wired.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced
@@ -133,14 +127,13 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   reads as if it might schedule publishing.
 - **Starter content and onboarding progress.** Concept-differentiated seed content for the strongest
   first-run activation, and a per-editor getting-started progress record.
-- **Remaining media work.** Media Pass D and the Media Library direct upload, plus the owed live
-  bulk-delete admin smoke. Passes 1-3c and A-C shipped across `0.57.0`-`0.59.0`.
-- **Small DX debt.** Fix the flaky spellcheck `e2e` so it stops blocking releases (a settle-aware
-  assertion, not a single `toHaveCount`), give the component picker dialog a `sm:`-breakpoint bottom-sheet
-  so it is not an unconditional `85vh` on a short viewport, and resolve the worktree dual vite/kit install
-  collision (the showcase typecheck throws ~12 dependency-`.d.ts` errors under a symlinked-`node_modules`
-  worktree, so the local consumer-build proof currently leans on the e2e build; CI's real checkout is
-  clean). The first two are in `docs/internal/docs-friction-log.md`.
+- **Remaining media work.** Media Pass D, plus the owed live bulk-delete admin smoke. Passes 1-3c
+  and A-C shipped across `0.57.0`-`0.59.0`; the Library direct upload landed after.
+- **Small DX debt.** Give the component picker dialog a `sm:`-breakpoint bottom-sheet so it is not an
+  unconditional `85vh` on a short viewport, and resolve the worktree dual vite/kit install collision
+  (the showcase typecheck throws ~12 dependency-`.d.ts` errors under a symlinked-`node_modules` worktree,
+  so the local consumer-build proof currently leans on the e2e build; CI's real checkout is clean). The
+  bottom-sheet item is in `docs/internal/docs-friction-log.md`.
 - **Engine-provided `inFeeds`/`routable` feed and sitemap views.** Phase 3b makes `routing.inFeeds`,
   `routable`, and `dated` concept-declared but keeps `inFeeds` a consumer-read hint: no engine code filters
   on it, so a site's feed and sitemap routes still hand-pick their concepts. Lands in the render/delivery

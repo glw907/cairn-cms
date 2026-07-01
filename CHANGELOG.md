@@ -29,6 +29,14 @@ accessible name, "Markdown source", closing a WCAG 4.1.2 gap the surface had fro
 The public API is unchanged and every addition is on by default with no new prop, so an upgrading
 site needs no action.
 
+The Media Library gains direct image upload. Its two Upload buttons and a drop target that accepts a
+file anywhere on the page now open the same name-and-describe capture the editor's insert flow uses,
+then store the file and commit its record to `main` in one step, so a new image appears in the
+Library without opening a post first. Upload is single-file for now, and a re-upload of identical
+bytes is a no-op. A freshly uploaded image is unreferenced until you place it, so its where-used
+reads "No references found" until then. The change is admin-side and additive, with no public API,
+delivery, or manifest-schema change, so an upgrading site needs no action.
+
 ## 0.78.1
 
 <!-- release-size: patch -->

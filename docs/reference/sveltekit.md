@@ -276,6 +276,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
+  mediaLibraryUpload: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
   mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   mediaBulkDelete: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
   mediaOrphanScan: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>;
@@ -299,6 +300,10 @@ actions back a concept's list view, and `editLoad` with the `save`, `publish`, `
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
 (the `media:` reference and the server-owned record), and commits nothing until the entry is saved.
+`mediaLibraryUpload` is its Library-direct sibling: it shares that store-and-derive body, then commits
+the derived `media.json` row to the default branch in the same step, so an author can add an asset from
+the Media Library without an entry to ride. Both derive every committed field server-side and trust no
+client-posted record; a re-upload of identical bytes is an idempotent no-op.
 `mediaLibraryLoad` backs the admin Media Library view: it unions `media.json` from the default
 branch with every open `cairn/*` branch (so a not-yet-published asset shows, with the default
 branch winning a same-hash tie), projects each row through the shared `mediaLibraryEntry` helper,
@@ -423,9 +428,9 @@ export const actions = { create: routes.createAction, delete: routes.listDeleteA
 
 ### Writing an admin fetch action
 
-`uploadAction` is the one admin action a client drives with `fetch` rather than a form submit, and its
-transport has two SvelteKit constraints worth knowing before you write another fetch-style action or a
-client that calls this one. A SvelteKit form action rejects any POST whose content type is not
+`uploadAction` and its Library-direct sibling `mediaLibraryUpload` are the admin actions a client
+drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints worth
+knowing before you write another fetch-style action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
 clears before its body-cloning form-field check, since reading the body twice would consume the stream.

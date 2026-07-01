@@ -50,6 +50,12 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   serves both diagnostic kinds, so it was left out of this pass's scope. LOW. The a11y hardening pass's
   1.4.13 audit (Task 6) re-checked the popover end to end and confirmed this is still the only rough edge
   in its message rendering; still open, still LOW.
+- **editor** (the Library upload capture card says "Insert image"): the direct-upload flow reuses
+  `MediaCaptureCard` verbatim, and its submit button is labeled "Insert image", the wording the editor
+  insert popover needs. In the Library upload dialog there is no post to insert into: the author is
+  adding the image to the library. The shared label reads slightly off in the new host. Candidate: let
+  `MediaCaptureCard` take an optional submit-label prop (default "Insert image", the Library passes
+  "Add to library"), or confirm the shared wording is acceptable. LOW.
 - **editor** (the diagnostics-summary announcer has no visual counterpart): the debounced live region
   ("2 spelling suggestions, 1 style issue") speaks the count to a screen reader, but a sighted mouse user
   has no on-screen equivalent, such as a small badge, and must still scan the page for underlines. Left
@@ -72,11 +78,14 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   advisory Vale Google package through the on-save hook, with no blocking floor. Candidate: state plainly
   that the internal docs are Vale-advisory only, or extend a prose gate over `docs/internal/` if a
   blocking floor is wanted. LOW.
-- **developer** (the spellcheck e2e flakes and blocks releases): `examples/showcase/e2e/spellcheck.spec.ts`
-  asserts `toHaveCount(2)` on the underline decorations and intermittently reads `0`, failing the whole
-  `e2e` CI job. The cause is timing (the CodeMirror lint decorations have not settled by the assertion),
-  not a regression. Candidate: wait for the lint to settle (`toPass` or poll the decoration count, or
-  await the spellcheck settle-cue the editor emits) rather than asserting once. MEDIUM, release-gate.
+- **maintainer** (a worktree's `dist/` goes stale after the first package): a feature worktree runs
+  `npm run package` once at setup to get `dist/`, but every later source edit leaves that `dist/` stale.
+  The showcase consumes the library through `file:../..` (its `dist/`), so an e2e or consumer-build run
+  against the stale `dist/` silently proves OLD code until you re-package. This pass had to re-`npm run
+  package` before the showcase e2e so it saw the new upload UI. The `cairn-worktree-needs-dist-build`
+  memory notes the build-once need; the goes-stale-after-edits half is the sharper trap. Candidate: a
+  `pretest:e2e` (or a `package` step folded into the showcase e2e command) that repackages `dist/` so a
+  consumer run can never read a stale build. LOW.
 - **developer** (the `delivery-*` cold-import spawn tests flake under full-suite load): the tests that
   spawn a fresh Node process to prove a `/delivery/data` import does not pull `@sveltejs/kit` or Svelte
   into the graph (`delivery-data-dist-spawn.test.ts`) can time out when the full suite runs them under

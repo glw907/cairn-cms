@@ -32,16 +32,19 @@ OK, `check:docs` OK. code-simplifier and daisyui-a11y-reviewer both folded in; t
 finding (a focus-loss-under-background-lint-effect hole) is fixed and regression-guarded by a headless
 `showTooltip`-facet-stability test.
 
-**Pending Geoff decision:** merge `cm-suggestion-popover` to `main` and decide the batched release since
-`0.78.1` (CHANGELOG is finalized under `## Unreleased`, sized patch, non-breaking, no consumer action).
-Hold-and-batch remains the default.
+**Decided (2026-06-30):** `cm-suggestion-popover` **merged to `main`** as merge commit `6d26f3e`
+(`--no-ff`, matching the repo's feature-branch convention); `package.json` untouched at `0.78.1`. The
+release is **held and batched**: no consumer is blocked (the popover is admin-internal, no public-API or
+behavior change), so it accumulates with `starter-template-1` and future consumer-facing work into a
+later single release. `main` is not yet pushed to `origin` (push-only-when-asked); local `main` is ahead
+by the merge.
 
 **Carried follow-ups (churn these, do not accumulate):**
-- **CM-upgrade-watch schedule routine DEFERRED to merge.** Create the monthly (`0 8 1 * *`, Default env,
-  Sonnet, ping-on-failure) cloud routine that bumps `@codemirror/*` and runs `check` + `test` +
-  `check:cm-internals`, WHEN the branch lands on `origin/main` (the routine needs `check:cm-internals` on
-  the default branch). The committed public-API tripwire test (`src/tests/unit/codemirror-public-api.test.ts`)
-  is the in-repo guard meanwhile.
+- **CM-upgrade-watch schedule routine DEFERRED to push.** Merged to `main` locally, but the routine needs
+  `check:cm-internals` on `origin/main`, so it stays deferred until `main` is pushed. Then create the
+  monthly (`0 8 1 * *`, Default env, Sonnet, ping-on-failure) cloud routine that bumps `@codemirror/*` and
+  runs `check` + `test` + `check:cm-internals`. The committed public-API tripwire test
+  (`src/tests/unit/codemirror-public-api.test.ts`) is the in-repo guard meanwhile.
 - **Live admin smoke: N/A this pass** (no `/admin` auth or Worker path changed; the popover is covered by
   real-browser component tests).
 - **Backtick-in-message polish** (friction log, editor perspective): the diagnostic message renders literal

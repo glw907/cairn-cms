@@ -134,3 +134,49 @@ published arms via the `vale-hook`), the `prose-voice-reviewer` subagent, the `s
   retired bracket form; leaving it would keep misdirecting developers and keep polluting the shipped sheet.
 - **Placement:** the canonical seam is in `admin-design-system.md` (per the spec) with a published on-ramp in
   the guide, so both the maintainer and the external developer reach it.
+
+---
+
+## Post-mortem (2026-06-30)
+
+**The docs phase is complete, and with it the whole admin idiomatic re-expression initiative.** Geoff opted
+into a workflow; it ran two sequential draft agents plus a parallel review (prose register + doc-vs-code
+accuracy), and the main loop folded the prose findings and wired the watcher.
+
+**What shipped (commit, executor):**
+- **Task 1** (`b3c91ab`, workflow `cairn-implementer`): rewrote `docs/internal/admin-design-system.md`. It
+  corrected the three stale muted/subtle bracket references to the named `text-muted` / `text-subtle` role
+  utilities (the doc had prescribed the retired form the sweep removed, which also polluted the shipped
+  sheet), verified by grep that the still-current admin brackets (`font-[family-name:var(--font-display)]`,
+  the tracking brackets, the AA-ink brackets) are unchanged, and added three sections: **the developer-facing
+  vocabulary (the versioned seam)** with the "cairn's frame, not your API" split, **the starter template's
+  design** (the showcase's own theme, its `@theme` tokens and generated utilities, the owned Tier 2, the
+  re-skin recipe), and **the DaisyUI/Tailwind upgrade-rehearsal runbook**.
+- **Task 2** (`c2755a0`, workflow `cairn-implementer`): added a short "The admin design vocabulary" section
+  to the published guide `docs/guides/add-a-custom-admin-screen.md`, mirroring Task 1's vocabulary and
+  linking to the canonical reference. Vale 0 errors.
+- **Prose polish** (`90d3c90`, main loop): folded the four `prose-voice-reviewer` findings (dropped a
+  decorative "X, never Y" frame and a mirrored antithetical summary in the runbook, varied a chained "so"
+  cadence, and recast the versioned-contract line off its setup-colon/negation in the guide).
+- **Task 3** (main loop, `schedule` skill): created the scheduled watcher routine
+  **`trig_01WkMgesdS1JAJuvc1hg1obH`** ("cairn: DaisyUI/Tailwind major watcher"), cron `0 17 * * 1` (Mondays
+  09:00 America/Anchorage), first run 2026-07-06. It checks `npm view daisyui version` /
+  `npm view tailwindcss version` and pings only when a new major (DaisyUI ≥ 6 or Tailwind ≥ 5) publishes,
+  pointing at the runbook. Read-only, ping-when-tripped, not a canary.
+
+**The accuracy review was clean** — every token, utility, and recipe the docs now name exists in the code as
+described. That check is the standing guard against the stale-doc drift that made this pass necessary.
+
+**Gate:** `check:docs` OK (96 files), `check:reference` unaffected (no export change), Vale 0 errors on the
+published guide (the internal design-system doc is Vale-exempt but follows the authoring charter). No em
+dash introduced. The admin CSS build exits 0 with the one concrete `text-[var(--color-muted)]` do-not-use
+example in backticks (a valid utility, so no build break).
+
+**Held unpublished** (docs and tooling only; no package, API, or behavior change; no `CHANGELOG` entry).
+
+**The initiative is complete.** Admin sweep (Phases 0–6, shipped `0.78.0`/`0.78.1`) + the starter-template
+track (Phases 1–2, held) + this docs phase (held). The residual custom surface across the admin and the
+template is the documented Tier-2 floor, guarded by `check:custom-surface` (both trees at budget 0),
+`check:public-tokens`, and the `admin-css-build` invariants; the developer-facing vocabulary is published as
+a versioned seam; and the scheduled watcher protects the upgrade path. **Next is Geoff's:** merge
+`starter-template-1` to `main`, and decide the batched release (the whole held body since `0.78.1`).

@@ -36,8 +36,9 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
   extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
   contract a developer builds on.
-- [ ] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression sweep is done, so the
-  surface a developer copies is native, not bespoke.
+- [x] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression initiative is done
+  (the admin sweep, the starter-template fold, and the docs phase), so the surface a developer copies is
+  native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.
 - [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
   showcase. (Weigh whether this gates 1.0 or rides the first 1.x.)
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
@@ -54,22 +55,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`). The remaining work is the site cutovers:
   mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
   the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
-- **The starter-template track, then the docs phase** (the admin re-expression sweep is done). The admin
-  sweep (Phases 0–6) re-expressed every admin component in native DaisyUI 5.6 / Tailwind 4: the
-  `check:custom-surface` gate and the frozen `text-muted` / `text-subtle` role vocabulary (Phase 0) plus the
-  vocabulary-screen pilot (Phase 1) shipped in `0.78.0`, and Phases 2–6 retired the admin's bespoke
-  muted/subtle surface to its terminal floor (`retiredTokenBudget` 0), published as `0.78.1`. The
-  starter-template track is now done through the fold: **Phase 1 (template foundation)** (the showcase
-  Tier-1/2/3 ledger, the walled Tier 2, the per-tree `check:custom-surface` seeded at 20, the zero-pixel
-  baseline) and **Phase 2 (template chrome)** (the design-scale tokens moved into Tailwind 4 `@theme`, the
-  chrome and route markup folded onto the generated named utilities, the `--cairn-rule` dead token fixed,
-  the showcase `retiredTokenBudget` ratcheted to its terminal floor 0) are both complete, held on
-  `starter-template-1`. **What remains is the docs phase** (the final phase of the initiative): rewrite
-  `admin-design-system.md` to publish the role vocabulary (the theme tokens, the `text-muted`/`text-subtle`
-  utilities, the recipes) as the versioned seam beside `CairnAdminShell`/`adminNav`, document the template's
-  owned design and idiomatic chrome the same way, add the upgrade-rehearsal runbook, and wire the scheduled
-  DaisyUI/Tailwind-major watcher. Spec:
-  `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
 
 ## Next
 

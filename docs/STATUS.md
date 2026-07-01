@@ -11,7 +11,49 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): starter-template track Phases 1+2 COMPLETE on a worktree (held, unmerged); NEXT = the docs phase (the final phase of the initiative)
+## Immediate next action (2026-06-30, LATEST): the admin idiomatic re-expression initiative is COMPLETE (all phases); NEXT is Geoff's — merge `starter-template-1` and decide the batched release
+
+**The admin idiomatic re-expression initiative is complete, end to end.** The admin sweep (Phases 0–6,
+shipped in `0.78.0`/`0.78.1`), the starter-template track (Phases 1–2, held), and the docs phase (held) are
+all done. Everything since `0.78.1` sits on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree), **held and unmerged**.
+
+**The docs phase (the final phase), executed via a workflow.** Two sequential draft agents plus a parallel
+review (prose register + doc-vs-code accuracy). It rewrote `docs/internal/admin-design-system.md` to the
+de-customized reality: corrected three **stale** muted/subtle bracket references to the named `text-muted` /
+`text-subtle` role utilities (the doc had prescribed the retired form, which also polluted the shipped
+sheet), and added three sections — the developer-facing vocabulary (the versioned seam) with the "cairn's
+frame, not your API" split, the starter template's design, and the DaisyUI/Tailwind upgrade-rehearsal
+runbook. Added a discoverable "The admin design vocabulary" on-ramp to the published guide
+`docs/guides/add-a-custom-admin-screen.md` (Vale 0 errors). The **accuracy review was clean** (every token,
+utility, and recipe the docs name exists in the code — the guard against exactly this stale-doc drift).
+Folded the four prose-voice findings in the main loop. Commits `b3c91ab`, `c2755a0`, `90d3c90`.
+
+**The scheduled watcher is wired.** Routine `trig_01WkMgesdS1JAJuvc1hg1obH` ("cairn: DaisyUI/Tailwind major
+watcher"), cron `0 17 * * 1` (Mondays 09:00 America/Anchorage, first run 2026-07-06). It checks
+`npm view daisyui/tailwindcss version` and pings only when a new major (DaisyUI ≥ 6 or Tailwind ≥ 5)
+publishes, pointing at the runbook. Read-only, ping-when-tripped.
+
+**The residual custom surface** across the admin and the template is the documented Tier-2 floor, guarded by
+`check:custom-surface` (both trees at budget 0), `check:public-tokens`, and the `admin-css-build`
+invariants; the developer-facing vocabulary is published as a versioned seam; and the watcher protects the
+upgrade path. Gate green (`check:docs` OK, `check:reference` unaffected, Vale 0 errors); held unpublished
+(docs and tooling only, no package/API/behavior change, no `CHANGELOG` entry).
+
+**NEXT is Geoff's call, not a dev pass:**
+1. **Merge `starter-template-1` to `main`** (fast-forward; it carries the held starter-template track + the
+   docs phase above `0.78.1`).
+2. **Decide the batched release.** The whole held body since `0.78.1` is admin/template/docs internals a
+   consumer never imports, so it can hold and batch with the next consumer-facing change, or cut a release
+   if a coherent boundary warrants it (Geoff's call per the cadence). Verify the next version free with
+   `npm view @glw907/cairn-cms versions` at cut time.
+3. **Carried follow-up (unrelated to a cut):** scope the admin CSS build's content detection so the shipped
+   sheet stops compiling foreign rules from `examples/showcase` and `docs/` (ROADMAP "Next"; the friction
+   log has the detail). And the standing deferred live admin smoke at a site cutover onto `0.78.x`.
+
+Use `cairn-pass` for the next dev initiative. See the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): starter-template track Phases 1+2 COMPLETE on a worktree (held, unmerged); NEXT = the docs phase (the final phase of the initiative)
 
 The starter-template track is done through the fold. **Phase 1 (template foundation) and Phase 2 (template
 chrome) are both complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the

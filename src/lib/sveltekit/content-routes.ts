@@ -2074,6 +2074,45 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return ingestAndStore(event);
   }
 
+  /**
+   * Upload straight into the Library: store the bytes and derive the record via `ingestAndStore`
+   *  (the editor upload's shared body), then commit the row to `main` in the same step, since a
+   *  Library-direct upload has no entry and no Save to ride. The client posts only the file; the
+   *  server derives and commits every field, trusting nothing client-posted (`ingestAndStore`'s
+   *  contract). A hash already present in the manifest is an idempotent no-op: the asset (and its
+   *  row) already exist, so the upload commits nothing and still returns the success envelope.
+   *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
+   *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
+   */
+  async function mediaLibraryUpload(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+    const result = await ingestAndStore(event);
+    if (!('record' in result)) return result;
+    const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
+    const backend = resolveBackend(event);
+
+    const manifest = parseMediaManifest(parseMediaJson(await backend.readFile(runtime.mediaManifestPath, backend.defaultBranch)));
+    if (manifest[result.record.hash]) return result; // Bytes and row already committed: nothing to do.
+
+    const commitFields = { concept: 'media', id: result.record.hash, editor: editor.email };
+    try {
+      await backend.commit(
+        backend.defaultBranch,
+        [{ path: runtime.mediaManifestPath, content: serializeMediaManifest(upsertMediaEntry(manifest, result.record)) }],
+        { name: editor.displayName, email: editor.email },
+        `Upload media: ${result.record.slug}`,
+      );
+      log.info('commit.succeeded', commitFields);
+    } catch (err) {
+      if (!isConflict(err)) {
+        log.error('commit.failed', { ...commitFields, error: String(err) });
+        throw err;
+      }
+      log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
+      return fail(409, { error: 'The media manifest changed since you opened it. Reload and try again.' });
+    }
+    return result;
+  }
+
   /** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */
   const MEDIA_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
   /** A 16-hex content-hash prefix, the immutable asset key. */
@@ -3312,7 +3351,7 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     return { corrected, model: message.model, usage: message.usage };
   }
 
-  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, vocabularyLoad, vocabularySave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
+  return { shellPayload, helpLoad, indexRedirect, listLoad, mediaLibraryLoad, settingsLoad, settingsSave, vocabularyLoad, vocabularySave, createAction, editLoad, saveAction, publishAction, publishAllAction, discardAction, deleteAction, listDeleteAction, renameAction, uploadAction, mediaLibraryUpload, mediaDeleteAction, mediaBulkDelete, mediaOrphanScan, mediaPurgeOrphans, mediaUpdateAction, mediaReplacePreview, mediaReplaceApply, mediaAltPreview, mediaAltApply, addDictionaryWord, tidyAction };
 }
 
 /**

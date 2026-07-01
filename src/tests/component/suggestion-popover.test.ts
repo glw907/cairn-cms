@@ -76,7 +76,7 @@ describe('suggestion popover', () => {
     await expect.poll(() => container.querySelectorAll('.cm-lintRange-info').length, COLD_START).toBe(0);
   });
 
-  it('moves focus into the popover on Alt-Enter and restores it on Escape', async () => {
+  it('moves focus into the popover on Alt-Enter and restores it on Escape (WCAG 1.4.13, dismissable)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
     const { container } = render(MarkdownEditor, props(fake));
     await openPopover(container);
@@ -84,6 +84,73 @@ describe('suggestion popover', () => {
     await expect.poll(() => document.activeElement?.closest('.cairn-cm-suggest'), COLD_START).toBeTruthy();
     await userEvent.keyboard('{Escape}');
     await expect.poll(() => document.activeElement?.closest('.cm-content'), COLD_START).toBeTruthy();
+  });
+
+  it('does not steal focus when the popover appears (WCAG 1.4.13, no focus theft)', async () => {
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const { container } = render(MarkdownEditor, props(fake));
+    await openPopover(container); // clicks the underline, which focuses the content
+    expect(document.activeElement?.closest('.cairn-cm-suggest')).toBeNull();
+    expect(document.activeElement?.closest('.cm-content')).toBeTruthy();
+  });
+
+  it('keeps the popover mounted across an unrelated background reconfigure (WCAG 1.4.13, persistent)', async () => {
+    // An unrelated background effect (the media library compartment reconfiguring on a prop change)
+    // dispatches a transaction with an effect but no doc or selection change, the same shape a stale
+    // background lint effect takes. The caret never leaves the diagnostic range, so the popover must
+    // stay the SAME mounted node, not merely reappear.
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const withImage = {
+      ...props(fake),
+      value: 'teh cat teh dog ![pic](media:unrelated.aaaabbbbccccdddd)',
+      mediaLibrary: {},
+    };
+    const screen = render(MarkdownEditor, withImage);
+    const popover = await openPopover(screen.container);
+    await screen.rerender({
+      ...withImage,
+      mediaLibrary: {
+        aaaabbbbccccdddd: {
+          hash: 'aaaabbbbccccdddd',
+          slug: 'unrelated',
+          ext: 'webp',
+          contentType: 'image/webp',
+          displayName: 'An unrelated image',
+          alt: 'Unrelated',
+          width: 640,
+          height: 480,
+          bytes: 1234,
+          createdAt: '2026-06-30T00:00:00.000Z',
+        },
+      },
+    });
+    // Confirm the reconfigure actually dispatched (not a no-op): the fallback chip's name updates to
+    // the library's display name once the entry joins.
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-media-name')?.textContent, COLD_START).toBe(
+      'An unrelated image',
+    );
+    expect(screen.container.querySelector('.cairn-cm-suggest')).toBe(popover);
+  });
+
+  it('agrees with the announcer on one diagnostic when a spelling and an objective finding overlap (WCAG 1.4.13, overlapping)', async () => {
+    // "teh teh" is a doubled word (the objective-error linter) AND its first occurrence is itself a
+    // misspelling (spellcheck), so the caret lands inside two overlapping diagnostics at once.
+    // forEachDiagnostic documents no ordering contract, so the expected winner is derived from what
+    // actually renders, never a hardcoded emission order.
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const { container } = render(MarkdownEditor, {
+      value: 'teh teh cat dog', name: 'body', spellcheck: true,
+      spellcheckTest: { createWorker: fake.create, assumeReady: true },
+    });
+    await expect.poll(() => container.querySelector('.cm-lintRange-info'), COLD_START).toBeTruthy();
+    await userEvent.click(container.querySelector('.cm-lintRange-info')!);
+    await expect.poll(() => container.querySelector('.cairn-cm-suggest'), COLD_START).toBeTruthy();
+    const popovers = container.querySelectorAll('.cairn-cm-suggest');
+    expect(popovers.length).toBe(1);
+    const popoverMessage = popovers[0]!.getAttribute('aria-label');
+    expect(popoverMessage).toBeTruthy();
+    const live = container.querySelector<HTMLElement>('[aria-live="polite"].cairn-cm-suggest-live')!;
+    await expect.poll(() => live.textContent, COLD_START).toContain(popoverMessage);
   });
 
   it('announces availability through a polite live region when the caret enters a misspelling', async () => {

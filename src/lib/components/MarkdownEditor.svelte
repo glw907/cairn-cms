@@ -210,6 +210,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const modesMod = await import('./editor-modes.js');
     const foldingMod = await import('./editor-folding.js');
     const placeholderMod = await import('./editor-placeholder.js');
+    const announcerMod = await import('./editor-diagnostics-announcer.js');
     mediaMod = await import('./editor-media.js');
     tidyMod = await import('./editor-tidy.js');
     const spellcheckMod = await import('./spellcheck.js');
@@ -723,6 +724,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
           // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
           EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' }),
+          // The diagnostics-summary announcer: general and top-level (any lint source), unlike the
+          // spellcheck-specific suggestion popover, which stays inside spellcheckCompartment. Always on;
+          // accessibility is not opt-in.
+          announcerMod.cairnDiagnosticsAnnouncer({ view: viewMod, lint: lintMod }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();
             // A doc edit can change the block's span and a caret move can change which block the

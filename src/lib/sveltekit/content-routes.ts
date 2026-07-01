@@ -1934,27 +1934,21 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   /**
-   * Ingest an uploaded image: the JSON/fetch endpoint with the untrusted-input contract (spec piece
-   * 2, decisions 1 to 3). The body is the raw file bytes, read once; the human metadata travels in
-   * percent-encoded `X-Cairn-*` request headers. The server owns every committed field and trusts no
-   * client value: it sniffs the real type, screens the engine deny-list, re-hashes, re-derives the
-   * ext and slug, caps and sanitizes the human fields, and clamps the advisory dimensions. It stores
-   * put-first to R2 with content-addressed dedup (no second put for identical bytes, no
-   * compensating delete) and commits nothing to git.
-   *
-   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
-   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
-   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
-   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
-   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
-   * `media.uploaded` on success.
+   * Ingest an uploaded image: the shared store-and-derive body for the upload endpoint (spec piece
+   * 2, decisions 1 to 3) and, later, the Media Library's direct-upload action. The body is the raw
+   * file bytes, read once; the human metadata travels in percent-encoded `X-Cairn-*` request
+   * headers. The server owns every committed field and trusts no client value: it sniffs the real
+   * type, screens the engine deny-list, re-hashes, re-derives the ext and slug, caps and sanitizes
+   * the human fields, and clamps the advisory dimensions. It stores put-first to R2 with
+   * content-addressed dedup (no second put for identical bytes, no compensating delete) and commits
+   * nothing to git; a caller that wants a git-committed row derives one from the returned record.
    *
    * Session authority: behind `createAuthGuard` the guard is the production session gate. An
    * unauthenticated admin POST is redirected 303 by the guard before this action runs (an opaque,
    * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session-expired')`
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
-  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function ingestAndStore(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
     const editor = event.locals.editor ?? null;
@@ -2066,6 +2060,18 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
 
     log.info('media.uploaded', { editor: editor.email, hash, bytes: bytes.length, contentType: sniffed, reused });
     return { reference, record, reused, mismatch };
+  }
+
+  /**
+   * Wire contract: this is a SvelteKit form action, so for a JSON request SvelteKit serializes the
+   * result into a 200 JSON envelope `{ type, status, data }`. A `fail(status, ...)` rides the
+   * envelope's `status` field, NOT the HTTP response status (the HTTP status stays 200); a client
+   * parses `type`/`status` from the body, never `Response.status`. Success returns a plain
+   * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
+   * `media.uploaded` on success. Delegates to `ingestAndStore`, the shared store-and-derive body.
+   */
+  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+    return ingestAndStore(event);
   }
 
   /** A media slug is the same lowercase-alphanumeric-with-hyphens grammar the reference token uses. */

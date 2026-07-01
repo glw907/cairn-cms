@@ -1,0 +1,14 @@
+{
+  "writingSurface": [
+    ".cm-content", ".cm-cursor", ".cm-editor", ".cm-focused",
+    ".cm-gutterElement", ".cm-gutters", ".cm-line", ".cm-lintRange-info"
+  ],
+  "cairnPrefix": ".cm-cairn-",
+  "chromeFloor": [".cm-tooltip"],
+  "enumeratedFiles": [
+    "src/lib/components/spellcheck.ts",
+    "src/lib/components/MarkdownEditor.svelte",
+    "src/lib/components/EditPage.svelte",
+    "src/lib/components/editor-suggestion-popover.ts"
+  ]
+}

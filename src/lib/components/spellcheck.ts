@@ -16,6 +16,7 @@ import type { EditorView } from '@codemirror/view';
 import { frontmatterSpan, fenceTokens } from './markdown-directives.js';
 import { parseMediaToken } from '../media/reference.js';
 import { objectiveErrors, type ObjectiveError } from './objective-errors.js';
+import { cairnSuggestionPopover } from './editor-suggestion-popover.js';
 
 /** An absolute character range in the document. */
 export interface Range {
@@ -468,34 +469,58 @@ export interface SpellcheckOptions {
 
 // The lint underline is LOCKED to --cairn-warning-ink (a muted amber, the closest shipped token to
 // the spec's "neither the directive accent nor error red"; there is no --cairn-info-ink). Spellcheck
-// diagnostics carry severity `info`, so the override targets the `info` underline and tooltip row.
-// --cairn-error-ink red is reserved for tidy deletions, so a spellcheck underline and a tidy deletion
-// are never the same color. The tooltip rides the admin Warm Stone tokens and the focus rules; the
-// lint action buttons are CodeMirror's own focusable buttons, so the theme only restores a visible
-// focus ring (the admin base button reset strips the UA outline). The wavy underline uses a CSS
-// text-decoration so the locked token resolves at render rather than being baked into a static SVG.
+// diagnostics carry severity `info`, so the override targets the `info` underline. --cairn-error-ink
+// red is reserved for tidy deletions, so a spellcheck underline and a tidy deletion are never the
+// same color. The wavy underline uses a CSS text-decoration so the locked token resolves at render
+// rather than being baked into a static SVG.
+//
+// The built-in @codemirror/lint tooltip is suppressed (tooltipFilter, above); cairn renders its own
+// `.cairn-cm-suggest` recipe popover through the public showTooltip facet (editor-suggestion-popover.ts).
+// The theme's only sanctioned internal-class touch is neutralizing `.cm-tooltip`, the class CodeMirror
+// force-adds to every tooltip it mounts (its own border and background would otherwise show through the
+// recipe DOM); everything else under `.cairn-cm-suggest*` is cairn's own class, not a CodeMirror internal.
 function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').EditorView): Extension {
   return EditorViewMod.theme({
     // The amber wavy underline, the one spellcheck underline color across the feature.
     '.cm-lintRange-info': {
       backgroundImage: 'none',
       textDecoration: 'underline wavy var(--cairn-warning-ink, oklch(50% 0.13 70))',
+      textDecorationThickness: '1px',
       textDecorationSkipInk: 'none',
-      textUnderlineOffset: '0.2em',
+      textUnderlineOffset: '0.22em',
     },
-    // The tooltip surface rides the admin Warm Stone tokens.
-    '.cm-tooltip.cm-tooltip-lint': {
-      backgroundColor: 'var(--color-base-100, #fff)',
-      border: '1px solid var(--color-base-300, oklch(90% 0.01 75))',
-      borderRadius: '0.5rem',
-      color: 'var(--color-base-content, oklch(28% 0.01 75))',
+    // The one sanctioned internal-class touch: CodeMirror force-adds `.cm-tooltip` and paints a border and
+    // a background; neutralize it so the recipe DOM owns the surface. Allow-listed by name in the gate.
+    '.cm-tooltip': { border: 'none', backgroundColor: 'transparent', padding: '0' },
+    // The recipe popover surface (cairn's own class, not a CodeMirror internal). Visual values from the
+    // frontend-design mockup; the structure is the admin popover recipe.
+    '.cairn-cm-suggest': {
+      fontFamily: 'var(--font-body)',
+      minWidth: '11rem',
+      maxWidth: '20rem',
+      background: 'var(--color-base-100)',
+      border: '1px solid var(--cairn-card-border)',
+      borderRadius: 'var(--radius-box)',
+      boxShadow: 'var(--cairn-shadow)',
+      padding: '0.5rem',
     },
-    '.cm-diagnostic-info': {
-      borderLeftColor: 'var(--cairn-warning-ink, oklch(50% 0.13 70))',
+    '.cairn-cm-suggest__msg': {
+      margin: '0 0 0.375rem',
+      padding: '0 0.125rem',
+      fontSize: '0.8125rem',
+      lineHeight: '1.35',
+      color: 'var(--color-base-content)',
     },
-    // The action buttons are real focusable buttons; the admin base reset strips the UA outline, so a
-    // visible focus ring is restored here to keep them keyboard-discoverable (the a11y focus rule).
-    '.cm-diagnosticAction:focus-visible': {
+    '.cairn-cm-suggest__actions': {
+      display: 'flex',
+      flexWrap: 'wrap',
+      gap: '0.25rem',
+    },
+    // Non-color hover cue (a color-only hover fails WCAG 1.4.1): underline the label.
+    '.cairn-cm-suggest .btn:hover': { textDecoration: 'underline' },
+    // The admin base button reset strips the UA outline, so restore a visible focus ring, tinted with the
+    // amber spellcheck ink so the popover reads as part of that layer.
+    '.cairn-cm-suggest .btn:focus-visible': {
       outline: '2px solid var(--cairn-warning-ink, oklch(50% 0.13 70))',
       outlineOffset: '1px',
     },
@@ -565,6 +590,15 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // A monotonic seq for suggest round-trips, separate from the check seq so the two answer streams
   // never collide on a shared counter.
   let suggestSeq = 0;
+
+  // @codemirror/lint's own doc comment for `tooltipFilter` promises "No tooltip will appear if the
+  // empty set is returned", but `lintTooltip` gates on `!found`, and an empty array is JS-truthy, so
+  // `() => []` still mounts an empty tooltip list (the `cm-tooltip-lint` class) on hover (verified against the installed
+  // @codemirror/lint 6.9.7: hovering with `tooltipFilter: () => []` renders `<ul class="cm-tooltip-lint">`
+  // with zero children rather than nothing). Returning `null` takes the `!found` branch the doc
+  // describes; the cast compensates for `DiagnosticFilter`'s non-nullable `Diagnostic[]` return type,
+  // which does not reflect the library's own falsy-return contract.
+  const suppressTooltip = (): Diagnostic[] => null as unknown as Diagnostic[];
 
   // Re-run the lint at once after a state change that is not a doc edit (the Worker became ready, or a
   // word was added or ignored). The dispatched effect makes the linter's needsRefresh schedule a run,
@@ -715,6 +749,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     // only re-runs on a doc change, so an add-to-dictionary would never clear the standing underlines.
     needsRefresh: (update) =>
       update.transactions.some((tr) => tr.effects.some((e) => e.is(relintEffect))),
+    // Suppress @codemirror/lint's built-in tooltip; cairn renders its own recipe popover via showTooltip
+    // (editor-suggestion-popover.ts). Every diagnostic here is cairn's, so filter to none. markerFilter is
+    // untouched, so the underline stays.
+    tooltipFilter: suppressTooltip,
   });
 
   // The objective-error source: a second linter() over the SAME viewport-scoped prose spans the
@@ -725,7 +763,14 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const objectiveSource = linter((view) => {
     const { text, spans } = visibleProseSpans(view);
     return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);
-  });
+  }, { tooltipFilter: suppressTooltip });
 
-  return [source, objectiveSource, lockedUnderlineTheme(EditorView)];
+  return [
+    source,
+    objectiveSource,
+    lockedUnderlineTheme(EditorView),
+    // The recipe popover: cairn's own DOM through the public showTooltip facet, replacing the built-in
+    // lint tooltip (suppressed above via tooltipFilter). The module handles are non-null at the return.
+    cairnSuggestionPopover({ view: viewMod!, state: stateMod!, lint: lintMod! }),
+  ];
 }

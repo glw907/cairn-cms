@@ -1,92 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
-import type { SpellWorker } from '../../lib/components/spellcheck.js';
 import type { MediaLibrary } from '../../lib/media/library-entry.js';
-
-// The real wasm and dictionary assets resolve through `import.meta.url` and do not load under the
-// vitest browser dev server, and the 1.5MB dictionary is slow, so the spellcheck component layer drives
-// a deterministic fake Worker through MarkdownEditor's `spellcheckTest` seam. The fake speaks the same
-// inbound/outbound protocol the real worker does (init/ready, check/checked, suggest/suggested,
-// addWord). It marks one chosen word wrong and everything else right, answers suggest with a canned
-// ranked list, and after an addWord marks that word right so a re-lint clears its underline.
-
-interface FakeWorkerConfig {
-  /** The lowercased words the engine treats as misspelled, until added to the personal set. */
-  wrong: string[];
-  /** The ranked suggestions a suggest round-trip returns for any word. */
-  suggestions: string[];
-  /** When true the fake posts a `ready` message after init, so the lint source waits for it the way it
-   *  waits for the real worker. When false the test passes `assumeReady` instead. */
-  announceReady?: boolean;
-}
-
-/** Build a fake SpellWorker plus a handle to read what it recorded. The worker answers on the same
- *  message listener the lint source registers, so the source's seq matching and re-lint run unchanged. */
-function makeFakeWorker(config: FakeWorkerConfig): { create: () => SpellWorker; added: Set<string> } {
-  const added = new Set<string>();
-  const wrong = new Set(config.wrong.map((w) => w.toLowerCase()));
-  const listeners = new Set<(event: MessageEvent) => void>();
-
-  const post = (data: unknown) => {
-    const event = { data } as MessageEvent;
-    for (const listener of listeners) listener(event);
-  };
-
-  const isCorrect = (word: string) => added.has(word.toLowerCase()) || !wrong.has(word.toLowerCase());
-
-  const worker: SpellWorker = {
-    postMessage(message: unknown) {
-      const msg = message as {
-        type?: string;
-        seq?: number;
-        words?: { id: number; word: string }[];
-        word?: string;
-      };
-      if (msg.type === 'init') {
-        if (config.announceReady) queueMicrotask(() => post({ type: 'ready' }));
-        return;
-      }
-      if (msg.type === 'check') {
-        const results = (msg.words ?? []).map((w) => ({ id: w.id, correct: isCorrect(w.word) }));
-        queueMicrotask(() => post({ type: 'checked', seq: msg.seq, results }));
-        return;
-      }
-      if (msg.type === 'suggest') {
-        queueMicrotask(() => post({ type: 'suggested', seq: msg.seq, word: msg.word, suggestions: config.suggestions }));
-        return;
-      }
-      if (msg.type === 'addWord' && typeof msg.word === 'string') {
-        added.add(msg.word.toLowerCase());
-        return;
-      }
-    },
-    addEventListener(_type, listener) {
-      listeners.add(listener);
-    },
-    removeEventListener(_type, listener) {
-      listeners.delete(listener);
-    },
-  };
-
-  return { create: () => worker, added };
-}
-
-// The locked spellcheck underline color: the theme overrides `.cm-lintRange-info` to a wavy underline
-// in var(--cairn-warning-ink). The test page loads no admin sheet, so the var is pinned here, the same
-// value cairn-admin.css sets; an unpinned var() drops the declaration and the color reads as the
-// inherited text color.
-const WARNING_INK = 'rgb(180, 120, 20)';
-function pinWarningInk(): () => void {
-  document.documentElement.style.setProperty('--cairn-warning-ink', WARNING_INK);
-  return () => document.documentElement.style.removeProperty('--cairn-warning-ink');
-}
-
-// The first CodeMirror mount pays the one-time cold-start of the editor's dynamic imports; under the
-// full tri-project run the transform contention pushes that past the default 1s poll. The generous
-// timeout absorbs it, matching MarkdownEditor.test.ts.
-const COLD_START = { timeout: 20000 };
+import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './fake-spell-worker.js';
 
 const underlines = (container: Element) =>
   Array.from(container.querySelectorAll<HTMLElement>('.cm-lintRange-info'));
@@ -135,64 +51,11 @@ describe('MarkdownEditor spellcheck (real browser)', () => {
     }
   });
 
-  it('replaces the word with one transaction when a suggestion action fires', async () => {
-    const unpin = pinWarningInk();
-    try {
-      const { create } = makeFakeWorker({ wrong: ['teh'], suggestions: ['the', 'tea'] });
-      const screen = render(MarkdownEditor, {
-        value: 'teh trail',
-        name: 'body',
-        spellcheck: true,
-        spellcheckTest: { createWorker: create, assumeReady: true },
-      });
-      await expect.poll(() => underlines(screen.container).length, COLD_START).toBe(1);
-      // Open the hover tooltip over the underline and click the first suggestion. The lint hover
-      // renders the diagnostic actions as `.cm-diagnosticAction` buttons; the first is the top
-      // suggestion "the".
-      const mark = underlines(screen.container)[0]!;
-      await userEvent.hover(mark);
-      const action = () =>
-        Array.from(document.querySelectorAll<HTMLButtonElement>('.cm-diagnosticAction')).find(
-          (b) => b.textContent === 'the',
-        );
-      await expect.poll(action, { timeout: 5000 }).toBeTruthy();
-      await userEvent.click(action()!);
-      // The replace lands as one transaction: "teh" becomes "the", the misspelling is gone, the rest of
-      // the line is intact.
-      await expect.poll(() => hiddenValue(screen.container)).toBe('the trail');
-    } finally {
-      unpin();
-    }
-  });
-
-  it('clears every instance of a word added to the dictionary', async () => {
-    const unpin = pinWarningInk();
-    try {
-      const { create, added } = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
-      // The misspelling appears twice, so both underline before the add and both must clear after.
-      const screen = render(MarkdownEditor, {
-        value: 'teh first line\nteh second line',
-        name: 'body',
-        spellcheck: true,
-        spellcheckTest: { createWorker: create, assumeReady: true },
-      });
-      await expect.poll(() => underlines(screen.container).length, COLD_START).toBe(2);
-      // Hover the first underline and click Add to dictionary.
-      await userEvent.hover(underlines(screen.container)[0]!);
-      const addBtn = () =>
-        Array.from(document.querySelectorAll<HTMLButtonElement>('.cm-diagnosticAction')).find(
-          (b) => b.textContent === 'Add to dictionary',
-        );
-      await expect.poll(addBtn, { timeout: 5000 }).toBeTruthy();
-      await userEvent.click(addBtn()!);
-      // The source posts addWord (the fake now answers "teh" correct) and re-lints; both underlines
-      // clear and the word is in the personal set.
-      await expect.poll(() => added.has('teh'), { timeout: 8000 }).toBe(true);
-      await expect.poll(() => underlines(screen.container).length, { timeout: 8000 }).toBe(0);
-    } finally {
-      unpin();
-    }
-  });
+  // The suggestion-apply and add-to-dictionary interactions used to run through @codemirror/lint's
+  // built-in hover tooltip (`.cm-diagnosticAction` buttons), asserted here. This pass suppresses that
+  // built-in tooltip with `tooltipFilter`; a later pass task renders cairn's own recipe popover via
+  // `showTooltip` in its place and carries the equivalent coverage into `suggestion-popover.test.ts`
+  // against the new popover's DOM.
 
   it('drops the underlines when the footer toggle goes off and restores them when it returns', async () => {
     const unpin = pinWarningInk();

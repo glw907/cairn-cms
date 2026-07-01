@@ -2,6 +2,21 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+<!-- release-size: patch -->
+
+The editor's spellcheck and objective-error suggestion popover is now cairn's own recipe DOM, rendered
+through CodeMirror's public `showTooltip` facet instead of the skinned `@codemirror/lint` tooltip. It
+matches the admin design language (the Warm Stone surface, DaisyUI buttons, the body face) and gains the
+keyboard and screen-reader path it never had: the popover appears when the caret enters a flagged word
+without stealing focus, a polite live region announces it, `Alt-Enter` moves focus into the popover, and
+Escape returns focus to the editor. The misspelling underline keeps its locked amber color, now tuned for
+weight and offset. A `check:cm-internals` gate holds the editor theme's coupling to CodeMirror's internal
+classes at a by-name floor, so a future CodeMirror major stays cheap to absorb.
+
+The public API and every other runtime behavior are unchanged, so an upgrading site needs no action.
+
 ## 0.78.1
 
 <!-- release-size: patch -->

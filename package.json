@@ -40,6 +40,7 @@
     "check:prose": "node scripts/check-admin-prose.mjs",
     "check:public-tokens": "node scripts/check-public-tokens.mjs",
     "check:custom-surface": "npm run package && node scripts/check-custom-surface.mjs",
+    "check:cm-internals": "node scripts/check-cm-internals.mjs",
     "test:reskin": "node scripts/reskin-fixture.mjs",
     "lint": "eslint src/lib",
     "check:comments": "bash scripts/check-comments.sh",

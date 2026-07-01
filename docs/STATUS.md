@@ -51,17 +51,25 @@ by the merge.
   backticks into the `aria-label`; parse to `<code>`/emphasis in the message string in `spellcheck.ts`, a
   future editor-copy refinement.
 
-**IN EXECUTION (2026-06-30): CM integration Pass 2 = editor accessibility hardening**, on the
-`editor-a11y-hardening` worktree (off `main` @ `5fd1314`). Brainstorm settled scope with Geoff
-(find/replace and the autocomplete tint both DEFERRED); spec written and adversarially hardened (12
-verified findings folded in); plan written. Executing test-first via a background workflow of
-`cairn-implementer` tasks with per-task adversarial verification, then a main-loop full gate + reviewer
-fan-out + merge. Spec: `docs/superpowers/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`; plan:
-`docs/superpowers/plans/2026-06-30-cairn-editor-a11y-hardening.md`; memory:
-`cairn-codemirror-integration-pass`. Scope: a diagnostics-summary announcer, `F8`/`Shift-F8` traversal
-(stock `nextDiagnostic`/`previousDiagnostic`, never `lintKeymap`), fold-control disclosure semantics, an
-editor-textbox accessible name (WCAG 4.1.2, caught by the review), an autocomplete-ARIA regression guard,
-and WCAG 1.4.13 assertions. Announce-plus-traverse over inline ARIA; `check:cm-internals` floor unchanged.
+**COMPLETE + MERGED to `main` (2026-06-30): CM integration Pass 2 = editor accessibility hardening.**
+Built on the `editor-a11y-hardening` worktree (off `main` @ `5fd1314`), merged `--no-ff`, **release HELD**
+(`package.json` untouched at `0.78.1`; batches with Pass 1 and `starter-template-1`). The editor gained a
+debounced polite diagnostics-summary announcer, `F8`/`Shift-F8` traversal (stock
+`nextDiagnostic`/`previousDiagnostic`, never `lintKeymap`), fold-control disclosure semantics
+(`aria-expanded` + a state-neutral name), an accessible name on `.cm-content` (WCAG 4.1.2, caught by the
+review), an autocomplete-ARIA regression guard, and WCAG 1.4.13 assertions plus an ambient Escape-dismiss.
+Announce-plus-traverse over inline ARIA; `check:cm-internals` floor unchanged (no new `.cm-*` chrome).
+
+**Execution + gate.** Eight test-first `cairn-implementer` tasks via a background workflow, each
+adversarially verified; `code-simplifier` + `svelte-reviewer` + `daisyui-a11y-reviewer` fan-out folded in
+three fixes (fold-name-on-rename, the 1.4.13 ambient dismiss, source-classification hardening). Final gate:
+`check` 0/0 (1255 files), `npm test` 2898 exit 0 (277 files), every `check:*` PASS. Spec, plan (with
+post-mortem), memory `cairn-codemirror-integration-pass`.
+
+**Carried follow-ups (pre-existing, surfaced by the a11y review; churn, do not accumulate):** fold-control
+target size (WCAG 2.2 2.5.8, mitigated by the `Ctrl+Shift+[`/`]` equivalent); gutter fold buttons' tab
+order (2.4.3); a real-screen-reader verbosity check of the two polite live regions. Detail in the plan
+post-mortem.
 
 **Deferred to a later CM pass** (in `ROADMAP.md` `## Considering`): a recipe-built find/replace panel on
 `@codemirror/search` `createPanel`, and the autocomplete popup tint. Reuse the identity-through-facets

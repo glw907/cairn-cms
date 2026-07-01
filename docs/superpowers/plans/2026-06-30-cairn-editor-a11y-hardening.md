@@ -448,3 +448,52 @@ git commit -m "docs(editor): record the a11y hardening pass"
 - **Spec coverage:** the spec's six in-scope items map to Task 1 (accessible name), Task 2 (announcer), Task 3 (traversal), Task 4 (fold), Task 5 (autocomplete guard), Task 6 (1.4.13 + overlap). The settle-under-resting-caret two-region case (spec §1) is covered by Task 2's component assertion plus Task 6's overlap case; add an explicit sequential assertion in Task 6 if the reviewer wants it named.
 - **Type consistency:** `summarizeDiagnostics` and `cairnDiagnosticsAnnouncer` names are used identically in Task 2's create and MarkdownEditor wiring. The traversal binds `lintMod.nextDiagnostic`/`previousDiagnostic` (Task 3), the same names Task 7 guards.
 - **Gate:** the orchestrator runs the full gate after Task 8; `check:cm-internals` must stay PASS with `cm-internals-allowlist.json` unchanged.
+
+---
+
+## Post-mortem (2026-06-30)
+
+**Built.** All eight tasks landed as planned, plus three review-gate fixes. The editor gained: an accessible
+name on `.cm-content` (`contentAttributes`, closing a WCAG 4.1.2 gap); a debounced polite diagnostics-summary
+announcer (`editor-diagnostics-announcer.ts`, a general surface keyed off `forEachDiagnostic`, wired top-level);
+`F8`/`Shift-F8` traversal binding CodeMirror's exported `nextDiagnostic`/`previousDiagnostic` (never
+`lintKeymap`); fold-control disclosure semantics (`aria-expanded` + a state-neutral block name); an
+autocomplete-ARIA regression guard; WCAG 1.4.13 and focus-discipline assertions; a public-API guard; and docs.
+
+**Executed** via a background workflow of eight sequential `cairn-implementer` (Sonnet) tasks, each with an
+independent adversarial verifier (which reverted hunks to prove tests were not tautologies and re-ran
+`check:cm-internals` per task). 8/8 verified pass, none flagged. Then `code-simplifier` (two small refinements),
+then a `svelte-reviewer` + `daisyui-a11y-reviewer` fan-out.
+
+**Verified.** Final gate green: `npm run check` 0/0 (1255 files), `npm test` 2898 passed exit 0 (277 files),
+`check:cm-internals` PASS (floor `.cm-tooltip`, allowlist unchanged), `check:custom-surface` PASS, plus
+`check:comments`, `check:docs`, `check:reference`, `check:reference:signatures`, `check:package`,
+`check:surface`, `check:prose`, `check:public-tokens`, `check:version`, `check:dev-package` all PASS.
+
+**Review-gate fixes (folded in before merge).**
+1. Fold-control name went stale on an in-place directive rename (`FoldMarker.eq` excluded the derived name);
+   fixed by making the name part of the marker's identity, plus a `placeholderRefreshExtender`
+   `transactionExtender` for the folded-pill path (CodeMirror's `codeFolding` never recomputes a mounted
+   placeholder, so a rename-while-folded forces an unfold-then-fold in the same transaction; side effect: the
+   unfold flash fires, judged benign).
+2. WCAG 1.4.13 Dismissable: the ambient caret-triggered popover had no dismiss without moving the caret, and
+   F8 makes that a first-class keyboard destination. Added a content-level Escape (keyed suppression in the
+   popover `StateField`, clears the instant the caret's diagnostic changes) that runs only when a popover is
+   shown and stays below `completionKeymap` in precedence (no `Prec.high`), so Escape still closes an open
+   autocomplete popup first. The Pass-1 memoized-Tooltip focus stability is preserved (the reference-stable
+   target is still returned on an unchanged diagnostic).
+3. Diagnostics-source classification hardened to key spelling off `source === 'cairn-spellcheck'` explicitly, so
+   a future third lint source cannot miscount as a spelling suggestion.
+
+**Decisions locked (as shipped).** Announce-plus-traverse over inline `aria-invalid`; the announcer and
+traversal general and top-level (the spellcheck popover stays compartment-gated); stock traversal commands, not
+`lintKeymap`; `check:cm-internals` floor unchanged; no new public export; additive and non-breaking.
+
+**Carried follow-ups (pre-existing, surfaced by the a11y review; not this pass's regressions).**
+- Fold controls are plausibly under the 24x24 CSS px target size (WCAG 2.2 2.5.8); mitigated today by the
+  `Ctrl+Shift+[`/`]` keyboard equivalent. Confirm or lean explicitly on the equivalent in a future editor pass.
+- The gutter fold buttons are native-focusable and precede `.cm-content` in the tab order (2.4.3); the new
+  `aria-expanded` raises their prominence in a screen reader's element list. Decide roving-tabindex vs
+  SR-only reachability if it proves noisy on a long document.
+- Verify with a real screen reader that the two polite live regions (per-caret popover message, then the ~1s
+  debounced summary) read at an acceptable combined verbosity. No code change implied.

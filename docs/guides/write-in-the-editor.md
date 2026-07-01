@@ -111,6 +111,13 @@ offers the fix.
 A toggle on the bottom edge of the editor turns spell checking off if you would rather write without
 it. The underlines vanish, and the editor remembers your choice for next time.
 
+### Jumping between issues
+
+Press F8 to jump the cursor to the next flagged word, or Shift+F8 for the previous one. Either way
+you land right on it, with the correction menu already open. A moment after you stop typing, the
+editor also speaks a quiet summary of what's outstanding, such as "2 spelling suggestions, 1 style
+issue," so you can tell how much remains without hunting through the page for underlines.
+
 ## Tidy
 
 If your site has tidy turned on, a Tidy button sits in the editor and offers a light copy-edit of

@@ -89,13 +89,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Later
 
-- **Editor accessibility hardening (beyond the suggestion popover).** The CM integration pass gives the
-  spellcheck and objective-error popover a keyboard and screen-reader path, but the editor's other
-  accessibility gaps remain, surfaced by that pass's a11y review: the lint underline is a bare
-  `text-decoration` with no `aria-invalid` or described-by relationship, there is no status live region
-  for diagnostics, and the keymap wires no `lintKeymap`. A focused pass would give the whole editing
-  surface a coherent accessibility model (diagnostic exposure, focus discipline, announcements) on the
-  same public-API discipline the popover pass establishes, so it composes rather than re-litigates.
 - **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
   so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
   `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward

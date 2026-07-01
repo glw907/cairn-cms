@@ -81,7 +81,7 @@ export function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: 
  */
 export function cairnSuggestionPopover(modules: PopoverModules): Extension {
   const { showTooltip, keymap, getTooltip, ViewPlugin } = modules.view;
-  const { StateField } = modules.state;
+  const { StateField, StateEffect } = modules.state;
   const { forEachDiagnostic } = modules.lint;
 
   // The field value carries its Tooltip PLUS the target it renders, so an unchanged target can return the
@@ -96,9 +96,29 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
     message: string;
   }
 
-  function targetFor(state: EditorState, prev: PopoverTarget | null): PopoverTarget | null {
+  // The field's full value: the rendered target (if any) plus which diagnostic, if any, Escape has
+  // dismissed for the ambient (caret-in-range, focus-still-in-.cm-content) case. Keyed by the
+  // diagnostic's own range, not a boolean, so the suppression clears the instant the caret lands on a
+  // DIFFERENT diagnostic (or leaves every diagnostic) and never needs an explicit un-suppress.
+  interface PopoverFieldValue {
+    target: PopoverTarget | null;
+    suppressedKey: string | null;
+  }
+
+  const dismissPopoverEffect = StateEffect.define<null>();
+
+  function keyFor(hit: { from: number; to: number } | null): string | null {
+    return hit ? `${hit.from}:${hit.to}` : null;
+  }
+
+  function targetFor(
+    state: EditorState,
+    prev: PopoverTarget | null,
+    suppressedKey: string | null,
+  ): PopoverTarget | null {
     const hit = diagnosticAtCaret(state, forEachDiagnostic);
     if (!hit) return null;
+    if (keyFor(hit) === suppressedKey) return null; // Escape-dismissed for this exact diagnostic
     // Same caret diagnostic as before: return the prior target so its Tooltip (and its `create` closure)
     // stay reference-stable and CM keeps the mounted, focused DOM.
     if (prev && prev.from === hit.from && prev.to === hit.to && prev.message === hit.diagnostic.message) {
@@ -117,28 +137,55 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
     };
   }
 
-  const popoverField = StateField.define<PopoverTarget | null>({
-    create: (state) => targetFor(state, null),
+  const popoverField = StateField.define<PopoverFieldValue>({
+    create: (state) => ({ target: targetFor(state, null, null), suppressedKey: null }),
     // Recompute on selection/doc changes AND on effect-bearing transactions: @codemirror/lint publishes
     // fresh diagnostics via a setDiagnostics EFFECT with no doc/selection change, so without `tr.effects`
     // the popover would go stale after add/ignore and miss first paint under a resting caret. A focus-loss
     // blur dispatches an empty update (no doc/selection/effects), so it returns the prior value unchanged.
-    update: (value, tr) => (tr.docChanged || tr.selection || tr.effects.length ? targetFor(tr.state, value) : value),
-    provide: (f) => showTooltip.from(f, (value) => value?.tooltip ?? null),
+    update: (value, tr) => {
+      const currentKey = keyFor(diagnosticAtCaret(tr.state, forEachDiagnostic));
+      // The suppression clears as soon as the caret's diagnostic changes, so the popover reappears on
+      // the next relevant caret move without an explicit un-suppress step.
+      let suppressedKey =
+        value.suppressedKey !== null && value.suppressedKey !== currentKey ? null : value.suppressedKey;
+      for (const effect of tr.effects) {
+        if (effect.is(dismissPopoverEffect)) suppressedKey = currentKey;
+      }
+      if (!tr.docChanged && !tr.selection && !tr.effects.length) return { target: value.target, suppressedKey };
+      return { target: targetFor(tr.state, value.target, suppressedKey), suppressedKey };
+    },
+    provide: (f) => showTooltip.from(f, (value) => value.target?.tooltip ?? null),
   });
 
   // Move focus into the popover shown for the caret's diagnostic. Returns false when none is shown, so the
   // binding is inert elsewhere. This is the ONLY focus move; caret-in-range never auto-focuses. Alt-Enter,
   // NOT Mod-. (Ctrl+. is the Details-panel shortcut and would double-fire).
   const focusPopover = (view: EditorView): boolean => {
-    const target = view.state.field(popoverField, false);
+    const target = view.state.field(popoverField, false)?.target;
     if (!target) return false;
     const button = getTooltip(view, target.tooltip)?.dom.querySelector<HTMLButtonElement>('button');
     if (!button) return false;
     button.focus();
     return true;
   };
-  const popoverKeymap = keymap.of([{ key: 'Alt-Enter', run: focusPopover }]);
+  // The ambient dismiss: Escape with focus still in .cm-content (the popover shown for the caret's
+  // diagnostic, never opened via Alt-Enter). The native Escape listener in buildPopoverDom handles the
+  // focus-in-popover case, which this binding never sees (that keydown targets the popover's own DOM,
+  // outside .cm-content, so CodeMirror's keymap facet does not fire for it). Runs only when a target is
+  // currently shown, so Escape falls through to the default keymap's own handling (e.g. clearing a
+  // selection) when there is nothing to dismiss. No Prec.high: this extension is mounted inside
+  // spellcheckCompartment, already placed after the top-level completionKeymap in MarkdownEditor's
+  // extensions array, so plain document order keeps Escape closing an open autocomplete popup first.
+  const dismissPopover = (view: EditorView): boolean => {
+    if (!view.state.field(popoverField, false)?.target) return false;
+    view.dispatch({ effects: dismissPopoverEffect.of(null) });
+    return true;
+  };
+  const popoverKeymap = keymap.of([
+    { key: 'Alt-Enter', run: focusPopover },
+    { key: 'Escape', run: dismissPopover },
+  ]);
 
   // A single visually-hidden polite live region: when the caret enters a NEW diagnostic range, announce the
   // message and the key that opens the popover. Recompute on the same triggers as the field

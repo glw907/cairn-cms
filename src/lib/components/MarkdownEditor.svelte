@@ -210,6 +210,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const modesMod = await import('./editor-modes.js');
     const foldingMod = await import('./editor-folding.js');
     const placeholderMod = await import('./editor-placeholder.js');
+    const announcerMod = await import('./editor-diagnostics-announcer.js');
     mediaMod = await import('./editor-media.js');
     tidyMod = await import('./editor-tidy.js');
     const spellcheckMod = await import('./spellcheck.js');
@@ -719,6 +720,23 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // never silently rewrites a `media:` token, a directive name, or frontmatter.
           theme,
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
+          // The live content's accessible name (WCAG 4.1.2): the only aria-label in this file otherwise
+          // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
+          // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
+          EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' }),
+          // The diagnostics-summary announcer: general and top-level (any lint source), unlike the
+          // spellcheck-specific suggestion popover, which stays inside spellcheckCompartment. Always on;
+          // accessibility is not opt-in.
+          announcerMod.cairnDiagnosticsAnnouncer({ view: viewMod, lint: lintMod }),
+          // Diagnostic traversal: F8/Shift-F8 jump the caret to the next/previous diagnostic range and
+          // land it in the cairn recipe popover (never the stock lint tooltip, which tooltipFilter
+          // suppresses; see spellcheck.ts). The stock exported commands, not lintKeymap (which also binds
+          // Mod-Shift-m to openLintPanel, the unaligned stock panel this pass avoids). General and
+          // top-level, like the announcer above: any lint source, not just spellcheck.
+          keymap.of([
+            { key: 'F8', run: lintMod.nextDiagnostic },
+            { key: 'Shift-F8', run: lintMod.previousDiagnostic },
+          ]),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();
             // A doc edit can change the block's span and a caret move can change which block the

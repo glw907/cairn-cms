@@ -47,7 +47,14 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   popover replaced had the same behavior, so it is not a regression, but it is a rough edge worth
   closing. Candidate: parse the backtick-quoted span in `spellcheck.ts`'s message string into a
   `<code>` or emphasis span; this belongs to the message string, not the generic popover renderer that
-  serves both diagnostic kinds, so it was left out of this pass's scope. LOW.
+  serves both diagnostic kinds, so it was left out of this pass's scope. LOW. The a11y hardening pass's
+  1.4.13 audit (Task 6) re-checked the popover end to end and confirmed this is still the only rough edge
+  in its message rendering; still open, still LOW.
+- **editor** (the diagnostics-summary announcer has no visual counterpart): the debounced live region
+  ("2 spelling suggestions, 1 style issue") speaks the count to a screen reader, but a sighted mouse user
+  has no on-screen equivalent, such as a small badge, and must still scan the page for underlines. Left
+  out of the a11y hardening pass because it is a new UI surface, not a gap in the existing one. Candidate
+  for a future pass if editors ask for one. LOW.
 
 ### Gates and test infrastructure
 

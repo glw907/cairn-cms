@@ -75,4 +75,28 @@ describe('suggestion popover', () => {
     await userEvent.click(ignore);
     await expect.poll(() => container.querySelectorAll('.cm-lintRange-info').length, COLD_START).toBe(0);
   });
+
+  it('moves focus into the popover on Alt-Enter and restores it on Escape', async () => {
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const { container } = render(MarkdownEditor, props(fake));
+    await openPopover(container);
+    await userEvent.keyboard('{Alt>}{Enter}{/Alt}');
+    await expect.poll(() => document.activeElement?.closest('.cairn-cm-suggest'), COLD_START).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => document.activeElement?.closest('.cm-content'), COLD_START).toBeTruthy();
+  });
+
+  it('announces availability through a polite live region when the caret enters a misspelling', async () => {
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const { container } = render(MarkdownEditor, props(fake));
+    await openPopover(container);
+    // Poll for the announcement text (the region mounts empty and fills when the caret enters the range),
+    // then re-query for the element itself (a poll assertion resolves to void, not the node).
+    await expect
+      .poll(() => container.querySelector('[aria-live="polite"].cairn-cm-suggest-live')?.textContent, COLD_START)
+      .toBeTruthy();
+    const live = container.querySelector<HTMLElement>('[aria-live="polite"].cairn-cm-suggest-live')!;
+    expect(live.textContent?.toLowerCase()).toContain('suggestion');
+    expect(live.textContent).toContain('Alt+Enter');
+  });
 });

@@ -2,8 +2,9 @@
 // facet for the diagnostic under the caret, instead of skinning @codemirror/lint's built-in tooltip. A pure
 // StateField maps the caret onto the diagnostic (via the public forEachDiagnostic) and provides the Tooltip;
 // the DOM is a generic renderer over Diagnostic.message + Diagnostic.actions, so it serves both the
-// spellcheck and objective-error diagnostics. The keyboard model (Alt-Enter) and the polite announcement
-// live in the exports Task 4 adds.
+// spellcheck and objective-error diagnostics. Alt-Enter moves focus into the popover, a native Escape
+// listener returns it to the editor, and a polite live region announces availability, so the caret-in-range
+// popover gains the keyboard and screen-reader path the built-in lint tooltip never had.
 import type { Extension } from '@codemirror/state';
 import type { EditorView, Tooltip } from '@codemirror/view';
 import type { EditorState } from '@codemirror/state';
@@ -80,7 +81,7 @@ export function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: 
  * public showTooltip facet, so cairn's recipe DOM replaces the built-in lint tooltip.
  */
 export function cairnSuggestionPopover(modules: PopoverModules): Extension {
-  const { showTooltip } = modules.view;
+  const { showTooltip, keymap, getTooltip, ViewPlugin } = modules.view;
   const { StateField } = modules.state;
   const { forEachDiagnostic } = modules.lint;
 
@@ -106,5 +107,53 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
     provide: (f) => showTooltip.from(f),
   });
 
-  return [popoverField];
+  // Move focus into the popover shown for the caret's diagnostic. Returns false when none is shown, so the
+  // binding is inert elsewhere. This is the ONLY focus move; caret-in-range never auto-focuses. Alt-Enter,
+  // NOT Mod-. (Ctrl+. is the Details-panel shortcut and would double-fire).
+  const focusPopover = (view: EditorView): boolean => {
+    const tip = view.state.field(popoverField, false);
+    if (!tip) return false;
+    const button = getTooltip(view, tip)?.dom.querySelector<HTMLButtonElement>('button');
+    if (!button) return false;
+    button.focus();
+    return true;
+  };
+  const popoverKeymap = keymap.of([{ key: 'Alt-Enter', run: focusPopover }]);
+
+  // A single visually-hidden polite live region: when the caret enters a NEW diagnostic range, announce the
+  // word, the suggestion count, and the key that opens the popover. Recompute on the same triggers as the
+  // field (doc/selection/effects) so a diagnostic landing under a resting caret still announces.
+  const liveRegion = ViewPlugin.fromClass(
+    class {
+      dom: HTMLElement;
+      lastKey = '';
+      constructor(view: EditorView) {
+        this.dom = document.createElement('div');
+        this.dom.className = 'cairn-cm-suggest-live';
+        this.dom.setAttribute('aria-live', 'polite');
+        this.dom.setAttribute('aria-atomic', 'true');
+        this.dom.style.cssText = 'position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);';
+        view.dom.appendChild(this.dom);
+        this.announce(view);
+      }
+      update(update: import('@codemirror/view').ViewUpdate): void {
+        if (update.docChanged || update.selectionSet || update.transactions.some((tr) => tr.effects.length))
+          this.announce(update.view);
+      }
+      announce(view: EditorView): void {
+        const hit = diagnosticAtCaret(view.state, forEachDiagnostic);
+        const key = hit ? `${hit.from}:${hit.to}` : '';
+        if (key === this.lastKey) return;
+        this.lastKey = key;
+        if (!hit) return;
+        const count = hit.diagnostic.actions?.length ?? 0;
+        this.dom.textContent = `${hit.diagnostic.message} ${count} suggestion${count === 1 ? '' : 's'}; press Alt+Enter to open.`;
+      }
+      destroy(): void {
+        this.dom.remove();
+      }
+    },
+  );
+
+  return [popoverField, popoverKeymap, liveRegion];
 }

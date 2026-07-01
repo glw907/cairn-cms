@@ -208,8 +208,8 @@ framework into your route beyond the shell's own chrome.
 
 Build your screen in the same DaisyUI and Tailwind idiom as the built-in admin. Read the Warm Stone
 theme through DaisyUI role classes, and use the two named role utilities for secondary text, so your
-screen matches the chrome and survives a framework bump. These parts are a versioned contract: a breaking
-change to them is a major-version event, not an everyday one.
+screen matches the chrome and survives a framework bump. These parts are a versioned contract. Breaking
+one is a major-version change, so cairn does it rarely and on purpose.
 
 - Color with the theme. Reach the Warm Stone tokens through DaisyUI role classes, `bg-base-100`,
   `text-primary`, and the rest, so your screen recolors with the theme.

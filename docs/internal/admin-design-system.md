@@ -670,13 +670,14 @@ records the tiers.
   `prefers-color-scheme: dark`), a warm stone pairing that is the showcase's brand and distinct from the
   admin's Warm Stone. The public output stays design-agnostic by charter, so the template does not impose
   the admin theme.
-- **The design-scale tokens live in Tailwind 4 `@theme`, so the named utilities generate.** The type scale,
-  the space scale, the faces, the rhythm, the reading measure, the muted ink, and the card hairline sit in
-  the `@theme` block. Tailwind emits a named utility for each, so the chrome markup writes `text-step-*`,
-  the spacing utilities (`gap-m`, `px-m`, `mt-2xl`), `font-display`, `tracking-*`, `leading-*`,
-  `max-w-measure` / `max-w-measure-wide`, `text-muted`, and `border-card-border`, never an arbitrary-value
-  bracket. `@theme` re-emits each token at `:root`, so the `var()` consumers in `theme.css`, `prose.css`,
-  and `site.css` keep resolving. Editing one token re-tunes both the `var()` reference and the utility.
+- **The design-scale tokens live in Tailwind 4 `@theme`, which generates the named utilities.** The type
+  scale, the space scale, the faces, the rhythm, the reading measure, the muted ink, and the card hairline
+  sit in the `@theme` block. Tailwind emits a named utility for each, so the chrome markup writes
+  `text-step-*`, the spacing utilities (`gap-m`, `px-m`, `mt-2xl`), `font-display`, `tracking-*`,
+  `leading-*`, `max-w-measure` / `max-w-measure-wide`, `text-muted`, and `border-card-border` instead of an
+  arbitrary-value bracket. `@theme` re-emits each token at `:root`, and the `var()` consumers in
+  `theme.css`, `prose.css`, and `site.css` keep resolving from there. Editing one token re-tunes both the
+  `var()` reference and the utility.
 - **The owned Tier 2 is the site's design, walled and documented.** The reading surface (`prose.css`, the
   hand-authored article typography), the `.cairn-place-*` figure-placement contract in `site.css`, the
   on-surface status inks (`--cairn-<status>-ink`), the elevation pair, the CTA pair, and the code-highlight
@@ -691,7 +692,7 @@ records the tiers.
 
 A DaisyUI or Tailwind major can shift a value or drop a class the admin sheet and the template both
 compile against. A maintainer rehearses the bump against the visual baselines and the gates before taking
-it, so an upstream change surfaces as a reviewed screenshot diff, never a silent regression. The scheduled
+it, so an upstream change surfaces as a reviewed screenshot diff before it ships. The scheduled
 watcher (a `schedule` routine) pings when a new major publishes; it points here.
 
 The runbook:
@@ -713,5 +714,5 @@ The runbook:
    (`npx playwright test --update-snapshots` for the affected specs) so the new screenshots are the
    reviewed record of the drift, and note the reason in the commit.
 
-A clean run across all six steps is the evidence the bump is safe. A red gate or an unexplained diff is the
-signal to hold the upgrade and investigate.
+The bump is safe once all six steps run green. Hold it on any red gate or an unexplained diff, and
+investigate.

@@ -51,8 +51,10 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
-- **Cross both production sites onto `0.78.0`.** The developer-extensibility seam and the editor tag
-  vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`). The remaining work is the site cutovers:
+- **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
+  vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
+  passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
+  work is the site cutovers:
   mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
   the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
 

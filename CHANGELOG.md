@@ -17,6 +17,18 @@ classes at a by-name floor, so a future CodeMirror major stays cheap to absorb.
 
 The public API and every other runtime behavior are unchanged, so an upgrading site needs no action.
 
+The editor also gains a coherent accessibility model beyond that popover. A debounced, polite live
+region speaks a settled summary of the document's diagnostics ("2 spelling suggestions, 1 style
+issue"), so an author knows issues exist without hunting for them. `F8` and `Shift-F8` jump the
+caret to the next or previous flagged range and land in the existing popover, bound through
+CodeMirror's own exported `nextDiagnostic` / `previousDiagnostic` commands. The directive-fold
+control now carries `aria-expanded` alongside a state-neutral name, so a screen reader hears the
+fold state instead of a verb-shaped label. The editing surface itself (`.cm-content`) carries an
+accessible name, "Markdown source", closing a WCAG 4.1.2 gap the surface had from the start.
+
+The public API is unchanged and every addition is on by default with no new prop, so an upgrading
+site needs no action.
+
 ## 0.78.1
 
 <!-- release-size: patch -->

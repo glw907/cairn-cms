@@ -8,11 +8,13 @@
 ## Status (2026-06-30)
 
 The suggestion popover, the clearest chrome-vs-writing-surface case below, **shipped in this pass**: see
-"What shipped" for the design as built. The broader chrome-alignment vision this doc originally framed,
-autocomplete and the search/replace panel rendered the same way, remains deferred; it is filed in
-`ROADMAP.md` under `## Later` ("Editor accessibility hardening (beyond the suggestion popover)" and the
-find/replace and autocomplete follow-ons). This doc stays the home for the writing-surface/chrome
-principle and for that remaining scope.
+"What shipped" for the design as built. A follow-on pass, editor accessibility hardening, then closed
+the remaining accessibility gaps the popover pass surfaced but did not touch: a diagnostics-summary live
+region, `F8`/`Shift-F8` traversal, fold-control disclosure semantics, and an accessible name on the
+`.cm-content` textbox. See "What shipped" for both passes. The broader chrome-alignment vision this doc
+originally framed, autocomplete and the search/replace panel rendered the same way, remains deferred; it
+is filed in `ROADMAP.md` under `## Considering` (find/replace and the autocomplete tint). This doc stays
+the home for the writing-surface/chrome principle and for that remaining scope.
 
 ## The problem
 
@@ -108,17 +110,45 @@ ambient, tied to caret position, and should not compete with typing for focus. A
 reached by `Alt-Enter` and announced by the live region is the simpler and more correct shape here; this is
 a recorded spec deviation, not an oversight.
 
+### The editor accessibility hardening pass
+
+A follow-on pass (spec `docs/superpowers/specs/2026-06-30-cairn-editor-a11y-hardening-design.md`) closed
+the accessibility gaps the popover pass left, all through the same public-API discipline:
+
+- **A general, top-level diagnostics-summary announcer** (`editor-diagnostics-announcer.ts`) speaks a
+  debounced, deduped count of the document's diagnostics through its own visually hidden polite region,
+  separate from the popover's per-word one. It reads `forEachDiagnostic` the same way the popover does,
+  but sits at the top level of the extensions array (general, any lint source) rather than inside
+  `spellcheckCompartment`, so it stays live even with spellcheck off (silent, with no diagnostics to
+  count).
+- **`F8` / `Shift-F8` traversal** binds `@codemirror/lint`'s exported `nextDiagnostic` /
+  `previousDiagnostic` commands directly, never `lintKeymap` (which would also wire the stock,
+  unaligned `openLintPanel`). The composition check passed without the `forEachDiagnostic` contingency
+  the spec allowed for: `spellcheck.ts`'s `tooltipFilter` already suppresses the built-in lint tooltip by
+  returning `null`, so the stock commands land in cairn's own popover instead of the `.cm-tooltip-lint`
+  they would otherwise surface.
+- **Fold-control disclosure semantics.** `editor-folding.ts`'s gutter chevron and folded-row pill both
+  carry `aria-expanded`, keyed off the marker's `folded` flag, and a state-neutral `aria-label` naming
+  the block, replacing the old state-verb label ("Fold this section" / "Show N hidden lines").
+- **An accessible name on `.cm-content`.** `EditorView.contentAttributes.of({ 'aria-label': 'Markdown
+  source' })` closes the WCAG 4.1.2 gap: the live textbox previously carried no name at all, since the
+  only `aria-label` in the file sat on the SSR-fallback `<textarea>` removed at hydration.
+- **The theme-scope-is-sanctioned clarification.** The pass's prior-art review settled a question this
+  doc left open: overriding a documented `.cm-*` class from inside `EditorView.theme` / `baseTheme` (as
+  the popover's `.cm-tooltip` neutralization already does) is sanctioned CodeMirror usage, not an
+  internals violation, and `check:cm-internals`'s allowlist is already the sanctioned mechanism to admit
+  such a class. This pass added no new `.cm-*` chrome, so it built no new gate machinery; the next pass
+  that renders autocomplete or search/replace chrome through the public API and needs to neutralize a
+  stock class should extend the allowlist the same way, not treat the theme touch as forbidden.
+
 ## What remains deferred
 
 The rule above (theme the writing surface, render chrome through the public API) still governs the
-surfaces this pass did not touch:
+surfaces neither pass touched:
 
 1. **Autocomplete and the search/replace panel** are still CodeMirror's stock chrome, skinned rather than
-   replaced. Filed in `ROADMAP.md` under `## Later`.
-2. **Editor accessibility hardening beyond the suggestion popover** ("Editor accessibility hardening
-   (beyond the suggestion popover)" in `ROADMAP.md`) covers the keyboard and screen-reader path for those
-   remaining surfaces, mirroring what this pass gave the popover.
-3. **The upgrade rehearsal** should extend to bump the lint, autocomplete, and search packages
+   replaced. Filed in `ROADMAP.md` under `## Considering` (find/replace and the autocomplete tint).
+2. **The upgrade rehearsal** should extend to bump the lint, autocomplete, and search packages
    independently of `@codemirror/state` / `view` (they version separately) and re-validate the public-API
    calls plus any new recipe DOM, mirroring the admin sweep's upgrade rehearsal. `check:cm-internals` is
    the standing regression gate; a future pass over autocomplete or search/replace should extend its

@@ -84,35 +84,56 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
   const { StateField } = modules.state;
   const { forEachDiagnostic } = modules.lint;
 
-  function tooltipFor(state: EditorState): Tooltip | null {
+  // The field value carries its Tooltip PLUS the target it renders, so an unchanged target can return the
+  // SAME object across recomputes. CM's tooltip reconciler reuses a mounted tooltip view only when the new
+  // Tooltip's `create` is reference-identical to the mounted one; a fresh object on every recompute would
+  // let an unrelated lint effect (a late/stale setDiagnostics) rebuild the popover DOM and drop focus from
+  // a focused button, the keyboard path this extension exists to add.
+  interface PopoverTarget {
+    tooltip: Tooltip;
+    from: number;
+    to: number;
+    message: string;
+  }
+
+  function targetFor(state: EditorState, prev: PopoverTarget | null): PopoverTarget | null {
     const hit = diagnosticAtCaret(state, forEachDiagnostic);
     if (!hit) return null;
+    // Same caret diagnostic as before: return the prior target so its Tooltip (and its `create` closure)
+    // stay reference-stable and CM keeps the mounted, focused DOM.
+    if (prev && prev.from === hit.from && prev.to === hit.to && prev.message === hit.diagnostic.message) {
+      return prev;
+    }
     return {
-      pos: hit.from,
-      end: hit.to,
-      above: true,
-      create: (view) => ({ dom: buildPopoverDom(view, hit.diagnostic, hit.from, hit.to) }),
+      tooltip: {
+        pos: hit.from,
+        end: hit.to,
+        above: true,
+        create: (view) => ({ dom: buildPopoverDom(view, hit.diagnostic, hit.from, hit.to) }),
+      },
+      from: hit.from,
+      to: hit.to,
+      message: hit.diagnostic.message,
     };
   }
 
-  const popoverField = StateField.define<Tooltip | null>({
-    create: (state) => tooltipFor(state),
+  const popoverField = StateField.define<PopoverTarget | null>({
+    create: (state) => targetFor(state, null),
     // Recompute on selection/doc changes AND on effect-bearing transactions: @codemirror/lint publishes
     // fresh diagnostics via a setDiagnostics EFFECT with no doc/selection change, so without `tr.effects`
     // the popover would go stale after add/ignore and miss first paint under a resting caret. A focus-loss
-    // blur dispatches an empty update (no doc/selection/effects), so it returns the prior value and the
-    // mounted, focused popover is preserved (CM reuses the view when the Tooltip value is unchanged).
-    update: (value, tr) => (tr.docChanged || tr.selection || tr.effects.length ? tooltipFor(tr.state) : value),
-    provide: (f) => showTooltip.from(f),
+    // blur dispatches an empty update (no doc/selection/effects), so it returns the prior value unchanged.
+    update: (value, tr) => (tr.docChanged || tr.selection || tr.effects.length ? targetFor(tr.state, value) : value),
+    provide: (f) => showTooltip.from(f, (value) => value?.tooltip ?? null),
   });
 
   // Move focus into the popover shown for the caret's diagnostic. Returns false when none is shown, so the
   // binding is inert elsewhere. This is the ONLY focus move; caret-in-range never auto-focuses. Alt-Enter,
   // NOT Mod-. (Ctrl+. is the Details-panel shortcut and would double-fire).
   const focusPopover = (view: EditorView): boolean => {
-    const tip = view.state.field(popoverField, false);
-    if (!tip) return false;
-    const button = getTooltip(view, tip)?.dom.querySelector<HTMLButtonElement>('button');
+    const target = view.state.field(popoverField, false);
+    if (!target) return false;
+    const button = getTooltip(view, target.tooltip)?.dom.querySelector<HTMLButtonElement>('button');
     if (!button) return false;
     button.focus();
     return true;
@@ -120,8 +141,8 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
   const popoverKeymap = keymap.of([{ key: 'Alt-Enter', run: focusPopover }]);
 
   // A single visually-hidden polite live region: when the caret enters a NEW diagnostic range, announce the
-  // word, the suggestion count, and the key that opens the popover. Recompute on the same triggers as the
-  // field (doc/selection/effects) so a diagnostic landing under a resting caret still announces.
+  // message and the key that opens the popover. Recompute on the same triggers as the field
+  // (doc/selection/effects) so a diagnostic landing under a resting caret still announces.
   const liveRegion = ViewPlugin.fromClass(
     class {
       dom: HTMLElement;
@@ -145,8 +166,10 @@ export function cairnSuggestionPopover(modules: PopoverModules): Extension {
         if (key === this.lastKey) return;
         this.lastKey = key;
         if (!hit) return;
-        const count = hit.diagnostic.actions?.length ?? 0;
-        this.dom.textContent = `${hit.diagnostic.message} ${count} suggestion${count === 1 ? '' : 's'}; press Alt+Enter to open.`;
+        // The message plus the key that opens the popover. No action count: the generic renderer cannot
+        // tell a spelling suggestion from a management action, so a raw actions.length would announce the
+        // "Add to dictionary" and "Ignore" buttons as suggestions.
+        this.dom.textContent = `${hit.diagnostic.message} Press Alt+Enter to open suggestions.`;
       }
       destroy(): void {
         this.dom.remove();

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
-import { makeFakeWorker, COLD_START } from './fake-spell-worker.js';
+import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './fake-spell-worker.js';
 
 describe('suggestion popover', () => {
   // The flat-props form MarkdownEditor's tests use (not `{ props: {...} }`): two NON-adjacent occurrences
@@ -98,5 +98,20 @@ describe('suggestion popover', () => {
     const live = container.querySelector<HTMLElement>('[aria-live="polite"].cairn-cm-suggest-live')!;
     expect(live.textContent?.toLowerCase()).toContain('suggestion');
     expect(live.textContent).toContain('Alt+Enter');
+  });
+
+  it('draws the misspelling underline in the locked amber token, wavy', async () => {
+    const unpin = pinWarningInk();
+    try {
+      const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+      const { container } = render(MarkdownEditor, props(fake));
+      await expect.poll(() => container.querySelector('.cm-lintRange-info'), COLD_START).toBeTruthy();
+      const mark = container.querySelector<HTMLElement>('.cm-lintRange-info')!;
+      const style = getComputedStyle(mark);
+      expect(style.textDecorationColor).toBe(WARNING_INK);
+      expect(style.textDecorationStyle).toBe('wavy');
+    } finally {
+      unpin();
+    }
   });
 });

@@ -485,8 +485,9 @@ function lockedUnderlineTheme(EditorViewMod: typeof import('@codemirror/view').E
     '.cm-lintRange-info': {
       backgroundImage: 'none',
       textDecoration: 'underline wavy var(--cairn-warning-ink, oklch(50% 0.13 70))',
+      textDecorationThickness: '1px',
       textDecorationSkipInk: 'none',
-      textUnderlineOffset: '0.2em',
+      textUnderlineOffset: '0.22em',
     },
     // The one sanctioned internal-class touch: CodeMirror force-adds `.cm-tooltip` and paints a border and
     // a background; neutralize it so the recipe DOM owns the surface. Allow-listed by name in the gate.

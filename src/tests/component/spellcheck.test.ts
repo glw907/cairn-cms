@@ -2,17 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import type { MediaLibrary } from '../../lib/media/library-entry.js';
-import { makeFakeWorker, COLD_START } from './fake-spell-worker.js';
-
-// The locked spellcheck underline color: the theme overrides `.cm-lintRange-info` to a wavy underline
-// in var(--cairn-warning-ink). The test page loads no admin sheet, so the var is pinned here, the same
-// value cairn-admin.css sets; an unpinned var() drops the declaration and the color reads as the
-// inherited text color.
-const WARNING_INK = 'rgb(180, 120, 20)';
-function pinWarningInk(): () => void {
-  document.documentElement.style.setProperty('--cairn-warning-ink', WARNING_INK);
-  return () => document.documentElement.style.removeProperty('--cairn-warning-ink');
-}
+import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './fake-spell-worker.js';
 
 const underlines = (container: Element) =>
   Array.from(container.querySelectorAll<HTMLElement>('.cm-lintRange-info'));

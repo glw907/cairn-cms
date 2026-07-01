@@ -81,3 +81,15 @@ export function makeFakeWorker(config: FakeWorkerConfig): { create: () => SpellW
 // full tri-project run the transform contention pushes that past the default 1s poll. The generous
 // timeout absorbs it, matching MarkdownEditor.test.ts.
 export const COLD_START = { timeout: 20000 };
+
+// The locked spellcheck underline color: the theme overrides `.cm-lintRange-info` to a wavy underline
+// in var(--cairn-warning-ink). The test page loads no admin sheet, so the var is pinned here, the same
+// value cairn-admin.css sets; an unpinned var() drops the declaration and the color reads as the
+// inherited text color.
+export const WARNING_INK = 'rgb(180, 120, 20)';
+
+/** Pin `--cairn-warning-ink` on the document root for a test; call the returned function to unpin. */
+export function pinWarningInk(): () => void {
+  document.documentElement.style.setProperty('--cairn-warning-ink', WARNING_INK);
+  return () => document.documentElement.style.removeProperty('--cairn-warning-ink');
+}

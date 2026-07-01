@@ -241,3 +241,48 @@ git commit -m "docs(media): record the Library direct-upload finish-up"
 - **Type consistency:** `ingestAndStore` (Task 1) returns the same `ReturnType<typeof fail> | UploadResult` that `mediaLibraryUpload` (Task 2) branches on with `'record' in result`. `upsertMediaEntry`/`serializeMediaManifest` are the existing `manifest.ts` helpers. The `'uploaded'` flash value is added to the union in Task 3 and rendered in Task 4.
 - **Security:** the client posts only the file; the server derives and commits the record (Task 2). No client-record trust path exists.
 - **Owed:** a live admin smoke against a real Worker rides the next site cutover (it commits real content), consistent with the media passes' standing deferral; the showcase e2e + the workerd integration suite prove it meanwhile.
+
+---
+
+## Post-mortem (2026-07-01)
+
+**Built.** All six tasks landed test-first on the `media-library-upload` worktree off `main`
+(`9c806b4`), then a review-fix pass. The Media Library gains direct single-file upload: the two
+`Upload` buttons and a page drop target open the reused `MediaCaptureCard`, the file posts to a new
+`mediaLibraryUpload` action that shares `uploadAction`'s store-and-derive body (factored out as
+`ingestAndStore`) then commits the derived `media.json` row to `main`, and the client refreshes to the
+`uploaded` flash. Single-file, idempotent on a duplicate hash, client posts only the file. Commits:
+`58d05c9` (ingestAndStore extraction), `6f56e14` (the action + commit), `2fd3458` (registration +
+flash), `269b387` (UI wiring), `1234117` (e2e), `6112c15` (docs), `82ba0bd` (simplify), `e25f57e`
+(review-gate fixes), `2c18502` (e2e label follow-up).
+
+**Verified.** Final gate at HEAD: `npm run check` 0/0 (1256 files), `npm test` exit 0 (278 files,
+2908 tests), `check:comments` OK, all four doc gates (`check:docs`, `check:reference`,
+`check:reference:signatures`, `check:package`). The `media-library.spec.ts` e2e passes in real
+Chromium against a fresh `dist` build (8 passed). New tests: 4 integration cases for the commit
+(new-row, idempotent no-op, no-session, bad-CSRF), 2 for the `expectedHead` guard (5th-arg spy + a
+simulated concurrent-uploader 409), component cases for the button/drop/refresh flow and the
+dragover gate, plus the e2e.
+
+**Decisions locked.** The row commits directly to `main`, no staging. `ingestAndStore` is the shared
+store-and-derive seam; the editor upload stores only, the Library upload stores then commits. The
+commit is fail-closed via `expectedHead` (read the head before the manifest), matching
+`settingsSave`/`vocabularySave`, so the advertised `fail(409)` reload prompt is real and a concurrent
+upload cannot last-writer-wins a row off the backstop-less `media.json`. `MediaCaptureCard` gained an
+optional `submitLabel` (default `"Insert image"`; the Library passes `"Upload image"`). The page drop
+target gates `preventDefault` on `dataTransfer.types.includes('Files')` (the only readable signal in
+dragover's protected mode) and stands down while any `dialog[open]` is present.
+
+**Review gate.** Four reviewers (svelte, daisyui-a11y, cloudflare-workers, an adversarial Opus
+correctness pass) found nine issues; seven were folded (`e25f57e`): a real-browser drop blocker the
+tests masked, a repeat-upload staleness bug (confirmed twice, restored the spec's `invalidateAll`),
+the concurrency `expectedHead` guard, a phantom file-input tab stop, the drop-guard dialog gap, the
+capture-card label, and a misleading light-dismiss comment. Three low findings were deferred to the
+friction log: the `fail(409)` message collapsing to the generic card (Retry recovers), a
+failed-state focus move (sibling-consistent), and non-image-drop feedback.
+
+**Owed / carried.** The live admin smoke against a real Worker rides the next site cutover (standing
+media-pass deferral). The three deferred review findings are in `docs/internal/docs-friction-log.md`.
+
+**Release.** Held. `package.json` untouched at `0.78.1`; the `## Unreleased` CHANGELOG entry is
+finalized. Batches with the CM a11y passes and `starter-template-1`.

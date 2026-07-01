@@ -11,34 +11,36 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-01, LATEST): execute the Media Library direct-upload pass, fresh session, worktree off `main`
+## Immediate next action (2026-07-01, LATEST): Media Library direct upload COMPLETE + MERGED to `main`, release HELD; NEXT is Geoff's merge/release call, then the next engine pass
 
-CM integration Passes 1 + 2 are COMPLETE + MERGED + pushed (`origin/main` @ `a3c9a1b`), release HELD. The
-next pass is **the Media Library direct upload** (ROADMAP `## Next`): brainstormed and scope-approved, spec +
-plan committed on `main` (`e25785f`), NOT yet executed. Execute test-first on a FRESH worktree off `main`, in
-a NEW session (a deliberate context clear after a long planning session).
+The **Media Library direct-upload** pass is COMPLETE and MERGED to `main` `--no-ff`, **release HELD**
+(`package.json` untouched at `0.78.1`). The Library's two `Upload` buttons and a page drop target now open the
+reused `MediaCaptureCard`, post the file to a new `mediaLibraryUpload` action that stores the bytes (shared
+`ingestAndStore` body) and commits the derived `media.json` row to `main` in one step, then refresh to the
+`uploaded` flash. Single-file, idempotent on a duplicate hash, client posts only the file, commit is
+fail-closed on `expectedHead` (matching `settingsSave`/`vocabularySave`). Plan + post-mortem:
+`docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`. Memory:
+`cairn-image-gallery-initiative-placement`.
 
-- Spec: `docs/superpowers/specs/2026-06-30-cairn-media-library-upload-design.md`
-- Plan (6 tasks): `docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`
-- Memory: `cairn-image-gallery-initiative-placement`
+**Gate (pass end):** `npm run check` 0/0 (1256 files), `npm test` exit 0 (278 files, 2908 tests),
+`check:comments` OK, all four doc gates, and `media-library.spec.ts` e2e green in real Chromium (8 passed).
+The four-reviewer fan-out (svelte + daisyui-a11y + cloudflare-workers + adversarial Opus) found nine issues;
+seven folded (`e25f57e`), including a real-browser drop blocker the tests had masked, a repeat-upload
+staleness bug, and the `expectedHead` concurrency guard. Three low findings deferred to the friction log.
 
-Scope: wire the Library's two `Upload` buttons + the empty-state drop target to a single-file upload that
-stores bytes AND commits the `media.json` row to `main` in ONE new `mediaLibraryUpload` action. The client
-posts only the file; the server derives and commits the record (factor `uploadAction`'s store-and-derive into
-a shared `ingestAndStore` helper). Reuse `MediaCaptureCard` + the Replace transport. Single-file only (batch
-deferred). Idempotent on a duplicate hash. Additive, non-breaking, release held.
+**Carried follow-ups (churn, do not accumulate):**
+- **Live admin smoke owed** at the next site cutover (commits real content; standing media-pass deferral).
+- **Three deferred review findings** in `docs/internal/docs-friction-log.md`: the `fail(409)` message
+  collapsing to the generic card (Retry recovers), a failed-state focus move (sibling-consistent), and
+  non-image-drop feedback. Also logged: the shared `MediaCaptureCard` label and the stale-worktree-`dist` trap.
 
-**Resume prompt for the fresh session** (launch in the cairn-cms main checkout, `~/Projects/cairn-cms`):
-
-> Execute the Media Library direct-upload plan
-> (`docs/superpowers/plans/2026-06-30-cairn-media-library-upload.md`), spec
-> `docs/superpowers/specs/2026-06-30-cairn-media-library-upload-design.md`. Use `cairn-pass`; create a feature
-> worktree off `main` per `superpowers:using-git-worktrees` and run `npm install && npm run package` in it
-> first (the worktree needs `node_modules` + `dist`). Execute the six tasks test-first via `cairn-implementer`
-> (or a workflow with per-task adversarial verification if I opt in), the main loop reviewing each diff and
-> the full gate between. Then the review-gate fan-out (svelte + daisyui-a11y + cloudflare-workers + an Opus
-> correctness pass), fold fixes, merge to `main` `--no-ff`, hold the release. Memory
-> `cairn-image-gallery-initiative-placement` carries the media substrate.
+**NEXT is Geoff's call, not a dev pass:** the held batch since `0.78.1` now spans three chunks (the CM
+editor-a11y passes on `main`, `starter-template-1` unmerged, and this media upload). Decide whether to merge
+`starter-template-1` and cut one batched release, which the **site cutovers onto `0.78.0`** (ROADMAP `## Now`)
+would trigger and which also discharges the owed live admin smoke. For the next cairn-cms ENGINE pass, the
+recommendation is **body-link cross-branch delete protection** (ROADMAP `## Next`): the most self-contained
+item, closing the deliberately-deferred main-only-guard asymmetry (locked decision 9) by extending the proven
+strict cross-branch index to the body-link delete gate.
 
 ---
 

@@ -4,7 +4,7 @@
     ".cm-gutterElement", ".cm-gutters", ".cm-line", ".cm-lintRange-info"
   ],
   "cairnPrefix": ".cm-cairn-",
-  "chromeFloor": [".cm-tooltip", ".cm-tooltip-lint", ".cm-diagnostic-info", ".cm-diagnosticAction"],
+  "chromeFloor": [".cm-tooltip"],
   "enumeratedFiles": [
     "src/lib/components/spellcheck.ts",
     "src/lib/components/MarkdownEditor.svelte",

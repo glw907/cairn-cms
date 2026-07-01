@@ -63,6 +63,14 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   primitives have published into the showcase `file:` dep), then the docs phase (publish the role vocabulary
   as the versioned seam in `admin-design-system.md`). Spec:
   `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
+- **CodeMirror integration: the suggestion popover.** Convert the spellcheck and objective-error
+  suggestion popover from a skinned `@codemirror/lint` tooltip into cairn's own recipe DOM rendered
+  through CodeMirror's public API (`showTooltip` facet + a caret `StateField` + `forEachDiagnostic`;
+  `tooltipFilter` suppresses the built-in tooltip while `linter()` keeps the underline), and give it the
+  keyboard and screen-reader path it has never had. A four-way adversarial review narrowed the original
+  three-surface sweep to this one surface; the cut work is filed below (find/replace, autocomplete,
+  editor a11y). Spec: `docs/superpowers/specs/2026-06-30-cairn-cm-integration-design.md`; memory:
+  `cairn-codemirror-integration-pass`.
 
 ## Next
 
@@ -89,25 +97,13 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Later
 
-- **Align the CodeMirror editing surface to the design language.** The in-editor surfaces that act as chrome
-  (the spellcheck `@codemirror/lint` suggestion popover first, then autocomplete and the search/replace panel)
-  are CodeMirror's stock widgets skinned with thin `EditorView.theme` patches, so they inherit CodeMirror's
-  default layout, button chrome, and the mono face and read as a different design language than the admin.
-  Align them by rendering cairn's own recipe DOM through CodeMirror's public extension points (the
-  `Tooltip`/`showTooltip` API, the lint `renderMessage` hook) rather than styling CodeMirror's internal `.cm-*`
-  classes, which is what makes a CodeMirror major expensive. Keep the writing surface (content, syntax, the
-  directive rails, the fold gutter, the lint underline) themed via `.cm-content`; just tune the underline.
-  Separate from the admin de-customization sweep, which walls the CodeMirror theme. Framing:
-  [`docs/internal/cm-editing-surface-alignment.md`](docs/internal/cm-editing-surface-alignment.md).
-
-  Geoff's steer (2026-06-30) sets the goal and the method. The goal holds three constraints that pull
-  against each other: the editor should feel like a fully integrated part of cairn and share its design
-  language; CM is mature and battle-tested, so the work must keep it easy to upgrade through narrow seams,
-  not deep overrides against internals; and it must leverage CM's accumulated UI/UX lessons rather than
-  subvert a quality editing experience for theoretically perfect design consistency. The design must START
-  with a careful prior-art review of how other systems integrated CM while preserving their own visual
-  identity and keeping CM upgrade-easy, then move to a brainstorm and a spec. Recorded in the
-  `cairn-codemirror-integration-pass` memory.
+- **Editor accessibility hardening (beyond the suggestion popover).** The CM integration pass gives the
+  spellcheck and objective-error popover a keyboard and screen-reader path, but the editor's other
+  accessibility gaps remain, surfaced by that pass's a11y review: the lint underline is a bare
+  `text-decoration` with no `aria-invalid` or described-by relationship, there is no status live region
+  for diagnostics, and the keymap wires no `lintKeymap`. A focused pass would give the whole editing
+  surface a coherent accessibility model (diagnostic exposure, focus discipline, announcements) on the
+  same public-API discipline the popover pass establishes, so it composes rather than re-litigates.
 - **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
   so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
   `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward
@@ -183,6 +179,20 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.
+- **Editor find/replace.** A recipe-built find/replace panel on `@codemirror/search`'s `createPanel`,
+  keeping CodeMirror's search state and commands but rendering cairn DOM. Bind only the search subset of
+  `searchKeymap` (not the stock un-themed `gotoLine` panel or the multi-cursor bindings it also carries),
+  and honor the full panel a11y contract (no focus trap, labeled stateful toggles with `aria-pressed`, a
+  polite match-count live region reading "3 of 12"). Cut from the CM integration pass as new capability,
+  not chrome alignment: cairn edits short Posts and Pages and the browser already finds visible text, so
+  scope it only if find/replace is genuinely wanted, on its own merit.
+- **Autocomplete dropdown look (conditional).** The link-completion dropdown stays a plain CodeMirror
+  default. The CM integration pass deliberately did not align it: CodeMirror offers no public replacement
+  for the dropdown container, so skinning it would add internal-class coupling (`.cm-completionLabel`,
+  `.cm-completionMatchedText`) on a rarely-seen surface, against the pass's shrink-the-fragility goal.
+  Revisit only if the default reads as jarring in practice, and only through the public
+  `tooltipClass`/`optionClass` tint (font and surface on the container), never reaching into the internal
+  completion classes; hold the selected state to a non-color cue and the contrast floors.
 - **A strong/gentle CTA pair in the starter template (DaisyUI Aura).** The template could offer a
   developer two call-to-action treatments to choose from: a strong one using DaisyUI's Aura animated glow
   and a gentle one without. Template only. The admin interface stays restrained and never uses Aura.

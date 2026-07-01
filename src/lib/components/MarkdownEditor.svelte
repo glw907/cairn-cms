@@ -719,6 +719,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // never silently rewrites a `media:` token, a directive name, or frontmatter.
           theme,
           surfaceCompartment.of(surface === 'prose' ? proseTheme : markupTheme),
+          // The live content's accessible name (WCAG 4.1.2): the only aria-label in this file otherwise
+          // sits on the SSR-fallback textarea below, which hydration removes, so the same string carries
+          // across the swap. A public facet, so this adds no CodeMirror-internal coupling.
+          EditorView.contentAttributes.of({ 'aria-label': 'Markdown source' }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) value = update.state.doc.toString();
             // A doc edit can change the block's span and a caret move can change which block the

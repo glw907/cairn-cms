@@ -11,7 +11,65 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-06-30, LATEST): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; NEXT = the starter-template track, then docs
+## Immediate next action (2026-06-30, LATEST): CM suggestion-popover pass COMPLETE + held on `cm-suggestion-popover`; NEXT = Geoff merge/release call, then the next CM integration surface (brainstorm-first)
+
+The CodeMirror suggestion-popover pass is **complete**: all 8 plan tasks plus a review-fix committed on the
+`cm-suggestion-popover` worktree branch (off `main` @ `18b519b`), **held unmerged, no publish**. The
+spellcheck and objective-error suggestion popover now renders cairn's own recipe DOM through CodeMirror's
+public `showTooltip` facet (not the skinned `@codemirror/lint` tooltip), with the keyboard and
+screen-reader path it never had: caret-in-range shows it without stealing focus, a polite live region
+announces it, `Alt-Enter` moves focus in, a native Escape listener returns focus to `.cm-content`, and it
+is a non-modal `role="group"`. The built-in tooltip is suppressed via `tooltipFilter` (returning `null`; an
+empty array does NOT suppress on `@codemirror/lint` 6.9.7); `linter()` keeps the underline, tuned for
+weight and offset on the locked `--cairn-warning-ink`. A new `check:cm-internals` allowlist gate (wired
+into CI) holds the editor theme's CodeMirror-internal coupling to the `.cm-tooltip` floor. Plan +
+post-mortem: `docs/superpowers/plans/2026-06-30-cairn-cm-suggestion-popover.md`. Memory:
+`cairn-codemirror-integration-pass`.
+
+**Gate (pass end):** `npm run check` 0/0 (1252 files), `npm test` exit 0 (2882 tests, 275 files),
+`check:cm-internals` PASS (floor `.cm-tooltip`), `check:custom-surface` both trees PASS, `check:comments`
+OK, `check:docs` OK. code-simplifier and daisyui-a11y-reviewer both folded in; the review's one real
+finding (a focus-loss-under-background-lint-effect hole) is fixed and regression-guarded by a headless
+`showTooltip`-facet-stability test.
+
+**Pending Geoff decision:** merge `cm-suggestion-popover` to `main` and decide the batched release since
+`0.78.1` (CHANGELOG is finalized under `## Unreleased`, sized patch, non-breaking, no consumer action).
+Hold-and-batch remains the default.
+
+**Carried follow-ups (churn these, do not accumulate):**
+- **CM-upgrade-watch schedule routine DEFERRED to merge.** Create the monthly (`0 8 1 * *`, Default env,
+  Sonnet, ping-on-failure) cloud routine that bumps `@codemirror/*` and runs `check` + `test` +
+  `check:cm-internals`, WHEN the branch lands on `origin/main` (the routine needs `check:cm-internals` on
+  the default branch). The committed public-API tripwire test (`src/tests/unit/codemirror-public-api.test.ts`)
+  is the in-repo guard meanwhile.
+- **Live admin smoke: N/A this pass** (no `/admin` auth or Worker path changed; the popover is covered by
+  real-browser component tests).
+- **Backtick-in-message polish** (friction log, editor perspective): the diagnostic message renders literal
+  backticks into the `aria-label`; parse to `<code>`/emphasis in the message string in `spellcheck.ts`, a
+  future editor-copy refinement.
+
+**NEXT development pass = the next CodeMirror integration surface**, a brainstorm-first initiative (prior-art
+review, then brainstorm, then spec, per `docs/internal/cm-editing-surface-alignment.md` "What remains
+deferred" and the ROADMAP "Later" tier): the deferred chrome surfaces (autocomplete look, find/replace
+panel) and editor a11y hardening. Reuse the identity-through-facets pattern this pass proved: recipe DOM
+through a public CM extension point plus the internal-class allowlist ratchet. Do NOT auto-write its plan;
+it needs the brainstorm.
+
+**Resume prompt for the next session** (launch in the cairn-cms **main checkout**, `~/Projects/cairn-cms`,
+so hooks and memory load):
+
+> The CodeMirror suggestion-popover pass is complete and held on the `cm-suggestion-popover` worktree
+> branch (all gates green, CHANGELOG under `## Unreleased`). First, decide with me whether to merge it to
+> `main` and cut a batched release since `0.78.1` (use `cairn-release` if releasing). Then start the next
+> CodeMirror integration pass: the deferred surfaces (autocomplete look, find/replace) and editor a11y
+> hardening. This is a brainstorm-first initiative — read `docs/internal/cm-editing-surface-alignment.md`
+> ("What remains deferred"), the `cairn-codemirror-integration-pass` memory, and the ROADMAP "Later" CM
+> items, run a prior-art review off the main loop, then `superpowers:brainstorming` to settle scope with me
+> before writing a plan. Reuse the identity-through-facets pattern (recipe DOM via a public CM extension
+> point plus the `check:cm-internals` allowlist ratchet) the popover pass proved. Use `cairn-pass`; create
+> a feature worktree off `main` per `superpowers:using-git-worktrees`.
+
+## Immediate next action (2026-06-30): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; NEXT = the starter-template track, then docs
 
 The admin idiomatic re-expression **sweep is complete**. Phase 6 (media part 2), the final sweep phase,
 retired the last 125 muted/subtle bracket tokens across the five media files and ratcheted the admin

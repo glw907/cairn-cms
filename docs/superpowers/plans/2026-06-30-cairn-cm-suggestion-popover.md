@@ -807,3 +807,29 @@ git commit -m "docs(editor): record the shipped CM popover seam and prune the ro
 **Type consistency.** `cairnSuggestionPopover(modules)` is called with `{ view, state, lint }` from `cairnSpellcheck`'s handles; `popoverField`, `diagnosticAtCaret`, and `buildPopoverDom` (defined in Task 3) are consumed by the keymap and live region in Task 4; `Diagnostic.actions[].apply(view, from, to)` matches the existing builders. `props`/`openPopover` test helpers are defined once and reused across Tasks 3–6.
 
 **Sequencing note.** Task 2 (suppress) precedes Task 3 (recipe), so between those commits the editor has no suggestion popover; suppress-first is deliberate (it avoids a double tooltip on hover). Acceptable because the pass merges as one feature branch; do not partial-merge Task 2 alone.
+
+---
+
+## Post-mortem (2026-06-30)
+
+**Shipped.** All 8 tasks landed on the `cm-suggestion-popover` worktree (off `main` @ `18b519b`), plus a review-fix. Commits: `ea0a692` (gate), `ef939a4` (suppress), `6d5b83e` (recipe DOM), `a62df09` (keyboard + live region), `6af3c72` (theme + ratchet), `c4facb9` (underline tune), `3375648` (tripwire test), `e4dc79e` (docs + roadmap), `1b4b8af` (import tidy), `4b64ade` (focus-stability fix). Held unmerged, no publish.
+
+**Verified.** Full gate green at pass end: `npm run check` 0/0 (1252 files), `npm test` exit 0 (2882 tests, 275 files), `check:cm-internals` PASS (floor = `.cm-tooltip`), `check:custom-surface` both trees PASS, `check:comments` OK, `check:docs` OK. The popover renders cairn's recipe DOM through `showTooltip`; the built-in lint tooltip is suppressed; the underline stays. Keyboard path (Alt-Enter in, native Escape out), the polite live region, and focus stability under background lint effects are all covered (7 component tests + 3 unit stability tests + the public-API tripwire).
+
+**Corrections made during execution (the plan draft's assumptions that did not hold):**
+- `tooltipFilter: () => []` does NOT suppress the built-in tooltip on `@codemirror/lint` 6.9.7: an empty array is JS-truthy and `lintTooltip` gates on `!found`, so it mounts an empty `.cm-tooltip-lint`. The filter must return `null` (a cast, since the type is non-nullable). Verified against the installed source.
+- The `showTooltip` field MUST memoize its `Tooltip`. CM's reconciler reuses a mounted tooltip only when the new Tooltip's `create` is reference-identical, so a fresh object per recompute lets a background lint effect (a late or stale `setDiagnostics`) rebuild the DOM and drop focus from a focused button. The a11y review caught this (its one real finding, W1); fixed and guarded by a headless facet-stability test.
+- The component fixture `'teh teh'` is a doubled word, so the objective-error linter adds a third underline that add/ignore cannot clear. Use two non-adjacent occurrences (`'teh cat teh dog'`).
+- The extracted `fake-spell-worker.ts` had no `ignoreWord` handler, so an ignored word never became correct on relint.
+- `.append()` resolves to a wrong overload in this file's type context; `appendChild` is the repo idiom.
+- `expect.poll(...).toBeTruthy()` resolves to void, so it cannot return the element; re-query after the poll (the repo's poll-to-wait / re-query-to-get idiom).
+- The live-region announcement drops the action count: the generic renderer cannot tell a spelling suggestion from a management action, so a raw `actions.length` announced "Add to dictionary" and "Ignore" as suggestions (a11y review S2).
+
+**a11y review verdict.** Accessibility-correct within the locked non-modal `role="group"` model; the one real focus hole is fixed. S3 (the message renders literal backticks into the `aria-label`) belongs to the message string in `spellcheck.ts`, one seam over, and is logged in the friction log.
+
+**Carried follow-ups:**
+- **Schedule routine DEFERRED to merge** (Geoff, 2026-06-30). The monthly CodeMirror-upgrade-watch cloud routine runs `check:cm-internals`, which is not on `origin/main` until this branch merges and pushes. Create it then: monthly (`0 8 1 * *`), Default env, Sonnet, ping-on-failure, mirroring the kit#15992 watcher. The committed public-API tripwire test is the in-repo guard meanwhile.
+- **Live admin smoke: N/A this pass.** No `/admin` auth or Worker path changed; the popover is covered by real-browser component tests.
+- **Backtick-in-message polish** (friction log, editor perspective): parse the backtick into a `<code>`/emphasis span in the diagnostic message, a future editor-copy refinement.
+
+**Next.** The CodeMirror integration initiative continues on the deferred surfaces (autocomplete, find/replace) and the editor a11y hardening, a brainstorm-first pass per `docs/internal/cm-editing-surface-alignment.md` ("What remains deferred") and the ROADMAP "Later" tier. The identity-through-facets pattern this pass proved (recipe DOM through a public extension point, the internal-class allowlist ratchet) is the template to reuse.

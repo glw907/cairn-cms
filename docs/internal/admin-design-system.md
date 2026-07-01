@@ -323,6 +323,30 @@ Recipes:
   70% mix is a locked floor: it clears the 3:1 non-text contrast minimum on both themes, where 45%
   measured near 2:1. A scoped `.cairn-doc-title:focus` rule in `cairn-admin.css` gives the document
   title input the same hairline.
+- **Editor: the suggestion popover (`.cairn-cm-suggest`).** The spellcheck and objective-error suggestion
+  surface, rendered as cairn's own recipe DOM through CodeMirror's public `showTooltip` facet
+  (`src/lib/components/editor-suggestion-popover.ts`), NOT a skinned `.cm-tooltip-lint`; the built-in
+  lint tooltip is suppressed via `tooltipFilter` (returning `null`, since @codemirror/lint 6.9.7 still
+  mounts an empty tooltip for `[]`). It is a generic renderer over `Diagnostic.message` and
+  `Diagnostic.actions`, so one recipe serves both diagnostic kinds: the spellcheck popover (a row of
+  suggestion buttons plus Add to dictionary and Ignore) and the objective-error popover (a single Fix
+  button). That genericity is why every action button gets the same uniform styling
+  (`.btn.btn-sm`), never a per-kind treatment. The structure is `role="group"` with an `aria-label` set
+  from the diagnostic message, a `.cairn-cm-suggest__msg` message line, and a `.cairn-cm-suggest__actions`
+  wrapping row of buttons. The Warm Stone surface comes from `--color-base-100`, `--cairn-card-border`,
+  `--radius-box`, `--cairn-shadow`, and `--font-body` (escaping CodeMirror's mono editing face, like the
+  media chip and figure pill do). The non-color hover cue is an underline on the button label (a
+  color-only cue fails WCAG 1.4.1); the focus ring is the amber `--cairn-warning-ink`, tying the popover
+  to the same ink as the misspelling underline it answers. The sole sanctioned internal-class touch is
+  neutralizing `.cm-tooltip`, the class CodeMirror force-adds to every tooltip it mounts; `npm run
+  check:cm-internals` holds that coupling to its allowlisted floor so a new `.cm-*` touch cannot slip in
+  unnoticed. Its accessibility model has no `MediaInsertPopover` analogue: the caret sitting inside a
+  diagnostic's range shows the popover without stealing focus, a polite `aria-live` region announces the
+  message and the key that opens it, `Alt-Enter` moves focus into the popover's first button, and a
+  native (non-CodeMirror) Escape listener returns focus to `.cm-content`. It is deliberately `role="group"`,
+  never `role="dialog"`, and has no `aria-modal`, no focus trap, and no auto-focus: it is ambient chrome
+  tied to caret position, not a flow the editor opens and must dismiss. Contrast with `MediaInsertPopover`
+  immediately below, which is a real modal.
 - **Media: the at-caret insert popover (`MediaInsertPopover`).** This is the one sanctioned exception
   to the Dialog recipe. Where every other modal is a centered `<dialog>`, the image insert surface is
   an anchored popover positioned at the CodeMirror caret, so an editor names and describes an image

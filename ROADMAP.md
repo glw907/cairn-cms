@@ -63,14 +63,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   primitives have published into the showcase `file:` dep), then the docs phase (publish the role vocabulary
   as the versioned seam in `admin-design-system.md`). Spec:
   `docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`.
-- **CodeMirror integration: the suggestion popover.** Convert the spellcheck and objective-error
-  suggestion popover from a skinned `@codemirror/lint` tooltip into cairn's own recipe DOM rendered
-  through CodeMirror's public API (`showTooltip` facet + a caret `StateField` + `forEachDiagnostic`;
-  `tooltipFilter` suppresses the built-in tooltip while `linter()` keeps the underline), and give it the
-  keyboard and screen-reader path it has never had. A four-way adversarial review narrowed the original
-  three-surface sweep to this one surface; the cut work is filed below (find/replace, autocomplete,
-  editor a11y). Spec: `docs/superpowers/specs/2026-06-30-cairn-cm-integration-design.md`; memory:
-  `cairn-codemirror-integration-pass`.
 
 ## Next
 

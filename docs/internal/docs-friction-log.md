@@ -41,6 +41,13 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   string, so the in-admin help hand-off cannot greet the author by the owner's name or offer a named
   button. Candidate: a richer shape (a name plus a contact), weighed against the one-string simplicity
   that needs no schema. LOW.
+- **editor** (the suggestion popover shows a literal backtick): the popover's message line renders
+  `Diagnostic.message` as `textContent`, so a message like `` `teh` may be misspelled. `` shows the
+  backticks verbatim instead of styling the flagged word. The built-in `@codemirror/lint` tooltip this
+  popover replaced had the same behavior, so it is not a regression, but it is a rough edge worth
+  closing. Candidate: parse the backtick-quoted span in `spellcheck.ts`'s message string into a
+  `<code>` or emphasis span; this belongs to the message string, not the generic popover renderer that
+  serves both diagnostic kinds, so it was left out of this pass's scope. LOW.
 
 ### Gates and test infrastructure
 

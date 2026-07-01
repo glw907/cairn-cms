@@ -63,14 +63,16 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   expect(decoration.style).toBe('wavy');
   expect(decoration.color).toBe(decoration.ink);
 
-  // Apply a suggestion for "recieve". Hover the underline to open the lint tooltip, then click the
-  // top suggestion "receive" (SymSpell ranks the single-transposition fix first). The replace lands
-  // as one transaction, so the corrected word appears in the hidden body field.
+  // Apply a suggestion for "recieve". The suggestion popover is cairn's own recipe DOM on the public
+  // showTooltip facet (the built-in lint tooltip is suppressed), and it opens on caret-in-range, not
+  // hover: click the underlined word to place the caret, then click the top suggestion "receive"
+  // (SymSpell ranks the single-transposition fix first). The replace lands as one transaction, so the
+  // corrected word appears in the hidden body field.
   const recieve = underlines.filter({ hasText: 'recieve' });
-  await recieve.hover();
-  const receiveAction = page.locator('.cm-diagnosticAction', { hasText: 'receive' }).first();
-  await expect(receiveAction).toBeVisible({ timeout: 10_000 });
-  await receiveAction.click();
+  await recieve.click();
+  const popover = page.locator('.cairn-cm-suggest');
+  await expect(popover).toBeVisible({ timeout: 10_000 });
+  await popover.getByRole('button', { name: 'receive' }).first().click();
 
   const body = page.locator('input[name="body"]');
   await expect(body).toHaveValue(/Please receive this draft/, { timeout: 10_000 });
@@ -81,9 +83,8 @@ test('the worker lints the seeded misspellings, a suggestion applies, and an add
   // the source re-lints, and the last underline clears. The commit to the dictionary file rides the
   // next save (Task 9); the underline clearing is the in-session proof the add reached the worker.
   const teh = underlines.filter({ hasText: 'teh' });
-  await teh.hover();
-  const addAction = page.locator('.cm-diagnosticAction', { hasText: 'Add to dictionary' }).first();
-  await expect(addAction).toBeVisible({ timeout: 10_000 });
-  await addAction.click();
+  await teh.click();
+  await expect(popover).toBeVisible({ timeout: 10_000 });
+  await popover.getByRole('button', { name: 'Add to dictionary' }).click();
   await expect(underlines).toHaveCount(0, { timeout: 10_000 });
 });

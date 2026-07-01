@@ -13,7 +13,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-01, LATEST): 0.78.2 PUBLISHED (the four held passes); NEXT = the site cutovers, then the body-link delete-protection engine pass
+## Immediate next action (2026-07-01, LATEST): 0.78.2 PUBLISHED; NEXT = the surface-pruning pass (plan written, pre-beta), then the site cutovers
 
 **`0.78.2` is on the registry as `latest`.** The cut rolled the four held passes since `0.78.1`: the
 CM-native suggestion popover, the editor accessibility hardening, the Media Library direct upload, and
@@ -36,7 +36,19 @@ the starter-template native re-expression (branch `starter-template-1` renamed t
 (`trig_01FUvcfteDNUe1dwP7MVumNE`, monthly on the 1st, Sonnet, read-and-report) bumps `@codemirror/*`
 in a cloud checkout and runs `check` + `test` + `check:cm-internals`, pinging on failure.
 
-**NEXT: the site cutovers (ROADMAP `## Now`).** Cross ecxc-ski and 907-life onto `0.78.2` with their
+**NEXT: the surface-pruning pass (pre-beta contract freeze).** An adversarial 19-agent audit of
+the public surface (2026-07-01) convicted ~106 of 305 exported names as engine plumbing leaked
+onto the contract, plus five reshapes and two shape blockers (the open `routing` union, the
+hand-declared `Platform.env`). The plan is
+`docs/superpowers/plans/2026-07-01-surface-pruning-pass.md` (evidence:
+`2026-07-01-surface-pruning-audit-verdicts.md` beside it); it lands the prune, the shape fixes,
+the three-tier stability vocabulary (`Unstable API` joins `Extension API`/`Scaffold API`,
+gate-enforced per export), and the packaging boundary, all batched under one `## Unreleased`
+window. Run it BEFORE the site cutovers so the pruned contract is what gets production miles.
+The docs rewrite (tutorial `mintToken` and admin-mount fixes included) follows the freeze;
+code is the guide until then.
+
+**Then: the site cutovers (ROADMAP `## Now`).** Cross ecxc-ski and 907-life onto `0.78.2` with their
 v2-adapter cutovers: mount the shared `/admin/+layout`, read `page.data.shell`, transcribe each site's
 URL policy into `defineConcept` (the phase-3b hard error catches a miss), and run the **owed live admin
 smoke** against a real Worker (the standing deferral from the tag-management and media passes). Use

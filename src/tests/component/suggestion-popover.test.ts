@@ -86,6 +86,23 @@ describe('suggestion popover', () => {
     await expect.poll(() => document.activeElement?.closest('.cm-content'), COLD_START).toBeTruthy();
   });
 
+  it('dismisses the ambient popover on Escape with focus still in .cm-content, and reappears at the next diagnostic (WCAG 1.4.13, dismissable)', async () => {
+    const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
+    const { container } = render(MarkdownEditor, props(fake));
+    await openPopover(container); // clicks the first underline: caret in range, focus in .cm-content
+    expect(document.activeElement?.closest('.cm-content')).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    await expect.poll(() => container.querySelector('.cairn-cm-suggest'), COLD_START).toBeNull();
+    // Stays hidden while the caret is unmoved, even across a beat that a background lint effect
+    // (a relint under a resting caret) could otherwise use to resurface it.
+    await new Promise((resolve) => setTimeout(resolve, 200));
+    expect(container.querySelector('.cairn-cm-suggest')).toBeNull();
+    // Moving the caret to the other misspelling shows the popover again.
+    const underlines = container.querySelectorAll('.cm-lintRange-info');
+    await userEvent.click(underlines[underlines.length - 1]!);
+    await expect.poll(() => container.querySelector('.cairn-cm-suggest'), COLD_START).toBeTruthy();
+  });
+
   it('does not steal focus when the popover appears (WCAG 1.4.13, no focus theft)', async () => {
     const fake = makeFakeWorker({ wrong: ['teh'], suggestions: ['the'] });
     const { container } = render(MarkdownEditor, props(fake));

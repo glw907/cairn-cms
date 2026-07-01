@@ -566,6 +566,15 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   // never collide on a shared counter.
   let suggestSeq = 0;
 
+  // @codemirror/lint's own doc comment for `tooltipFilter` promises "No tooltip will appear if the
+  // empty set is returned", but `lintTooltip` gates on `!found`, and an empty array is JS-truthy, so
+  // `() => []` still mounts an empty `.cm-tooltip-lint` on hover (verified against the installed
+  // @codemirror/lint 6.9.7: hovering with `tooltipFilter: () => []` renders `<ul class="cm-tooltip-lint">`
+  // with zero children rather than nothing). Returning `null` takes the `!found` branch the doc
+  // describes; the cast compensates for `DiagnosticFilter`'s non-nullable `Diagnostic[]` return type,
+  // which does not reflect the library's own falsy-return contract.
+  const suppressTooltip = (): Diagnostic[] => null as unknown as Diagnostic[];
+
   // Re-run the lint at once after a state change that is not a doc edit (the Worker became ready, or a
   // word was added or ignored). The dispatched effect makes the linter's needsRefresh schedule a run,
   // so the following forceLinting is no longer a no-op (its internal force() only fires on a scheduled
@@ -715,6 +724,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
     // only re-runs on a doc change, so an add-to-dictionary would never clear the standing underlines.
     needsRefresh: (update) =>
       update.transactions.some((tr) => tr.effects.some((e) => e.is(relintEffect))),
+    // Suppress @codemirror/lint's built-in tooltip; cairn renders its own recipe popover via showTooltip
+    // (editor-suggestion-popover.ts). Every diagnostic here is cairn's, so filter to none. markerFilter is
+    // untouched, so the underline stays.
+    tooltipFilter: suppressTooltip,
   });
 
   // The objective-error source: a second linter() over the SAME viewport-scoped prose spans the
@@ -725,7 +738,7 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
   const objectiveSource = linter((view) => {
     const { text, spans } = visibleProseSpans(view);
     return objectiveErrors(text, spans).map(buildObjectiveDiagnostic);
-  });
+  }, { tooltipFilter: suppressTooltip });
 
   return [source, objectiveSource, lockedUnderlineTheme(EditorView)];
 }

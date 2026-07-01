@@ -781,19 +781,23 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     const btn = foldBtn(screen.container)!;
     expect(btn.tagName).toBe('BUTTON');
-    expect(btn.getAttribute('aria-label')).toBe('Fold this section');
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    expect(btn.getAttribute('aria-label')).toBe('panel section');
     // Clicking it hides the body and the closer.
     await userEvent.click(btn);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
     expect(lineCount(screen.container)).toBeLessThan(visible);
     // The folded row shows the real focusable pill counting the hidden lines (body one, body two,
-    // and the closer: three), and the gutter button now reads as the unfold control.
+    // and the closer: three), and the gutter button now reads collapsed via aria-expanded, with
+    // the same state-neutral name (aria-expanded is the sole state signal, per spec 2026-06-30).
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.tagName).toBe('BUTTON');
-    expect(pill.getAttribute('aria-label')).toBe('Show 3 hidden lines');
+    expect(pill.getAttribute('aria-expanded')).toBe('false');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
     expect(pill.textContent).toContain('3 lines');
-    await expect.poll(() => foldBtn(screen.container)?.getAttribute('aria-label')).toBe('Unfold this section');
+    await expect.poll(() => foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
+    expect(foldBtn(screen.container)?.getAttribute('aria-label')).toBe('panel section');
     // Clicking the pill restores the hidden lines and the body text still mirrors to the form.
     await userEvent.click(pill);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();

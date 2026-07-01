@@ -45,3 +45,15 @@ describe('diagnostic traversal', () => {
     expect(document.querySelector('.cm-diagnosticAction')).toBeNull();
   });
 });
+
+describe('fold-control disclosure semantics', () => {
+  it('fold control exposes aria-expanded and a state-neutral name', async () => {
+    const doc = ':::note\nbody line one\nbody line two\n:::\n';
+    const { container } = render(MarkdownEditor, { value: doc, name: 'body' });
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
+    const btn = container.querySelector('.cm-cairn-fold-btn')!;
+    expect(btn.getAttribute('aria-expanded')).toBe('true'); // expanded at rest
+    const label = btn.getAttribute('aria-label') ?? '';
+    expect(label.toLowerCase()).not.toMatch(/fold|unfold|show/); // state-neutral, names the block
+  });
+});

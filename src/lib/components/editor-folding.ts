@@ -24,7 +24,13 @@ import {
 } from '@codemirror/view';
 import { EditorState, Prec, RangeSetBuilder, StateEffect, StateField, type Extension } from '@codemirror/state';
 import { codeFolding, foldEffect, foldedRanges, unfoldEffect } from '@codemirror/language';
-import { caretContainerRange, containerRanges, fenceScan, type ContainerRange } from './markdown-directives.js';
+import {
+  caretContainerRange,
+  containerRanges,
+  directiveOpenerName,
+  fenceScan,
+  type ContainerRange,
+} from './markdown-directives.js';
 
 // One chevron glyph; CSS rotates it (down open, right folded) and reveals it on gutter hover. The
 // gutter is the fixed-x home, so the chevron no longer encodes depth by position.
@@ -45,19 +51,40 @@ function chevronSvg(): SVGSVGElement {
   return svg;
 }
 
-// The pill placeholder: a real focusable button counting the hidden lines, the screen-reader story
-// for a fold. preparePlaceholder computes the count off the folded char range so placeholderDOM
-// renders it without re-deriving. Clicking unfolds through CodeMirror's own onclick handler.
-function preparePlaceholder(state: EditorState, range: { from: number; to: number }): number {
-  return state.doc.lineAt(range.to).number - state.doc.lineAt(range.from).number;
+// The disclosure name for a fold control: the directive name from its opener line, or the
+// generic 'section' when the opener carries none. State-neutral by construction, so
+// aria-expanded stays the sole state signal rather than double-signaling against a verb label.
+function blockName(openerLineText: string): string {
+  const name = directiveOpenerName(openerLineText);
+  return name ? `${name} section` : 'section';
 }
 
-function placeholderDOM(view: EditorView, onclick: (event: Event) => void, lines: number): HTMLElement {
+// The pill placeholder: a real focusable button counting the hidden lines, the screen-reader story
+// for a fold. preparePlaceholder computes the count and the block name off the folded char range
+// so placeholderDOM renders both without re-deriving. Clicking unfolds through CodeMirror's own
+// onclick handler.
+function preparePlaceholder(
+  state: EditorState,
+  range: { from: number; to: number },
+): { lines: number; name: string } {
+  const lines = state.doc.lineAt(range.to).number - state.doc.lineAt(range.from).number;
+  const name = blockName(state.doc.lineAt(range.from).text);
+  return { lines, name };
+}
+
+function placeholderDOM(
+  view: EditorView,
+  onclick: (event: Event) => void,
+  prepared: { lines: number; name: string },
+): HTMLElement {
   const pill = document.createElement('button');
   pill.type = 'button';
   pill.className = 'cm-cairn-fold-pill';
-  pill.textContent = `${lines} lines`;
-  pill.setAttribute('aria-label', `Show ${lines} hidden lines`);
+  pill.textContent = `${prepared.lines} lines`;
+  // A folded row is only ever rendered while folded, so aria-expanded is always false here; the
+  // redundancy with the gutter chevron's own aria-expanded is intended (spec 2026-06-30).
+  pill.setAttribute('aria-expanded', 'false');
+  pill.setAttribute('aria-label', `${prepared.name}, ${prepared.lines} hidden lines`);
   pill.addEventListener('click', onclick);
   return pill;
 }
@@ -322,13 +349,16 @@ class FoldMarker extends GutterMarker {
   toDOM(view: EditorView) {
     const btn = document.createElement('button');
     btn.type = 'button';
-    const label = this.folded ? 'Unfold this section' : 'Fold this section';
+    const title = this.folded ? 'Unfold this section' : 'Fold this section';
+    const openerText = view.state.doc.line(this.container.fromLine + 1).text;
     btn.className =
       'cm-cairn-fold-btn' +
       (this.folded ? ' cm-cairn-fold-folded' : '') +
       (this.active ? ' cm-cairn-fold-active' : '');
-    btn.setAttribute('aria-label', label);
-    btn.title = label + (this.folded ? UNFOLD_KEY_HINT : FOLD_KEY_HINT);
+    // aria-expanded is the sole state signal; the label names the block instead of repeating it.
+    btn.setAttribute('aria-expanded', this.folded ? 'false' : 'true');
+    btn.setAttribute('aria-label', blockName(openerText));
+    btn.title = title + (this.folded ? UNFOLD_KEY_HINT : FOLD_KEY_HINT);
     btn.appendChild(chevronSvg());
     btn.addEventListener('mousedown', (e) => e.preventDefault());
     btn.addEventListener('click', (e) => {

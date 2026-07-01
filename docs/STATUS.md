@@ -122,7 +122,164 @@ so hooks and memory load):
 > point plus the `check:cm-internals` allowlist ratchet) the popover pass proved. Use `cairn-pass`; create
 > a feature worktree off `main` per `superpowers:using-git-worktrees`.
 
-## Immediate next action (2026-06-30): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; NEXT = the starter-template track, then docs
+## Immediate next action (2026-06-30, superseded): the admin idiomatic re-expression initiative is COMPLETE (all phases); NEXT is Geoff's — merge `starter-template-1` and decide the batched release
+
+**The admin idiomatic re-expression initiative is complete, end to end.** The admin sweep (Phases 0–6,
+shipped in `0.78.0`/`0.78.1`), the starter-template track (Phases 1–2, held), and the docs phase (held) are
+all done. Everything since `0.78.1` sits on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree), **held and unmerged**.
+
+**The docs phase (the final phase), executed via a workflow.** Two sequential draft agents plus a parallel
+review (prose register + doc-vs-code accuracy). It rewrote `docs/internal/admin-design-system.md` to the
+de-customized reality: corrected three **stale** muted/subtle bracket references to the named `text-muted` /
+`text-subtle` role utilities (the doc had prescribed the retired form, which also polluted the shipped
+sheet), and added three sections — the developer-facing vocabulary (the versioned seam) with the "cairn's
+frame, not your API" split, the starter template's design, and the DaisyUI/Tailwind upgrade-rehearsal
+runbook. Added a discoverable "The admin design vocabulary" on-ramp to the published guide
+`docs/guides/add-a-custom-admin-screen.md` (Vale 0 errors). The **accuracy review was clean** (every token,
+utility, and recipe the docs name exists in the code — the guard against exactly this stale-doc drift).
+Folded the four prose-voice findings in the main loop. Commits `b3c91ab`, `c2755a0`, `90d3c90`.
+
+**The scheduled watcher is wired.** Routine `trig_01WkMgesdS1JAJuvc1hg1obH` ("cairn: DaisyUI/Tailwind major
+watcher"), cron `0 17 * * 1` (Mondays 09:00 America/Anchorage, first run 2026-07-06). It checks
+`npm view daisyui/tailwindcss version` and pings only when a new major (DaisyUI ≥ 6 or Tailwind ≥ 5)
+publishes, pointing at the runbook. Read-only, ping-when-tripped.
+
+**The residual custom surface** across the admin and the template is the documented Tier-2 floor, guarded by
+`check:custom-surface` (both trees at budget 0), `check:public-tokens`, and the `admin-css-build`
+invariants; the developer-facing vocabulary is published as a versioned seam; and the watcher protects the
+upgrade path. Gate green (`check:docs` OK, `check:reference` unaffected, Vale 0 errors); held unpublished
+(docs and tooling only, no package/API/behavior change, no `CHANGELOG` entry).
+
+**NEXT is Geoff's call, not a dev pass:**
+1. **Merge `starter-template-1` to `main`** (fast-forward; it carries the held starter-template track + the
+   docs phase above `0.78.1`).
+2. **Decide the batched release.** The whole held body since `0.78.1` is admin/template/docs internals a
+   consumer never imports, so it can hold and batch with the next consumer-facing change, or cut a release
+   if a coherent boundary warrants it (Geoff's call per the cadence). Verify the next version free with
+   `npm view @glw907/cairn-cms versions` at cut time.
+3. **Carried follow-ups (unrelated to a cut), now planned:**
+   - **Scope the admin CSS build's content detection** so the shipped sheet stops compiling foreign rules
+     from `examples/showcase` and `docs/`. Plan WRITTEN + QUEUED:
+     `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` (a test-first single task: disable
+     Tailwind's automatic source detection with `source(none)`, keep the explicit `@source`, lock it with a
+     no-foreign-token invariant in `admin-css-build.test.ts`, prove it with the byte-identical `admin-visual`
+     baseline). ROADMAP "Next"; the friction log has the detail. Execute via `cairn-implementer`.
+   - **The deferred live admin smoke** at a site cutover onto `0.78.x` — NOT a standalone plan (no code to
+     build). It is a triggered run of the documented procedure (`docs/internal/admin-smoke-test.md`),
+     contingent on an ecxc-ski or 907-life cutover, and rides that site's pass. Kept visible here only.
+
+Use `cairn-pass` for the next dev initiative. See the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): starter-template track Phases 1+2 COMPLETE on a worktree (held, unmerged); NEXT = the docs phase (the final phase of the initiative)
+
+The starter-template track is done through the fold. **Phase 1 (template foundation) and Phase 2 (template
+chrome) are both complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree), **held and not yet merged** (merge to `main` when Geoff asks; the showcase
+template is copied, not imported, so no release). Plans + post-mortems:
+`docs/superpowers/plans/2026-06-30-starter-template-{1-foundation,2-chrome}.md`.
+
+**Phase 2 (template chrome) — the fold, executed via a workflow.** Geoff opted into a workflow; it ran six
+sequential `cairn-implementer` fold tasks (shared files, strict in-order ratchet) plus a parallel review.
+The showcase design-scale tokens moved into Tailwind 4 `@theme` and the chrome/route markup now uses the
+generated named utilities (`font-display`, `text-step-*`, `gap-m`/`px-m`/…, `tracking-tight`, `leading-snug`,
+`max-w-measure*`, `text-muted`, `border-card-border`, `rounded-field`). The tokens **renamed** to Tailwind
+namespaces (`--cairn-step-N` → `--text-step-N`, `--cairn-space-X` → `--spacing-X`, `--cairn-muted` →
+`--color-muted`, `--cairn-card-border` → `--color-card-border`, `--cairn-measure*` → `--container-measure*`;
+Geoff confirmed the idiomatic rename), the re-skin recipe was rewritten to the new names, and the
+`--cairn-rule` dead token was fixed (`var(--color-base-300)`). The showcase `retiredTokenBudget` ratcheted
+**20 → 19 → 16 → 1 → 0 → 0 → 0** to its **terminal floor 0** (every `var(--…)` bracket folded). Commits
+`1194680`..`a1ceb8b`.
+
+**Pixel discipline:** the two site-home snapshots stayed **byte-identical through every task** (the
+token-fold pixel-neutrality proof); three styleguide snapshots updated by design (the ink-swatch label text
+reflecting the renamed token, Task 3; the dark island-converter hairline, Task 5). **Forced deviation
+(reviewed sound):** Task 3 edited `scripts/check-public-tokens.mjs` (added a `themeBlock()` parser and
+renamed the muted-ink reference) because the AA-contrast gate hard-references the ink by name — the 4.5:1
+threshold and the value are unchanged, so the gate reads the same ink from its new `@theme` home, not
+weakened.
+
+**Verified (main-loop, cumulative):** `check` 0/0 (1245), `npm test` exit 0 (2871), `check:custom-surface`
+PASS both trees (admin 0, showcase 0), `check:public-tokens` PASS (30 pairs AA in sRGB+P3), `check:comments`
+/ `check:docs` OK; showcase e2e **12 passed under `CI=1`** fresh build (`site-visual` + `styleguide` axe +
+`islands`). `svelte-reviewer` and `daisyui-a11y-reviewer` both clean.
+
+**NEXT = the docs phase (the final phase of the admin idiomatic re-expression initiative).** Per the spec
+(`docs/superpowers/specs/2026-06-29-admin-idiomatic-re-expression-design.md`, "Final phase: docs"): rewrite
+`admin-design-system.md` from "bespoke recipes" to "native primitives plus the documented essential floor,"
+publishing the role vocabulary (the Warm Stone theme tokens, the `text-muted`/`text-subtle` utilities, the
+component recipes) as the versioned seam beside `CairnAdminShell`/`adminNav`; document the template's owned
+design and idiomatic chrome the same way; add the upgrade-rehearsal procedure (a documented bump-and-verify
+runbook) and wire the scheduled DaisyUI/Tailwind-major watcher (the `schedule` skill — pings only when an
+upstream major publishes, not an always-on canary). Then the initiative is complete and the whole
+admin-re-expression + starter-template body can batch into one release decision (Geoff's call). Use
+`cairn-pass`. See the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): starter-template track Phase 1 (template foundation) COMPLETE on a worktree (held, unmerged); NEXT = Phase 2 (template chrome)
+
+The starter-template track of the admin idiomatic re-expression has begun, and **Phase 1 (template
+foundation) is complete** on branch `starter-template-1` (off `main` at `14e52b1`, in the
+`extensibility-plan-1` worktree). Plan + post-mortem:
+`docs/superpowers/plans/2026-06-30-starter-template-1-foundation.md`. Held unpublished, **not yet merged**
+(merge to `main` when Geoff asks; admin + showcase internals a consumer never imports, no public surface or
+behavior change, no release).
+
+**What shipped (4 tasks + simplify, commits `f8cfce3`..`8f83894`).** The showcase Tier-1/2/3 **ledger**
+(`docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md`): Tier 1 = the showcase's own DaisyUI
+theme (the two `@plugin "daisyui/theme"` blocks, kept verbatim, **not** Warm Stone); Tier 2 = the owned
+design (the `prose.css` reading surface, the `.cairn-place-*` figure contract + `.site-main`, the
+`--cairn-muted`/`--cairn-*-ink` inks, the elevation and CTA pairs, the `pre.shiki`/`.cairn-tok-*`
+code-highlight binding), walled and documented with the frame-vs-owned split; Tier 3 = the Phase-2 fold
+target. The **gate** (`check:custom-surface`) extended to the showcase tree: a **per-tree retired-token
+pattern** (admin keeps `var(--color-muted|subtle)` byte-for-byte at budget 0; the showcase counts any
+bracketed or inline `var(--…)` in markup), **seeded at 20** across the 4 chrome/route files. Comment-only
+**Tier markers** in the three CSS files. The showcase **visual baseline** (`e2e/site-visual.spec.ts` + 4
+`-linux` snapshots: home + styleguide, light + dark), the Phase-2 zero-pixel floor. Gate green: `check`
+0/0 (1245), `npm test` exit 0 (2871), `check:custom-surface` PASS both trees, `check:comments`/`check:docs`
+OK, `site-visual` e2e 4/4 stable.
+
+**Decisions locked (do not relitigate):** the showcase gate signal = any bracketed/inline `var(--…)` (the
+admin pattern unchanged, its AA inks still sanctioned-and-uncounted); the styleguide's dynamic `var({token})`
+swatches are sanctioned (the design-reference tool); the showcase keeps its own theme (Tier 1, no Warm
+Stone); `prose.css` is Tier 2 in full; Phase 1 is **zero-pixel** (the `--cairn-rule` bug, the
+island-converter CSS, and the design-scale token-home move are Tier-3, deferred to Phase 2). Task-1
+deviation: `DEFAULT_RETIRED_TOKEN_PATTERN` is a regex literal's `.source` (not a raw string) so the
+repo-wide Tailwind scan cannot extract it as a breaking candidate; `.source` equals the intended string.
+
+**Discovered, triaged (NOT this phase):** the shipped compiled admin sheet carries foreign rules.
+`scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with no content config, so auto-detection scans
+the whole repo on top of the explicit components `@source`; `dist/components/cairn-admin.css` compiles
+stray candidates from `examples/showcase/src` and `docs/` (including `text-[var(--color-muted)]` bracket
+forms whose only surviving origin is the docs that discuss them, since admin source retired them). Valid
+no-op CSS (bloat, not breakage), and the mechanism behind the four `tailwind-scans-docs-bad-candidate`
+breaks. Logged in ROADMAP "Next" and the friction log: scope the admin build's content to the components
+glob + a test asserting no foreign token in the sheet.
+
+**NEXT = Phase 2 (template chrome).** Fold the showcase chrome and route markup (`SiteHeader`,
+`SiteFooter`, the `(site)` layouts/pages: the 20 retired-token lines) onto **Tailwind 4 `@theme` named
+utilities** and DaisyUI 5.6 primitives; move the design-scale token home (`--cairn-step-*`/`--cairn-space-*`/
+`--font-*`/tracking/leading/measure) from `:root` into `@theme` so the utilities generate; fix the
+island-converter demo CSS and the `--cairn-rule` dead token; ratchet the showcase `retiredTokenBudget` from
+20 toward its floor, with the `site-visual` baseline as the reviewed drift record. **Open design decisions
+for the Phase-2 brainstorm:** the `@theme` namespace mapping and naming (e.g. `--cairn-step-1` →
+`--text-step-1` → `text-step-1`; `--cairn-space-m` → a `--spacing-*` step → `gap-m`/`px-m`); which tokens
+get named utilities vs stay bare CSS consumption; whether the figure/code Tier-2 contracts need any utility
+exposure. **The Phase 2 plan is WRITTEN + QUEUED** at
+`docs/superpowers/plans/2026-06-30-starter-template-2-chrome.md` (committed, not executed). It commits to
+the idiomatic `@theme` mapping (the table in the plan) and structures the fold as six tasks (faces →
+type/space scales → tracking/leading/measure/colors → radius+floor → island-converter+`--cairn-rule` →
+styleguide+recipe+ledger), each pixel-neutral and guarded by the `site-visual` baseline, ratcheting the
+showcase budget from 20 toward its floor. **⚑ ONE DECISION PENDING GEOFF before executing:** the fold
+**renames** the template's design-scale tokens to Tailwind namespaces (`--cairn-step-1` → `--text-step-1`,
+`--cairn-space-m` → `--spacing-m`, `--cairn-muted` → `--color-muted`, …) so the named utilities generate,
+which changes the template's documented re-skin surface (the recipe is rewritten to the new names). The plan
+commits to the rename (idiomatic, the gate reaches its floor); the alternative keeps `--cairn-*` names and
+accepts bracket utilities (stable re-skin API, non-idiomatic, gate never reaches floor). Confirm or redirect,
+then adversarially review the plan and execute task-by-task via `cairn-implementer` with the full gate per
+task. Then the docs phase (publish the role vocabulary as the versioned seam in `admin-design-system.md`).
+Use `cairn-pass`. See the `cairn-admin-design-modernization` memory.
+
+## Immediate next action (2026-06-30, prior): admin re-expression sweep COMPLETE (Phases 0–6); released 0.78.1; starter-template track NEXT (now Phase 1 done, above)
 
 The admin idiomatic re-expression **sweep is complete**. Phase 6 (media part 2), the final sweep phase,
 retired the last 125 muted/subtle bracket tokens across the five media files and ratcheted the admin

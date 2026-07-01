@@ -20,11 +20,11 @@
 </svelte:head>
 
 <div
-  class="min-h-screen bg-base-100 font-[family-name:var(--font-body)] text-base-content"
+  class="min-h-screen bg-base-100 font-body text-base-content"
 >
   <a
     href="#main"
-    class="skip-link absolute left-[var(--cairn-space-s)] top-[-3rem] z-50 rounded-[var(--radius-field)] bg-primary px-[0.9rem] py-[0.5rem] font-semibold text-primary-content no-underline focus:top-[var(--cairn-space-s)]"
+    class="skip-link absolute left-s top-[-3rem] z-50 rounded-field bg-primary px-[0.9rem] py-[0.5rem] font-semibold text-primary-content no-underline focus:top-s"
   >
     Skip to content
   </a>

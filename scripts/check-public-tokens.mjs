@@ -198,6 +198,19 @@ function rootBlock(css) {
 }
 
 /**
+ * The `@theme { ... }` block body: the design-scale tokens that drive Tailwind utilities. The muted
+ * ink (`--color-muted`) lives here in its light value (so the `text-muted` utility generates), so the
+ * light-theme ink source concatenates this with the `:root` block.
+ * @param {string} css
+ * @returns {string}
+ */
+function themeBlock(css) {
+  const m = css.match(/@theme\s*\{([\s\S]*?)\n\}/);
+  if (!m) throw new Error('@theme block not found in theme.css');
+  return m[1];
+}
+
+/**
  * The `@media (prefers-color-scheme: dark) { :root { ... } }` body: the dark on-surface inks.
  * @param {string} css
  * @returns {string}
@@ -231,7 +244,7 @@ const ROLE_TOKENS = [
   'color-info-content',
 ];
 const INK_TOKENS = [
-  'cairn-muted',
+  'color-muted',
   'cairn-success-ink',
   'cairn-warning-ink',
   'cairn-error-ink',
@@ -248,7 +261,9 @@ const INK_TOKENS = [
 export function parseThemeTokens(css) {
   const lightRoles = daisyThemeBlock(css, 'cairn');
   const darkRoles = daisyThemeBlock(css, 'cairn-dark');
-  const rootInks = rootBlock(css);
+  // The light muted ink moved to the @theme block (so the text-muted utility generates), so the
+  // light ink source concatenates @theme with :root; the dark muted ink stays in the dark media root.
+  const rootInks = `${themeBlock(css)}\n${rootBlock(css)}`;
   const darkInks = darkMediaRoot(css);
 
   /** @param {string} roleBlock @param {string} inkBlock */
@@ -282,7 +297,7 @@ export function themePairs(t) {
   const base = t['color-base-100'];
   return [
     { label: 'base-content on base-100', fg: t['color-base-content'], bg: base, threshold: 4.5 },
-    { label: 'muted ink on base-100', fg: t['cairn-muted'], bg: base, threshold: 4.5 },
+    { label: 'muted ink on base-100', fg: t['color-muted'], bg: base, threshold: 4.5 },
     { label: 'success ink on base-100', fg: t['cairn-success-ink'], bg: base, threshold: 4.5 },
     { label: 'warning ink on base-100', fg: t['cairn-warning-ink'], bg: base, threshold: 4.5 },
     { label: 'error ink on base-100', fg: t['cairn-error-ink'], bg: base, threshold: 4.5 },

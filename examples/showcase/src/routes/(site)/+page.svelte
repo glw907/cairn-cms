@@ -51,19 +51,19 @@
   }
 </script>
 
-<section class="mx-auto max-w-[var(--cairn-measure)] pb-[var(--cairn-space-xl)] pt-[var(--cairn-space-l)]">
+<section class="mx-auto max-w-measure pb-xl pt-l">
   <p
-    class="m-0 mb-[var(--cairn-space-s)] text-[length:var(--cairn-step--1)] font-semibold uppercase tracking-[var(--cairn-tracking-eyebrow)] text-[color:var(--cairn-muted)]"
+    class="m-0 mb-s text-step--1 font-semibold uppercase tracking-eyebrow text-muted"
   >
     A cairn site
   </p>
   <h1
-    class="m-0 mb-[var(--cairn-space-s)] font-[family-name:var(--font-display)] text-[length:var(--cairn-step-5)] font-semibold leading-[var(--cairn-leading-tight)] tracking-[var(--cairn-tracking-tight)]"
+    class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight"
   >
     Notes, stacked one stone at a time.
   </h1>
   <p
-    class="m-0 max-w-[38rem] text-[length:var(--cairn-step-1)] leading-[var(--cairn-leading-snug)] text-[color:var(--cairn-muted)]"
+    class="m-0 max-w-[38rem] text-step-1 leading-snug text-muted"
   >
     The cairn showcase. You write in markdown and publish a static page that reads the way a
     publication should. Every entry below is the markdown you type, rendered by the surface your
@@ -74,7 +74,7 @@
 <section class="index" aria-label="Writing">
   <div class="index__head">
     <p
-      class="m-0 text-[length:var(--cairn-step--1)] font-semibold uppercase tracking-[var(--cairn-tracking-eyebrow)] text-[color:var(--cairn-muted)]"
+      class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted"
     >
       Writing
     </p>
@@ -132,18 +132,18 @@
      column and the title/excerpt body) over a hairline. All color and rhythm reads the tokens. */
   .index {
     border-top: var(--border) solid var(--color-base-300);
-    padding-top: var(--cairn-space-s);
-    margin-bottom: var(--cairn-space-2xl);
+    padding-top: var(--spacing-s);
+    margin-bottom: var(--spacing-2xl);
   }
   .index__head {
     display: flex;
     align-items: baseline;
     justify-content: space-between;
-    margin-bottom: var(--cairn-space-xs);
+    margin-bottom: var(--spacing-xs);
   }
   .index__count {
-    font-size: var(--cairn-step--1);
-    color: var(--cairn-muted);
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
     font-variant-numeric: tabular-nums;
   }
 
@@ -153,17 +153,17 @@
   .tag-filter {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--cairn-space-2xs);
-    padding: var(--cairn-space-s) 0;
+    gap: var(--spacing-2xs);
+    padding: var(--spacing-s) 0;
   }
   .tag-filter__option {
-    font-size: var(--cairn-step--1);
-    line-height: var(--cairn-leading-snug);
+    font-size: var(--text-step--1);
+    line-height: var(--leading-snug);
     padding: 0.25rem 0.7rem;
-    border: var(--border) solid var(--cairn-card-border);
+    border: var(--border) solid var(--color-card-border);
     border-radius: 999px;
     background: transparent;
-    color: var(--cairn-muted);
+    color: var(--color-muted);
     cursor: pointer;
   }
   .tag-filter__option:hover {
@@ -178,10 +178,10 @@
   .entry {
     display: grid;
     grid-template-columns: 7.5rem 1fr;
-    gap: var(--cairn-space-m);
+    gap: var(--spacing-m);
     align-items: start;
-    padding: var(--cairn-space-m) 0;
-    border-bottom: var(--border) solid var(--cairn-card-border);
+    padding: var(--spacing-m) 0;
+    border-bottom: var(--border) solid var(--color-card-border);
   }
   /* An undated post drops the date column and reads as a single column. */
   .entry--undated {
@@ -190,8 +190,8 @@
 
   .entry__date {
     padding-top: 0.5rem;
-    font-size: var(--cairn-step--1);
-    color: var(--cairn-muted);
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
     font-variant-numeric: tabular-nums;
     letter-spacing: 0.01em;
   }
@@ -200,9 +200,9 @@
     margin: 0 0 0.35rem;
     font-family: var(--font-display);
     font-weight: 600;
-    font-size: var(--cairn-step-2);
-    line-height: var(--cairn-leading-snug);
-    letter-spacing: var(--cairn-tracking-tight);
+    font-size: var(--text-step-2);
+    line-height: var(--leading-snug);
+    letter-spacing: var(--tracking-tight);
   }
   .entry__title a {
     color: inherit;
@@ -214,9 +214,9 @@
 
   .entry__excerpt {
     margin: 0;
-    font-size: var(--cairn-step-0);
-    line-height: var(--cairn-leading-snug);
-    color: var(--cairn-muted);
+    font-size: var(--text-step-0);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
   }
 
   /* Below the narrow breakpoint the date stacks above the title in one column. */

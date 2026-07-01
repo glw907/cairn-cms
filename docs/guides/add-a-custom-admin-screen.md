@@ -203,3 +203,21 @@ The shell owns a few keys and behaviors, so design your screen around them:
 Your screen's own client interactivity rides your own client code in the `+page.svelte`, or a
 registered [island](./add-an-island.md) if you want a hydrated component. cairn does not inject a client
 framework into your route beyond the shell's own chrome.
+
+## The admin design vocabulary
+
+Build your screen in the same DaisyUI and Tailwind idiom as the built-in admin. Read the Warm Stone
+theme through DaisyUI role classes, and use the two named role utilities for secondary text, so your
+screen matches the chrome and survives a framework bump. These parts are a versioned contract. Breaking
+one is a major-version change, so cairn does it rarely and on purpose.
+
+- Color with the theme. Reach the Warm Stone tokens through DaisyUI role classes, `bg-base-100`,
+  `text-primary`, and the rest, so your screen recolors with the theme.
+- Use `text-muted` for labels, dates, and hints, and `text-subtle` for lower-emphasis navigation text.
+  These are the two frozen role utilities. A standing test keeps them compiled.
+- Match the component recipes, the card, the eyebrow, the empty state, and the dialog, so your screen
+  reads as part of the admin.
+
+For the full token list, the component recipes, and the split between the contract and cairn's internal
+frame, see the canonical reference at
+[`admin-design-system.md`](../internal/admin-design-system.md).

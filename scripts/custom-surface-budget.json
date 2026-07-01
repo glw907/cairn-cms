@@ -3,6 +3,7 @@
     "admin": {
       "adminCss": "src/lib/components/cairn-admin.css",
       "markupDirs": ["src/lib/components"],
+      "retiredTokenPattern": "\\[[^\\][]*var\\(--color-(?:muted|subtle)\\)[^\\][]*\\]|style=\"[^\"]*var\\(--color-(?:muted|subtle)\\)",
       "budget": {
         "unlayeredAllowlist": [
           "[data-theme='cairn-admin']",
@@ -19,6 +20,7 @@
     "showcase": {
       "adminCss": null,
       "markupDirs": ["examples/showcase/src"],
+      "retiredTokenPattern": "\\[[^\\][]*var\\(--[^\\][]*\\]|style=\"[^\"]*var\\(--",
       "budget": { "unlayeredAllowlist": [], "componentsLayerCap": 0, "retiredTokenBudget": 0 }
     }
   }

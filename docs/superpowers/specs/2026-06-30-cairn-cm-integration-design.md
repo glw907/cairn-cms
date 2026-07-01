@@ -115,18 +115,31 @@ different focus contracts:
   invalidated), and *dismissable* (`Escape` closes it without moving the pointer). Configure the
   tooltip's `hideOn` accordingly. Interactive buttons in a pure hover card are an anti-pattern, so this
   path *shows* the fix; it is not the only way to operate it.
-- **Deliberate key → action dialog, focus moves in.** When the caret is in a diagnostic range, an
-  explicit keybinding (match the "Quick Fix" idiom, `Mod-.`) opens the action surface as
-  `role="dialog"` with **`aria-modal="false"`**, moves focus to the first suggestion, and on `Escape`
-  restores focus to the prior selection in `.cm-content`. Role follows focus: a `role="dialog"` that
-  never receives focus is never announced, so the dialog role is used only on this focus-taking path.
+- **Deliberate key → focus moves into the popover.** When the caret is in a diagnostic range, an
+  explicit keybinding, **`Alt-Enter`** (the IntelliJ "Quick Fix" idiom), moves focus to the first action
+  button. `Escape` returns focus to `.cm-content`. The popover is `role="group"` with an `aria-label`
+  throughout: a non-modal labeled group of native buttons, reached by `Alt-Enter` and announced by the
+  live region below. This is simpler and more correct than a dynamically-switched `role="dialog"` (we do
+  not want modal semantics, and a dialog role that is never focused is never announced anyway).
 
-Caret-in-range must **not** auto-open-and-focus the dialog (that is a WCAG 3.2.1 / 2.4.3 violation and
+  Two keybinding and dispatch constraints the plan review surfaced, load-bearing: (1) the keybinding is
+  `Alt-Enter`, **not** `Mod-.`/`Ctrl+.`, because Ctrl+. is already the editor's Details-panel shortcut
+  (`editor-shortcuts.ts`, an EditPage window handler) and a CodeMirror keymap cannot suppress it
+  (`run` receives no event to `stopPropagation`), so `Mod-.` would double-fire. (2) `Escape` must be a
+  **native `keydown` listener on the popover DOM**, not a CodeMirror keymap binding: CodeMirror registers
+  its key handler on `contentDOM`, and the popover button lives outside `.cm-content`, so a keymap
+  `Escape` would never fire in the one scenario it exists for.
+
+Caret-in-range must **not** auto-open-and-focus the popover (that is a WCAG 3.2.1 / 2.4.3 violation and
 subverts navigation, constraint 3). Instead, when the caret enters a diagnostic range, announce
 availability through a **polite** `aria-live` region: the word, that suggestions exist, and the key that
-opens them ("misspelled: teh; 3 suggestions; press Ctrl+period"). Polite, not assertive, because a
+opens them ("misspelled: teh; 3 suggestions; press Alt+Enter to open"). Polite, not assertive, because a
 spelling flag is not an interruption. This announcement is the screen-reader half of the caret trigger,
-and without it a screen-reader user never learns the popover exists.
+and without it a screen-reader user never learns the popover exists. The state that drives the popover
+and the announcement must recompute on diagnostic-bearing transactions, not only on caret/doc changes:
+`@codemirror/lint` publishes results via a `setDiagnostics` effect that changes neither the selection nor
+the document, so a stationary caret over a freshly-flagged word (or the relint after add/ignore) would
+otherwise be missed.
 
 ### The writing surface: keep the theme, tune the underline
 

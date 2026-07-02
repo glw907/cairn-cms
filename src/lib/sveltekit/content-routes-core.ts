@@ -255,6 +255,22 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
 }
 
 /**
+ * The shared preamble for a single-entry action addressed by the `[id]` route param:
+ *  authenticate, resolve the concept, and validate the id. Confines the id to the slug rule
+ *  before any commit path is built from it (the App token can write anywhere in the repo), so a
+ *  malformed id is rejected before touching GitHub. Shared by save, publish, discard, the
+ *  editor's own delete, and rename; the concept list's delete reads its id from the posted form
+ *  instead, a different shape left to validate inline.
+ */
+function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
+  const editor = requireSession(event);
+  const concept = conceptOf(runtime, event.params);
+  const id = event.params.id ?? '';
+  if (!isValidId(id)) throw error(400, 'Invalid entry id');
+  return { editor, concept, id };
+}
+
+/**
  * Build the core content loads and actions (the admin shell payload, Help, the concept list, and
  *  the per-entry create/edit/save/publish/discard/delete/rename cycle), closed over the shared
  *  content-routes context.
@@ -853,12 +869,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
    */
   async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    // Confine the commit path to the concept dir, built from a validated id (the App token can
-    // write anywhere in the repo). Reject before touching GitHub.
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
     let savedQuery = held.draftLinks.length
@@ -878,10 +889,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
    */
   async function publishAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
     const { path, markdown, branch, branchSha, manifest, backend, mediaChange } = held;
@@ -1041,10 +1049,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  the edit page when the entry lives on main, else to the list (the entry is gone entirely).
    */
   async function discardAction(event: ContentEvent): Promise<never> {
-    const editor = requireSession(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
     await backend.deleteBranch(pendingBranch(concept.id, id));
@@ -1157,10 +1162,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Delete an entry from its editor. The id comes from the route param. */
   async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
   }
 
@@ -1181,10 +1183,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  caught by the build's fail-closed backstop.
    */
   async function renameAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
-    const concept = conceptOf(runtime, event.params);
-    const id = event.params.id ?? '';
-    if (!isValidId(id)) throw error(400, 'Invalid entry id');
+    const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
     // Pending edits on the branch are keyed to the old id; renaming underneath them would strand
@@ -1287,6 +1286,10 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const repoints = new Map<string, InboundRepoint>();
     const linkerPathFor = (linkerConcept: ConceptDescriptor, linkerId: string): string =>
       `${linkerConcept.dir}/${filenameFromId(linkerId)}`;
+    // The two loops below look like a jscpd near-dupe (same lookup-and-guard shape), but their
+    // merge semantics diverge: a link sets a boolean flag, a reference unions a field-name set.
+    // Parameterizing the difference would need a callback per loop, which is not simpler than
+    // the two short loops it would replace; left as is.
     for (const linker of inboundLinks(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
       if (!linkerConcept) continue;

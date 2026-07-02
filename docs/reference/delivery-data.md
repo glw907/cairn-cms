@@ -62,49 +62,6 @@ export const site = indexes.site;
 export const posts = indexes.posts;
 ```
 
-### `createSiteResolver`
-
-Stability tier: Extension API.
-
-```ts
-function createSiteResolver(
-  concepts: ConceptIndex[],
-  opts?: { validate?: boolean },
-): SiteResolver;
-```
-
-Union a list of per-concept indexes into the cross-concept site resolver, the same `SiteResolver`
-that `createSiteIndexes` returns on its `site` key. It throws on a duplicate permalink and, unless
-`validate` is `false`, on any non-draft entry whose frontmatter fails its concept's validator, so
-malformed content fails the build instead of shipping. Reach for it when you assemble the
-`ConceptIndex` list yourself.
-
-```ts
-import { createContentIndex, createSiteResolver, fromGlob } from '@glw907/cairn-cms/delivery/data';
-import { siteDescriptors } from '@glw907/cairn-cms/delivery/data';
-
-const [postsDesc, pagesDesc] = siteDescriptors(cairn, siteConfig);
-const site = createSiteResolver([
-  { descriptor: postsDesc, index: createContentIndex(fromGlob(postsRaw), postsDesc) },
-  { descriptor: pagesDesc, index: createContentIndex(fromGlob(pagesRaw), pagesDesc) },
-]);
-```
-
-### `createContentIndex`
-
-Stability tier: Extension API.
-
-```ts
-function createContentIndex<F = Record<string, unknown>>(
-  files: RawFile[],
-  descriptor: ConceptDescriptor,
-): ContentIndex<F>;
-```
-
-Build one concept's query surface from its raw files and normalized descriptor. The returned
-`ContentIndex` answers `all`, `byId`, `byTag`, `allTags`, `adjacent`, and `problems`. Pass `F` to
-type the per-entry frontmatter.
-
 ---
 
 ## Feeds, sitemap, and robots
@@ -347,10 +304,9 @@ Stability tier: Extension API.
 function buildLinkResolver(site: SiteResolver): LinkResolve;
 ```
 
-Build a `cairn:` link resolver backed by the site resolver, for the build. It lives beside
-`createSiteResolver` in the source, since it closes over the resolver rather than the manifest. A
-miss throws, so a dangling `cairn:` token fails the prerender. The feed routes above use it to turn
-an internal link into an absolute URL.
+Build a `cairn:` link resolver backed by the site resolver, for the build. A miss throws, so a
+dangling `cairn:` token fails the prerender. The feed routes above use it to turn an internal link
+into an absolute URL.
 
 ### `resolveReferences`
 
@@ -399,42 +355,6 @@ function deriveExcerpt(body: string, opts?: { description?: string; maxChars?: n
 Return a plain-text excerpt: a trimmed frontmatter `description` when present, otherwise the stripped
 body cut at a word boundary near `maxChars` (default 200) with an ellipsis.
 
-### `wordCount`
-
-Stability tier: Extension API.
-
-```ts
-function wordCount(body: string): number;
-```
-
-Count the words in the stripped markdown body.
-
-### `permalink`
-
-Stability tier: Extension API.
-
-```ts
-function permalink(
-  descriptor: ConceptDescriptor,
-  entry: { id: string; slug: string; date?: string },
-): string;
-```
-
-Resolve an entry's canonical path from its concept's permalink pattern. It throws when the pattern
-uses a date token and the entry has no valid date. This is the same `permalink` the core surface
-exports, re-exported here so the node-safe builders can resolve a path without the SvelteKit module
-graph.
-
-### `fromGlob`
-
-Stability tier: Extension API.
-
-```ts
-function fromGlob(record: Record<string, string>): RawFile[];
-```
-
-Map a Vite eager `?raw` glob record (`{ path: raw }`) to a `RawFile[]` for `createContentIndex`.
-
 ### `resolveImageUrl`
 
 Stability tier: Extension API.
@@ -478,8 +398,9 @@ Stability tier: Extension API.
 function siteDescriptors(adapter: CairnAdapter, siteConfig: SiteConfig): ConceptDescriptor[];
 ```
 
-Build the per-concept descriptors for a site from its adapter content and its parsed site config. The
-descriptors feed `createContentIndex` and `createSiteResolver` when you assemble the indexes by hand.
+Build the per-concept descriptors for a site from its adapter content and its parsed site config.
+`createSiteIndexes` derives them internally. A public route calls this directly when it needs a
+`ConceptDescriptor` on its own, such as the descriptor `resolveReferences` takes.
 
 ---
 
@@ -487,12 +408,10 @@ descriptors feed `createContentIndex` and `createSiteResolver` when you assemble
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `RawFile` | Extension API | `interface RawFile { path: string; raw: string }` | A raw content file before parsing: the glob key and the file's full markdown text. |
 | `ContentSummary` | Extension API | `interface ContentSummary { concept; id; slug; permalink; title; date?; updated?; tags: string[]; excerpt; wordCount; draft; fields }` | The cheap plain-data view of one entry, for lists, feeds, and the sitemap. |
 | `ContentEntry` | Extension API | `interface ContentEntry<F = Record<string, unknown>> extends ContentSummary { frontmatter: F; body: string }` | The detail view: a summary plus the typed frontmatter and the body to render. |
 | `ContentProblem` | Extension API | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
-| `ContentIndex` | Extension API | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface that `createContentIndex` returns. |
-| `ConceptIndex` | Extension API | `interface ConceptIndex { descriptor: ConceptDescriptor; index: ContentIndex }` | One concept's descriptor paired with its built index, the input to `createSiteResolver`. |
+| `ContentIndex` | Extension API | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface `createSiteIndexes` builds one of per concept. |
 | `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. `byPermalink` resolves one entry by request path. |
 | `SiteGlobs` | Extension API | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
 | `SiteIndexes` | Extension API | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |

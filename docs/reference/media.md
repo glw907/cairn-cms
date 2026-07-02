@@ -1,13 +1,15 @@
 # Media (`@glw907/cairn-cms/media`)
 
-This subpath holds the node-safe media surface: the config normalizer, the committed manifest
-functions, the content-addressed naming helpers, the Cloudflare Images transform-URL builders, the
-`media:` reference codec, and the render-time resolver. All of it is pure projection. Nothing here
-pulls `@sveltejs/kit` or `@cloudflare/workers-types` into the module graph, so a plain-Node tool, a
-Vite build step, or a site's render path can import it. The R2-touching pieces (the object store and
-the delivery bucket seam), the `requireBucket` helper, and the `createMediaRoute` delivery factory
-live on [`/sveltekit`](./sveltekit.md) instead, off this surface, so the public type for `/media`
-names no kit or workers-types type.
+This subpath holds the node-safe media surface a site actually reaches into: the config normalizer,
+reading the committed manifest, the `media:` reference codec, and the render-time resolver. All of
+it is pure projection. Nothing here pulls `@sveltejs/kit` or `@cloudflare/workers-types` into the
+module graph, so a plain-Node tool, a Vite build step, or a site's render path can import it. The
+R2-touching pieces (the object store and the delivery bucket seam), the `requireBucket` helper, and
+the `createMediaRoute` delivery factory live on [`/sveltekit`](./sveltekit.md) instead, off this
+surface, so the public type for `/media` names no kit or workers-types type. The manifest CRUD, the
+content-hash naming helpers, and the Cloudflare Images transform-URL builders back the engine's own
+upload and preview pipeline; every real caller reaches them by relative import, so they stay
+unexported internals rather than public surface.
 
 ```ts
 import { makeMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
@@ -52,17 +54,6 @@ The media manifest is a small git-committed record, one row per stored asset, ke
 content-hash prefix. It carries the human layer the bytes cannot (display name, alt text, original
 filename) and is the dedup lookup an ingest checks before storing.
 
-### `parseMediaManifest`
-
-Stability tier: Extension API.
-
-```ts
-declare function parseMediaManifest(json: unknown): MediaManifest;
-```
-
-Parse a committed manifest. Tolerant: an empty, missing, null, or non-object input yields an empty
-manifest, so a first ingest into a site with no manifest file reads a clean `{}`.
-
 ### `readCommittedManifest`
 
 Stability tier: Extension API.
@@ -76,163 +67,6 @@ empty manifest. A static import of an absent `media.json` fails the Vite build b
 degrade can run, so a fresh site can't build. A glob with no match returns `{}` instead of throwing.
 The consumer passes `import.meta.glob('<path-to-media.json>', { eager: true, import: 'default' })`,
 and this helper extracts the single matched value and parses it.
-
-### `parseMediaEntries`
-
-Stability tier: Extension API.
-
-```ts
-declare function parseMediaEntries(value: unknown): MediaEntry[];
-```
-
-Parse the posted `media` field, the editor's optimistic records, into a validated list of
-`MediaEntry` rows. The field arrives as a JSON string, an already-parsed array, or junk; a failing
-element is dropped so a partly malformed post still lands its good rows. This is the trust boundary
-for the client's optimistic records.
-
-### `findByHash`
-
-Stability tier: Extension API.
-
-```ts
-declare function findByHash(manifest: MediaManifest, hash: string): MediaEntry | undefined;
-```
-
-The dedup lookup: the entry stored under the content-hash prefix, or `undefined` when no bytes with
-that hash are stored yet.
-
-### `upsertMediaEntry`
-
-Stability tier: Extension API.
-
-```ts
-declare function upsertMediaEntry(manifest: MediaManifest, entry: MediaEntry): MediaManifest;
-```
-
-Set the entry under its own hash, replacing any same-hash row, and return a new manifest. The input
-is left untouched, so a caller's prior manifest reference stays valid.
-
-### `removeMediaEntry`
-
-Stability tier: Extension API.
-
-```ts
-declare function removeMediaEntry(manifest: MediaManifest, hash: string): MediaManifest;
-```
-
-Drop the entry under the given hash and return a new manifest. Removing an absent hash is a no-op
-that still returns an equivalent new manifest, and the input is left untouched.
-
-### `serializeMediaManifest`
-
-Stability tier: Extension API.
-
-```ts
-declare function serializeMediaManifest(manifest: MediaManifest): string;
-```
-
-Serialize canonically: the top-level hash keys sorted ascending, two-space pretty, and a trailing
-newline, so the committed file diffs cleanly and a re-serialization is byte-identical.
-
----
-
-## Content-addressed naming
-
-Media is content-addressed: the sha256 of the bytes names the object, so identical bytes always land
-at the same key no matter the original filename.
-
-### `hashBytes`
-
-Stability tier: Extension API.
-
-```ts
-declare function hashBytes(bytes: Uint8Array<ArrayBufferLike>): Promise<string>;
-```
-
-The full lowercase hex sha256 of the bytes, via Web Crypto, hand-formatted to 64 hex characters.
-
-### `shortHash`
-
-Stability tier: Extension API.
-
-```ts
-declare function shortHash(full: string): string;
-```
-
-The first 16 characters of a full hex digest, the content-hash prefix a media reference commits to.
-
-### `slugifyFilename`
-
-Stability tier: Extension API.
-
-```ts
-declare function slugifyFilename(name: string): string;
-```
-
-The strict ingest transform from a raw filename to a slug that satisfies the `media:` slug grammar,
-or the literal `file`. It drops the extension, lowercases, transliterates accents, collapses
-non-alphanumeric runs to a single hyphen, caps at 80 characters, screens Windows reserved names, and
-appends `-img` to a slug that would otherwise collide with the bare-hash reference form.
-
-### `r2Key`
-
-Stability tier: Extension API.
-
-```ts
-declare function r2Key(shortHash: string, ext: string): string;
-```
-
-The content-addressed R2 object key `media/<aa>/<shortHash>.<ext>`, fanned out on the first two hex
-characters of the short hash. It throws on a non-hex hash or a non-alphanumeric extension, so an
-unvalidated path never reaches R2.
-
-### `publicPath`
-
-Stability tier: Extension API.
-
-```ts
-declare function publicPath(
-  slug: string | null,
-  shortHash: string,
-  ext: string,
-  urlForm: "slug" | "opaque",
-  publicBase?: string,
-): string;
-```
-
-The public delivery URL path under the delivery base (`publicBase`, default `/media`). The `slug`
-form is human-readable; the `opaque` form mirrors the R2 fan-out and ignores the slug.
-
----
-
-## Cloudflare Images transform URLs
-
-A variant URL prefixes a delivery path with `/cdn-cgi/image/<options>/`, the on-demand resize and
-format directives Cloudflare reads at the edge.
-
-### `variantUrl`
-
-Stability tier: Extension API.
-
-```ts
-declare function variantUrl(publicPath: string, spec: VariantSpec): string;
-```
-
-Build the on-demand transform URL for a delivery path from a `VariantSpec`. The options are
-comma-joined in a stable order, so the same spec always builds the same URL and a CDN cache keys on
-it cleanly.
-
-### `presetUrl`
-
-Stability tier: Extension API.
-
-```ts
-declare function presetUrl(publicPath: string, presetName: string, variants: Record<string, VariantSpec>): string;
-```
-
-Build a variant URL from a named preset. It looks `presetName` up in `variants` and throws a
-`cairn:`-prefixed error naming the unknown preset when the name is absent, so a typo fails loudly
-rather than silently rendering an unsized image.
 
 ---
 
@@ -286,23 +120,6 @@ the manifest entry's slug and ext, not the token's, so a rename never breaks the
 preset and zone transformations on it returns the variant URL; otherwise it returns the bare
 full-size path. It returns `undefined` when media is off or no entry carries the hash, the
 preview-miss backstop. A site threads the resolver through `render` via the `resolveMedia` option.
-
-### `manifestMediaResolver`
-
-Stability tier: Extension API.
-
-```ts
-declare function manifestMediaResolver(
-  targets: Record<string, { slug: string; ext: string; contentType: string }>,
-): MediaResolve;
-```
-
-Build a media resolver from the lean `mediaTargets` projection the edit load hands the admin
-preview, keyed by the 16-hex content hash. A hash present in the projection builds the slug delivery
-path (`/media/<slug>.<hash>.<ext>`); a miss returns `undefined`, so the render step marks the image
-broken rather than throwing. It is the media analog of the content `manifestLinkResolver`: pure over
-the projection, with no manifest and no config, so the edit page reaches it with the data it has.
-The engine wires this for its own preview pane; a site does not call it directly.
 
 ---
 

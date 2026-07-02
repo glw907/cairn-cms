@@ -98,26 +98,20 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
-- `ConceptIndex`: { descriptor: ConceptDescriptor; index: ContentIndex<Record<string, unknown>> }
 - `ContentEntry`: { frontmatter: F; body: string; concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F>; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
-- `createContentIndex`: <F = Record<string, unknown>>(files: RawFile[], descriptor: ConceptDescriptor) => ContentIndex<F>
 - `createPublicRoutes`: (deps: PublicRoutesDeps) => { entryLoad: (event: { url: URL }) => Promise<EntryData>; entries: () => { path: string }[] }
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
-- `createSiteResolver`: (concepts: ConceptIndex[], opts?: { validate?: boolean }) => SiteResolver
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
 - `EntryData`: { concept: string; entry: ContentEntry<Record<string, unknown>>; html: string; canonicalUrl: string; seo: SeoMeta; newer?: ContentSummary; older?: ContentSummary; heroImage?: { url: string; absoluteUrl?: string; alt: string; caption?: string } }
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
-- `fromGlob`: (record: Record<string, string>) => RawFile[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
-- `permalink`: (descriptor: ConceptDescriptor, entry: { id: string; slug: string; date?: string }) => string
 - `PublicRoutesDeps`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
-- `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string
@@ -134,7 +128,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
-- `wordCount`: (body: string) => number
 
 ## `/delivery/data`
 
@@ -145,23 +138,17 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `buildSeoMeta`: (input: SeoInput) => SeoMeta
 - `buildSiteManifest`: <A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>) => Manifest
 - `buildSitemap`: (urls: SitemapUrl[]) => string
-- `ConceptIndex`: { descriptor: ConceptDescriptor; index: ContentIndex<Record<string, unknown>> }
 - `ContentEntry`: { frontmatter: F; body: string; concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
 - `ContentIndex`: { all: (opts?: { includeDrafts?: boolean }) => ContentSummary[]; byId: (id: string) => ContentEntry<F>; byTag: (tag: string, opts?: { includeDrafts?: boolean }) => ContentSummary[]; allTags: () => { tag: string; count: number }[]; adjacent: (id: string) => { newer?: ContentSummary; older?: ContentSummary }; problems: () => ContentProblem[] }
 - `ContentProblem`: { id: string; draft: boolean; errors: { [x: string]: string } }
 - `ContentSummary`: { concept: string; id: string; slug: string; permalink: string; title: string; date?: string; updated?: string; tags: string[]; excerpt: string; wordCount: number; draft: boolean; fields: { [x: string]: unknown } }
-- `createContentIndex`: <F = Record<string, unknown>>(files: RawFile[], descriptor: ConceptDescriptor) => ContentIndex<F>
 - `createSiteIndexes`: <const A extends CairnAdapter>(adapter: A, config: SiteConfig, globs: SiteGlobs<A>, opts?: { validate?: boolean }) => SiteIndexes<A>
-- `createSiteResolver`: (concepts: ConceptIndex[], opts?: { validate?: boolean }) => SiteResolver
 - `deriveExcerpt`: (body: string, opts?: { description?: string; maxChars?: number }) => string
 - `FeedChannel`: { title: string; description: string; siteUrl: string; feedUrl: string; language?: string; author?: { name: string; email?: string } }
 - `FeedItem`: { title: string; url: string; date?: string; updated?: string; summary: string; contentHtml?: string; tags?: string[] }
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
-- `fromGlob`: (record: Record<string, string>) => RawFile[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
-- `permalink`: (descriptor: ConceptDescriptor, entry: { id: string; slug: string; date?: string }) => string
-- `RawFile`: { path: string; raw: string }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string
@@ -178,7 +165,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => SitemapUrl[]
 - `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
-- `wordCount`: (body: string) => number
 
 ## `/delivery/head`
 
@@ -191,31 +177,17 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/media`
 
-- `findByHash`: (manifest: MediaManifest, hash: string) => MediaEntry
-- `hashBytes`: (bytes: Uint8Array<ArrayBufferLike>) => Promise<string>
 - `makeMediaResolver`: (manifest: MediaManifest, resolved: ResolvedAssetConfig, opts?: { preset?: string }) => MediaResolve
-- `manifestMediaResolver`: (targets: Record<string, { slug: string; ext: string; contentType: string }>) => MediaResolve
 - `MediaEntry`: { hash: string; sha256: string; slug: string; displayName: string; originalFilename: string; alt: string; ext: string; contentType: string; bytes: number; width: number | null; height: number | null; createdAt: string }
 - `MediaManifest`: { [x: string]: MediaEntry }
 - `MediaRef`: { slug: string | null; hash: string }
 - `MediaResolve`: (ref: MediaRef) => string
 - `mediaToken`: (ref: MediaRef) => string
 - `normalizeAssets`: (assets: AssetConfig) => ResolvedAssetConfig
-- `parseMediaEntries`: (value: unknown) => MediaEntry[]
-- `parseMediaManifest`: (json: unknown) => MediaManifest
 - `parseMediaToken`: (href: string) => MediaRef | null
-- `presetUrl`: (publicPath: string, presetName: string, variants: Record<string, VariantSpec>) => string
-- `publicPath`: (slug: string | null, shortHash: string, ext: string, urlForm: "slug" | "opaque", publicBase?: string) => string
-- `r2Key`: (shortHash: string, ext: string) => string
 - `readCommittedManifest`: (globResult: Record<string, unknown>) => MediaManifest
-- `removeMediaEntry`: (manifest: MediaManifest, hash: string) => MediaManifest
 - `ResolvedAssetConfig`: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }
-- `serializeMediaManifest`: (manifest: MediaManifest) => string
-- `shortHash`: (full: string) => string
-- `slugifyFilename`: (name: string) => string
-- `upsertMediaEntry`: (manifest: MediaManifest, entry: MediaEntry) => MediaManifest
 - `VariantSpec`: { width?: number; height?: number; quality?: number; fit?: "scale-down" | "contain" | "cover" | "crop" | "pad"; gravity?: string; format?: string }
-- `variantUrl`: (publicPath: string, spec: VariantSpec) => string
 
 ## `/render`
 
@@ -279,12 +251,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/vite`
 
-- `AdapterFacts`: { owner?: string; repo?: string; from?: string; mediaBucketBinding?: string }
-- `buildManifestFromVite`: (opts: CairnManifestOptions, root: string) => Promise<string>
 - `cairnManifest`: (opts: CairnManifestOptions) => Plugin<any>
 - `CairnManifestOptions`: { configModule: string; content: { [x: string]: string }; manifestPath?: string }
-- `readAdapterFacts`: (cwd?: string) => Promise<AdapterFacts | null>
-- `stripCairnManifest`: (plugins: PluginOption | PluginOption[]) => PluginOption[]
-- `verifyManifestFromVite`: (opts: CairnManifestOptions, root: string) => Promise<void>
-- `writeManifest`: (cwd?: string) => Promise<void>
 

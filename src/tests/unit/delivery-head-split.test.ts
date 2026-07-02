@@ -8,7 +8,7 @@ import { describe, it, expect } from 'vitest';
 describe('delivery head split', { timeout: 20_000 }, () => {
   it('imports the /delivery barrel at runtime under node with no Svelte plugin', async () => {
     const barrel = await import('../../lib/delivery/index.js');
-    expect(typeof barrel.createContentIndex).toBe('function');
+    expect(typeof barrel.createSiteIndexes).toBe('function');
     expect(typeof barrel.createPublicRoutes).toBe('function');
   });
 

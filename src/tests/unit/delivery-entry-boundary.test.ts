@@ -18,7 +18,7 @@ describe('/delivery backend-free boundary', () => {
     expect(barrel).toContain("export * from './data.js'");
     // The pure projections live in the node-safe ./delivery/data barrel that index.ts re-exports.
     const data = readFileSync('src/lib/delivery/data.ts', 'utf8');
-    expect(data).toContain('createSiteResolver');
+    expect(data).toContain('createSiteIndexes');
     // CairnHead moved to the dedicated ./delivery/head entry so the data barrel stays
     // component-free and loads under node without the Svelte vitest plugin.
     expect(barrel).not.toContain('CairnHead');

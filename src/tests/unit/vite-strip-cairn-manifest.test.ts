@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { Plugin } from 'vite';
-import { stripCairnManifest } from '../../lib/vite/index.js';
+import { stripCairnManifest } from '../../lib/vite/internal.js';
 
 const named = (name: string): Plugin => ({ name });
 

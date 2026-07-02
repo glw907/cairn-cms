@@ -1,98 +1,58 @@
-# cairn-cms
+# cairn
 
-A CMS that lives inside your SvelteKit site and commits to git. Your editors log in with an
-email link (no GitHub account, no password), write raw markdown in a CodeMirror editor with a
-live preview, and hit Save.
+An embedded CMS for SvelteKit sites on Cloudflare. Editors write markdown in the browser,
+and publishing is a git commit.
 
-When they hit Save, cairn doesn't write to a database. It commits the markdown to a holding
-branch in the repo, one branch per entry, where the edit waits until the editor hits Publish.
-Publish copies the held content to `main`, and from there your normal Cloudflare deploy takes
-over, the same as if you'd pushed from a terminal. Every commit goes through a GitHub App, so
-the editor never touches GitHub; they still show up as the commit author, and `cairn-cms[bot]`
-does the signing. If someone else changed the file mid-edit, cairn refuses the save instead
-of guessing how to merge.
+Cairn installs into your site as a library. An editor signs in from an emailed link (no
+GitHub account, no password) and writes in an editor with a live preview of the real site.
+Saving commits the markdown to a holding branch in your repo, one branch per entry, where the
+draft waits. Publishing copies it to `main`, authored in the editor's name, and your site
+redeploys the same as if you'd pushed from a terminal. There's no hosted service and no
+database. The CMS is code in your app, and the content is files in your repo.
 
-## How it fits your site
+I built cairn for my own sites. The people who write for a small site need to edit and
+publish without learning git, and the tools built for them mostly come in two shapes:
+platforms that absorb your whole site, and hosted services that keep your content in their
+database. I didn't want either, and I also didn't want a CMS where pulling updates meant
+reworking whatever I'd built around it. So cairn is small on purpose. It manages markdown
+content and the admin where editors write it, and that's the whole job. Your routes, data,
+auth, and design stay yours, reachable through a few documented seams. The stack is fixed
+(SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them) and I say "out of
+scope" a lot. That refusal is what keeps the engine small enough to understand, and small
+enough that updates don't break what you built around it.
 
-cairn is an engine your site imports, not a platform you deploy to. The engine owns the
-machinery that has to be right: the magic-link auth, the commit path, the admin app, the
-render pipeline and its sanitize floor. Your site owns everything a visitor sees: the adapter
-(your content concepts, frontmatter schema, and slug rules through
-`defineAdapter`/`defineFields`), your markdown pipeline, your CSS. Two production sites run
-the same engine today and look nothing alike: [ecnordic.ski](https://ecnordic.ski) renders
-through its own remark directive pipeline, [907.life](https://907.life) through the engine's
-`createRenderer`.
-
-## What cairn is not
-
-- Not a hosted platform. There is no cairn server; the admin ships inside your site's Worker
-  and your repo is the source of truth.
-- Not a database CMS. Content is markdown files in your repo, so it outlives the tool and
-  never needs an export.
-- Not an open-ended collection builder. Content is a fixed set of first-class concepts (Posts
-  and Pages today), each with its own behavior, because the engine should have an opinion
-  about what a Post is.
-
-## The stack is chosen for you
-
-SvelteKit on Cloudflare Workers, D1 for the auth store, GitHub for content. cairn is
-deliberately opinionated: if that stack matches yours, the pieces click together, and if it
-doesn't, cairn is the wrong tool and will not try to meet you halfway.
-
-## Start here
-
-1. **[Build your first cairn site](./docs/tutorial/build-your-first-cairn-site.md)**, the
-   tutorial, takes you from an empty directory to a deployed site with a working `/admin`.
-2. **[`examples/showcase`](./examples/showcase)** is a complete consumer site wired to the
-   engine, and the worked reference for every shape in the docs. When a guide says "mount the
-   admin," the showcase shows the mounted result.
-3. **[The docs](./docs/README.md)** are organized in four arms: the tutorial, task guides,
-   one reference page per export, and explanation pages for the architecture and design
-   rules.
-
-## Status
-
-cairn-cms runs the two production sites above. It is `0.x`, and the version position signals scale.
-A minor bump (`0.X.0`) is reserved for a new subsystem or public surface that did not exist before,
-such as a new entry point, a new content concept, or the scaffolder, and it may break. Everything
-that refines, extends, or adds an affordance to a surface that already exists (the editor, the admin,
-auth, delivery) is a patch (`0.X.Y`), even when it gives an editor a new thing to do; a redesign, a
-round-trip edit on an existing surface, or a new optional config field is a patch. When the call is
-unclear, it is a patch. A minor release carries a `<!-- release-size: minor -->` marker in its
-CHANGELOG entry, which the `check:version` gate requires, so a minor is always a deliberate,
-documented choice. Pin a caret range and read the [CHANGELOG](./CHANGELOG.md) before taking a minor;
-every breaking entry carries a "Consumers must" line. The author is still working through the core-feature
-[ROADMAP](./ROADMAP.md), and the project stays closely held until that core lands. A
-contributor who feels inspired is welcome to open an issue or a discussion; there is no
-formal contribution process yet, so this is not an open call for pull requests.
-
-## Install
+<!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
+     resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
+     author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
 
 ```sh
 npm install @glw907/cairn-cms
 ```
 
-Peer dependencies: `svelte@^5` and `@sveltejs/kit@^2.12`. A consumer site implements a
-`CairnAdapter` and mounts the whole `/admin` with one catch-all route over the package subpaths:
+A few details that tend to matter to developers evaluating this:
 
-- `@glw907/cairn-cms`: the core engine and adapter contract.
-- `@glw907/cairn-cms/sveltekit`: the server load and action logic.
-- `@glw907/cairn-cms/components`: the admin Svelte UI.
-- `@glw907/cairn-cms/delivery` and `/delivery/data`: the public read model (indexes, feeds,
-  sitemap, SEO head). The `/delivery/data` barrel is node-safe, with no `@sveltejs/kit` in
-  its graph.
-- `@glw907/cairn-cms/vite`: the `cairnManifest()` Vite plugin, paired with the
-  `cairn-manifest` bin, that builds and verifies the committed content manifest at build
-  time.
+- Sign-in is an emailed link. The editor list is rows in your D1 database, managed from the
+  admin by owners.
+- Saving and publishing are separate steps. A save waits on its holding branch, and a
+  conflicting edit is refused rather than merged by guesswork.
+- The editor's preview and your public pages render through the same function, the one your
+  site supplies. Editors see exactly what ships.
+- Content is a fixed set of concepts you declare. Posts and Pages to start, others if you add
+  them, each with a typed frontmatter schema.
+- If you remove cairn, you're left with a repo of markdown that still builds.
 
-Each site binds a Cloudflare D1 database as `AUTH_DB` (the editor allowlist, sessions, and
-single-use magic tokens) and a `[[send_email]]` binding named `EMAIL`. The
-[security policy](./SECURITY.md) covers reporting and the security posture.
+Cairn is obviously not for you if you don't have (or don't want) a Cloudflare account, if
+your team works in React or another framework, or if you need open-ended user-defined
+collections rather than a fixed set of declared concepts. Each of those is a deliberate
+choice, and [Why cairn](./docs/explanation/why-cairn.md) argues them one by one.
 
-## How it's developed
+Start with the
+[tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed
+site with a working admin. The [docs](./docs/README.md) cover the rest:
+[guides](./docs/guides/README.md), [reference](./docs/reference/README.md),
+[explanation](./docs/explanation/README.md).
 
-This is a standalone repo. Consumer sites install the published package from the npm registry
-by version range. The library's own development proves changes against `examples/showcase`,
-which consumes the package through the relative `file:../..` path, so a change is exercised
-end to end before it publishes. The historical rebuild plan and the early architecture
-writeups live under `docs/internal/history/` and are not current.
+Cairn is pre-1.0 and runs two production sites, [ecxc.ski](https://ecxc.ski) and
+[907.life](https://907.life). The [upgrade guide](./docs/guides/upgrade-cairn.md) covers
+versioning, the [CHANGELOG](./CHANGELOG.md) covers history, and the
+[security policy](./SECURITY.md) covers reporting. MIT [licensed](./LICENSE).

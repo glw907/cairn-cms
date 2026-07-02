@@ -72,17 +72,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
-- **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
-  before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
-  imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,
-  agent-facing: one way per pattern family — errors and result shapes, validation, factory anatomy,
-  module layout, test structure, Svelte component anatomy, naming — picked from what the code already
-  does best). Then measure bloat deterministically (dead internal code, unused dependencies,
-  duplication) and run a behavior-preserving module-by-module sweep against the charter, with the
-  frozen surface as a machine-checked invariant (`check:surface` plus the signatures gate) and the
-  full test suite as the behavior contract. Anything that wants a public-surface change gets filed
-  for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
-  queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
 - **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
   production sites from Wayfinder as the dogfood test (Geoff, 2026-07-02 — supersedes the
   upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
@@ -220,23 +209,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
   warts a dogfood found), then Part B3 (defaults) and B4 (options plus first-run), then the Part C
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
-- **Scope the admin CSS build's content detection (the shipped sheet carries foreign rules).** Surfaced
-  during the starter-template Phase 1 audit: `scripts/build-admin-css.mjs` runs `@tailwindcss/postcss` with
-  no explicit content config, so its automatic source detection walks up from `scripts/admin-css.input.css`
-  to the repo root and scans the **whole tree** (`examples/showcase/src`, `docs/`, `scripts/`) on top of the
-  explicit `@source "../src/lib/components/**"`. The shipped `dist/components/cairn-admin.css` therefore
-  compiles stray utility candidates it finds anywhere, including `text-[var(--color-muted)]` forms that the
-  admin sweep retired from source (so their only remaining origin is the docs that discuss them) and the
-  showcase's `--cairn-step/space/measure` tokens. The rules are valid no-op CSS (they reference vars
-  undefined in the admin theme), so this is bloat, not breakage, but it undercuts the de-customization
-  North Star and is the mechanism behind the `tailwind-scans-docs-bad-candidate` build breaks. Fix: restrict
-  the admin build's content to the components glob (Tailwind v4 `source(none)` plus the explicit `@source`,
-  or a content config on the postcss plugin), and add a test asserting the compiled sheet contains no
-  foreign token (`--cairn-step`, `--cairn-measure`, a bracket muted/subtle form). This also retires the
-  "write bare token forms in docs" workaround once the scan no longer reaches docs. **Plan written and
-  queued:** `docs/superpowers/plans/2026-06-30-admin-build-content-scope.md` (test-first, one task, the
-  `admin-visual` baseline as the no-utility-dropped proof).
-
 ## Later
 
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
@@ -266,11 +238,40 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   live `itemLabel(item, index)` the row's current values needs a per-keystroke row-input snapshot plus a new
   client behavior channel (a `CairnAdmin` prop and scaffolder wiring). A focused concept-array-editor pass can
   design that live-row snapshot properly. The string `itemLabel` (a sub-field key) still covers the common case.
-- **Merge the two form renderers.** Phase 3c unified the field vocabulary and the validation core, but
-  `ComponentForm.svelte` and `FieldInput.svelte` still keep separate per-type switches and each wires the
-  IconPicker itself (3c decision 9). Merging them onto one leaf-field renderer removes that duplication. The
-  3a multi-instance focus risk is the hazard to design around, so it is a deliberate later refactor, not a
-  drive-by.
+- **Dedupe the leaf-field family's shared pass-through props, not the renderers themselves.** The
+  code-polish pass's guarded rider (`docs/superpowers/plans/2026-07-01-code-polish-pass.md`, Task 7)
+  wrote guard tests first
+  (`src/tests/component/form-renderer-family-guard.test.ts`) covering both leaf-field dispatchers,
+  then found the merge architecturally wrong on four separate walls the guards now pin: the binding
+  model (`FieldInput` does native, name-carrying, uncontrolled form participation; `ComponentForm`
+  does controlled state with inline touched-tracking), the field-type semantics each switch encodes
+  differently for the same nominal type, the validation display (`FieldInput`'s native `required`
+  plus an `aria-describedby` hint versus `ComponentForm`'s asterisk, `aria-invalid`, and a
+  `role="alert"` error span with live values bound out for the dialog preview), and the phase-3a
+  multi-instance focus model (`RepeatableField`'s uncontrolled rows must survive a sibling structural
+  mutation without re-seeding, which a shared controlled renderer cannot preserve). A homogenizing
+  merge fails the guard suite by design; per the rider's escape hatch, no merge landed. The
+  duplication the original entry named is real but narrower than a full merge: `FieldInput.svelte`,
+  `ObjectGroupField.svelte`, and `RepeatableField.svelte` pass roughly nine identical props straight
+  through to their children (`mediaLibrary`, `heroFieldRefs`, `conceptId`, `id`, `targets`,
+  `markFieldsDirty`, `onuploaded`, `onheroneedsalt`, and the field). Folding those into one shared
+  field-context object (a prop or a context, not a merged component) is the accurate remaining
+  refactor; the guard suite is the standing regression net for it.
+- **Split `CairnMediaLibrary.svelte`.** The code-polish pass's measurement (`docs/superpowers/plans/
+  2026-07-01-code-polish-measurements.md`) converged three signals on this one file: it is the
+  largest component in the tree (3,141 lines), the largest jscpd self-duplication cluster (25
+  `html`-format clone pairs, unchanged across the pass), and internally organized as six
+  near-identical inline dialog controllers (open/close/apply per feature, each with its own
+  `$state` cluster and origin-refocus lifecycle) followed by six near-identical `<dialog>` markup
+  blocks. The pass's S3 idiom convergence (the code-idioms.md charter) already extracted the
+  *script*-level repetition into shared helpers (the check-and-tint class helper, the typed-confirm
+  gate, the fetch/deserialize/stale-guard round-trip, the origin-refocus lifecycle), closing several
+  hundred lines; the *markup* duplication is untouched on purpose, since splitting a component
+  couples its template, state, and focus behavior (the phase-3a lesson) and risks the same
+  multi-instance-focus hazard the form-renderer rider guarded against. A dedicated pass should
+  design the split (most likely one child component or snippet per feature dialog: replace, alt-
+  propagate, bulk-delete, orphan-scan, upload, delete), verified against the `admin-visual` baseline
+  and the e2e media suite.
 - **Build-time icon-name validation against the set.** An icon value is a glyph name from the adapter's
   `rendering.icons`, but the `fieldset` validator only enforces required and non-empty (3c decision 1); it does
   not check the name against the set (the directive icon is not set-validated today either). A build-time check

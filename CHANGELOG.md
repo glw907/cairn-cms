@@ -81,6 +81,48 @@ This is breaking. Consumers must:
   the authoritative list, and grepping the showcase, ecxc-ski, and 907-life found no consumer
   import touching any of them, so no site is known to need this action.
 
+The code-polish pass converges the whole engine, the gate scripts, the tests, the Wayfinder
+showcase, and the dev package on one agent-facing idiom charter (`docs/internal/code-idioms.md`),
+behavior-preserving throughout: a survey of ~10 subsystems catalogued every divergent pattern
+family (error and result shapes, validation, factory anatomy, module layout, naming, async
+patterns, logging, test structure, Svelte component anatomy), and a module-by-module sweep applied
+the picked convention with `check:surface` and the signatures gate as a machine-checked invariant
+at every cluster. `content-routes.ts`, the codebase's largest file at 3,435 lines and its densest
+duplication cluster, decomposes into per-domain internal modules (media, tidy, settings and
+vocabulary, dictionary, core content actions) behind an unchanged `createContentRoutes` composer.
+The sweep also dedupes real duplication across clusters: the sveltekit-routes cluster's dead
+exports and entry-action preamble, the tests cluster's shared harnesses, the admin cluster's
+dialog and segmented-control and typed-confirm and fetch idioms (dropping redundant ARIA roles the
+convergence made unnecessary), the editor cluster's async-race guards and fetch round trips, the
+content and nav-config clusters' shared helpers, the media and delivery clusters' error-message
+idiom, the auth-github and tooling and scripts clusters' module layout and indentation, and the
+showcase's structural idioms. A new root gate, `check:consumers`, typechecks the showcase and the
+dev package against the published surface so a public reshape can no longer silently break either,
+closing the incident class the pruning pass's Task 6 surfaced. The admin CSS build's Tailwind
+content detection now scopes to the components glob instead of scanning the whole repo, shrinking
+the shipped `dist/components/cairn-admin.css` by 31% (415,976 to 286,719 bytes) with the
+`admin-visual` baseline proving no real utility dropped. A guarded rider wrote a component-test
+suite pinning the leaf-field-rendering family's two deliberately different conventions
+(`FieldInput`'s native uncontrolled form participation, `ComponentForm`'s controlled
+touched-tracking validation, and the phase-3a multi-instance focus model) before evaluating whether
+to merge them; the merge proved architecturally wrong on all four walls the guard suite now pins
+permanently, so it did not land (see `ROADMAP.md`, "Later," for the narrower prop-context dedup
+that remains).
+
+This is breaking. Consumers must: rename any direct call onto the `createContentRoutes` return that
+dropped the `Action` suffix (`mediaLibraryUpload` to `mediaLibraryUploadAction`, `mediaBulkDelete`
+to `mediaBulkDeleteAction`, `mediaOrphanScan` to `mediaOrphanScanAction`, `mediaPurgeOrphans` to
+`mediaPurgeOrphansAction`, `mediaReplacePreview` to `mediaReplacePreviewAction`,
+`mediaReplaceApply` to `mediaReplaceApplyAction`, `mediaAltPreview` to `mediaAltPreviewAction`,
+`mediaAltApply` to `mediaAltApplyAction`, `addDictionaryWord` to `addDictionaryWordAction`); the
+SvelteKit named-action wire names (`?/mediaBulkDelete` and kin) are unchanged. Unstable API tier
+makes the rename legal across minors, and the unpublished window makes it cheap.
+
+The owner-gated editor-management actions (add, remove, role change) now log `editor.added`,
+`editor.removed`, and `editor.role_changed`, each carrying the acting owner's and the target
+editor's email and, where relevant, the role, closing the one route-layer path with no audit
+trail (`docs/reference/log-events.md`). No consumer action.
+
 ## 0.78.2
 
 <!-- release-size: patch -->

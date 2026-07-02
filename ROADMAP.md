@@ -51,6 +51,12 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
+- **Land the surface-pruning pass (the pre-beta contract freeze).** In flight on `surface-pruning-1`;
+  plan at `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, evidence beside it. It demotes
+  the ~106 audited-internal exports, fixes the shape warts (the open `routing` union, the deps
+  grab-bags, `createMediaRoute`'s argument, the hand-declared `Platform.env`), and lands the
+  gate-enforced three-tier stability vocabulary, so the contract the cutovers exercise is the frozen
+  one. Runs before the cutovers below.
 - **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
   passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
@@ -60,6 +66,24 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Next
 
+- **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
+  writes: a per-entry history view over the backend's commit log (the commit author is already the
+  editor, so attribution is free), and revert implemented as a new commit through the existing
+  save/publish pipeline, so the per-entry branch and the deliberate Publish gate hold unchanged. No
+  new storage and no new actor. The strongest unbuilt in-charter feature from the 2026-07-01 mission
+  review: every competitor CMS has "revisions," cairn has something better underneath, and the editor
+  persona currently sees none of it.
+- **Docs rewrite to the frozen contract.** After the surface-pruning pass merges, rewrite the
+  published doc arms against the pruned surface. Carries: the two tutorial blockers the audit found
+  (the retired `mintToken` dep in Milestone 8, and the admin mount taught as "three files in all"
+  without the shell layout pair); a migration guide (bring existing Hugo/Jekyll-style markdown into
+  cairn concepts; the engine needs nothing, concepts are directories of markdown); an "add authors to
+  your site" guide teaching the declare-your-own-concept plus `fields.reference` pattern (the intended
+  answer to a whole class of "does cairn support X?" questions; authors stay content with reference
+  integrity, never a built-in identity, per the reverted identity-substrate lesson); and the
+  extending-developer-lens baseline refresh (its "baseline" section still describes the pre-redesign
+  state). The doc-snippet extract-and-typecheck gate lands with this rewrite so the docs cannot rot
+  against the frozen surface again.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced
@@ -156,6 +180,15 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   and verify the live permalinks. The phase 3b hard-error in `parseSiteConfig` makes a missed transcription
   fail loud rather than silently default `datePrefix` to `day` and shift every post URL. Tied to each site's
   v2 cutover pass.
+- **Shareable draft preview (pattern before engine).** An editor who wants "look at this before I
+  publish" today has only the in-editor preview. The per-entry `cairn/<concept>/<id>` branches mean a
+  Workers Builds preview deployment per branch can give a shareable draft URL with zero engine code;
+  document that pattern at a site cutover, and consider an engine-rendered signed preview URL only if
+  the pattern proves clumsy on a real site.
+- **`llms.txt` delivery view.** The positioning carries "feeds AIs easily," and the delivery surface
+  builds robots, sitemaps, and feeds but not the convention file for exactly that promise. A
+  `buildLlmsTxt` plus `llmsTxtResponse` beside `buildRobots`, additive, shaped like the existing
+  response builders.
 - **Migrate cairn's CSRF-disable before SvelteKit removes `checkOrigin`.** cairn's admin CSRF ownership
   depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61. `trustedOrigins` cannot replace
   it: a missing-`Origin` POST is always forbidden, and the check runs before the `handle` hook. The
@@ -165,6 +198,12 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Considering
 
+- **Scheduled publishing ("publish at").** Editors expect scheduling from a CMS, and the
+  date-vs-publish field redesign note in Later exists precisely because the date field already reads
+  as if it schedules. The lean shape, if it lands: a publish-at timestamp on the held per-entry
+  branch, a documented Cron Trigger the site adds, and the existing publish action fired at the
+  time; no queues and no recurring schedules. It cuts against the deliberate-Publish philosophy, so
+  this is a product decision to make explicitly, not an engineering default.
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.
 - **Editor find/replace.** A recipe-built find/replace panel on `@codemirror/search`'s `createPanel`,

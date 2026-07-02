@@ -168,3 +168,24 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   candidate. Triaged to ROADMAP "Next" (scope the admin build's content to the components glob; add a test
   asserting no foreign token in the sheet). Until then the bare-token-forms-in-docs discipline
   (`tailwind-scans-docs-bad-candidate`) stays the workaround.
+
+### From the surface-pruning pass (2026-07-01)
+
+- **developer** (a `SiteConfigError` surfaces as a bare 500 on the save paths): `settingsSave` and
+  `vocabularySave` call `parseSiteConfig` unguarded, so a malformed or misplaced site-config key at
+  save time propagates as an uncaught throw and SvelteKit's generic 500, while the loads catch and
+  log. Pre-existing (the auth review traced it; no reflection risk, production hides the message).
+  Candidate: catch and `fail(400)` with the actionable boundary message the parser now writes.
+- **developer** (the dev sibling package breaks silently on a public reshape): the Task 6 deps
+  regroup broke `packages/cairn-cms-dev/src/fake-anthropic.ts` (typed against the retired
+  `ContentRoutesDeps['anthropic']`) and no root gate failed; the miss surfaced only in a manual
+  showcase `svelte-check` two tasks later. The already-logged owed `check:dev-package` gate now has
+  its concrete incident; wiring the showcase check (or a dev-package `tsc`) into the root gate would
+  have caught it in-task.
+- **developer** (the site-config allowlist rejects editor-tooling keys by design): the new
+  unknown-key error means a YAML-LSP `$schema:` key would fail the parse. Conscious strictness, per
+  the loud-boundary posture; add the key to `KNOWN_TOP_LEVEL_KEYS` only when a real tool wants it.
+- **developer** (`AdminData` satellite types are inconsistently barrel-exported):
+  `VocabularyLoadData` and `SettingsData` are facade-returned members like `ListData`/`EditData` but
+  are not exported from `/sveltekit` (the tier sweep's reverse check caught a stale doc row for the
+  former). Additive fix if a consumer ever needs to name them; decide then, not now.

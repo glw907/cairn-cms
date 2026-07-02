@@ -440,3 +440,68 @@ gates; keep the site cutovers as the step after this pass.
 - The audit's two tutorial blockers (`mintToken`, the three-file admin claim) are deliberately
   NOT in this plan: the docs rewrite follows the freeze, per the pass decision that code is
   the guide until the contract is solid.
+
+---
+
+## Post-mortem (2026-07-01)
+
+**Built.** All nine tasks landed on `surface-pruning-1` plus three review-gate fixes:
+`5d21d65` (root prune), `eacf3f2` (/sveltekit prune, backend seam deleted), `10e9406`
+(/components prune, spellcheck keys, spike route), `5454140` (/delivery /media /vite),
+`5b38271` (routing union closed + runtime guard, loud site-config), `b66b989` (mount reshape,
+bindings), `43982d9` (src/lib out of the tarball), `870e444` (three-tier vocabulary + both
+gate rules + sweep), `0c91877` (changelog/roadmap consolidation after merging main),
+`46af986` (bindings fidelity fix from review), `42d2346` (dev-package retype). ~106 names
+demoted; the surface snapshot diff is the authoritative list.
+
+**Verified.** At close: `npm run check` 0/0 (1264 files), `npm test` exit 0 (284 files, 2965
+tests), `check:comments`, `check:reference`, `check:reference:signatures`, `check:package`,
+`check:docs`, `check:surface` all green; showcase build and showcase `check` 0/0; full e2e 64
+passed with only the two known pre-existing `admin-visual` pixel flakes (reproduced on
+unmodified `main` during Task 3). Review gate: `code-simplifier` returned no changes
+warranted; three reviewers (workers, auth-security, svelte) returned zero blockers, one
+warning (fixed in `46af986`), two suggestions (applied), two deliberate no-actions (below).
+
+**Decisions locked during execution** (beyond the plan's locked list):
+- The `ContentRoutesDeps.backend` test seam was **deleted**, not hidden: typing the public
+  factory param with an unexported wider type leaks the name into the published signature,
+  keeps the member structurally accepted and IDE-visible, and fails
+  `check:reference:signatures`. Tests inject via `event.locals.backend`, the same path the
+  dev double rides. The intersection-hiding technique is disproven; do not reuse it.
+- `NavLoadData`/`NavPageOption` are **frozen**, overriding the plan's illustrative Unstable
+  list: `AdminData.nav` carries `NavLoadData`, and tier-by-frozen-owner governs.
+- `resolveRouting` gained a runtime guard (typo'd or cast object routing values throw with
+  the concept named); compile-only enforcement was judged insufficient given the pass's
+  loud-boundary posture.
+- `CairnPlatformBindings` carries only what the engine reads from `platform.env`:
+  `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, `GITHUB_APP_PRIVATE_KEY_B64`, optional
+  `ANTHROPIC_API_KEY` (tidy). The GitHub App id/installation id are compile-time adapter
+  config, and four guides that taught them as Worker secrets were corrected.
+
+**What the process caught** (evidence the gate stack earns its keep):
+- Task 2's first solution passed every locally-run gate and failed the CI-only
+  `check:reference:signatures`; every later dispatch carried that gate by name.
+- The new reverse-check gate found real drift on its first run (a `VocabularyLoadData` row
+  for a never-exported type).
+- The reviewer fan-out caught the bindings-fidelity warning after all mechanical gates were
+  green; type-accuracy of documentation-bearing interfaces is invisible to the snapshot.
+- Task 6's regroup silently broke `packages/cairn-cms-dev` and nothing failed until a manual
+  showcase `svelte-check`; the friction log's owed `check:dev-package` gate now has its
+  incident.
+
+**Deliberate no-actions.** The site-config allowlist stays strict (`$schema` would be
+rejected; add to `KNOWN_TOP_LEVEL_KEYS` only when a real tool wants it). The pre-existing
+unguarded `SiteConfigError` on the settings/vocabulary save paths (bare 500) is logged, not
+drive-by-fixed.
+
+**Budgets.** Subagent tokens ≈ 5.9M total: the 19-agent adversarial audit workflow ≈ 1.9M
+(including evidence agents), eleven implementer dispatches ≈ 3.0M, simplifier + three
+reviewers ≈ 0.4M, review fixes ≈ 0.4M (main-loop tokens additional; see `/cost`). Human
+interaction points during execution: one plan approval and two lightweight confirmations,
+zero corrections; the concurrent strategy threads (mission review, polish, templates,
+project sites) were Geoff-initiated and never blocked the pass.
+
+**Carried follow-ups.** The owed `check:dev-package`/showcase-check gate (friction log, now
+with evidence); the settings/vocabulary save 500 (friction log); `VocabularyLoadData`/
+`SettingsData` barrel-export inconsistency (additive, decide post-freeze if a consumer needs
+to name them); push the branch for a CI e2e run at merge per the ritual.

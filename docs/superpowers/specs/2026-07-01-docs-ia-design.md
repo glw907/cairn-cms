@@ -150,3 +150,14 @@ No genuinely solo-maintained, cairn-scale docs-IA comparable exists (the critic'
 finding); the mitigations are the leanness rulings above and the page-count ceiling the
 comparables imply. The scaffolder-first on-ramp arrives in a later pass; ruling 3 keeps the
 seam explicit so the quickstart lands without restructuring.
+
+## Amendment (Geoff, 2026-07-02): the three-intro structure
+
+The docs open with a GENERAL introduction both audiences can read (this becomes
+`docs/README.md`'s opening job: plain language, no stack jargon in the first paragraph), which
+routes to two audience follow-ups: the developer intro (served by `why-cairn.md` plus the
+Start-here path, no new page) and an **editor intro — one new page**,
+`docs/guides/editor-welcome.md`, heading the For-editors group: what this tool is in an
+editor's terms (your site's writing room; saving holds, publishing ships, nothing you do can
+break the site), signing in, and where each editor guide is. Warmest register in the tree.
+Page inventory +1; the guides index's For-editors group leads with it.

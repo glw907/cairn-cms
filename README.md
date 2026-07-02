@@ -3,27 +3,34 @@
 An embedded CMS for SvelteKit sites on Cloudflare. Editors write markdown in the browser,
 and publishing is a git commit.
 
-Cairn installs into your site as a library. An editor signs in from an emailed link (no GitHub
-account, no password) and writes in an editor with a live preview of the real site. Saving
-commits the markdown to a holding branch in your repo, one branch per entry, where the draft
-waits. Publishing copies it to `main`, authored in the editor's name, and your site redeploys
-the same as if you'd pushed from a terminal. There is no hosted service, no database, and no
-account with anyone. Cairn is code in your app and files in your repo.
+Cairn installs into your site as a library. An editor signs in from an emailed link (no
+GitHub account, no password) and writes in an editor with a live preview of the real site.
+Saving commits the markdown to a holding branch in your repo, one branch per entry, where the
+draft waits. Publishing copies it to `main`, authored in the editor's name, and your site
+redeploys the same as if you'd pushed from a terminal. There's no hosted service and no
+database. The CMS is code in your app, and the content is files in your repo.
 
-I built cairn for my own sites, to solve two problems that kept arriving together. The people
-who write for a small site need to edit and publish without learning git, and everything
-built for them either takes the site over (a platform with your pages inside it) or takes the
-content hostage (a service with your words in its database). And the developer maintaining
-that site needs updates to stay cheap. A CMS you build around should never make you rebuild.
-So cairn is deliberately small. Its one job is managing markdown content and the
-admin where editors write it. It does that job well and gets out of the way. Everything else a site
-needs is yours. Routes, data, auth, design, all of it served through a few documented seams
-rather than absorbed as features. The stack is fixed on purpose (SvelteKit,
-Cloudflare, GitHub, no abstractions over any of them), and "out of scope" is an answer I use
-a lot. Refusing generality is what keeps the engine small enough to trust with your site, and
-small enough that pulling updates never means reworking what you built around it.
+I built cairn for my own sites. The people who write for a small site need to edit and
+publish without learning git, and the tools built for them mostly come in two shapes:
+platforms that absorb your whole site, and hosted services that keep your content in their
+database. I didn't want either, and I also didn't want a CMS where pulling updates meant
+reworking whatever I'd built around it. So cairn is small on purpose. It manages markdown
+content and the admin where editors write it, and that's the whole job. Your routes, data,
+auth, and design stay yours, reachable through a few documented seams. The stack is fixed
+(SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them) and I say "out of
+scope" a lot. That refusal is what keeps the engine small enough to understand, and small
+enough that updates don't break what you built around it.
 
-<!-- SCREENSHOT (paired evidence): left, the editor mid-edit with live preview; right, the
+SvelteKit was the easy call. Content sites are what it does best (server-rendered pages,
+form actions that work before JavaScript loads), and it's the rare framework developers seem
+to genuinely enjoy. Cloudflare needs more defending. Workers, D1, and R2 cover everything a
+small site needs, running a small site there costs almost nothing, and the whole substrate
+comes from one vendor. GitHub barely counted as a choice, since your content's history,
+attribution, and deploy hooks already live there, and cairn uses them rather than rebuilding
+them. [Why cairn](./docs/explanation/why-cairn.md) has the full arguments, including the
+costs.
+
+<!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
      author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
 
@@ -31,21 +38,22 @@ small enough that pulling updates never means reworking what you built around it
 npm install @glw907/cairn-cms
 ```
 
-- **Sign-in** is an emailed link. The editor list lives in your D1 database; owners manage it
-  from the admin.
-- **Saving** writes to a per-entry holding branch. **Publishing** is a deliberate, separate
-  step. A conflicting edit is refused, never merged by guesswork.
-- **Rendering** is one function your site supplies. The editor's preview and your public
-  pages share it, so editors see exactly what ships.
-- **Content** is a fixed set of concepts you declare (Posts and Pages out of the box, your
-  own beside them), each with a typed frontmatter schema.
-- **Removing cairn** leaves you a working repo of markdown. Nothing to export, nothing to
-  migrate.
+A few details that tend to matter to developers evaluating this:
+
+- Sign-in is an emailed link. The editor list is rows in your D1 database, managed from the
+  admin by owners.
+- Saving and publishing are separate steps. A save waits on its holding branch, and a
+  conflicting edit is refused rather than merged by guesswork.
+- The editor's preview and your public pages render through the same function, the one your
+  site supplies. Editors see exactly what ships.
+- Content is a fixed set of concepts you declare. Posts and Pages to start, others if you add
+  them, each with a typed frontmatter schema.
+- If you remove cairn, you're left with a repo of markdown that still builds.
 
 Cairn is obviously not for you if you don't have (or don't want) a Cloudflare account, if
 your team works in React or another framework, or if you need open-ended user-defined
-collections rather than a fixed set of declared concepts. Each of those constraints is a
-deliberate choice, and [Why cairn](./docs/explanation/why-cairn.md) argues them one by one.
+collections rather than a fixed set of declared concepts. Each of those is a deliberate
+choice, and [Why cairn](./docs/explanation/why-cairn.md) argues them one by one.
 
 Start with the
 [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed

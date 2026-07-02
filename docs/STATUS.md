@@ -28,12 +28,15 @@ out of the tarball with the deep-import lock. Holds unpublished under `## Unrele
 reviewers zero blockers; the bindings-fidelity warning and the dev-package fallout were fixed
 in-pass (`46af986`, `42d2346`).
 
-**NEXT: the code polish pass (ROADMAP `## Now`), Geoff's call 2026-07-01, before the docs
-rewrite.** Method in the ROADMAP entry: idiom charter (`docs/internal/code-idioms.md`) first,
-deterministic bloat measurement, then a behavior-preserving sweep with `check:surface` as the
-frozen invariant; surface-change wants get filed, never done in the sweep. The polish plan and
-the docs-rewrite plan are both being drafted warm (one combined brainstorm); execution order:
-polish first.
+**NEXT: execute the code polish pass.** Spec approved
+(`docs/superpowers/specs/2026-07-01-code-polish-pass-design.md`) and the plan is written:
+`docs/superpowers/plans/2026-07-01-code-polish-pass.md` (worktree `code-polish-1`; Tasks 2 and 4
+are Workflow launches per Geoff's recorded opt-in, riders via `cairn-implementer`, charter
+synthesis in the main loop). The docs-rewrite spec
+(`docs/superpowers/specs/2026-07-01-docs-rewrite-design.md`, standards section reconfirmed) is
+written and awaiting Geoff's final sign-off; its Stage 1 research workflow may run concurrently
+with the polish sweep once signed off, and its Stage 2 plan is authored only after the docs IA
+doc is approved.
 
 **Carried follow-ups (churn, do not accumulate):**
 - The owed `check:dev-package`/showcase-check root gate: the Task 6 regroup broke the dev

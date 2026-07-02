@@ -627,10 +627,10 @@ export async function cairnSpellcheck(options: SpellcheckOptions = {}): Promise<
         relint();
         return;
       }
-      // An init or lookup failure: log it and leave the editor usable (no underlines is the graceful
-      // degrade, never a thrown error). A `check` that arrives after this still resolves to [] below.
+      // An init or lookup failure: leave the editor usable (no underlines is the graceful degrade,
+      // never a thrown error, and never a console message on this client surface per E7). A
+      // `check` that arrives after this still resolves to [] below.
       if (data.type === 'error') {
-        console.warn('cairn spellcheck worker error:', data.detail ?? 'unknown');
         return;
       }
       if (data.type !== 'checked' || typeof data.seq !== 'number') return;

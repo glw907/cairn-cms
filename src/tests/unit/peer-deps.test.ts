@@ -8,7 +8,9 @@ const pkg = JSON.parse(readFileSync(new URL('../../../package.json', import.meta
 
 describe('package dependency contract', () => {
   const peers = ['@sveltejs/kit', 'svelte'];
-  const editorDeps = ['codemirror', '@codemirror/lang-markdown', '@codemirror/state', '@codemirror/view'];
+  // The bare `codemirror` meta-package is not itself in this list: nothing imports it (only the
+  // scoped @codemirror/* subpackages below are ever value-imported), so it is not a dependency.
+  const editorDeps = ['@codemirror/lang-markdown', '@codemirror/state', '@codemirror/view'];
 
   it('declares the framework packages as peers', () => {
     for (const p of peers) expect(pkg.peerDependencies?.[p], `${p} must be a peer`).toBeTruthy();

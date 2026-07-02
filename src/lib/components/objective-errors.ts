@@ -10,13 +10,13 @@
 import type { Range } from './spellcheck.js';
 
 /** The three objective-error kinds, each its own check. */
-export type ObjectiveErrorKind = 'doubled-word' | 'double-space' | 'repeated-punct';
+type ObjectiveErrorKind = 'doubled-word' | 'double-space' | 'repeated-punct';
 
 /**
  * A single deterministic edit that resolves one finding: replace [from, to) with `insert`. The lint
  *  source turns this into the diagnostic's quick-fix action.
  */
-export interface ObjectiveFix {
+interface ObjectiveFix {
   from: number;
   to: number;
   insert: string;

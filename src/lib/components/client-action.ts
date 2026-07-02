@@ -8,21 +8,31 @@ import { deserialize } from '$app/forms';
 
 /**
  * The outcome of `postFormAction`: a typed success payload, or a fail-closed miss carrying
- * whatever data a parsed failure response supplied (`undefined` for a network throw).
+ * whatever data a parsed failure response supplied (`undefined` for a network throw) plus
+ * `sessionExpired` when the miss was specifically the guard's expired-session redirect. Most
+ * callers fold `sessionExpired` into their generic failure branch; a caller that shows a distinct
+ * "sign in again" message reads it.
  */
-export type ActionOutcome<T> = { ok: true; data: T } | { ok: false; data?: unknown };
+export type ActionOutcome<T> =
+  | { ok: true; data: T }
+  | { ok: false; data?: unknown; sessionExpired?: boolean };
 
 /**
  * POST `init` to `url` and parse the response as a SvelteKit `ActionResult` envelope via
  * `deserialize`. A network throw and a non-success envelope both resolve to `{ ok: false }` (the
  * fail-closed branch), so the caller's own default-failure object handles both uniformly; a
  * success envelope with falsy `data` also resolves fail-closed, matching the action-result
- * contract (a success always carries data here).
+ * contract (a success always carries data here). A caller that posts with `redirect: 'manual'`
+ * sees the guard's expired-session 303 as an opaque, status-0 response with no parseable body;
+ * that case resolves to `{ ok: false, sessionExpired: true }` before the parse is attempted.
  */
 export async function postFormAction<T>(url: string, init: RequestInit): Promise<ActionOutcome<T>> {
   let result: { type: string; data?: unknown };
   try {
     const res = await fetch(url, init);
+    if (res.type === 'opaqueredirect' || res.status === 0) {
+      return { ok: false, sessionExpired: true };
+    }
     result = deserialize(await res.text()) as { type: string; data?: unknown };
   } catch {
     return { ok: false };

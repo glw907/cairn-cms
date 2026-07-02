@@ -17,7 +17,7 @@ export interface PopoverModules {
 }
 
 /** The diagnostic under the caret with its live range, or null when the caret sits outside every diagnostic. */
-export function diagnosticAtCaret(
+function diagnosticAtCaret(
   state: EditorState,
   forEachDiagnostic: typeof import('@codemirror/lint').forEachDiagnostic,
 ): { diagnostic: Diagnostic; from: number; to: number } | null {
@@ -33,7 +33,7 @@ export function diagnosticAtCaret(
  * Build the recipe popover DOM for one diagnostic. `role="group"` (non-modal, labeled): shown without
  * taking focus; Alt-Enter moves focus into these native buttons; Escape returns focus here.
  */
-export function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number, to: number): HTMLElement {
+function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number, to: number): HTMLElement {
   const dom = document.createElement('div');
   dom.className = 'cairn-cm-suggest';
   dom.setAttribute('role', 'group');

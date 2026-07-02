@@ -108,6 +108,17 @@ should NOT choose cairn because of them (no Cloudflare account, a React team, a 
 open-ended collections); the who-it-is-not-for half is what makes the who-it-is-for half
 credible.
 
+**Wayfinder is part of the pitch, not an accessory (Geoff, 2026-07-02).** The what/who
+opening carries the dual-mode positioning: cairn is both a near-end-point for basic
+content-managed sites (Wayfinder plus the scaffolder gets a clean, professional site running
+quickly, and for many sites that is legitimately the finish line) and a foundational starting
+point for sites that will grow past a basic CMS (the thin seams, the token-layer
+extensibility, the build-alongside model). Quality scaffolding is named as a critical part of
+the experience, not a demo: "started quickly and cleanly" and "extend and grow easily" are
+the same promise at two moments in a site's life. This is the Wayfinder design review's
+neutral-yet-compelling balance restated as product positioning — the docs claim it, the
+review verifies it, and the two must not drift apart.
+
 **Acceptance:** all three pass the gates; no published page links into `docs/internal/`
 after this task (grep-proven); `prose-voice-reviewer` findings on these three folded in
 before the task commits (these pages are the register exemplars every dispatch cites, so

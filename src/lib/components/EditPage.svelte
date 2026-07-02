@@ -19,7 +19,6 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 <script lang="ts">
   import { flushSync, untrack, getContext } from 'svelte';
   import { beforeNavigate } from '$app/navigation';
-  import { deserialize } from '$app/forms';
   import { page } from '$app/state';
   import BlocksIcon from '@lucide/svelte/icons/blocks';
   import SquarePenIcon from '@lucide/svelte/icons/square-pen';
@@ -69,6 +68,8 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
+  import { postFormAction } from './client-action.js';
+  import { arbitrateChecked } from './spellcheck.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -392,38 +393,29 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   /** Commit the pending personal-dictionary additions through the addDictionaryWord action, then drop
    *  the words the server confirms from the pending set. Fire-and-forget at save time: the words are
    *  already live in the Worker's in-memory set, so a slow or failed commit never blocks the save. A
-   *  failure leaves the words pending for the next save (never dropped). The transport mirrors the media
-   *  raw-body actions: a text/plain POST, the CSRF token in X-Cairn-CSRF, a JSON `{ words }` body. */
+   *  failure (a network throw, an expired session, a parsed csrf/400/409) leaves the words pending for
+   *  the next save (never dropped); the words stay live in the Worker for the session, so the author
+   *  sees no regression. The transport mirrors the media raw-body actions: a text/plain POST, the CSRF
+   *  token in X-Cairn-CSRF, a JSON `{ words }` body, read back through the S3 round-trip helper. */
   async function commitPendingDictionary(): Promise<void> {
     if (pendingAdditions.size === 0) return;
     const words = [...pendingAdditions];
-    try {
-      const res = await fetch(`/admin/${data.conceptId}/${data.id}?/addDictionaryWord`, {
+    const outcome = await postFormAction<{ words?: unknown }>(
+      `/admin/${data.conceptId}/${data.id}?/addDictionaryWord`,
+      {
         method: 'POST',
         redirect: 'manual',
         headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
         body: JSON.stringify({ words }),
-      });
-      // The guard's expired-session 303 under redirect: 'manual' surfaces as an opaque, status-0
-      // response with no body: leave the words pending and bail.
-      if (res.type === 'opaqueredirect' || res.status === 0) return;
-      // deserialize turns the devalue-encoded form-action result back into an ActionResult; a 500 HTML
-      // error page is not devalue-encoded, so it throws into the catch below. Only a success carries
-      // the merged word list; a fail (csrf, 400, 409) leaves the words pending for the next save.
-      const result = deserialize(await res.text()) as
-        | { type: 'success'; data?: { words?: unknown } }
-        | { type: 'failure' | 'error' | 'redirect' };
-      if (result.type !== 'success') return;
-      const merged = result.data?.words;
-      if (!Array.isArray(merged)) return;
-      // Reconcile: drop every now-committed word (matched lowercased, the form the action stored) from
-      // the pending set so it is not re-sent. A word the server did not confirm stays pending.
-      const committed = new Set(merged.filter((w): w is string => typeof w === 'string').map((w) => w.toLowerCase()));
-      for (const w of words) if (committed.has(w.toLowerCase())) pendingAdditions.delete(w);
-    } catch {
-      // A network failure or an unparseable server response leaves the pending set intact for the next
-      // save; the words stay live in the Worker for the session, so the author sees no regression.
-    }
+      },
+    );
+    if (!outcome.ok) return;
+    const merged = outcome.data.words;
+    if (!Array.isArray(merged)) return;
+    // Reconcile: drop every now-committed word (matched lowercased, the form the action stored) from
+    // the pending set so it is not re-sent. A word the server did not confirm stays pending.
+    const committed = new Set(merged.filter((w): w is string => typeof w === 'string').map((w) => w.toLowerCase()));
+    for (const w of words) if (committed.has(w.toLowerCase())) pendingAdditions.delete(w);
   }
   function setSurface(posture: 'prose' | 'markup') {
     surface = posture;
@@ -557,30 +549,39 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // The bounded client timeout: a slow call becomes a cancel/retry rather than hanging the review.
     const timer = setTimeout(() => tidyController?.abort(), TIDY_CLIENT_TIMEOUT_MS);
     try {
-      const res = await fetch(`/admin/${data.conceptId}/${data.id}?/tidy`, {
-        method: 'POST',
-        redirect: 'manual',
-        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body: JSON.stringify({ text, scope: useSelection ? 'selection' : 'document' }),
-        signal: tidyController.signal,
-      });
-      if (res.type === 'opaqueredirect' || res.status === 0) {
-        tidyMessage = 'Your session expired. Sign in again to tidy.';
-        return;
-      }
-      const result = deserialize(await res.text()) as
-        | { type: 'success'; data?: { corrected?: unknown; model?: unknown } }
-        | { type: 'failure'; data?: { error?: unknown } }
-        | { type: 'error' | 'redirect' };
-      if (result.type !== 'success') {
+      const outcome = await postFormAction<{ corrected?: unknown; model?: unknown }>(
+        `/admin/${data.conceptId}/${data.id}?/tidy`,
+        {
+          method: 'POST',
+          redirect: 'manual',
+          headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+          body: JSON.stringify({ text, scope: useSelection ? 'selection' : 'document' }),
+          signal: tidyController.signal,
+        },
+      );
+      if (!outcome.ok) {
+        // An abort (Cancel or the client timeout) resolves through the round-trip helper's own
+        // fail-closed catch with no way to tell it apart from a genuine network failure; read the
+        // signal directly so Cancel stays silent instead of showing the generic retry message
+        // below. A response that was actually received (outcome.ok) is processed on its own merits
+        // below regardless of the flag, so a late-arriving success is never discarded.
+        if (tidyController.signal.aborted) {
+          tidyMessage = null;
+          return;
+        }
+        if (outcome.sessionExpired) {
+          tidyMessage = 'Your session expired. Sign in again to tidy.';
+          return;
+        }
+        const failure = outcome.data as { error?: unknown } | undefined;
         tidyMessage =
-          result.type === 'failure' && typeof result.data?.error === 'string' && result.data.error !== 'csrf'
-            ? result.data.error
+          typeof failure?.error === 'string' && failure.error !== 'csrf'
+            ? failure.error
             : 'Tidy could not finish. Try again.';
         return;
       }
-      const corrected = typeof result.data?.corrected === 'string' ? result.data.corrected : '';
-      const model = typeof result.data?.model === 'string' ? result.data.model : data.tidy.model;
+      const corrected = typeof outcome.data.corrected === 'string' ? outcome.data.corrected : '';
+      const model = typeof outcome.data.model === 'string' ? outcome.data.model : data.tidy.model;
       if (corrected.length === 0 || corrected === text) {
         // A clean result: tidy found nothing to fix. Never open an empty review.
         tidyNoop = true;
@@ -608,9 +609,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       tidyMode = true;
       tidyApi?.enter(changes);
     } catch {
-      // An abort (Cancel or the client timeout) or a network/parse failure both map to the same
-      // retryable message; the buffer is untouched.
-      tidyMessage = tidyController?.signal.aborted ? null : 'Tidy could not finish. Try again.';
+      // A throw anywhere in the round trip or the success processing above (a parse failure
+      // unrelated to the network) must not escape as an unhandled rejection out of the untracked
+      // onclick call; fold it into the same retryable message a fetch failure shows.
+      tidyMessage = 'Tidy could not finish. Try again.';
     } finally {
       clearTimeout(timer);
       tidyController = null;
@@ -776,9 +778,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let editReason = $state<'none' | 'unsafe'>('none');
   // Resolve editability when the caret-component changes, async-safe. componentRoundTripSafety is
   // async, so a slow check could resolve after a newer caret move; guard latest-wins on the
-  // caretComponent identity (the EditPage preview-debounce pattern), only applying a result when
-  // the caret has not moved since the check started. A block whose check did not pass for the
-  // current caret never enables edit.
+  // shared SeqArbiter shape, only applying a result when no newer caret move has started a fresh
+  // check. The arbiter alone is not enough: it is bumped only when the effect itself reruns
+  // (the teardown below, or the next run's own call), which Svelte schedules asynchronously, so a
+  // slow check for the block the caret just left can still resolve before that rerun happens. The
+  // live `caretComponent` read is the belt to the arbiter's suspenders: it reflects the caret's
+  // real position the instant it changes, independent of when the effect gets around to noticing.
+  // A block whose check did not pass for the current caret never enables edit.
+  const editableArbiter = arbitrateChecked();
   $effect(() => {
     const current = caretComponent;
     const def = editableDef(current?.name ?? null);
@@ -787,10 +794,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       editReason = 'none';
       return;
     }
-    let stale = false;
+    const run = editableArbiter.next();
     void componentRoundTripSafety(current.markdown, def)
       .then((result) => {
-        if (stale || caretComponent !== current) return;
+        if (!editableArbiter.accept(run) || caretComponent !== current) return;
         if (result.safe) {
           editable = { def, range: { from: current.from, to: current.to }, markdown: current.markdown };
           editReason = 'none';
@@ -801,13 +808,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       })
       .catch(() => {
         // A parse throw during the safety check must never leave a stale block enabled. Guarded by
-        // the same latest-wins identity, fall back to the safe default of no editable block.
-        if (stale || caretComponent !== current) return;
+        // the same arbiter and live caret identity, fall back to the safe default of no editable
+        // block.
+        if (!editableArbiter.accept(run) || caretComponent !== current) return;
         editable = null;
         editReason = 'none';
       });
     return () => {
-      stale = true;
+      editableArbiter.next();
     };
   });
   // The Edit-block control's accessible label and tooltip: a plain reason in each state. Enabled
@@ -1220,24 +1228,24 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The preview call threads the same entry context the public route passes (concept and
   // frontmatter), so a custom entry-aware renderer's preview matches its page. The body is the live
   // editor content; frontmatter is the loaded snapshot, which is faithful for the saved state.
-  // previewRun is a plain counter (not reactive state) used as a latest-wins guard: if a slow earlier
-  // async render call resolves after a newer one has started, the stale result is discarded.
-  let previewRun = 0;
+  // previewArbiter is the shared SeqArbiter latest-wins guard: if a slow earlier async render call
+  // resolves after a newer one has started, the stale result is discarded.
+  const previewArbiter = arbitrateChecked();
   $effect(() => {
     if (mode !== 'preview' || !render) return;
     const md = body;
     const resolve = resolveLink; // tracked read in the effect body
     const resolveMediaRef = resolveMedia; // tracked read in the effect body
-    const run = ++previewRun;
+    const run = previewArbiter.next();
     const handle = setTimeout(async () => {
       try {
         const html = await render({ body: md, concept: data.conceptId, frontmatter: data.frontmatter, resolve, resolveMedia: resolveMediaRef });
-        if (run === previewRun) {
+        if (previewArbiter.accept(run)) {
           previewHtml = html;
           previewFailed = false;
         }
       } catch {
-        if (run === previewRun) {
+        if (previewArbiter.accept(run)) {
           previewHtml = '';
           previewFailed = true;
         }
@@ -1245,10 +1253,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     }, 150);
     return () => {
       clearTimeout(handle);
-      // Every re-run and the final teardown invalidate the in-flight render. The entry-key reset
-      // above cannot reach this counter, so without the bump a slow render for entry A could
+      // Every re-run and the final teardown invalidate the in-flight render: bumping the arbiter
+      // with no waiting caller makes any earlier accept() call report stale. The entry-key reset
+      // above cannot reach this arbiter, so without the bump a slow render for entry A could
       // resolve after a same-route hop and write A's html into entry B's pane.
-      previewRun++;
+      previewArbiter.next();
     };
   });
 
@@ -1334,9 +1343,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       >
         <PanelRightIcon class="h-4 w-4" aria-hidden="true" />
       </button>
-      <!-- The overflow menu is a DaisyUI v5 popover dropdown: click to open (never
-           focus-in-transit), Escape and light dismiss from the Popover API, and the
-           anchor-name/position-anchor pair places the panel under its trigger. -->
+      <!-- The overflow menu is the same DaisyUI v5 popover dropdown recipe EditorToolbar's More
+           menu uses (click to open, Escape/light-dismiss via the Popover API, anchor-name/
+           position-anchor placement). -->
       <button
         type="button"
         class="btn btn-ghost btn-sm btn-square"

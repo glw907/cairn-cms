@@ -64,7 +64,7 @@ export function slugFromId(id: string, datePrefix: DatePrefix | null): string {
  */
 export function composeDatedId(date: string, slug: string, datePrefix: DatePrefix): string {
   const m = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-  if (!m) throw new Error(`composeDatedId: malformed date "${date}"`);
+  if (!m) throw new Error(`cairn: date "${date}" is malformed, expected YYYY-MM-DD`);
   const [, year, month, day] = m;
   let prefix: string;
   switch (datePrefix) {
@@ -91,4 +91,15 @@ export function renameId(oldId: string, newSlug: string, datePrefix: DatePrefix 
   const oldSlug = slugFromId(oldId, datePrefix);
   const prefix = oldId.slice(0, oldId.length - oldSlug.length);
   return prefix + newSlug;
+}
+
+/**
+ * Split a `<concept>/<id>` token into its parts, or null when no concept precedes the slash. The
+ * shared shape behind the cairn: link token (links.ts) and a pending-branch name (pending.ts),
+ * each of which strips its own prefix and applies its own id validation around this split.
+ */
+export function splitConceptIdToken(token: string): { concept: string; id: string } | null {
+  const slash = token.indexOf('/');
+  if (slash <= 0) return null;
+  return { concept: token.slice(0, slash), id: token.slice(slash + 1) };
 }

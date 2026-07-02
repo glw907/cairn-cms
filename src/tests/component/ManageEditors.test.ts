@@ -52,6 +52,12 @@ describe('ManageEditors', () => {
 
   it('surfaces an action error', async () => {
     const screen = render(ManageEditors, { data: data(), form: { error: 'That editor already exists' } });
-    await expect.element(screen.getByText(/already exists/i)).toBeInTheDocument();
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert?.textContent).toContain('That editor already exists');
+    // The visible alert carries the message with no role of its own; a persistent polite live
+    // region announces it instead (the ConceptList discipline).
+    expect(alert?.getAttribute('role')).toBeNull();
+    const region = screen.container.querySelector('[aria-live="polite"]');
+    expect(region?.textContent ?? '').toContain('That editor already exists');
   });
 });

@@ -2,6 +2,7 @@
 // it marks `taxonomy: true`; its values are the tags that drive the tag index, tag archives, and
 // feed categories. resolveTaxonomyField names that field for the content index to read.
 import type { NamedField } from './types.js';
+import { coerceStringList } from './coerce.js';
 
 /** The name of the single top-level field marked `taxonomy: true`, or null when none is. */
 export function resolveTaxonomyField(fields: NamedField[]): string | null {
@@ -10,14 +11,10 @@ export function resolveTaxonomyField(fields: NamedField[]): string | null {
 }
 
 /**
- * A raw taxonomy frontmatter value as a tag array. An array maps each element to a string; a
- *  non-empty scalar coerces to a one-element array; anything else (absent, empty string) yields
- *  none. This is the scalar-coercing form the validator and the multiselect form layer use, so a
- *  lone `topics: svelte` projects `['svelte']` rather than dropping, which the tag-usage index
- *  relies on for its delete-safety gate.
+ * A raw taxonomy frontmatter value as a tag array, via the shared scalar-or-array coercer. This is
+ *  the form the validator and the multiselect form layer use, so a lone `topics: svelte` projects
+ *  `['svelte']` rather than dropping, which the tag-usage index relies on for its delete-safety gate.
  */
 export function coerceTags(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
-  return [];
+  return coerceStringList(value);
 }

@@ -3,6 +3,7 @@
 // commits the file back through the GitHub-App pipeline. This module is pure: parse, validate, and
 // rewrite only. The engine returns data; each site renders the tree with its own markup.
 import { parse as parseYaml, parseDocument } from 'yaml';
+import { CairnError } from '../diagnostics/index.js';
 
 /** One navigation node. An omitted or empty `url` is a label-only grouping header; no `children` is a leaf. */
 export interface NavNode {
@@ -12,13 +13,13 @@ export interface NavNode {
 }
 
 /** Total node cap across the whole tree, a guard against a runaway payload. */
-export const MAX_NAV_NODES = 200;
+const MAX_NAV_NODES = 200;
 
 /** Maximum character length for a node label. */
-export const MAX_LABEL_LENGTH = 500;
+const MAX_LABEL_LENGTH = 500;
 
 /** Maximum character length for a node URL. */
-export const MAX_URL_LENGTH = 2048;
+const MAX_URL_LENGTH = 2048;
 
 /** Allowlist for safe URL schemes: site-relative, in-page anchors, http(s), mailto, and tel. */
 const SAFE_URL = /^(\/|#|https?:\/\/|mailto:|tel:)/i;
@@ -26,9 +27,10 @@ const SAFE_URL = /^(\/|#|https?:\/\/|mailto:|tel:)/i;
 /** A valid vocabulary `value`: lowercase alphanumeric segments joined by single hyphens, the stored token and filter key. */
 const SAFE_TAG_VALUE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export class NavValidationError extends Error {
+/** An untrusted nav tree fails validateNavTree's bounds; maps to the site-config diagnostic condition. */
+export class NavValidationError extends CairnError {
   constructor(message: string) {
-    super(message);
+    super('config.site-config-invalid', { message });
     this.name = 'NavValidationError';
   }
 }
@@ -207,12 +209,10 @@ const EM_DASH_VALUES = ['spaced', 'closed'] as const;
 const ELLIPSIS_VALUES = ['single-char', 'three-dots'] as const;
 const TIME_FORMAT_VALUES = ['5 PM', '5pm', '5 p.m.'] as const;
 
-export class TidyConventionsError extends Error {
-  /** A malformed settings payload maps to the same diagnostic as a malformed config. */
-  readonly conditionId = 'config.site-config-invalid';
-
+/** A malformed tidy-conventions settings payload maps to the same diagnostic as a malformed config. */
+export class TidyConventionsError extends CairnError {
   constructor(message: string) {
-    super(message);
+    super('config.site-config-invalid', { message });
     this.name = 'TidyConventionsError';
   }
 }
@@ -281,12 +281,10 @@ export function dictionaryFileForDialect(dialect: string | undefined): string {
   return DICTIONARY_BY_DIALECT[key] ?? DICTIONARY_BY_DIALECT[DEFAULT_DIALECT]!;
 }
 
-export class SiteConfigError extends Error {
-  /** The registered diagnostic condition a malformed site config maps to (mirrors CairnError). */
-  readonly conditionId = 'config.site-config-invalid';
-
+/** Thrown by parseSiteConfig and the nav/tidy/vocabulary writers on a malformed site.config.yaml. */
+export class SiteConfigError extends CairnError {
   constructor(message: string) {
-    super(message);
+    super('config.site-config-invalid', { message });
     this.name = 'SiteConfigError';
   }
 }

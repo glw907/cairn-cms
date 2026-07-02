@@ -87,15 +87,37 @@ validates on save.
       rows = sortItems(rows, draggedItemIndex, targetItemIndex);
     }
   }
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
+  // every fresh error so the region text always mutates and the screen reader speaks again (the
+  // ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard sentence is
+  // unchanged; the visible alert below keeps its own styling and drops the `role` (a fresh-inserted
+  // role element announces inconsistently and would clobber a repeat).
+  let announceNonce = $state(0);
+  function nonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // Each save hands a fresh `data` object (the action redirects on both success and failure, so the
+  // component always remounts), so the nonce bumps once per load, keyed to the load identity.
+  let lastData: unknown;
+  $effect(() => {
+    if (data !== lastData) {
+      lastData = data;
+      if (data.error) announceNonce++;
+    }
+  });
+  const liveError = $derived(data.error ? `${data.error}${nonce()}` : '');
 </script>
 
 <h1 class="mb-6 text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.menu.label}</h1>
 
+<div class="sr-only" aria-live="polite">{liveError}</div>
 {#if data.saved}
   <div role="status" class="alert alert-success mb-4 text-sm">Navigation saved.</div>
 {/if}
 {#if data.error}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
 {/if}
 
 <form method="POST" action="?/save">

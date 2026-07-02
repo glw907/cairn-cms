@@ -6,7 +6,6 @@
 // assets it could gather with an empty usage overlay rather than a thrown 500.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { ContentFormFailure, MediaBulkFailure } from '../../lib/sveltekit/content-routes.js';
@@ -17,8 +16,7 @@ import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
 import type { Backend } from '../../lib/github/backend.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -35,35 +33,21 @@ const MEDIA_ON: ResolvedAssetConfig = {
 };
 
 function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
+      postsConcept({
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'image', name: 'image', label: 'Hero', seo: true },
         ],
-        schema: fieldset({}),
-        summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
+      }),
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: MEDIA_ON,
-    vocabulary: [],
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const HASH_MAIN = '0000000000000aaa';
 const HASH_BRANCH = '0000000000000bbb';
@@ -104,13 +88,7 @@ function contentManifest(mediaRefs: string[]): string {
 }
 
 function libraryEvent(search = '', eventBackend: Backend = backend) {
-  return {
-    url: new URL(`https://t.example/admin/media${search}`),
-    params: {},
-    request: new Request(`https://t.example/admin/media${search}`),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend: eventBackend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: `https://t.example/admin/media${search}`, eventBackend });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -372,18 +350,11 @@ function mediaActionEvent(
     }
     return inner(input, init);
   }));
-  const body = new URLSearchParams(fields).toString();
-  return {
-    url: new URL('https://t.example/admin/media'),
-    params: {},
-    request: new Request('https://t.example/admin/media', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body,
-    }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
-  };
+  return contentEvent({
+    url: 'https://t.example/admin/media',
+    form: fields,
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket },
+  });
 }
 
 describe('mediaDeleteAction in-use refusal', () => {

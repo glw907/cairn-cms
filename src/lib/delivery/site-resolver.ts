@@ -56,7 +56,7 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
   if (opts.validate !== false) {
     const problems = siteProblems(concepts);
     if (problems.length > 0) {
-      throw new Error(`site resolver: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
+      throw new Error(`cairn: ${problems.length} invalid frontmatter field(s):\n  ${problems.join('\n  ')}`);
     }
   }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
@@ -67,7 +67,7 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
       const existing = byPath.get(summary.permalink);
       if (existing) {
         throw new Error(
-          `site resolver: "${existing.id}" and "${summary.id}" both resolve to "${summary.permalink}"`,
+          `cairn: permalink "${summary.permalink}" resolves to both "${existing.id}" and "${summary.id}"`,
         );
       }
       byPath.set(summary.permalink, { index, id: summary.id });
@@ -165,7 +165,7 @@ export function resolveReferences(
 export function buildLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
     const url = site.concept(ref.concept)?.byId(ref.id)?.permalink;
-    if (!url) throw new Error(`cairn link target not found: cairn:${ref.concept}/${ref.id}`);
+    if (!url) throw new Error(`cairn: link target "cairn:${ref.concept}/${ref.id}" not found`);
     return url;
   };
 }

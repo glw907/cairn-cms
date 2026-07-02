@@ -7,11 +7,13 @@
 //       The budget ratchets to zero across the sweep. Budgets, the per-tree retired-token pattern, and the
 //       by-name Tier-2 allowlist live in scripts/custom-surface-budget.json, seeded at current values.
 //       Wired as `npm run check:custom-surface`.
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walk } from './walk-files.mjs';
+import { repoRoot } from './repo-root.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = repoRoot(import.meta.url);
 
 /**
  * The css with every `/* … *\/` comment blanked to whitespace. The signal scans below brace-match and
@@ -23,7 +25,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * @returns {string}
  */
 function stripCssComments(css) {
-	return css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
+  return css.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
 }
 
 /**
@@ -32,17 +34,17 @@ function stripCssComments(css) {
  * @returns {string}
  */
 function componentsLayerBody(source) {
-	const css = stripCssComments(source);
-	const start = css.indexOf('@layer components');
-	if (start === -1) return '';
-	const open = css.indexOf('{', start);
-	if (open === -1) return '';
-	let depth = 0;
-	for (let i = open; i < css.length; i++) {
-		if (css[i] === '{') depth++;
-		else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
-	}
-	return '';
+  const css = stripCssComments(source);
+  const start = css.indexOf('@layer components');
+  if (start === -1) return '';
+  const open = css.indexOf('{', start);
+  if (open === -1) return '';
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}' && --depth === 0) return css.slice(open + 1, i);
+  }
+  return '';
 }
 
 /**
@@ -52,17 +54,17 @@ function componentsLayerBody(source) {
  * @returns {string}
  */
 function stripComponentsLayer(source) {
-	const css = stripCssComments(source);
-	const body = componentsLayerBody(source);
-	if (!body) return css;
-	const start = css.indexOf('@layer components');
-	const open = css.indexOf('{', start);
-	let depth = 0;
-	for (let i = open; i < css.length; i++) {
-		if (css[i] === '{') depth++;
-		else if (css[i] === '}' && --depth === 0) return css.slice(0, start) + css.slice(i + 1);
-	}
-	return css;
+  const css = stripCssComments(source);
+  const body = componentsLayerBody(source);
+  if (!body) return css;
+  const start = css.indexOf('@layer components');
+  const open = css.indexOf('{', start);
+  let depth = 0;
+  for (let i = open; i < css.length; i++) {
+    if (css[i] === '{') depth++;
+    else if (css[i] === '}' && --depth === 0) return css.slice(0, start) + css.slice(i + 1);
+  }
+  return css;
 }
 
 // A scoped rule selector in EITHER authored form: the compiled `:where([data-theme=…])` form and the
@@ -79,12 +81,12 @@ const SCOPED_RULE = /(?::where\(\s*)?\[data-theme=[^{]*?\{/g;
  * @returns {string[]}
  */
 export function pinnedUnlayeredRules(css) {
-	const out = [];
-	for (const m of stripComponentsLayer(css).matchAll(SCOPED_RULE)) {
-		// Drop the trailing brace, keep the selector text.
-		out.push(m[0].slice(0, -1).trim());
-	}
-	return out;
+  const out = [];
+  for (const m of stripComponentsLayer(css).matchAll(SCOPED_RULE)) {
+    // Drop the trailing brace, keep the selector text.
+    out.push(m[0].slice(0, -1).trim());
+  }
+  return out;
 }
 
 /**
@@ -93,23 +95,7 @@ export function pinnedUnlayeredRules(css) {
  * @returns {number}
  */
 export function componentsLayerSelectorCount(css) {
-	return [...componentsLayerBody(css).matchAll(SCOPED_RULE)].length;
-}
-
-/**
- * Files under a dir matching an extension predicate, recursively.
- * @param {string} dir
- * @param {(name: string) => boolean} keep
- * @returns {string[]}
- */
-function walk(dir, keep) {
-	const out = [];
-	for (const name of readdirSync(dir)) {
-		const full = join(dir, name);
-		if (statSync(full).isDirectory()) out.push(...walk(full, keep));
-		else if (keep(name)) out.push(full);
-	}
-	return out;
+  return [...componentsLayerBody(css).matchAll(SCOPED_RULE)].length;
 }
 
 // The admin retired-token pattern (muted/subtle only): the default when a tree names no pattern, so the
@@ -120,8 +106,8 @@ function walk(dir, keep) {
 // could compile to malformed CSS (see the tailwind-scans-docs-bad-candidate gotcha). A regex literal is
 // inert to that scan, and .source yields the same source string a hand-written constant would.
 const DEFAULT_RETIRED_TOKEN_PATTERN =
-	/\[[^\][]*var\(--color-(?:muted|subtle)\)[^\][]*\]|style="[^"]*var\(--color-(?:muted|subtle)\)/
-		.source;
+  /\[[^\][]*var\(--color-(?:muted|subtle)\)[^\][]*\]|style="[^"]*var\(--color-(?:muted|subtle)\)/
+    .source;
 
 /**
  * Arbitrary retired-token references in `.svelte` markup under a dir. The de-customization Rule 2 retires
@@ -139,17 +125,17 @@ const DEFAULT_RETIRED_TOKEN_PATTERN =
  * @returns {{ file: string, line: number, text: string }[]}
  */
 export function retiredTokenHits(dir, patternSource = DEFAULT_RETIRED_TOKEN_PATTERN) {
-	const pat = new RegExp(patternSource);
-	/** @type {{ file: string, line: number, text: string }[]} */
-	const hits = [];
-	for (const file of walk(resolve(ROOT, dir), (n) => n.endsWith('.svelte'))) {
-		readFileSync(file, 'utf8')
-			.split('\n')
-			.forEach((line, i) => {
-				if (pat.test(line)) hits.push({ file: relative(ROOT, file), line: i + 1, text: line.trim() });
-			});
-	}
-	return hits;
+  const pat = new RegExp(patternSource);
+  /** @type {{ file: string, line: number, text: string }[]} */
+  const hits = [];
+  for (const file of walk(resolve(ROOT, dir), (n) => n.endsWith('.svelte'))) {
+    readFileSync(file, 'utf8')
+      .split('\n')
+      .forEach((line, i) => {
+        if (pat.test(line)) hits.push({ file: relative(ROOT, file), line: i + 1, text: line.trim() });
+      });
+  }
+  return hits;
 }
 
 /**
@@ -160,45 +146,45 @@ export function retiredTokenHits(dir, patternSource = DEFAULT_RETIRED_TOKEN_PATT
  * @returns {{ pass: boolean, failures: string[] }}
  */
 export function evaluate(tree, budget) {
-	const failures = [];
-	if (tree.adminCss) {
-		const css = readFileSync(resolve(ROOT, tree.adminCss), 'utf8');
-		// Pin the unlayered set by EXACT selector, not substring. A substring allow (`.menu li`) would pass
-		// a swapped rule that merely CONTAINS the sanctioned text; whitespace-normalized set equality is the
-		// tight pin. Normalize runs of whitespace to one space on both sides before comparing.
-		const norm = (/** @type {string} */ s) => s.replace(/\s+/g, ' ').trim();
-		const unlayered = pinnedUnlayeredRules(css).map(norm);
-		const allow = budget.unlayeredAllowlist.map(norm);
-		if (unlayered.length !== allow.length)
-			failures.push(`unlayered rules: found ${unlayered.length}, allowlist has ${allow.length}`);
-		const allowSet = new Set(allow);
-		for (const sel of unlayered)
-			if (!allowSet.has(sel)) failures.push(`unsanctioned unlayered rule: ${sel}`);
-		const layerCount = componentsLayerSelectorCount(css);
-		if (layerCount > budget.componentsLayerCap)
-			failures.push(`@layer components selectors: ${layerCount} > cap ${budget.componentsLayerCap}`);
-	}
-	let retired = 0;
-	for (const dir of tree.markupDirs) retired += retiredTokenHits(dir, tree.retiredTokenPattern).length;
-	if (retired > budget.retiredTokenBudget)
-		failures.push(`retired tokens: ${retired} > budget ${budget.retiredTokenBudget}`);
-	return { pass: failures.length === 0, failures };
+  const failures = [];
+  if (tree.adminCss) {
+    const css = readFileSync(resolve(ROOT, tree.adminCss), 'utf8');
+    // Pin the unlayered set by EXACT selector, not substring. A substring allow (`.menu li`) would pass
+    // a swapped rule that merely CONTAINS the sanctioned text; whitespace-normalized set equality is the
+    // tight pin. Normalize runs of whitespace to one space on both sides before comparing.
+    const norm = (/** @type {string} */ s) => s.replace(/\s+/g, ' ').trim();
+    const unlayered = pinnedUnlayeredRules(css).map(norm);
+    const allow = budget.unlayeredAllowlist.map(norm);
+    if (unlayered.length !== allow.length)
+      failures.push(`unlayered rules: found ${unlayered.length}, allowlist has ${allow.length}`);
+    const allowSet = new Set(allow);
+    for (const sel of unlayered)
+      if (!allowSet.has(sel)) failures.push(`unsanctioned unlayered rule: ${sel}`);
+    const layerCount = componentsLayerSelectorCount(css);
+    if (layerCount > budget.componentsLayerCap)
+      failures.push(`@layer components selectors: ${layerCount} > cap ${budget.componentsLayerCap}`);
+  }
+  let retired = 0;
+  for (const dir of tree.markupDirs) retired += retiredTokenHits(dir, tree.retiredTokenPattern).length;
+  if (retired > budget.retiredTokenBudget)
+    failures.push(`retired tokens: ${retired} > budget ${budget.retiredTokenBudget}`);
+  return { pass: failures.length === 0, failures };
 }
 
 function main() {
-	const budget = JSON.parse(readFileSync(resolve(ROOT, 'scripts/custom-surface-budget.json'), 'utf8'));
-	let failed = false;
-	for (const [name, tree] of Object.entries(budget.trees)) {
-		const { pass, failures } = evaluate(tree, tree.budget);
-		if (pass) {
-			console.log(`custom-surface [${name}]: PASS`);
-		} else {
-			console.error(`custom-surface [${name}]: FAIL`);
-			for (const f of failures) console.error(`  ${f}`);
-			failed = true;
-		}
-	}
-	process.exit(failed ? 1 : 0);
+  const budget = JSON.parse(readFileSync(resolve(ROOT, 'scripts/custom-surface-budget.json'), 'utf8'));
+  let failed = false;
+  for (const [name, tree] of Object.entries(budget.trees)) {
+    const { pass, failures } = evaluate(tree, tree.budget);
+    if (pass) {
+      console.log(`custom-surface [${name}]: PASS`);
+    } else {
+      console.error(`custom-surface [${name}]: FAIL`);
+      for (const f of failures) console.error(`  ${f}`);
+      failed = true;
+    }
+  }
+  process.exit(failed ? 1 : 0);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

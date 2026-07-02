@@ -6,45 +6,24 @@
 // conflict re-reads the new head, re-merges (order-independent), and retries once. The response is the
 // merged word list so the client reconciles its pending additions; a refusal rides a fail envelope.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { DictionaryAddResult, DictionaryAddFailure } from '../../lib/sveltekit/content-routes.js';
 import { parseDictionary, serializeDictionary } from '../../lib/content/site-dictionary.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const DICT_PATH = 'src/content/.cairn/dictionary.txt';
 const CSRF = 'csrf-token-value-0123456789abcdef';
 
 function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
-  const ok = () => ({ ok: true as const, data: {} });
-  return {
-    siteName: 'T',
-    concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok,
-      },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
+  return baseRuntime({
+    concepts: [postsConcept()],
     dictionaryPath: DICT_PATH,
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
     ...over,
-  };
+  });
 }
-
-// The read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function cookieJar(csrf: string | undefined): CookieJar {
   return {
@@ -56,17 +35,13 @@ function cookieJar(csrf: string | undefined): CookieJar {
 
 /** A JSON-body POST with the X-Cairn-CSRF header and a matching cookie jar, the raw-body transport. */
 function addEvent(payload: unknown, opts: { csrf?: string; cookieCsrf?: string | undefined } = {}) {
-  const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
-  const headers = new Headers({ 'content-type': 'text/plain' });
-  headers.set('x-cairn-csrf', opts.csrf ?? CSRF);
-  return {
-    url,
+  return contentEvent({
+    url: 'https://t.example/admin/posts/2026-05-01-hi',
     params: { concept: 'posts', id: '2026-05-01-hi' },
-    request: new Request(url, { method: 'POST', headers, body: JSON.stringify(payload) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+    body: JSON.stringify(payload),
+    headers: { 'content-type': 'text/plain', 'x-cairn-csrf': opts.csrf ?? CSRF },
     cookies: cookieJar('cookieCsrf' in opts ? opts.cookieCsrf : CSRF),
-  };
+  });
 }
 
 /** Count the ref-PATCH-to-main calls a GithubDouble recorded: the landing commits. */
@@ -83,7 +58,7 @@ describe('addDictionaryWord transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWord(addEvent({ word: 'cairn' }, { csrf: 'wrong' }) as never);
+    const result = await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }, { csrf: 'wrong' }) as never);
     expect(result).toMatchObject({ status: 403 });
     expect((result as unknown as { data: DictionaryAddFailure }).data.error).toBe('csrf');
     expect(commitCount(gh)).toBe(0);
@@ -93,7 +68,7 @@ describe('addDictionaryWord transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWord(addEvent({ word: 'two words' }) as never);
+    const result = await routes.addDictionaryWordAction(addEvent({ word: 'two words' }) as never);
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -102,7 +77,7 @@ describe('addDictionaryWord transport gates', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.addDictionaryWord(addEvent({ word: 'good\nevil' }) as never);
+    const result = await routes.addDictionaryWordAction(addEvent({ word: 'good\nevil' }) as never);
     expect(result).toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -114,7 +89,7 @@ describe('addDictionaryWord read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWord(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
     // The committed file is the canonical sorted set.
@@ -126,7 +101,7 @@ describe('addDictionaryWord read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWord(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['cairn']);
     expect(commitCount(gh)).toBe(1);
     expect(parseDictionary(gh.read('main', DICT_PATH))).toEqual(['cairn']);
@@ -138,7 +113,7 @@ describe('addDictionaryWord read-modify-write', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
     // Case-insensitive: "cairn" collapses onto the existing "Cairn".
-    const result = (await routes.addDictionaryWord(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'cairn' }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'Cairn']);
     expect(commitCount(gh)).toBe(0);
   });
@@ -148,7 +123,7 @@ describe('addDictionaryWord read-modify-write', () => {
     gh.install();
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWord(addEvent({ words: ['gamma', 'beta'] }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.addDictionaryWordAction(addEvent({ words: ['gamma', 'beta'] }) as never)) as unknown as DictionaryAddResult;
     expect(result.words).toEqual(['alpha', 'beta', 'gamma']);
     expect(commitCount(gh)).toBe(1);
   });
@@ -207,7 +182,7 @@ describe('addDictionaryWord SHA-guarded retry', () => {
     vi.stubGlobal('fetch', fetchMock);
 
     const routes = createContentRoutes(runtime());
-    const result = (await routes.addDictionaryWord(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
+    const result = (await routes.addDictionaryWordAction(addEvent({ word: 'beta' }) as never)) as unknown as DictionaryAddResult;
     // The retry's re-merge keeps the concurrent "newword" and adds "beta": order-independent convergence.
     expect(result.words).toEqual(['alpha', 'beta', 'newword']);
     expect(parseDictionary(file)).toEqual(['alpha', 'beta', 'newword']);
@@ -221,6 +196,6 @@ describe('addDictionaryWord routing gate (composer)', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
-    expect(typeof routes.addDictionaryWord).toBe('function');
+    expect(typeof routes.addDictionaryWordAction).toBe('function');
   });
 });

@@ -1,39 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
+import { runtime as baseRuntime, contentEvent, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
-  const ok = () => ({ ok: true as const, data: {} });
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
     navMenu: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
-  };
+  });
 }
 
-// The read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
 function saveEvent(treeJson: string) {
-  const body = new URLSearchParams({ tree: treeJson });
-  return {
-    url: new URL('https://t.example/admin/nav'),
-    params: {},
-    request: new Request('https://t.example/admin/nav', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/nav', form: { tree: treeJson } });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -45,12 +24,8 @@ describe('navSave', () => {
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
     gh.install();
     const routes = createNavRoutes(runtime());
-    try {
-      await routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/nav?saved=1');
-    }
+    const { location } = await expectRedirect(() => routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
+    expect(location).toBe('/admin/nav?saved=1');
     // The new YAML landed on main, carrying the new menu.
     expect(gh.read('main', 'src/lib/site.config.yaml')).toContain('label: Home');
     // The commit names the session editor as author, never a committer.
@@ -63,13 +38,9 @@ describe('navSave', () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createNavRoutes(runtime());
-    try {
-      await routes.navSave(saveEvent(JSON.stringify([{ url: '/no-label' }])) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/\/admin\/nav\?error=.*label/i);
-    }
+    const { status, location } = await expectRedirect(() => routes.navSave(saveEvent(JSON.stringify([{ url: '/no-label' }])) as never));
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/nav\?error=.*label/i);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -97,11 +68,7 @@ describe('navSave', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createNavRoutes(runtime());
-    try {
-      await routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
-    }
+    const { location } = await expectRedirect(() => routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never));
+    expect(location).toMatch(/error=.*changed%20since/i);
   });
 });

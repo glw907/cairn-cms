@@ -8,8 +8,6 @@
 // These tests use the same GithubDouble harness as the bulk-delete suite, with a fake R2 bucket that
 // supports both .list (for the reconcile) and .delete (for the purge).
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { MediaOrphanPurgeResult } from '../../lib/sveltekit/content-routes.js';
@@ -19,8 +17,7 @@ import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -37,32 +34,13 @@ const MEDIA_ON: ResolvedAssetConfig = {
 };
 
 function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
-    concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
-        summaryFields: [],
-        validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+  return baseRuntime({
+    concepts: [postsConcept({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true }], validate: () => ({ ok: true as const, data: { title: 'Hi' } }) })],
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: MEDIA_ON,
-    vocabulary: [],
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 // 16-hex content hashes. ORPHAN has no manifest row; REFERENCED is used by a post; MISSING is a
 // manifest row whose bytes are absent from the R2 listing (a broken reference).
@@ -122,13 +100,7 @@ function fakeBucket(storedKeys: string[], timeline: string[]): {
 
 /** A GET event for the on-demand scan (no body). */
 function scanEvent(bucket: object) {
-  return {
-    url: new URL('https://t.example/admin/media'),
-    params: {},
-    request: new Request('https://t.example/admin/media', { method: 'GET' }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/media', env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } });
 }
 
 /** A POST event for the purge: the selected `key` fields plus the typed `confirm` value. */
@@ -136,17 +108,11 @@ function purgeEvent(keys: string[], confirm: string, bucket: object) {
   const params = new URLSearchParams();
   for (const k of keys) params.append('key', k);
   params.set('confirm', confirm);
-  return {
-    url: new URL('https://t.example/admin/media'),
-    params: {},
-    request: new Request('https://t.example/admin/media', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
-  };
+  return contentEvent({
+    url: 'https://t.example/admin/media',
+    form: params,
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket },
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -168,7 +134,7 @@ describe('mediaOrphanScan', () => {
     const bucket = fakeBucket(stored, timeline);
     const routes = createContentRoutes(runtime());
 
-    const scan = (await routes.mediaOrphanScan(scanEvent(bucket) as never)) as OrphanScan;
+    const scan = (await routes.mediaOrphanScanAction(scanEvent(bucket) as never)) as OrphanScan;
 
     // The orphan key (stored, no row) is purgeable.
     expect(scan.orphanedBytes).toHaveLength(1);
@@ -211,7 +177,7 @@ describe('mediaOrphanScan', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaOrphanScan(event as never);
+    const result = await routes.mediaOrphanScanAction(event as never);
 
     expect(result).toMatchObject({ status: 503 });
     // No scan shape leaked through (a fail() has no orphanedBytes).
@@ -238,7 +204,7 @@ describe('mediaPurgeOrphans', () => {
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const claimedKey = r2Key(HASH_REFERENCED, 'jpg');
     // Two selected, so the typed confirm is the count "2".
-    const result = (await routes.mediaPurgeOrphans(
+    const result = (await routes.mediaPurgeOrphansAction(
       purgeEvent([orphanKey, claimedKey], '2', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -267,7 +233,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected but confirm is empty: the count gate fails.
-    const result = await routes.mediaPurgeOrphans(purgeEvent([orphanKey], '', bucket) as never);
+    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();
@@ -296,7 +262,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One selected, so the typed confirm is the count "1".
-    const result = (await routes.mediaPurgeOrphans(
+    const result = (await routes.mediaPurgeOrphansAction(
       purgeEvent([orphanKey], '1', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -335,7 +301,7 @@ describe('mediaPurgeOrphans', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaPurgeOrphans(event as never);
+    const result = await routes.mediaPurgeOrphansAction(event as never);
 
     expect(result).toMatchObject({ status: 503 });
     // No delete happened: the irreversible purge fails closed when usage cannot be verified.
@@ -358,7 +324,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected, confirm "2": does not match the count of 1.
-    const result = await routes.mediaPurgeOrphans(purgeEvent([orphanKey], '2', bucket) as never);
+    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '2', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();

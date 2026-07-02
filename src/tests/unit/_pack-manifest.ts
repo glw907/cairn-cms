@@ -7,15 +7,15 @@
 // helper tolerates the pollution by scanning for the earliest bracket that begins a complete,
 // parseable JSON document, rather than assuming the whole stream is JSON.
 export function parsePackManifest(stdout: string): unknown {
-	for (let i = 0; i < stdout.length; i++) {
-		const ch = stdout[i];
-		if (ch !== '[' && ch !== '{') continue;
-		try {
-			return JSON.parse(stdout.slice(i));
-		} catch {
-			// Not the real document's start: a bracket in the pollution text, or a nested
-			// bracket that does not open the top-level document. Keep scanning.
-		}
-	}
-	throw new SyntaxError('no parseable JSON document found in npm pack output');
+  for (let i = 0; i < stdout.length; i++) {
+    const ch = stdout[i];
+    if (ch !== '[' && ch !== '{') continue;
+    try {
+      return JSON.parse(stdout.slice(i));
+    } catch {
+      // Not the real document's start: a bracket in the pollution text, or a nested
+      // bracket that does not open the top-level document. Keep scanning.
+    }
+  }
+  throw new SyntaxError('no parseable JSON document found in npm pack output');
 }

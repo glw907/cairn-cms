@@ -167,3 +167,33 @@ at the smoke doc. Nothing to build.
 - **Two independent proofs no real utility dropped:** the `admin-css-build` positive assertions and the
   byte-identical `admin-visual` baseline.
 - **Scope is narrow:** the admin build only; the showcase build and `check:custom-surface` are untouched.
+
+## Post-mortem (2026-07-02)
+
+**Built.** One task, one commit (`ad99b74` on `code-polish-1`, as Task 6 of the code-polish pass). The
+plan's own mechanism held on the first try: `source(none)` on the granular
+`@import "tailwindcss/utilities.css" layer(utilities)` is the exact working spelling against
+`@tailwindcss/postcss`, no fallback form needed.
+
+**Verified.** The failing test reproduced the pollution first (`--cairn-step` present in the compiled
+sheet). After the one-line `source(none)` change: `npm run test:unit -- admin-css-build` 10/10 passed
+(the new no-foreign-token invariant plus every existing positive assertion, unweakened). `npm run
+package` byte-identical proof: the shipped `dist/components/cairn-admin.css` shrank from 415,976 bytes
+to 286,719 bytes (31% smaller). `grep -c 'cairn-step\|cairn-space\|cairn-measure\|text-step\|
+container-measure' dist/components/cairn-admin.css` returns `0`. `npm run design:mockup-css` still
+compiles the mockup's extra `@source` classes (the design-mockup path is unaffected, as the plan
+predicted: `source(none)` disables only automatic detection, not explicit `@source`). The
+`admin-visual` Playwright baseline: 16/16 passed, byte-identical (no real admin utility dropped). Full
+gate: `npm run check` 0/0 (1284 files), `npm test` exit 0 (284 files, 2973 tests), `npm run
+check:custom-surface` PASS on both trees (unchanged, as the plan predicted, since it scans the source
+partial, not the compiled sheet), `npm run check:surface` OK (surface snapshot unaffected), `npm run
+check:comments` OK, and the showcase `vite build` succeeded.
+
+**Decisions.** None deviated from the plan; the mechanism, the file set, and the commit message all
+matched the plan verbatim. No `CHANGELOG` entry, per the plan (the shipped sheet only shrinks, no
+consumer action, holds unpublished with the rest of the code-polish pass).
+
+**Carried follow-ups.** The pass-end ritual (simplify, review, docs prune, STATUS/memory) is the code
+polish pass's, not this sub-plan's alone; see that pass's own post-mortem for the roadmap/friction-log
+prune and the `tailwind-scans-docs-bad-candidate` memory update. The deferred live admin smoke stays a
+site-cutover follow-up, unaffected by this change.

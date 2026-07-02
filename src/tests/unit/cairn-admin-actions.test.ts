@@ -6,6 +6,7 @@ import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -96,13 +97,10 @@ function actionEvent(
   };
 }
 
+/** Assert `promise` throws a 303 redirect to `location`, via the shared isRedirect-guarded helper. */
 async function expectRedirect(promise: Promise<unknown>, location: string) {
-  try {
-    await promise;
-    throw new Error('should have redirected');
-  } catch (e) {
-    expect(e).toMatchObject({ status: 303, location });
-  }
+  const result = await expectRedirectAssertion(() => promise);
+  expect(result).toEqual({ status: 303, location });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -463,7 +461,7 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
     expect(result).toMatchObject({ status: 503 });
   });
 
-  it('mediaPurge on the media view reaches mediaPurgeOrphans (refused 503 when media is off)', async () => {
+  it('mediaPurge on the media view reaches mediaPurgeOrphansAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     const result = await admin.actions.mediaPurge(actionEvent('/admin/media') as never);
@@ -523,7 +521,7 @@ describe('editor actions', () => {
   });
 });
 
-describe('settings view (Task 15)', () => {
+describe('settings view', () => {
   /** A runtime with tidy enabled, so the settings save reaches the commit gate rather than the
    *  tidy-off 404. The nav menu carries the config path the save reads and commits. */
   function tidyRuntime(): CairnRuntime {

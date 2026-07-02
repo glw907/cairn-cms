@@ -21,7 +21,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import {
   checkThemeContrast,
-  formatContrastTable,
+  reportContrast,
   checkTokenResolution,
   COLOR_LITERAL,
 } from './check-public-tokens.mjs';
@@ -110,20 +110,12 @@ function main() {
   }
 
   const rows = checkThemeContrast(readFileSync(fixturePath, 'utf8'));
-  console.log('');
-  console.log(formatContrastTable(rows));
-  const contrastFailures = rows.filter((r) => !r.pass);
-  if (contrastFailures.length) {
-    console.error('');
-    console.error(`Re-skin contrast: FAIL (${contrastFailures.length} pair(s) below AA after the hue rotation)`);
-    for (const r of contrastFailures) {
-      console.error(`  ${r.theme} ${r.label}: sRGB ${r.srgb.toFixed(2)}, P3 ${r.p3.toFixed(2)} (need ${r.threshold.toFixed(1)})`);
-    }
-    failed = true;
-  } else {
-    console.log('');
-    console.log(`Re-skin contrast: PASS (the hue-rotated theme clears AA on all ${rows.length} pairs in both gamuts)`);
-  }
+  const contrastPassed = reportContrast(
+    rows,
+    (n) => `Re-skin contrast: PASS (the hue-rotated theme clears AA on all ${n} pairs in both gamuts)`,
+    (n) => `Re-skin contrast: FAIL (${n} pair(s) below AA after the hue rotation)`,
+  );
+  if (!contrastPassed) failed = true;
 
   // 2. Prove the prose surface has no second colour source.
   const proseViolations = checkProseSecondSource();

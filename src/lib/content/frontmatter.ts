@@ -5,6 +5,7 @@
 import matter from 'gray-matter';
 import type { ImageValue, NamedField } from './types.js';
 import type { FieldDescriptor } from './fields.js';
+import { coerceStringList } from './coerce.js';
 
 /**
  * True when a multiselect field is a closed checkbox group: it declares an options vocabulary and is
@@ -256,14 +257,12 @@ function oneLeafFormValue(field: FieldDescriptor, value: unknown): unknown {
 }
 
 /**
- * Coerce a raw multiselect value to the string[] the editor's tag/checkbox inputs read. An array maps
- *  each element through String; a lone non-empty scalar (a single tag a YAML scalar carries) is one
- *  element rather than dropping to []; anything else is the empty list.
+ * Coerce a raw multiselect value to the string[] the editor's tag/checkbox inputs read, via the
+ *  shared scalar-or-array coercer: a lone non-empty scalar (a single tag a YAML scalar carries) is
+ *  one element rather than dropping to [].
  */
 function multiselectFormValue(value: unknown): string[] {
-  if (Array.isArray(value)) return value.map(String);
-  if (typeof value === 'string' && value.trim() !== '') return [value.trim()];
-  return [];
+  return coerceStringList(value);
 }
 
 /** Coerce parsed frontmatter to the form-ready values the editor inputs expect, one rule per field type. */

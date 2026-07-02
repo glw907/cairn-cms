@@ -14,7 +14,7 @@ import type {
 } from '../../lib/sveltekit/content-routes.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 import * as ingest from '../../lib/components/client-ingest.js';
-import { gotoCalls, gotoOptsCalls } from './app-navigation.js';
+import { gotoCalls, gotoOptsCalls } from './_app-navigation.js';
 
 // The Replace upload step reuses the 2b ingest helpers. ESM namespaces are not configurable in the
 // browser pool, so the helpers cannot be spied directly: mock the module so ingestFile and sendUpload
@@ -913,14 +913,14 @@ async function pushAltThroughPreview(screen: ReturnType<typeof render>, name: Re
 }
 
 describe('CairnMediaLibrary Push-alt dialog', () => {
-  it('opens as role="dialog" (the everyday register, not alertdialog), aria-modal, labelled and described', async () => {
+  it('opens with native dialog semantics (no redundant role or aria-modal), labelled and described', async () => {
     stubPreviewFetch(successBody(ALT_PLAN));
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
     const dialog = await openPushAlt(screen, /first-light/);
-    expect(dialog.getAttribute('role')).toBe('dialog');
-    // It is the everyday register, never the alertdialog Replace uses.
-    expect(dialog.getAttribute('role')).not.toBe('alertdialog');
-    expect(dialog.getAttribute('aria-modal')).toBe('true');
+    // The everyday register: no explicit role, so it relies on the native <dialog> default rather
+    // than the alertdialog Replace uses.
+    expect(dialog.getAttribute('role')).toBeNull();
+    expect(dialog.getAttribute('aria-modal')).toBeNull();
     const labelledby = dialog.getAttribute('aria-labelledby');
     const describedby = dialog.getAttribute('aria-describedby');
     expect(labelledby && dialog.querySelector(`#${labelledby}`)).toBeTruthy();

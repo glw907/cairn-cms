@@ -2,10 +2,10 @@
 // over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
 // unit-testable against a fetch double riding the event's locals.backend seam.
 import { redirect, error } from '@sveltejs/kit';
-import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
 import { requireSession } from './guard.js';
+import { commitFailure } from './commit-log.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
 import type { ContentEvent } from './content-routes.js';
@@ -129,13 +129,12 @@ export function createNavRoutes(runtime: CairnRuntime) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      if (isConflict(err)) {
-        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
-        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
-        throw redirect(303, `/admin/nav?error=${encodeURIComponent(message)}`);
-      }
-      log.error('commit.failed', { ...commitFields, error: String(err) });
-      throw err;
+      commitFailure(
+        commitFields,
+        err,
+        '/admin/nav',
+        'The site config changed since you opened it. Reload and reapply your edits.',
+      );
     }
 
     throw redirect(303, '/admin/nav?saved=1');

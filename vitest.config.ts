@@ -72,7 +72,7 @@ export default defineConfig({
         test: {
           name: 'integration',
           include: ['src/tests/integration/**/*.test.ts'],
-          setupFiles: ['./src/tests/integration/apply-migrations.ts'],
+          setupFiles: ['./src/tests/integration/_apply-migrations.ts'],
         },
       },
       {
@@ -82,18 +82,18 @@ export default defineConfig({
           // which only a SvelteKit app provides. The component project resolves them to stubs:
           // a recording one for the guard, a settable one for the URL.
           alias: {
-            '$app/navigation': path.resolve('./src/tests/component/app-navigation.ts'),
-            '$app/state': path.resolve('./src/tests/component/app-state.ts'),
+            '$app/navigation': path.resolve('./src/tests/component/_app-navigation.ts'),
+            '$app/state': path.resolve('./src/tests/component/_app-state.ts'),
             // MediaInsertPopover imports deserialize from $app/forms to read the upload action
             // envelope; the real module exists only inside a kit app, so the component project
             // resolves it to a stub that runs the same JSON-then-devalue parse.
-            '$app/forms': path.resolve('./src/tests/component/app-forms.ts'),
+            '$app/forms': path.resolve('./src/tests/component/_app-forms.ts'),
           },
         },
         test: {
           name: 'component',
           include: ['src/tests/component/**/*.test.ts'],
-          setupFiles: ['./src/tests/component/setup.ts'],
+          setupFiles: ['./src/tests/component/_setup.ts'],
           // The heaviest component tests mount the full EditPage with the CodeMirror editor, and on a
           // slower CI runner the editor surface and toolbar occasionally are not ready before the
           // matcher times out (the EditPage and CairnAdmin toolbar/insert assertions flake this way;

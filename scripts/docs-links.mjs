@@ -164,7 +164,7 @@ export function findBrokenLinks(root = ROOT) {
   return broken;
 }
 
-function run() {
+function main() {
   const scanned = filesInScope().length;
   const broken = findBrokenLinks();
   if (broken.length === 0) {
@@ -183,4 +183,4 @@ function run() {
   process.exitCode = 1;
 }
 
-if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) run();
+if (resolve(process.argv[1] ?? '') === fileURLToPath(import.meta.url)) main();

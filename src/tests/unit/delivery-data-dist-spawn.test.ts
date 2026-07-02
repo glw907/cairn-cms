@@ -18,16 +18,16 @@ const BUILT = resolve(process.cwd(), 'dist/delivery/data.js');
 const built = existsSync(BUILT);
 
 describe('packaged /delivery/data node-safety (needs dist/delivery/data.js; run npm run package to unskip)', () => {
-	it.skipIf(!built)('imports cleanly under plain Node with the pure projections and no kit loader', () => {
-		const url = pathToFileURL(BUILT).href;
-		const script = `const d = await import(${JSON.stringify(url)}); if (typeof d.buildSiteManifest !== 'function' || typeof d.createSiteIndexes !== 'function' || typeof d.buildRssFeed !== 'function') { console.error('missing export'); process.exit(3); } if ('createPublicRoutes' in d) { console.error('kit loader leaked'); process.exit(4); } console.log('DATA_BARREL_OK');`;
-		const out = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
-			cwd: tmpdir(),
-			env: { PATH: process.env.PATH },
-			encoding: 'utf8',
-		});
-		expect(out.status).toBe(0);
-		expect(out.stdout).toContain('DATA_BARREL_OK');
-		expect(out.stderr).toBe('');
-	});
+  it.skipIf(!built)('imports cleanly under plain Node with the pure projections and no kit loader', () => {
+    const url = pathToFileURL(BUILT).href;
+    const script = `const d = await import(${JSON.stringify(url)}); if (typeof d.buildSiteManifest !== 'function' || typeof d.createSiteIndexes !== 'function' || typeof d.buildRssFeed !== 'function') { console.error('missing export'); process.exit(3); } if ('createPublicRoutes' in d) { console.error('kit loader leaked'); process.exit(4); } console.log('DATA_BARREL_OK');`;
+    const out = spawnSync(process.execPath, ['--input-type=module', '-e', script], {
+      cwd: tmpdir(),
+      env: { PATH: process.env.PATH },
+      encoding: 'utf8',
+    });
+    expect(out.status).toBe(0);
+    expect(out.stdout).toContain('DATA_BARREL_OK');
+    expect(out.stderr).toBe('');
+  });
 });

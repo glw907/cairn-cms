@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import type { MediaLibrary } from '../../lib/media/library-entry.js';
-import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './fake-spell-worker.js';
+import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './_fake-spell-worker.js';
 
 const underlines = (container: Element) =>
   Array.from(container.querySelectorAll<HTMLElement>('.cm-lintRange-info'));

@@ -1,51 +1,35 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes, type EditData } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
+import type { CairnRuntime } from '../../lib/content/types.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
 
 function runtime(): CairnRuntime {
-  const ok = () => ({ ok: true as const, data: {} });
   const postsSchema = fieldset({
     title: fields.text({ label: 'Title', required: true }),
     date: fields.date({ label: 'Date' }),
   });
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
+      postsConcept({
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'date', name: 'date', label: 'Date' },
         ],
         schema: postsSchema,
-        summaryFields: [],
-        validate: ok,
-      },
+      }),
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
+  });
 }
 
 const MEDIA_ON: ResolvedAssetConfig = {
@@ -82,17 +66,12 @@ function mediaEntry(hash: string, slug: string): MediaEntry {
   };
 }
 
-// The read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
 function editEvent(id: string, search = '') {
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}${search}`),
+  return contentEvent({
+    url: `https://t.example/admin/posts/${id}${search}`,
     params: { concept: 'posts', id },
-    request: new Request('https://t.example'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+    editor: { email: 'e@t', displayName: 'E', role: 'editor' },
+  });
 }
 
 /** Scripted editLoad fetch for the non-pending cases: 404 the pending-branch probe, then serve
@@ -415,13 +394,11 @@ describe('editLoad address-collision advisory', () => {
   }
 
   function pagesEvent(id: string, search = '') {
-    return {
-      url: new URL(`https://t.example/admin/pages/${id}${search}`),
+    return contentEvent({
+      url: `https://t.example/admin/pages/${id}${search}`,
       params: { concept: 'pages', id },
-      request: new Request('https://t.example'),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
+      editor: { email: 'e@t', displayName: 'E', role: 'editor' },
+    });
   }
 
   it('warns when a different entry already resolves to the same address', async () => {
@@ -618,19 +595,13 @@ describe('editLoad taxonomy enforcement', () => {
     return {
       ...runtime(),
       concepts: [
-        {
-          id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-          routing: { routable: true, dated: true, inFeeds: true },
-          permalink: '/posts/:slug',
-          datePrefix: 'day',
+        postsConcept({
           fields: [
             { type: 'text', name: 'title', label: 'Title', required: true },
             { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true },
           ],
-          schema: fieldset({}),
-          summaryFields: [],
           validate: (fm) => ({ ok: true as const, data: fm }),
-        },
+        }),
       ],
       vocabulary,
     };

@@ -6,14 +6,10 @@
 import { visit } from 'unist-util-visit';
 import type { VFile } from 'vfile';
 import { parseCairnToken, type LinkResolve } from '../content/links.js';
+import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
 
 /** The VFile data key the renderer sets the per-call resolver under. */
 export const CAIRN_RESOLVE = 'cairnResolve';
-
-interface LinkNode {
-  url: string;
-  data?: { hProperties?: Record<string, unknown> };
-}
 
 /**
  * Resolve cairn: link nodes against the VFile's resolver. A non-cairn href and a malformed token
@@ -24,7 +20,7 @@ export function remarkResolveCairnLinks() {
   return (tree: unknown, file: VFile): void => {
     const resolve = file.data[CAIRN_RESOLVE] as LinkResolve | undefined;
     if (!resolve) return;
-    visit(tree as Parameters<typeof visit>[0], 'link', (node: LinkNode) => {
+    visit(tree as Parameters<typeof visit>[0], 'link', (node: ResolvableNode) => {
       const ref = parseCairnToken(node.url);
       if (!ref) return;
       const url = resolve(ref); // may throw (build backstop); propagates out of render
@@ -33,12 +29,7 @@ export function remarkResolveCairnLinks() {
         return;
       }
       // Missing target in the preview: mark it broken and neutralize the href, keeping the text.
-      node.url = '#';
-      node.data = node.data ?? {};
-      const props = (node.data.hProperties = node.data.hProperties ?? {});
-      const existing = Array.isArray(props.className) ? (props.className as string[]) : [];
-      props.className = [...existing, 'cairn-broken-link'];
-      props.title = 'Broken internal link';
+      markNodeBroken(node, 'cairn-broken-link', 'Broken internal link');
     });
   };
 }

@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
+import { log } from '../../lib/log/index.js';
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('fieldset behavior.validate', () => {
   const fs = fieldset(
@@ -17,5 +22,24 @@ describe('fieldset behavior.validate', () => {
   });
   it('rejects a behavior key that names no field', () => {
     expect(() => fieldset({ a: fields.text({ label: 'A' }) }, { behavior: { b: { validate: () => null } } })).toThrow(/not a declared field/);
+  });
+
+  it('treats a field as valid and logs, rather than throwing, when its behavior.validate throws', () => {
+    const throwing = fieldset(
+      { a: fields.text({ label: 'A' }) },
+      {
+        behavior: {
+          a: {
+            validate: () => {
+              throw new Error('boom');
+            },
+          },
+        },
+      },
+    );
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const result = throwing.validate({ a: 'value' }, '');
+    expect(result.ok).toBe(true);
+    expect(warn).toHaveBeenCalledWith('content.field_behavior_error', { field: 'a', error: 'boom' });
   });
 });

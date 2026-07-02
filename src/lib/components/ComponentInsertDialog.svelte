@@ -61,6 +61,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   import { serializeComponent } from '../render/component-grammar.js';
   import { buildPreviewDoc } from './preview-doc.js';
   import ComponentForm from './ComponentForm.svelte';
+  import { arbitrateChecked } from './spellcheck.js';
 
   interface Props {
     /** The site's component registry. */
@@ -138,37 +139,38 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
   });
 
   // The debounced, latest-wins preview render, the same shape EditPage's preview effect uses: a
-  // setTimeout debounce (~200ms) guarded by a plain counter so a slow earlier render that resolves
-  // after a newer one started is discarded, one persistent iframe whose srcdoc is replaced. The
-  // incomplete state short-circuits the render (the skeleton renders from the template, not the
-  // pipeline), so a required-empty block never reaches the site render as a fabricated finish.
-  let previewRun = 0;
+  // setTimeout debounce (~200ms) guarded by the shared SeqArbiter so a slow earlier render that
+  // resolves after a newer one started is discarded, one persistent iframe whose srcdoc is
+  // replaced. The incomplete state short-circuits the render (the skeleton renders from the
+  // template, not the pipeline), so a required-empty block never reaches the site render as a
+  // fabricated finish.
+  const previewArbiter = arbitrateChecked();
   $effect(() => {
     if (!twoPane || !render || !picked || !formValues) return;
     if (formIncomplete) {
       previewState = 'settled';
-      previewRun++;
+      previewArbiter.next();
       return;
     }
     const md = serializeComponent(picked, formValues);
-    const run = ++previewRun;
+    const run = previewArbiter.next();
     previewState = 'settling';
     const handle = setTimeout(async () => {
       try {
         const html = await render({ body: md });
-        if (run === previewRun) {
+        if (previewArbiter.accept(run)) {
           previewDoc = buildPreviewDoc(html, preview);
           previewState = 'settled';
         }
       } catch {
-        if (run === previewRun) {
+        if (previewArbiter.accept(run)) {
           previewState = 'failed';
         }
       }
     }, 200);
     return () => {
       clearTimeout(handle);
-      previewRun++;
+      previewArbiter.next();
     };
   });
 

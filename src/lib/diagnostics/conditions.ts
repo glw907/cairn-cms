@@ -6,7 +6,7 @@
 // docs/superpowers/specs/2026-06-08-cairn-diagnostics-initiative-design.md.
 import type { CairnLogEvent } from '../log/index.js';
 
-export type ConditionSeverity = 'blocker' | 'warning';
+type ConditionSeverity = 'blocker' | 'warning';
 
 export interface CairnCondition {
 	/** Stable, greppable id, e.g. 'edge.https-not-forced'. */

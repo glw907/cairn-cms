@@ -118,7 +118,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
+    const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 
     expect(res.status).toBeUndefined();
     expect(res.record).toBeDefined();
@@ -153,7 +153,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const routes = createContentRoutes(runtime());
     const before = gh.read('main', MEDIA_PATH);
 
-    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG_2, filename: 'dupe.png' }))) as ActionResult;
+    const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG_2, filename: 'dupe.png' }))) as ActionResult;
 
     expect(res.status).toBeUndefined();
     expect(res.record?.hash).toBe(hash);
@@ -167,7 +167,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
+    const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
     expect(res.status).toBe(401);
     expect(res.data?.error).toBe('session-expired');
@@ -179,7 +179,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
 
-    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
+    const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
 
     expect(res.status).toBe(403);
     expect(res.data?.error).toBe('csrf');
@@ -197,7 +197,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     const routes = createContentRoutes(runtime());
     const head = gh.headSha('main');
 
-    await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png', backend: spiedBackend }));
+    await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png', backend: spiedBackend }));
 
     expect(commitSpy).toHaveBeenCalledWith(
       'main',
@@ -250,7 +250,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     );
     const routes = createContentRoutes(runtime());
 
-    const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
+    const res = (await routes.mediaLibraryUploadAction(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 
     expect(res.status).toBe(409);
     expect(res.data?.error).toMatch(/changed since you opened/i);

@@ -1,43 +1,29 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
+import type { CairnRuntime } from '../../lib/content/types.js';
 
 function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
-  const ok = () => ({ ok: true as const, data: {} });
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [
-      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
-      { id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages', routing: { routable: true, dated: false, inFeeds: false }, permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
+      postsConcept(),
+      {
+        id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
+        routing: { routable: true, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        validate: () => ({ ok: true as const, data: {} }),
+      },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
     navMenu,
-  };
+  });
+}
+
+function loadEvent(search = '') {
+  return contentEvent({ url: `https://t.example/admin/nav${search}`, editor: { email: 'e@t', displayName: 'E', role: 'editor' } });
 }
 
 const NAV = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-// The read backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
-function loadEvent(search = '') {
-  return {
-    url: new URL(`https://t.example/admin/nav${search}`),
-    params: {},
-    request: new Request('https://t.example/admin/nav'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
-}
 
 afterEach(() => vi.restoreAllMocks());
 

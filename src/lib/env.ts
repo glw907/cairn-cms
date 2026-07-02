@@ -1,3 +1,7 @@
+// cairn-cms: the platform-binding guards. A site's env carries PUBLIC_ORIGIN, AUTH_DB, and its
+// media bucket only if wired correctly; each guard here turns a missing or malformed binding into
+// a named CairnError instead of a raw TypeError deep in a store or backend call, so a
+// misconfiguration surfaces as a doctor condition rather than an opaque crash.
 import type { D1Database } from '@cloudflare/workers-types';
 import { CairnError } from './diagnostics/index.js';
 import type { DeliveryBucket } from './media/delivery-bucket.js';

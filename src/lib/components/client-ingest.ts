@@ -174,12 +174,12 @@ export interface IngestFailureCard {
 }
 
 /** A pending ingest card, shown while the bytes are decoded, transcoded, and uploaded. */
-export interface IngestPendingCard {
+interface IngestPendingCard {
   status: 'pending';
 }
 
 /** A ready ingest card: the upload succeeded and the server returned a reference. */
-export interface IngestReadyCard {
+interface IngestReadyCard {
   status: 'ready';
   reference: string;
   width: number | null;
@@ -187,7 +187,7 @@ export interface IngestReadyCard {
 }
 
 /** The card states the capture UI moves through for a single ingested file. */
-export type IngestCard = IngestPendingCard | IngestReadyCard | IngestFailureCard;
+type IngestCard = IngestPendingCard | IngestReadyCard | IngestFailureCard;
 
 /** The human message per failure kind, plain and specific so an author knows whether to retry. */
 const FAILURE_MESSAGE: Record<IngestFailureKind, string> = {

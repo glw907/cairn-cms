@@ -112,10 +112,10 @@ export function slugifyFilename(name: string): string {
  */
 export function r2Key(shortHash: string, ext: string): string {
   if (!HASH_RE.test(shortHash)) {
-    throw new Error(`r2Key: hash must be 16 lowercase hex chars, got "${shortHash}"`);
+    throw new Error(`cairn: hash must be 16 lowercase hex chars, got "${shortHash}"`);
   }
   if (!R2_EXT_RE.test(ext)) {
-    throw new Error(`r2Key: ext must be 1 to 5 lowercase alphanumerics, got "${ext}"`);
+    throw new Error(`cairn: ext must be 1 to 5 lowercase alphanumerics, got "${ext}"`);
   }
   return `media/${shortHash.slice(0, 2)}/${shortHash}.${ext}`;
 }

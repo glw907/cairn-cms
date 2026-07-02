@@ -1,0 +1,14 @@
+# cairn-cms: records the code-idiom charter's M4 rule (indentation is 2-space everywhere) so an
+# editor enforces it going forward instead of relying on a one-time sweep to hold.
+root = true
+
+[*]
+indent_style = space
+indent_size = 2
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.md]
+trim_trailing_whitespace = false

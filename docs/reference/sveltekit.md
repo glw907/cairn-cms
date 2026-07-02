@@ -252,17 +252,17 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
   uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
-  mediaLibraryUpload: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
+  mediaLibraryUploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
   mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaBulkDelete: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
-  mediaOrphanScan: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>;
-  mediaPurgeOrphans: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
+  mediaBulkDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
+  mediaOrphanScanAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>;
+  mediaPurgeOrphansAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
   mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaReplacePreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
-  mediaReplaceApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaAltPreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
-  mediaAltApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  addDictionaryWord: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
+  mediaReplacePreviewAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
+  mediaReplaceApplyAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  mediaAltPreviewAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
+  mediaAltApplyAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  addDictionaryWordAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
   tidyAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | TidyResult>;
 };
 ```
@@ -276,7 +276,7 @@ actions back a concept's list view, and `editLoad` with the `save`, `publish`, `
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
 (the `media:` reference and the server-owned record), and commits nothing until the entry is saved.
-`mediaLibraryUpload` is its Library-direct sibling: it shares that store-and-derive body, then commits
+`mediaLibraryUploadAction` is its Library-direct sibling: it shares that store-and-derive body, then commits
 the derived `media.json` row to the default branch in the same step, so an author can add an asset from
 the Media Library without an entry to ride. Both derive every committed field server-side and trust no
 client-posted record; a re-upload of identical bytes is an idempotent no-op.
@@ -290,31 +290,31 @@ the `media.json` row removal before deleting the R2 object so a mid-failure leav
 rather than a broken delivery. `mediaUpdateAction` edits an asset's display name, slug, and default
 alt in one row commit with no reference rewrite (the resolver keys on the hash), refusing a bad slug
 with `MediaUpdateFailure`. The replace-in-place pair swaps one asset for another across the published
-corpus. `mediaReplacePreview` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
+corpus. `mediaReplacePreviewAction` is a display-only fetch endpoint (the upload's `X-Cairn-CSRF` header
 transport): it plans the rewrite of every entry that references the old asset and returns a
 `MediaReplacePreviewPlan` (the affected entries with their per-reference diff, the affected count, and
-a report-only cross-branch delta), committing nothing. `mediaReplaceApply` re-derives that plan from a
+a report-only cross-branch delta), committing nothing. `mediaReplaceApplyAction` re-derives that plan from a
 fresh read, gates every replace behind a typed-slug confirm (`MediaReplaceFailure` on a wrong or
 missing confirm), and rewrites every referencing entry plus the new `media.json` row in one commit;
 it performs no R2 write, since the new bytes are already stored and the old asset's row is kept. Both
 fail closed on an unverifiable usage read. The alt-propagation pair pushes an asset's default alt
-across the same corpus. `mediaAltPreview` plans the fill over that header transport and returns a
+across the same corpus. `mediaAltPreviewAction` plans the fill over that header transport and returns a
 `MediaAltPreviewPlan` that sorts each placement into a will-fill bucket (an empty alt), a customized
 bucket (a hand-written alt kept unless the editor opts in), or a decorative-hero bucket (left alone).
-`mediaAltApply` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
+`mediaAltApplyAction` re-derives the plan from a fresh read, fills the empty alts (and the customized ones
 when the `overwrite` opt-in is set), and commits only the entries it changes in one commit. It never
 writes `media.json`, never gates on a typed slug, and never touches a decorative hero. The destructive
-trio (`mediaBulkDelete`, `mediaOrphanScan`, `mediaPurgeOrphans`) clears assets and stored bytes in
-bulk. `mediaBulkDelete` is the single safe-delete gate applied per item over a selection: it builds
+trio (`mediaBulkDeleteAction`, `mediaOrphanScanAction`, `mediaPurgeOrphansAction`) clears assets and stored bytes in
+bulk. `mediaBulkDeleteAction` is the single safe-delete gate applied per item over a selection: it builds
 one strict cross-branch usage index for the whole batch, deletes the assets nothing references, and
 skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (its `deleted`,
 `skipped`, and `failed` arrays) rather than force-deleting. The row removals land as one commit before
 the R2 objects are deleted, so a bulk delete is reversible from git history, the same delete-order the
-single safe-delete uses. `mediaOrphanScan` runs a storage reconcile plus a strict usage read and
+single safe-delete uses. `mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and
 returns the `OrphanScan` projection: `orphanedBytes` (stored keys with no manifest row and no
 reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
 whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
-that uploaded them references them. `mediaPurgeOrphans` is the one irreversible media action: it
+that uploaded them references them. `mediaPurgeOrphansAction` is the one irreversible media action: it
 deletes the raw R2 bytes, which carry no git history, so it gates on a typed-count confirm (the number
 of files). At action time it re-derives the orphan set fresh and re-checks the strict usage index, so
 a key that gained a manifest row or a new branch reference since the scan is skipped, never purged; the
@@ -351,12 +351,12 @@ that strict cross-branch usage (an in-use value cannot be removed, failing close
 read-modify-commits the `vocabulary` key into the same committed `src/lib/site.config.yaml` the tidy
 settings write, head-guarded and bouncing a stale-head conflict back to the screen.
 
-The editor copy-edit adds two more actions, both fetch-style on the upload transport. `addDictionaryWord`
+The editor copy-edit adds two more actions, both fetch-style on the upload transport. `addDictionaryWordAction`
 commits an editor's personal-dictionary additions, and `tidyAction` runs the language-model tidy.
 Neither is a form submit; both follow the [admin fetch action](#writing-an-admin-fetch-action) contract
 below. Their request shapes and `fail` payloads:
 
-- **`addDictionaryWord`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
+- **`addDictionaryWordAction`.** A `text/plain` POST carrying JSON `{ word }` or `{ words: string[] }`, the
   CSRF token in `X-Cairn-CSRF`. It validates CSRF first, then the session, validates each word against
   the one-line dictionary grammar (no whitespace or control bytes, length-bounded, batch-capped),
   reads `src/content/.cairn/dictionary.txt` from the default branch, inserts the new words in sorted
@@ -404,7 +404,7 @@ export const actions = { create: routes.createAction, delete: routes.listDeleteA
 
 ### Writing an admin fetch action
 
-`uploadAction` and its Library-direct sibling `mediaLibraryUpload` are the admin actions a client
+`uploadAction` and its Library-direct sibling `mediaLibraryUploadAction` are the admin actions a client
 drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints worth
 knowing before you write another fetch-style action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one

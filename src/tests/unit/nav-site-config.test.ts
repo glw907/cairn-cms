@@ -13,7 +13,7 @@ import {
   dictionaryFileForDialect,
   DEFAULT_DIALECT,
 } from '../../lib/nav/site-config.js';
-import { condition } from '../../lib/diagnostics/index.js';
+import { condition, CairnError } from '../../lib/diagnostics/index.js';
 
 describe('validateNavTree', () => {
   it('normalizes a nested tree and keeps only known keys', () => {
@@ -33,6 +33,17 @@ describe('validateNavTree', () => {
 
   it('rejects a non-array', () => {
     expect(() => validateNavTree({}, 1)).toThrow(NavValidationError);
+  });
+
+  it('carries the registered site-config condition id, as a CairnError', () => {
+    let thrown: unknown;
+    try {
+      validateNavTree({}, 1);
+    } catch (err) {
+      thrown = err;
+    }
+    expect(thrown).toBeInstanceOf(CairnError);
+    expect((thrown as NavValidationError).conditionId).toBe('config.site-config-invalid');
   });
 
   it('rejects an item with no label', () => {
@@ -172,7 +183,9 @@ describe('SiteConfigError', () => {
   it('carries the registered site-config condition id', () => {
     const err = new SiteConfigError('bad');
     expect(err).toBeInstanceOf(Error);
+    expect(err).toBeInstanceOf(CairnError);
     expect(err.name).toBe('SiteConfigError');
+    expect(err.message).toBe('bad');
     expect(condition(err.conditionId).id).toBe('config.site-config-invalid');
   });
 });

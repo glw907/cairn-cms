@@ -9,11 +9,12 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-// Load a .d.ts module through the compiler API and return its type checker plus its export
-// symbols (re-exports and `export *` resolved). The two reference gates share this so they
-// enumerate the same surface; the signature gate keeps the checker to render each export's type.
+// Load a .d.ts module through the compiler API and return its type checker plus its source file.
+// The two reference gates and the surface gate's ambient-augmentation renderer all start a d.ts
+// program this way, so the `moduleResolution`/`skipLibCheck` options and the missing-source guard
+// stay in one place.
 /** @param {string} dtsPath */
-export function moduleExports(dtsPath) {
+export function loadDts(dtsPath) {
   const program = ts.createProgram([dtsPath], {
     noEmit: true,
     skipLibCheck: true,
@@ -22,6 +23,15 @@ export function moduleExports(dtsPath) {
   const checker = program.getTypeChecker();
   const source = program.getSourceFile(dtsPath);
   if (!source) throw new Error(`cannot load ${dtsPath}`);
+  return { checker, source };
+}
+
+// A .d.ts module's type checker plus its export symbols (re-exports and `export *` resolved).
+// The two reference gates share this so they enumerate the same surface; the signature gate keeps
+// the checker to render each export's type.
+/** @param {string} dtsPath */
+export function moduleExports(dtsPath) {
+  const { checker, source } = loadDts(dtsPath);
   const moduleSymbol = checker.getSymbolAtLocation(source);
   if (!moduleSymbol) throw new Error(`no module symbol for ${dtsPath}`);
   return { checker, symbols: checker.getExportsOfModule(moduleSymbol) };
@@ -295,13 +305,36 @@ function checkOne(entry, knownNames) {
   return { subpath: entry.subpath, page: entry.page, missing, untagged, stale };
 }
 
-function main() {
-  const only = process.argv[2];
-  const entries = only ? CONFIG.filter((c) => c.subpath === only) : CONFIG;
+// The CONFIG entries selected by an optional `--only <subpath>` CLI arg, or every entry when
+// `only` is undefined. Exits the process with a diagnostic when the requested subpath does not
+// exist, the failure mode both reference gates' `main()` share.
+/**
+ * @template {{ subpath: string }} T
+ * @param {string | undefined} only
+ * @param {T[]} config
+ * @returns {T[]}
+ */
+export function resolveEntries(only, config) {
+  const entries = only ? config.filter((c) => c.subpath === only) : config;
   if (only && entries.length === 0) {
     console.error(`unknown subpath ${only}`);
     process.exit(2);
   }
+  return entries;
+}
+
+// Run `main` only when this module is the invoked entry point (`node scripts/x.mjs`), not when a
+// sibling gate imports its exports. Both reference gates share this ESM entry-point guard.
+/**
+ * @param {() => void} main
+ * @param {string} moduleUrl
+ */
+export function runIfMain(main, moduleUrl) {
+  if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(moduleUrl)) main();
+}
+
+function main() {
+  const entries = resolveEntries(process.argv[2], CONFIG);
   const knownNames = globalKnownNames(CONFIG);
   let failed = false;
   for (const entry of entries) {
@@ -325,6 +358,4 @@ function main() {
   process.exit(failed ? 1 : 0);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
-}
+runIfMain(main, import.meta.url);

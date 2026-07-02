@@ -47,13 +47,13 @@ export function createSiteIndexes<const A extends CairnAdapter>(
   for (const descriptor of descriptors) {
     if (descriptor.id === 'site') {
       throw new Error(
-        'createSiteIndexes: a concept cannot be named "site", which is the reserved cross-concept resolver key',
+        'cairn: concept cannot be named "site", which is the reserved cross-concept resolver key',
       );
     }
     if (!Object.prototype.hasOwnProperty.call(globRecord, descriptor.id)) {
       const passed = Object.keys(globRecord);
       throw new Error(
-        `createSiteIndexes: no glob passed for concept "${descriptor.id}"; pass its import.meta.glob (an empty {} for an intentionally empty concept). Globs passed: ${passed.length ? passed.join(', ') : '(none)'}`,
+        `cairn: concept "${descriptor.id}" has no glob passed; pass its import.meta.glob (an empty {} for an intentionally empty concept). Globs passed: ${passed.length ? passed.join(', ') : '(none)'}`,
       );
     }
     const record = globRecord[descriptor.id] ?? {};

@@ -6,7 +6,16 @@ field, so it arrives as a number. Uses `$derived` for the converted value (never
 loop. Every prop is author-controlled and untrusted, so they only ever reach text bindings, never `{@html}`.
 -->
 <script lang="ts">
-  let { from = '', to = '', rate = 1 }: { from?: string; to?: string; rate?: number } = $props();
+  interface Props {
+    /** The source unit's label, shown beside the amount input. */
+    from?: string;
+    /** The target unit's label, shown beside the converted output. */
+    to?: string;
+    /** The multiplier applied to the entered amount. */
+    rate?: number;
+  }
+
+  let { from = '', to = '', rate = 1 }: Props = $props();
   let amount = $state(1);
   // Number.isFinite guards the cleared-input case: bind:value on a number input yields undefined when the
   // field is empty, which would otherwise announce "NaN" through the output live region.

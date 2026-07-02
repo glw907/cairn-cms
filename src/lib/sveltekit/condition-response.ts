@@ -36,8 +36,6 @@ function conditionFaultPage(cond: CairnCondition): string {
   return renderStaticAdminPage({ title: `${cond.title} · Cairn`, innerHtml: inner });
 }
 
-export type GuardReason = keyof typeof REASON_CONDITION;
-
 /** Render the Response the guard serves for a rejection, by its condition id. */
 export function renderConditionResponse(id: string, ctx: { url?: URL } = {}): Response {
   // Assert the id is registered before rendering, keeping the renderer in 1:1 with the registry.

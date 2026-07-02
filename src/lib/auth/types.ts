@@ -1,3 +1,6 @@
+// cairn-cms: the auth session and editor shapes shared by the D1 store, the guard, and the
+// manage-editors screen. AuthEnv is a structural subset of Platform.env, so auth code takes it
+// directly instead of importing a consumer's whole platform type.
 import type { D1Database } from '@cloudflare/workers-types';
 
 export type Role = 'owner' | 'editor';

@@ -7,7 +7,7 @@ import type { CairnRuntime, NamedField } from '../../lib/content/types.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
-import { page } from './app-state.js';
+import { page } from './_app-state.js';
 
 // The authed shell payload the edit view reads its siteName from (page.data.shell). CairnAdmin no
 // longer carries chrome, so only the edit view consults the shell.

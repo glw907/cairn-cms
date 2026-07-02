@@ -21,6 +21,7 @@ redaction stance.
 | `commit.succeeded` | info | A content or nav commit lands. | `concept`, `id`, `editor`, `branch` on a save |
 | `commit.failed` | warn or error | A commit fails. `warn` with `reason: "conflict"` on a 409, `error` with `error` otherwise. | `concept`, `id`, `editor`, `reason` or `error`, `branch` on a save |
 | `config.invalid` | error | The nav editor's load reads a site config that does not parse or validate, and degrades to an empty tree. | `conditionId`, `error` |
+| `content.field_behavior_error` | warn | A field's co-bundled `behavior.validate()` throws during save-time validation; the save keeps the field valid rather than breaking. | `field`, `error` |
 | `taxonomy.unmarked_field` | warn | A concept marks no `taxonomy: true` field yet declares a multiselect named `tags`, `freetags`, or `categories`, so the tag index reads empty. Fires once per index build. | `concept`, `field` |
 | `entry.published` | info | A pending entry's edits land on the default branch. | `concept`, `id`, `editor`, `batch` |
 | `entry.discarded` | info | A pending branch is deleted: a discard, or the delete of a never-published entry. | `concept`, `id`, `editor` |
@@ -41,6 +42,9 @@ redaction stance.
 | `media.alt_propagated` | info | An alt-propagation fills the asset's default alt into its empty placements (and customized ones on the opt-in) across the referencing entries. | `editor`, `hash`, `overwrite`, `written` (the count of rewritten entries) |
 | `media.bulk_deleted` | info | A bulk delete commits, removing the manifest rows of the unreferenced assets in the batch. | `editor`, `deleted` (the count removed), `skipped` (the count still in use and left alone) |
 | `media.orphans_purged` | info | The orphan purge runs, deleting stored R2 bytes that no manifest row and no reference points at. | `editor`, `purged` (the count of byte objects removed) |
+| `editor.added` | info | An owner adds an editor to the D1 allowlist. | `owner` (the acting owner), `target` (the added editor), `role` |
+| `editor.removed` | info | An owner removes an editor from the D1 allowlist. | `owner` (the acting owner), `target` (the removed editor) |
+| `editor.role_changed` | info | An owner changes an editor's role. | `owner` (the acting owner), `target` (the changed editor), `role` (the new role) |
 | `dictionary.added` | info | A personal-dictionary add commits the new words to the committed dictionary file. | `editor`, `words` (the added words), `retried` (true when the commit landed on the post-conflict retry) |
 | `dictionary.add_conflict` | warn | A personal-dictionary add hits a second commit conflict and gives up; the client keeps the words pending and re-attempts on the next save. | `editor`, `words` |
 | `tidy.done` | info | A tidy copy-edit returns a corrected document. Carries no content and no key. | `editor`, `model`, `usage` (the token counts) |

@@ -10,6 +10,7 @@ import {
   type ViewUpdate,
 } from '@codemirror/view';
 import { RangeSetBuilder, type Extension } from '@codemirror/state';
+import { docLines } from './editor-doc-lines.js';
 
 /** An inclusive 0-based line range. */
 export interface LineRange {
@@ -38,13 +39,8 @@ export function paragraphRange(lines: string[], caretLine: number): LineRange {
 const dimLine = Decoration.line({ class: 'cm-cairn-focus-dim' });
 
 // The line cache mirrors editor-highlight's: one full-document read per doc change, so a caret
-// move or scroll rebuilds the viewport decorations from the cached array.
-function docLines(view: EditorView): string[] {
-  const doc = view.state.doc;
-  const lines: string[] = [];
-  for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
-  return lines;
-}
+// move or scroll rebuilds the viewport decorations from the cached array. docLines itself is the
+// shared editor-doc-lines helper.
 
 function buildFocusDecorations(view: EditorView, lines: string[]): DecorationSet {
   const builder = new RangeSetBuilder<Decoration>();

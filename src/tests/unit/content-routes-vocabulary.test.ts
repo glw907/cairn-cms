@@ -6,15 +6,12 @@
 // degrades best-effort like mediaLibraryLoad, so a transient read keeps the committed list visible.
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { GithubDouble } from './_github-double.js';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseSiteConfig, extractVocabulary } from '../../lib/nav/site-config.js';
 import { fieldset } from '../../lib/content/fieldset.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
-import type { ConceptDescriptor } from '../../lib/content/types.js';
+import { runtime as baseRuntime, contentEvent, expectRedirect } from './_content-harness.js';
+import type { CairnRuntime, ConceptDescriptor } from '../../lib/content/types.js';
 
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const CONFIG_PATH = 'src/lib/site.config.yaml';
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
@@ -39,24 +36,14 @@ const POSTS: ConceptDescriptor = {
 };
 
 function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [POSTS],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
     navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
     tidy: { enabled: false },
     ...over,
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 // The committed config: a siteName plus a two-entry vocabulary (svelte in use, rust unused), with a
 // comment so the round-trip-preserves-comments invariant has something to assert.
@@ -95,24 +82,11 @@ function seeded(): GithubDouble {
 }
 
 function loadEvent() {
-  return {
-    url: new URL('https://t.example/admin/vocabulary'),
-    params: {},
-    request: new Request('https://t.example/admin/vocabulary'),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/vocabulary' });
 }
 
 function saveEvent(vocabularyJson: string) {
-  const body = new URLSearchParams({ vocabulary: vocabularyJson });
-  return {
-    url: new URL('https://t.example/admin/vocabulary'),
-    params: {},
-    request: new Request('https://t.example/admin/vocabulary', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/vocabulary', form: { vocabulary: vocabularyJson } });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -178,12 +152,8 @@ describe('vocabularySave', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    try {
-      await routes.vocabularySave(saveEvent(posted) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/vocabulary?saved=1');
-    }
+    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    expect(location).toBe('/admin/vocabulary?saved=1');
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
     expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
     const committed = gh.read('main', CONFIG_PATH)!;
@@ -203,12 +173,8 @@ describe('vocabularySave', () => {
       { value: 'rust', label: 'Rust' },
       { value: 'extra', label: 'Extra' },
     ]);
-    try {
-      await routes.vocabularySave(saveEvent(posted) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/vocabulary?saved=1');
-    }
+    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte', 'rust', 'extra']);
   });
@@ -218,14 +184,10 @@ describe('vocabularySave', () => {
     const routes = createContentRoutes(runtime());
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
-    try {
-      await routes.vocabularySave(saveEvent(posted) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/\/admin\/vocabulary\?error=/);
-      expect(decodeURIComponent((e as { location: string }).location)).toContain('svelte');
-    }
+    const { status, location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/vocabulary\?error=/);
+    expect(decodeURIComponent(location)).toContain('svelte');
     // No commit landed: the committed vocabulary still carries both entries.
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
@@ -237,12 +199,8 @@ describe('vocabularySave', () => {
     const routes = createContentRoutes(runtime());
     // Drop rust, which no entry carries: allowed.
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
-    try {
-      await routes.vocabularySave(saveEvent(posted) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/vocabulary?saved=1');
-    }
+    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    expect(location).toBe('/admin/vocabulary?saved=1');
     const reparsed = extractVocabulary(parseSiteConfig(gh.read('main', CONFIG_PATH)!));
     expect(reparsed.map((v) => v.value)).toEqual(['svelte']);
   });
@@ -252,13 +210,11 @@ describe('vocabularySave', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
-    try {
-      await routes.vocabularySave(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/\/admin\/vocabulary\?error=/);
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.vocabularySave(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/vocabulary\?error=/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -288,11 +244,7 @@ describe('vocabularySave', () => {
       { value: 'svelte', label: 'SvelteKit' },
       { value: 'rust', label: 'Rust' },
     ]);
-    try {
-      await routes.vocabularySave(saveEvent(posted) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
-    }
+    const { location } = await expectRedirect(() => routes.vocabularySave(saveEvent(posted) as never));
+    expect(location).toMatch(/error=.*changed%20since/i);
   });
 });

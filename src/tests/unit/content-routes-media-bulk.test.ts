@@ -5,8 +5,6 @@
 // These tests use the same GithubDouble harness as the single-delete suite, with a multi-hash event
 // builder that repeats the `hash` field.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { MediaBulkDeleteResult } from '../../lib/sveltekit/content-routes.js';
@@ -15,8 +13,7 @@ import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type Media
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -33,35 +30,21 @@ const MEDIA_ON: ResolvedAssetConfig = {
 };
 
 function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
+      postsConcept({
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'image', name: 'image', label: 'Hero', seo: true },
         ],
-        schema: fieldset({}),
-        summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
+      }),
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: MEDIA_ON,
-    vocabulary: [],
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const HASH_A = '0000000000000aaa';
 const HASH_B = '0000000000000bbb';
@@ -125,17 +108,11 @@ function bulkEvent(hashes: string[], bucket: { delete: ReturnType<typeof vi.fn> 
   }));
   const params = new URLSearchParams();
   for (const h of hashes) params.append('hash', h);
-  return {
-    url: new URL('https://t.example/admin/media'),
-    params: {},
-    request: new Request('https://t.example/admin/media', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
-  };
+  return contentEvent({
+    url: 'https://t.example/admin/media',
+    form: params,
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket },
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -154,7 +131,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted.sort()).toEqual([HASH_A, HASH_B].sort());
     expect(result.skipped).toEqual([]);
@@ -183,7 +160,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never);
+    await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never);
 
     expect(timeline.filter((m) => m === 'commit')).toHaveLength(1);
   });
@@ -203,7 +180,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     expect(result.skipped).toHaveLength(1);
@@ -233,7 +210,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     expect(result.skipped).toHaveLength(1);
@@ -253,7 +230,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([]);
     expect(result.skipped.map((s) => s.hash)).toEqual([HASH_USED]);
@@ -275,7 +252,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     // The malformed value never reaches the plan, so it is not even a skip.
@@ -309,7 +286,7 @@ describe('mediaBulkDelete fails closed', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaBulkDelete(event as never);
+    const result = await routes.mediaBulkDeleteAction(event as never);
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: { error: string } }).data;
     expect(data.error).toMatch(/could not verify/i);

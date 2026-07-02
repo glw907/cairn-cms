@@ -21,14 +21,36 @@ dispatcher defines.
 
   // Eyebrow styling for the table column headers, matching the concept list.
   const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // (a second submit failing the same way) would otherwise go silent. An invisible nonce flips on
+  // every fresh error so the region text always mutates and the screen reader speaks again (the
+  // ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard sentence is
+  // unchanged; the visible alert below keeps its own styling and drops the `role` (a fresh-inserted
+  // role element announces inconsistently and would clobber a repeat).
+  let announceNonce = $state(0);
+  function nonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // Each submit hands a fresh `form` object, so the nonce bumps once per submit, keyed to the submit
+  // identity rather than to a string change the live region would swallow.
+  let lastForm: unknown;
+  $effect(() => {
+    if (form !== lastForm) {
+      lastForm = form;
+      if (form?.error) announceNonce++;
+    }
+  });
+  const liveError = $derived(form?.error ? `${form.error}${nonce()}` : '');
 </script>
 
 <header class="mb-6">
   <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Editors</h1>
 </header>
 
+<div class="sr-only" aria-live="polite">{liveError}</div>
 {#if form?.error}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{form.error}</div>
+  <div class="alert alert-error mb-4 text-sm">{form.error}</div>
 {/if}
 
 <div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">

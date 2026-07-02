@@ -14,6 +14,7 @@ import {
   markerPrefix,
   type FenceScan,
 } from './markdown-directives.js';
+import { docLines } from './editor-doc-lines.js';
 
 /** Markdown token colors over the admin theme variables. */
 export function cairnHighlightStyle(): HighlightStyle {
@@ -96,13 +97,7 @@ function hangLine(width: number): Decoration {
 // One regex pass per line, linear in the document; at admin entry sizes (tens of kilobytes) that
 // is well under a millisecond. The plugin caches the fence scan, so it reruns only when the
 // document changes; a scroll or a caret move rebuilds the viewport decorations from the cached
-// scan.
-function docLines(view: EditorView): string[] {
-  const doc = view.state.doc;
-  const lines: string[] = [];
-  for (let n = 1; n <= doc.lines; n++) lines.push(doc.line(n).text);
-  return lines;
-}
+// scan. docLines itself is the shared editor-doc-lines helper, the same read editor-modes uses.
 
 function buildDirectiveDecorations(view: EditorView, scan: FenceScan): DecorationSet {
   const { depths } = scan;

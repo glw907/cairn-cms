@@ -55,7 +55,7 @@ each linking to its edit page, so the author repoints or removes those links fir
   </button>
 {/if}
 
-<dialog class="modal" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
+<dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
       <h2 id="cairn-delete-dialog-title" class="text-base font-semibold">Delete this {label.toLowerCase()}?</h2>

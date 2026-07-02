@@ -4,6 +4,9 @@ import { userEvent } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
 import { stringify as devalueStringify } from 'devalue';
 import * as ingest from '../../lib/components/client-ingest.js';
+import * as tidyValidateModule from '../../lib/components/tidy-validate.js';
+import * as componentGrammar from '../../lib/render/component-grammar.js';
+import type { RoundTripSafety } from '../../lib/render/component-grammar.js';
 import type { MediaEntry } from '../../lib/media/manifest.js';
 
 // The optimistic upload loop touches createImageBitmap (ingestFile) and a real fetch (sendUpload);
@@ -15,11 +18,29 @@ vi.mock('../../lib/components/client-ingest.js', async () => {
   );
   return { ...actual, ingestFile: vi.fn(), sendUpload: vi.fn() };
 });
+// validateTidy stays real for every existing test; wrapping it in a vi.fn lets one test push a
+// single-call throwing override (a parse-time throw in the success path) without touching every
+// other tidy test's real validation behavior.
+vi.mock('../../lib/components/tidy-validate.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/components/tidy-validate.js')>(
+    '../../lib/components/tidy-validate.js',
+  );
+  return { ...actual, validateTidy: vi.fn(actual.validateTidy) };
+});
+// componentRoundTripSafety stays real for every existing test; wrapping it in a vi.fn lets one
+// test hold its promise open to reproduce the stale-async-result race against a caret that has
+// since moved to a different component.
+vi.mock('../../lib/render/component-grammar.js', async () => {
+  const actual = await vi.importActual<typeof import('../../lib/render/component-grammar.js')>(
+    '../../lib/render/component-grammar.js',
+  );
+  return { ...actual, componentRoundTripSafety: vi.fn(actual.componentRoundTripSafety) };
+});
 // EditPage's lifecycle controls (Save, Publish, the status badge, the overflow) render into the
 // one header band through the topbar context portal, not in a header of their own. This harness
 // mounts EditPage joined to that band the way CairnAdmin/CairnAdminShell do, so a standalone render
 // still exercises the desk controls. The band carries data-testid="cairn-band".
-import EditPage from './EditPageDesk.svelte';
+import EditPage from './_EditPageDesk.svelte';
 import type { NamedField, SiteRender } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
@@ -27,9 +48,9 @@ import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/re
 import { fields } from '../../lib/content/fields.js';
 import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
-import { beforeNavigateCallbacks } from './app-navigation.js';
+import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
-import { page as appPage } from './app-state.js';
+import { page as appPage } from './_app-state.js';
 
 function postProps(over = {}) {
   return {
@@ -2242,6 +2263,43 @@ describe('EditPage', () => {
       expect(editControl(screen)!.disabled).toBe(false);
     });
 
+    it('resolves editability to whichever component the caret settles on, never a stale in-flight answer', async () => {
+      // Two distinct safe blocks with opposite eventual outcomes (A safe, B unsafe), so a wrongly
+      // applied answer is unambiguous: if A's slow, stale check ever won, the control would read
+      // enabled instead of the unsafe reason. componentRoundTripSafety is mocked so both checks
+      // stay pending until the test resolves them out of order (A resolves after B), the worst
+      // case for a latest-wins guard that is not keyed to the caret's live identity.
+      const SAFE_A = [':::callout[Block A]{tone="note"}', ':::'].join('\n');
+      const SAFE_B = [':::callout[Block B]{tone="note" bogus="x"}', ':::'].join('\n');
+      const body = ['plain prose', SAFE_A, 'middle prose', SAFE_B, 'tail prose'].join('\n');
+      // Two mockImplementationOnce calls, one per expected check; the mock falls back to the real
+      // implementation afterward (the same self-restoring shape the tidy-validate mock above
+      // uses), so this test never leaves componentRoundTripSafety stubbed for the tests after it.
+      const resolvers: Array<(v: RoundTripSafety) => void> = [];
+      const pending = () =>
+        new Promise<RoundTripSafety>((resolve) => {
+          resolvers.push(resolve);
+        });
+      vi.mocked(componentGrammar.componentRoundTripSafety).mockImplementationOnce(pending).mockImplementationOnce(pending);
+      const screen = render(EditPage, { ...postProps({ body }), registry: calloutRegistry } as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await clickLine(screen, 'Block A');
+      await expect.poll(() => resolvers.length).toBe(1);
+      await clickLine(screen, 'Block B');
+      await expect.poll(() => resolvers.length).toBe(2);
+      // Resolve out of order: B (the caret's real position) first as unsafe, then A (stale) as
+      // safe. The stale, later-resolving answer for a block the caret has already left must never
+      // override the current position's own outcome.
+      resolvers[1]({ safe: false, reason: 'unknown-attribute' });
+      await expect
+        .poll(() => editControl(screen)?.getAttribute('aria-label'))
+        .toBe("This block can't be edited in the form. Edit it as markdown.");
+      resolvers[0]({ safe: true });
+      expect(editControl(screen)?.getAttribute('aria-label')).toBe(
+        "This block can't be edited in the form. Edit it as markdown.",
+      );
+    });
+
     it('opens the dialog in edit mode seeded from the parsed block when activated', async () => {
       const screen = render(EditPage, { ...postProps({ body: bodyWith(SAFE_BLOCK) }), registry: calloutRegistry } as never);
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
@@ -2420,6 +2478,84 @@ describe('EditPage', () => {
       await expect.poll(noop, { timeout: 8000 }).not.toBeNull();
       // showModal() puts the dialog in the top layer; it matches :modal only then.
       await expect.poll(() => noop()!.matches(':modal')).toBe(true);
+      vi.unstubAllGlobals();
+    });
+
+    // Stub globalThis.fetch with a promise the test resolves on its own schedule, so a Cancel click
+    // (or the bounded client timeout) can be made to land before the response arrives, modeling the
+    // narrow race the abort flag and a fully-received response can hit at the same tick.
+    function deferredTidyFetch() {
+      let settle!: (value: unknown) => void;
+      const pending = new Promise((resolve) => {
+        settle = resolve;
+      });
+      const spy = vi.fn(() => pending as unknown as Promise<Response>);
+      vi.stubGlobal('fetch', spy);
+      return {
+        resolveSuccess(corrected: string) {
+          settle({
+            type: 'basic',
+            status: 200,
+            text: async () =>
+              JSON.stringify({
+                type: 'success',
+                status: 200,
+                data: devalueStringify({ corrected, model: 'claude-sonnet-4-6', usage: {} }),
+              }),
+          } as unknown as Response);
+        },
+      };
+    }
+
+    it('opens the review with a response that arrives after Cancel, not silently', async () => {
+      // A real fetch would already have rejected once truly aborted; this mock does not honor the
+      // AbortSignal, modeling the narrow race the client timeout or a fast Cancel can hit exactly as
+      // the body finishes arriving. A response the caller actually received must still be shown,
+      // independent of whether the abort flag happened to flip first.
+      const body = 'We can accomodate the crowd.';
+      const deferred = deferredTidyFetch();
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      const working = () => document.querySelector<HTMLDialogElement>('[data-testid="tidy-working"]');
+      await expect.poll(working, { timeout: 8000 }).not.toBeNull();
+      const cancel = Array.from(working()!.querySelectorAll<HTMLButtonElement>('button')).find(
+        (b) => b.textContent?.trim() === 'Cancel',
+      );
+      if (!cancel) throw new Error('cancel button not found');
+      cancel.click();
+      // <dialog>'s close event fires on a queued task, not synchronously; wait for the dialog to
+      // actually leave the DOM (cancelTidy having run and aborted the controller) before letting the
+      // response land, so the abort genuinely precedes the response the way a real race would.
+      await expect.poll(working, { timeout: 8000 }).toBeNull();
+      deferred.resolveSuccess('We can accommodate the crowd.');
+      await expect.poll(() => document.querySelector('[data-testid="tidy-review"]'), { timeout: 8000 }).not.toBeNull();
+      const cancelReview = Array.from(
+        document.querySelectorAll<HTMLButtonElement>('[data-testid="tidy-review"] button'),
+      ).find((b) => b.textContent?.trim() === 'Cancel');
+      cancelReview?.click();
+      vi.unstubAllGlobals();
+    });
+
+    it('a throw while processing a successful result shows the retry message, not a crash', async () => {
+      // validateTidy throws once (a parse failure unrelated to the network); the try/finally in
+      // runTidy must still catch it and surface the generic retry message rather than letting the
+      // rejection propagate unhandled out of the untracked onclick call.
+      const body = 'We can accomodate the crowd.';
+      stubTidyFetch('We can accommodate the crowd.');
+      vi.mocked(tidyValidateModule.validateTidy).mockImplementationOnce(() => {
+        throw new Error('boom');
+      });
+      const screen = render(EditPage, tidyProps({ body }) as never);
+      await expect.poll(() => screen.container.querySelector('.cm-content'), { timeout: 20000 }).not.toBeNull();
+      await expect.poll(() => tidyButton(screen)).toBeTruthy();
+      tidyButton(screen)!.click();
+      await expect.poll(() => document.querySelector('[data-testid="tidy-message"]'), { timeout: 8000 }).not.toBeNull();
+      expect(document.querySelector('[data-testid="tidy-message"]')?.textContent).toContain(
+        'Tidy could not finish. Try again.',
+      );
+      expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
       vi.unstubAllGlobals();
     });
   });

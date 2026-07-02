@@ -208,7 +208,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     addDictionaryWord: viewAction(['edit'], (event, view) =>
-      content.addDictionaryWord(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+      content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction(['edit'], (event, view) =>
@@ -225,17 +225,17 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // applies the repoint. Alt propagation previews and applies the alt fill. The preview pair are 2a
     // fetch actions; the apply pair are form posts. All gate on the media view.
     mediaUpload: viewAction(['media'], (event) => content.uploadAction(contentEvent(event, {}))),
-    mediaLibraryUpload: viewAction(['media'], (event) => content.mediaLibraryUpload(contentEvent(event, {}))),
-    mediaReplacePreview: viewAction(['media'], (event) => content.mediaReplacePreview(contentEvent(event, {}))),
-    mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApply(contentEvent(event, {}))),
-    mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreview(contentEvent(event, {}))),
-    mediaAltPropagate: viewAction(['media'], (event) => content.mediaAltApply(contentEvent(event, {}))),
+    mediaLibraryUpload: viewAction(['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {}))),
+    mediaReplacePreview: viewAction(['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
+    mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
+    mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
+    mediaAltPropagate: viewAction(['media'], (event) => content.mediaAltApplyAction(contentEvent(event, {}))),
     // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
     // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
     // `?/mediaPurge` (the purge key is short of its content method name). All gate on the media view.
-    mediaBulkDelete: viewAction(['media'], (event) => content.mediaBulkDelete(contentEvent(event, {}))),
-    mediaOrphanScan: viewAction(['media'], (event) => content.mediaOrphanScan(contentEvent(event, {}))),
-    mediaPurge: viewAction(['media'], (event) => content.mediaPurgeOrphans(contentEvent(event, {}))),
+    mediaBulkDelete: viewAction(['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
+    mediaOrphanScan: viewAction(['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
+    mediaPurge: viewAction(['media'], (event) => content.mediaPurgeOrphansAction(contentEvent(event, {}))),
     publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
     addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
     removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),

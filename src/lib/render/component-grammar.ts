@@ -152,7 +152,7 @@ export async function parseComponent(markdown: string, def: ComponentDef): Promi
  * The raw attribute keys present on the component's opening directive, read from the parsed tree
  *  (quote-aware, unlike a regex over the source). Used by validation to flag unknown keys.
  */
-export function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
+function parseRawAttributeKeys(markdown: string, def: ComponentDef): string[] {
   return rawKeysFromRoot(findComponentRoot(markdown, def));
 }
 

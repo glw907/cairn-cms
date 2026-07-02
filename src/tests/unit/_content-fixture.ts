@@ -8,7 +8,7 @@ import type { SiteConfig } from '../../lib/nav/site-config.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
-export const postFieldset = fieldset({
+const postFieldset = fieldset({
   title: fields.text({ label: 'Title', required: true }),
   date: fields.date({ label: 'Date', required: true }),
   description: fields.textarea({ label: 'Description', required: true }),
@@ -16,7 +16,7 @@ export const postFieldset = fieldset({
   draft: fields.boolean({ label: 'Draft' }),
 });
 
-export const pageFieldset = fieldset({
+const pageFieldset = fieldset({
   title: fields.text({ label: 'Title', required: true }),
 });
 

@@ -143,10 +143,10 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
 
   <!-- THE ADD CARD: a human label, a live slug preview, the primary Add control. -->
   <section class="mt-5 {cardClass} p-4">
-    <label for="vocab-new-label" class="text-[0.9375rem] font-semibold">Add a tag</label>
+    <label for="cairn-vocab-new-label" class="text-[0.9375rem] font-semibold">Add a tag</label>
     <div class="mt-2.5 flex flex-wrap items-start gap-2.5">
       <input
-        id="vocab-new-label"
+        id="cairn-vocab-new-label"
         name="new-label"
         type="text"
         autocomplete="off"
@@ -159,14 +159,14 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
           }
         }}
         class="input input-sm min-w-0 flex-1"
-        aria-describedby="vocab-new-help"
+        aria-describedby="cairn-vocab-new-help"
         aria-invalid={addError ? 'true' : undefined}
       />
       <button type="button" class="btn btn-primary btn-sm flex-none" onclick={add}>
         <PlusIcon class="h-4 w-4" aria-hidden="true" />Add tag
       </button>
     </div>
-    <div id="vocab-new-help" class="mt-2 text-[0.8125rem] leading-relaxed">
+    <div id="cairn-vocab-new-help" class="mt-2 text-[0.8125rem] leading-relaxed">
       {#if addError}
         <span role="alert" class="text-[var(--cairn-error-ink)]">{addError}</span>
       {:else if newSlug}

@@ -660,13 +660,13 @@ declare class CommitConflictError extends Error {
   constructor(path: string);
 }
 declare class SiteConfigError extends Error {
-  readonly conditionId: 'config.site-config-invalid';
+  readonly conditionId: string;
 }
 ```
 
 `CommitConflictError` signals a lost SHA race on a commit, so the save fails safe. `SiteConfigError`
-is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` names the registered
-diagnostic condition the fault maps to.
+is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` (always
+`config.site-config-invalid`) names the registered diagnostic condition the fault maps to.
 
 ---
 

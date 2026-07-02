@@ -1,8 +1,14 @@
+// cairn-cms: the field descriptor union (Contract v2's fieldset primitive). Each interface below is a
+// leaf or container's plain-data shape (label, constraints, a type discriminant); `fieldset()` reads
+// this record to derive the validator, and the editor form reads it to render inputs. The `fields`
+// constructor namespace captures each call site's literal options with a `const` type parameter, so a
+// concept's own literals (a `select`'s option union, `required: true`) survive into the descriptor
+// type for `Infer` to read; the runtime value is unchanged.
 /** The stored value of an image field; re-exported so this module owns the image shape too. */
 export type { ImageValue } from './types.js';
 
 /** Common to every field descriptor: the form label and the universal options. */
-export interface FieldBase {
+interface FieldBase {
   /** Form label. */
   label: string;
   /** One author-facing sentence shown under the field. */

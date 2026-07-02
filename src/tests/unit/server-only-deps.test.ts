@@ -85,10 +85,11 @@ describe('server-only deps stay off the client', () => {
   });
 
   it('the SDK is reachable only from the server action module', () => {
-    // The whole point of the dep: it lives in content-routes.ts, a Worker module no component imports
-    // statically. This asserts the positive too, so the guard fails loudly if the import is ever moved
-    // somewhere a component can reach (and the first assertion would then also fire).
-    const importer = 'src/lib/sveltekit/content-routes.ts';
+    // The whole point of the dep: it lives in content-routes-context.ts (the content-routes factory's
+    // shared closure context), a Worker module no component imports statically. This asserts the
+    // positive too, so the guard fails loudly if the import is ever moved somewhere a component can
+    // reach (and the first assertion would then also fire).
+    const importer = 'src/lib/sveltekit/content-routes-context.ts';
     expect(STATIC_SDK.test(readFileSync(importer, 'utf8'))).toBe(true);
     const graph = reachable(componentFiles('src/lib/components'));
     expect(graph.has(path.resolve(importer))).toBe(false);

@@ -7,7 +7,7 @@ import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 
 /** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
-export const ADMIN_NAV_ICON_NAMES = [
+const ADMIN_NAV_ICON_NAMES = [
   'anchor',
   'calendar',
   'clipboard-list',

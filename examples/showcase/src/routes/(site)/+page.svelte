@@ -149,8 +149,13 @@
 
   /* The size-gated tag filter: a row of pill toggles over the index, reading the showcase tokens.
      The pressed option carries the primary ink so the active narrowing is visible without color
-     alone (the aria-pressed state backs assistive tech). */
+     alone (the aria-pressed state backs assistive tech). The pill shape rides its own scoped
+     custom property (the `--flow-space` idiom in prose.css) rather than a literal 999px: the
+     theme's `--radius-selector` is a separate, smaller "modest" DaisyUI geometry knob (0.28rem),
+     so reading it here would change the shape, not just unlock it. --tag-filter-radius keeps the
+     default pill unchanged while giving a re-skin a token to override. */
   .tag-filter {
+    --tag-filter-radius: 999px;
     display: flex;
     flex-wrap: wrap;
     gap: var(--spacing-2xs);
@@ -161,7 +166,7 @@
     line-height: var(--leading-snug);
     padding: 0.25rem 0.7rem;
     border: var(--border) solid var(--color-card-border);
-    border-radius: 999px;
+    border-radius: var(--tag-filter-radius);
     background: transparent;
     color: var(--color-muted);
     cursor: pointer;

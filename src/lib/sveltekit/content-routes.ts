@@ -376,19 +376,23 @@ export interface TidyClient {
 }
 
 export interface ContentRoutesDeps {
-  /**
-   * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the real
-   *  SDK client. Injected in tests so `messages.create` is stubbed and no network call (or real key)
-   *  is ever needed. The factory runs only after the key is read from the env, so a disabled or
-   *  unconfigured site never constructs a client.
-   */
-  anthropic?: (opts: { apiKey: string }) => TidyClient;
-  /**
-   * The tidy action's own request deadline in milliseconds, set shorter than the platform limit so a
-   *  slow model call becomes a clean retryable fail(502) rather than a platform timeout. Defaults to
-   *  {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline path without waiting.
-   */
-  tidyTimeoutMs?: number;
+  /** The tidy action's injectable dependencies, grouped since both members shape one call. */
+  tidy?: {
+    /**
+     * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the
+     *  real SDK client. Injected in tests so `messages.create` is stubbed and no network call (or
+     *  real key) is ever needed. The factory runs only after the key is read from the env, so a
+     *  disabled or unconfigured site never constructs a client.
+     */
+    client?: (opts: { apiKey: string }) => TidyClient;
+    /**
+     * The tidy action's own request deadline in milliseconds, set shorter than the platform limit
+     *  so a slow model call becomes a clean retryable fail(502) rather than a platform timeout.
+     *  Defaults to {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline
+     *  path without waiting.
+     */
+    timeoutMs?: number;
+  };
 }
 
 /**
@@ -705,11 +709,11 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
   }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
-  // (deps.anthropic) so messages.create is stubbed and no network call or real key is ever needed. The
+  // (deps.tidy.client) so messages.create is stubbed and no network call or real key is ever needed. The
   // SDK client satisfies TidyClient structurally; the cast names that to the compiler.
   const anthropicClient =
-    deps.anthropic ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
-  const tidyTimeoutMs = deps.tidyTimeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
+    deps.tidy?.client ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
+  const tidyTimeoutMs = deps.tidy?.timeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
 
   /**
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).

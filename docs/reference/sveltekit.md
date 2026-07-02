@@ -420,7 +420,7 @@ client in `examples/showcase` is the working reference.
 Stability tier: Scaffold API.
 
 ```ts
-declare function createMediaRoute(resolved: ResolvedAssetConfig): RequestHandler;
+declare function createMediaRoute(runtime: CairnRuntime): RequestHandler;
 ```
 
 The media delivery route, a SvelteKit `RequestHandler` a media-enabled site mounts at
@@ -430,16 +430,17 @@ Every served response carries the load-bearing security headers (`X-Content-Type
 `Content-Disposition: inline`, a `default-src 'none'; sandbox` CSP, and a one-year immutable cache),
 which are the XSS control for the served bytes since the route sits outside `/admin`. It forwards
 `If-None-Match` and `Range` for 304 and 206 responses, short-circuits the Cloudflare Images
-self-loop, returns 503 on a missing bucket binding, and 404s a media-off site or a bad path. Pass it
-the runtime's `resolvedAssets`.
+self-loop, returns 503 on a missing bucket binding, and 404s a media-off site or a bad path. Pass
+it the composed runtime directly; the factory reads `runtime.resolvedAssets` itself, matching every
+other route factory's convention.
 
 ```ts
 // src/routes/media/[...path]/+server.ts
-import { cairn, siteConfig } from '$lib/cairn.config.js';
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from '$lib/cairn.config.js';
 
-export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }).resolvedAssets);
+export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }));
 ```
 
 ### `createNavRoutes`
@@ -590,7 +591,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's optional support contact. |
 | `ContentEvent` | Extension API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | Extension API | `interface ContentRoutesDeps { anthropic?: (opts: { apiKey: string }) => TidyClient; tidyTimeoutMs?: number }` | Injectable dependencies for `createContentRoutes`: `anthropic` so a test's tidy action calls a stubbed model, and `tidyTimeoutMs` to assert the deadline path. |
+| `ContentRoutesDeps` | Extension API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number } }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads: `tidy.client` so a test's tidy action calls a stubbed model, and `tidy.timeoutMs` to assert the deadline path. |
 | `SaveFailure` | Extension API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Extension API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
 | `RenameFailure` | Extension API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -603,11 +604,13 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[] }` | The tag-vocabulary screen's load data, returned by `vocabularyLoad`: the committed `{ value, label }` entries in config order, each value's cross-branch in-use count (`usage`), and the in-use-but-unlisted tags with their counts (`unlisted`, the seed candidates). The usage overlay degrades to an empty `usage`/`unlisted` on a failed read while the committed `vocabulary` stays visible. |
-| `CairnAdminDeps` | Extension API | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `anthropic` and `tidyTimeoutMs` pass through to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
+| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink }; tidy?: ContentRoutesDeps['tidy'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the two bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes. `tidy` forwards verbatim to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `RequestContext` | Extension API | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: RequestContext; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input. |
 | `BackendEnv` | Extension API | `interface BackendEnv { GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker secret carrier the backend provider's `connect` reads to mint the GitHub App token; it also types the `healthLoad` event env. |
-| `AuthEnv` | Extension API | `interface AuthEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; EMAIL?: { send(message): Promise<void> }; CAIRN_DEV_BACKEND?: string \| boolean }` | The Cloudflare env shape the auth and email bindings live on: the D1 session store, the canonical confirmation-link origin, the Email Sending binding, and the `CAIRN_DEV_BACKEND` tripwire flag the guard reads. A site names it in its `app.d.ts` Platform block so `platform.env` carries these members. |
+| `AuthEnv` | Extension API | `interface AuthEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; EMAIL?: { send(message): Promise<void> }; CAIRN_DEV_BACKEND?: string \| boolean }` | The Cloudflare env shape the auth and email bindings live on: the D1 session store, the canonical confirmation-link origin, the Email Sending binding, and the `CAIRN_DEV_BACKEND` tripwire flag the guard reads. Every member is optional, since a test or a partial handler builds one piece at a time; a site's `app.d.ts` names {@link CairnPlatformBindings} instead, which requires them. |
+| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: NonNullable<AuthEnv['EMAIL']>; PUBLIC_ORIGIN: string; GITHUB_APP_ID: string; GITHUB_APP_INSTALLATION_ID: string; GITHUB_APP_PRIVATE_KEY_B64: string }` | The Cloudflare bindings and vars every cairn site's Worker needs, every member required (not optional), so a forgotten binding fails `app.d.ts` at compile time instead of surfacing as a runtime `config.bindings-missing` error. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
+| <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since `MEDIA_BUCKET` exists only when the adapter's `assets` block turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. |

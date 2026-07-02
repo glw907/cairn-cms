@@ -79,6 +79,14 @@ describe('public views', () => {
     expect('layout' in data).toBe(false);
   });
 
+  it('applies deps.auth.branding to the login page, overriding the runtime-derived default', async () => {
+    const admin = createCairnAdmin(runtime(), { auth: { branding: { siteName: 'Overridden Site', from: 'x@test' } } });
+    const data = await admin.load(adminEvent('/admin/login', { editor: null }) as never);
+    expect(data.view).toBe('login');
+    if (data.view !== 'login') throw new Error('narrowing');
+    expect(data.page.siteName).toBe('Overridden Site');
+  });
+
   it('serves the confirm page with the token and sets Referrer-Policy', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const event = adminEvent('/admin/auth/confirm', { editor: null, search: '?token=abc' });

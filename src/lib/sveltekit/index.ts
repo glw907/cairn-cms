@@ -39,3 +39,6 @@ export type { RequestContext, CookieJar, HandleInput } from './types.js';
 export type { BackendEnv } from '../github/credentials.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { AuthEnv } from '../auth/types.js';
+// The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
+// their canonical home (decision: surface-pruning Task 6).
+export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';

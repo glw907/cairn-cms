@@ -91,6 +91,9 @@ describe('sveltekit barrel prune', () => {
     const type = checker.getTypeAtLocation(declared!);
     const memberNames = type.getProperties().map((p) => p.name);
     expect(memberNames).not.toContain('backend');
-    expect(memberNames).toEqual(expect.arrayContaining(['anthropic', 'tidyTimeoutMs']));
+    // Surface-pruning Task 6: anthropic/tidyTimeoutMs regrouped into one `tidy` bag.
+    expect(memberNames).not.toContain('anthropic');
+    expect(memberNames).not.toContain('tidyTimeoutMs');
+    expect(memberNames).toEqual(['tidy']);
   });
 });

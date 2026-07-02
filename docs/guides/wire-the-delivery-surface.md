@@ -196,7 +196,7 @@ This guide assumes a running cairn site whose content you want to deliver. The w
    import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
    import { runtime } from '$lib/cairn.server.js';
 
-   export const GET = createMediaRoute(runtime.resolvedAssets);
+   export const GET = createMediaRoute(runtime);
    ```
 
    The route validates the hash and extension before any R2 read, derives the object key from the

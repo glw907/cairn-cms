@@ -3,6 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
+import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -272,11 +273,12 @@ describe('content actions', () => {
     expect(gh.read('main', 'src/content/posts/2026-05-01-hi.md')).toBe(raw);
   });
 
-  // Gap closer (Task 16): createCairnAdmin must forward `deps.anthropic` to the content routes so the
-  // tidy action calls the injected client, not the real SDK. The tidy action reads the CSRF header, the
-  // ANTHROPIC_API_KEY from platform.env, and `runtime.tidy.enabled`, so a forwarded factory that is
-  // invoked proves the dep crossed the composition boundary.
-  it('forwards deps.anthropic to the tidy action', async () => {
+  // Gap closer (Task 16, reshaped by surface-pruning Task 6): createCairnAdmin must forward
+  // `deps.tidy` to the content routes so the tidy action calls the injected client, not the real
+  // SDK. The tidy action reads the CSRF header, the ANTHROPIC_API_KEY from platform.env, and
+  // `runtime.tidy.enabled`, so a forwarded factory that is invoked proves the dep crossed the
+  // composition boundary.
+  it('forwards deps.tidy.client to the tidy action', async () => {
     const create = vi.fn(async () => ({
       content: [{ type: 'text' as const, text: 'the trail' }],
       model: 'claude-test',
@@ -285,7 +287,7 @@ describe('content actions', () => {
     }));
     const anthropic = vi.fn(() => ({ messages: { create } }));
     const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
-    const admin = createCairnAdmin(tidyRuntime, { ...deps, anthropic });
+    const admin = createCairnAdmin(tidyRuntime, { ...deps, tidy: { client: anthropic } });
 
     // A CSRF-valid raw POST: the token rides the X-Cairn-CSRF header and the __Host-cairn_csrf cookie.
     const csrf = 'csrf-token-value-0123456789abcdef';
@@ -311,6 +313,49 @@ describe('content actions', () => {
     expect(anthropic).toHaveBeenCalledTimes(1);
     expect(create).toHaveBeenCalledTimes(1);
     expect(res.corrected).toBe('the trail');
+  });
+
+  it('forwards deps.tidy.timeoutMs to the tidy action, mapping a deadline overrun to fail(502)', async () => {
+    let sawSignal: AbortSignal | undefined;
+    const create = vi.fn((_body: unknown, options?: { signal?: AbortSignal }) => {
+      sawSignal = options?.signal;
+      return new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener('abort', () => {
+          const err = new Error('Request was aborted.');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      });
+    }) as unknown as TidyClient['messages']['create'];
+    const anthropic = vi.fn(() => ({ messages: { create } })) as unknown as (opts: {
+      apiKey: string;
+    }) => TidyClient;
+    const tidyRuntime = { ...runtime(), tidy: { enabled: true, model: 'claude-test', conventions: {} } } as CairnRuntime;
+    // A short deadline so the test does not wait the real 30s default.
+    const admin = createCairnAdmin(tidyRuntime, { ...deps, tidy: { client: anthropic, timeoutMs: 20 } });
+
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const event = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+
+    const res = (await admin.actions.tidy(event as never)) as { status?: number };
+    expect(sawSignal).toBeInstanceOf(AbortSignal);
+    expect(res.status).toBe(502);
   });
 });
 

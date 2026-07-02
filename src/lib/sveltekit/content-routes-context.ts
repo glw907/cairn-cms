@@ -5,14 +5,12 @@
 // -dictionary.ts) closes over it instead of re-deriving these from `runtime`/`deps` itself. This is
 // the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
 // where their shared captures come from.
-import { redirect } from '@sveltejs/kit';
 import type { Backend } from '../github/backend.js';
-import { isConflict } from '../github/types.js';
 import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { log } from '../log/index.js';
 import { normalizeAdminNav, type ResolvedNavEntry } from './admin-nav.js';
+import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
@@ -206,42 +204,6 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
    */
   function dictionaryFilePath(): string {
     return runtime.dictionaryPath ?? 'src/content/.cairn/dictionary.txt';
-  }
-
-  /**
-   * Log a failed commit: a conflict is the expected last-writer-wins outcome, so it warns with a
-   *  reason; any other error is unexpected and logs at error with the stringified cause. Publish
-   *  failures carry the same shape under their own event name.
-   */
-  function logCommitFailed(
-    fields: { concept: string; id: string; editor: string },
-    err: unknown,
-    event: 'commit.failed' | 'publish.failed' = 'commit.failed',
-  ): void {
-    if (isConflict(err)) {
-      log.warn(event, { ...fields, reason: 'conflict' });
-    } else {
-      log.error(event, { ...fields, error: String(err) });
-    }
-  }
-
-  /**
-   * The shared commit catch for the entry actions: log the failure, bounce a conflict back to
-   *  `page` with `message` as the inline error, and rethrow anything else. `query` keeps any extra
-   *  params the bounce must carry (saveAction's `&new=1`).
-   */
-  function commitFailure(
-    fields: { concept: string; id: string; editor: string },
-    err: unknown,
-    page: string,
-    message: string,
-    opts: { event?: 'commit.failed' | 'publish.failed'; query?: string } = {},
-  ): never {
-    logCommitFailed(fields, err, opts.event);
-    if (isConflict(err)) {
-      throw redirect(303, `${page}?error=${encodeURIComponent(message)}${opts.query ?? ''}`);
-    }
-    throw err;
   }
 
   return {

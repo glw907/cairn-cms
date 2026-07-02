@@ -2,7 +2,6 @@
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
 import { redirect, error } from '@sveltejs/kit';
-import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -60,14 +59,6 @@ export interface SettingsData {
   saved: boolean;
   /** A redirected save's validation or conflict error read from `?error=`. */
   error: string | null;
-}
-
-/**
- * A refused settings save: a conflict bounce or a malformed conventions payload. Just the one-line
- *  summary; the save commits nothing on a refusal.
- */
-export interface SettingsSaveFailure {
-  error: string;
 }
 
 /**
@@ -201,13 +192,12 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      if (isConflict(err)) {
-        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
-        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
-        throw redirect(303, `/admin/settings?error=${encodeURIComponent(message)}`);
-      }
-      log.error('commit.failed', { ...commitFields, error: String(err) });
-      throw err;
+      ctx.commitFailure(
+        commitFields,
+        err,
+        '/admin/settings',
+        'The site config changed since you opened it. Reload and reapply your edits.',
+      );
     }
 
     throw redirect(303, '/admin/settings?saved=1');
@@ -332,13 +322,12 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      if (isConflict(err)) {
-        log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
-        const message = 'The site config changed since you opened it. Reload and reapply your edits.';
-        throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(message)}`);
-      }
-      log.error('commit.failed', { ...commitFields, error: String(err) });
-      throw err;
+      ctx.commitFailure(
+        commitFields,
+        err,
+        '/admin/vocabulary',
+        'The site config changed since you opened it. Reload and reapply your edits.',
+      );
     }
 
     throw redirect(303, '/admin/vocabulary?saved=1');

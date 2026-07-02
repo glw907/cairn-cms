@@ -58,14 +58,13 @@ export type {
   MediaOrphanPurgeResult,
   MediaReplacePreviewEntry,
   MediaReplacePreviewPlan,
-  MediaAltPreviewEntry,
   MediaAltPreviewPlan,
   UploadResult,
 } from './content-routes-media.js';
 
-export type { TidyResult, TidyFailure } from './content-routes-tidy.js';
+export type { TidyResult } from './content-routes-tidy.js';
 
-export type { SettingsData, SettingsSaveFailure, VocabularyLoadData } from './content-routes-settings.js';
+export type { SettingsData, VocabularyLoadData } from './content-routes-settings.js';
 
 export type { DictionaryAddResult, DictionaryAddFailure } from './content-routes-dictionary.js';
 

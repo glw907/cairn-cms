@@ -18,7 +18,7 @@ export interface CookieJar {
 }
 
 /** The Cloudflare platform wrapper an event carries; `context` is the legacy alias for `ctx`. */
-export interface PlatformContext<Env> {
+interface PlatformContext<Env> {
   env?: Env;
   ctx?: { waitUntil(promise: Promise<unknown>): void };
   context?: { waitUntil(promise: Promise<unknown>): void };

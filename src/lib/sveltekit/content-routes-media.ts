@@ -16,6 +16,7 @@ import type { MediaLibraryEntry } from '../media/library-entry.js';
 import { buildUsageIndex } from '../media/usage.js';
 import type { UsageEntry } from '../media/usage.js';
 import { runReconcile, MEDIA_KEY_RE, type ReconcileBucket } from '../media/reconcile.js';
+import type { ResolvedAssetConfig } from '../media/config.js';
 import { buildOrphanScan, type OrphanScan } from '../media/orphan-scan.js';
 import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
@@ -129,6 +130,16 @@ export interface MediaBulkFailure {
 }
 
 /**
+ * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
+ *  disallowed content) and the mediaLibraryUpload commit's own conflict bounce. Just the one-line
+ *  summary; a refusal here never stores bytes or commits a row. Module-internal: the client reads
+ *  the envelope's `error` string loosely, so no other module names this type.
+ */
+interface MediaUploadFailure {
+  error: string;
+}
+
+/**
  * The bulk-delete outcome the component renders: the deleted hashes, the skipped rows from the
  *  partition (with their reason and where-used), and any per-object R2 delete failure. Admin-internal,
  *  not on the package subpath, so no reference page.
@@ -184,11 +195,10 @@ export interface MediaReplacePreviewPlan {
  * One entry the alt-propagation preview reports, enriched with its display title and permalink from
  *  the content manifest. Its placements carry every reference of the asset on this entry, each tagged
  *  with the bucket it falls in (a will-fill, a customized alt left as-is, or a decorative hero), so
- *  the screen can show what would change. Admin-internal: exported from content-routes for the bundled
- *  Media Library component, not added to the package's sveltekit subpath, so it carries no reference
- *  page.
+ *  the screen can show what would change. Module-internal: only MediaAltPreviewPlan's `entries` field
+ *  names it, so the bundled Media Library component consumes it structurally through that field.
  */
-export interface MediaAltPreviewEntry {
+interface MediaAltPreviewEntry {
   /** The concept id, e.g. "posts". */
   concept: string;
   /** The entry id (its filename stem). */
@@ -320,6 +330,27 @@ function replacementToken(slug: string, hash: string): string {
   return mediaToken({ slug: MEDIA_SLUG_RE.test(slug) ? slug : null, hash });
 }
 
+/** The fail(503) message every media action returns when the site declares no assets block. */
+const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
+
+/**
+ * Resolve the R2 bucket for an action that reads or writes raw bytes, refusing before any write
+ *  when media is disabled for the site or the platform has no binding under the site's configured
+ *  name. Shared by every action that touches the bucket directly (delete, bulk delete, orphan scan,
+ *  orphan purge); replace and alt-fill write no bytes, so they check `resolved.enabled` alone against
+ *  MEDIA_DISABLED_MESSAGE and skip this step.
+ */
+function resolveMediaBucket(
+  event: ContentEvent,
+  resolved: ResolvedAssetConfig,
+): { bucket: R2Bucket } | { error: string } {
+  if (!resolved.enabled) return { error: MEDIA_DISABLED_MESSAGE };
+  const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
+  const rawBucket = platformEnv[resolved.bucketBinding];
+  if (!rawBucket) return { error: 'The media bucket is not bound.' };
+  return { bucket: rawBucket as R2Bucket };
+}
+
 /**
  * Build every media load and action, closed over the shared content-routes context.
  */
@@ -425,7 +456,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const editor = event.locals.editor ?? null;
     const refuse = (status: number, reason: string): ReturnType<typeof fail> => {
       log.warn('media.upload_failed', { editor: editor?.email, reason });
-      return fail(status, { error: reason });
+      return fail(status, { error: reason } satisfies MediaUploadFailure);
     };
 
     // 1. Media on.
@@ -579,12 +610,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
       );
       log.info('commit.succeeded', commitFields);
     } catch (err) {
-      if (!isConflict(err)) {
-        log.error('commit.failed', { ...commitFields, error: String(err) });
-        throw err;
-      }
-      log.warn('commit.failed', { ...commitFields, reason: 'conflict' });
-      return fail(409, { error: 'The media manifest changed since you opened it. Reload and try again.' });
+      ctx.logCommitFailed(commitFields, err);
+      if (!isConflict(err)) throw err;
+      return fail(409, {
+        error: 'The media manifest changed since you opened it. Reload and try again.',
+      } satisfies MediaUploadFailure);
     }
     return result;
   }
@@ -669,16 +699,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     }
 
     // Resolve the R2 bucket before the commit, so a missing binding refuses before any write.
-    const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.', hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
+    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    if ('error' in bucketResult) {
+      return fail(503, { error: bucketResult.error, hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
     }
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) {
-      return fail(503, { error: 'The media bucket is not bound.', hash, usage: [], foundIn } satisfies MediaDeleteRefusal);
-    }
-    const store = r2Store(rawBucket as R2Bucket);
+    const store = r2Store(bucketResult.bucket);
     // Derive the R2 key BEFORE the commit. A corrupt ext throws here, so a bad key refuses before
     // any write rather than after the row is already removed (which would orphan the bytes).
     const objectKey = r2Key(hash, row.ext);
@@ -751,16 +776,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 bucket before any write, so a media-off site or a missing binding refuses before
     // the commit, exactly like single delete.
-    const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
+    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    if ('error' in bucketResult) {
+      return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) {
-      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
-    }
-    const store = r2Store(rawBucket as R2Bucket);
+    const store = r2Store(bucketResult.bucket);
 
     // THE fail-closed gate for the whole batch: one shared strict usage index. STRICT mode rethrows a
     // branch-read failure, so a transient branch read failing refuses the whole batch rather than
@@ -838,14 +858,9 @@ export function createMediaActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
     // the MediaStore seam carries no list. A media-off site or a missing binding refuses the scan.
-    const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
-    }
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) {
-      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
+    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    if ('error' in bucketResult) {
+      return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }
 
     // Read the fresh media manifest for the reconcile's manifest side.
@@ -858,7 +873,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     let reconcile: Awaited<ReturnType<typeof runReconcile>>;
     let index: Awaited<ReturnType<typeof buildUsageIndex>>;
     try {
-      reconcile = await runReconcile(rawBucket as unknown as ReconcileBucket, manifest);
+      reconcile = await runReconcile(bucketResult.bucket as unknown as ReconcileBucket, manifest);
       index = await buildUsageIndex(backend, runtime.concepts, await ctx.readManifest(backend), { strict: true });
     } catch {
       return fail(503, { error: 'Could not check where files are used, so the scan was not run. Try again.' } satisfies MediaBulkFailure);
@@ -900,16 +915,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
 
     // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
     // deletes through the MediaStore seam, so wrap the raw binding.
-    const resolved = runtime.resolvedAssets;
-    if (!resolved.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaBulkFailure);
+    const bucketResult = resolveMediaBucket(event, runtime.resolvedAssets);
+    if ('error' in bucketResult) {
+      return fail(503, { error: bucketResult.error } satisfies MediaBulkFailure);
     }
-    const platformEnv = (event.platform as { env?: Record<string, unknown> } | undefined)?.env ?? {};
-    const rawBucket = platformEnv[resolved.bucketBinding];
-    if (!rawBucket) {
-      return fail(503, { error: 'The media bucket is not bound.' } satisfies MediaBulkFailure);
-    }
-    const store = r2Store(rawBucket as R2Bucket);
+    const store = r2Store(bucketResult.bucket);
 
     // Read the selected R2 keys and the typed confirm.
     const form = await event.request.formData();
@@ -1144,7 +1154,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     // bytes are kept), so there is no bucket binding to resolve. Media-off still refuses before any
     // git write.
     if (!runtime.resolvedAssets.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.', hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
+      return fail(503, { error: MEDIA_DISABLED_MESSAGE, hash: oldHash, usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
 
     // Re-derive the plan from a FRESH content-manifest read (never trust a client plan). The planner
@@ -1312,7 +1322,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
 
     // Media-enabled guard only: alt fill does no R2 write, so there is no bucket binding to resolve.
     if (!runtime.resolvedAssets.enabled) {
-      return fail(503, { error: 'Media is not enabled for this site.' } satisfies MediaAltPropagateFailure);
+      return fail(503, { error: MEDIA_DISABLED_MESSAGE } satisfies MediaAltPropagateFailure);
     }
 
     // Re-derive from a FRESH content-manifest read with the actual overwrite choice. Strict, so an

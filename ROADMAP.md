@@ -143,8 +143,16 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   gradient, or layout gimmick of the season) that let a viewer date the template from styling alone.
   The test per element: could you name the year from this choice? If yes, it fails, however good it
   looks today. (The "strong CTA with DaisyUI Aura glow" item under Considering is exactly the kind of
-  call this lens adjudicates.) Conducted by the main loop as design critic over the
-  live rendered output (both color modes, real content, the component set), with findings ranked by
+  call this lens adjudicates.) A fourth lens, structural extensibility (Geoff, 2026-07-02): the
+  developer must not be locked into the look-and-feel. Where the first three lenses judge how the
+  design reads, this one judges how it is built: look-and-feel decisions must concentrate in the
+  swappable layer (the Tailwind 4 `@theme` design-scale tokens and named utilities the
+  starter-template pass established), never scattered through component markup. The test: pick three
+  deliberately different redirections (say, an editorial serif look, a dense corporate look, a
+  playful rounded one) and price each — if any requires broad markup surgery rather than token and
+  theme edits, the design is structurally locked regardless of how neutral it reads. Conducted by
+  the main loop as design critic over the live rendered output (both color modes, real content, the
+  component set) plus the template's token and utility architecture, with findings ranked by
   which lens they fall under. Runs after the Wayfinder starter component set lands and
   before the cairn.org intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings

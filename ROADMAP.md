@@ -51,6 +51,18 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
+### The beta gate (Geoff's decisions, not passes; settle before the beta cut)
+
+- [ ] **Define the beta release as an event.** The version scheme (a SemVer pre-release tag like
+  `1.0.0-beta.1` signals beta explicitly while `0.x` semantics continue; or a designated `0.x`
+  milestone), what the accumulated `## Unreleased` window rolls into it, whether beta is the moment
+  the "closely held until the core lands" posture flips, and the support promise to beta users
+  (SECURITY.md's latest-minor line becomes real once strangers depend on it).
+- [ ] **Close the naming window deliberately.** The package (`@glw907/cairn-cms` vs an unscoped name)
+  and the repo home (personal account vs a `cairn` org) are cheapest to change before any external
+  user pins them and maximally painful after. Staying with the current names is fine, but as a
+  decision, not a default; check name availability first.
+
 ## Now
 
 - **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
@@ -64,7 +76,9 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   full test suite as the behavior contract. Anything that wants a public-surface change gets filed
   for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
   queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
-- **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
+- **Cross both production sites onto `0.78.2` (a beta prerequisite, not parallel work).** The
+  cutovers carry the owed live admin smoke against a real Worker, the last unexercised verification
+  class before an admin real editors use ships to beta. The developer-extensibility seam and the editor tag
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
   passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
   work is the site cutovers:
@@ -117,6 +131,30 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.
+- **Wayfinder final design review (adversarial, Fable-conducted, before Wayfinder goes live).**
+  Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
+  enough that a developer or designer could take it many different directions," and simultaneously
+  "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
+  delicate balance, and the review's job is to attack both failure directions: too neutral (reads as
+  unfinished scaffolding, compels no one) and too designed (reads as a look to undo before you can
+  make it yours; or trendy in a way that dates). Conducted by the main loop as design critic over the
+  live rendered output (both color modes, real content, the component set), with findings ranked by
+  which side of the balance they fall on. Runs after the Wayfinder starter component set lands and
+  before the cairn.org intro site or the beta ships the template.
+- **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
+  toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
+  disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
+  (machine paths, account and database identifiers, infrastructure detail — each gets a deliberate
+  public/redact/archive ruling); fork-PR CI hardening (Actions permissions, `pull_request` vs
+  `pull_request_target`, protecting the OIDC publish path from drive-by PRs); branch protection on
+  `main`; the private-vulnerability-reporting toggle plus the SECURITY.md trim (the standing timed
+  item); and the issues-on decision with a minimal triage posture.
+- **The beta dress rehearsal (after the docs rewrite and scaffolder land).** One fresh-environment
+  first-hour run: a clean machine or account, only the public docs and scaffolder, zero context,
+  through to a deployed site with a working admin. Every artifact will have been individually gated
+  by then; this tests the chain the way a beta user experiences it. A cloud agent runs the mechanical
+  path and reports friction; the steps needing real accounts (Cloudflare, GitHub App) are a short
+  attended session.
 - **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
   documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
   prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than

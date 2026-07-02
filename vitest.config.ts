@@ -22,10 +22,13 @@ export default defineConfig({
         test: {
           name: 'unit',
           include: ['src/tests/unit/**/*.test.ts', 'packages/cairn-cms-dev/src/**/*.test.ts'],
-          // The dist cold-import spec spawns a child Node process to import the built barrel. Under the
-          // full run's concurrent IO that spawn starves and its child read flakes, so it runs in its own
-          // single-fork project below; exclude it here so it does not run twice.
-          exclude: ['src/tests/unit/delivery-data-dist-spawn.test.ts'],
+          // Both specs spawn a child process (npm pack, a plain Node resolver probe) against the
+          // built dist. Under the full run's concurrent IO that spawn starves and flakes, so they
+          // run in their own single-fork project below; exclude them here so they do not run twice.
+          exclude: [
+            'src/tests/unit/delivery-data-dist-spawn.test.ts',
+            'src/tests/unit/packaging-boundary.test.ts',
+          ],
           environment: 'node',
           // A few unit tests are CPU-bound (the admin CSS Tailwind+DaisyUI compile, the export
           // enumerator that parses the public surface, a runtime barrel import that vite compiles
@@ -38,12 +41,16 @@ export default defineConfig({
       },
       {
         test: {
-          // The dist cold-import spec spawns a child Node process to cold-import the built barrel, and
-          // that spawn flakes under the full run's concurrent IO. It gets its own non-concurrent project:
-          // a single fork, no file parallelism, so the spawn runs alone. The spec is excluded from the
-          // `unit` project above so it runs here exactly once.
+          // These specs each spawn a child process (a cold-import of the built barrel, an npm pack,
+          // a Node resolver probe) against the built dist, and that spawn flakes under the full
+          // run's concurrent IO. They get their own non-concurrent project: a single fork, no file
+          // parallelism, so each spawn runs alone. Both specs are excluded from the `unit` project
+          // above so they run here exactly once.
           name: 'unit-dist-spawn',
-          include: ['src/tests/unit/delivery-data-dist-spawn.test.ts'],
+          include: [
+            'src/tests/unit/delivery-data-dist-spawn.test.ts',
+            'src/tests/unit/packaging-boundary.test.ts',
+          ],
           environment: 'node',
           // Vitest 4 retired `poolOptions.forks.singleFork`; a single fork is now `maxWorkers: 1` on a
           // forks pool, and `fileParallelism: false` keeps the spec off the shared concurrent pool.

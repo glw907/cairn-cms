@@ -211,7 +211,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnAdminDeps`: { auth?: { branding?: AuthBranding; send?: SendMagicLink }; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number } }
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
-- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> }; PUBLIC_ORIGIN: string; GITHUB_APP_ID: string; GITHUB_APP_INSTALLATION_ID: string; GITHUB_APP_PRIVATE_KEY_B64: string }
+- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> }; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
 - `ContentEvent`: { params: { [x: string]: string }; cookies?: CookieJar; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend }; platform?: PlatformContext<BackendEnv> }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }
 - `ContentRoutesDeps`: { tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number } }

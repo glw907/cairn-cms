@@ -25,9 +25,7 @@ export interface NavLoadData {
   error: string | null;
 }
 
-/**
- *
- */
+/** Build the nav editor's load and save functions, closed over the composed runtime. */
 export function createNavRoutes(runtime: CairnRuntime) {
   /**
    * Resolve the live content backend for one request: the dev double's `event.locals.backend`,

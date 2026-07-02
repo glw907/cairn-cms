@@ -28,21 +28,17 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
 
    The `EMAIL` binding serves both Cloudflare email products through the one declaration. The engine calls it as `env.EMAIL.send({ to, from, subject, html, text })`, which is the Email Sending shape that reaches arbitrary recipients.
 
-   Type those bindings for the build with an `app.d.ts` that imports the engine's ambient `App.Locals` augmentation and points `platform.env` at the `AuthEnv` shape plus the GitHub App secrets. Copy this block verbatim:
+   Type those bindings for the build with an `app.d.ts` that imports the engine's ambient `App.Locals` augmentation and intersects `CairnPlatformBindings` into `platform.env`. Copy this block verbatim:
 
    ```ts
    // src/app.d.ts
    import '@glw907/cairn-cms/ambient';
-   import type { AuthEnv } from '@glw907/cairn-cms/sveltekit';
+   import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';
 
    declare global {
      namespace App {
        interface Platform {
-         env: AuthEnv & {
-           GITHUB_APP_ID: string;
-           GITHUB_APP_INSTALLATION_ID: string;
-           GITHUB_APP_PRIVATE_KEY_B64: string;
-         };
+         env: CairnPlatformBindings;
        }
      }
    }
@@ -50,7 +46,7 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
    export {};
    ```
 
-   Import `AuthEnv` from `/sveltekit`, not the package root. The auth and content helpers a site mounts are typed on that subpath, and `skipLibCheck` does not warn when the import is wrong, so a mistyped binding degrades to an error type in silence (the gap two site retrofits hit).
+   Import `CairnPlatformBindings` from `/sveltekit`, not the package root. The auth and content helpers a site mounts are typed on that subpath, and `skipLibCheck` does not warn when the import is wrong, so a mistyped binding degrades to an error type in silence (the gap two site retrofits hit). `CairnPlatformBindings` names only what the Worker reads at runtime, so it carries `GITHUB_APP_PRIVATE_KEY_B64` but not the App id or the installation id; see step 4 for why those two stay out of `platform.env`.
 
 3. **Onboard your sending domain.** The `EMAIL` binding can only send from a domain the zone has onboarded as a sender, and the magic-link email rides on that send, so an un-onboarded domain locks every editor out. Onboard the domain of your adapter's `branding.from` address:
 
@@ -62,15 +58,15 @@ Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub 
 
    Skip this step and every send throws `E_SENDER_NOT_VERIFIED`. Its message reads "destination address is not a verified address", which misleads twice over. The unverified party is your sender, and Email Routing throws the same string for an unverified forwarding destination, which is a different product. Run `npx cairn-doctor` before launch to catch the gap ahead of the first sign-in; [the doctor reference](../reference/doctor.md) and [the readiness checklist](./cloudflare-readiness.md) cover the full pre-launch gate.
 
-4. **Set the GitHub App secrets.** Push the App id, the installation id, and the base64 private key as Worker secrets (never as plaintext in `wrangler.toml`):
+4. **Set the GitHub App private key as a Worker secret.** Push the base64 private key (never as plaintext in `wrangler.toml`):
 
    ```bash
-   npx wrangler secret put GITHUB_APP_ID
-   npx wrangler secret put GITHUB_APP_INSTALLATION_ID
    npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
    ```
 
    The Worker decodes `GITHUB_APP_PRIVATE_KEY_B64` with `atob()` before it signs, so store the PEM as a single-line base64 string.
+
+   The App id and the installation id aren't secrets, and they never reach `platform.env`. The adapter's `githubApp({ appId, installationId, ... })` call builds the backend at module scope, before a request and its `platform.env` exist, so those two identity facts live in your adapter's source alongside the owner, repo, and branch.
 
 5. **Mount the admin and `/healthz`.** The whole `/admin` surface mounts as one catch-all route pair, and `/healthz` lives at the site root (so the auth guard does not gate the deploy check). Copy the two files and the composer from [the canonical admin mount](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
 

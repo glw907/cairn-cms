@@ -6,7 +6,7 @@ Goal: register and install a GitHub App so an editor's saves and publishes in `/
 
 - A GitHub repository holding the site's content (the markdown the editor will commit to).
 - Owner access on the account or organization that owns the repo (creating and installing an App needs it).
-- The site's Cloudflare Worker, which holds the App credentials as secrets. See [Deploy to Cloudflare](./deploy-to-cloudflare.md).
+- The site's Cloudflare Worker, which holds the App's private key as a secret. See [Deploy to Cloudflare](./deploy-to-cloudflare.md).
 
 This guide assumes you already have a running cairn site. If you are building one for the first time, start from the tutorial, then come back here.
 
@@ -18,12 +18,12 @@ This guide assumes you already have a running cairn site. If you are building on
 
 3. **Install the App on the content repo.** From the App's settings, choose Install App, pick the account that owns the content repo, and scope the install to that repo. After installing, open the installation's settings page and look at its URL; the trailing number is the installation ID. Record it.
 
-4. **Store the three credentials the Worker needs.** The commit path reads three Worker secrets:
-   - `GITHUB_APP_ID`: the App ID shown on the App's settings page.
-   - `GITHUB_APP_INSTALLATION_ID`: the installation ID from step 3.
-   - `GITHUB_APP_PRIVATE_KEY_B64`: the base64 of the `.pem`, on a single line (`base64 -w0 your-key.pem`).
+4. **Record the three credentials the site needs.** Only one of them is a Worker secret:
+   - `GITHUB_APP_ID`: the App ID shown on the App's settings page. Not a secret; pass it as the `appId` your adapter hands to `githubApp({ appId, installationId, ... })` in source.
+   - `GITHUB_APP_INSTALLATION_ID`: the installation ID from step 3. Also not a secret; pass it as `installationId` alongside `appId`.
+   - `GITHUB_APP_PRIVATE_KEY_B64`: the base64 of the `.pem`, on a single line (`base64 -w0 your-key.pem`). This one is the Worker secret: `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
 
-   The Worker decodes the base64 with `atob()` in process before it signs, which is why the secret stays a single line. For key encoding, rotation, and the brittle conversion step, follow [GitHub App private-key rotation](./rotate-the-github-app-key.md) rather than hand-rolling it here.
+   The App ID and installation ID stay out of `platform.env` because the adapter builds the backend at module scope, before a request and its `platform.env` exist. Only the private key is a runtime binding. The Worker decodes the private key's base64 with `atob()` in process before it signs, which is why the secret stays a single line. For key encoding, rotation, and the brittle conversion step, follow [GitHub App private-key rotation](./rotate-the-github-app-key.md) rather than hand-rolling it here.
 
 You may notice the format mismatch in step 4. GitHub issues the key in PKCS#1, and Web Crypto's `importKey('pkcs8', ...)` accepts only PKCS#8, so the Worker converts the key in process. That conversion lives in the signer. You store the key as the base64 of the PKCS#1 PEM, and the engine handles the rest.
 

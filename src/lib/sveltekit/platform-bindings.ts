@@ -22,7 +22,10 @@ import type { AuthEnv } from '../auth/types.js';
  * ```
  *
  * A media-enabled site also intersects {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
- *  on a site that turns media on.
+ *  on a site that turns media on. The GitHub App's id and installation id are not runtime bindings:
+ *  they name which App the commit signer authenticates as, so the adapter passes them as compile-time
+ *  config to `githubApp({ appId, installationId })`, constructed at module scope before
+ *  `platform.env` exists. Only the private key is a Worker secret the engine reads at runtime.
  */
 export interface CairnPlatformBindings {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
@@ -31,12 +34,13 @@ export interface CairnPlatformBindings {
   EMAIL: NonNullable<AuthEnv['EMAIL']>;
   /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
   PUBLIC_ORIGIN: string;
-  /** The GitHub App's id, naming which App the commit signer authenticates as. */
-  GITHUB_APP_ID: string;
-  /** The GitHub App's installation id on the content repository. */
-  GITHUB_APP_INSTALLATION_ID: string;
   /** The GitHub App's private key, base64 of the PEM on one line, decoded with `atob()` before signing. */
   GITHUB_APP_PRIVATE_KEY_B64: string;
+  /**
+   * The Anthropic API key the tidy action reads at runtime, present only on a site that opts
+   *  into tidy. Optional, unlike the bindings above every site needs.
+   */
+  ANTHROPIC_API_KEY?: string;
 }
 
 /**

@@ -43,10 +43,13 @@ itself, matching every other route factory's convention, so `ResolvedAssetConfig
 load-bearing `/sveltekit` surface (it stays exported from `/media`). `CairnAdminDeps` and
 `ContentRoutesDeps` regroup their flat `branding`/`send`/`anthropic`/`tidyTimeoutMs` members into
 two cohesive bags, `auth` and `tidy`. A new `CairnPlatformBindings` interface names every binding
-the engine always reads as required, split from a separate `CairnMediaBindings` carrying
-`MEDIA_BUCKET` (present only on a media-enabled site), so an `app.d.ts` intersection missing a
-binding now fails at compile time instead of surfacing as a runtime `config.bindings-missing`
-error. Finally, `src/lib` leaves the npm tarball's `files` array; the package ships only `dist` and
+the engine reads off `platform.env` at runtime: `AUTH_DB`, `EMAIL`, `PUBLIC_ORIGIN`, and
+`GITHUB_APP_PRIVATE_KEY_B64` are required, and the opt-in tidy action's `ANTHROPIC_API_KEY` is
+optional, so an `app.d.ts` intersection missing a required binding now fails at compile time
+instead of surfacing as a runtime `config.bindings-missing` error. The GitHub App's id and
+installation id are not runtime bindings; they are compile-time adapter config passed to
+`githubApp({ appId, installationId })`. A separate `CairnMediaBindings` carries `MEDIA_BUCKET`,
+present only on a media-enabled site. Finally, `src/lib` leaves the npm tarball's `files` array; the package ships only `dist` and
 `CHANGELOG.md`, and a packaging boundary test locks a deep import of shipped source or an
 unexported `dist` path to fail closed with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
 

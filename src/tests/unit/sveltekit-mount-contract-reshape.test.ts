@@ -58,18 +58,12 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     expect(names).toEqual(['auth', 'tidy']);
   });
 
-  it('CairnPlatformBindings names every always-on engine binding as required', () => {
+  it('CairnPlatformBindings names every always-on engine binding as required, ANTHROPIC_API_KEY optional', () => {
     const { names, required } = memberNames(SVELTEKIT_DTS, 'CairnPlatformBindings');
-    const expected = [
-      'AUTH_DB',
-      'EMAIL',
-      'PUBLIC_ORIGIN',
-      'GITHUB_APP_ID',
-      'GITHUB_APP_INSTALLATION_ID',
-      'GITHUB_APP_PRIVATE_KEY_B64',
-    ];
-    expect(names.sort()).toEqual(expected.sort());
-    expect(required.sort()).toEqual(expected.sort());
+    const expectedNames = ['AUTH_DB', 'EMAIL', 'PUBLIC_ORIGIN', 'GITHUB_APP_PRIVATE_KEY_B64', 'ANTHROPIC_API_KEY'];
+    const expectedRequired = ['AUTH_DB', 'EMAIL', 'PUBLIC_ORIGIN', 'GITHUB_APP_PRIVATE_KEY_B64'];
+    expect(names.sort()).toEqual(expectedNames.sort());
+    expect(required.sort()).toEqual(expectedRequired.sort());
   });
 
   it('CairnMediaBindings names MEDIA_BUCKET as required, split from the always-on bindings', () => {
@@ -84,8 +78,6 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
       AUTH_DB: {} as never,
       EMAIL: {} as never,
       PUBLIC_ORIGIN: 'https://example.com',
-      GITHUB_APP_ID: 'x',
-      GITHUB_APP_INSTALLATION_ID: 'y',
       GITHUB_APP_PRIVATE_KEY_B64: 'z',
       APP_DB: 'db',
     };
@@ -99,8 +91,6 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
       AUTH_DB: {} as never,
       EMAIL: {} as never,
       PUBLIC_ORIGIN: 'https://example.com',
-      GITHUB_APP_ID: 'x',
-      GITHUB_APP_INSTALLATION_ID: 'y',
       APP_DB: 'db',
     };
     expect(env).toBeDefined();
@@ -113,8 +103,6 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
       EMAIL: {} as never,
       PUBLIC_ORIGIN: 'https://example.com',
       MEDIA_BUCKET: {} as never,
-      GITHUB_APP_ID: 'x',
-      GITHUB_APP_INSTALLATION_ID: 'y',
       GITHUB_APP_PRIVATE_KEY_B64: 'z',
       APP_DB: 'db',
     };

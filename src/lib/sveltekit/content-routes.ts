@@ -689,9 +689,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
   return concept;
 }
 
-/**
- *
- */
+/** Build the admin content routes' load and action functions, closed over the composed runtime. */
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.

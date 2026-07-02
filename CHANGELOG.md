@@ -2,6 +2,82 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+<!-- release-size: minor -->
+
+The pre-beta surface-pruning pass shrinks and firms the public contract to exactly what the beta
+freeze will promise. An adversarial audit (19 agents: a prosecutor per export subpath, an Opus
+defender, three shape auditors) convicted every demoted name for having no real consumer import
+across the showcase, ecxc-ski, and 907-life; `docs/internal/api-surface.md`'s diff for this pass is
+the exhaustive, generated list, since the counts below summarize rather than enumerate.
+
+The root `@glw907/cairn-cms` barrel sheds 72 content-graph, manifest, component-grammar, and
+field-arm internals plus the duplicate `ResolvedReference` re-export (its home is `/delivery`);
+every demoted symbol keeps living in its module for the engine's own relative imports, nothing is
+deleted. `/sveltekit` loses `isPublicAdminPath`, `parseAdminPath`, `AdminView`, and `NavRoutesDeps`,
+and `ContentRoutesDeps` loses its `backend` test-injection member from the published type (the
+factories now resolve their backend from `event.locals.backend`, the same seam the dev double
+already rides). `/components` loses `ComponentInsertDialog`, `ComponentForm`, `IconPicker`, and
+`LinkPicker`, plus the three `spellcheck-worker`/`spellcheck-assets` export-map keys;
+`MarkdownEditor` already resolves the spellcheck worker and its two assets itself through a
+module-relative `new URL(..., import.meta.url)`, so no consumer needs a frozen public subpath for
+them, and the showcase's spike route that imported them is deleted. `/delivery` and
+`/delivery/data` each lose `createSiteResolver`, `ConceptIndex`, `createContentIndex`, `RawFile`,
+`fromGlob`, `wordCount`, and `permalink`, all internals of the `createSiteIndexes` hand-assembly
+escape hatch. `/media` loses 14 names: the manifest CRUD, the content-hash naming helpers, the
+Cloudflare Images transform-URL builders, and `manifestMediaResolver`. `/vite` loses
+`writeManifest`, `readAdapterFacts`, `AdapterFacts`, `verifyManifestFromVite`,
+`buildManifestFromVite`, and `stripCairnManifest`, keeping only `cairnManifest` and
+`CairnManifestOptions`.
+
+Five shape reshapes ride the same window. `ConceptConfig.routing` closes to the
+`'feed' | 'page' | 'embedded'` shorthand union; the `RoutingRule` object form leaves the barrel, and
+`resolveRouting` now throws on a defined-but-unrecognized routing value instead of silently
+resolving to `undefined`, closing the runtime edge a cast can still reach around the closed
+compile-time union. `parseSiteConfig` becomes loud about the config boundary: an unrecognized
+top-level `site.config.yaml` key throws, and a closed set of adapter-owned keys
+(`content`, `backend`, `email`, `rendering`, `media`, `editor`) names `cairn.config.ts` as their
+correct home. `createMediaRoute` now takes the composed `runtime` and reads `resolvedAssets`
+itself, matching every other route factory's convention, so `ResolvedAssetConfig` stops being
+load-bearing `/sveltekit` surface (it stays exported from `/media`). `CairnAdminDeps` and
+`ContentRoutesDeps` regroup their flat `branding`/`send`/`anthropic`/`tidyTimeoutMs` members into
+two cohesive bags, `auth` and `tidy`. A new `CairnPlatformBindings` interface names every binding
+the engine always reads as required, split from a separate `CairnMediaBindings` carrying
+`MEDIA_BUCKET` (present only on a media-enabled site), so an `app.d.ts` intersection missing a
+binding now fails at compile time instead of surfacing as a runtime `config.bindings-missing`
+error. Finally, `src/lib` leaves the npm tarball's `files` array; the package ships only `dist` and
+`CHANGELOG.md`, and a packaging boundary test locks a deep import of shipped source or an
+unexported `dist` path to fail closed with `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+
+The pass also lands the gate-enforced three-tier stability vocabulary: `Extension API` and
+`Scaffold API` (both existing) are the frozen contract, and a new `Unstable API` tier marks an
+export that stays importable with no stability promise across minors. `check:reference` now fails
+on any enumerated export missing a tier and on any backticked name in a page's export table or
+heading that no longer exists in that subpath's exports (the reverse stale-prose lock). The sweep
+assigns `Unstable API` to the eleven page-level components, the four piecewise route factories and
+their config/deps/result satellite types, and `feedView`; `MarkdownEditor`'s stable contract
+narrows to eleven props (`value`, `name`, `registerInsert`, `registerFormat`,
+`completionSources`, `focusMode`, `typewriter`, `surface`, `spellcheck`, `spellcheckDictionary`,
+`siteDictionary`), with every other prop documented as `Unstable API` `EditPage` wiring.
+
+This is breaking. Consumers must:
+
+- Import `ResolvedReference` from `@glw907/cairn-cms/delivery`, not the root barrel (no known
+  consumer imported it from root).
+- Pass the runtime to `createMediaRoute(runtime)` instead of `runtime.resolvedAssets`.
+- Regroup `createCairnAdmin` deps: `anthropic` becomes `tidy.client`, `tidyTimeoutMs` becomes
+  `tidy.timeoutMs`, and `branding`/`send` become `auth.branding`/`auth.send`.
+- Declare a concept's `routing` with only the string shorthand; the `RoutingRule` object form no
+  longer type-checks or resolves at runtime (no known consumer used the object form).
+- Fix a `site.config.yaml` that carries an adapter-owned or otherwise unrecognized top-level key;
+  `parseSiteConfig` now throws with the key's correct home.
+- Declare `Platform.env` via `CairnPlatformBindings & CairnMediaBindings & { /* the site's own
+  bindings */ }` (recommended, not strictly required) instead of hand-listing each binding.
+- Stop importing any name demoted above; `docs/internal/api-surface.md`'s diff for this pass is
+  the authoritative list, and grepping the showcase, ecxc-ski, and 907-life found no consumer
+  import touching any of them, so no site is known to need this action.
+
 ## 0.78.2
 
 <!-- release-size: patch -->

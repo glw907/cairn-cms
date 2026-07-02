@@ -84,4 +84,14 @@ describe('admin css build', () => {
     expect(css).not.toMatch(/:where\(\[data-theme=[^)]*\)\s*[>~+]/);
     expect(css).toContain('.lg\\:drawer-open > .drawer-toggle ~ .drawer-side');
   });
+
+  // The admin build must scan ONLY the admin components, never the whole repo. These tokens exist only in
+  // examples/showcase and in docs that discuss the showcase rename; if the sheet carries them, Tailwind's
+  // automatic source detection is scanning outside src/lib/components and compiling foreign candidates into
+  // the shipped artifact. Do not weaken this: a hit means the content scope regressed.
+  it('compiles no foreign token from outside the admin components', () => {
+    for (const foreign of ['--text-step', '--container-measure', '--cairn-step', '--cairn-space', '--cairn-measure']) {
+      expect(css, `foreign token ${foreign} leaked into the shipped admin sheet`).not.toContain(foreign);
+    }
+  });
 });

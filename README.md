@@ -44,9 +44,8 @@ npm install @glw907/cairn-cms
 
 Cairn is obviously not for you if you don't have (or don't want) a Cloudflare account, if
 your team works in React or another framework, or if you need open-ended user-defined
-collections rather than a fixed set of declared concepts. Those aren't gaps to be fixed. They're the trade
-the rest of this README is built on, argued in
-[Why cairn](./docs/explanation/why-cairn.md).
+collections rather than a fixed set of declared concepts. Each of those constraints is a
+deliberate choice, and [Why cairn](./docs/explanation/why-cairn.md) argues them one by one.
 
 Start with the
 [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed

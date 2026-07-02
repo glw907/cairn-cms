@@ -39,6 +39,17 @@ polished idiom). Worktree off `main` (suggested branch: `docs-rewrite-1`).
   needs an engine fix files to STATUS carry-forwards instead.
 - Conventional commits; one commit per task or coherent page group; docs-only commits skip
   `code-simplifier`.
+- **Outline gate for the open-shape documents (Geoff, 2026-07-02).** Before any prose, the
+  ~twelve documents whose structure is genuinely open get heading-plus-one-liner outlines:
+  the two front doors and `why-cairn` (Task 2), the tutorial's milestone-level outline with
+  payoff and diagram placements (Task 3), the seven new/replaced pages (Task 4's three new
+  guides and the thin upgrade guide; Task 7's `docs-maintenance` and showcase README), and
+  the two explanation restructures (Task 5's `security-model` and `media-storage`). All
+  outlines are reviewed in ONE batched adversarial pass (a single Opus reviewer against the
+  IA inventory, the comparables' leanness lessons, and the register rules — including
+  cross-page duplication, the failure mode that produced the render-safety overlap), the
+  main loop rules on findings, and only then does prose begin. Survivor pages and
+  defect-list rewrites skip the gate; their shapes are already settled.
 
 ---
 

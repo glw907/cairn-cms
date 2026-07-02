@@ -310,3 +310,9 @@ waste, discarded as each page is replaced.
   `2026-07-02-docs-craft-references.md` Study 4 and binds every dispatch and review.
 - **One end-to-end journey per audience**: the tutorial is the developer's; the editor's
   (sign in → edit → publish) lives in editor-welcome and must stay complete.
+
+- **Geoff's own voice is a register factor (Geoff, 2026-07-02):** plain, direct, dry,
+  judgment-forward, unceremonious; parenthetical asides allowed; no performance. Cairn is a
+  solo project and the honest pronoun is **"I"** wherever a person speaks (the ripgrep and
+  re-frame precedent), never a fictitious "we". Length may breathe when the extra sentences
+  are doing real work.

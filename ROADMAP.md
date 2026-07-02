@@ -122,6 +122,15 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
   Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
   produces the content Topo hosts); gives the scaffolder its first real template choice.
+- **The project sites: cairn.org on Wayfinder, docs.cairn.org on Topo.** Two sites, not one, because
+  a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
+  either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
+  of its template: the intro site is the Pages-plus-Posts shape cairn targets, and the click-through
+  proof a prospective user sees before running the scaffolder; the docs site is the engine
+  publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Wayfinder
+  derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
+  Wayfinder as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
+  hosts them. Domain procurement is its own small first step.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX

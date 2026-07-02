@@ -5,10 +5,13 @@ import type {
   Fieldset,
   InferFieldset,
   FieldsetOptions,
-  BehaviorTable,
-  FieldBehavior,
   NamedField,
   ImageValue,
+  StandardInput,
+  StandardSchemaV1,
+} from '../../lib/index.js';
+import type { BehaviorTable, FieldBehavior } from '../../lib/content/fieldset.js';
+import type {
   TextField,
   TextareaField,
   NumberField,
@@ -20,9 +23,7 @@ import type {
   DatetimeField,
   BooleanField,
   ImageField,
-  StandardInput,
-  StandardSchemaV1,
-} from '../../lib/index.js';
+} from '../../lib/content/fields.js';
 
 describe('v2 field vocabulary package exports', () => {
   it('exports the fields constructor namespace from the main entry', () => {
@@ -30,9 +31,14 @@ describe('v2 field vocabulary package exports', () => {
     expect(typeof cairn.fields.select).toBe('function');
   });
 
-  it('exports fieldset and initialValues from the main entry', () => {
+  it('exports fieldset from the main entry', () => {
     expect(typeof cairn.fieldset).toBe('function');
-    expect(typeof cairn.initialValues).toBe('function');
+  });
+
+  it('omits initialValues from the root barrel but keeps it reachable from its module', async () => {
+    expect('initialValues' in cairn).toBe(false);
+    const fieldsetModule = await import('../../lib/content/fieldset.js');
+    expect(typeof fieldsetModule.initialValues).toBe('function');
   });
 
   it('exports the v2 field types', () => {
@@ -47,8 +53,9 @@ describe('v2 field vocabulary package exports', () => {
     expectTypeOf<FieldBehavior>().toMatchTypeOf<{ validate?: unknown }>();
   });
 
-  it('reclaims the v2 *Field interfaces, NamedField, and ImageValue from the main entry', () => {
-    // Type-level imports; if the barrel drops a name this file fails to type-check under svelte-check.
+  it('keeps the *Field interfaces, NamedField, and ImageValue reachable through FieldDescriptor narrowing', () => {
+    // Type-level imports from their own modules, not the root barrel: the surface-pruning pass
+    // demotes these arms in favor of the kept FieldDescriptor union and structural `kind` narrowing.
     expectTypeOf<TextField>().toMatchTypeOf<{ type: 'text' }>();
     expectTypeOf<TextareaField>().toMatchTypeOf<{ type: 'textarea' }>();
     expectTypeOf<NumberField>().toMatchTypeOf<{ type: 'number' }>();

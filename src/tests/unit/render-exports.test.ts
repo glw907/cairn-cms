@@ -1,13 +1,19 @@
 import { describe, it, expect } from 'vitest';
-import { createRenderer, defineRegistry, glyph, remarkDirectiveStamp } from '../../lib/index.js';
+import { createRenderer, defineRegistry, glyph } from '../../lib/index.js';
 import * as engine from '../../lib/index.js';
 import * as authoring from '../../lib/render/authoring.js';
 
 describe('engine entry render surface', () => {
   it('keeps the core render entry points on the root barrel', () => {
-    for (const fn of [createRenderer, defineRegistry, glyph, remarkDirectiveStamp]) {
+    for (const fn of [createRenderer, defineRegistry, glyph]) {
       expect(typeof fn).toBe('function');
     }
+  });
+
+  it('omits remarkDirectiveStamp from the root barrel but keeps it reachable from its module', async () => {
+    expect('remarkDirectiveStamp' in engine).toBe(false);
+    const directives = await import('../../lib/render/remark-directives.js');
+    expect(typeof directives.remarkDirectiveStamp).toBe('function');
   });
 
   it('no longer exports the authoring helpers from the root entry', () => {

@@ -85,6 +85,6 @@ author to resolve the conflict. The author sees a named refusal and acts on it; 
 graph with no signal.
 
 The reference field's surface is documented in [the core reference](../reference/core.md#field-types), the
-build gate in [`verifyReferences`](../reference/core.md#manifest-parse-serialize-verify-and-diff), and the
+build gate in [`verifyReferences`](../reference/core.md#manifest-serialize-and-verify), and the
 read-model resolver in [`resolveReferences`](../reference/delivery-data.md#resolvereferences). For the wider
 content graph the references join, see [the content model](./content-model.md#the-content-graph).

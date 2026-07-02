@@ -682,10 +682,12 @@ permanent id, so a rename or slug change never breaks the link. The editor rende
 target concept in the Details panel, renaming a target repoints its inbound references on `main`, deleting
 a referenced target refuses fail-closed across open branches, and the build's `verifyReferences` gate fails
 on a dangling edge. The public read model resolves an edge to its target's identity through the new
-`resolveReferences` on `/delivery`. The barrel adds `fields.reference`, `fields.array`, `ReferenceField`,
-`ArrayField`, `ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`. Consumers
-must: nothing. References are additive; a site that declares no reference field is unchanged. To adopt them,
-see [Link content with references](./link-content-with-references.md).
+`resolveReferences` on `/delivery`. The barrel adds `fields.reference`, `fields.array`, and
+`verifyReferences`. (`ReferenceField`, `ArrayField`, `ReferenceEdge`, and `InboundReference` left the
+root barrel again in the pre-beta surface-pruning pass; `ResolvedReference` moved to `/delivery`,
+its resolver's home.) Consumers must: nothing. References are additive; a site that declares no
+reference field is unchanged. To adopt them, see [Link content with
+references](./link-content-with-references.md).
 
 ## 0.71.0: structured fields, additive
 

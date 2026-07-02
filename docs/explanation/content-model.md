@@ -26,8 +26,9 @@ should have an opinion on. A Post and a Page differ in real ways (whether the UR
 for one), so the engine models them as distinct named concepts and gives each its own behavior.
 Multiplicity comes from distinct concepts, never from a duplicate one.
 
-You declare your concepts through `defineAdapter`, and the engine reads them through
-`normalizeConcepts`. Both live in [`core.md`](../reference/core.md#defineadapter).
+You declare your concepts through `defineAdapter`, documented in
+[`core.md`](../reference/core.md#defineadapter). The engine normalizes them into uniform descriptors
+internally; `composeRuntime` is the one call site.
 
 ## URL identity
 
@@ -50,8 +51,9 @@ the day. That granularity decides how much of the leading date the slug strips.
 The URL itself is not built from the id alone. Each concept declares its own URL policy, its
 `permalink` pattern and `datePrefix`, through `defineConcept`, and a site-level catch-all
 `byPermalink` route serves the resolved URL. A single URL draws on the frontmatter date and the
-concept's declared policy, both of which live on the concept, the one home for the address. The id
-helpers and `permalink` are documented in [`core.md`](../reference/core.md#id-helpers).
+concept's declared policy, both of which live on the concept, the one home for the address.
+`defineConcept` is documented in [`core.md`](../reference/core.md); the id-to-filename helpers
+themselves are engine-internal, owned by the save and delete paths.
 
 cairn validates the URL policy at the concept declaration, so a wrong shape throws at module load
 instead of emitting a defaulted URL. A permalink pattern must be root-relative (it starts with `/`)
@@ -118,5 +120,6 @@ file-derived graph at build regardless. Putting the graph in D1 would create a s
 reconciliation point, since the build never sees D1 to catch drift from a raw-git edit. A committed
 manifest is one artifact the build regenerates and verifies, and it stays version-controlled,
 diffable in a pull request, and recoverable by a revert. The full placement rule lives in
-[data tiers](./data-tiers.md). The manifest helpers and the `cairn:` link helpers are documented in
-[`core.md`](../reference/core.md#manifest-parse-serialize-verify-and-diff).
+[data tiers](./data-tiers.md). The manifest's serialize and verify operations are documented in
+[`core.md`](../reference/core.md#manifest-serialize-and-verify); the `cairn:` link grammar and the
+rest of the manifest's read-write operations are engine-internal.

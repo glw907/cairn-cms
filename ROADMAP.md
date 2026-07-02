@@ -53,11 +53,18 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ### The beta gate (Geoff's decisions, not passes; settle before the beta cut)
 
-- [ ] **Define the beta release as an event.** The version scheme (a SemVer pre-release tag like
-  `1.0.0-beta.1` signals beta explicitly while `0.x` semantics continue; or a designated `0.x`
-  milestone), what the accumulated `## Unreleased` window rolls into it, whether beta is the moment
-  the "closely held until the core lands" posture flips, and the support promise to beta users
-  (SECURITY.md's latest-minor line becomes real once strangers depend on it).
+- [ ] **Define the beta release as an event, and adopt the long-term numbering scheme at it**
+  (Geoff, 2026-07-02: from beta on, version numbers carry durable, useful meaning). Standing
+  recommendation: strict SemVer with compatibility meaning from beta day — beta ships as
+  `1.0.0-beta.1` and iterates as `-beta.N` under an npm `beta` dist-tag (`latest` stays on `0.x`
+  until `1.0.0`), a pre-release bump that breaks a consumer carries its `Consumers must:` line, and
+  `1.0.0` lands when this checklist holds. The test the scheme must pass: a consumer reads the
+  number correctly with zero cairn-specific documentation, which only compatibility-meaning SemVer
+  does (the `0.x` scale heuristic was scaffolding; CalVer says when, never whether it breaks you).
+  Adopting at beta rather than `1.0` is deliberate: beta users are exactly who needs the number to
+  mean something. Also in this decision: what the accumulated `## Unreleased` window rolls into the
+  beta cut, whether beta flips the "closely held until the core lands" posture, and the support
+  promise to beta users (SECURITY.md's latest-minor line becomes real once strangers depend on it).
 - [ ] **Close the naming window deliberately.** The package (`@glw907/cairn-cms` vs an unscoped name)
   and the repo home (personal account vs a `cairn` org) are cheapest to change before any external
   user pins them and maximally painful after. Staying with the current names is fine, but as a

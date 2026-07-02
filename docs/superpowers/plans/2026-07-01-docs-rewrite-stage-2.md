@@ -160,11 +160,21 @@ lists; editor guides read in one voice.
 
 - [ ] Dispatch, gates, commit
 
-### Task 7: Repo health, kills, and pass consolidation
+### Task 7: Repo health, kills, the staleness sweep, and pass consolidation
 
 **Outcome:** `examples/showcase/README.md` (new, short: the Wayfinder template and the
 tutorial's companion); the stray `docs/cairn-dx-feedback-2026-06-09-*.md` moves to
-`docs/internal/history/`; ROADMAP updates — the docs-rewrite Next entry marked done and
+`docs/internal/history/`; **a repo-wide stale-docs sweep** (Geoff, 2026-07-02): every file
+under `docs/internal/` (and any doc outside the published arms) is graded current, superseded,
+or history — superseded design docs move to `docs/internal/history/` per the established
+archive convention; internal docs whose public-worthy content the rewrite absorbed (starting
+with `what-cairn-is-and-is-not.md` → `why-cairn.md`) gain a one-line pointer header naming
+their successor; every internal doc that published pages used to link into is either public
+now or unreferenced; the friction log is pruned of items this pass resolves. Exempt by
+convention: `docs/superpowers/` plans and specs, post-mortems, and everything already under
+`history/` — those are write-once records, not staleness. The sweep is graded work
+(implementer inventories and proposes, main loop rules on each disposition), not a bulk
+delete; ROADMAP updates — the docs-rewrite Next entry marked done and
 removed, the community-file triggers filed (CONTRIBUTING + templates when PRs are solicited;
 CODE_OF_CONDUCT when a community space exists; the SECURITY.md go-public toggle+trim as a
 timed item on the go-public pass); CHANGELOG entry under `## Unreleased` (docs overhaul,

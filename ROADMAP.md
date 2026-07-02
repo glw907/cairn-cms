@@ -150,10 +150,19 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   starter-template pass established), never scattered through component markup. The test: pick three
   deliberately different redirections (say, an editorial serif look, a dense corporate look, a
   playful rounded one) and price each — if any requires broad markup surgery rather than token and
-  theme edits, the design is structurally locked regardless of how neutral it reads. Conducted by
-  the main loop as design critic over the live rendered output (both color modes, real content, the
-  component set) plus the template's token and utility architecture, with findings ranked by
-  which lens they fall under. Runs after the Wayfinder starter component set lands and
+  theme edits, the design is structurally locked regardless of how neutral it reads. This lens also
+  owns accessibility-under-retheming: the contrast floors must be encoded in the token
+  relationships so a redirect inherits them, not achieved accidentally by the default palette. A
+  fifth lens, content robustness (2026-07-02): the template must survive its actual users'
+  content, not the showcase's curated demos — the review renders a hostile-but-realistic fixture
+  set (a 140-character title, a post with no hero image, two entries and two hundred, unbroken
+  text walls, deep list nesting, a directive component mid-prose, an over-wide table) and judges
+  what breaks. The review's method also carries one measured floor, not a lens: default page
+  weight and a Lighthouse-class check on the rendered pages, since compelling-by-default must not
+  mean heavy-by-default. Conducted by
+  the main loop as design critic over the live rendered output (both color modes, the stress
+  fixtures, the component set) plus the template's token and utility architecture, with findings
+  ranked by which lens they fall under. Runs after the Wayfinder starter component set lands and
   before the cairn.org intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from

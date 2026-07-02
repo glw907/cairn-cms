@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { transformPackageJson, shouldExclude } from './emit-template.mjs';
+import { transformPackageJson, isExcluded } from './emit-template.mjs';
 
 test('transformPackageJson rewrites the engine and dev specs and renames the package', () => {
   const input = {
@@ -20,11 +20,11 @@ test('transformPackageJson rewrites the engine and dev specs and renames the pac
   assert.equal(out.devDependencies.vite, '^8');
 });
 
-test('shouldExclude matches an excluded dir and its children, not a prefix sibling', () => {
+test('isExcluded matches an excluded dir and its children, not a prefix sibling', () => {
   const exclude = ['src/routes/test', 'playwright.config.ts'];
-  assert.equal(shouldExclude('src/routes/test', exclude), true);
-  assert.equal(shouldExclude('src/routes/test/last-commit/+server.ts', exclude), true);
-  assert.equal(shouldExclude('playwright.config.ts', exclude), true);
-  assert.equal(shouldExclude('src/routes/testimonials/+page.svelte', exclude), false);
-  assert.equal(shouldExclude('src/routes/(site)/+page.svelte', exclude), false);
+  assert.equal(isExcluded('src/routes/test', exclude), true);
+  assert.equal(isExcluded('src/routes/test/last-commit/+server.ts', exclude), true);
+  assert.equal(isExcluded('playwright.config.ts', exclude), true);
+  assert.equal(isExcluded('src/routes/testimonials/+page.svelte', exclude), false);
+  assert.equal(isExcluded('src/routes/(site)/+page.svelte', exclude), false);
 });

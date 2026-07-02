@@ -22,7 +22,7 @@ export function transformPackageJson(pkg, { name, engineSpec, devSpec }) {
 }
 
 /** True when rel is an excluded path or sits under an excluded directory. */
-export function shouldExclude(rel, exclude) {
+export function isExcluded(rel, exclude) {
   const norm = rel.split(path.sep).join('/');
   return exclude.some((ex) => norm === ex || norm.startsWith(ex + '/'));
 }
@@ -48,7 +48,7 @@ export async function emitTemplate({ from, to, engineSpec, devSpec, name = 'cair
       if (rel === '') return true;
       const top = rel.split(path.sep)[0];
       if (alwaysSkip.includes(top)) return false;
-      return !shouldExclude(rel, exclude);
+      return !isExcluded(rel, exclude);
     },
   });
   const pkg = JSON.parse(await readFile(path.join(from, 'package.json'), 'utf8'));

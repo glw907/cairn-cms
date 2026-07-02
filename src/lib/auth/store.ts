@@ -1,5 +1,5 @@
-// D1 access for auth, through prepared statements only. No ORM. Each function takes the
-// `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
+// cairn-cms: D1 access for auth, through prepared statements only. No ORM. Each function takes
+// the `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
 // SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
 import type { D1Database } from '@cloudflare/workers-types';
 import type { Editor, Role } from './types.js';

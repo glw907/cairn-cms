@@ -3,11 +3,13 @@
 // major, so this gate holds the editor theme's chrome coupling to a by-name floor. Writing-surface content
 // classes and cairn's own `.cm-cairn-*` decorations are allow-listed; the sole sanctioned chrome touch is a
 // neutralize of `.cm-tooltip` (CM force-adds that class to every tooltip). Wired as `npm run check:cm-internals`.
-import { readFileSync, readdirSync, statSync } from 'node:fs';
-import { resolve, dirname, join, relative } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { walk } from './walk-files.mjs';
+import { repoRoot } from './repo-root.mjs';
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const ROOT = repoRoot(import.meta.url);
 // Three regexes with three jobs. TOKEN is GLOBAL (for matchAll) and must never be reused for `.test()`
 // (a global regex's .test() advances lastIndex and is stateful across calls). HAS_CM is the stateless
 // boolean for the staleness guard. DYNAMIC catches a dynamically composed CHROME name; cairn's own
@@ -26,22 +28,6 @@ const DYNAMIC = /\.cm-(?!cairn-)[a-zA-Z-]*\$\{/;
  */
 export function collectCmTokens(source) {
   return [...source.matchAll(TOKEN)].map((m) => m[0]);
-}
-
-/**
- * Every file path under `dir` (recursive) whose basename passes `keep`.
- * @param {string} dir
- * @param {(name: string) => boolean} keep
- * @returns {string[]}
- */
-function walk(dir, keep) {
-  const out = [];
-  for (const name of readdirSync(dir)) {
-    const full = join(dir, name);
-    if (statSync(full).isDirectory()) out.push(...walk(full, keep));
-    else if (keep(name)) out.push(full);
-  }
-  return out;
 }
 
 /**

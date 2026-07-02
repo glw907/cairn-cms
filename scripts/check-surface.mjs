@@ -13,7 +13,7 @@ import ts from 'typescript';
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { enumerateExports, moduleExports } from './reference-coverage.mjs';
+import { enumerateExports, moduleExports, loadDts } from './reference-coverage.mjs';
 import { normalizeSignature } from './check-reference-signatures.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -146,14 +146,7 @@ function renderExport(checker, exportSym) {
 // the ambient identity contract (the `editor`/`backend` fields) drifts the snapshot.
 /** @param {string} dtsPath */
 function renderAmbient(dtsPath) {
-  const program = ts.createProgram([dtsPath], {
-    noEmit: true,
-    skipLibCheck: true,
-    moduleResolution: ts.ModuleResolutionKind.Bundler,
-  });
-  const checker = program.getTypeChecker();
-  const source = program.getSourceFile(dtsPath);
-  if (!source) throw new Error(`cannot load ${dtsPath}`);
+  const { checker, source } = loadDts(dtsPath);
   /** @type {Record<string, string>} */
   const exports = {};
   /** @param {import('typescript').Node} node */

@@ -361,6 +361,32 @@ export function formatContrastTable(rows) {
   return [head, ...body].join('\n');
 }
 
+/**
+ * Print the contrast table, then report PASS or FAIL against the failing rows. The live gate and
+ * the re-skin fixture (reskin-fixture.mjs) share this reporting shape; only the PASS/FAIL wording
+ * differs between the two callers, so each supplies its own message builders.
+ * @param {ReturnType<typeof checkThemeContrast>} rows
+ * @param {(passCount: number) => string} passMessage
+ * @param {(failCount: number) => string} failMessage
+ * @returns {boolean} Whether every row passed.
+ */
+export function reportContrast(rows, passMessage, failMessage) {
+  console.log('');
+  console.log(formatContrastTable(rows));
+  const failures = rows.filter((r) => !r.pass);
+  if (failures.length) {
+    console.error('');
+    console.error(failMessage(failures.length));
+    for (const r of failures) {
+      console.error(`  ${r.theme} ${r.label}: sRGB ${r.srgb.toFixed(2)}, P3 ${r.p3.toFixed(2)} (need ${r.threshold.toFixed(1)})`);
+    }
+    return false;
+  }
+  console.log('');
+  console.log(passMessage(rows.length));
+  return true;
+}
+
 // ============================================================================
 // (c) Token resolution. A reference to a custom property that no block defines
 // resolves to nothing (the `var()` has no fallback), so a colour or a rule
@@ -494,20 +520,12 @@ function main() {
   // (b) Dual-gamut AA contrast.
   const css = readFileSync(THEME_CSS, 'utf8');
   const rows = checkThemeContrast(css);
-  console.log('');
-  console.log(formatContrastTable(rows));
-  const failures = rows.filter((r) => !r.pass);
-  if (failures.length) {
-    console.error('');
-    console.error(`Contrast check: FAIL (${failures.length} pair(s) below AA in at least one gamut)`);
-    for (const r of failures) {
-      console.error(`  ${r.theme} ${r.label}: sRGB ${r.srgb.toFixed(2)}, P3 ${r.p3.toFixed(2)} (need ${r.threshold.toFixed(1)})`);
-    }
-    failed = true;
-  } else {
-    console.log('');
-    console.log(`Contrast check: PASS (${rows.length} pairs clear AA in both sRGB and P3)`);
-  }
+  const contrastPassed = reportContrast(
+    rows,
+    (n) => `Contrast check: PASS (${n} pairs clear AA in both sRGB and P3)`,
+    (n) => `Contrast check: FAIL (${n} pair(s) below AA in at least one gamut)`,
+  );
+  if (!contrastPassed) failed = true;
 
   // (c) Token resolution.
   const dangling = checkTokenResolution(css, readFileSync(PROSE_CSS, 'utf8'));

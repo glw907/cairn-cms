@@ -10,7 +10,7 @@ import ts from 'typescript';
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CONFIG, enumerateExports, moduleExports } from './reference-coverage.mjs';
+import { CONFIG, enumerateExports, moduleExports, resolveEntries, runIfMain } from './reference-coverage.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -227,12 +227,7 @@ function checkOne(entry) {
 }
 
 function main() {
-  const only = process.argv[2];
-  const entries = only ? CONFIG.filter((c) => c.subpath === only) : CONFIG;
-  if (only && entries.length === 0) {
-    console.error(`unknown subpath ${only}`);
-    process.exit(2);
-  }
+  const entries = resolveEntries(process.argv[2], CONFIG);
   let failed = false;
   for (const entry of entries) {
     const r = checkOne(entry);
@@ -251,6 +246,4 @@ function main() {
   process.exit(failed ? 1 : 0);
 }
 
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  main();
-}
+runIfMain(main, import.meta.url);

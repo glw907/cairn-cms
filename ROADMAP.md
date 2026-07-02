@@ -114,6 +114,14 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.
+- **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
+  documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
+  prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than
+  exhaustively. Once Topo exists, cairn's own documentation moves onto it, so the engine publishes
+  its own manual (the strongest dogfood available, and the standing proof that the docs-site use
+  case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
+  Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
+  produces the content Topo hosts); gives the scaffolder its first real template choice.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX

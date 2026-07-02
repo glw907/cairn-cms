@@ -295,3 +295,18 @@ never-merged branch `opus-docs-anti-exemplar` (pointed at the last pre-rewrite m
 briefs may cite it only as contrast. The Task 1 snippet gate keeps its full value (the
 mechanism outlives the corpus it first ran on); its fixes to old-page snippets are accepted
 waste, discarded as each page is replaced.
+
+## Register rules from the sentiment study (2026-07-02, binding)
+
+- **"Just", "simply", "obviously" are banned in editor-class prose** (the Ghost curse-of-
+  knowledge tell); prerequisites are stated, never assumed. The civilians' asymmetry: nobody
+  complains a help page was too easy — err plain and short.
+- **Every page ends in an action** the reader copies or clicks ("polish without actionability"
+  is the named AI-smell); every option documented is also *explained* (what it does, when
+  you'd want it).
+- **Committed judgment is the register**: named defaults, honest limitations, "don't do this"
+  — the positive inversion of the AI-smell checklist, and the voice cairn's charter already
+  speaks. The full checklist (structural + content tells) lives in
+  `2026-07-02-docs-craft-references.md` Study 4 and binds every dispatch and review.
+- **One end-to-end journey per audience**: the tutorial is the developer's; the editor's
+  (sign in → edit → publish) lives in editor-welcome and must stay complete.

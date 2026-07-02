@@ -167,3 +167,119 @@ My earlier structural survey (logo → tagline → visual → install → bullet
 Recommendation: 1 as the tagline with 2's content as the spec paragraph's opening sentence — the pair reproduces the Laravel/ripgrep two-beat (memorable line, then full specification).
 
 Sources: [Ask HN best docs](https://news.ycombinator.com/item?id=17399340) · [awesome-readme](https://github.com/matiassingers/awesome-readme) · [ripgrep README](https://github.com/BurntSushi/ripgrep/blob/master/README.md) · [re-frame README](https://github.com/day8/re-frame) · [Laravel README](https://github.com/laravel/laravel) · [HTTPie README](https://github.com/httpie/cli) · [Mintlify on Stripe docs](https://www.mintlify.com/blog/stripe-docs) · [apidog on Stripe docs](https://apidog.com/blog/stripe-docs/) · [How to write a great README (HN)](https://news.ycombinator.com/item?id=36773022) · [Art of README (HN)](https://news.ycombinator.com/item?id=32333350) · HN Algolia comment search (individual comment quotes, 2014-2026)
+
+---
+
+# Study 4: field sentiment — praise, frustration, and the AI-smell checklist (structure/content split)
+
+All three research agents have reported. Synthesizing now into the structured report with the [structure]/[content] tagging from the addendum.
+
+---
+
+# Documentation praise/frustration field research — calibration report for cairn docs rewrite
+
+**Method note:** Quotes are verbatim from fetched sources. HN quotes pulled via Algolia API (original comment text); CMS quotes from WordPress.org reviews/forums, Capterra, Trustpilot, TrustRadius, Threads, and blog reviews. Reddit was unreachable in this environment (domain-level block); HN + review sites substitute with comparably candid first-person voice. Attribution by platform only.
+
+---
+
+## 1. Praise evidence — what people say when docs work
+
+| Quote | Source | Property credited |
+|---|---|---|
+| "An example that would look like `get("<YOUR API KEY>")` in every other document you've ever seen would actually contain YOUR API key in the Stripe.com docs. Simply brilliant." | HN, re: Stripe | [content] examples runnable as-is, zero substitution needed |
+| "The personalized code samples & easy library switching features of Stripe docs are a dream." | HN, re: Stripe | [content] personalized samples; [structure] per-language switching |
+| "TailwindCSS's docs are some of the best I've used. It's arguably the best way to learn not just Tailwind, but CSS itself." | HN, re: Tailwind | [content] teaches the underlying domain, not just the tool |
+| "the Tailwind docs are miles easier to search than grepping the codebase" | HN, re: Tailwind | [structure] search/findability beats source-diving |
+| "Instead I always go to tailwind docs, and quickly learn the utility class that just does the thing I want." | HN, re: Tailwind | [structure] fast task-oriented lookup |
+| "I would go to the tailwind doc pages and see the underlying css of any class." | HN, re: Tailwind | [content] transparency about the mechanism |
+| "Their reference docs are great, but their tutorial really shines... Each step provides a working example next to the documentation, allowing you to figure it out before clicking the 'Show me' button for help." | HN, re: Svelte | [structure] interactive tutorial with try-first design |
+| "there's not much to it and you can read the entire docs in a few hours." | HN, re: Svelte | [structure] bounded, finishable corpus |
+| "It not only explains, it educates." | HN, re: Django | [content] concept-teaching over API-listing |
+| "I rarely have to go to blogs or Stack Overflow because that answer usually exists right in the docs." | HN, re: Django | [content] completeness/self-sufficiency |
+| "The layering. From beginner tutorial through to high level overviews of the subsystems, through to detailed usage for the subsystems, through to API level docs" | HN, "best documentation you've ever read", re: Django | [structure] layered IA by reader skill level |
+| "I like that FastAPI has documentation meant to be read from beginning to end. It walks you through not only the how but the why" | HN, re: FastAPI | [structure] linear narrative path; [content] design rationale |
+| "astro's documentation is much more accessible; there were a handful of cases where there was something I wanted to do and astro had an example of exactly that." | HN, re: Astro | [content] worked examples matching the reader's actual task |
+| "you have created an awesome orm with awful documentation" | HN, re: Drizzle | (negative — Drizzle yielded no genuine praise; the brief's assumption didn't verify) |
+
+---
+
+## 2. Frustration evidence — developer complaints
+
+| Quote | Source | Category |
+|---|---|---|
+| "There's nothing more frustrating than minutely explicit demonstration code that doesn't reflect reality - and it's very common!" | HN, Best/Worst API docs thread | stale examples [content] |
+| "Wrong documentation is significantly worse than no documentation." | HN | stale/wrong [content] |
+| "[Unix man pages] are almost without fail written as an exhaustive reference for someone who already knows how to use the tool." | HN | assumed context [content] |
+| "I'm lost here. No parallels from Svelte 3 or 4, just dropping us into 'runes'... the way it is presented in what are termed 'reference docs' looks NOISY IMO." | GitHub, sveltejs/svelte discussion #13721 | assumed context [content] + noisy presentation [structure] |
+| "`listWidget(str name): Returns a Widget` is useless to me. 90% of api docs i see are like this, its evident they've been auto-generated and no effort had been made." | HN | API-dump, no narrative [structure] |
+| "There will be three different versions explaining how to set some option with cli, sdk, and console versions...but they never explain what that option actually does." | AWS re:Post | coverage without explanation [content] |
+| "If I'm looking for API docs I don't want to parse through your contrived how-to combined with a shallow tutorial...just give me the damn API docs." | HN | the inverse failure — doc types not separated [structure] |
+| "There is a huge discoverability problem in just finding out what tools exist." | HN, re: AWS | discoverability [structure] |
+| "The thing I find most useful - and that is hardest to write - is a complete and realistic example of an entire flow." | HN | missing end-to-end workflow [structure] |
+
+**Key structural insight from the pair of quotes above:** reference-only docs and tutorial-only docs both generate anger. The praised systems (Django, FastAPI) win by keeping the layers separate and complete — which is Diátaxis, the structure cairn already uses. The rewrite's risk is content within the structure, not the structure.
+
+---
+
+## 3. CMS-specific — non-technical users
+
+| Quote | Source | Category |
+|---|---|---|
+| "I can't figure these blocks out and I have put serious time into reading instructions carefully, followed many tutorials, read through wordpress guides thoroughly." | WordPress.org review (blogger) | lost — effort didn't convert |
+| "It would also be helpful if you were given a 'list of things you need' when you first get started." | Capterra, WordPress | wished-for: prerequisites checklist |
+| "The available videos and knowledge base articles were too cumbersome and not specific enough to be of much use." | Trustpilot, Squarespace | confused — generic help, not task-specific |
+| "The in-person customer support is superb AFTER you wade thru their bot and all the endless pre-written 'help' articles" | Trustpilot, Squarespace | lost — article volume as an obstacle |
+| "spent more time watching youtube tutorials on how to set it up than actually getting work done" | Trustpilot, Notion | lost — docs abandoned for third-party video |
+| "Consistently requires screenshots / asking claude for new users to accomplish simple tasks." | Trustpilot, Notion | lost — docs abandoned for AI |
+| "I really wish there was a better way to introduce basic features to new team members without it feeling overwhelming." | Trustpilot, Notion | wished-for: non-overwhelming onboarding |
+| "The instructions they post on their help page are mostly incorrect as well." / "help articles are often outdated" | Trustpilot, Webflow (2 reviews) | staleness hits civilians too |
+| "There is extensive documentation, a little confusingly divided between developer and general guidance." | Blog review, Ghost | lost — the two-audience split itself confuses when unlabeled |
+| "The signal of the curse of knowledge is that little word 'just', which often crops up in answers to questions. 'Just insert this line in the theme.'" | Blog review, Ghost | condescended/confused — the word "just" as the tell |
+| "I hate to take up someone's time with these primitive questions but they are a huge obstacle in moving forward." | WPBeginner comment | shame — the emotional cost of a docs gap |
+
+**Asymmetry finding:** the "condescended by too-basic docs" complaint barely exists in the wild. Civilians overwhelmingly report the *confused* side. The closest analogue to resentment is **time waste** ("endless pre-written help articles"). Implication for cairn's editor docs: err toward plain and short; nobody complains a help page was too easy, they complain it was long, generic, wrong, or said "just."
+
+---
+
+## 4. Synthesis
+
+### 4a. Top 5 properties that earn love
+
+1. **[content] Examples that are the reader's actual task, runnable without substitution.** ("astro had an example of exactly that"; Stripe's your-real-API-key samples; "AI thinks docs are for reading. Developers use docs for copy-pasting until something works.")
+2. **[structure] Layered IA — tutorial → overview → guide → reference, each layer complete and separate.** ("The layering. From beginner tutorial through to... API level docs" — Django; the paired HN complaints show mixing layers angers both audiences.)
+3. **[content] Docs that teach the domain and the why, not just the surface.** ("It not only explains, it educates" — Django; "the best way to learn not just Tailwind, but CSS itself"; FastAPI "not only the how but the why".)
+4. **[structure] Task-shaped findability — lookup lands on the answer faster than any alternative.** ("miles easier to search than grepping the codebase"; "quickly learn the utility class that just does the thing I want".)
+5. **[structure+content] A bounded, self-sufficient corpus.** ("you can read the entire docs in a few hours" — Svelte; "I rarely have to go to blogs or Stack Overflow" — Django. Structure gives the finishable shape; content earns the trust that the answer is in there.)
+
+### 4b. Top 5 frustrations to design against
+
+1. **[content] Stale or wrong examples.** "Wrong documentation is significantly worse than no documentation." Hits both audiences (Webflow civilians: "help articles are often outdated"). For cairn: examples must be exercised by CI or generated from tested code where possible.
+2. **[content] Assumed context / curse of knowledge.** Man-pages complaint; Svelte 5 "just dropping us into 'runes'"; Ghost's "that little word 'just'". Ban "just/simply/obviously" in editor-facing prose; state prerequisites explicitly.
+3. **[structure] Features documented individually, no end-to-end flow.** "A complete and realistic example of an entire flow" is the named most-useful-and-hardest artifact. cairn needs at least one full-journey guide per audience (dev: install→adapter→deploy; editor: login→edit→publish).
+4. **[structure] Getting-started buried, or the audience split unlabeled.** AWS discoverability; Ghost's "confusingly divided between developer and general guidance" — directly cairn's two-audience risk. Label every page's audience; make each audience's entry point one click from the docs root.
+5. **[content] Coverage without explanation, and volume without specificity.** "they never explain what that option actually does"; civilians: "too cumbersome and not specific enough." Every option documented = necessary; every option *explained* (what it does, when you'd want it) = the actual bar. More pages is a cost, not a virtue.
+
+### 4c. AI-smell checklist — observable tells cairn's rewrite must not trip
+
+**Structural tells (page/section shape):**
+- [ ] Identical section skeleton on every page regardless of what the page needs ("the same opening paragraph, bullet list and scattering of emoji, and immediately hit back")
+- [ ] Rule-of-three everywhere — "lots of sets of three bullet points"
+- [ ] Bullet lists where prose should carry an argument; uniform paragraph/section lengths
+- [ ] Reflexive "In summary" / recap sections that add nothing
+- [ ] Every claim balanced with a counter-claim ("Too balanced, too fair... AI keeps the peace like it's being graded")
+- [ ] Unnecessary Title Casing of Concepts; self-referential meta-commentary ("this document describes...")
+
+**Content tells (prose and substance):**
+- [ ] Hedging noun phrases: "various factors," "a range of considerations," "it's important to note"
+- [ ] The contrast frame: "it's not X, it's Y"; stock flourishes: "here's the kicker," "and the best part?"
+- [ ] Model-isms: "excellent question!", em-dash overuse
+- [ ] Uniform confidence — no caveats, no "this doesn't work when," no stated limitations ("Without this grounding in reality, docs generated by LLMs are hollow"; "Nothing risks being wrong. Humans leave dents.")
+- [ ] Invented or unverified commands/flags ("a specific command that doesn't exist")
+- [ ] Polish without actionability — "Your docs are beautifully written. I still have no idea how to create an order." Every page must answer: what does the reader copy-paste or click next?
+- [ ] Semantic averaging — generic word choice, "sanding down your words until they're a smooth average"; no opinions, no committed defaults ("the millennial gray of prose")
+
+**The positive inversion:** the anti-AI-smell signal readers reward is *committed judgment* — a named default, an honest limitation, a "don't do this," an opinion about the right way. That is also property #3 (teach the why) and cairn's existing register ("out of scope" as a valid answer) — the docs should sound like the charter already does.
+
+---
+
+**Report complete.** All quotes verbatim from fetched sources; attribution by platform. Gaps acknowledged: Reddit unreachable (HN + review sites substitute), Drizzle praise did not verify (found the opposite), and the "condescended" category is thin because it is genuinely rare in the wild, not under-searched — a finding in itself for the editor-docs register.

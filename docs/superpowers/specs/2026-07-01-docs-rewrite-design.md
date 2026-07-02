@@ -9,12 +9,25 @@ carries. Executes after the polish pass (Stage 1 may run concurrently with it).
 ## Philosophy
 
 The docs mirror the engine's charter. Every page earns its place; "no page" is a valid and
-often correct answer; prefer one excellent page over three adequate ones. The published docs
-follow the Google developer-documentation style (the existing Vale tooling stands); the
-structure is re-derived from research, not inherited: Diátaxis is the incumbent hypothesis,
-not an assumption. Everything is written portable for its future home on Topo
-(docs.cairn.org): plain markdown, no GitHub-rendering assumptions, link discipline that
-survives re-hosting.
+often correct answer; prefer one excellent page over three adequate ones. Everything is
+written portable for its future home on Topo (docs.cairn.org): plain markdown, no
+GitHub-rendering assumptions, link discipline that survives re-hosting.
+
+## Standards (adopted, not re-derived)
+
+The pass adopts proven external standards per audience, per the workstation authoring charter
+(Geoff reconfirmed 2026-07-01):
+
+- **Sentence level, all published docs and the repo-health files**: the Google Developer
+  Documentation Style Guide, already enforced in this repo by Vale's vendored Google package
+  over the published arms; the rewrite extends that Vale scope to the new/rewritten pages and
+  the repo-root docs.
+- **Editor-facing product copy** (the admin UI strings): the Microsoft Style Guide, per the
+  existing charter split. Named here for completeness; product copy is not this pass's scope.
+- **Structure**: the one layer the standards do not settle and Stage 1 re-derives. Diátaxis is
+  the incumbent hypothesis, validated or replaced by the comparable-tools research, with the
+  outcome recorded in the IA doc. Any deviation from the adopted sentence-level standards that
+  the research argues for surfaces in the IA doc for approval; the default is no deviation.
 
 ## Stage 1: research and the docs IA (the design deliverable)
 

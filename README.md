@@ -35,7 +35,7 @@ SvelteKit, Cloudflare, or git as the source of truth. Whether cairn fits your pr
 when it doesn't—is [Why cairn](./docs/explanation/why-cairn.md).
 
 Start with the [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory
-to a deployed site with a working admin. The [docs](./docs/README.md) cover the rest —
+to a deployed site with a working admin. The [docs](./docs/README.md) cover the rest:
 [guides](./docs/guides/README.md), [reference](./docs/reference/README.md),
 [explanation](./docs/explanation/README.md).
 

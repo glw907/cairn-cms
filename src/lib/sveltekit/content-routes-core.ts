@@ -397,7 +397,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       const raw = await backend.readFile(file.path, ref);
       if (raw === null) return { id: file.id, title: file.id, date: null, draft: false, status, summary: null };
       const { frontmatter, body } = parseMarkdown(raw);
-      const title = typeof frontmatter.title === 'string' && frontmatter.title.trim() ? frontmatter.title : file.id;
+      const title = asString(frontmatter.title) ?? file.id;
       const date = dateInputValue(frontmatter.date) || null;
       // Normalize an empty excerpt to null, so a pending row matches EntrySummary's `string | null`
       // contract (the published builder already coalesces with `?? null`).
@@ -562,7 +562,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const loadFrontmatter = isNew
       ? { ...initialValues(concept.schema, new Date()), ...parsed.frontmatter }
       : parsed.frontmatter;
-    const title = typeof parsed.frontmatter.title === 'string' && parsed.frontmatter.title.trim() ? parsed.frontmatter.title : id;
+    const title = asString(parsed.frontmatter.title) ?? id;
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];

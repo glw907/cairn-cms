@@ -15,7 +15,7 @@ import type { ConceptDescriptor } from './types.js';
 import type { Backend } from '../github/backend.js';
 import type { Manifest } from './manifest.js';
 import { buildCrossBranchIndex, type CrossBranchRow } from './cross-branch-index.js';
-import { entryIdentity } from './identity.js';
+import { asString, entryIdentity } from './identity.js';
 
 /** One action an advisory offers, as a label and an optional link target. */
 export interface AdvisoryAction {
@@ -100,8 +100,7 @@ export async function buildAddressIndex(
     concepts,
     mainRows,
     ({ concept, id, path, frontmatter }): CrossBranchRow<AddressEntry>[] => {
-      const fmTitle = frontmatter.title;
-      const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : id;
+      const title = asString(frontmatter.title) ?? id;
       // entryIdentity throws for a dated entry with no date; the shared builder catches it per branch.
       const { permalink } = entryIdentity(concept, path, frontmatter);
       return [{ key: permalink, entry: { concept: concept.id, id, title, source: 'branch' } }];

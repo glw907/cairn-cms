@@ -18,6 +18,7 @@ import type { Backend } from '../github/backend.js';
 import type { Manifest } from './manifest.js';
 import { buildCrossBranchIndex, type CrossBranchIndexOptions, type CrossBranchRow } from './cross-branch-index.js';
 import { extractReferenceEdges } from './references.js';
+import { asString } from './identity.js';
 
 /**
  * Where a reference lives: the published corpus on main, or a named open edit branch. Re-declared here
@@ -92,8 +93,7 @@ export async function buildReferenceIndex(
     concepts,
     mainRows,
     ({ concept, id, branch, frontmatter }): CrossBranchRow<ReferenceUsageEntry>[] => {
-      const fmTitle = frontmatter.title;
-      const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : id;
+      const title = asString(frontmatter.title) ?? id;
       return extractReferenceEdges(frontmatter, concept.fields).map((edge) => ({
         key: `${edge.concept}/${edge.id}`,
         entry: { concept: concept.id, id, title, field: edge.field, origin: { kind: 'branch', branch } },

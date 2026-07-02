@@ -28,6 +28,7 @@ import {
   type CrossBranchRow,
 } from '../content/cross-branch-index.js';
 import { extractMediaRefs } from '../content/media-refs.js';
+import { asString } from '../content/identity.js';
 
 /** Where a reference lives: the published corpus on main, or a named open edit branch. */
 type UsageOrigin = { kind: 'published' } | { kind: 'branch'; branch: string };
@@ -97,8 +98,7 @@ export async function buildUsageIndex(
     concepts,
     mainRows,
     ({ concept, id, branch, frontmatter, body }): CrossBranchRow<UsageEntry>[] => {
-      const fmTitle = frontmatter.title;
-      const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : id;
+      const title = asString(frontmatter.title) ?? id;
       return extractMediaRefs(frontmatter, body, concept.fields).map((hash) => ({
         key: hash,
         entry: { concept: concept.id, id, title, origin: { kind: 'branch', branch } },

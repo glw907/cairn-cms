@@ -6,6 +6,7 @@ import { fail } from '@sveltejs/kit';
 import type { D1Database } from '@cloudflare/workers-types';
 import { requireOwner } from './guard.js';
 import { requireDb } from '../env.js';
+import { log } from '../log/index.js';
 import {
   listEditors,
   findEditor,
@@ -38,14 +39,15 @@ export function createEditorRoutes() {
   /**
    * Owner-only prelude every mutating action shares: authorize, resolve the D1 binding, and read
    *  the posted email (lowercased and trimmed, the store's lookup key). Each action reads any
-   *  further field it needs off the returned `form` itself.
+   *  further field it needs off the returned `form` itself. `owner` is the acting owner's email,
+   *  threaded through so a landed mutation can log who made it.
    */
-  async function ownerAction(event: RequestContext): Promise<{ db: D1Database; form: FormData; email: string }> {
-    requireOwner(event);
+  async function ownerAction(event: RequestContext): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
+    const owner = requireOwner(event);
     const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
     const email = String(form.get('email') ?? '').trim().toLowerCase();
-    return { db, form, email };
+    return { db, form, email, owner: owner.email };
   }
 
   /** GET /admin/editors. Owner-only. Returns the allowlist and the acting owner's email. */
@@ -57,7 +59,7 @@ export function createEditorRoutes() {
 
   /** POST add an editor. Owner-only. */
   async function addEditorAction(event: RequestContext) {
-    const { db, form, email } = await ownerAction(event);
+    const { db, form, email, owner } = await ownerAction(event);
     const name = String(form.get('name') ?? '').trim();
     const role = parseRole(form.get('role'));
     if (!EMAIL_RE.test(email) || !name) {
@@ -67,12 +69,13 @@ export function createEditorRoutes() {
       return fail(400, { error: 'That editor already exists' } satisfies EditorActionFailure);
     }
     await insertEditor(db, email, name, role, Date.now());
+    log.info('editor.added', { owner, target: email, role });
     return { ok: true as const };
   }
 
   /** POST remove an editor. Owner-only. Refuses the last owner, atomically. */
   async function removeEditorAction(event: RequestContext) {
-    const { db, email } = await ownerAction(event);
+    const { db, email, owner } = await ownerAction(event);
     const target = await findEditor(db, email);
     if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
     if (target.role === 'owner') {
@@ -82,12 +85,13 @@ export function createEditorRoutes() {
     } else {
       await deleteEditor(db, email);
     }
+    log.info('editor.removed', { owner, target: email });
     return { ok: true as const };
   }
 
   /** POST change an editor's role. Owner-only. Refuses demoting the last owner, atomically. */
   async function setRoleAction(event: RequestContext) {
-    const { db, form, email } = await ownerAction(event);
+    const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     const target = await findEditor(db, email);
     if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
@@ -98,6 +102,7 @@ export function createEditorRoutes() {
     } else {
       await setEditorRole(db, email, role);
     }
+    log.info('editor.role_changed', { owner, target: email, role });
     return { ok: true as const };
   }
 

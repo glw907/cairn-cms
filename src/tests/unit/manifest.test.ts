@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, tagUsage } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -556,7 +556,7 @@ describe('inboundReferences', () => {
   });
 });
 
-describe('tagUsage', () => {
+describe('deriveTagUsage', () => {
   const manifest = {
     version: 1 as const,
     entries: [
@@ -567,16 +567,16 @@ describe('tagUsage', () => {
     ],
   };
   it('returns a row for each entry whose tags include the value', () => {
-    expect(tagUsage(manifest, 'svelte')).toEqual([
+    expect(deriveTagUsage(manifest, 'svelte')).toEqual([
       { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' },
       { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },
     ]);
   });
   it('returns an empty list when no entry carries the value', () => {
-    expect(tagUsage(manifest, 'nobody')).toEqual([]);
+    expect(deriveTagUsage(manifest, 'nobody')).toEqual([]);
   });
   it('never returns an entry lacking the value, including a tagless entry', () => {
-    const ids = tagUsage(manifest, 'typescript').map((r) => r.id);
+    const ids = deriveTagUsage(manifest, 'typescript').map((r) => r.id);
     expect(ids).toEqual(['c']);
   });
 });

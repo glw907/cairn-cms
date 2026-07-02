@@ -17,7 +17,7 @@ function dateParts(date?: string): { year: string; month: string; day: string } 
  * pattern uses a date token and the entry has no valid date, or when a token is unknown, so
  * a misconfiguration fails at build rather than emitting a broken path.
  */
-export function permalink(
+export function resolvePermalink(
   descriptor: ConceptDescriptor,
   entry: { id: string; slug: string; date?: string },
 ): string {
@@ -27,13 +27,13 @@ export function permalink(
       const parts = dateParts(entry.date);
       if (!parts) {
         throw new Error(
-          `permalink: concept "${descriptor.id}" pattern uses :${token}, but entry "${entry.id}" has no valid date`,
+          `cairn: concept "${descriptor.id}" permalink pattern uses :${token}, but entry "${entry.id}" has no valid date`,
         );
       }
       if (token === 'year') return parts.year;
       if (token === 'month') return pad(Number(parts.month));
       return pad(Number(parts.day));
     }
-    throw new Error(`permalink: unknown token :${token} in pattern "${descriptor.permalink}"`);
+    throw new Error(`cairn: permalink pattern "${descriptor.permalink}" uses unknown token :${token}`);
   });
 }

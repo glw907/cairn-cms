@@ -10,7 +10,7 @@
 // STRING is product content transcribed from the spec; it carries whatever the spec specifies.
 import type { TidyConventions } from '../nav/site-config.js';
 
-export { defaultTidyConventions, resolveTidyConventions } from '../nav/site-config.js';
+export { defaultTidyConventions } from '../nav/site-config.js';
 export type { TidyConventions } from '../nav/site-config.js';
 
 // The stable always-on core, verbatim in intent from spec 2.3.1. Prepended to every request and

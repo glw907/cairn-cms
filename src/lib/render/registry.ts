@@ -8,7 +8,7 @@ import type { FieldDescriptor } from '../content/fields.js';
 import type { BehaviorTable, Fieldset } from '../content/fieldset.js';
 import { fieldset } from '../content/fieldset.js';
 
-export type SlotKind = 'markdown' | 'inline' | 'repeatable';
+type SlotKind = 'markdown' | 'inline' | 'repeatable';
 
 /**
  * One named content region of a component. The slots named `title` and `body` are special: `title`

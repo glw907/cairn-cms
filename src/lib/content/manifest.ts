@@ -139,14 +139,14 @@ export function serializeManifest(manifest: Manifest): string {
 export function parseManifest(raw: string): Manifest {
   const data = JSON.parse(raw) as unknown;
   if (!data || typeof data !== 'object') {
-    throw new Error('content manifest: malformed file, expected { version, entries: [] }');
+    throw new Error('cairn: content manifest file is malformed, expected { version, entries: [] }');
   }
   const obj = data as { version?: unknown; entries?: unknown };
   if (obj.version !== 1) {
-    throw new Error(`content manifest: unsupported version ${String(obj.version)}, expected 1`);
+    throw new Error(`cairn: content manifest version ${String(obj.version)} is unsupported, expected 1`);
   }
   if (!Array.isArray(obj.entries)) {
-    throw new Error('content manifest: malformed file, expected { version, entries: [] }');
+    throw new Error('cairn: content manifest file is malformed, expected { version, entries: [] }');
   }
   for (const entry of obj.entries) {
     const e = entry as Record<string, unknown>;
@@ -164,7 +164,7 @@ export function parseManifest(raw: string): Manifest {
       (e.tags === undefined || Array.isArray(e.tags)) &&
       Array.isArray(e.links);
     if (!ok) {
-      throw new Error(`content manifest: malformed entry ${JSON.stringify(e)}`);
+      throw new Error(`cairn: content manifest entry ${JSON.stringify(e)} is malformed`);
     }
     // mediaRefs is additive and optional: an entry without it parses (the field reads as absent),
     // so a manifest committed before this field still builds. When present, validate each element
@@ -172,7 +172,7 @@ export function parseManifest(raw: string): Manifest {
     if (e.mediaRefs !== undefined) {
       for (const hash of e.mediaRefs as unknown[]) {
         if (typeof hash !== 'string') {
-          throw new Error(`content manifest: malformed mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)}`);
+          throw new Error(`cairn: content manifest mediaRefs element ${JSON.stringify(hash)} in entry ${JSON.stringify(e)} is malformed`);
         }
       }
     }
@@ -184,7 +184,7 @@ export function parseManifest(raw: string): Manifest {
       for (const edge of e.references as unknown[]) {
         const r = edge as Record<string, unknown> | null;
         if (!r || typeof r !== 'object' || typeof r.field !== 'string' || typeof r.concept !== 'string' || typeof r.id !== 'string') {
-          throw new Error(`content manifest: malformed reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)}`);
+          throw new Error(`cairn: content manifest reference ${JSON.stringify(edge)} in entry ${JSON.stringify(e)} is malformed`);
         }
       }
     }
@@ -194,7 +194,7 @@ export function parseManifest(raw: string): Manifest {
     if (e.tags !== undefined) {
       for (const tag of e.tags as unknown[]) {
         if (typeof tag !== 'string') {
-          throw new Error(`content manifest: malformed tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)}`);
+          throw new Error(`cairn: content manifest tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)} is malformed`);
         }
       }
     }
@@ -204,7 +204,7 @@ export function parseManifest(raw: string): Manifest {
     for (const link of e.links as unknown[]) {
       const l = link as Record<string, unknown> | null;
       if (!l || typeof l !== 'object' || typeof l.concept !== 'string' || typeof l.id !== 'string') {
-        throw new Error(`content manifest: malformed link ${JSON.stringify(link)} in entry ${JSON.stringify(e)}`);
+        throw new Error(`cairn: content manifest link ${JSON.stringify(link)} in entry ${JSON.stringify(e)} is malformed`);
       }
     }
   }
@@ -212,7 +212,7 @@ export function parseManifest(raw: string): Manifest {
 }
 
 /** A changed entry and the fields that differ between the built and committed manifests. */
-export interface ManifestEntryDiff {
+interface ManifestEntryDiff {
   concept: string;
   id: string;
   fields: string[];
@@ -427,7 +427,7 @@ export interface TagUsageRow {
  *  branches; this pure reader is the published arm and the delete gate's manifest-only query. Pure
  *  over the manifest, so the request-time delete path and a unit test call it the same way.
  */
-export function tagUsage(manifest: Manifest, value: string): TagUsageRow[] {
+export function deriveTagUsage(manifest: Manifest, value: string): TagUsageRow[] {
   return manifest.entries
     .filter((e) => e.tags?.includes(value))
     .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));

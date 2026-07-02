@@ -11,24 +11,22 @@
 // records) and builds the reverse map; it never crawls the files, since the manifest already carries
 // the edges. The branch arm cannot use a manifest (the content manifest is never committed to a
 // branch), so it reconstructs each edited entry's path from the branch name, reads that one file, and
-// runs the schema extractor directly.
+// runs the schema extractor directly. The cross-branch fan-out itself is the shared shape
+// buildCrossBranchIndex owns (A2); this module supplies only its rows and its extractor.
 import type { ConceptDescriptor } from './types.js';
 import type { Backend } from '../github/backend.js';
 import type { Manifest } from './manifest.js';
-import { PENDING_PREFIX, parsePendingBranch } from './pending.js';
-import { findConcept } from './concepts.js';
-import { isValidId, filenameFromId } from './ids.js';
-import { parseMarkdown } from './frontmatter.js';
+import { buildCrossBranchIndex, type CrossBranchIndexOptions, type CrossBranchRow } from './cross-branch-index.js';
 import { extractReferenceEdges } from './references.js';
 
 /**
  * Where a reference lives: the published corpus on main, or a named open edit branch. Re-declared here
  *  (rather than imported from media/usage.ts) so the content layer does not depend on the media layer.
  */
-export type UsageOrigin = { kind: 'published' } | { kind: 'branch'; branch: string };
+type UsageOrigin = { kind: 'published' } | { kind: 'branch'; branch: string };
 
 /** One entry that references a target, in a shape the rename and delete gates name and group by. */
-export interface ReferenceUsageEntry {
+interface ReferenceUsageEntry {
   /** The referencing (source) entry's concept id, e.g. "posts". */
   concept: string;
   /** The referencing (source) entry's id (its filename stem). */
@@ -55,28 +53,16 @@ export type ReferenceIndex = Map<string, ReferenceUsageEntry[]>;
  *  to fail-closed: a delete or rename gate must not treat a transient branch-read failure as an absent
  *  reference, so it rethrows instead.
  */
-export interface BuildReferenceOptions {
-  /** The open cairn/* branch names, already listed. When present the index skips its own listing. */
-  branches?: string[];
-  /** When true a branch read that throws rejects the whole build, so the caller can fail closed. */
-  strict?: boolean;
-}
-
-/** Append a row under its target pair key, creating the bucket on first use. */
-function push(index: ReferenceIndex, key: string, entry: ReferenceUsageEntry): void {
-  const rows = index.get(key);
-  if (rows) rows.push(entry);
-  else index.set(key, [entry]);
-}
+export type BuildReferenceOptions = CrossBranchIndexOptions;
 
 /**
  * Build the pair-keyed reference index over main (from the manifest's per-entry references) plus every
- * open cairn/* branch (parsed from its edited markdown).
+ * open cairn/* branch (parsed from its edited markdown), via the shared cross-branch builder (A2).
  *
  * By default a single branch read that throws degrades that one branch and is skipped, the way the
  * admin loaders degrade a failed read. That tolerance is wrong for the rename and delete gates: a
  * transient branch-read failure would make a still-referenced target look free. Pass `strict: true` to
- * rethrow a branch failure so the caller fails closed. Pass `branches` to reuse a branch list the
+ * rethrow a branch failure so the caller fails closed (E6). Pass `branches` to reuse a branch list the
  * caller already has rather than listing them a second time.
  */
 export async function buildReferenceIndex(
@@ -85,75 +71,34 @@ export async function buildReferenceIndex(
   manifest: Manifest,
   opts: BuildReferenceOptions = {},
 ): Promise<ReferenceIndex> {
-  const index: ReferenceIndex = new Map();
-
   // The main arm: the manifest already carries each entry's reference edges, so this is a pure reverse
   // map with no per-file read. The KEY is the edge's TARGET (concept, id); the ROW is the source entry.
-  for (const entry of manifest.entries) {
-    for (const edge of entry.references ?? []) {
-      push(index, `${edge.concept}/${edge.id}`, {
+  const mainRows: CrossBranchRow<ReferenceUsageEntry>[] = manifest.entries.flatMap((entry) =>
+    (entry.references ?? []).map((edge) => ({
+      key: `${edge.concept}/${edge.id}`,
+      entry: {
         concept: entry.concept,
         id: entry.id,
         title: entry.title,
         permalink: entry.permalink,
         field: edge.field,
-        origin: { kind: 'published' },
-      });
-    }
-  }
-
-  // The branch arm: read each open cairn/* branch's one edited file. The path is derivable from the
-  // branch name, so no tree-listing is needed. The branch list is reused when the caller passes it.
-  const names = opts.branches ?? (await backend.listBranches(PENDING_PREFIX));
-  // Read the branches in parallel rather than one at a time, so the latency floor is one round trip
-  // instead of N. workerd self-throttles to 6 simultaneous outbound connections, so this batch and
-  // the load path's media-union and linker reads each stay under the limit; do NOT run this fan-out
-  // concurrently with those (a future combined safety gate must not wrap them in one Promise.all),
-  // since the merged fan-out would queue behind that throttle.
-  const perBranch = await Promise.all(
-    names.map(async (name): Promise<{ key: string; entry: ReferenceUsageEntry }[]> => {
-      // Resolve the branch name to a configured entry with the same guard the branch tooling uses: a
-      // malformed name, an id that fails the slug rule (entry paths are built from it, so this is the
-      // path confinement), or a concept this site does not configure is skipped, no read attempted.
-      const ref = parsePendingBranch(name);
-      if (!ref || !isValidId(ref.id)) return [];
-      const concept = findConcept(concepts, ref.concept);
-      if (!concept) return [];
-
-      const path = `${concept.dir}/${filenameFromId(ref.id)}`;
-      try {
-        const raw = await backend.readFile(path, name);
-        if (raw === null) return []; // The file is absent on the branch: nothing to extract.
-        const { frontmatter } = parseMarkdown(raw);
-        const fmTitle = frontmatter.title;
-        const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : ref.id;
-        const rows: { key: string; entry: ReferenceUsageEntry }[] = [];
-        for (const edge of extractReferenceEdges(frontmatter, concept.fields)) {
-          rows.push({
-            key: `${edge.concept}/${edge.id}`,
-            entry: {
-              concept: concept.id,
-              id: ref.id,
-              title,
-              field: edge.field,
-              origin: { kind: 'branch', branch: name },
-            },
-          });
-        }
-        return rows;
-      } catch (err) {
-        // In strict mode a branch failure fails the whole build so the gate can fail closed; otherwise
-        // degrade this one branch rather than sinking the screen.
-        if (opts.strict) throw err;
-        return [];
-      }
-    }),
+        origin: { kind: 'published' as const },
+      },
+    })),
   );
 
-  // Fold the per-branch rows back in, preserving the branch order so the index reads stably.
-  for (const rows of perBranch) {
-    for (const { key, entry } of rows) push(index, key, entry);
-  }
-
-  return index;
+  return buildCrossBranchIndex(
+    backend,
+    concepts,
+    mainRows,
+    ({ concept, id, branch, frontmatter }): CrossBranchRow<ReferenceUsageEntry>[] => {
+      const fmTitle = frontmatter.title;
+      const title = typeof fmTitle === 'string' && fmTitle.trim() ? fmTitle : id;
+      return extractReferenceEdges(frontmatter, concept.fields).map((edge) => ({
+        key: `${edge.concept}/${edge.id}`,
+        entry: { concept: concept.id, id, title, field: edge.field, origin: { kind: 'branch', branch } },
+      }));
+    },
+    opts,
+  );
 }

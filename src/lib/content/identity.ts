@@ -3,7 +3,7 @@
 // drift on what an entry's URL is. A cairn: link resolves through the manifest in the admin preview
 // and through the content index in the public build, so the two must agree by construction.
 import { idFromFilename, slugFromId } from './ids.js';
-import { permalink } from './permalink.js';
+import { resolvePermalink } from './url-policy.js';
 import type { ConceptDescriptor } from './types.js';
 
 /** A content entry's resolved URL identity. */
@@ -56,5 +56,5 @@ export function entryIdentity(
   const id = entryId(path);
   const slug = slugFromId(id, descriptor.routing.dated ? descriptor.datePrefix : null);
   const date = asDate(frontmatter.date);
-  return { id, slug, date, permalink: permalink(descriptor, { id, slug, date }) };
+  return { id, slug, date, permalink: resolvePermalink(descriptor, { id, slug, date }) };
 }

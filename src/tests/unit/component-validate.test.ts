@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { validateComponent } from '../../lib/render/component-validate.js';
 import { defineComponent } from '../../lib/render/registry.js';
 import { fields } from '../../lib/content/fields.js';
+import { log } from '../../lib/log/index.js';
 
 const base = { build: () => ({ type: 'element' as const, tagName: 'div', properties: {}, children: [] }), description: 'd', use: 'u' };
 const alert = defineComponent({
@@ -119,7 +120,7 @@ describe('validateComponent custom validate', () => {
   });
 
   it('treats a throwing validator as valid and does not crash', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const def = defineComponent({
       ...base, name: 'boom', label: 'Boom',
       attributes: { name: fields.text({ label: 'Name' }) },
@@ -128,8 +129,7 @@ describe('validateComponent custom validate', () => {
     });
     const r = await validateComponent(':::boom{name="x"}\nGo.\n:::', def);
     expect(r).toEqual({ ok: true });
-    expect(warn).toHaveBeenCalled();
-    expect(String(warn.mock.calls[0]?.[0])).toMatch(/name/);
+    expect(warn).toHaveBeenCalledWith('content.field_behavior_error', { field: 'name', error: 'kaboom' });
   });
 
   it('reports the required error before running pattern or validate on an empty value', async () => {

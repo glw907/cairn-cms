@@ -9,6 +9,7 @@ import type { StandardInput, StandardSchemaV1 } from './standard-schema.js';
 import { datetimeInputValue, dateInputValue, isCalendarDate, referenceIdsFromValue } from './frontmatter.js';
 import { compilePattern, dateBoundsError, patternError, stringLengthError } from './field-rules.js';
 import { isValidId } from './ids.js';
+import { log } from '../log/index.js';
 
 /** Accept any URL using http or https with a non-empty rest, mirroring the conservative form check. */
 const URL_RE = /^https?:\/\/\S+$/;
@@ -444,7 +445,12 @@ export function fieldset<const R extends Record<string, FieldDescriptor>>(
         try {
           message = options.behavior[key].validate!('value' in outcome ? outcome.value : undefined, frontmatter);
         } catch (err) {
-          console.warn(`cairn: behavior.validate for field "${key}" threw; treating it as valid.`, err);
+          // A developer's cross-field validate() is a bug, not an author fault; log and treat the field
+          // as valid rather than breaking the save (E7: server code speaks through the log chokepoint).
+          log.warn('content.field_behavior_error', {
+            field: key,
+            error: err instanceof Error ? err.message : String(err),
+          });
         }
         if (typeof message === 'string') issues.push({ path: [key], message });
       }

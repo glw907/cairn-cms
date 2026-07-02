@@ -11,6 +11,7 @@ import { publicPath } from '../media/naming.js';
 import { presetUrl } from '../media/transform-url.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
 import { log } from '../log/index.js';
+import { markNodeBroken, type ResolvableNode } from './resolve-shared.js';
 
 /** The VFile data key the renderer sets the per-call media resolver under. */
 export const MEDIA_RESOLVE = 'mediaResolve';
@@ -70,11 +71,6 @@ export function manifestMediaResolver(
   };
 }
 
-interface ImageNode {
-  url: string;
-  data?: { hProperties?: Record<string, unknown> };
-}
-
 /**
  * Resolve media: image nodes against the VFile's resolver. A non-media src and a malformed token
  *  pass through. A missing target is marked with the cairn-broken-media class (the resolver returns
@@ -84,7 +80,7 @@ export function remarkResolveMedia() {
   return (tree: unknown, file: VFile): void => {
     const resolve = file.data[MEDIA_RESOLVE] as MediaResolve | undefined;
     if (!resolve) return;
-    visit(tree as Parameters<typeof visit>[0], 'image', (node: ImageNode) => {
+    visit(tree as Parameters<typeof visit>[0], 'image', (node: ResolvableNode) => {
       const ref = parseMediaToken(node.url);
       if (!ref) return;
       const url = resolve(ref); // may throw (build backstop); propagates out of render
@@ -93,12 +89,7 @@ export function remarkResolveMedia() {
         return;
       }
       // Missing asset in the preview: mark it broken and neutralize the src, keeping the alt.
-      node.url = '#';
-      node.data = node.data ?? {};
-      const props = (node.data.hProperties = node.data.hProperties ?? {});
-      const existing = Array.isArray(props.className) ? (props.className as string[]) : [];
-      props.className = [...existing, 'cairn-broken-media'];
-      props.title = 'Missing media asset';
+      markNodeBroken(node, 'cairn-broken-media', 'Missing media asset');
     });
   };
 }

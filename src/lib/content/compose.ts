@@ -29,7 +29,7 @@ export interface ComposeInput {
  * permalinks cannot diverge. The media slot (seam 4) passes through untouched.
  */
 export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRuntime {
-  if (!siteConfig) throw new Error('composeRuntime needs a site config for the site name and editor settings');
+  if (!siteConfig) throw new Error('cairn: composeRuntime needs a site config for the site name and editor settings');
   return {
     siteName: siteConfig.siteName,
     concepts: normalizeConcepts(adapter.content),

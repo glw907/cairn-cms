@@ -308,7 +308,7 @@ export function repointMediaRef(markdown: string, oldHash: string, newToken: str
  * Which alt bucket a placement falls in: an empty alt always gets filled, a non-empty (custom) alt is
  *  reported and only overwritten on opt-in, and a decorative hero is never touched.
  */
-export type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
+type AltBucket = 'will-fill' | 'customized' | 'decorative-skipped';
 
 /**
  * One placement of the target hash and what the alt-fill does to it: which surface it lives on, its
@@ -357,7 +357,7 @@ function classifyAlt(existing: string): 'will-fill' | 'customized' {
  * Whether a bucket plus the overwrite choice means the alt text is actually rewritten. A will-fill
  *  always writes; a customized alt writes only on opt-in; a decorative hero never writes.
  */
-function altIsEdited(bucket: AltBucket, overwrite: boolean): boolean {
+function isAltEdited(bucket: AltBucket, overwrite: boolean): boolean {
   if (bucket === 'will-fill') return true;
   if (bucket === 'customized') return overwrite;
   return false;
@@ -383,7 +383,7 @@ function bodyAltEdits(body: string, blockLength: number, hash: string, defaultAl
     if (close === -1) continue;
     const before = hit.node.alt ?? '';
     const bucket = classifyAlt(before);
-    const write = altIsEdited(bucket, overwrite);
+    const write = isAltEdited(bucket, overwrite);
     const after = write ? defaultAlt : before;
     const placement: AltPlacement = { kind: hit.kind, bucket, before, after };
     if (!write) {
@@ -457,7 +457,7 @@ function heroAltEdits(
     const decorative = obj.decorative === true;
     const before = typeof obj.alt === 'string' ? obj.alt : '';
     const bucket: AltBucket = decorative ? 'decorative-skipped' : classifyAlt(before);
-    const write = altIsEdited(bucket, overwrite);
+    const write = isAltEdited(bucket, overwrite);
     const after = write ? defaultAlt : before;
     const placement: AltPlacement = { kind: 'hero', bucket, before, after };
 

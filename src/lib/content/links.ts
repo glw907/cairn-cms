@@ -7,7 +7,7 @@ import remarkParse from 'remark-parse';
 import remarkGfm from 'remark-gfm';
 import { visit } from 'unist-util-visit';
 import type { Link } from 'mdast';
-import { isValidId } from './ids.js';
+import { isValidId, splitConceptIdToken } from './ids.js';
 
 /** A resolved reference to a content entry by its concept and permanent id. */
 export interface CairnRef {
@@ -24,13 +24,9 @@ export type LinkResolve = (ref: CairnRef) => string | undefined;
 /** Parse a `cairn:<concept>/<id>` href, or null for any other href or a malformed token. */
 export function parseCairnToken(href: string): CairnRef | null {
   if (!href.startsWith('cairn:')) return null;
-  const rest = href.slice('cairn:'.length);
-  const slash = rest.indexOf('/');
-  if (slash <= 0) return null;
-  const concept = rest.slice(0, slash);
-  const id = rest.slice(slash + 1);
-  if (!concept || !isValidId(id)) return null;
-  return { concept, id };
+  const token = splitConceptIdToken(href.slice('cairn:'.length));
+  if (!token || !isValidId(token.id)) return null;
+  return token;
 }
 
 /**

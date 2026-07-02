@@ -157,6 +157,7 @@
     "spellchecker-wasm": "^0.3.3",
     "unified": "^11.0.5",
     "unist-util-visit": "^5.1.0",
+    "vfile": "^6.0.3",
     "yaml": "^2"
   },
   "devDependencies": {

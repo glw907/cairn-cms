@@ -68,7 +68,7 @@ const DATE_PREFIXES = new Set<string>(['year', 'month', 'day']);
  * here rather than emitting a wrong or defaulted URL at render. The permalink must be root-relative and
  * use only known tokens, a date token requires a dated concept, and the datePrefix must be in range.
  */
-export function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
+function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
   if (policy.permalink !== undefined) {
     const pattern = policy.permalink;
     if (!pattern.startsWith('/')) {

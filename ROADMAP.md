@@ -72,6 +72,32 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
+**The pre-beta sequence (Geoff, 2026-07-02; the order is the plan, executed continuously with
+the named human gates only):**
+
+1. **Polish pass close + merge** (consolidation in flight).
+2. **The pre-beta cut** (rolls the pruning + polish window; `cairn-release` mechanics).
+3. **In parallel: the docs rewrite Stage 2** (its plan is written; human gate: Geoff reads the
+   front-door drafts) **and the Wayfinder starter component set** (human gate: one batched
+   taste question settles the final component list at its plan's start; no file contention
+   between the two).
+4. **The Wayfinder design review** (five lenses; the fixture harness and retheme-lab evidence
+   are already banked; findings to Geoff).
+5. **Deploy the finished Wayfinder example to cairn.pub** — the intro site IS the reviewed
+   example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
+   front-door work; the template's permanent living demo.
+6. **The scaffolder** (the pre-B3 DX slot, B3/B4, then the Part C generator), baking the
+   reviewed template.
+7. **Rebuild ecxc.ski and 907.life from Wayfinder, via the scaffolder where possible** — one
+   effort dogfoods the template's redirection story AND `create-cairn-site`; permalinks exact,
+   live admin smokes ride here, build-alongside-then-swap.
+8. **The go-public pass** (secrets-history scan, exposure rulings, fork-PR CI hardening,
+   SECURITY toggle).
+9. **The dress rehearsal** (fresh-eyes first-hour chain; short attended session for the
+   account steps).
+10. **The beta gate** (Geoff's two decisions) → **beta**: `1.0.0-beta.1`, repo public, on
+    cairn.pub.
+
 - **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
   before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
   imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,

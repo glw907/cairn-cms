@@ -137,9 +137,15 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
   delicate balance, and the review's job is to attack both failure directions: too neutral (reads as
   unfinished scaffolding, compels no one) and too designed (reads as a look to undo before you can
-  make it yours; or trendy in a way that dates). Conducted by the main loop as design critic over the
+  make it yours). A third named lens, contemporary-but-not-trendy (Geoff, 2026-07-02): contemporary
+  means current fundamentals — type scale, spacing rhythm, contrast handling, the craft that reads as
+  made-now without announcing a year — while trendy means identifiable-era effects (the glow, glass,
+  gradient, or layout gimmick of the season) that let a viewer date the template from styling alone.
+  The test per element: could you name the year from this choice? If yes, it fails, however good it
+  looks today. (The "strong CTA with DaisyUI Aura glow" item under Considering is exactly the kind of
+  call this lens adjudicates.) Conducted by the main loop as design critic over the
   live rendered output (both color modes, real content, the component set), with findings ranked by
-  which side of the balance they fall on. Runs after the Wayfinder starter component set lands and
+  which lens they fall under. Runs after the Wayfinder starter component set lands and
   before the cairn.org intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from

@@ -161,3 +161,10 @@ Start-here path, no new page) and an **editor intro — one new page**,
 editor's terms (your site's writing room; saving holds, publishing ships, nothing you do can
 break the site), signing in, and where each editor guide is. Warmest register in the tree.
 Page inventory +1; the guides index's For-editors group leads with it.
+
+**Audience widening (Geoff, 2026-07-02):** the editor class includes the general public — the
+test reader is a less-technical nonprofit or small-business manager, someone who oversees the
+site without having chosen the tool. Every For-editors page (and the general intro) must pass
+that reader: no stack vocabulary, no assumed git/web knowledge, and the ownership/safety
+questions a manager actually has answered plainly. This is the register criterion for the
+editor-guides sweep, not just the welcome page.

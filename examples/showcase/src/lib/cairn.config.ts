@@ -20,6 +20,8 @@ const icons: IconSet = {
   // A speech glyph for the callout picker row and a triangle-bang for the alert row.
   callout: 'M216 48H40a8 8 0 0 0-8 8v160l40-32h144a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8Z',
   alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
+  // A trail-marker pennant, both the icon component's own picker row and a selectable content glyph.
+  flag: 'M64 24v208M64 32h128l-32 32 32 32H64',
 };
 
 const callout = defineComponent({
@@ -86,6 +88,34 @@ const alert = defineComponent({
   ],
 });
 
+// A single glyph from the declared icon set, for a note that wants a small marker of its own without a
+// card around it. The directive vocabulary is container-only (a bare colon or double-colon directive
+// always restores to literal prose, never dispatches), so this renders at its own block position rather
+// than truly inline in a sentence; it still serves a standalone line or a short aside. An icon name
+// outside the declared set is an author-input error that only a hand-edited directive can reach (the
+// picker only offers declared names), so it fails loud at render, the same build-backstop posture
+// resolveMedia and resolveLinks use for a broken reference: preview catches the throw and shows the
+// failed state (EditPage's preview effect), a public build lets it propagate and fails the build.
+const icon = defineComponent({
+  name: 'icon',
+  label: 'Icon',
+  description: 'A single glyph from the site icon set, for a note that wants a small marker of its own.',
+  use: 'Mark a short standalone line without wrapping it in a card.',
+  group: 'Notices',
+  icon: 'flag',
+  preview: { attributes: { name: 'flag' } },
+  attributes: {
+    name: fields.icon({ label: 'Icon', required: true }),
+  },
+  build: (ctx) => {
+    const name = strAttr(ctx, 'name');
+    if (!name || !(name in icons)) {
+      throw new Error(`cairn: icon component references "${name ?? ''}", which is not in the declared icon set`);
+    }
+    return iconSpan(glyph(name, icons));
+  },
+});
+
 // A hydrate (island) component: attribute-only, so its static fallback states the conversion and the live
 // component (Converter.svelte) adds the interactive input. The fallback is class-driven (no inline style),
 // because rehypeSinkGuard strips style/on* from build() output.
@@ -106,7 +136,7 @@ const converter = defineComponent({
     ]),
 });
 
-const registry = defineRegistry({ components: [callout, alert, converter] });
+const registry = defineRegistry({ components: [callout, alert, icon, converter] });
 
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);

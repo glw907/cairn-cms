@@ -164,6 +164,13 @@ The second component is an alert, for a caution set in a bordered card with an i
 The post's date sets its place in the archive and its web address. Fixing it after you publish changes the link, which can break anything pointing at the old one. Get it right the first time.
 :::
 
+The third component is an icon, a single glyph from the site's icon set for a short line that wants a marker of its own, with no card and no title:
+
+:::icon{name="flag"}
+:::
+
+Pick the glyph from the same picker the callout and alert icons use. An icon name outside the declared set is not a shape the site can draw, so it fails the build rather than rendering a blank one.
+
 ## Changing the look
 
 Everything you have seen draws its type, color, and spacing from one set of variables, the design tokens, in a single theme file. The accent color, the heading font, the width of the text column, and the rhythm between blocks are all named values you can edit in one place. Change `--color-primary` and the links, the list markers, the blockquote rule, and the callout accents all move together. The point of a surface like this is that the writing and the site stay in step, so a post written today still looks right after the next redesign.

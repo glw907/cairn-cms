@@ -97,10 +97,10 @@ declare function defineConcept<const C extends ConceptConfig>(concept: C): C;
 ```
 
 Declare one concept while preserving its fieldset type for typed reads, the concept-level companion
-to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink` or
-`datePrefix` throws at module load rather than at a defaulted render. A concept declares its routing
-with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit `RoutingRule`) and
-its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
+to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink`,
+`datePrefix`, or `routing` throws at module load rather than defaulting or resolving silently. A
+concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
+and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
 
 ```ts
 posts: defineConcept({
@@ -573,7 +573,12 @@ Stability tier: Extension API.
 declare function parseSiteConfig(raw: string): SiteConfig;
 ```
 
-Parse the YAML site-config text into a typed object. Throws `SiteConfigError` on a malformed root.
+Parse the YAML site-config text into a typed object. Throws `SiteConfigError` on a malformed root,
+and enforces the config boundary between site.config.yaml and `cairn.config.ts`: every top-level key
+must be one the engine reads from the YAML (`siteName`, `description`, `author`, `locale`, `menus`,
+`spellcheck`, `tidy`, `vocabulary`). A key that belongs on the adapter instead (`content`, `backend`,
+`email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as its correct
+home; any other unrecognized key throws listing the known keys.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
@@ -676,7 +681,6 @@ function signatures above reference these.
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `ConceptUrlPolicy` | Extension API | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
-| `RoutingRule` | Extension API | `interface RoutingRule` | Concept-fixed routing: routable, dated, inFeeds. |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |

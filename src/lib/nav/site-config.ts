@@ -291,6 +291,33 @@ export class SiteConfigError extends Error {
   }
 }
 
+/** The top-level keys the engine reads from site.config.yaml (spec 1.2, Contract v2, tag management). */
+const KNOWN_TOP_LEVEL_KEYS = new Set([
+  'siteName',
+  'description',
+  'author',
+  'locale',
+  'menus',
+  'spellcheck',
+  'tidy',
+  'vocabulary',
+]);
+
+// Adapter-owned settings a site author might reach for in the YAML by mistake, each mapped to the
+// message naming its correct home (`cairn.config.ts`). The `content` entry is the Contract v2
+// migration guard (a leftover per-concept block would silently do nothing while the concept
+// defaulted its permalink); the rest are the other CairnAdapter top-level groups, named here so the
+// same boundary message teaches a developer who reaches for the wrong file for any of them.
+const ADAPTER_MISPLACEMENTS: Readonly<Record<string, string>> = {
+  content:
+    'cairn: site config no longer carries per-concept URL policy; move permalink/datePrefix into defineConcept (Contract v2)',
+  backend: 'cairn: "backend" belongs in cairn.config.ts (githubApp(...)), not site.config.yaml',
+  email: 'cairn: "email" belongs in cairn.config.ts (the adapter\'s SenderConfig), not site.config.yaml',
+  rendering: 'cairn: "rendering" belongs in cairn.config.ts (the adapter\'s render subsystem), not site.config.yaml',
+  media: 'cairn: "media" belongs in cairn.config.ts (the adapter\'s AssetConfig), not site.config.yaml',
+  editor: 'cairn: "editor" belongs in cairn.config.ts (the adapter\'s preview/nav/supportContact knobs), not site.config.yaml',
+};
+
 /** Parse the YAML site-config text into a typed object. Throws SiteConfigError on a malformed root. */
 export function parseSiteConfig(raw: string): SiteConfig {
   const parsed = parseYaml(raw) as unknown;
@@ -301,12 +328,15 @@ export function parseSiteConfig(raw: string): SiteConfig {
   if (typeof siteName !== 'string' || !siteName.trim()) {
     throw new SiteConfigError('Site config needs a siteName');
   }
-  // Contract v2 moved per-concept URL policy out of the YAML and onto defineConcept. A leftover
-  // `content:` block here would silently do nothing while the concept defaulted its permalink, so a
-  // half-migrated site (one carrying a non-default datePrefix) would rewrite every post URL. Fail loud.
-  if ((parsed as SiteConfig).content !== undefined) {
+  // The config boundary: every top-level key must be one the engine reads from the YAML. A key that
+  // belongs on the adapter names its correct home; anything else is simply unrecognized. Fail on the
+  // first offending key, mirroring the single-cause `content:` guard this generalizes.
+  for (const key of Object.keys(parsed as Record<string, unknown>)) {
+    if (KNOWN_TOP_LEVEL_KEYS.has(key)) continue;
+    const misplacement = ADAPTER_MISPLACEMENTS[key];
+    if (misplacement !== undefined) throw new SiteConfigError(misplacement);
     throw new SiteConfigError(
-      'cairn: site config no longer carries per-concept URL policy; move permalink/datePrefix into defineConcept (Contract v2)',
+      `cairn: site config has an unrecognized key "${key}"; known keys are ${[...KNOWN_TOP_LEVEL_KEYS].join(', ')}`,
     );
   }
   return parsed as SiteConfig;

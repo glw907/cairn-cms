@@ -17,7 +17,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ComponentRegistry`: { defs: ComponentDef[]; names: string[]; get: (name: string) => ComponentDef; defaultIcon: (name: string, role?: string) => string; iconField: (name: string) => string }
 - `ComposeInput`: { adapter: CairnAdapter; siteConfig: SiteConfig }
 - `composeRuntime`: ({ adapter, siteConfig }: ComposeInput) => CairnRuntime
-- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded" | RoutingRule; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
+- `ConceptConfig`: { dir: string; label?: string; singular?: string; fields: S; routing?: "feed" | "page" | "embedded"; permalink?: string; datePrefix?: DatePrefix; summaryFields?: string[] }
 - `ConceptDescriptor`: { id: string; label: string; singular: string; dir: string; routing: RoutingRule; permalink: string; datePrefix: "year" | "month" | "day"; fields: NamedField[]; schema: Fieldset<Record<string, FieldDescriptor>>; summaryFields: string[]; validate: (frontmatter: Record<string, unknown>, body: string) => ValidationResult }
 - `ConceptUrlPolicy`: { permalink?: string; datePrefix?: DatePrefix }
 - `createRenderer`: (registry?: ComponentRegistry, options?: RendererOptions) => { remarkPlugins: PluggableList; rehypePlugins: PluggableList; renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string> }
@@ -52,7 +52,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RendererOptions`: { sanitizeSchema?: ((defaults: Schema) => Schema); unsafeDisableSanitize?: boolean; anchorRel?: string | false }
 - `RepoFile`: { id: string; name: string; path: string }
 - `Role`: "owner" | "editor"
-- `RoutingRule`: { routable: boolean; dated: boolean; inFeeds: boolean }
 - `SenderConfig`: { from: string; replyTo?: string }
 - `SendMagicLink`: (env: AuthEnv, message: MagicLinkMessage) => Promise<void>
 - `serializeManifest`: (manifest: Manifest) => string

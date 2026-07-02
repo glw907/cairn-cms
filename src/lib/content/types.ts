@@ -75,10 +75,10 @@ export interface ConceptConfig<S extends Fieldset = Fieldset> {
   /** The concept's fieldset: the form projection, the generated validator, and the inferred type. */
   fields: S;
   /**
-   * This concept's routing. A named shorthand (`'feed'` dated and in feeds, `'page'` a routable
-   *  static page, `'embedded'` not routable) or an explicit rule. Omitted means `'page'`.
+   * This concept's routing: the `'feed'` (dated and in feeds), `'page'` (a routable static page), or
+   *  `'embedded'` (not routable) shorthand. Omitted means `'page'`.
    */
-  routing?: 'feed' | 'page' | 'embedded' | RoutingRule;
+  routing?: 'feed' | 'page' | 'embedded';
   /** The permalink pattern, root-relative, e.g. `/blog/:year/:slug`. Defaults by concept id. */
   permalink?: string;
   /** Date-prefix granularity for a dated concept's id-to-slug stripping. Defaults to `day`. */

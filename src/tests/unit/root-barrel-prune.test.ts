@@ -5,7 +5,9 @@ import { fileURLToPath } from 'node:url';
 import { enumerateExports } from '../../../scripts/reference-coverage.mjs';
 
 // The 72 names the surface-pruning pass demotes from the root barrel (Task 1), plus the
-// `ResolvedReference` reshape (its home becomes `/delivery` only). Verbatim from
+// `ResolvedReference` reshape (its home becomes `/delivery` only) and `RoutingRule` (Task 5,
+// demoted alongside the routing-union change: `RoutingRule` is the internal normalization target
+// only, no longer an accepted `ConceptConfig.routing` value). Verbatim from
 // `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`.
 const DEMOTED = [
   'initialValues',
@@ -81,12 +83,11 @@ const DEMOTED = [
   'ComponentInsert',
   'ReferenceOptions',
   'ResolvedReference',
+  'RoutingRule',
 ];
 
 // The keep list for the root subpath, from the audit verdicts doc's `## .` section
-// (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`). `RoutingRule` is a
-// deliberate exception: it is on the audit's keep list and stays exported through this task, and
-// leaves the barrel only in Task 5 alongside the routing-union change.
+// (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
 const KEPT = [
   'defineAdapter',
   'defineConcept',
@@ -123,7 +124,6 @@ const KEPT = [
   'NavMenuConfig',
   'PreviewConfig',
   'AssetConfig',
-  'RoutingRule',
   'ConceptDescriptor',
   'ConceptUrlPolicy',
   'CairnRuntime',

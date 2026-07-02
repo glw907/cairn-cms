@@ -17,10 +17,18 @@ const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingR
   embedded: { routable: false, dated: false, inFeeds: false },
 };
 
-/** Expand a concept's routing shorthand to a concrete rule. The single resolution point: omitted is `page`. */
-export function resolveRouting(routing: ConceptConfig['routing']): RoutingRule {
+/**
+ * Expand a concept's routing shorthand to a concrete rule. The single resolution point, reached
+ *  from both `defineConcept` (declaration time) and `normalizeConcepts` (compose time): omitted is
+ *  `page`. Throws on a defined-but-unrecognized value, so a typo'd shorthand (from an untyped
+ *  caller, or a cast) fails loudly here rather than silently defaulting.
+ */
+export function resolveRouting(routing: ConceptConfig['routing'], id: string): RoutingRule {
   if (routing === undefined) return ROUTING_SHORTHANDS.page;
-  return typeof routing === 'string' ? ROUTING_SHORTHANDS[routing] : routing;
+  if (!(routing in ROUTING_SHORTHANDS)) {
+    throw new Error(`cairn: concept "${id}" routing "${routing}" must be one of feed, page, embedded`);
+  }
+  return ROUTING_SHORTHANDS[routing];
 }
 
 /**
@@ -29,10 +37,11 @@ export function resolveRouting(routing: ConceptConfig['routing']): RoutingRule {
  * Mirrors {@link defineAdapter}; the validation is the build-independent net for a concept with no entries.
  */
 export function defineConcept<const C extends ConceptConfig>(concept: C): C {
+  const id = concept.label ?? concept.dir;
   validateUrlPolicy(
-    concept.label ?? concept.dir,
+    id,
     { permalink: concept.permalink, datePrefix: concept.datePrefix },
-    resolveRouting(concept.routing).dated,
+    resolveRouting(concept.routing, id).dated,
   );
   return concept;
 }
@@ -86,9 +95,9 @@ export function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: b
 
 /**
  * Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each concept declares its
- * own routing (a shorthand or an explicit rule, resolved by `resolveRouting`) and URL policy
- * (`permalink`, `datePrefix`) on the config; both default when omitted (`/:slug` for Pages, `/<id>/:slug`
- * otherwise; `datePrefix` defaults to `day`). A new concept attaches by adding one key under `content`.
+ * own routing shorthand, resolved by `resolveRouting`, and URL policy (`permalink`, `datePrefix`) on the
+ * config; both default when omitted (`/:slug` for Pages, `/<id>/:slug` otherwise; `datePrefix` defaults
+ * to `day`). A new concept attaches by adding one key under `content`.
  */
 export function normalizeConcepts(
   content: Record<string, ConceptConfig | undefined>,
@@ -125,7 +134,7 @@ export function normalizeConcepts(
         );
       }
     }
-    const conceptRouting = resolveRouting(config.routing);
+    const conceptRouting = resolveRouting(config.routing, id);
     const policy: ConceptUrlPolicy = {
       permalink: config.permalink,
       datePrefix: config.datePrefix,

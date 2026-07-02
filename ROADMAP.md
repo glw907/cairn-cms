@@ -190,6 +190,17 @@ the named human gates only):**
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.
+- **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).** Two
+  scoped engine items: (1) **the gallery enabler** — component attributes reject `image`/`array`
+  types and repeatable slots render bare text inputs regardless of `itemFields`; a schema-driven
+  gallery component needs either an image-typed repeatable-slot widget in `ComponentForm` or an
+  `image` carve-in for component attributes. Additive contract change; its own designed task (the
+  phase-3a focus hazard lives in that component). Gallery joins the starter set when it lands.
+  (2) **Inline icons** — the directive vocabulary is container-only by design, so the shipped icon
+  component is block-level; the aksailingclub migration's 99x inline usage needs either a site-level
+  render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
+  directives (a design question, not a task). Figure needs no component at all: the engine owns
+  `:::figure` natively, and the name is reserved — the docs pass records this.
 - **Wayfinder final design review (adversarial, Fable-conducted, before Wayfinder goes live).**
   Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
   enough that a developer or designer could take it many different directions," and simultaneously

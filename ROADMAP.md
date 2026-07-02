@@ -57,6 +57,17 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   grab-bags, `createMediaRoute`'s argument, the hand-declared `Platform.env`), and lands the
   gate-enforced three-tier stability vocabulary, so the contract the cutovers exercise is the frozen
   one. Runs before the cutovers below.
+- **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
+  before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
+  imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,
+  agent-facing: one way per pattern family — errors and result shapes, validation, factory anatomy,
+  module layout, test structure, Svelte component anatomy, naming — picked from what the code already
+  does best). Then measure bloat deterministically (dead internal code, unused dependencies,
+  duplication) and run a behavior-preserving module-by-module sweep against the charter, with the
+  frozen surface as a machine-checked invariant (`check:surface` plus the signatures gate) and the
+  full test suite as the behavior contract. Anything that wants a public-surface change gets filed
+  for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
+  queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
 - **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
   passes after it (editor popover and a11y, Library upload, the native starter template). The remaining

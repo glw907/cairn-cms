@@ -10,9 +10,12 @@ waits. Publishing copies it to `main`, authored in the editor's name, and your s
 the same as if you'd pushed from a terminal. There is no hosted service, no database, and no
 account with anyone: cairn is code in your app and files in your repo.
 
-I built cairn for my own sites: small productions with real editors who deserved better than
-raw git, where every existing answer either wanted to be the whole site or wanted to own the
-content. So cairn is deliberately small. It does one job—managing markdown content and the
+I built cairn for my own sites, to solve two problems that kept arriving together. The people
+who write for a small site need to edit and publish without learning git, and everything
+built for them either takes the site over (a platform with your pages inside it) or takes the
+content hostage (a service with your words in its database). And the developer maintaining
+that site needs updates to stay cheap: a CMS you build around should never make you rebuild.
+So cairn is deliberately small. It does one job—managing markdown content and the
 admin where editors write it—does it well, and gets out of the way. Everything else a site
 needs is yours: your routes, your data, your auth, your design, served through a few
 documented seams rather than absorbed as features. The stack is fixed on purpose (SvelteKit,
@@ -39,8 +42,13 @@ npm install @glw907/cairn-cms
 - **Removing cairn** leaves you a working repo of markdown. Nothing to export, nothing to
   migrate.
 
-Whether cairn fits your project—and when it doesn't—is
-[Why cairn](./docs/explanation/why-cairn.md). Start with the
+Cairn is obviously not for you if you don't have (or don't want) a Cloudflare account, if
+your team works in React or another framework, or if you need open-ended user-defined
+collections rather than a fixed set of declared concepts. Those aren't gaps to be fixed;
+they're the trade the rest of this README is built on, argued in
+[Why cairn](./docs/explanation/why-cairn.md).
+
+Start with the
 [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed
 site with a working admin. The [docs](./docs/README.md) cover the rest:
 [guides](./docs/guides/README.md), [reference](./docs/reference/README.md),

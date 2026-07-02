@@ -53,13 +53,6 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
-- **Land the surface-pruning pass (the pre-beta contract freeze).** Engine work complete on
-  `surface-pruning-1`, gates green; plan at
-  `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, evidence beside it. It demotes the
-  ~106 audited-internal exports, fixes the shape warts (the open `routing` union, the deps
-  grab-bags, `createMediaRoute`'s argument, the hand-declared `Platform.env`), and lands the
-  gate-enforced three-tier stability vocabulary, so the contract the cutovers exercise is the frozen
-  one. Pending: merge to `main` and the pass-end ritual. Runs before the cutovers below.
 - **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
   before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
   imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,

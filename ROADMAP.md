@@ -51,6 +51,23 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
+- **Land the surface-pruning pass (the pre-beta contract freeze).** In flight on `surface-pruning-1`;
+  plan at `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, evidence beside it. It demotes
+  the ~106 audited-internal exports, fixes the shape warts (the open `routing` union, the deps
+  grab-bags, `createMediaRoute`'s argument, the hand-declared `Platform.env`), and lands the
+  gate-enforced three-tier stability vocabulary, so the contract the cutovers exercise is the frozen
+  one. Runs before the cutovers below.
+- **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
+  before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
+  imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,
+  agent-facing: one way per pattern family — errors and result shapes, validation, factory anatomy,
+  module layout, test structure, Svelte component anatomy, naming — picked from what the code already
+  does best). Then measure bloat deterministically (dead internal code, unused dependencies,
+  duplication) and run a behavior-preserving module-by-module sweep against the charter, with the
+  frozen surface as a machine-checked invariant (`check:surface` plus the signatures gate) and the
+  full test suite as the behavior contract. Anything that wants a public-surface change gets filed
+  for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
+  queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
 - **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
   passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
@@ -60,6 +77,24 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Next
 
+- **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
+  writes: a per-entry history view over the backend's commit log (the commit author is already the
+  editor, so attribution is free), and revert implemented as a new commit through the existing
+  save/publish pipeline, so the per-entry branch and the deliberate Publish gate hold unchanged. No
+  new storage and no new actor. The strongest unbuilt in-charter feature from the 2026-07-01 mission
+  review: every competitor CMS has "revisions," cairn has something better underneath, and the editor
+  persona currently sees none of it.
+- **Docs rewrite to the frozen contract.** After the surface-pruning pass merges, rewrite the
+  published doc arms against the pruned surface. Carries: the two tutorial blockers the audit found
+  (the retired `mintToken` dep in Milestone 8, and the admin mount taught as "three files in all"
+  without the shell layout pair); a migration guide (bring existing Hugo/Jekyll-style markdown into
+  cairn concepts; the engine needs nothing, concepts are directories of markdown); an "add authors to
+  your site" guide teaching the declare-your-own-concept plus `fields.reference` pattern (the intended
+  answer to a whole class of "does cairn support X?" questions; authors stay content with reference
+  integrity, never a built-in identity, per the reverted identity-substrate lesson); and the
+  extending-developer-lens baseline refresh (its "baseline" section still describes the pre-redesign
+  state). The doc-snippet extract-and-typecheck gate lands with this rewrite so the docs cannot rot
+  against the frozen surface again.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced
@@ -69,6 +104,33 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   object leaves, the byte-preserving rename rewriter to address a nested YAML path (the corruption-prone part
   the references fan-out caught bugs in), and the cross-branch index plus rename and delete gates to cover the
   nested edges.
+- **Starter component set for the Wayfinder template (before beta).** The starter template ships a
+  curated set of content components common across the sites cairn is likely to manage (clubs and
+  small orgs, personal and small-business sites) — reasonable, deliberately not exhaustive. Today the
+  showcase defines `callout`, `alert`, and the `converter` island demo; the demo is showcase-ware,
+  not a template component, so the real set is two. Candidates to curate at plan time (a taste pass,
+  brainstorm the final list): figure/gallery, the callout family, a CTA/button, video embed, pull
+  quote, FAQ/details. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
+  render implementation in the template's design — so the set doubles as the reference example of
+  the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
+  rewrite's authoring guidance.
+- **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
+  documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
+  prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than
+  exhaustively. Once Topo exists, cairn's own documentation moves onto it, so the engine publishes
+  its own manual (the strongest dogfood available, and the standing proof that the docs-site use
+  case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
+  Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
+  produces the content Topo hosts); gives the scaffolder its first real template choice.
+- **The project sites: cairn.org on Wayfinder, docs.cairn.org on Topo.** Two sites, not one, because
+  a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
+  either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
+  of its template: the intro site is the Pages-plus-Posts shape cairn targets, and the click-through
+  proof a prospective user sees before running the scaffolder; the docs site is the engine
+  publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Wayfinder
+  derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
+  Wayfinder as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
+  hosts them. Domain procurement is its own small first step.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
@@ -156,6 +218,15 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   and verify the live permalinks. The phase 3b hard-error in `parseSiteConfig` makes a missed transcription
   fail loud rather than silently default `datePrefix` to `day` and shift every post URL. Tied to each site's
   v2 cutover pass.
+- **Shareable draft preview (pattern before engine).** An editor who wants "look at this before I
+  publish" today has only the in-editor preview. The per-entry `cairn/<concept>/<id>` branches mean a
+  Workers Builds preview deployment per branch can give a shareable draft URL with zero engine code;
+  document that pattern at a site cutover, and consider an engine-rendered signed preview URL only if
+  the pattern proves clumsy on a real site.
+- **`llms.txt` delivery view.** The positioning carries "feeds AIs easily," and the delivery surface
+  builds robots, sitemaps, and feeds but not the convention file for exactly that promise. A
+  `buildLlmsTxt` plus `llmsTxtResponse` beside `buildRobots`, additive, shaped like the existing
+  response builders.
 - **Migrate cairn's CSRF-disable before SvelteKit removes `checkOrigin`.** cairn's admin CSRF ownership
   depends on `csrf: { checkOrigin: false }`, deprecated in SvelteKit 2.61. `trustedOrigins` cannot replace
   it: a missing-`Origin` POST is always forbidden, and the check runs before the `handle` hook. The
@@ -165,6 +236,12 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Considering
 
+- **Scheduled publishing ("publish at").** Editors expect scheduling from a CMS, and the
+  date-vs-publish field redesign note in Later exists precisely because the date field already reads
+  as if it schedules. The lean shape, if it lands: a publish-at timestamp on the held per-entry
+  branch, a documented Cron Trigger the site adds, and the existing publish action fired at the
+  time; no queues and no recurring schedules. It cuts against the deliberate-Publish philosophy, so
+  this is a product decision to make explicitly, not an engineering default.
 - **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
   beyond Posts and Pages, scoped when a production site needs it.
 - **Editor find/replace.** A recipe-built find/replace panel on `@codemirror/search`'s `createPanel`,

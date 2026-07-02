@@ -1,41 +1,45 @@
 # cairn
 
-**Your writers get a magic link. Your repo gets the commit.**
+An embedded CMS for SvelteKit sites on Cloudflare. Editors write markdown in the browser;
+publishing is a git commit.
 
-Cairn is an embedded CMS for SvelteKit sites on Cloudflare: editors write markdown in the
-browser, and every publish is a git commit to your repo, authored in their name. An editor
-signs in from an emailed link—no GitHub account, no password—and their saves wait on a
-per-entry branch until a deliberate Publish commits to `main` and your site redeploys, the
-same as if you'd pushed from a terminal. Unlike a hosted headless CMS there is no service, no
-database, and no vendor account; unlike form-based git CMSes, markdown is the writing
-surface, not an implementation detail. We built cairn on two convictions that rarely ship
-together: writers deserve a real editor, and developers deserve to keep owning their site.
+Cairn installs into your site as a library. An editor signs in from an emailed link—no GitHub
+account, no password—and writes in an editor with a live preview of the real site. Saving
+commits the markdown to a holding branch in your repo, one branch per entry, where the draft
+waits. Publishing copies it to `main`, authored in the editor's name, and your site redeploys
+the same as if you'd pushed from a terminal. There is no hosted service, no database, and no
+account with anyone: cairn is code in your app and files in your repo.
+
+Cairn is deliberately small. It does one job—managing markdown content and the admin where
+editors write it—and it does that job well and gets out of the way. Everything else a site
+needs is yours: your routes, your data, your auth, your design, served through a few
+documented seams rather than absorbed as features. The stack is fixed on purpose, and
+"out of scope" is an answer we use; refusing generality is what keeps the engine small enough
+to trust with your site.
 
 <!-- SCREENSHOT (paired evidence): left, the editor mid-edit with live preview; right, the
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
-     author. One image proving both halves of the pitch. Capture at the Wayfinder design
-     review; never substitute a stock placeholder. -->
+     author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
 
 ```sh
 npm install @glw907/cairn-cms
 ```
 
-- **One renderer, yours.** Your site supplies `render`; the editor's live preview and your
-  public pages run the same pipeline, so editors see exactly what ships.
-- **Save holds, Publish ships.** One branch per entry; a conflicting edit is refused, never
-  merged by guesswork.
-- **Nothing rendered for you.** Cairn owns `/admin` and stays out of your public site; every
-  route, template, and byte of CSS is yours.
-- **Concepts, not collections.** Posts and Pages out of the box, your own declared beside
-  them, each with a typed frontmatter schema.
-- **Leave anytime.** Your content was markdown files in your repo the whole time.
+- **Sign-in** is an emailed link. The editor list lives in your D1 database; owners manage it
+  from the admin.
+- **Saving** writes to a per-entry holding branch; **publishing** is a deliberate, separate
+  step. A conflicting edit is refused, never merged by guesswork.
+- **Rendering** is one function your site supplies; the editor's preview and your public
+  pages share it, so editors see exactly what ships.
+- **Content** is a fixed set of concepts you declare—Posts and Pages out of the box, your own
+  beside them—each with a typed frontmatter schema.
+- **Removing cairn** leaves you a working repo of markdown. Nothing to export, nothing to
+  migrate.
 
-For developers who want the people they build for to publish on their own, without giving up
-SvelteKit, Cloudflare, or git as the source of truth. Whether cairn fits your project—and
-when it doesn't—is [Why cairn](./docs/explanation/why-cairn.md).
-
-Start with the [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory
-to a deployed site with a working admin. The [docs](./docs/README.md) cover the rest:
+Whether cairn fits your project—and when it doesn't—is
+[Why cairn](./docs/explanation/why-cairn.md). Start with the
+[tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed
+site with a working admin. The [docs](./docs/README.md) cover the rest:
 [guides](./docs/guides/README.md), [reference](./docs/reference/README.md),
 [explanation](./docs/explanation/README.md).
 

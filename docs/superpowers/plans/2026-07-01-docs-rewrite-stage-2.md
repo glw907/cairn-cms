@@ -87,10 +87,33 @@ page — who cairn is for and not for, absorbing the public-worthy content of
 `docs/internal/what-cairn-is-and-is-not.md` (which stays, internal-facing, but published
 pages stop linking into it).
 
+**Content brief for the opening and the why (Geoff, 2026-07-02):** the README and
+`why-cairn.md` open with a good, clear statement of what cairn is and who it is for — the
+two-persona statement (the developer who owns everything; the editor who gets a humane
+tool), before any feature list. The positioning coordinates from the competitive read are
+material: cairn sits where Kirby's two-persona honesty, Eleventy's leanness creed, and iA
+Writer's editorial respect intersect, on the one stack it refuses to abstract away.
+`why-cairn.md`'s technical why must ARGUE the stack, not just state it: **why Cloudflare**
+(Workers + D1 + R2 + Email Sending are a complete small-site substrate from one vendor at
+small-site prices, and refusing the multi-cloud portability layer is precisely what keeps the
+engine small — every abstraction cairn does not carry is a seam that cannot break); **why
+SvelteKit** (server-rendered pages with progressive enhancement match a CMS whose admin is
+form actions that work before JavaScript loads; the islands model matches
+mostly-static-content sites; the component model is the one the extending developer already
+lives in); and, at lesser weight, **why DaisyUI** for the admin skeleton (the developer
+extends the admin in the most copyable idiom in the ecosystem instead of learning a bespoke
+design system — the admin's look is cairn's, but its extension language is everyone's).
+Honesty rule for all three: the arguments are real trade-offs stated plainly, including who
+should NOT choose cairn because of them (no Cloudflare account, a React team, a taste for
+open-ended collections); the who-it-is-not-for half is what makes the who-it-is-for half
+credible.
+
 **Acceptance:** all three pass the gates; no published page links into `docs/internal/`
 after this task (grep-proven); `prose-voice-reviewer` findings on these three folded in
 before the task commits (these pages are the register exemplars every dispatch cites, so
-they get their voice review early, not at pass end).
+they get their voice review early, not at pass end); the content brief above is satisfied
+on its own terms — the what/who opening leads, and each stack choice is argued with its
+trade-off named.
 
 - [ ] Draft, voice-review, fix inbound links, commit
 

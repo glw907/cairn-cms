@@ -21,14 +21,14 @@ auth, and design stay yours, reachable through a few documented seams. The stack
 scope" a lot. That refusal is what keeps the engine small enough to understand, and small
 enough that updates don't break what you built around it.
 
-The stack picks have reasons you can check. SvelteKit because its grain matches a content
-site: server-rendered pages, form actions that work before JavaScript loads (the admin leans
-on this), and it's the framework developers keep reporting they actually enjoy. Cloudflare
-because Workers, D1, and R2 add up to everything a small site needs from one vendor, at
-prices that round to zero, on infrastructure that does not go down. GitHub because your
-content's history, attribution, and deploy hooks already live there, so cairn borrows them
-instead of rebuilding them. [Why cairn](./docs/explanation/why-cairn.md) makes each argument
-properly, costs included.
+SvelteKit was the easy call. Content sites are what it does best (server-rendered pages,
+form actions that work before JavaScript loads), and it's the rare framework developers seem
+to genuinely enjoy. Cloudflare needs more defending. Workers, D1, and R2 cover everything a
+small site needs, running a small site there costs almost nothing, and the whole substrate
+comes from one vendor. GitHub barely counted as a choice, since your content's history,
+attribution, and deploy hooks already live there, and cairn uses them rather than rebuilding
+them. [Why cairn](./docs/explanation/why-cairn.md) has the full arguments, including the
+costs.
 
 <!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as

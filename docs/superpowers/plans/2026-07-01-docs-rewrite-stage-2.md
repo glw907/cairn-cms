@@ -337,3 +337,11 @@ waste, discarded as each page is replaced.
   parallels ("code in your app and files in your repo"), no dramatic nouns ("hostage"), no
   bolded-lead feature bullets (feature-card formatting), no punchline triples. Explanation to
   peers, in ordinary sentence shapes, with the writer's judgment visible.
+
+- **Identical sentence skeletons in sequence are a rhythm tell (Geoff, 2026-07-02).** "X
+  because [three benefits]. Y because [three benefits]. Z because [three benefits]." is a drum
+  machine no human writes. When explaining several choices, the judgments must differ in
+  length, confidence, and construction (one gets a short verdict and a long defense, one gets
+  a subordinate clause, one barely counts as a choice). Announcement sentences ("The stack
+  picks have reasons you can check.") are the same defect: a meta-line doing setup instead of
+  saying the first real thing.

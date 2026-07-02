@@ -331,3 +331,9 @@ waste, discarded as each page is replaced.
   developers and that is where their authenticity detector runs hottest. The same per-voice
   logic covers the structural tells: the not-X-but-Y contrast frame is banned outright (a
   caught instance: "Those aren't gaps to be fixed; they're the trade...").
+
+- **The positive register model (Geoff, 2026-07-02): a good writer on a developer-focused
+  blog.** Not marketing copy at any temperature. Concretely: no aphorisms or slogan-shaped
+  parallels ("code in your app and files in your repo"), no dramatic nouns ("hostage"), no
+  bolded-lead feature bullets (feature-card formatting), no punchline triples. Explanation to
+  peers, in ordinary sentence shapes, with the writer's judgment visible.

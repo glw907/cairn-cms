@@ -8,7 +8,7 @@ export default defineConfig({
   // read. Run the e2e suite on one worker so each spec reads back its own commit deterministically.
   workers: 1,
   fullyParallel: false,
-  // Retry on CI only. The spellcheck spike streams a 1.5MB dictionary into wasm on first init, which
+  // Retry on CI only. The spellcheck spec streams a 1.5MB dictionary into wasm on first lint, which
   // intermittently exceeds its budget on a loaded CI runner; a retry clears the transient slowness
   // without weakening any assertion. Locally (reuseExistingServer) retries stay off for fast feedback.
   retries: process.env.CI ? 2 : 0,

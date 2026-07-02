@@ -21,10 +21,10 @@ const SNAPSHOT = 'docs/internal/api-surface.md';
 const BANNER = 'GENERATED — run `npm run check:surface -- --update` to regenerate';
 
 // The exported subpaths the gate snapshots, drawn directly from package.json `exports`: every entry
-// whose value carries a `types` field. The raw asset entries (`.wasm`, `.txt`, `package.json`) have
-// no `types` field and fall out. This list is NOT the reference gate's CONFIG, which omits
-// `/components/spellcheck-worker`; and the gate does NOT inherit that gate's `excludeDts` page-dedup,
-// because the re-exported names ARE real surface here.
+// whose value carries a `types` field. The raw asset entries (`.txt`, `package.json`) have no
+// `types` field and fall out. This list is NOT the reference gate's CONFIG, and the gate does NOT
+// inherit that gate's `excludeDts` page-dedup (for example `/delivery/data`'s re-export of
+// `/delivery`'s names), because the re-exported names ARE real surface here.
 /** @returns {{ subpath: string, dts: string }[]} */
 export function surfaceSubpaths() {
   const pkg = JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf8'));

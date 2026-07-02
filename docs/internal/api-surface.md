@@ -77,27 +77,17 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnAdminShell`: Component<Props, {}, "">
 - `CairnMediaLibrary`: Component<Props, {}, "">
 - `CairnTidySettings`: Component<Props, {}, "">
-- `ComponentForm`: Component<Props, {}, "incomplete" | "values">
-- `ComponentInsertDialog`: Component<Props, { open: () => void; editComponent: (def: ComponentDef, values: ComponentValues, range: { from: number; to: number }) => void }, "">
 - `ConceptList`: Component<Props, {}, "">
 - `ConfirmPage`: Component<Props, {}, "">
 - `CsrfField`: Component<Props, {}, "">
 - `DeleteDialog`: Component<Props, { open: () => void }, "">
 - `EditPage`: Component<Props, {}, "">
 - `HelpHome`: Component<$$ComponentProps, {}, "">
-- `IconPicker`: Component<Props, {}, "">
-- `LinkPicker`: Component<Props, { open: () => void }, "">
 - `LoginPage`: Component<Props, {}, "">
 - `ManageEditors`: Component<Props, {}, "">
 - `MarkdownEditor`: Component<Props, {}, "value">
 - `NavTree`: Component<Props, {}, "">
 - `RenameDialog`: Component<Props, { open: () => void }, "">
-
-## `/components/spellcheck-worker`
-
-- `createSpellcheckHandler`: (engine: SpellEngine) => { handle(message: HandlerMessage, post: Post): void }
-- `OutboundMessage`: ReadyMessage | CheckResult | SuggestResult | ErrorResult
-- `SpellEngine`: { check: (word: string) => boolean; suggest: (word: string) => string[] }
 
 ## `/delivery`
 

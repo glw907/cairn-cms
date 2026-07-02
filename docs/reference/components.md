@@ -407,9 +407,10 @@ of its own.
 
 ## Composed components
 
-These mount inside `EditPage` and its dialogs, so you don't wire them directly. They appear here
-for completeness, and for a site that builds its own admin surface. The snippets are minimal mounts
-with the real prop names.
+`MarkdownEditor` is the charter-named authoring seam, documented as a standalone bare surface a
+site can mount directly. `DeleteDialog` and `RenameDialog` mount inside `EditPage` but stay public
+for a site that builds its own per-route admin surface, pairing with the same load/action names
+`EditPage` uses. The snippets are minimal mounts with the real prop names.
 
 ### `MarkdownEditor`
 
@@ -489,145 +490,6 @@ a plain-language hover hint, and native browser spell check.
 
 ```svelte
 <MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
-```
-
-### `ComponentInsertDialog`
-
-Stability tier: Extension API.
-
-```ts
-let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: {
-  registry?: ComponentRegistry;
-  insert: (text: string) => void;
-  update?: (range: { from: number; to: number }, markdown: string) => void;
-  icons?: IconSet;
-  render?: SiteRender;
-  preview?: ResolvedPreview | null;
-  disabled?: boolean;
-  trigger?: boolean;
-};
-```
-
-The insert palette: an Insert block button that opens a dialog listing the site's registered
-components, then hands off to `ComponentForm` for the chosen one. The catalog groups the rows by
-each def's `group` (groups in first-declared order, ungrouped rows in a leading default group), draws
-each def's `icon` beside its label when the icon set resolves it, and hides any def marked `hidden`.
-Past eight actionable components the catalog grows a search input that filters by label or
-description, with the arrow keys roaming the rows.
-
-A component that declares an icon attribute with `fields.icon()` can resolve a role to a default glyph.
-The engine ships a fallback, `DEFAULT_ICON_BY_ROLE`, that covers the conventional admonition roles:
-`note`, `tip`, `important`, `warning`, `caution`, `info`, and `danger`. The fallback names a glyph
-key, so the site's IconSet must carry that key for the glyph to render. A component's own
-`defaultIconByRole` overrides the engine fallback for the roles it names.
-
-`registry` is the site's component registry, `insert` inserts the serialized markdown at the editor
-cursor, and `icons` feeds icon fields. `render` is the site's design-accurate render pipeline and
-`preview` is the adapter's resolved preview knob: when both are present and the chosen component
-declares a `preview` sample, the configure step splits into two panes, the guided form on the left
-and a live preview on the right that renders the configured directive through `render` into a
-sandboxed iframe, the same path `EditPage`'s preview uses. A host that threads neither simply gets
-the single-column configure step. `update` is the round-trip seam: a host that re-opens a placed
-component for editing passes a `(range, markdown)` callback, and the dialog routes the form's submit
-there (overwriting the stored source span) instead of through `insert`. A host that never opens edit
-mode passes none. `disabled` greys the trigger. With `trigger={false}` the component renders only the
-dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it that way, keeping
-the dialog's own form outside the edit form. `EditPage` composes it.
-
-The dialog also exports an `editComponent(def, values, range)` instance method that re-opens a
-placed component into the same guided form for editing. It skips the catalog, seeds the form from the
-parsed `values`, and stores the source `range` for the `update` callback. In this mode the header
-eyebrow reads "Edit" and the form's submit button reads "Update". `EditPage`'s Edit-block control
-calls it after resolving the block under the caret. The bare `open()` method drives the catalog
-insert flow as before.
-
-```svelte
-<ComponentInsertDialog
-  {registry}
-  insert={insertAtCursor}
-  {icons}
-  render={cairn.rendering.render}
-  preview={data.preview}
-/>
-```
-
-### `ComponentForm`
-
-Stability tier: Extension API.
-
-```ts
-let { def, icons, onInsert, values = $bindable(), incomplete = $bindable(), initial, submitLabel = 'Insert' }: {
-  def: ComponentDef;
-  icons?: IconSet;
-  onInsert: (markdown: string) => void;
-  values?: ComponentValues;
-  incomplete?: boolean;
-  initial?: ComponentValues;
-  submitLabel?: string;
-};
-```
-
-The guided form for one component definition: a field per attribute and slot, validated and
-serialized to the component's markdown. `def` is the chosen `ComponentDef`, `icons` feeds icon
-fields, and `onInsert` receives the serialized markdown when the form validates. The form seeds its
-working values from `previewValues(def)`, so a component's declared `preview` sample fills the
-fields on open. `values` binds out the live working values and `incomplete` binds out whether a
-required attribute or slot is still empty, so the dialog can render the preview pane from them and
-mirror the disabled Insert. `initial` seeds the working values for editing: the dialog passes the
-parsed values of a placed component so the form re-opens on its real content instead of the
-`previewValues` sample, and the catalog insert path leaves it unset. `submitLabel` names the submit
-button and defaults to "Insert"; the dialog passes "Update" in edit mode. Back lives in the dialog
-header now, not in the form, so the component takes no `onBack`. `ComponentInsertDialog` composes it.
-
-```svelte
-<ComponentForm {def} {icons} onInsert={handleInsert} bind:values bind:incomplete />
-```
-
-### `IconPicker`
-
-Stability tier: Extension API.
-
-```ts
-let { icons, value, required, onChange, label = 'Icon' }: {
-  icons: IconSet;
-  value: string;
-  required: boolean;
-  onChange: (name: string) => void;
-  label?: string;
-};
-```
-
-An ARIA radiogroup that picks one glyph from the site's icon set. `icons` is the glyph name to SVG
-path-data map, `value` is the selected name (or `''` for none), `required` toggles whether a None
-choice is offered, and `onChange` receives the new name. `label` names the group for assistive tech.
-`ComponentForm` composes it for an icon field.
-
-```svelte
-<IconPicker {icons} value={selected} required={false} onChange={(name) => (selected = name)} />
-```
-
-### `LinkPicker`
-
-Stability tier: Extension API.
-
-```ts
-let { linkTargets, insert, disabled = false, trigger = true }: {
-  linkTargets: LinkTarget[];
-  insert: (href: string, title: string) => void;
-  disabled?: boolean;
-  trigger?: boolean;
-};
-```
-
-The Link to page control: a dialog that searches the site's content and inserts a rot-proof
-`cairn:` internal link at the editor cursor. `linkTargets` is the link target list the edit load
-ships from the committed manifest; `insert` inserts the chosen link. `disabled` greys the trigger.
-With `trigger={false}` the component renders only the dialog, and the exported `open()` method
-shows it; `EditPage`'s toolbar drives it that way, keeping the dialog's search form outside the
-edit form. `EditPage` composes it.
-
-```svelte
-<LinkPicker {linkTargets} insert={insertLinkAtCursor} />
 ```
 
 ### `DeleteDialog`

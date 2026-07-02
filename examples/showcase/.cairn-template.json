@@ -1,7 +1,6 @@
 {
   "exclude": [
     "src/routes/test",
-    "src/routes/spike",
     "src/routes/(site)/calendar",
     "e2e",
     "playwright.config.ts"

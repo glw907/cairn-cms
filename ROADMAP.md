@@ -104,6 +104,16 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   object leaves, the byte-preserving rename rewriter to address a nested YAML path (the corruption-prone part
   the references fan-out caught bugs in), and the cross-branch index plus rename and delete gates to cover the
   nested edges.
+- **Starter component set for the Wayfinder template (before beta).** The starter template ships a
+  curated set of content components common across the sites cairn is likely to manage (clubs and
+  small orgs, personal and small-business sites) — reasonable, deliberately not exhaustive. Today the
+  showcase defines `callout`, `alert`, and the `converter` island demo; the demo is showcase-ware,
+  not a template component, so the real set is two. Candidates to curate at plan time (a taste pass,
+  brainstorm the final list): figure/gallery, the callout family, a CTA/button, video embed, pull
+  quote, FAQ/details. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
+  render implementation in the template's design — so the set doubles as the reference example of
+  the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
+  rewrite's authoring guidance.
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX

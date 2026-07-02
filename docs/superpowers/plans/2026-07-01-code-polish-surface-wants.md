@@ -24,3 +24,18 @@ Filed, never done in the sweep; one batched decision at consolidation (Task 8).
    `/delivery/data` (`docs/reference/delivery-data.md`), so renaming it changes
    `check:surface` and `check:reference:signatures` and needs a documented `Consumers must:`
    migration at a deliberate release, not a same-behavior polish edit.
+
+## Rulings (Geoff, 2026-07-02 — both wants approved for this pass)
+
+1. **Action-name convergence: APPROVED, do in consolidation (Task 8).** Rename the media-era
+   handlers onto the `Action` suffix (`mediaBulkDeleteAction`, `mediaOrphanScanAction`,
+   `mediaPurgeOrphansAction`, `mediaReplacePreviewAction`, `mediaReplaceApplyAction`,
+   `mediaAltPreviewAction`, `mediaAltApplyAction`, `addDictionaryWordAction`; audit any other
+   suffix-less handler on the public return). Regenerate the surface snapshot, update the
+   reference page rows and every test/caller, and carry one `Consumers must:` line in the
+   changelog entry. Unstable API tier makes this legal; the unpublished window makes it cheap.
+2. **Editor-mutation log events: APPROVED, do in consolidation (Task 8).** Add events for the
+   owner-gated editor mutations in `editors-routes.ts` (shapes per the existing vocabulary,
+   e.g. `editor.added` / `editor.removed` / `editor.role_changed`, each carrying the acting
+   owner and target editor emails per the log privacy rules — no tokens, no session ids), with
+   their rows added to `docs/reference/log-events.md` in the same commit.

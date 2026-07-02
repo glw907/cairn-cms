@@ -55,11 +55,12 @@ A line that starts with `>` becomes a blockquote. Use it when you quote someone 
 
 > A good interface is like a joke. If you have to explain it, it is not that good.
 
-When you want a single line from your own writing to land hard, make it a pull-quote. There is no markdown shorthand for that, so you write a small piece of raw HTML and give it the `pullquote` class:
+When you want a single line from your own writing to land hard, make it a pull quote with the `pull-quote` component:
 
-<p class="pullquote">Write the post you wish someone had handed you on your first day.</p>
+:::pull-quote[Write the post you wish someone had handed you on your first day.]
+:::
 
-The line outdents into the margin on a wide screen and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare.
+The line outdents into the margin on a wide screen and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare. Give it `{attribution="..."}` when the line is not your own words.
 
 ## Code, inline and in blocks
 
@@ -170,6 +171,25 @@ The third component is an icon, a single glyph from the site's icon set for a sh
 :::
 
 Pick the glyph from the same picker the callout and alert icons use. An icon name outside the declared set is not a shape the site can draw, so it fails the build rather than rendering a blank one.
+
+The fourth component is a video link. It never requests the video platform until a reader clicks through; before that it is a static panel naming where the link goes:
+
+:::video{url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="A short walkthrough"}
+:::
+
+The fifth is a CTA, a single link styled like a button, for pointing the reader at the one next step that matters:
+
+:::cta{label="Read the getting-started guide" url="https://example.com/guide" variant="primary"}
+:::
+
+The sixth is an FAQ question, a native disclosure widget that works with no JavaScript. The answer takes full markdown, including a **bold** term or a [link](https://example.com):
+
+:::faq{question="Does the FAQ component support formatting in the answer?"}
+Yes. The answer slot is **markdown**, so you can add emphasis, a [link](https://example.com), or even a short list:
+
+- It renders through the same pipeline as a post's body.
+- Nothing here is a plain-text-only special case.
+:::
 
 ## Changing the look
 

@@ -10,12 +10,15 @@ waits. Publishing copies it to `main`, authored in the editor's name, and your s
 the same as if you'd pushed from a terminal. There is no hosted service, no database, and no
 account with anyone: cairn is code in your app and files in your repo.
 
-Cairn is deliberately small. It does one job—managing markdown content and the admin where
-editors write it—and it does that job well and gets out of the way. Everything else a site
+I built cairn for my own sites: small productions with real editors who deserved better than
+raw git, where every existing answer either wanted to be the whole site or wanted to own the
+content. So cairn is deliberately small. It does one job—managing markdown content and the
+admin where editors write it—does it well, and gets out of the way. Everything else a site
 needs is yours: your routes, your data, your auth, your design, served through a few
-documented seams rather than absorbed as features. The stack is fixed on purpose, and
-"out of scope" is an answer we use; refusing generality is what keeps the engine small enough
-to trust with your site.
+documented seams rather than absorbed as features. The stack is fixed on purpose (SvelteKit,
+Cloudflare, GitHub, no abstractions over any of them), and "out of scope" is an answer I use
+a lot. Refusing generality is what keeps the engine small enough to trust with your site, and
+small enough that pulling updates never means reworking what you built around it.
 
 <!-- SCREENSHOT (paired evidence): left, the editor mid-edit with live preview; right, the
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as

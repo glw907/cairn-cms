@@ -32,11 +32,11 @@ in-pass (`46af986`, `42d2346`).
 (`docs/superpowers/specs/2026-07-01-code-polish-pass-design.md`) and the plan is written:
 `docs/superpowers/plans/2026-07-01-code-polish-pass.md` (worktree `code-polish-1`; Tasks 2 and 4
 are Workflow launches per Geoff's recorded opt-in, riders via `cairn-implementer`, charter
-synthesis in the main loop). The docs-rewrite spec
-(`docs/superpowers/specs/2026-07-01-docs-rewrite-design.md`, standards section reconfirmed) is
-written and awaiting Geoff's final sign-off; its Stage 1 research workflow may run concurrently
-with the polish sweep once signed off, and its Stage 2 plan is authored only after the docs IA
-doc is approved.
+synthesis in the main loop). The docs rewrite is fully planned: Stage 1
+research ran (eleven agents + two supplementals), the docs IA is APPROVED
+(`docs/superpowers/specs/2026-07-01-docs-ia-design.md`, Geoff 2026-07-01), and the Stage 2 plan
+is written (`docs/superpowers/plans/2026-07-01-docs-rewrite-stage-2.md`; executes on its own
+worktree AFTER the polish pass merges, since the docs snippets imitate the polished idiom).
 
 **Carried follow-ups (churn, do not accumulate):**
 - The owed `check:dev-package`/showcase-check root gate: the Task 6 regroup broke the dev

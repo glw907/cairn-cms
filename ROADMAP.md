@@ -51,6 +51,25 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
+### The beta gate (Geoff's decisions, not passes; settle before the beta cut)
+
+- [ ] **Define the beta release as an event, and adopt the long-term numbering scheme at it**
+  (Geoff, 2026-07-02: from beta on, version numbers carry durable, useful meaning). Standing
+  recommendation: strict SemVer with compatibility meaning from beta day — beta ships as
+  `1.0.0-beta.1` and iterates as `-beta.N` under an npm `beta` dist-tag (`latest` stays on `0.x`
+  until `1.0.0`), a pre-release bump that breaks a consumer carries its `Consumers must:` line, and
+  `1.0.0` lands when this checklist holds. The test the scheme must pass: a consumer reads the
+  number correctly with zero cairn-specific documentation, which only compatibility-meaning SemVer
+  does (the `0.x` scale heuristic was scaffolding; CalVer says when, never whether it breaks you).
+  Adopting at beta rather than `1.0` is deliberate: beta users are exactly who needs the number to
+  mean something. Also in this decision: what the accumulated `## Unreleased` window rolls into the
+  beta cut, whether beta flips the "closely held until the core lands" posture, and the support
+  promise to beta users (SECURITY.md's latest-minor line becomes real once strangers depend on it).
+- [ ] **Close the naming window deliberately.** The package (`@glw907/cairn-cms` vs an unscoped name)
+  and the repo home (personal account vs a `cairn` org) are cheapest to change before any external
+  user pins them and maximally painful after. Staying with the current names is fine, but as a
+  decision, not a default; check name availability first.
+
 ## Now
 
 - **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
@@ -64,12 +83,27 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   full test suite as the behavior contract. Anything that wants a public-surface change gets filed
   for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
   queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
-- **Cross both production sites onto `0.78.2`.** The developer-extensibility seam and the editor tag
-  vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
-  passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
-  work is the site cutovers:
-  mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
-  the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
+- **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
+  production sites from Wayfinder as the dogfood test (Geoff, 2026-07-02 — supersedes the
+  upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
+  number free via `npm view`; the `cairn-release` skill owns the mechanics). Then, instead of
+  upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Wayfinder on that cut: the end
+  result need not be pixel-identical to each site's current look, but it should be close — and
+  since the two sites look very different from each other, one template re-expressed into both is
+  the strongest real-world test of the token-layer redirection story (the design review's
+  extensibility lens, production-priced twice). Hard requirements per rebuild: live permalinks
+  preserved exactly (the URL policies transcribe onto `defineConcept` — ecxc posts
+  `/:year/:month/:slug` with `datePrefix: month`, 907 posts `/:year/:month/:day/:slug` with
+  `datePrefix: day`; the phase-3b hard error catches a miss), content migrates as-is (markdown in
+  git; frontmatter mapped to the v2 fieldsets), the owed **live admin smoke** runs against each
+  rebuilt site's real Worker, and the swap is build-alongside-verify-then-cut, never in-place (real
+  editors use these admins). Each rebuild runs as a `site-pass` in its own repo; every friction
+  point feeds the docs friction log and the scaffolder's work-list — the rebuilds are the expert
+  half of the dogfood, with the fresh-eyes dress rehearsal (below in Next) remaining the
+  zero-context half. Beta-prerequisite framing unchanged: the rebuilt sites ARE the production
+  miles on the frozen contract. Sequenced after the Wayfinder starter component set (rebuilding
+  from a template whose components are still landing would test the wrong artifact); the design
+  review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
 
@@ -117,6 +151,53 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.
+- **Wayfinder final design review (adversarial, Fable-conducted, before Wayfinder goes live).**
+  Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
+  enough that a developer or designer could take it many different directions," and simultaneously
+  "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
+  delicate balance, and the review's job is to attack both failure directions: too neutral (reads as
+  unfinished scaffolding, compels no one) and too designed (reads as a look to undo before you can
+  make it yours). A third named lens, contemporary-but-not-trendy (Geoff, 2026-07-02): contemporary
+  means current fundamentals — type scale, spacing rhythm, contrast handling, the craft that reads as
+  made-now without announcing a year — while trendy means identifiable-era effects (the glow, glass,
+  gradient, or layout gimmick of the season) that let a viewer date the template from styling alone.
+  The test per element: could you name the year from this choice? If yes, it fails, however good it
+  looks today. (The "strong CTA with DaisyUI Aura glow" item under Considering is exactly the kind of
+  call this lens adjudicates.) A fourth lens, structural extensibility (Geoff, 2026-07-02): the
+  developer must not be locked into the look-and-feel. Where the first three lenses judge how the
+  design reads, this one judges how it is built: look-and-feel decisions must concentrate in the
+  swappable layer (the Tailwind 4 `@theme` design-scale tokens and named utilities the
+  starter-template pass established), never scattered through component markup. The test: pick three
+  deliberately different redirections (say, an editorial serif look, a dense corporate look, a
+  playful rounded one) and price each — if any requires broad markup surgery rather than token and
+  theme edits, the design is structurally locked regardless of how neutral it reads. This lens also
+  owns accessibility-under-retheming: the contrast floors must be encoded in the token
+  relationships so a redirect inherits them, not achieved accidentally by the default palette. A
+  fifth lens, content robustness (2026-07-02): the template must survive its actual users'
+  content, not the showcase's curated demos — the review renders a hostile-but-realistic fixture
+  set (a 140-character title, a post with no hero image, two entries and two hundred, unbroken
+  text walls, deep list nesting, a directive component mid-prose, an over-wide table) and judges
+  what breaks. The review's method also carries one measured floor, not a lens: default page
+  weight and a Lighthouse-class check on the rendered pages, since compelling-by-default must not
+  mean heavy-by-default. Conducted by
+  the main loop as design critic over the live rendered output (both color modes, the stress
+  fixtures, the component set) plus the template's token and utility architecture, with findings
+  ranked by which lens they fall under. Runs after the Wayfinder starter component set lands and
+  before the cairn.pub intro site or the beta ships the template.
+- **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
+  toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
+  disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
+  (machine paths, account and database identifiers, infrastructure detail — each gets a deliberate
+  public/redact/archive ruling); fork-PR CI hardening (Actions permissions, `pull_request` vs
+  `pull_request_target`, protecting the OIDC publish path from drive-by PRs); branch protection on
+  `main`; the private-vulnerability-reporting toggle plus the SECURITY.md trim (the standing timed
+  item); and the issues-on decision with a minimal triage posture.
+- **The beta dress rehearsal (after the docs rewrite and scaffolder land).** One fresh-environment
+  first-hour run: a clean machine or account, only the public docs and scaffolder, zero context,
+  through to a deployed site with a working admin. Every artifact will have been individually gated
+  by then; this tests the chain the way a beta user experiences it. A cloud agent runs the mechanical
+  path and reports friction; the steps needing real accounts (Cloudflare, GitHub App) are a short
+  attended session.
 - **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
   documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
   prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than
@@ -125,7 +206,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
   Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
   produces the content Topo hosts); gives the scaffolder its first real template choice.
-- **The project sites: cairn.org on Wayfinder, docs.cairn.org on Topo.** Two sites, not one, because
+- **The project sites: cairn.pub on Wayfinder, docs.cairn.pub on Topo (domain DECIDED 2026-07-02: cairn.pub, standard tier, registered via the dashboard since the Registrar API does not yet carry .pub; every single-word alternative was taken and the .pub TLD reads "publish", cairn's signature verb; the cairn.dev acquisition inquiry remains the optional endgame, yielding via redirect if it ever lands).** Two sites, not one, because
   a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
   either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
   of its template: the intro site is the Pages-plus-Posts shape cairn targets, and the click-through
@@ -133,7 +214,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Wayfinder
   derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
   Wayfinder as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
-  hosts them. Domain procurement is its own small first step.
+  hosts them. Domain procurement: cairn.pub (see above).
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX

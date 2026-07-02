@@ -13,6 +13,23 @@ often correct answer; prefer one excellent page over three adequate ones. Everyt
 written portable for its future home on Topo (docs.cairn.org): plain markdown, no
 GitHub-rendering assumptions, link discipline that survives re-hosting.
 
+**Friendly and approachable (Geoff, 2026-07-01).** The register is warm, direct, and
+welcoming, not formal. This is not a deviation from the adopted standard: the Google guide's
+own voice guidance is "conversational and friendly without being frivolous," and the rewrite
+leans into that permission rather than defaulting to the drier end of the standard. The
+tutorial and quick-start surfaces carry the warmest register; reference pages stay precise but
+never stiff.
+
+**Visual diagrams are first-class content (Geoff, 2026-07-01).** The concepts that resist
+prose get diagrams: the magic-link auth flow, the save/publish pipeline and per-entry branch
+lifecycle, the adapter/runtime composition, the two-file config boundary, the media pipeline.
+A diagram earns its place the same way a page does. Working default, validated in Stage 1:
+Mermaid, because it is text-diffable (fits the gate culture), renders on GitHub today, and can
+render on Topo through the site's own `render` pipeline later; hand-drawn SVGs are ruled out
+as unmaintainable. The Stage 1 comparables research notes each tool's diagram practice, and
+the IA doc carries a diagram inventory (which pages get which diagrams) alongside the page
+inventory.
+
 ## Standards (adopted, not re-derived)
 
 The pass adopts proven external standards per audience, per the workstation authoring charter

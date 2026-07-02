@@ -1,35 +1,44 @@
 # cairn
 
-An embedded CMS for SvelteKit sites on Cloudflare: your writers edit markdown in the browser,
-and publishing is a git commit to your repo.
+**Your writers get a magic link. Your repo gets the commit.**
 
-<!-- SCREENSHOT: the editor pane with live preview, mid-edit on a showcase page.
-     Captured at the Wayfinder review; do not substitute a placeholder image. -->
+Cairn is an embedded CMS for SvelteKit sites on Cloudflare: editors write markdown in the
+browser, and every publish is a git commit to your repo, authored in their name. An editor
+signs in from an emailed link—no GitHub account, no password—and their saves wait on a
+per-entry branch until a deliberate Publish commits to `main` and your site redeploys, the
+same as if you'd pushed from a terminal. Unlike a hosted headless CMS there is no service, no
+database, and no vendor account; unlike form-based git CMSes, markdown is the writing
+surface, not an implementation detail. We built cairn on two convictions that rarely ship
+together: writers deserve a real editor, and developers deserve to keep owning their site.
+
+<!-- SCREENSHOT (paired evidence): left, the editor mid-edit with live preview; right, the
+     resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
+     author. One image proving both halves of the pitch. Capture at the Wayfinder design
+     review; never substitute a stock placeholder. -->
 
 ```sh
 npm install @glw907/cairn-cms
 ```
 
-- **Writers sign in from an email link.** No accounts to manage, no passwords, no GitHub.
-- **Markdown with a live preview of the real site.** The preview renders through your own
-  `render` function, so editors see exactly what ships.
-- **Save holds, Publish ships.** Drafts wait on a per-entry branch; a deliberate Publish
-  commits to `main` and your normal deploy takes over.
-- **Your design, untouched.** Cairn renders nothing on the public site; every route,
-  template, and byte of CSS stays yours.
-- **Content is markdown files in your repo.** No database, no export problem, nothing to
-  migrate away from. Stop using cairn tomorrow and you keep everything.
+- **One renderer, yours.** Your site supplies `render`; the editor's live preview and your
+  public pages run the same pipeline, so editors see exactly what ships.
+- **Save holds, Publish ships.** One branch per entry; a conflicting edit is refused, never
+  merged by guesswork.
+- **Nothing rendered for you.** Cairn owns `/admin` and stays out of your public site; every
+  route, template, and byte of CSS is yours.
+- **Concepts, not collections.** Posts and Pages out of the box, your own declared beside
+  them, each with a typed frontmatter schema.
+- **Leave anytime.** Your content was markdown files in your repo the whole time.
 
-For developers who want the people they build for to edit and publish on their own, without
-giving up SvelteKit, Cloudflare, or git as the source of truth. Whether it fits your
-project, and honestly when it doesn't, is [Why cairn](./docs/explanation/why-cairn.md).
+For developers who want the people they build for to publish on their own, without giving up
+SvelteKit, Cloudflare, or git as the source of truth. Whether cairn fits your project—and
+when it doesn't—is [Why cairn](./docs/explanation/why-cairn.md).
 
-**Get started:** the [tutorial](./docs/tutorial/build-your-first-cairn-site.md) goes from an
-empty directory to a deployed site with a working admin. The [docs](./docs/README.md) cover
-the rest: [guides](./docs/guides/README.md), [reference](./docs/reference/README.md), and
+Start with the [tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory
+to a deployed site with a working admin. The [docs](./docs/README.md) cover the rest —
+[guides](./docs/guides/README.md), [reference](./docs/reference/README.md),
 [explanation](./docs/explanation/README.md).
 
 Cairn is pre-1.0 and runs two production sites, [ecxc.ski](https://ecxc.ski) and
-[907.life](https://907.life). Versioning and upgrades:
-[upgrade guide](./docs/guides/upgrade-cairn.md) · history: [CHANGELOG](./CHANGELOG.md) ·
-security: [policy](./SECURITY.md) · license: [MIT](./LICENSE)
+[907.life](https://907.life). Upgrades: [guide](./docs/guides/upgrade-cairn.md) · history:
+[CHANGELOG](./CHANGELOG.md) · security: [policy](./SECURITY.md) · license: [MIT](./LICENSE)

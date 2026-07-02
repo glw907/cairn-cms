@@ -83,19 +83,27 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   full test suite as the behavior contract. Anything that wants a public-surface change gets filed
   for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
   queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
-- **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then cross both
-  production sites onto it (a beta prerequisite, not parallel work).** One deliberate cut rolls the
-  pruning + polish window (verify the next number free via `npm view` before promising it; the
-  `cairn-release` skill owns the mechanics), so the cutovers put production miles on the frozen
-  contract itself — the evidence the 1.0 checklist asks for — and the sites cross one
-  `Consumers must:` list once. The
-  cutovers carry the owed live admin smoke against a real Worker, the last unexercised verification
-  class before an admin real editors use ships to beta. The developer-extensibility seam and the editor tag
-  vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held
-  passes after it (editor popover and a11y, Library upload, the native starter template). The remaining
-  work is the site cutovers:
-  mount the shared `/admin/+layout` on ecxc-ski and 907-life, read the shell from `page.data.shell`, and run
-  the deferred live admin smoke against a real Worker. Tied to each site's v2-adapter cutover.
+- **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
+  production sites from Wayfinder as the dogfood test (Geoff, 2026-07-02 — supersedes the
+  upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
+  number free via `npm view`; the `cairn-release` skill owns the mechanics). Then, instead of
+  upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Wayfinder on that cut: the end
+  result need not be pixel-identical to each site's current look, but it should be close — and
+  since the two sites look very different from each other, one template re-expressed into both is
+  the strongest real-world test of the token-layer redirection story (the design review's
+  extensibility lens, production-priced twice). Hard requirements per rebuild: live permalinks
+  preserved exactly (the URL policies transcribe onto `defineConcept` — ecxc posts
+  `/:year/:month/:slug` with `datePrefix: month`, 907 posts `/:year/:month/:day/:slug` with
+  `datePrefix: day`; the phase-3b hard error catches a miss), content migrates as-is (markdown in
+  git; frontmatter mapped to the v2 fieldsets), the owed **live admin smoke** runs against each
+  rebuilt site's real Worker, and the swap is build-alongside-verify-then-cut, never in-place (real
+  editors use these admins). Each rebuild runs as a `site-pass` in its own repo; every friction
+  point feeds the docs friction log and the scaffolder's work-list — the rebuilds are the expert
+  half of the dogfood, with the fresh-eyes dress rehearsal (below in Next) remaining the
+  zero-context half. Beta-prerequisite framing unchanged: the rebuilt sites ARE the production
+  miles on the frozen contract. Sequenced after the Wayfinder starter component set (rebuilding
+  from a template whose components are still landing would test the wrong artifact); the design
+  review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
 

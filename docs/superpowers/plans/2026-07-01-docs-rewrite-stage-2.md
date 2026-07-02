@@ -115,9 +115,14 @@ quickly, and for many sites that is legitimately the finish line) and a foundati
 point for sites that will grow past a basic CMS (the thin seams, the token-layer
 extensibility, the build-alongside model). Quality scaffolding is named as a critical part of
 the experience, not a demo: "started quickly and cleanly" and "extend and grow easily" are
-the same promise at two moments in a site's life. This is the Wayfinder design review's
-neutral-yet-compelling balance restated as product positioning — the docs claim it, the
-review verifies it, and the two must not drift apart.
+the same promise at two moments in a site's life. Hierarchy (Geoff, 2026-07-02): the
+dual-mode positioning is cairn in a nutshell — the charter itself viewed from the user's side
+("does its one job well" is the near-end-point claim; "serves everything beyond it with a
+thin seam" is the foundation claim) — and Wayfinder follows the philosophy rather than
+carrying it. The page argues cairn's dual nature first and presents Wayfinder as its visible
+instantiation. This is also the Wayfinder design review's neutral-yet-compelling balance
+restated as product positioning — the docs claim it, the review verifies it, and the two
+must not drift apart.
 
 **Acceptance:** all three pass the gates; no published page links into `docs/internal/`
 after this task (grep-proven); `prose-voice-reviewer` findings on these three folded in

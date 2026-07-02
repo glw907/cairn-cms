@@ -87,11 +87,12 @@ test('alt-propagation round-trip: push the default alt fills the empty placement
 }) => {
   const panel = await openAsset(page);
 
-  // Open the Push-alt dialog from the slide-over. It is the everyday register: role="dialog".
+  // Open the Push-alt dialog from the slide-over. It is the everyday register: no explicit role,
+  // relying on the native <dialog> default (unlike the alertdialog register Replace uses).
   await panel.locator('[data-cairn-pushalt-open]').click();
   const dialog = page.getByTestId('cairn-alt-dialog');
   await expect(dialog).toBeVisible();
-  await expect(dialog).toHaveAttribute('role', 'dialog');
+  await expect(dialog).not.toHaveAttribute('role');
 
   // The will-fill bucket names the empty-alt entry; the customized bucket names the custom-alt entry.
   const fillBucket = dialog.locator('#cairn-ml-alt-fill');

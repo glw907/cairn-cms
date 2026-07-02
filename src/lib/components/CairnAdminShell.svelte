@@ -284,7 +284,7 @@ discriminant, not the fields, gates the chrome).
        effect, so the chrome-free state does not flash. The checkbox still governs the overlay, so the
        toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand. -->
   <div class="drawer min-h-screen bg-base-200 text-base-content" class:lg:drawer-open={!isDeskRoute}>
-    <input id="cairn-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
+    <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div class="drawer-content flex flex-col">
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
@@ -302,7 +302,7 @@ discriminant, not the fields, gates the chrome).
              stands in for it); on a desk route the sidebar is closed, so the toggle stays visible and
              reopens the nav as an overlay. -->
         <div class="flex-none" class:lg:hidden={!isDeskRoute}>
-          <label for="cairn-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
+          <label for="cairn-shell-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>
         </div>
@@ -417,10 +417,10 @@ discriminant, not the fields, gates the chrome).
       {#await data.pendingEntries then pending}
         {#if pending && pending.length > 0}
           {@const groups = groupPending(pending)}
-          <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-publish-all-title">
+          <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-shell-publish-all-title">
             <div class="modal-box">
               <div class="mb-3 flex items-center justify-between">
-                <h2 id="cairn-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
+                <h2 id="cairn-shell-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
               </div>
               <p class="text-sm">Every entry below goes live in one step.</p>
@@ -447,7 +447,7 @@ discriminant, not the fields, gates the chrome).
     </div>
 
     <div class="drawer-side">
-      <label for="cairn-drawer" aria-label="Close menu" class="drawer-overlay"></label>
+      <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
       <nav class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and

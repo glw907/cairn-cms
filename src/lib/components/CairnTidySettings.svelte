@@ -37,6 +37,7 @@ home), diffable and shared across editors.
   import SparklesIcon from '@lucide/svelte/icons/sparkles';
   import type { SettingsData } from '../sveltekit/content-routes.js';
   import type { TidyConventions } from '../nav/site-config.js';
+  import { segmentTintClass } from './segmented-control.js';
 
   interface Props {
     /** The two-tier settings load: the read-only developer facts, the truthful gate flag, and the
@@ -45,6 +46,27 @@ home), diffable and shared across editors.
   }
 
   let { data }: Props = $props();
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
+  // every fresh error so the region text always mutates and the screen reader speaks again (the
+  // ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard sentence is
+  // unchanged; the visible alert below keeps its own styling and drops the `role` (a fresh-inserted
+  // role element announces inconsistently and would clobber a repeat).
+  let announceNonce = $state(0);
+  function nonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // Each save hands a fresh `data` object (the action redirects on both success and failure, so the
+  // component always remounts), so the nonce bumps once per load, keyed to the load identity.
+  let lastData: unknown;
+  $effect(() => {
+    if (data !== lastData) {
+      lastData = data;
+      if (data.error) announceNonce++;
+    }
+  });
+  const liveError = $derived(data.error ? `${data.error}${nonce()}` : '');
 
   // The working copy of the editor-tier conventions: every control binds to this, and the save posts
   // it. Seeded once from the load's resolved conventions, so the resting state IS the committed state.
@@ -281,7 +303,7 @@ home), diffable and shared across editors.
     }`;
   }
   function segClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${on ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${segmentTintClass(on)}`;
   }
 </script>
 
@@ -293,11 +315,12 @@ home), diffable and shared across editors.
     change as a diff before it lands.
   </p>
 
+  <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.saved}
     <div role="status" class="alert alert-success mt-4 text-sm">Tidy settings saved.</div>
   {/if}
   {#if data.error}
-    <div role="alert" class="alert alert-error mt-4 text-sm">{data.error}</div>
+    <div class="alert alert-error mt-4 text-sm">{data.error}</div>
   {/if}
 
   <!-- DEVELOPER TIER, read-only: the three deploy-time facts the editor depends on, model included as

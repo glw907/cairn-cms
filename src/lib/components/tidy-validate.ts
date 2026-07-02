@@ -29,7 +29,7 @@ import type { Change } from './tidy-diff.js';
  *  - `code`: a code span or fenced code block was edited.
  *  - `divergence`: the changed-token amount exceeds the length-aware bound (a wholesale rewrite).
  */
-export type TidyRejectionReason = 'structure' | 'frontmatter' | 'media' | 'code' | 'divergence';
+type TidyRejectionReason = 'structure' | 'frontmatter' | 'media' | 'code' | 'divergence';
 
 /**
  * The honest author-facing message a rejection maps to. The same message for every reason, by

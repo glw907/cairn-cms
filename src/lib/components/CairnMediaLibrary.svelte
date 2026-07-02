@@ -67,6 +67,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     type IngestFailureCard,
   } from './client-ingest.js';
   import { uploadOutcome, type UploadEnvelope } from './media-upload-outcome.js';
+  import { segmentTintClass } from './segmented-control.js';
+  import { confirmGateMatches } from './typed-confirm.js';
+  import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
+  import { postFormAction, createRequestGuard } from './client-action.js';
   import CsrfField from './CsrfField.svelte';
   import CairnLogo from './CairnLogo.svelte';
   import MediaCaptureCard from './MediaCaptureCard.svelte';
@@ -242,7 +246,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let deleteDialog = $state<HTMLDialogElement | null>(null);
 
   function openAsset(asset: MediaLibraryEntry, origin?: HTMLElement | null) {
-    panelOrigin = origin ?? (document.activeElement as HTMLElement | null);
+    panelOrigin = resolveDialogOrigin(origin);
     deleteOnly = false;
     selected = asset;
     // flushSync mounts the panel synchronously so its close button exists before we move focus in.
@@ -253,8 +257,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   function closePanel() {
     selected = null;
     deleteOnly = false;
-    panelOrigin?.focus();
-    panelOrigin = null;
+    panelOrigin = refocusDialogOrigin(panelOrigin);
   }
   // Escape closes the slide-over (the non-modal region recipe). A window listener carries it, the
   // way EditPage's details panel does, so the non-interactive region needs no keyboard handler. The
@@ -339,14 +342,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let replaceConfirmInput = $state('');
   // The asset the Replace dialog acts on, pinned at open so a background re-render never swaps it.
   let replaceAsset = $state<MediaLibraryEntry | null>(null);
-  const replaceConfirmMatches = $derived(replaceAsset !== null && replaceConfirmInput === replaceAsset.slug);
+  const replaceConfirmMatches = $derived(replaceAsset !== null && confirmGateMatches(replaceConfirmInput, replaceAsset.slug));
 
   function openReplaceDialog(origin?: HTMLElement | null) {
     if (!selected) return;
     // The entry-point button passed from the click (focus restores here on close), falling back to the
     // active element. A programmatic .click() does not focus its target, so the explicit origin is the
     // reliable restore point.
-    replaceOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    replaceOrigin = resolveDialogOrigin(origin);
     replaceAsset = selected;
     replaceStep = 'upload';
     replaceUpload = { kind: 'idle' };
@@ -369,8 +372,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     replaceConfirmInput = '';
     replaceUpload = { kind: 'idle' };
     // Restore focus to the entry-point button (the alertdialog focus-restore recipe).
-    replaceOrigin?.focus();
-    replaceOrigin = null;
+    replaceOrigin = refocusDialogOrigin(replaceOrigin);
   }
 
   // The chosen-file handler: route the file through the ingest-and-upload loop, exactly as the insert
@@ -443,11 +445,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     await runReplacePreview();
   }
 
-  // A per-call request token guards the preview fetch against a stale response landing on a closed or
-  // reopened dialog. Svelte reactivity does not track reads below the first `await`, so each call pins
-  // its own sequence at entry and bails after the await if a newer call (a reopen, or a "Check usage
-  // again" double-click) has since superseded it.
-  let replacePreviewSeq = 0;
+  // A per-call request guard drops the preview fetch's response if it lands on a closed or reopened
+  // dialog. Svelte reactivity does not track reads below the first `await`, so each call pins its own
+  // token at entry and bails after the await if a newer call (a reopen, or a "Check usage again"
+  // double-click) has since superseded it.
+  const replacePreviewGuard = createRequestGuard();
 
   // The preview fetch: POST the (oldHash, newHash, slug) tuple in the 2a transport (a text/plain
   // body, the CSRF token in the X-Cairn-CSRF header), parse the SvelteKit ActionResult envelope, and
@@ -457,41 +459,29 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   async function runReplacePreview() {
     if (!replaceAsset || !replaceRecord) return;
     const hash = replaceAsset.hash;
-    const seq = ++replacePreviewSeq;
-    // The fail-closed landing: an unverifiable usage read, an unreachable preview, or an unparseable
-    // body all route to the blocked step. The passed failure carries the branch-naming error when the
-    // server returned one; a transport miss carries the empty error (the generic honest line stands in).
-    const blockClosed = (failure?: MediaReplaceFailure) => {
-      replaceFailure = failure ?? { error: '', hash, usage: [], foundIn: 0 };
-      replacePlan = null;
-      replaceStep = 'blocked';
-    };
-
+    const token = replacePreviewGuard.next();
     const body = JSON.stringify({ oldHash: hash, newHash: replaceRecord.hash, slug: replaceAsset.slug });
-    let result: { type: string; data?: unknown };
-    try {
-      const res = await fetch(REPLACE_PREVIEW_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body,
-      });
-      result = deserialize(await res.text()) as { type: string; data?: unknown };
-    } catch {
-      // Drop a stale response that lost the race to a reopen or a re-run before surfacing the block.
-      if (seq !== replacePreviewSeq) return;
-      blockClosed();
-      return;
-    }
+    const outcome = await postFormAction<MediaReplacePreviewPlan>(REPLACE_PREVIEW_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body,
+    });
     // The dialog was closed or reopened (for another asset, or via a re-run) while this fetch was in
-    // flight, so this response is stale: ignore it rather than clobber the live state.
-    if (seq !== replacePreviewSeq) return;
-    if (result.type === 'success' && result.data) {
-      replacePlan = result.data as MediaReplacePreviewPlan;
+    // flight, so a stale response is ignored rather than clobbering the live state.
+    if (replacePreviewGuard.isStale(token)) return;
+    if (outcome.ok) {
+      replacePlan = outcome.data;
       replaceFailure = null;
       replaceConfirmInput = '';
       replaceStep = 'review';
     } else {
-      blockClosed(result.data as MediaReplaceFailure | undefined);
+      // The fail-closed landing: an unverifiable usage read, an unreachable preview, or an unparseable
+      // body all route to the blocked step. A parsed failure carries the branch-naming error when the
+      // server returned one; a transport miss carries the empty error (the generic honest line stands in).
+      const failure = outcome.data as MediaReplaceFailure | undefined;
+      replaceFailure = failure ?? { error: '', hash, usage: [], foundIn: 0 };
+      replacePlan = null;
+      replaceStep = 'blocked';
     }
   }
 
@@ -582,7 +572,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   /** Open the capture dialog on a chosen or dropped file. */
   function openLibraryUpload(file: File, origin: HTMLElement | null) {
-    uploadOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    uploadOrigin = resolveDialogOrigin(origin);
     uploadCaptureFile = file;
     uploadStatus = { kind: 'idle' };
     void tick().then(() => {
@@ -594,8 +584,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     uploadDialog?.close();
     uploadCaptureFile = null;
     uploadStatus = { kind: 'idle' };
-    uploadOrigin?.focus();
-    uploadOrigin = null;
+    uploadOrigin = refocusDialogOrigin(uploadOrigin);
   }
   /** Either Upload button: pin the clicked button as the focus-restore origin, then open the native
    *  file chooser through the shared hidden input. A programmatic .click() does not focus its target,
@@ -710,7 +699,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // --- the Push-alt flow: a one-step review dialog (the everyday register) over the selected asset ---
   // Alt propagation pushes the asset's default alt into published placements that lack it, with one
   // bucket-level opt-in to also overwrite placements that carry a custom alt. It is reversible and
-  // frequent, so the dialog is role="dialog" (not alertdialog) with no typed-slug gate; apply is always
+  // frequent, so the dialog carries no alertdialog role and no typed-slug gate; apply is always
   // enabled. The preview fetch reuses the 2a transport (a text/plain body, the CSRF token in the
   // X-Cairn-CSRF header) and fails closed to a blocked surface when usage cannot be verified.
   type AltStep = 'review' | 'blocked';
@@ -733,7 +722,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   function openAltDialog(origin?: HTMLElement | null) {
     if (!selected) return;
-    altOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    altOrigin = resolveDialogOrigin(origin);
     altAsset = selected;
     altStep = 'review';
     altPlan = null;
@@ -751,47 +740,34 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     altPlan = null;
     altFailure = null;
     altOverwrite = false;
-    altOrigin?.focus();
-    altOrigin = null;
+    altOrigin = refocusDialogOrigin(altOrigin);
   }
 
-  // The per-call request token for the alt preview, mirroring the Replace guard: a stale response from
-  // a closed or reopened dialog (or a "Check usage again" double-click) is dropped after the await.
-  let altPreviewSeq = 0;
+  // The per-call request guard for the alt preview, mirroring the Replace guard: a stale response
+  // from a closed or reopened dialog (or a "Check usage again" double-click) is dropped after the await.
+  const altPreviewGuard = createRequestGuard();
 
   // The preview fetch: POST the hash in the 2a transport, parse the ActionResult envelope, and route to
   // the review step (a plan) or the fail-closed blocked step (a failure). Re-runnable from the blocked
   // step's "Check usage again".
   async function runAltPreview() {
     if (!altAsset) return;
-    const hash = altAsset.hash;
-    const seq = ++altPreviewSeq;
-    const blockClosed = (failure?: MediaAltPropagateFailure) => {
-      altFailure = failure ?? { error: '' };
-      altPlan = null;
-      altStep = 'blocked';
-    };
-    let result: { type: string; data?: unknown };
-    try {
-      const res = await fetch(ALT_PREVIEW_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body: JSON.stringify({ hash }),
-      });
-      result = deserialize(await res.text()) as { type: string; data?: unknown };
-    } catch {
-      if (seq !== altPreviewSeq) return;
-      blockClosed();
-      return;
-    }
+    const token = altPreviewGuard.next();
+    const outcome = await postFormAction<MediaAltPreviewPlan>(ALT_PREVIEW_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain', 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body: JSON.stringify({ hash: altAsset.hash }),
+    });
     // Stale-response guard: a reopen or a re-run superseded this fetch while it was in flight.
-    if (seq !== altPreviewSeq) return;
-    if (result.type === 'success' && result.data) {
-      altPlan = result.data as MediaAltPreviewPlan;
+    if (altPreviewGuard.isStale(token)) return;
+    if (outcome.ok) {
+      altPlan = outcome.data;
       altFailure = null;
       altStep = 'review';
     } else {
-      blockClosed(result.data as MediaAltPropagateFailure | undefined);
+      altFailure = (outcome.data as MediaAltPropagateFailure | undefined) ?? { error: '' };
+      altPlan = null;
+      altStep = 'blocked';
     }
   }
 
@@ -879,7 +855,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The type-to-confirm input. The Delete submit is gated until it equals the asset slug (the one
   // legitimate disable: a visible, typed destructive confirmation, not a hidden requirement).
   let confirmSlugInput = $state('');
-  const confirmMatches = $derived(selected !== null && confirmSlugInput === selected.slug);
+  const confirmMatches = $derived(selected !== null && confirmGateMatches(confirmSlugInput, selected.slug));
 
   // Forms post full-page (no use:enhance), so on a failure the screen remounts with no selection and
   // the error would render nowhere. This effect re-surfaces the failure from the `form` prop. An
@@ -1094,7 +1070,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
   function openBulkDialog(origin?: HTMLElement | null) {
     if (selectedCount === 0) return;
-    bulkOrigin = origin ?? (document.activeElement as HTMLElement | null) ?? null;
+    bulkOrigin = resolveDialogOrigin(origin);
     bulkHashes = [...selectedHashes];
     bulkPhase = 'review';
     bulkResult = null;
@@ -1110,8 +1086,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     bulkResult = null;
     bulkError = null;
     bulkHashes = [];
-    bulkOrigin?.focus();
-    bulkOrigin = null;
+    bulkOrigin = refocusDialogOrigin(bulkOrigin);
   }
   // Escape (the dialog's cancel event) must not abandon an in-flight delete: while the request is
   // running the close is suppressed; in every other phase Escape closes normally.
@@ -1140,25 +1115,17 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     bulkError = null;
     const formData = new FormData();
     for (const h of bulkHashes) formData.append('hash', h);
-    let result: { type: string; data?: unknown };
-    try {
-      const res = await fetch(BULK_DELETE_URL, {
-        method: 'POST',
-        headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body: formData,
-      });
-      result = deserialize(await res.text()) as { type: string; data?: unknown };
-    } catch {
-      bulkError = 'The delete could not be completed. Please try again.';
-      bulkPhase = 'error';
-      return;
-    }
-    if (result.type === 'success' && result.data) {
-      bulkResult = result.data as MediaBulkDeleteResult;
+    const outcome = await postFormAction<MediaBulkDeleteResult>(BULK_DELETE_URL, {
+      method: 'POST',
+      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body: formData,
+    });
+    if (outcome.ok) {
+      bulkResult = outcome.data;
       bulkPhase = 'done';
       void tick().then(() => bulkSummaryTitle?.focus());
     } else {
-      const failure = result.data as { error?: string } | undefined;
+      const failure = outcome.data as { error?: string } | undefined;
       bulkError = failure?.error ?? 'The delete could not be completed. Please try again.';
       bulkPhase = 'error';
     }
@@ -1204,7 +1171,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   const orphanSelectedCount = $derived(orphanKeys.size);
   // The typed-count gate: the submit is enabled only when the typed value equals the selected count and
   // at least one byte is selected. The one legitimate disable, a visible typed destructive confirm.
-  const orphanConfirmMatches = $derived(orphanSelectedCount > 0 && orphanConfirmInput === String(orphanSelectedCount));
+  const orphanConfirmMatches = $derived(orphanSelectedCount > 0 && confirmGateMatches(orphanConfirmInput, orphanSelectedCount));
   // The select-all is checked when every byte is selected, indeterminate on a strict subset. Driven
   // imperatively because `indeterminate` is a DOM property with no HTML attribute.
   $effect(() => {
@@ -1267,26 +1234,19 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   async function runOrphanScan() {
     orphanPhase = 'scanning';
     orphanBlockedError = '';
-    let result: { type: string; data?: unknown };
-    try {
-      const res = await fetch(ORPHAN_SCAN_URL, {
-        method: 'POST',
-        headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body: new FormData(),
-      });
-      result = deserialize(await res.text()) as { type: string; data?: unknown };
-    } catch {
-      // A network throw blocks the scan with the generic blocked surface; orphanBlockedError stays
-      // empty (set above), so the surface shows its own framing without a server message.
-      orphanPhase = 'blocked';
-      return;
-    }
-    if (result.type === 'success' && result.data) {
-      orphanScan = result.data as OrphanScan;
+    const outcome = await postFormAction<OrphanScan>(ORPHAN_SCAN_URL, {
+      method: 'POST',
+      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body: new FormData(),
+    });
+    if (outcome.ok) {
+      orphanScan = outcome.data;
       orphanKeys = new Set<string>();
       orphanPhase = 'result';
     } else {
-      const failure = result.data as MediaBulkFailure | undefined;
+      // A network throw and a parsed failure both block the scan; a network throw carries no data, so
+      // orphanBlockedError falls back to '' and the surface shows its own framing with no server message.
+      const failure = outcome.data as MediaBulkFailure | undefined;
       orphanBlockedError = failure?.error ?? '';
       orphanPhase = 'blocked';
     }
@@ -1332,25 +1292,17 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     const formData = new FormData();
     for (const key of orphanKeys) formData.append('key', key);
     formData.append('confirm', orphanConfirmInput);
-    let result: { type: string; data?: unknown };
-    try {
-      const res = await fetch(ORPHAN_PURGE_URL, {
-        method: 'POST',
-        headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
-        body: formData,
-      });
-      result = deserialize(await res.text()) as { type: string; data?: unknown };
-    } catch {
-      orphanPurgeBusy = false;
-      orphanPurgeError = 'The purge could not be completed. Please try again.';
-      return;
-    }
+    const outcome = await postFormAction<MediaOrphanPurgeResult>(ORPHAN_PURGE_URL, {
+      method: 'POST',
+      headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
+      body: formData,
+    });
     orphanPurgeBusy = false;
-    if (result.type === 'success' && result.data) {
-      orphanPurgeResult = result.data as MediaOrphanPurgeResult;
+    if (outcome.ok) {
+      orphanPurgeResult = outcome.data;
       orphanPurging = false;
     } else {
-      const failure = result.data as MediaBulkFailure | undefined;
+      const failure = outcome.data as MediaBulkFailure | undefined;
       orphanPurgeError = failure?.error ?? 'The purge could not be completed. Please try again.';
     }
   }
@@ -1432,7 +1384,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The selected-cue check glyph for the triage radiogroup (WCAG 1.4.1): hue never carries the
   // chosen state alone, the same non-color cue the ConceptList triage uses.
   function segButtonClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${on ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(on)}`;
   }
   function densityButtonClass(on: boolean): string {
     return `inline-flex items-center justify-center rounded-md p-1.5 ${on ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-base-content/[0.06]'}`;
@@ -2332,19 +2284,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 </dialog>
 
 <!-- The Push-alt review dialog: a native modal <dialog> (native focus trap + Escape), NO light dismiss.
-     Alt fill is reversible and frequent, so it carries role="dialog" (the everyday register, never
-     alertdialog) with NO typed-slug gate; apply is always enabled. The review step lists three buckets
+     Alt fill is reversible and frequent (never the alertdialog register) with NO typed-slug gate;
+     apply is always enabled. It relies on the native <dialog> role and aria-labelledby, with no
+     redundant role or aria-modal (the Replace dialog's role="alertdialog" is the deliberate outlier,
+     stated explicitly because it changes the semantics). The review step lists three buckets
      (will-fill always applied, customized behind one opt-in, decorative-skipped reported); the blocked
      step is the fail-closed surface (no apply form). -->
-<!-- svelte-ignore a11y_no_redundant_roles -->
-<!-- The explicit role="dialog" is the native <dialog> default, but it is stated to mark the everyday
-     register against the Replace dialog's role="alertdialog" sibling, and the component test reads it. -->
 <dialog
   bind:this={altDialog}
   data-testid="cairn-alt-dialog"
   class="modal"
-  role="dialog"
-  aria-modal="true"
   aria-labelledby="cairn-ml-alt-title"
   aria-describedby="cairn-ml-alt-sub"
   oncancel={closeAltDialog}
@@ -2840,15 +2789,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      dismiss. The result is the two-section dry-run, the loading state, and the detection-time blocked
      surface. The irreversible byte purge lives inside this dialog only, kept structurally apart from
      the reversible bulk delete: a separate selection Set of R2 keys, a solid-danger Purge, and a
-     typed-count confirm. role="dialog" (the everyday register): the scan itself changes nothing, and
-     the irreversible step is gated behind the typed confirm below. -->
-<!-- svelte-ignore a11y_no_redundant_roles -->
+     typed-count confirm. It relies on the native <dialog> role and aria-labelledby, with no redundant
+     role or aria-modal: the scan itself changes nothing, and the irreversible step is gated behind
+     the typed confirm below. -->
 <dialog
   bind:this={orphanDialog}
   data-testid="cairn-orphan-dialog"
   class="modal"
-  role="dialog"
-  aria-modal="true"
   aria-labelledby="cairn-ml-orphan-title"
   aria-describedby="cairn-ml-orphan-desc"
   oncancel={onOrphanCancel}
@@ -3144,16 +3091,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      backdrop form, matching the Replace/Alt siblings): a backdrop click does nothing, and only
      Escape or the Cancel button closes it. It hosts MediaCaptureCard on a chosen or dropped file; a
      typed ingest/upload failure or an expired session shows the Replace flow's retry-card treatment
-     without losing the file. -->
-<!-- svelte-ignore a11y_no_redundant_roles -->
-<!-- The explicit role="dialog" is the native <dialog> default, but it is stated to mark the everyday
-     register against the Replace dialog's role="alertdialog" sibling, matching the Push-alt dialog. -->
+     without losing the file. It relies on the native <dialog> role and aria-labelledby, with no
+     redundant role or aria-modal, matching the Push-alt and orphan-scan dialogs. -->
 <dialog
   bind:this={uploadDialog}
   data-testid="cairn-library-upload-dialog"
   class="modal"
-  role="dialog"
-  aria-modal="true"
   aria-labelledby="cairn-ml-upload-title"
   aria-describedby="cairn-ml-upload-sub"
   oncancel={closeLibraryUpload}

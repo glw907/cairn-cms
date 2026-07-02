@@ -13,6 +13,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
   import CairnLogo from './CairnLogo.svelte';
+  import { segmentTintClass } from './segmented-control.js';
   import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
 
@@ -119,11 +120,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   // A segment of the bordered publish-state control: the shared group border carries the pick-one
   // semantics, so a segment stays borderless; the active one tints and bolds.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(pressed)}`;
   }
   // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
   function hiddenToggleClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${segmentTintClass(pressed)}`;
   }
   // Hidden is a row treatment: a draft row de-emphasizes its TITLE by opacity (the title is
   // high-contrast base-content, so it stays above the AA text floor when dimmed). The already-muted

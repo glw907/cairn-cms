@@ -203,7 +203,7 @@ describe('CairnAdminShell', () => {
     ];
     const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (4)' }).click();
-    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
     const text = dialog.textContent ?? '';
     // Configured concepts resolve to their labels; an unknown key falls back to the raw key.
@@ -225,7 +225,7 @@ describe('CairnAdminShell', () => {
     const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (1)' }).click();
     const dialog = () =>
-      screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]') as HTMLDialogElement;
+      screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]') as HTMLDialogElement;
     expect(dialog().open).toBe(true);
     await screen.rerender({ data: { ...data(true, null, '/admin/pages'), pendingEntries: Promise.resolve(pending) }, children: child });
     expect(dialog().open).toBe(false);
@@ -249,7 +249,7 @@ describe('CairnAdminShell', () => {
     ];
     const screen = render(CairnAdminShell, { data: { ...data(true), pendingEntries: Promise.resolve(pending) }, children: child });
     await screen.getByRole('button', { name: 'Publish site (2)' }).click();
-    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-publish-all-title"]')!;
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-shell-publish-all-title"]')!;
     const lists = Array.from(dialog.querySelectorAll('ul[aria-labelledby]'));
     expect(lists.length).toBe(2);
     const labelTexts = lists.map(
@@ -288,11 +288,11 @@ describe('CairnAdminShell', () => {
     const deskScreen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
-    const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
+    const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
 
     const listScreen = render(CairnAdminShell, { data: data(true), children: child });
-    const listToggleWrap = listScreen.container.querySelector('label[for="cairn-drawer"]')!.parentElement!;
+    const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
   });
 
@@ -318,7 +318,7 @@ describe('CairnAdminShell', () => {
 
   it('toggles the drawer with Ctrl+B', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
-    const toggle = () => screen.container.querySelector('#cairn-drawer') as HTMLInputElement;
+    const toggle = () => screen.container.querySelector('#cairn-shell-drawer') as HTMLInputElement;
     const before = toggle().checked;
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
     await expect.poll(() => toggle().checked).toBe(!before);

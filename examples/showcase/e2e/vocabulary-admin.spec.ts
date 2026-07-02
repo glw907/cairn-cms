@@ -28,7 +28,7 @@ test('add, rename, delete-unused, the in-use guard, and seed, then the commit ca
     .split('-')
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(' ');
-  await page.locator('#vocab-new-label').fill(addedLabel);
+  await page.locator('#cairn-vocab-new-label').fill(addedLabel);
   await page.getByRole('button', { name: 'Add tag' }).click();
   await expect(page.getByRole('textbox', { name: `Tag name (${addedSlug})` })).toBeVisible();
 

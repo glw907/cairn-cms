@@ -208,3 +208,41 @@ consistent with what actually landed; post-mortem present; tree clean.
   justification and backstop, so the convention's skip is conscious, not forgotten.
 - The docs-rewrite Stage 1 research may run concurrently with Tasks 1-4 (no file contention),
   gated on Geoff's docs-spec sign-off, which is still open as of this writing.
+
+---
+
+## Post-mortem (2026-07-02)
+
+**Built.** The idiom charter (`docs/internal/code-idioms.md`, now a standing pass dimension),
+the measured baseline and its closing deltas, the nine-step sweep (61 workflow agents, zero
+errors: the content-routes decomposition, the idiom convergences, the shared-helper
+extractions, the test-harness dedup), three riders (the `check:consumers` gate proven against
+an injected error; the admin-css content scope with a 31% shipped-sheet reduction; the
+form-renderer merge taken to its revert-and-record outcome, correcting the ROADMAP entry and
+banking 23 guard tests), and the consolidation (the two ruled surface changes, the retheme
+lockage fix, the changelog window). Final commits `da9d83c..bc43ba7` on `code-polish-1`.
+
+**Verified.** Full gate green at close (285 files, 3,000 tests, exit 0; every check:* gate;
+showcase + dev package via the new `check:consumers`); the full e2e flake-free including both
+visual baselines; a targeted security review of the two auth-adjacent consolidation commits
+(no findings; one awareness note: a no-op accepted mutation emits a success-shaped event,
+matching the action's own semantics); the simplifier backstop (one micro-convergence, `asString`).
+
+**Quantified return.** knip findings 61 → 15 (remainder justified in the charter); jscpd clone
+pairs 86 → 64 (the `CairnMediaLibrary` html cluster deliberately deferred, filed to ROADMAP);
+`content-routes.ts` 3,435 → 128 lines; the shipped admin sheet 416KB → 287KB; the surface
+snapshot changed by exactly the nine ruled action renames.
+
+**Budgets.** Subagent tokens ≈ 9.5M (survey 1.43M, baseline 0.22M, sweep 6.89M, riders 0.41M,
+consolidation 0.33M, verifiers + backstop 0.27M), of which an estimated 0.4–0.5M was the
+memory-maintenance runaway (now guarded by doctrine: the transcript-size + stall watchdog, the
+skip-memory-maintenance prompt rule). Main-loop tokens additional; see `/cost`. Human
+interaction points attributable to the pass: the plan approval, two front-loaded surface-want
+rulings, zero corrections to landed work.
+
+**Durable lessons.** (1) The runaway guard incident and its doctrine (global CLAUDE.md +
+memory). (2) The guarded-merge escape hatch converted a wrong ROADMAP idea into an accurate
+one plus permanent guard tests — the format earns its ceremony. (3) Sequential mutation with
+parallel adversarial verify held: verifiers forced amendments on five of nine steps and caught
+a CI-only e2e break pre-CI; the verify:produce token ratio near 1:1 is the deliberate cost.
+(4) Calendar time is explicitly not a budget; tokens and attended time are (Geoff, 2026-07-02).

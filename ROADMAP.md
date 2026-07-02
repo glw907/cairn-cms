@@ -51,9 +51,23 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
-### The beta gate (Geoff's decisions, not passes; settle before the beta cut)
+### The beta gate — DECIDED (Geoff, 2026-07-02; step 10 is now mechanics)
 
-- [ ] **Define the beta release as an event, and adopt the long-term numbering scheme at it**
+All four rulings, ratified in advance: **(1) Versioning** — compatibility-meaning SemVer from
+beta day; the pre-beta cut is the last `0.x`; beta ships `1.0.0-beta.1` under an npm `beta`
+dist-tag, iterating `-beta.N` with `Consumers must:` on breaking bumps; `1.0.0` when the
+checklist holds; the `0.x` scale heuristic retires at beta. **(2) Posture** — public at beta:
+repo public, issues on with minimal triage, docs live on cairn.pub; the go-public pass is the
+gate. **(3) Support** — latest beta only; fixes land in the next `-beta.N`, no backports;
+SECURITY.md's wording updates to match at its go-public trim. **(4) Naming** — the package goes
+UNSCOPED `cairn-cms` at beta day (reserve the free npm name with a placeholder publish before
+then — an interactive act for Geoff, npm auth is passkey-bound); the repo stays
+`glw907/cairn-cms` (GitHub redirects keep a future org move cheap; the npm name does not have
+that luxury, hence deciding it now).
+
+The original decision framing, for the record:
+
+- [x] **Define the beta release as an event, and adopt the long-term numbering scheme at it**
   (Geoff, 2026-07-02: from beta on, version numbers carry durable, useful meaning). Standing
   recommendation: strict SemVer with compatibility meaning from beta day — beta ships as
   `1.0.0-beta.1` and iterates as `-beta.N` under an npm `beta` dist-tag (`latest` stays on `0.x`
@@ -65,7 +79,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   mean something. Also in this decision: what the accumulated `## Unreleased` window rolls into the
   beta cut, whether beta flips the "closely held until the core lands" posture, and the support
   promise to beta users (SECURITY.md's latest-minor line becomes real once strangers depend on it).
-- [ ] **Close the naming window deliberately.** The package (`@glw907/cairn-cms` vs an unscoped name)
+- [x] **Close the naming window deliberately.** The package (`@glw907/cairn-cms` vs an unscoped name)
   and the repo home (personal account vs a `cairn` org) are cheapest to change before any external
   user pins them and maximally painful after. Staying with the current names is fine, but as a
   decision, not a default; check name availability first.

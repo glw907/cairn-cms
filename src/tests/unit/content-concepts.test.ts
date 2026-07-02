@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { normalizeConcepts, findConcept } from '../../lib/content/concepts.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
-import type { ConceptConfig, RoutingRule } from '../../lib/content/types.js';
+import type { ConceptConfig } from '../../lib/content/types.js';
 import { fields } from '../../lib/content/fields.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
@@ -64,7 +64,7 @@ describe('normalizeConcepts', () => {
   it('attaches a Fragments concept additively without reshaping the contract', () => {
     const fragments: ConceptConfig = {
       dir: 'src/content/fragments',
-      routing: { routable: false, dated: false, inFeeds: false },
+      routing: 'embedded',
       fields: fieldset({ title: fields.text({ label: 'Title' }) }),
     };
     const descriptors = normalizeConcepts({ ...testAdapter.content, fragments });
@@ -73,6 +73,19 @@ describe('normalizeConcepts', () => {
     expect(descriptors.find((c) => c.id === 'fragments')?.routing.routable).toBe(false);
     // The existing concepts are untouched.
     expect(descriptors.find((c) => c.id === 'posts')?.routing.dated).toBe(true);
+  });
+
+  // Surface-pruning Task 5: RoutingRule left ConceptConfig's public surface, so an object-form
+  // routing value is a compile-time error even though the same shape still normalizes internally
+  // (ConceptDescriptor.routing stays a RoutingRule).
+  it('rejects an object-form routing value on ConceptConfig at compile time', () => {
+    const objectRouting: ConceptConfig = {
+      dir: 'src/content/fragments',
+      // @ts-expect-error routing accepts only the 'feed' | 'page' | 'embedded' shorthand now
+      routing: { routable: false, dated: false, inFeeds: false },
+      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+    };
+    expect(objectRouting.dir).toBe('src/content/fragments');
   });
 });
 
@@ -99,8 +112,7 @@ describe('normalizeConcepts URL policy', () => {
   // normalizeConcepts keeps its own validateUrlPolicy call (defense-in-depth beside defineConcept), so a
   // bad concept-declared permalink still fails here with an id-keyed message.
   it('validates the concept-declared permalink with an id-keyed message', () => {
-    const rule: RoutingRule = { routable: true, dated: false, inFeeds: false };
-    expect(() => normalizeConcepts({ pages: { ...cfg, routing: rule, permalink: '/:year/:slug' } })).toThrow(
+    expect(() => normalizeConcepts({ pages: { ...cfg, routing: 'page', permalink: '/:year/:slug' } })).toThrow(
       'cairn: concept "pages" is not dated, so permalink "/:year/:slug" cannot use the date token ":year"',
     );
   });

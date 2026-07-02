@@ -10,11 +10,11 @@ import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
-The `.` entry carries 118 names, so this page groups them in three tiers. **Stable API** is the
-deliberate public surface, each primary entry point with a worked snippet. **Low-level** lists the
-internal helpers a site rarely calls. **Types** is a table of the public type aliases and
-interfaces. The TypeScript types in `src/lib` are the source of truth, and the export-coverage gate
-checks every name here against them.
+The `.` entry carries the earned construction surface: the adapter and schema constructors, the read
+helpers a site calls on its own routes, and the types that name their signatures. **Stable API** is
+the deliberate public surface, each primary entry point with a worked snippet. **Types** is a table
+of the public type aliases and interfaces. The TypeScript types in `src/lib` are the source of
+truth, and the export-coverage gate checks every name here against them.
 
 The public delivery read surface lives at [`/delivery`](./delivery.md) and
 [`/delivery/data`](./delivery-data.md); the root no longer re-exports it.
@@ -97,10 +97,10 @@ declare function defineConcept<const C extends ConceptConfig>(concept: C): C;
 ```
 
 Declare one concept while preserving its fieldset type for typed reads, the concept-level companion
-to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink` or
-`datePrefix` throws at module load rather than at a defaulted render. A concept declares its routing
-with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand, or an explicit `RoutingRule`) and
-its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
+to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink`,
+`datePrefix`, or `routing` throws at module load rather than defaulting or resolving silently. A
+concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
+and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
 
 ```ts
 posts: defineConcept({
@@ -131,8 +131,6 @@ interface PreviewConfig {
   containerClass?: string;
   byConcept?: Record<string, { bodyClass?: string; containerClass?: string }>;
 }
-
-type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>;
 ```
 
 How the edit page's preview frame reproduces the live site's content styling. Chrome isolation
@@ -153,7 +151,7 @@ site whose concepts wrap content differently (a blog whose posts render inside a
 its pages use a static-page wrapper). An entry's preview resolves the override for its concept
 over the top-level values, key by key: a missing override key keeps the top-level value, and only
 a string replaces it. Stylesheets are always shared. `editLoad` ships the already-resolved flat
-shape, `ResolvedPreview`, so the map itself never reaches the client.
+shape, so the map itself never reaches the client.
 
 ```ts
 preview: {
@@ -276,10 +274,10 @@ component-level companion to `defineConcept`. A directive attribute is one flat 
 attributes are a `fields.*` record of scalar leaves: `text`, `textarea`, `number`, `select`, `url`,
 `email`, `date`, `datetime`, `boolean`, and `icon`. An `object`, `array`, `reference`, or `image`
 attribute throws at declaration. It validates at declaration like `defineConcept`, so a bad type or a
-malformed pattern fails at module load rather than at first insert. The built `attributeSchema` is the
-`Fieldset` that `validateComponent` runs, so a component attribute and a concept field validate through
-identical code. A cross-field attribute rule lives in the co-bundled `behavior` table, keyed by
-attribute name.
+malformed pattern fails at module load rather than at first insert. The built `attributeSchema` is a
+`Fieldset`, the engine's own component-grammar validator runs it, so a component attribute and a
+concept field validate through identical code. A cross-field attribute rule lives in the co-bundled
+`behavior` table, keyed by attribute name.
 
 A component opts into client hydration with `hydrate?: boolean | 'visible'`. With it set, the render
 pipeline wraps the component's `build()` output in an island boundary, and the live Svelte component the
@@ -309,41 +307,6 @@ const callout = defineComponent({
     { name: 'body', label: 'Body', kind: 'markdown' },
   ],
 });
-```
-
-#### `normalizeConcepts`
-
-Stability tier: Extension API.
-
-```ts
-declare function normalizeConcepts(
-  content: Record<string, ConceptConfig | undefined>,
-): ConceptDescriptor[];
-```
-
-Normalize an adapter's declared concepts into uniform descriptors (seam 1). Each concept declares its
-own routing and URL policy (`routing`, `permalink`, `datePrefix`), and each defaults when the concept
-omits it. `composeRuntime` calls it, so a site rarely calls it directly.
-
-```ts
-const descriptors = normalizeConcepts(cairn.content);
-```
-
-#### `findConcept`
-
-Stability tier: Extension API.
-
-```ts
-declare function findConcept(
-  concepts: ConceptDescriptor[],
-  id: string,
-): ConceptDescriptor | undefined;
-```
-
-Look up a normalized concept by id, or `undefined` when the site does not enable it.
-
-```ts
-const posts = findConcept(runtime.concepts, 'posts');
 ```
 
 ### Fields
@@ -449,20 +412,6 @@ and a nested failure reports. On failure the result carries the flat `errors` ma
 top-level field, plus an additive `issues` array of `ValidationIssue`, each located by a
 multi-segment path (a row index, a leaf sub-key) so the form routes a nested error to its input.
 
-#### `initialValues`
-
-Stability tier: Extension API.
-
-```ts
-declare function initialValues(fieldset: Fieldset, now?: Date): Record<string, unknown>;
-```
-
-Resolve each descriptor's `default` to a form-initial value, so a fresh entry opens prefilled. The
-`'today'` sentinel on a date field resolves through `now` to its `YYYY-MM-DD` form; an empty-string
-or `false` default is omitted, so an untouched field commits no key. With no `now`, a `'today'`
-default is omitted rather than read off a real clock, keeping the call deterministic and
-Workers-safe.
-
 #### Field types
 
 Stability tier: Extension API.
@@ -473,11 +422,6 @@ Stability tier: Extension API.
 - `InferFieldset` extracts the normalized frontmatter type from a `Fieldset`, where a descriptor
   declared `required: true` is a required key.
 - `FieldsetOptions` carries the `refine` cross-field check and the `behavior` table.
-- `BehaviorTable` is the per-field function-valued behavior co-bundled with a fieldset, keyed by field
-  name and empty for a behavior-free fieldset.
-- `FieldBehavior` is one field's entry in that table: an optional `validate` that runs cross-field
-  after per-field coercion (returning an error string or `null`) and an optional `itemLabel` that
-  derives an array row's label.
 
 ### Render
 
@@ -564,24 +508,11 @@ declare function parseMarkdown(source: string): {
 };
 ```
 
-Parse a markdown file into its frontmatter and body, the read-side inverse of `serializeMarkdown`.
+Parse a markdown file into its frontmatter and body. The write side, reassembling a file for
+committing, is the engine's own save-path concern, not a construction-time call a site makes.
 
 ```ts
 const { frontmatter, body } = parseMarkdown(fileText);
-```
-
-#### `serializeMarkdown`
-
-Stability tier: Extension API.
-
-```ts
-declare function serializeMarkdown(frontmatter: object, body: string): string;
-```
-
-Reassemble a markdown file from frontmatter and body for committing.
-
-```ts
-const fileText = serializeMarkdown({ title: 'Hello' }, '# Hello\n');
 ```
 
 #### Component-author helpers
@@ -610,30 +541,6 @@ build: (ctx) =>
     headRow(ctx.slot('title'), makeIcon('leaf')),
     h('div', { className: ['alert-body'] }, ctx.slot('body')),
   ]),
-```
-
-#### Component grammar and insertion
-
-Stability tier: Extension API.
-
-```ts
-declare function serializeComponent(def: ComponentDef, values: ComponentValues): string;
-declare function parseComponent(markdown: string, def: ComponentDef): Promise<ComponentValues>;
-declare function validateComponent(markdown: string, def: ComponentDef): Promise<ComponentValidation>;
-declare function buildComponentInsert(def: ComponentDef, values: ComponentValues): Promise<ComponentInsert>;
-declare function emptyValues(def: ComponentDef): ComponentValues;
-declare function generateComponentReference(registry: ComponentRegistry, opts: ReferenceOptions): string;
-```
-
-`serializeComponent` and `parseComponent` round-trip a component between guided-form values and the
-canonical directive markdown. `validateComponent` returns a verdict for a serialized directive.
-`buildComponentInsert` serializes and validates a form's values, returning the markdown to insert or
-the field errors. `emptyValues` seeds a blank form from a component's schema. `generateComponent
-Reference` builds a self-contained markdown reference for a registry, the llms-full shape.
-
-```ts
-const insert = await buildComponentInsert(def, values);
-if (insert.ok) editor.insert(insert.markdown);
 ```
 
 ### Runtime and config
@@ -666,7 +573,12 @@ Stability tier: Extension API.
 declare function parseSiteConfig(raw: string): SiteConfig;
 ```
 
-Parse the YAML site-config text into a typed object. Throws `SiteConfigError` on a malformed root.
+Parse the YAML site-config text into a typed object. Throws `SiteConfigError` on a malformed root,
+and enforces the config boundary between site.config.yaml and `cairn.config.ts`: every top-level key
+must be one the engine reads from the YAML (`siteName`, `description`, `author`, `locale`, `menus`,
+`spellcheck`, `tidy`, `vocabulary`). A key that belongs on the adapter instead (`content`, `backend`,
+`email`, `rendering`, `media`, `editor`) throws a message naming `cairn.config.ts` as its correct
+home; any other unrecognized key throws listing the known keys.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
@@ -688,37 +600,6 @@ Extract one named menu from a parsed config and validate it. Returns `[]` when t
 const primary = extractMenu(siteConfig, 'primary', 2);
 ```
 
-#### `setMenu`
-
-Stability tier: Extension API.
-
-```ts
-declare function setMenu(raw: string, name: string, tree: NavNode[]): string;
-```
-
-Replace one named menu in the YAML text and reserialize, preserving every other top-level key. The
-nav editor's save path calls it.
-
-```ts
-const updated = setMenu(yamlText, 'primary', tree);
-```
-
-#### `validateNavTree`
-
-Stability tier: Extension API.
-
-```ts
-declare function validateNavTree(value: unknown, maxDepth: number): NavNode[];
-```
-
-Validate and normalize an untrusted value into a `NavNode[]`: arrays only, non-empty labels, depth
-within `maxDepth`, a bounded node count, and only the known keys. Throws `NavValidationError` on any
-violation.
-
-```ts
-const tree = validateNavTree(submitted, 2);
-```
-
 #### `extractVocabulary`
 
 Stability tier: Extension API.
@@ -736,154 +617,38 @@ and edit paths read.
 const vocabulary = extractVocabulary(siteConfig);
 ```
 
-#### `validateVocabulary`
-
-Stability tier: Extension API.
-
-```ts
-declare function validateVocabulary(value: unknown): VocabularyEntry[];
-```
-
-Validate an untrusted value into a `VocabularyEntry[]`: an array of objects, each with a non-empty
-`label` and a `value` that is a lowercase hyphenated slug (the stored frontmatter token), no duplicate
-`value`. Returns the entries in input order. Throws `SiteConfigError` on any violation, so a malformed
-vocabulary fails the build the same as a bad menu.
-
-```ts
-const vocabulary = validateVocabulary([{ value: 'web-design', label: 'Web Design' }]);
-```
-
-#### `setVocabulary`
-
-Stability tier: Extension API.
-
-```ts
-declare function setVocabulary(raw: string, vocab: VocabularyEntry[]): string;
-```
-
-Replace the tag vocabulary in the YAML site-config text and reserialize, preserving every other
-top-level key and the file's comments. Each entry serializes to just `value` and `label`. Throws
-`SiteConfigError` when the config has no `siteName`. The tag-admin save path calls it.
-
-```ts
-const updated = setVocabulary(yamlText, [{ value: 'web-design', label: 'Web Design' }]);
-```
-
-#### Id helpers
-
-Stability tier: Extension API.
-
-```ts
-declare function composeDatedId(date: string, slug: string, datePrefix: DatePrefix): string;
-declare function idFromFilename(filename: string): string;
-declare function filenameFromId(id: string): string;
-declare function slugFromId(id: string, datePrefix: DatePrefix | null): string;
-declare function isValidId(id: string): boolean;
-declare function slugify(title: string): string;
-```
-
-`composeDatedId` builds a dated entry's id from a date, a slug, and the concept's granularity.
-`idFromFilename` and `filenameFromId` convert between a basename and an id. `slugFromId` strips the
-leading date prefix to yield the URL slug, or returns the id verbatim for a non-dated concept.
-`isValidId` checks a filename-stem id. `slugify` lowercases a title into a filename-safe stem.
-
-```ts
-const id = composeDatedId('2026-01-01', slugify('Hello World'), 'day'); // 2026-01-01-hello-world
-```
-
 ### Content and manifest
 
 The manifest is the committed, build-verified link graph. The content index that projects raw
-markdown into the query surfaces lives at [`/delivery`](./delivery.md); the manifest helpers and the
-`cairn:` link helpers stay on the root because the engine and the admin both read them.
+markdown into the query surfaces lives at [`/delivery`](./delivery.md). The write and diff side of
+the manifest is the engine's own save path, so only its serialize and verify operations stay public,
+for a build script or a custom regenerate tool to call.
 
-#### Manifest parse, serialize, verify, and diff
+#### Manifest serialize and verify
 
 Stability tier: Extension API.
 
 ```ts
-declare function parseManifest(raw: string): Manifest;
 declare function serializeManifest(manifest: Manifest): string;
-declare function emptyManifest(): Manifest;
 declare function verifyManifest(built: Manifest, committedRaw: string): void;
 declare function verifyReferences(manifest: Manifest): void;
-declare function diffManifests(built: Manifest, committed: Manifest): ManifestDiff;
-declare function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest;
-declare function removeEntry(manifest: Manifest, concept: string, id: string): Manifest;
-declare function inboundLinks(manifest: Manifest, concept: string, id: string): InboundLink[];
 ```
 
-`parseManifest` reads a committed manifest, throwing on a malformed or wrong-version file.
-`serializeManifest` writes the canonical, sorted, deduped form that diffs cleanly. `emptyManifest`
-is the starting point when no file exists. `verifyManifest` throws when the committed manifest drifts
-from the corpus, so a raw-git edit fails the build loudly. `verifyReferences` throws when any
-frontmatter reference edge points at a missing target, naming the source entry, the field, and the
-missing target; references have no prerender backstop, so this build gate is their only integrity
-authority. `diffManifests` reports the drift. `upsertEntry` and `removeEntry` are the save and delete
-patches. `inboundLinks` lists every entry that links at a target, for the delete guard.
+`serializeManifest` writes the canonical, sorted, deduped form that diffs cleanly. The `cairnManifest`
+Vite plugin uses it in write mode. `verifyManifest` throws when the committed manifest drifts from the
+corpus, so a raw-git edit fails the build loudly. `verifyReferences` throws when any frontmatter
+reference edge points at a missing target, naming the source entry, the field, and the missing target.
+References have no prerender backstop, so this build gate is their only integrity authority.
 
 ```ts
 verifyManifest(built, committedRaw); // throws on drift
-const next = upsertEntry(manifest, entry);
-```
-
-#### `cairn:` link helpers
-
-Stability tier: Extension API.
-
-```ts
-declare function parseCairnToken(href: string): CairnRef | null;
-declare function formatCairnToken(ref: CairnRef): string;
-declare function extractCairnLinks(body: string): CairnRef[];
-declare function escapeLinkText(text: string): string;
-```
-
-`parseCairnToken` parses a `cairn:<concept>/<id>` href, or `null` for any other href.
-`formatCairnToken` is its inverse, the form the editor link picker writes. `extractCairnLinks`
-returns the cairn links a body points at, in first-occurrence order, deduped. `escapeLinkText`
-escapes the characters that would break a markdown link's display text.
-
-```ts
-const ref = parseCairnToken('cairn:posts/2026-01-01-hello'); // { concept: 'posts', id: '...' }
 ```
 
 ### Auth and GitHub App
 
-These build and send the magic-link email and commit a file. The GitHub App token mint moved off the
-root; a route mints through the `/sveltekit` content routes. The error classes are defined in the
-package so `instanceof` is reliable across the peer boundary.
-
-#### `buildMagicLinkMessage`
-
-Stability tier: Extension API.
-
-```ts
-declare function buildMagicLinkMessage(input: {
-  to: string;
-  branding: AuthBranding;
-  link: string;
-}): MagicLinkMessage;
-```
-
-Build the confirmation email. The link is the only action and the copy stays plain.
-
-```ts
-const message = buildMagicLinkMessage({ to, branding, link });
-```
-
-#### `cloudflareSend`
-
-Stability tier: Extension API.
-
-```ts
-declare const cloudflareSend: SendMagicLink;
-```
-
-The production send: Cloudflare Email Sending through the `EMAIL` binding. Tests pass a sink instead.
-
-```ts
-await cloudflareSend(env, message);
-```
+Sending the magic-link email and minting the GitHub App token are the engine's own save and login
+paths, not construction-time calls a site makes. The error classes stay public so a custom route can
+catch them: they are defined in the package, so `instanceof` is reliable across the peer boundary.
 
 #### Error classes
 
@@ -897,58 +662,11 @@ declare class CommitConflictError extends Error {
 declare class SiteConfigError extends Error {
   readonly conditionId: 'config.site-config-invalid';
 }
-declare class NavValidationError extends Error {}
 ```
 
 `CommitConflictError` signals a lost SHA race on a commit, so the save fails safe. `SiteConfigError`
 is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` names the registered
-diagnostic condition the fault maps to. `NavValidationError` is thrown by `validateNavTree` on an
-invalid tree. `MAX_NAV_NODES` is the total node cap the validator enforces.
-
-```ts
-declare const MAX_NAV_NODES: 200;
-```
-
-### Admin form helpers
-
-The admin form path decodes submitted frontmatter, coerces a date for the date input, and reads the
-public origin from config. The feed, sitemap, robots, SEO, and pagination builders live at
-[`/delivery`](./delivery.md), with the response helpers that wrap them.
-
-#### `frontmatterFromForm` and `dateInputValue`
-
-Stability tier: Extension API.
-
-```ts
-declare function frontmatterFromForm(fields: NamedField[], form: FormData): Record<string, unknown>;
-declare function dateInputValue(value: unknown): string;
-declare function requireOrigin(env: { PUBLIC_ORIGIN?: string }): string;
-```
-
-`frontmatterFromForm` decodes submitted form data into raw frontmatter, one rule per field type.
-`dateInputValue` coerces a frontmatter date to the `YYYY-MM-DD` an `<input type="date">` wants.
-`requireOrigin` returns the site's public origin from config, never a request header, so a forged
-Host header cannot redirect a magic link. Its throw carries a `conditionId` of
-`config.public-origin-invalid`, the registered diagnostic condition, for all three faults: the
-variable is unset, fails to parse as a URL, or uses http on a non-local host.
-
-```ts
-const raw = frontmatterFromForm(descriptor.fields, formData);
-```
-
----
-
-## Low-level
-
-Stability tier: Extension API.
-
-These are internal helpers leaked through `export *`. They are not part of the supported surface,
-so don't depend on them; the list is here for completeness.
-
-- `rehypeDispatch` the rehype transformer that dispatches each stamped element through its registry `build`.
-- `remarkDirectiveStamp` the remark transformer that stamps a recognized directive for dispatch.
-- `manifestEntryFromFile` build one manifest entry from a content file.
-- `manifestLinkResolver` a `LinkResolve` backed by manifest targets, for the admin preview.
+diagnostic condition the fault maps to.
 
 ---
 
@@ -963,7 +681,6 @@ function signatures above reference these.
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
 | `ConceptUrlPolicy` | Extension API | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
-| `RoutingRule` | Extension API | `interface RoutingRule` | Concept-fixed routing: routable, dated, inFeeds. |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
@@ -972,55 +689,24 @@ function signatures above reference these.
 | `SenderConfig` | Extension API | `interface SenderConfig` | Magic-link sender identity for Cloudflare Email Sending. |
 | `NavMenuConfig` | Extension API | `interface NavMenuConfig` | A git-committed YAML menu the nav editor manages. |
 | `PreviewConfig` | Extension API | `interface PreviewConfig` | The live site's stylesheets and container classes for the edit page's preview frame, with optional per-concept wrapper overrides. |
-| `ResolvedPreview` | Extension API | `type ResolvedPreview = Omit<PreviewConfig, 'byConcept'>` | The flat per-entry preview shape `editLoad` ships: the top-level values with the entry's concept override applied. |
 | `AssetConfig` | Extension API | `interface AssetConfig` | A site's media configuration: the R2 bucket binding, the delivery base and URL form, the upload limits, and the named Cloudflare Images variant presets. Omitting it leaves media off. See the `assets` adapter member above. |
 | `CairnRuntime` | Extension API | `interface CairnRuntime` | The composed runtime the engine serves from. |
 | `ComposeInput` | Extension API | `interface ComposeInput` | The input to `composeRuntime`: adapter, siteConfig. |
 | `NamedField` | Extension API | `type NamedField` | A field descriptor with its frontmatter key re-attached as `name`, the normalized shape `ConceptDescriptor.fields` carries. |
-| `TextField` | Extension API | `interface TextField` | A single-line text field with length and pattern rules. |
-| `TextareaField` | Extension API | `interface TextareaField` | A multi-line text field with rows, length, and pattern rules. |
-| `NumberField` | Extension API | `interface NumberField` | A numeric field with `min`, `max`, and an `integer` flag. |
-| `SelectField` | Extension API | `interface SelectField` | A single-choice field over a closed `options` list. |
-| `MultiselectField` | Extension API | `interface MultiselectField` | A multi-choice field: a closed `options` list renders checkboxes; `creatable: true` opens a tag input with an optional `placeholder`. |
-| `UrlField` | Extension API | `interface UrlField` | A URL field validated for a well-formed absolute URL. |
-| `EmailField` | Extension API | `interface EmailField` | An email field validated for a well-formed address. |
-| `DateField` | Extension API | `interface DateField` | A `YYYY-MM-DD` date field with min and max. |
-| `DatetimeField` | Extension API | `interface DatetimeField` | A naive-local `YYYY-MM-DDTHH:mm` minute-precision datetime field. |
-| `BooleanField` | Extension API | `interface BooleanField` | A checkbox field; absent means false. |
-| `IconField` | Extension API | `interface IconField` | A glyph chosen from the adapter's icon set; the stored value is the glyph's name. |
-| `ImageField` | Extension API | `interface ImageField` | A hero image set in frontmatter, with an optional `seo` flag for the social card. |
-| `ObjectField` | Extension API | `interface ObjectField` | A group of leaf fields stored as a nested object; the `label` is optional, since an array labels a row group. Holds only leaves, one level deep. |
-| `ReferenceField` | Extension API | `interface ReferenceField` | A single typed edge to one entry of a named `concept`, stored as that target's permanent id. |
-| `ArrayField` | Extension API | `interface ArrayField` | A repeatable field over one `item` descriptor: any leaf (scalar, `image`, `reference`) or a flat `object` of leaves. |
 | `ImageValue` | Extension API | `interface ImageValue` | The stored value of an `image` field: a `media:` src, an alt, and an optional caption. |
 | `ValidationResult` | Extension API | `type ValidationResult` | A validator's verdict: normalized data, or field-keyed `errors` plus the additive located `issues`. |
 | `ValidationIssue` | Extension API | `interface ValidationIssue` | One validation failure located by a `path` (a top-level key, then a row index and/or a leaf sub-key) and its message. |
 | `StandardInput` | Extension API | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
 | `StandardSchemaV1` | Extension API | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
-| `DatePrefix` | Extension API | `type DatePrefix` | Filename date-prefix granularity for a dated concept: year, month, day. |
 | `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
 | `LinkResolve` | Extension API | `type LinkResolve` | Resolve a `CairnRef` to its live permalink, or undefined when missing. |
 | `Manifest` | Extension API | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
-| `ManifestEntry` | Extension API | `interface ManifestEntry` | One entry's projection: identity, routing, draft flag, the `summary` excerpt, and outbound edges. |
-| `ManifestDiff` | Extension API | `interface ManifestDiff` | The drift between a built and a committed manifest: added, removed, changed. |
-| `ManifestEntryDiff` | Extension API | `interface ManifestEntryDiff` | A changed entry and the fields that differ between manifests. |
-| `LinkTarget` | Extension API | `interface LinkTarget` | The minimal entry view the preview resolver and picker read. |
-| `InboundLink` | Extension API | `interface InboundLink` | One inbound linker: enough to name it and link to its edit page. |
-| `ReferenceEdge` | Extension API | `interface ReferenceEdge` | One typed frontmatter reference edge: the field, the target concept, and the target id. |
-| `InboundReference` | Extension API | `interface InboundReference` | One inbound referencer: its identity plus the distinct fields through which it references the target. |
-| `ResolvedReference` | Extension API | `interface ResolvedReference` | A reference edge resolved to its target's identity (id, concept, title, permalink, optional summary), for a route to render a linked target. |
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
-| `ComponentValues` | Extension API | `interface ComponentValues` | Guided-form values for one component: attribute and slot values. |
-| `ComponentValidation` | Extension API | `type ComponentValidation` | A validation verdict: ok, or field-keyed error messages. |
-| `ComponentInsert` | Extension API | `type ComponentInsert` | The outcome of preparing a form for insertion: markdown, or field errors. |
-| `SlotKind` | Extension API | `type SlotKind` | A component slot kind: markdown, inline, repeatable. |
-| `SlotDef` | Extension API | `interface SlotDef` | One named content region of a component. A repeatable slot's `itemFields` are a `fields.*` record of leaf descriptors (v1 uses the first), and the optional `itemLabel` derives a row's label from its item values and index, falling back to the indexed label. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` the editor preview and every public page call. |
 | `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize and anchor controls. |
-| `ReferenceOptions` | Extension API | `interface ReferenceOptions` | The title and summary for `generateComponentReference`. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |
@@ -1029,6 +715,6 @@ function signatures above reference these.
 | `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
 | `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. |
-| `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send; production uses `cloudflareSend`. |
+| `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |

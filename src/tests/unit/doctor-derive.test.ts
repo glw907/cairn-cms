@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { deriveMissingInputs } from '../../lib/doctor/index.js';
 import type { DerivationSources } from '../../lib/doctor/index.js';
-import { readAdapterFacts } from '../../lib/vite/index.js';
+import { readAdapterFacts } from '../../lib/vite/internal.js';
 
 const ADAPTER = {
 	owner: 'acme',

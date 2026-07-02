@@ -12,7 +12,7 @@ import { CairnError } from '../diagnostics/index.js';
 import { r2Key } from '../media/naming.js';
 import { log } from '../log/index.js';
 import type { DeliveryObject, DeliveryObjectBody } from '../media/delivery-bucket.js';
-import type { ResolvedAssetConfig } from '../media/config.js';
+import type { CairnRuntime } from '../content/types.js';
 
 /** A 16-character lowercase hex content-hash prefix, validated before any R2 lookup. */
 const HASH_RE = /^[0-9a-f]{16}$/;
@@ -49,14 +49,17 @@ function hasBody(obj: DeliveryObject | DeliveryObjectBody): obj is DeliveryObjec
 }
 
 /**
- * Build the media delivery `RequestHandler` for a site's resolved media config.
+ * Build the media delivery `RequestHandler` for a site's composed runtime.
  *
- * The handler validates the hash and extension before any R2 call, derives the object key from the
- * validated values only (never trusting the URL's fan-out), guards the Cloudflare Images self-loop,
- * and sets the security headers on every served response.
- * @param resolved - the adapter's resolved media config; when media is off the handler always 404s.
+ * The handler reads the runtime's resolved media config itself, matching the convention every
+ * other route factory follows, validates the hash and extension before any R2 call, derives the
+ * object key from the validated values only (never trusting the URL's fan-out), guards the
+ * Cloudflare Images self-loop, and sets the security headers on every served response.
+ * @param runtime - the composed runtime; its `resolvedAssets` decides delivery, and a media-off
+ * site's handler always 404s.
  */
-export function createMediaRoute(resolved: ResolvedAssetConfig): RequestHandler {
+export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
+  const resolved = runtime.resolvedAssets;
   return async (event) => {
     // Media off: the route is mounted but serves nothing.
     if (!resolved.enabled) return new Response(null, { status: 404 });

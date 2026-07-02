@@ -60,7 +60,8 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const HASH_A = '0000000000000aaa';
 const HASH_B = '0000000000000bbb';
@@ -132,7 +133,7 @@ function bulkEvent(hashes: string[], bucket: { delete: ReturnType<typeof vi.fn> 
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
   };
 }
@@ -151,7 +152,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
@@ -180,7 +181,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never);
 
@@ -200,7 +201,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
@@ -230,7 +231,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
@@ -250,7 +251,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.mediaBulkDelete(bulkEvent([HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
@@ -272,7 +273,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
@@ -298,7 +299,7 @@ describe('mediaBulkDelete fails closed', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket(timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const event = bulkEvent([HASH_A, HASH_B], bucket, timeline);
     const wrapped = globalThis.fetch;

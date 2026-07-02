@@ -6,6 +6,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
 import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -34,15 +35,16 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
-function saveEvent(id: string, form: Record<string, string>) {
+function saveEvent(id: string, form: Record<string, string>, eventBackend: Backend = backend) {
   const body = new URLSearchParams(form);
   return {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend: eventBackend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -87,7 +89,7 @@ describe('saveAction', () => {
     const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     const gh = new GithubDouble({ main: { 'src/content/.cairn/index.json': manifest } });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
       throw new Error('should have redirected');
@@ -123,7 +125,7 @@ describe('saveAction', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' }) as never);
       throw new Error('should have redirected');
@@ -139,7 +141,7 @@ describe('saveAction', () => {
   it('bounces invalid frontmatter back to the form and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-x', { title: '', body: 'b' }) as never);
       throw new Error('should have redirected');
@@ -153,7 +155,7 @@ describe('saveAction', () => {
   it('rejects an invalid id before any commit', async () => {
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     await expect(routes.saveAction(saveEvent('Bad Id!', { title: 'x', body: 'b' }) as never)).rejects.toMatchObject({ status: 400 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -172,7 +174,7 @@ describe('saveAction', () => {
       return new Response('unexpected', { status: 500 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
       throw new Error('should have redirected');
@@ -183,7 +185,7 @@ describe('saveAction', () => {
 
   it('blocks a save that links to an absent target, with no commit', async () => {
     const calls = commitFetch(null); // empty manifest: nothing to resolve against
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
     )) as unknown as { status: number; data: { error: string; brokenLinks: string[] } };
@@ -197,11 +199,10 @@ describe('saveAction', () => {
   it('accepts a mintToken that returns a bare string', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
-      backend: makeGithubBackend(REPO, () => 'sync-token'),
-    });
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
+    const syncBackend = makeGithubBackend(REPO, () => 'sync-token');
     try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never);
+      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend) as never);
       throw new Error('should have redirected');
     } catch (e) {
       expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
@@ -216,7 +217,7 @@ describe('saveAction', () => {
     // Force the draft row's concept/id to a pages target the body links to.
     const manifest = serializeManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' }) as never);
       throw new Error('should have redirected');
@@ -234,7 +235,7 @@ describe('saveAction', () => {
     const selfRow = manifestEntryFromFile(concept, { path: 'src/content/posts/2026-05-hi.md', raw: '---\ntitle: Hi\ndraft: true\n---\nx' });
     const manifest = serializeManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' }) as never);
       throw new Error('should have redirected');
@@ -250,7 +251,7 @@ describe('saveAction', () => {
     const liveRow = manifestEntryFromFile(concept, { path: 'src/content/pages/home.md', raw: '---\ntitle: Home\n---\nx' });
     const manifest = serializeManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' }) as never);
       throw new Error('should have redirected');
@@ -268,7 +269,7 @@ describe('saveAction', () => {
     });
     const manifest = serializeManifest({ version: 1, entries: [{ ...aboutRow, concept: 'pages', id: 'about', draft: false }] });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
     } catch {
@@ -293,7 +294,7 @@ describe('saveAction', () => {
       return new Response('unexpected', { status: 500 });
     });
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
     } catch {
@@ -305,9 +306,7 @@ describe('saveAction', () => {
   });
 
   it('matches a conflict by name even if the class identity differs', async () => {
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })), {
-      backend: makeGithubBackend(REPO, () => Promise.resolve('t')),
-    });
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     // Manifest read returns 404 (empty), then the ref update throws a look-alike error carrying
     // the class name, to exercise the name-based branch.
     vi.stubGlobal('fetch', vi.fn(async (url: string, init?: RequestInit) => {
@@ -365,7 +364,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('commits a posted tag that is in the vocabulary', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' }) as never);
       throw new Error('should have redirected');
@@ -380,7 +379,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('rejects a brand-new tag not in the vocabulary and never commits', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never);
       throw new Error('should have redirected');
@@ -401,7 +400,7 @@ describe('saveAction taxonomy enforcement', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     const form = new URLSearchParams();
     form.append('title', 'Hi');
     form.append('topics', 'a');
@@ -411,7 +410,7 @@ describe('saveAction taxonomy enforcement', () => {
       url: new URL('https://t.example/admin/posts/2026-05-hi'),
       params: { concept: 'posts', id: '2026-05-hi' },
       request: new Request('https://t.example/admin/posts/2026-05-hi', { method: 'POST', body: form }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
     try {
@@ -428,7 +427,7 @@ describe('saveAction taxonomy enforcement', () => {
   it('commits a free-form tag with no vocabulary (the opt-in fallback)', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([]));
     try {
       await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' }) as never);
       throw new Error('should have redirected');

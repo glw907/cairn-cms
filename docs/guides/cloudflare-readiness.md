@@ -107,15 +107,13 @@ Condition: `auth.store-unreachable`.
 
 Condition: `github.app-unreachable`.
 
-[Set up the GitHub App](./set-up-the-github-app.md) covers registering the App and installing it on the site repository. Push the three credentials as Worker secrets:
+[Set up the GitHub App](./set-up-the-github-app.md) covers registering the App and installing it on the site repository. Only the private key is a Worker secret; the App ID and installation ID are non-secret identity facts your adapter passes to `githubApp({ appId, installationId, ... })` in source, since the adapter builds the backend before a request's `platform.env` exists:
 
 ```bash
-npx wrangler secret put GITHUB_APP_ID
-npx wrangler secret put GITHUB_APP_INSTALLATION_ID
 npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
 ```
 
-The doctor walks the same chain the Worker does: the key parses, the App authenticates, an installation token mints, and the repository answers a read. A failure names which link broke.
+The doctor's own check needs all three credentials to run its self-test, so export `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` into the shell or CI job that runs it (see [Run the doctor](#run-the-doctor) below). The doctor walks the same chain the Worker does: the key parses, the App authenticates, an installation token mints, and the repository answers a read. A failure names which link broke.
 
 ## Hand cairn the CSRF authority
 

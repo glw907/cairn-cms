@@ -77,14 +77,15 @@ function pagesRuntime(): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function actionEvent(id: string, form: Record<string, string> = {}) {
   return {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -94,7 +95,7 @@ function pagesActionEvent(id: string, form: Record<string, string> = {}) {
     url: new URL(`https://t.example/admin/pages/${id}`),
     params: { concept: 'pages', id },
     request: new Request(`https://t.example/admin/pages/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -158,7 +159,7 @@ describe('publishAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     // The form carries text typed after the last save: publish-what-you-see.
     const location = await redirectedTo(
@@ -185,7 +186,7 @@ describe('publishAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'pending body' }) as never));
 
@@ -197,7 +198,7 @@ describe('publishAction', () => {
   it('saves then publishes when no pending branch exists yet', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
       routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'straight to publish' }) as never),
@@ -215,7 +216,7 @@ describe('publishAction', () => {
     gh.install();
     const rt = runtime();
     rt.concepts[0].validate = () => ({ ok: false as const, errors: { title: 'Title is required' } });
-    const routes = createContentRoutes(rt, deps);
+    const routes = createContentRoutes(rt);
 
     const location = await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { body: 'b' }) as never));
     expect(location).toMatch(/error=.*Title/);
@@ -225,7 +226,7 @@ describe('publishAction', () => {
   it('returns the broken-link fail like save, with no commit anywhere', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.publishAction(
       actionEvent('2026-05-01-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
@@ -244,7 +245,7 @@ describe('publishAction', () => {
     });
     gh.install();
     injectSaveDuringMainPatch(gh, BRANCH, ENTRY_PATH, '---\ntitle: Newer\n---\nsecond-tab save');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
       routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first-tab text' }) as never),
@@ -264,7 +265,7 @@ describe('publishAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'b' }) as never));
 
@@ -296,7 +297,7 @@ describe('publishAction', () => {
       'cairn/pages/about-copy': { 'src/content/pages/about-copy.md': '---\ntitle: About copy\n---\npending body' },
     });
     gh.install();
-    const routes = createContentRoutes(rt, deps);
+    const routes = createContentRoutes(rt);
 
     const location = await redirectedTo(
       routes.publishAction(pagesActionEvent('about-copy', { title: 'About copy', body: 'about copy text' }) as never),
@@ -333,7 +334,7 @@ describe('publishAction', () => {
       'cairn/pages/contact': { 'src/content/pages/contact.md': '---\ntitle: Contact\n---\nReach us.' },
     });
     gh.install();
-    const routes = createContentRoutes(rt, deps);
+    const routes = createContentRoutes(rt);
 
     await redirectedTo(routes.publishAction(pagesActionEvent('contact', { title: 'Contact', body: 'reach us' }) as never));
 
@@ -351,7 +352,7 @@ describe('publishAction', () => {
     });
     gh.install();
     failMainRefPatch();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
       routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'typed text' }) as never),
@@ -385,7 +386,7 @@ describe('publishAllAction', () => {
       url: new URL(`https://t.example/admin/${concept}`),
       params: { concept },
       request: new Request(`https://t.example/admin/${concept}`, { method: 'POST', body: new URLSearchParams() }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }
@@ -405,7 +406,7 @@ describe('publishAllAction', () => {
       [NEW_BRANCH]: { [NEW_PATH]: NEW_MD },
     });
     gh.install();
-    const routes = createContentRoutes(multiRuntime(), deps);
+    const routes = createContentRoutes(multiRuntime());
 
     // The form posts from the pages list, but the redirect lands on the first concept.
     const location = await redirectedTo(routes.publishAllAction(listActionEvent('pages') as never));
@@ -445,7 +446,7 @@ describe('publishAllAction', () => {
       'cairn/widgets/x': { 'src/content/widgets/x.md': '---\ntitle: W\n---\nw' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
     expect(location).toBe('/admin/posts?publishedAll=1');
@@ -469,7 +470,7 @@ describe('publishAllAction', () => {
     });
     gh.install();
     injectSaveDuringMainPatch(gh, PAGE_BRANCH, PAGE_PATH, '---\ntitle: Mid-publish\n---\nnewer save');
-    const routes = createContentRoutes(multiRuntime(), deps);
+    const routes = createContentRoutes(multiRuntime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
     expect(location).toBe('/admin/posts?publishedAll=2');
@@ -487,7 +488,7 @@ describe('publishAllAction', () => {
   it('redirects back with a flash and no commit when nothing is pending', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
     expect(location).toMatch(/^\/admin\/posts\?error=/);
@@ -503,7 +504,7 @@ describe('publishAllAction', () => {
     });
     gh.install();
     failMainRefPatch();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.publishAllAction(listActionEvent() as never));
     expect(location).toMatch(/^\/admin\/posts\?error=/);
@@ -525,7 +526,7 @@ describe('discardAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
     expect(location).toBe('/admin/posts/2026-05-01-hi?discarded=1');
@@ -538,7 +539,7 @@ describe('discardAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
     expect(location).toBe('/admin/posts');
@@ -552,7 +553,7 @@ describe('discardAction', () => {
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     await redirectedTo(routes.discardAction(actionEvent('2026-05-01-hi') as never));
 

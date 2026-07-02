@@ -1,14 +1,13 @@
 // cairn-cms: the node-safe delivery data surface (@glw907/cairn-cms/delivery/data). The pure corpus
 // projections a SvelteKit site or a plain-Node tool reads, with no @sveltejs/kit and no .svelte in
 // the graph. The full ./delivery barrel re-exports this and adds the route loaders.
-export { createContentIndex, fromGlob } from './content-index.js';
-export type { RawFile, ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
-export { createSiteResolver, buildLinkResolver, resolveReferences } from './site-resolver.js';
-export type { SiteResolver, ConceptIndex, ResolvedReference } from './site-resolver.js';
+export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
+export { buildLinkResolver, resolveReferences } from './site-resolver.js';
+export type { SiteResolver, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';
 export { siteDescriptors } from './site-descriptors.js';
-export { deriveExcerpt, wordCount } from '../content/excerpt.js';
+export { deriveExcerpt } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
 export { buildSitemap } from './sitemap.js';
@@ -21,5 +20,4 @@ export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
-export { permalink } from '../content/permalink.js';
 export { buildSiteManifest } from './manifest.js';

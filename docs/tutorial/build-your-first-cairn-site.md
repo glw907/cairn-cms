@@ -303,7 +303,7 @@ A liter per person is the floor, more if the day is warm.
 ::::
 ```
 
-The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warning" icon="snowflake"}` part sets the two attributes, and the text inside the fence fills the markdown `body` slot. When the renderer meets this directive it calls the `callout`'s `build(ctx)`, so `ctx.slot('title')` returns the title content and `ctx.attributes.tone` returns `'warning'`. The post renders the `<aside>` markup, never the literal directive text. For the full directive grammar and how the editor inserts a component, see [Component grammar and insertion](../reference/core.md#component-grammar-and-insertion) in the core reference.
+The `[Don't forget water]` part fills the inline `title` slot, the `{tone="warning" icon="snowflake"}` part sets the two attributes, and the text inside the fence fills the markdown `body` slot. When the renderer meets this directive it calls the `callout`'s `build(ctx)`, so `ctx.slot('title')` returns the title content and `ctx.attributes.tone` returns `'warning'`. The post renders the `<aside>` markup, never the literal directive text. The directive grammar and how the editor inserts a component are engine-internal, part of what `defineComponent` (documented in the [core reference](../reference/core.md)) builds a validator from.
 
 ## Milestone 6: Wire the delivery surface
 
@@ -730,7 +730,7 @@ npm run cairn:manifest
 
 Reload the dev server and open the packing-list post at `/2026/05/15/packing-list`. The `cairn:` link now renders as a real anchor pointing at the first-trail post's permalink, `/2026/05/01/first-trail`. The renderer read the manifest, looked up the target id, and rewrote the token into the live URL.
 
-That lookup is what keeps an internal link rot-proof. The link stores a permanent id, the manifest maps every id to its current permalink, and the build verify fails red if the manifest drifts from the files. A target post can move to a different date or a different slug, and every link to it still resolves, because the id never changes. For the link helpers behind the token, see [`cairn:` link helpers](../reference/core.md#cairn-link-helpers) in the core reference. For the content graph the manifest projects, see [the content graph](../explanation/content-model.md#the-content-graph) in the content model.
+That lookup is what keeps an internal link rot-proof. The link stores a permanent id, the manifest maps every id to its current permalink, and the build verify fails red if the manifest drifts from the files. A target post can move to a different date or a different slug, and every link to it still resolves, because the id never changes. The token grammar behind the link is engine-internal, part of the render pipeline `createRenderer` composes. For the content graph the manifest projects, see [the content graph](../explanation/content-model.md#the-content-graph) in the content model.
 
 ## Milestone 10: Where to go next
 

@@ -37,21 +37,23 @@ export interface AdminEvent extends EventBase<BackendEnv & AuthEnv> {
 }
 
 /**
- * Injectable dependencies. Branding defaults from the runtime's siteName and sender, so a
- *  site overrides it only to change the magic-link email identity; `send` is the same seam the
- *  underlying auth factory takes. The content backend rides `event.locals.backend` (the dev double)
- *  or the adapter's provider, so it is not a dep here.
+ * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
+ *  content backend rides `event.locals.backend` (the dev double) or the adapter's provider, so it
+ *  is not a dep here.
  */
 export interface CairnAdminDeps {
-  branding?: AuthBranding;
-  send?: SendMagicLink;
+  /** The magic-link auth seam. */
+  auth?: {
+    /** Defaults from the runtime's `siteName` and `sender`; override to change the email identity. */
+    branding?: AuthBranding;
+    /** The same seam the underlying auth factory takes. */
+    send?: SendMagicLink;
+  };
   /**
-   * Build the Anthropic client for the tidy action. Forwarded to the content routes; a site that
-   *  enables tidy injects a stub here to avoid a real network call. Defaults to the real SDK client.
+   * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
+   *  to avoid a real network call.
    */
-  anthropic?: ContentRoutesDeps['anthropic'];
-  /** The tidy action's own request deadline in milliseconds. Forwarded to the content routes. */
-  tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'];
+  tidy?: ContentRoutesDeps['tidy'];
 }
 
 /**
@@ -77,16 +79,13 @@ export type AdminData =
 export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
-  const branding: AuthBranding = deps.branding ?? {
+  const branding: AuthBranding = deps.auth?.branding ?? {
     siteName: runtime.siteName,
     from: runtime.sender.from,
     replyTo: runtime.sender.replyTo,
   };
-  const auth = createAuthRoutes({ branding, send: deps.send });
-  const content = createContentRoutes(runtime, {
-    anthropic: deps.anthropic,
-    tidyTimeoutMs: deps.tidyTimeoutMs,
-  });
+  const auth = createAuthRoutes({ branding, send: deps.auth?.send });
+  const content = createContentRoutes(runtime, { tidy: deps.tidy });
   const editors = createEditorRoutes();
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;

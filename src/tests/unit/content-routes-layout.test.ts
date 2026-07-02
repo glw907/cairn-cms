@@ -4,6 +4,7 @@ import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -25,12 +26,15 @@ function runtime(): CairnRuntime {
   };
 }
 
-function event(pathname: string, role: 'owner' | 'editor' | null) {
+// The default read backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, async () => 'tok');
+
+function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: Backend = backend) {
   return {
     url: new URL(`https://test.example${pathname}`),
     params: {},
     request: new Request('https://test.example'),
-    locals: { editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role } },
+    locals: { editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role }, backend: eventBackend },
     platform: { env: {} },
     cookies: {
       get: () => undefined,
@@ -83,9 +87,8 @@ describe('shellPayload', () => {
   });
 
   it('returns a bare public payload for a login path and never resolves the backend', async () => {
-    const backend = makeGithubBackend(REPO, async () => 'tok');
     const spy = vi.spyOn(backend, 'listBranches');
-    const routes = createContentRoutes(runtime(), { backend });
+    const routes = createContentRoutes(runtime());
     const { shell } = routes.shellPayload(event('/admin/login', null) as never);
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
@@ -101,7 +104,7 @@ describe('shellPayload', () => {
     gh.createBranch('cairn/pages/about', 'main');
     gh.createBranch('cairn/oops', 'main'); // malformed: no entry id, dropped by the parser
     gh.install();
-    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok') });
+    const routes = createContentRoutes(runtime());
     const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     // pendingEntries is a streamed promise, resolved here for the assertion.
@@ -118,7 +121,7 @@ describe('shellPayload', () => {
     gh.createBranch('cairn/widgets/x', 'main'); // concept this site does not configure
     gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
     gh.install();
-    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok') });
+    const routes = createContentRoutes(runtime());
     const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
@@ -126,14 +129,13 @@ describe('shellPayload', () => {
 
   it('degrades pendingEntries to null and logs github.unreachable when the token mint throws', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime(), {
-      backend: makeGithubBackend(REPO, async () => {
-        // The real missing-secret failure from appCredentials; the message names the env var
-        // and never carries PEM material, which the redaction assertion below pins.
-        throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
-      }),
+    const routes = createContentRoutes(runtime());
+    const failingBackend = makeGithubBackend(REPO, async () => {
+      // The real missing-secret failure from appCredentials; the message names the env var
+      // and never carries PEM material, which the redaction assertion below pins.
+      throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = routes.shellPayload(event('/admin/posts', 'owner', failingBackend) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user.email).toBe('e@test');

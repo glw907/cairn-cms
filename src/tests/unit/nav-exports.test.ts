@@ -7,10 +7,16 @@ describe('nav exports', () => {
     expect(typeof sveltekit.createNavRoutes).toBe('function');
   });
 
-  it('the package entry exports the nav site-config helpers', () => {
+  it('the package entry exports the read-side nav helpers', () => {
     expect(typeof pkg.parseSiteConfig).toBe('function');
     expect(typeof pkg.extractMenu).toBe('function');
-    expect(typeof pkg.setMenu).toBe('function');
-    expect(typeof pkg.validateNavTree).toBe('function');
+  });
+
+  it('omits the nav-editor write helpers from the root barrel', async () => {
+    expect('setMenu' in pkg).toBe(false);
+    expect('validateNavTree' in pkg).toBe(false);
+    const siteConfig = await import('../../lib/nav/site-config.js');
+    expect(typeof siteConfig.setMenu).toBe('function');
+    expect(typeof siteConfig.validateNavTree).toBe('function');
   });
 });

@@ -18,9 +18,8 @@ The engine resolves the token to the entry's live permalink when it renders the 
 hard-codes a URL. The token keys on the entry id, so it keeps resolving across a slug or date change
 that moves the permalink. An id the site cannot resolve is left as plain text rather than a dead link.
 
-The codec is the `parseCairnToken` helper on the root export, documented under
-[`cairn:` link helpers](./core.md#cairn-link-helpers). Feed and sitemap routes resolve the same tokens
-through `buildLinkResolver`.
+The codec itself is engine-internal, part of the render pipeline `createRenderer` composes. Feed and
+sitemap routes resolve the same tokens through `buildLinkResolver`.
 
 ## `media:` asset references
 

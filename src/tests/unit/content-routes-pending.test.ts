@@ -38,7 +38,8 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function saveEvent(id: string, form: Record<string, string>) {
   const body = new URLSearchParams(form);
@@ -46,7 +47,7 @@ function saveEvent(id: string, form: Record<string, string>) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -57,7 +58,7 @@ function createEvent(form: Record<string, string>) {
     url: new URL('https://t.example/admin/posts'),
     params: { concept: 'posts' },
     request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -78,7 +79,7 @@ describe('saveAction on the pending branch', () => {
   it('creates the pending branch from main on first save and commits only the entry file there', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'hello' }) as never));
     expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
@@ -97,7 +98,7 @@ describe('saveAction on the pending branch', () => {
   it('reuses the existing branch on a second save', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'first' }) as never));
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'second' }) as never));
@@ -112,7 +113,7 @@ describe('saveAction on the pending branch', () => {
       main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const result = (await routes.saveAction(
       saveEvent('2026-05-hi', { title: 'Hi', body: 'see [gone](cairn:pages/gone)' }) as never,
@@ -132,7 +133,7 @@ describe('createAction with a pending branch', () => {
     const gh = new GithubDouble({ main: {} });
     gh.createBranch('cairn/posts/2026-05-01-hello', 'main');
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const location = await redirectedTo(
       routes.createAction(createEvent({ slug: 'hello', date: '2026-05-01' }) as never),

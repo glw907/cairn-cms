@@ -107,7 +107,7 @@ hides the button rather than showing a stale count.
 
 ### `ConceptList`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data }: { data: ListData };
@@ -132,7 +132,7 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 
 ### `CairnMediaLibrary`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data, form }: { data: MediaLibraryData; form?: ContentFormFailure | null };
@@ -170,7 +170,7 @@ surfaces in the slide-over.
 
 ### `EditPage`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data, registry, render, icons, form }: {
@@ -246,7 +246,7 @@ web-link dialog.
 
 ### `LoginPage`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data, form }: {
@@ -275,7 +275,7 @@ mounting, register `requestAction` under that name in the unauthed
 
 ### `ConfirmPage`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data }: { data: { token: string; siteName: string; error: string | null; csrf: string } };
@@ -299,7 +299,7 @@ load and a `confirm`-named action.
 
 ### `ManageEditors`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data, form }: {
@@ -327,7 +327,7 @@ actions, registered under the same names.
 
 ### `NavTree`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data }: { data: NavLoadData };
@@ -353,7 +353,7 @@ action.
 
 ### `CairnTidySettings`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data }: { data: SettingsData };
@@ -379,7 +379,7 @@ same committed site-config YAML the nav editor writes.
 
 ### `HelpHome`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { data }: { data: HelpData };
@@ -407,19 +407,69 @@ of its own.
 
 ## Composed components
 
-These mount inside `EditPage` and its dialogs, so you don't wire them directly. They appear here
-for completeness, and for a site that builds its own admin surface. The snippets are minimal mounts
-with the real prop names.
+`MarkdownEditor` is the charter-named authoring seam, documented as a standalone bare surface a
+site can mount directly. `DeleteDialog` and `RenameDialog` mount inside `EditPage` but stay public
+for a site that builds its own per-route admin surface, pairing with the same load/action names
+`EditPage` uses. The snippets are minimal mounts with the real prop names.
 
 ### `MarkdownEditor`
 
-Stability tier: Extension API.
+Stability tier: Extension API for its eleven stable props below; every other prop is `EditPage`
+wiring, [documented separately as `Unstable API`](#markdowneditor-wiring-props-unstable-api).
 
 ```ts
-let { value = $bindable(), name, registerInsert, registerInsertLink, registerInsertImage, onImageIngest, mediaLibrary = {}, registerCaretCoords, registerFocusEditor, registerImagePlaceholders, registerGetSelection, registerFormat, onComponentAtCaret, registerReplaceRange, registerSelectRange, completionSources = [], focusMode = false, typewriter = false }: {
+let { value = $bindable(), name, registerInsert, registerFormat, completionSources = [], focusMode = false, typewriter = false, surface = 'prose', spellcheck = true, spellcheckDictionary = 'dictionary-en-us.txt', siteDictionary = [] }: {
   value: string;
   name: string;
   registerInsert?: (insert: (text: string) => void) => void;
+  registerFormat?: (format: (kind: FormatKind) => void) => void;
+  completionSources?: CompletionSource[];
+  focusMode?: boolean;
+  typewriter?: boolean;
+  surface?: 'prose' | 'markup';
+  spellcheck?: boolean;
+  spellcheckDictionary?: string;
+  siteDictionary?: ReadonlyArray<string>;
+};
+```
+
+The bare CodeMirror editing surface behind the `MarkdownEditor` seam, and cairn's charter-named
+authoring seam: this is the frozen stable contract a site mounting the component directly can
+depend on across minors. `value` is bindable, so the parent reads edits back; `name` is the hidden
+field the value mirrors to for form submit. `registerInsert` hands the parent a `(text) => void`
+that inserts at the cursor, and `registerFormat` hands the parent a `(kind) => void` that applies a
+named selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`.
+`completionSources` wires generic CodeMirror autocomplete, such as the internal-link source.
+`focusMode` fades every paragraph except the caret's, and `typewriter` keeps the caret line
+vertically centered while typing. `surface` picks the posture: `prose` (the default) sets a 72ch
+centered measure at a larger type step, `markup` fills the pane densely for tables and directives.
+`spellcheck` turns the markdown-aware lint underlines on (the default) or off, reconfiguring the
+lint compartment to empty and idling the Worker while off. `spellcheckDictionary` names the
+dialect-resolved dictionary file (for example `dictionary-en-us.txt`) the source resolves to a real
+asset URL and hands to the spellcheck Worker's init. `siteDictionary` seeds the Worker's personal
+layer with the committed personal-dictionary words at init, so a word another editor committed
+answers correct from the first lint. All are plain reactive props, so the host owns any toggle
+persistence (`EditPage` persists the writing-mode toggles per browser). CodeMirror loads only in
+the browser, so this component is client-only.
+
+The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
+composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
+directly gets the plain surface and supplies its own controls through `registerFormat`, since the
+engine's toolbar component is internal and not exported here. The surface ships as a quiet
+writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped heading
+sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive machinery with
+a plain-language hover hint.
+
+```svelte
+<MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
+```
+
+#### `MarkdownEditor` wiring props (Unstable API)
+
+Stability tier: Unstable API.
+
+```ts
+{
   registerInsertLink?: (insert: (href: string, title: string) => void) => void;
   registerInsertImage?: (insert: (alt: string, ref: string) => void) => void;
   onImageIngest?: (file: File) => void;
@@ -428,211 +478,62 @@ let { value = $bindable(), name, registerInsert, registerInsertLink, registerIns
   registerFocusEditor?: (focus: () => void) => void;
   registerImagePlaceholders?: (api: ImagePlaceholderApi) => void;
   registerGetSelection?: (get: () => string) => void;
-  registerFormat?: (format: (kind: FormatKind) => void) => void;
+  registerGetSelectionRange?: (get: () => { from: number; to: number } | null) => void;
+  registerTidy?: (api: TidyApi) => void;
+  registerUndo?: (undo: () => void) => void;
   onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
   onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
   registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
   registerSelectRange?: (select: (from: number, to: number) => void) => void;
-  completionSources?: CompletionSource[];
-  focusMode?: boolean;
-  typewriter?: boolean;
-  surface?: 'prose' | 'markup';
-};
+  pendingAdditions?: Set<string>;
+  spellcheckTest?: { createWorker?: () => SpellWorker; assumeReady?: boolean };
+  tidyMode?: boolean;
+}
 ```
 
-The bare CodeMirror editing surface behind the `MarkdownEditor` seam. `value` is bindable, so the
-parent reads edits back; `name` is the hidden field the value mirrors to for form submit. The
-`register*` props each hand the parent a callback into the mounted editor. `registerInsert`
-inserts text at the cursor (the Insert block dialog calls it), `registerInsertLink` inserts an
-inline link (the pickers call it), `registerGetSelection` returns the selected text (the web-link
-dialog prefills from it), and `registerFormat` applies a named selection transform such as `bold`,
-`italic`, `h2`, `ol`, `codeblock`, or `table` (the toolbar calls it). `onComponentAtCaret` and
-`registerReplaceRange` are the round-trip editing seams. `onComponentAtCaret` reports the directive
-container under the caret whenever it changes: the opening directive's `name`, the block's
-`markdown`, and the document character offsets (`from`, `to`) of its inclusive line range, or `null`
-when the caret sits outside any container. The host resolves that block against the registry to
-offer an Edit-block control. `registerReplaceRange` hands the parent a `(from, to, text)` callback
-that overwrites a document span and drops the caret after it, which the Edit-block dialog's Update
-calls to write an edited block back over its original range. `registerSelectRange` hands the parent a
-`(from, to)` callback that selects a document span, focuses the surface, and scrolls the range into
-view, which the publish-time needs-alt notice's jump control calls to land the author on an image
-that lacks alt text. `onMediaImageAtCaret` reports the media image under the caret whenever it
-changes: the inner `![alt](media:slug.hash)` token's exact source offsets, plus the enclosing
-`:::figure` block (its range, raw caption, and placement role) when the image is wrapped, or
-`figure: null` when it is bare, or `null` when the caret is not on a media image. The host opens the
-figure control over it to wrap, edit, or unwrap a figure, writing the source through
-`registerReplaceRange`. The media seams support the insert
-popover: `registerInsertImage` inserts an inline `![alt](media:slug.hash)` image at the caret (the
-picker and the capture card call it), `onImageIngest` fires with the first image file of a paste or
-drop onto the surface (the host opens the capture card with the bytes), and `mediaLibrary` is the
-per-asset projection the source decoration reads to render a `media:` token as a thumbnail chip.
-`registerCaretCoords` returns the caret's viewport coordinates so the popover anchors to the cursor,
-`registerFocusEditor` returns focus to the surface on close, and `registerImagePlaceholders` hands
-the host the optimistic-placeholder api (`begin`, `progress`, `resolveTo`, `cancel`) that drives the
-upload loop's in-flight thumbnail and determinate progress without ever writing doc text until the
-upload resolves. `completionSources` wires
-generic CodeMirror autocomplete, such as the internal-link source. `focusMode` fades every
-paragraph except the caret's, and `typewriter` keeps the caret line vertically centered while
-typing. `surface` picks the posture: `prose` (the default) sets a 72ch centered measure at a
-larger type step, `markup` fills the pane densely for tables and directives. All three are plain
-reactive props, so the host owns the toggles and any persistence (`EditPage` persists them per
-browser). CodeMirror loads only in the browser, so this component
-is client-only.
-
-The component renders no toolbar and no card chrome of its own; the host frames it. `EditPage`
-composes it inside the editor card with the engine's toolbar. A site mounting `MarkdownEditor`
-directly gets the plain surface and supplies its own controls through `registerFormat`, since the
-engine's toolbar component is internal and not exported here. The surface ships as a quiet
-writing surface: the self-hosted iA Writer Mono face on a centered measure, stepped heading
-sizes, dimmed syntax markers, GFM parsing, depth-stepped rails on `:::` directive machinery with
-a plain-language hover hint, and native browser spell check.
-
-```svelte
-<MarkdownEditor bind:value={body} name="body" registerInsert={(fn) => (insert = fn)} />
-```
-
-### `ComponentInsertDialog`
-
-Stability tier: Extension API.
-
-```ts
-let { registry, insert, update, icons, render, preview = null, disabled = false, trigger = true }: {
-  registry?: ComponentRegistry;
-  insert: (text: string) => void;
-  update?: (range: { from: number; to: number }, markdown: string) => void;
-  icons?: IconSet;
-  render?: SiteRender;
-  preview?: ResolvedPreview | null;
-  disabled?: boolean;
-  trigger?: boolean;
-};
-```
-
-The insert palette: an Insert block button that opens a dialog listing the site's registered
-components, then hands off to `ComponentForm` for the chosen one. The catalog groups the rows by
-each def's `group` (groups in first-declared order, ungrouped rows in a leading default group), draws
-each def's `icon` beside its label when the icon set resolves it, and hides any def marked `hidden`.
-Past eight actionable components the catalog grows a search input that filters by label or
-description, with the arrow keys roaming the rows.
-
-A component that declares an icon attribute with `fields.icon()` can resolve a role to a default glyph.
-The engine ships a fallback, `DEFAULT_ICON_BY_ROLE`, that covers the conventional admonition roles:
-`note`, `tip`, `important`, `warning`, `caution`, `info`, and `danger`. The fallback names a glyph
-key, so the site's IconSet must carry that key for the glyph to render. A component's own
-`defaultIconByRole` overrides the engine fallback for the roles it names.
-
-`registry` is the site's component registry, `insert` inserts the serialized markdown at the editor
-cursor, and `icons` feeds icon fields. `render` is the site's design-accurate render pipeline and
-`preview` is the adapter's resolved preview knob: when both are present and the chosen component
-declares a `preview` sample, the configure step splits into two panes, the guided form on the left
-and a live preview on the right that renders the configured directive through `render` into a
-sandboxed iframe, the same path `EditPage`'s preview uses. A host that threads neither simply gets
-the single-column configure step. `update` is the round-trip seam: a host that re-opens a placed
-component for editing passes a `(range, markdown)` callback, and the dialog routes the form's submit
-there (overwriting the stored source span) instead of through `insert`. A host that never opens edit
-mode passes none. `disabled` greys the trigger. With `trigger={false}` the component renders only the
-dialog and the exported `open()` method shows it; `EditPage`'s toolbar drives it that way, keeping
-the dialog's own form outside the edit form. `EditPage` composes it.
-
-The dialog also exports an `editComponent(def, values, range)` instance method that re-opens a
-placed component into the same guided form for editing. It skips the catalog, seeds the form from the
-parsed `values`, and stores the source `range` for the `update` callback. In this mode the header
-eyebrow reads "Edit" and the form's submit button reads "Update". `EditPage`'s Edit-block control
-calls it after resolving the block under the caret. The bare `open()` method drives the catalog
-insert flow as before.
-
-```svelte
-<ComponentInsertDialog
-  {registry}
-  insert={insertAtCursor}
-  {icons}
-  render={cairn.rendering.render}
-  preview={data.preview}
-/>
-```
-
-### `ComponentForm`
-
-Stability tier: Extension API.
-
-```ts
-let { def, icons, onInsert, values = $bindable(), incomplete = $bindable(), initial, submitLabel = 'Insert' }: {
-  def: ComponentDef;
-  icons?: IconSet;
-  onInsert: (markdown: string) => void;
-  values?: ComponentValues;
-  incomplete?: boolean;
-  initial?: ComponentValues;
-  submitLabel?: string;
-};
-```
-
-The guided form for one component definition: a field per attribute and slot, validated and
-serialized to the component's markdown. `def` is the chosen `ComponentDef`, `icons` feeds icon
-fields, and `onInsert` receives the serialized markdown when the form validates. The form seeds its
-working values from `previewValues(def)`, so a component's declared `preview` sample fills the
-fields on open. `values` binds out the live working values and `incomplete` binds out whether a
-required attribute or slot is still empty, so the dialog can render the preview pane from them and
-mirror the disabled Insert. `initial` seeds the working values for editing: the dialog passes the
-parsed values of a placed component so the form re-opens on its real content instead of the
-`previewValues` sample, and the catalog insert path leaves it unset. `submitLabel` names the submit
-button and defaults to "Insert"; the dialog passes "Update" in edit mode. Back lives in the dialog
-header now, not in the form, so the component takes no `onBack`. `ComponentInsertDialog` composes it.
-
-```svelte
-<ComponentForm {def} {icons} onInsert={handleInsert} bind:values bind:incomplete />
-```
-
-### `IconPicker`
-
-Stability tier: Extension API.
-
-```ts
-let { icons, value, required, onChange, label = 'Icon' }: {
-  icons: IconSet;
-  value: string;
-  required: boolean;
-  onChange: (name: string) => void;
-  label?: string;
-};
-```
-
-An ARIA radiogroup that picks one glyph from the site's icon set. `icons` is the glyph name to SVG
-path-data map, `value` is the selected name (or `''` for none), `required` toggles whether a None
-choice is offered, and `onChange` receives the new name. `label` names the group for assistive tech.
-`ComponentForm` composes it for an icon field.
-
-```svelte
-<IconPicker {icons} value={selected} required={false} onChange={(name) => (selected = name)} />
-```
-
-### `LinkPicker`
-
-Stability tier: Extension API.
-
-```ts
-let { linkTargets, insert, disabled = false, trigger = true }: {
-  linkTargets: LinkTarget[];
-  insert: (href: string, title: string) => void;
-  disabled?: boolean;
-  trigger?: boolean;
-};
-```
-
-The Link to page control: a dialog that searches the site's content and inserts a rot-proof
-`cairn:` internal link at the editor cursor. `linkTargets` is the link target list the edit load
-ships from the committed manifest; `insert` inserts the chosen link. `disabled` greys the trigger.
-With `trigger={false}` the component renders only the dialog, and the exported `open()` method
-shows it; `EditPage`'s toolbar drives it that way, keeping the dialog's search form outside the
-edit form. `EditPage` composes it.
-
-```svelte
-<LinkPicker {linkTargets} insert={insertLinkAtCursor} />
-```
+`EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
+rather than wrapping it, with no stability promise across minors: a site that reaches past
+`EditPage` for one of these should expect it to move or change shape. `registerInsertLink` inserts
+an inline link (the pickers call it), and `registerGetSelection` returns the selected text (the
+web-link dialog prefills from it). `onComponentAtCaret` and `registerReplaceRange` are the
+round-trip editing seams. `onComponentAtCaret` reports the directive container under the caret
+whenever it changes: the opening directive's `name`, the block's `markdown`, and the document
+character offsets (`from`, `to`) of its inclusive line range, or `null` when the caret sits outside
+any container. The host resolves that block against the registry to offer an Edit-block control.
+`registerReplaceRange` hands the parent a `(from, to, text)` callback that overwrites a document
+span and drops the caret after it, which the Edit-block dialog's Update calls to write an edited
+block back over its original range. `registerSelectRange` hands the parent a `(from, to)` callback
+that selects a document span, focuses the surface, and scrolls the range into view, which the
+publish-time needs-alt notice's jump control calls to land the author on an image that lacks alt
+text. `onMediaImageAtCaret` reports the media image under the caret whenever it changes: the inner
+`![alt](media:slug.hash)` token's exact source offsets, plus the enclosing `:::figure` block (its
+range, raw caption, and placement role) when the image is wrapped, or `figure: null` when it is
+bare, or `null` when the caret is not on a media image. The host opens the figure control over it
+to wrap, edit, or unwrap a figure, writing the source through `registerReplaceRange`. The media
+seams support the insert popover: `registerInsertImage` inserts an inline
+`![alt](media:slug.hash)` image at the caret (the picker and the capture card call it),
+`onImageIngest` fires with the first image file of a paste or drop onto the surface (the host opens
+the capture card with the bytes), and `mediaLibrary` is the per-asset projection the source
+decoration reads to render a `media:` token as a thumbnail chip. `registerCaretCoords` returns the
+caret's viewport coordinates so the popover anchors to the cursor, `registerFocusEditor` returns
+focus to the surface on close, and `registerImagePlaceholders` hands the host the
+optimistic-placeholder api (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload
+loop's in-flight thumbnail and determinate progress without ever writing doc text until the upload
+resolves. `registerGetSelectionRange` returns the selection's document offsets, or null for a bare
+caret, so the tidy host maps a selection tidy onto the exact selected span. `registerTidy` hands
+the tidy review surface the apply api that drives its in-buffer decorations and its accept/reject
+state machine. `registerUndo` hands the parent a `() => void` that undoes the tidy apply's whole
+history entry in one move, for the "Undo tidy" chip. `pendingAdditions` is the caller-owned pending
+personal-dictionary additions set; `EditPage` commits it through the save-time dictionary action
+and reconciles it against the merged response. `spellcheckTest` is a test-only seam for the
+spellcheck Worker (the real wasm and dictionary assets do not load under the component test
+runner); never set this outside a test. `tidyMode` makes the surface read-only while a tidy review
+is open, the way Preview disables the toolbar, so the author cannot edit underneath a pending
+review.
 
 ### `DeleteDialog`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: {
@@ -662,7 +563,7 @@ navigates; `EditPage` uses it to stand down its unsaved-changes guard. `EditPage
 
 ### `RenameDialog`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 let { conceptId, id, label, slug, trigger = true, onsubmitting }: {

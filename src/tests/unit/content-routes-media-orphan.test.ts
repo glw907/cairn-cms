@@ -61,7 +61,8 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 // 16-hex content hashes. ORPHAN has no manifest row; REFERENCED is used by a post; MISSING is a
 // manifest row whose bytes are absent from the R2 listing (a broken reference).
@@ -125,7 +126,7 @@ function scanEvent(bucket: object) {
     url: new URL('https://t.example/admin/media'),
     params: {},
     request: new Request('https://t.example/admin/media', { method: 'GET' }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
   };
 }
@@ -143,7 +144,7 @@ function purgeEvent(keys: string[], confirm: string, bucket: object) {
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
     }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
   };
 }
@@ -165,7 +166,7 @@ describe('mediaOrphanScan', () => {
     // R2 holds the referenced bytes and one orphan whose hash has no manifest row.
     const stored = [r2Key(HASH_REFERENCED, 'jpg'), r2Key(HASH_ORPHAN, 'jpg')];
     const bucket = fakeBucket(stored, timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const scan = (await routes.mediaOrphanScan(scanEvent(bucket) as never)) as OrphanScan;
 
@@ -200,7 +201,7 @@ describe('mediaOrphanScan', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([r2Key(HASH_REFERENCED, 'jpg')], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const event = scanEvent(bucket);
     const wrapped = globalThis.fetch;
@@ -232,7 +233,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const claimedKey = r2Key(HASH_REFERENCED, 'jpg');
@@ -262,7 +263,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected but confirm is empty: the count gate fails.
@@ -291,7 +292,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One selected, so the typed confirm is the count "1".
@@ -323,7 +324,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const event = purgeEvent([orphanKey], '1', bucket);
@@ -353,7 +354,7 @@ describe('mediaPurgeOrphans', () => {
     gh.install();
     const timeline: string[] = [];
     const bucket = fakeBucket([], timeline);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected, confirm "2": does not match the count of 1.

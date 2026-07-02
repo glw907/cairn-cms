@@ -9,7 +9,7 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
-import { verifyManifestFromVite, buildManifestFromVite, readAdapterFacts } from '../../lib/vite/index.js';
+import { verifyManifestFromVite, buildManifestFromVite, readAdapterFacts } from '../../lib/vite/internal.js';
 
 // The temp project's nested Vite must resolve `@glw907/cairn-cms` (and its subpaths), which the
 // generated virtual module imports. That package lives only in the repo's own node_modules (a

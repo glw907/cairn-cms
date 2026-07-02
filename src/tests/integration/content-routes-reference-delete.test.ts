@@ -63,7 +63,8 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A delete POST for posts/<id> (the route-param delete action). */
 function deleteEvent(id: string) {
@@ -71,7 +72,7 @@ function deleteEvent(id: string) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST' }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -90,7 +91,7 @@ function entry(
 
 /** Delete the target and either return the thrown redirect location or the fail() result. */
 async function del(id: string): Promise<{ location?: string; status?: number; data?: { error: string; inboundLinks?: { id: string }[] } }> {
-  const routes = createContentRoutes(runtime(), deps);
+  const routes = createContentRoutes(runtime());
   try {
     const result = (await routes.deleteAction(deleteEvent(id) as never)) as unknown as {
       status: number; data: { error: string; inboundLinks?: { id: string }[] };

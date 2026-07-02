@@ -26,14 +26,15 @@ function runtime(navMenu: CairnRuntime['navMenu']): CairnRuntime {
 }
 
 const NAV = { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function loadEvent(search = '') {
   return {
     url: new URL(`https://t.example/admin/nav${search}`),
     params: {},
     request: new Request('https://t.example/admin/nav'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -51,7 +52,7 @@ describe('navLoad', () => {
       }
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     const data = await routes.navLoad(loadEvent() as never);
     expect(data.menu).toEqual({ name: 'primary', label: 'Primary nav', maxDepth: 2 });
     expect(data.tree).toEqual([{ label: 'Home', url: '/' }]);
@@ -64,7 +65,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     const data = await routes.navLoad(loadEvent() as never);
     expect(data.tree).toEqual([]);
     expect(data.error).toBeNull();
@@ -77,7 +78,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     const data = await routes.navLoad(loadEvent() as never);
     expect(data.tree).toEqual([]);
   });
@@ -89,7 +90,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     await routes.navLoad(loadEvent() as never);
     const records = errorSpy.mock.calls.map(
       (c) => c[0] as { event?: string; conditionId?: string; error?: string },
@@ -107,7 +108,7 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     await routes.navLoad(loadEvent() as never);
     expect(errorSpy).not.toHaveBeenCalled();
   });
@@ -117,13 +118,13 @@ describe('navLoad', () => {
       if (url.includes('/git/trees/')) return new Response(JSON.stringify({ tree: [], truncated: false }), { status: 200 });
       return new Response('Not Found', { status: 404 });
     }));
-    const routes = createNavRoutes(runtime(NAV), deps);
+    const routes = createNavRoutes(runtime(NAV));
     const data = await routes.navLoad(loadEvent('?saved=1') as never);
     expect(data.saved).toBe(true);
   });
 
   it('404s when no navMenu is configured', async () => {
-    const routes = createNavRoutes(runtime(undefined), deps);
+    const routes = createNavRoutes(runtime(undefined));
     await expect(routes.navLoad(loadEvent() as never)).rejects.toMatchObject({ status: 404 });
   });
 });

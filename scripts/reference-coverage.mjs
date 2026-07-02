@@ -49,9 +49,11 @@ export function missingNames(names, pageText) {
 
 // The stability-tier token the marker carries, recognized in two forms: the inline
 // "Stability tier: Extension API" line on a heading-sectioned export, and the bare "Extension API"
-// cell value in a Types table's Stability column. Both resolve to the same tier word.
-const TIER_CELL = /^(Extension|Scaffold) API$/;
-const TIER_LINE = /Stability tier:\s*(Extension|Scaffold) API/;
+// cell value in a Types table's Stability column. Both resolve to the same tier word. Three tiers
+// are recognized: Extension and Scaffold API are the frozen contract, Unstable API marks a name
+// that stays importable with no stability promise across minors (see docs/reference/README.md).
+const TIER_CELL = /^(Extension|Scaffold|Unstable) API$/;
+const TIER_LINE = /Stability tier:\s*(Extension|Scaffold|Unstable) API/;
 
 // Whether a single export name carries a tier marker in the page text, resolved against THAT name,
 // not the whole page. Two carriers, checked in order: a Types-table row whose second (Stability)
@@ -69,11 +71,11 @@ export function hasTierMarker(name, pageText) {
 }
 
 // The tier from a Types-table row for `name`, or null. The row is `| `name` | <stability> | … |`,
-// the Stability cell second; the cell must read "Extension API" or "Scaffold API".
+// the Stability cell second; the cell must read "Extension API", "Scaffold API", or "Unstable API".
 /**
  * @param {string} name
  * @param {string} pageText
- * @returns {'Extension' | 'Scaffold' | null}
+ * @returns {'Extension' | 'Scaffold' | 'Unstable' | null}
  */
 function tierFromTableRow(name, pageText) {
   const escaped = name.replace(/[$]/g, '\\$&');
@@ -83,7 +85,7 @@ function tierFromTableRow(name, pageText) {
   const m = rowRe.exec(pageText);
   if (!m) return null;
   const cell = TIER_CELL.exec(m[1].trim());
-  return cell ? /** @type {'Extension' | 'Scaffold'} */ (cell[1]) : null;
+  return cell ? /** @type {'Extension' | 'Scaffold' | 'Unstable'} */ (cell[1]) : null;
 }
 
 // The tier from the `###`/`####` section that documents `name`, or null. A subpath documents an
@@ -97,7 +99,7 @@ function tierFromTableRow(name, pageText) {
 /**
  * @param {string} name
  * @param {string} pageText
- * @returns {'Extension' | 'Scaffold' | null}
+ * @returns {'Extension' | 'Scaffold' | 'Unstable' | null}
  */
 function tierFromSection(name, pageText) {
   const escaped = name.replace(/[$]/g, '\\$&');
@@ -128,7 +130,7 @@ function tierFromSection(name, pageText) {
   }
   if (!best) return null;
   const m = TIER_LINE.exec(best.body);
-  return m ? /** @type {'Extension' | 'Scaffold'} */ (m[1]) : null;
+  return m ? /** @type {'Extension' | 'Scaffold' | 'Unstable'} */ (m[1]) : null;
 }
 
 // Each h2/h3/h4 section of a page as `{ heading, body }`, the body running from the heading to the
@@ -165,6 +167,70 @@ export function untaggedNames(names, pageText) {
   return names.filter((/** @type {string} */ name) => !hasTierMarker(name, pageText));
 }
 
+// The candidate names from a page's Types table, bare export headings, and declared signatures
+// that are no longer real exports anywhere in the package (rule b, the reverse check / stale-prose
+// lock): a page that still documents a renamed or removed name fails here, even though the
+// forward check above never looks at it (it only ever iterates the real export list). This
+// deliberately reads the same three carriers hasTierMarker does, plus the Types table's Name
+// column read as a whole, not any backticked span anywhere on the page: an ordinary prose mention,
+// a non-export table (the admin action table's `request`/`confirm`/… rows), or a dependent,
+// non-exported type shown for context in a signature block must not false-positive. `names` is
+// the caller's known-real-export pool; the check is package-wide, not page-scoped, because a page
+// legitimately names a real export that lives on a different subpath (core's "Component-author
+// helpers" section shows `cardShell`/`headRow`/`iconSpan`, all `/render` exports, beside the root
+// export `glyph`), so this stays a lock against a genuinely dead name, not a page-boundary check.
+/**
+ * @param {string[]} names
+ * @param {string} pageText
+ * @returns {string[]}
+ */
+export function staleNames(names, pageText) {
+  const known = new Set(names);
+  const candidates = new Set([...typesTableNames(pageText), ...bareHeadingNames(pageText), ...declaredNames(pageText)]);
+  return [...candidates].filter((name) => !known.has(name)).sort();
+}
+
+// The Name column of a page's Types table, scoped to the table whose header carries a Stability
+// column (`| Name | Stability | Signature | Meaning |`), the export-catalog shape. Any other
+// table on the page (such as the admin action table) is not scanned, since its backticked first
+// cells are not export names.
+/** @param {string} pageText */
+function typesTableNames(pageText) {
+  const header = /^\|\s*Name\s*\|\s*Stability\s*\|.*\|\s*$/m.exec(pageText);
+  if (!header) return [];
+  // Slice from the header line itself, then drop it (index 0), so the divider row and every
+  // data row that follows line up at index 1+ with no off-by-one from the header's own newline.
+  const lines = pageText.slice(header.index).split('\n').slice(1);
+  const names = [];
+  for (const line of lines) {
+    if (!line.startsWith('|')) break; // the table ends at the first non-table line
+    const m = /^\|[^|]*`([A-Za-z_$][\w$]*)`/.exec(line);
+    if (m) names.push(m[1]);
+  }
+  return names;
+}
+
+// A bare export heading: `#{2,4}` followed by exactly one backticked name and nothing else. A
+// qualified heading such as "#### `preview` (adapter `editor` member)" carries trailing prose and
+// is deliberately excluded, since its bare name documents an adapter field, not an export (the
+// underlying exported type, `PreviewConfig`, is covered by its own Types-table row).
+/** @param {string} pageText */
+function bareHeadingNames(pageText) {
+  const re = /^#{2,4}[ \t]+`([A-Za-z_$][\w$]*)`\s*$/gm;
+  return [...pageText.matchAll(re)].map((m) => m[1]);
+}
+
+// A top-level `declare function`/`declare const`/`declare class` statement in a signature block.
+// The bare (undeclared) `interface`/`type`/`class` form is excluded: a signature block
+// legitimately shows a dependent, non-exported type alongside the export it supports, and only
+// the `declare`-prefixed form is this codebase's convention for a top-level function, const, or
+// class export.
+/** @param {string} pageText */
+function declaredNames(pageText) {
+  const re = /declare\s+(?:function|const|class)\s+([A-Za-z_$][\w$]*)/g;
+  return [...pageText.matchAll(re)].map((m) => m[1]);
+}
+
 // One reference page per importable subpath. `excludeDts` drops a re-exported surface that is
 // documented on its own page: /delivery re-exports all of /delivery/data, so the delivery page
 // documents only its own additions. The /delivery/head entry points at the same delivery.md page,
@@ -184,8 +250,30 @@ export const CONFIG = [
   { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },
 ];
 
-/** @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry */
-function checkOne(entry) {
+// The full, unfiltered real-export set across every covered subpath, not just the one a page
+// documents. A reference page legitimately shows a real name from another subpath for narrative
+// context (core's "Component-author helpers" block declares `cardShell`, `headRow`, and
+// `iconSpan` alongside the root export `glyph`, even though the three live on `/render`), so the
+// reverse check's job is narrower than "is this name exported here": it is "does this name still
+// exist anywhere as a real export", which is what makes it a lock against a renamed or removed
+// name rather than a page-boundary purity check. Built from all of CONFIG regardless of the
+// `--only` filter, so a single-subpath run sees the same pool a full run does.
+/** @param {{ dts: string }[]} entries */
+function globalKnownNames(entries) {
+  const known = new Set();
+  for (const entry of entries) {
+    const dtsPath = resolve(ROOT, entry.dts);
+    if (!existsSync(dtsPath)) continue;
+    for (const n of enumerateExports(dtsPath)) known.add(n);
+  }
+  return known;
+}
+
+/**
+ * @param {{ subpath: string, dts: string, page: string, excludeDts?: string }} entry
+ * @param {Set<string>} knownNames
+ */
+function checkOne(entry, knownNames) {
   const dtsPath = resolve(ROOT, entry.dts);
   if (!existsSync(dtsPath)) throw new Error(`missing ${entry.dts}; run "npm run package" first`);
   let names = enumerateExports(dtsPath);
@@ -194,14 +282,17 @@ function checkOne(entry) {
     names = names.filter((n) => !excluded.has(n));
   }
   const pagePath = resolve(ROOT, entry.page);
-  if (!existsSync(pagePath)) return { subpath: entry.subpath, page: entry.page, missing: names, untagged: [], noPage: true };
+  if (!existsSync(pagePath)) {
+    return { subpath: entry.subpath, page: entry.page, missing: names, untagged: [], stale: [], noPage: true };
+  }
   const pageText = readFileSync(pagePath, 'utf8');
   const missing = missingNames(names, pageText);
   // A documented export must also carry a tier marker; an undocumented one is already reported as
   // missing, so the tier check runs over the documented (present) names only.
   const present = names.filter((n) => !missing.includes(n));
   const untagged = untaggedNames(present, pageText);
-  return { subpath: entry.subpath, page: entry.page, missing, untagged };
+  const stale = staleNames([...knownNames], pageText);
+  return { subpath: entry.subpath, page: entry.page, missing, untagged, stale };
 }
 
 function main() {
@@ -211,9 +302,10 @@ function main() {
     console.error(`unknown subpath ${only}`);
     process.exit(2);
   }
+  const knownNames = globalKnownNames(CONFIG);
   let failed = false;
   for (const entry of entries) {
-    const r = checkOne(entry);
+    const r = checkOne(entry, knownNames);
     if (r.noPage) {
       console.error(`MISSING PAGE ${r.page} (${r.subpath})`);
       failed = true;
@@ -222,6 +314,9 @@ function main() {
       failed = true;
     } else if (r.untagged.length) {
       console.error(`${r.subpath} (${r.page}): ${r.untagged.length} untagged (no stability tier): ${r.untagged.join(', ')}`);
+      failed = true;
+    } else if (r.stale.length) {
+      console.error(`${r.subpath} (${r.page}): ${r.stale.length} stale (no longer exported): ${r.stale.join(', ')}`);
       failed = true;
     } else {
       console.log(`OK ${r.subpath} (${r.page})`);

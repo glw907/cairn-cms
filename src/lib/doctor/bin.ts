@@ -43,7 +43,7 @@ async function main(): Promise<void> {
 	// and the account id off the wrangler config. The API token stays env-only.
 	const derived = await deriveMissingInputs(contextFromEnv(process.env, args, cwd), {
 		adapterFacts: async () => {
-			const { readAdapterFacts } = await import('../vite/index.js');
+			const { readAdapterFacts } = await import('../vite/internal.js');
 			return readAdapterFacts(cwd);
 		},
 		wranglerAccountId: async () => (await readWranglerConfig(readFileUnderCwd))?.accountId,

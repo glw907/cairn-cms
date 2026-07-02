@@ -682,10 +682,12 @@ permanent id, so a rename or slug change never breaks the link. The editor rende
 target concept in the Details panel, renaming a target repoints its inbound references on `main`, deleting
 a referenced target refuses fail-closed across open branches, and the build's `verifyReferences` gate fails
 on a dangling edge. The public read model resolves an edge to its target's identity through the new
-`resolveReferences` on `/delivery`. The barrel adds `fields.reference`, `fields.array`, `ReferenceField`,
-`ArrayField`, `ReferenceEdge`, `InboundReference`, `ResolvedReference`, and `verifyReferences`. Consumers
-must: nothing. References are additive; a site that declares no reference field is unchanged. To adopt them,
-see [Link content with references](./link-content-with-references.md).
+`resolveReferences` on `/delivery`. The barrel adds `fields.reference`, `fields.array`, and
+`verifyReferences`. (`ReferenceField`, `ArrayField`, `ReferenceEdge`, and `InboundReference` left the
+root barrel again in the pre-beta surface-pruning pass; `ResolvedReference` moved to `/delivery`,
+its resolver's home.) Consumers must: nothing. References are additive; a site that declares no
+reference field is unchanged. To adopt them, see [Link content with
+references](./link-content-with-references.md).
 
 ## 0.71.0: structured fields, additive
 
@@ -864,3 +866,44 @@ the same release as the preceding taxonomy entries.
 
 Consumers must: nothing. The screen mounts with the rest of the admin and writes only when an editor
 saves.
+
+## Unreleased: the surface-pruning pass demotes ~106 exports and reshapes the mount contract (breaking)
+
+The pre-beta surface-pruning pass demotes every export an adversarial audit convicted for having no
+real consumer import (the exhaustive list is `docs/internal/api-surface.md`'s diff for this pass) and
+reshapes five call sites. This entry rides the same release as the preceding taxonomy entries.
+
+Consumers must: import `ResolvedReference` from `@glw907/cairn-cms/delivery`, not the root barrel. No
+known consumer imported it from root.
+
+Consumers must: pass the runtime to `createMediaRoute(runtime)` instead of `runtime.resolvedAssets`.
+The factory now reads `resolvedAssets` off the runtime itself, matching every other route factory.
+
+Consumers must: regroup `createCairnAdmin` deps into the two new bags. `anthropic` becomes
+`tidy.client`, `tidyTimeoutMs` becomes `tidy.timeoutMs`, and `branding`/`send` become
+`auth.branding`/`auth.send`.
+
+Consumers must: declare a concept's `routing` with only the `'feed' | 'page' | 'embedded'` string
+shorthand. The `RoutingRule` object form no longer type-checks on `ConceptConfig.routing` and no
+longer resolves at runtime. No known consumer used the object form.
+
+Consumers must: fix a `site.config.yaml` that carries an adapter-owned or otherwise unrecognized
+top-level key. `parseSiteConfig` now throws for any key it doesn't read, naming the key's correct
+home (`cairn.config.ts`) when it recognizes the mistake.
+
+Consumers must: declare `Platform.env` via `CairnPlatformBindings & CairnMediaBindings & { /* the
+site's own bindings */ }` instead of hand-listing each engine binding (recommended, not strictly
+required). A missing engine binding in the intersection now fails at compile time.
+
+Consumers must: stop importing any name the pass demoted from `@glw907/cairn-cms` (72 names plus
+`ResolvedReference`), `/sveltekit` (`isPublicAdminPath`, `parseAdminPath`, `AdminView`,
+`NavRoutesDeps`, and `ContentRoutesDeps.backend`), `/components` (`ComponentInsertDialog`,
+`ComponentForm`, `IconPicker`, `LinkPicker`, and the three `spellcheck-worker`/`spellcheck-assets`
+export-map keys), `/delivery` and `/delivery/data` (7 names each), `/media` (14 names), or `/vite` (6
+names). Grepping the showcase, ecxc-ski, and 907-life found no consumer import touching any of them,
+so no site needs this action. `docs/internal/api-surface.md`'s diff for this pass is the
+authoritative list if you maintain a fork.
+
+Consumers must: nothing for `src/lib` leaving the npm tarball, or for the new gate-enforced
+`Unstable API` stability tier and `MarkdownEditor`'s narrowed eleven-prop stable contract (every
+other prop was already `EditPage` wiring, now documented rather than reshaped).

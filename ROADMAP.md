@@ -30,9 +30,11 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **Both production sites run the latest published cairn on the v2 adapter**, with their URL policies
   transcribed onto `defineConcept` (the per-site cutover watch items), so the real surface is exercised and
   needs no engine break to serve them.
-- [ ] **The enforced boundary is green and complete**: `check:surface`, `check:reference`,
-  `check:reference:signatures`, and `check:package` pass, and the surface they enumerate is the whole
-  intended public API with nothing accidental.
+- [ ] **The enforced boundary is green and complete**: `check:surface`, `check:reference` (including
+  its every-export tier requirement and its reverse stale-name check), `check:reference:signatures`,
+  `check:package`, and the packaging boundary test (`src/tests/unit/packaging-boundary.test.ts`, the
+  deep-import lock) pass, and the surface they enumerate is the whole intended public API with
+  nothing accidental.
 - [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
   extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
   contract a developer builds on.
@@ -51,12 +53,13 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Now
 
-- **Land the surface-pruning pass (the pre-beta contract freeze).** In flight on `surface-pruning-1`;
-  plan at `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, evidence beside it. It demotes
-  the ~106 audited-internal exports, fixes the shape warts (the open `routing` union, the deps
+- **Land the surface-pruning pass (the pre-beta contract freeze).** Engine work complete on
+  `surface-pruning-1`, gates green; plan at
+  `docs/superpowers/plans/2026-07-01-surface-pruning-pass.md`, evidence beside it. It demotes the
+  ~106 audited-internal exports, fixes the shape warts (the open `routing` union, the deps
   grab-bags, `createMediaRoute`'s argument, the hand-declared `Platform.env`), and lands the
   gate-enforced three-tier stability vocabulary, so the contract the cutovers exercise is the frozen
-  one. Runs before the cutovers below.
+  one. Pending: merge to `main` and the pass-end ritual. Runs before the cutovers below.
 - **Code polish pass (idiom charter, then the sweep).** After the surface-pruning pass merges and
   before the docs rewrite, since polish is the last cheap-break window and the docs snippets should
   imitate the polished idiom. First derive the codebase idiom charter (`docs/internal/code-idioms.md`,
@@ -77,6 +80,13 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Next
 
+- **The `checkOrigin` pre-beta mitigation.** Adopt-now guidance rather than waiting on the upstream
+  removal: document the edge Transform Rule that injects `Origin` on `/admin` POSTs in the deploy
+  guide, and add a `cairn-doctor --probe` assertion that an `Origin` header actually reaches
+  `/admin` on the live deployment, so a site that never applied the rule fails loud before an editor
+  hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
+  this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
+  tracking item below for the removal itself.
 - **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
   writes: a per-entry history view over the backend's commit log (the commit author is already the
   editor, so attribution is free), and revert implemented as a new commit through the existing
@@ -155,6 +165,11 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
 
 ## Later
 
+- **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
+  flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether
+  Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag
+  without enabling the feature (or vice versa) gets silently wrong image URLs instead of a build-time
+  or doctor-time signal. `cairn-doctor` could corroborate the declared flag against a live probe.
 - **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
   so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
   `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward

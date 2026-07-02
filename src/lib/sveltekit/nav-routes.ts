@@ -1,6 +1,6 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
 // over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
-// unit-testable against a fetch double behind an injected Backend.
+// unit-testable against a fetch double riding the event's locals.backend seam.
 import { redirect, error } from '@sveltejs/kit';
 import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
@@ -25,26 +25,15 @@ export interface NavLoadData {
   error: string | null;
 }
 
-/** Injectable dependencies; a test injects a live `Backend` so the read and commit paths run with no real token mint. */
-export interface NavRoutesDeps {
+/** Build the nav editor's load and save functions, closed over the composed runtime. */
+export function createNavRoutes(runtime: CairnRuntime) {
   /**
-   * Override the resolved content backend. A test injects a live `Backend` (a `makeGithubBackend`
-   *  over a fetch double) so the read and commit paths run with no real token mint. When set it
-   *  replaces the per-handler `locals.backend ?? runtime.backend.connect(env)` resolve.
-   */
-  backend?: Backend;
-}
-
-/**
- *
- */
-export function createNavRoutes(runtime: CairnRuntime, deps: NavRoutesDeps = {}) {
-  /**
-   * Resolve the live content backend for one request: the test seam, then the dev double's
-   *  `event.locals.backend`, then the production `runtime.backend.connect(env)`.
+   * Resolve the live content backend for one request: the dev double's `event.locals.backend`,
+   *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.backend`
+   *  seam the dev double uses, so the read and commit paths run with no real token mint.
    */
   function resolveBackend(event: ContentEvent): Backend {
-    return deps.backend ?? event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   /** List page-like concepts (routable, not dated) for the URL picker. Best-effort per concept. */

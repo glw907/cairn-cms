@@ -3,7 +3,7 @@
 `cairn-manifest` regenerates the committed content manifest. It evaluates the
 [`cairnManifest`](./vite.md) virtual module in write mode through the consumer's own Vite
 resolution, so the manifest it writes matches what a build would verify against. The bin is a thin
-shell over the exported `writeManifest` function, which keeps the write logic testable apart from the
+shell over an internal `writeManifest` function, which keeps the write logic testable apart from the
 command.
 
 The package ships the command in its `bin` field, so an install puts it on the project's path.

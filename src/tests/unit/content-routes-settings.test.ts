@@ -33,7 +33,8 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function saveEvent(conventionsJson: string) {
   const body = new URLSearchParams({ conventions: conventionsJson });
@@ -41,7 +42,7 @@ function saveEvent(conventionsJson: string) {
     url: new URL('https://t.example/admin/settings'),
     params: {},
     request: new Request('https://t.example/admin/settings', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -67,7 +68,7 @@ describe('settingsSave', () => {
     // seeds main with the YAML and answers the ref read, the head-guarded commit, and the write.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: SEED_YAML } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
     try {
       await routes.settingsSave(saveEvent(conventions) as never);
@@ -100,7 +101,7 @@ describe('settingsSave', () => {
   it('404s when tidy is not enabled and never reads or commits (the server half of the gate)', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }), deps);
+    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
     await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -108,7 +109,7 @@ describe('settingsSave', () => {
   it('bounces a malformed conventions payload back to the form and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
     try {
       await routes.settingsSave(saveEvent('{"oxfordComma":"sometimes"}') as never);
@@ -135,7 +136,7 @@ describe('settingsSave', () => {
       }
       return new Response('{}', { status: 200 });
     }));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     try {
       await routes.settingsSave(saveEvent('{"fixes":true}') as never);
       throw new Error('should have redirected');
@@ -146,7 +147,7 @@ describe('settingsSave', () => {
 
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
 });
@@ -157,13 +158,13 @@ describe('settingsLoad', () => {
       url: new URL('https://t.example/admin/settings'),
       params: {},
       request: new Request('https://t.example/admin/settings'),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
       platform: { env },
     };
   }
 
   it('opens the editor tier only when tidy is enabled AND the key is present (truthful gate)', () => {
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
     expect(data.enabled).toBe(true);
     expect(data.tidyEnabled).toBe(true);
@@ -173,7 +174,7 @@ describe('settingsLoad', () => {
   });
 
   it('keeps the gate closed when the key is missing, even with tidy enabled', () => {
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = routes.settingsLoad(loadEvent({}) as never);
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(true);
@@ -181,13 +182,13 @@ describe('settingsLoad', () => {
   });
 
   it('never returns the API key, only a presence flag', () => {
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-secret-value' }) as never);
     expect(JSON.stringify(data)).not.toContain('sk-secret-value');
   });
 
   it('keeps the gate closed when tidy is off', () => {
-    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }), deps);
+    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
     const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(false);

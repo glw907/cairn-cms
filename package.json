@@ -72,12 +72,6 @@
       "svelte": "./dist/components/index.js",
       "default": "./dist/components/index.js"
     },
-    "./components/spellcheck-worker": {
-      "types": "./dist/components/spellcheck-worker.d.ts",
-      "default": "./dist/components/spellcheck-worker.js"
-    },
-    "./components/spellcheck-assets/spellchecker-wasm.wasm": "./dist/components/spellcheck-assets/spellchecker-wasm.wasm",
-    "./components/spellcheck-assets/dictionary-en-us.txt": "./dist/components/spellcheck-assets/dictionary-en-us.txt",
     "./islands": {
       "types": "./dist/islands/index.d.ts",
       "default": "./dist/islands/index.js"
@@ -123,7 +117,6 @@
   },
   "files": [
     "dist",
-    "src/lib",
     "CHANGELOG.md"
   ],
   "peerDependencies": {

@@ -1,7 +1,7 @@
 // Task 11: the tidy Worker action, the first remote model call in the library and the highest blast
 // radius on the server side (untrusted content, the API key). These tests drive tidyAction directly
 // through createContentRoutes against the workerd pool, with the Anthropic client INJECTED so no
-// network call ever happens and no real key is needed. The injection seam is ContentRoutesDeps.anthropic:
+// network call ever happens and no real key is needed. The injection seam is ContentRoutesDeps.tidy.client:
 // a factory the action calls with the resolved key, returning a structural client whose messages.create
 // the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi } from 'vitest';
@@ -93,7 +93,7 @@ type TidyResult = { status?: number; data?: { error?: string } } & {
 describe('tidy action: the remote model-call boundary (Task 11)', () => {
   it('returns { corrected, model, usage } on a stubbed success and commits nothing', async () => {
     const create = vi.fn<TidyClient['messages']['create']>(async () => cannedMessage('the cat'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent({ text: 'teh cat' }))) as TidyResult;
 
     expect(res.corrected).toBe('the cat');
@@ -108,7 +108,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(403) on a bad CSRF header, before the session read and any model call', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent({ csrf: 'wrong' }))) as TidyResult;
 
     expect(res.status).toBe(403);
@@ -117,7 +117,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('surfaces a missing session as the guard redirect (no model call)', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     // requireSession throws a redirect; the action does not catch it (the manual-redirect 303 the
     // client reads as status-0). Assert it throws and the model was never called.
     await expect(routes.tidyAction(tidyEvent({ hasEditor: false }))).rejects.toMatchObject({ status: 303 });
@@ -126,7 +126,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(503) when tidy is disabled, before any model call', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime({ tidy: { enabled: false } }), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(503);
@@ -135,7 +135,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(503) when the API key is missing, before any model call', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent({ platformEnv: {} }))) as TidyResult;
 
     expect(res.status).toBe(503);
@@ -144,7 +144,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(413) when the text is too large, before the model call', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const huge = 'a '.repeat(20000); // well past the cap
     const res = (await routes.tidyAction(tidyEvent({ text: huge }))) as TidyResult;
 
@@ -168,7 +168,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       });
     }) as unknown as TidyClient['messages']['create'];
     // A short deadline so the test does not wait the real 30s.
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create), tidyTimeoutMs: 20 });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create), timeoutMs: 20 } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     // The action reached the call with a real signal in the options argument, and the deadline mapped
@@ -181,7 +181,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
     const create = vi.fn(async () => {
       throw new Error('overloaded');
     }) as unknown as TidyClient['messages']['create'];
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(502);
@@ -194,7 +194,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
       stop_reason: 'refusal' as const,
       usage: { input_tokens: 5, output_tokens: 0 },
     })) as unknown as TidyClient['messages']['create'];
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
 
     expect(res.status).toBe(422);
@@ -202,7 +202,7 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
   it('refuses fail(400) on a malformed body, before the model call', async () => {
     const create = vi.fn(async () => cannedMessage('x'));
-    const routes = createContentRoutes(runtime(), { anthropic: fakeAnthropic(create) });
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
     const res = (await routes.tidyAction(tidyEvent({ rawBody: 'not json' }))) as TidyResult;
 
     expect(res.status).toBe(400);

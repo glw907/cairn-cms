@@ -115,6 +115,42 @@ describe('parseSiteConfig', () => {
   it('parses a content-free config', () => {
     expect(parseSiteConfig('siteName: S\nmenus:\n  primary: []\n')).toMatchObject({ siteName: 'S' });
   });
+
+  it('throws on an unrecognized top-level key, naming the known keys', () => {
+    expect(() => parseSiteConfig('siteName: S\ntypoKey: 1\n')).toThrow(
+      /unrecognized key "typoKey"; known keys are/,
+    );
+  });
+
+  it('throws on a known adapter misplacement (backend), naming cairn.config.ts', () => {
+    expect(() => parseSiteConfig('siteName: S\nbackend:\n  kind: github-app\n')).toThrow(
+      /"backend" belongs in cairn\.config\.ts/,
+    );
+  });
+
+  it('throws on a known adapter misplacement (rendering), naming cairn.config.ts', () => {
+    expect(() => parseSiteConfig('siteName: S\nrendering:\n  render: x\n')).toThrow(
+      /"rendering" belongs in cairn\.config\.ts/,
+    );
+  });
+
+  it('accepts every known top-level key together', () => {
+    const raw = [
+      'siteName: S',
+      'description: d',
+      'author: a',
+      'locale: en-US',
+      'menus:',
+      '  primary: []',
+      'spellcheck:',
+      '  dialect: en-US',
+      'tidy:',
+      '  enabled: false',
+      'vocabulary: []',
+      '',
+    ].join('\n');
+    expect(() => parseSiteConfig(raw)).not.toThrow();
+  });
 });
 
 describe('dictionaryFileForDialect', () => {

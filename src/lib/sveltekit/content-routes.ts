@@ -376,26 +376,23 @@ export interface TidyClient {
 }
 
 export interface ContentRoutesDeps {
-  /**
-   * Override the resolved content backend. A test injects a live `Backend` (a `makeGithubBackend`
-   *  over a fetch double, or an in-memory fake) so the read and commit paths run with no real token
-   *  mint. When set it replaces the per-handler `locals.backend ?? runtime.backend.connect(env)`
-   *  resolve; a production caller leaves it unset and the dev double rides `event.locals.backend`.
-   */
-  backend?: Backend;
-  /**
-   * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the real
-   *  SDK client. Injected in tests so `messages.create` is stubbed and no network call (or real key)
-   *  is ever needed. The factory runs only after the key is read from the env, so a disabled or
-   *  unconfigured site never constructs a client.
-   */
-  anthropic?: (opts: { apiKey: string }) => TidyClient;
-  /**
-   * The tidy action's own request deadline in milliseconds, set shorter than the platform limit so a
-   *  slow model call becomes a clean retryable fail(502) rather than a platform timeout. Defaults to
-   *  {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline path without waiting.
-   */
-  tidyTimeoutMs?: number;
+  /** The tidy action's injectable dependencies, grouped since both members shape one call. */
+  tidy?: {
+    /**
+     * Build the Anthropic client for the tidy action from the resolved API key. Defaults to the
+     *  real SDK client. Injected in tests so `messages.create` is stubbed and no network call (or
+     *  real key) is ever needed. The factory runs only after the key is read from the env, so a
+     *  disabled or unconfigured site never constructs a client.
+     */
+    client?: (opts: { apiKey: string }) => TidyClient;
+    /**
+     * The tidy action's own request deadline in milliseconds, set shorter than the platform limit
+     *  so a slow model call becomes a clean retryable fail(502) rather than a platform timeout.
+     *  Defaults to {@link DEFAULT_TIDY_TIMEOUT_MS}. Overridable in tests to assert the deadline
+     *  path without waiting.
+     */
+    timeoutMs?: number;
+  };
 }
 
 /**
@@ -692,30 +689,29 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
   return concept;
 }
 
-/**
- *
- */
+/** Build the admin content routes' load and action functions, closed over the composed runtime. */
 export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.
   const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
 
   /**
-   * Resolve the live content backend for one request. A test seam (`deps.backend`) wins, then the
-   *  dev double's `event.locals.backend`, then the production `runtime.backend.connect(env)`. The
-   *  GitHub provider mints and caches its installation token lazily behind `connect`, so a
-   *  per-request resolve re-signs only on a cache miss.
+   * Resolve the live content backend for one request. The dev double's `event.locals.backend`
+   *  wins, else the production `runtime.backend.connect(env)`. A test rides the same
+   *  `locals.backend` seam the dev double uses, so the read and commit paths run with no real
+   *  token mint. The GitHub provider mints and caches its installation token lazily behind
+   *  `connect`, so a per-request resolve re-signs only on a cache miss.
    */
   function resolveBackend(event: ContentEvent): Backend {
-    return deps.backend ?? event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake
-  // (deps.anthropic) so messages.create is stubbed and no network call or real key is ever needed. The
+  // (deps.tidy.client) so messages.create is stubbed and no network call or real key is ever needed. The
   // SDK client satisfies TidyClient structurally; the cast names that to the compiler.
   const anthropicClient =
-    deps.anthropic ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
-  const tidyTimeoutMs = deps.tidyTimeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
+    deps.tidy?.client ?? ((opts: { apiKey: string }) => new Anthropic({ apiKey: opts.apiKey }) as unknown as TidyClient);
+  const tidyTimeoutMs = deps.tidy?.timeoutMs ?? DEFAULT_TIDY_TIMEOUT_MS;
 
   /**
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).

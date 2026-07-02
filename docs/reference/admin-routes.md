@@ -88,10 +88,12 @@ export const admin = createCairnAdmin(runtime);
 ```
 
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
-so most sites pass no deps at all. The showcase reads markdown through a fake GitHub backend in
-development, which rides `event.locals.backend` from a fenced dev handle rather than through a dep.
-A deployed site connects the real backend and mints installation tokens on demand, so it passes no
-backend dep.
+so most sites pass no deps at all. A site that does override something passes the grouped
+`CairnAdminDeps` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
+reads markdown through a fake GitHub backend in development, which rides `event.locals.backend`
+from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
+mints installation tokens on demand, so it passes no backend dep. See
+[`CairnAdminDeps`](./sveltekit.md#cairnadmindeps) for the full shape.
 
 Keep the `prerender = false` line. The admin is session-gated, and a site that prerenders by
 default would otherwise try to bake a build-time snapshot of it; the explicit opt-out keeps the
@@ -148,7 +150,29 @@ version bump alone; there is no per-site action table to keep in sync.
 The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
 it. The guard sets `event.locals.editor`, and one line in `src/app.d.ts` types it:
-`import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)).
+`import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
+and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
+App credentials); type `App.Platform.env` by intersecting
+[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) rather than restating each one by
+hand, so a binding a site forgets to wire fails at compile time:
+
+```ts
+// src/app.d.ts
+import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';
+import '@glw907/cairn-cms/ambient';
+
+declare global {
+  namespace App {
+    interface Platform {
+      env: CairnPlatformBindings & { /* the site's own bindings */ };
+    }
+  }
+}
+```
+
+A media-enabled site also intersects
+[`CairnMediaBindings`](./sveltekit.md#cairnmediabindings), since `MEDIA_BUCKET` exists only when
+the adapter turns media on.
 
 A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
 `<html data-theme>`) keeps it by sequencing the engine guard after its own:

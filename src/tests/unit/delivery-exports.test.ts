@@ -2,15 +2,11 @@ import { describe, it, expect } from 'vitest';
 import * as root from '../../lib/index.js';
 
 describe('delivery exports', () => {
-  it('exposes the delivery builders and the permalink resolver from the data subpath', async () => {
+  it('exposes the delivery builders from the data subpath', async () => {
     const data = await import('../../lib/delivery/data.js');
     for (const name of [
-      'permalink',
-      'createContentIndex',
-      'fromGlob',
-      'createSiteResolver',
+      'createSiteIndexes',
       'deriveExcerpt',
-      'wordCount',
       'buildRssFeed',
       'buildJsonFeed',
       'buildSitemap',

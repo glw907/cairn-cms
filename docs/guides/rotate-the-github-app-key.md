@@ -8,9 +8,10 @@ editors' sessions. This page walks you through a rotation and the one brittle st
 ## What's stored
 
 Each site holds the App private key as a single-line base64 of the PEM, in the worker secret
-**`GITHUB_APP_PRIVATE_KEY_B64`** (alongside `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID`).
-The machine-local copy lives in `~/.dotfiles/secrets/values.age` and `~/.local/secrets`; the
-workspace `CLAUDE.md` records the IDs.
+**`GITHUB_APP_PRIVATE_KEY_B64`**. `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` aren't worker
+secrets; they're non-secret identity facts baked into the adapter's `githubApp({ appId,
+installationId, ... })` call in source. The machine-local copy of all three lives in
+`~/.dotfiles/secrets/values.age` and `~/.local/secrets`; the workspace `CLAUDE.md` records the IDs.
 
 ## The conversion step (why it's brittle)
 

@@ -11,6 +11,7 @@ import { existsSync, mkdtempSync, mkdirSync, symlinkSync, rmSync } from 'node:fs
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { parsePackManifest } from './_pack-manifest.js';
 
 const ROOT = resolve(process.cwd());
 const BUILT = resolve(ROOT, 'dist/index.js');
@@ -26,17 +27,20 @@ interface PackManifest {
 
 describe('packaging boundary (needs dist/index.js; run npm run package to unskip)', () => {
 	it.skipIf(!built)('the npm pack tarball carries no src/lib path', () => {
-		// --ignore-scripts skips the `prepare` rebuild (dist is already built by the gate that runs
-		// this suite); --offline guarantees no registry round trip, keeping the assertion
-		// deterministic in a sandboxed run.
+		// --ignore-scripts is meant to skip the `prepare` rebuild (dist is already built by the
+		// gate that runs this suite); on npm 10.x it does not, and the rebuild's own stdout lands
+		// ahead of the `--json` manifest (see _pack-manifest.ts). --loglevel=silent trims npm's own
+		// log lines, and --offline guarantees no registry round trip, but the manifest still has to
+		// be extracted defensively from `out.stdout`, never `out.stderr`, since a script's own
+		// output is not an npm log line and ignores --loglevel.
 		const out = spawnSync(
 			'npm',
-			['pack', '--dry-run', '--json', '--ignore-scripts', '--offline'],
+			['pack', '--dry-run', '--json', '--ignore-scripts', '--offline', '--loglevel=silent'],
 			{ cwd: ROOT, encoding: 'utf8' }
 		);
 		expect(out.status).toBe(0);
 
-		const [manifest] = JSON.parse(out.stdout) as PackManifest[];
+		const [manifest] = parsePackManifest(out.stdout) as PackManifest[];
 		const srcLibPaths = manifest.files.map((f) => f.path).filter((p) => p.startsWith('src/lib'));
 		expect(srcLibPaths).toEqual([]);
 
@@ -86,4 +90,23 @@ describe('packaging boundary (needs dist/index.js; run npm run package to unskip
 			}
 		}
 	);
+
+	// A regression for the extraction helper itself, run unconditionally (not skipIf(!built)): it
+	// needs no dist build, only a fixture reproducing the npm 10.x pollution (a script's own
+	// stdout, such as svelte-package's "src/lib -> dist" notice, landing ahead of the `--json`
+	// manifest).
+	describe('parsePackManifest', () => {
+		it('extracts the JSON document past a prepended npm log-pollution line', () => {
+			const polluted =
+				'src/lib -> dist\n' +
+				'@sveltejs/package found the following issues while packaging your library:\n' +
+				JSON.stringify([{ files: [{ path: 'dist/index.js' }] }]);
+
+			expect(parsePackManifest(polluted)).toEqual([{ files: [{ path: 'dist/index.js' }] }]);
+		});
+
+		it('throws when no parseable JSON document is present', () => {
+			expect(() => parsePackManifest('src/lib -> dist\nno json here')).toThrow(SyntaxError);
+		});
+	});
 });

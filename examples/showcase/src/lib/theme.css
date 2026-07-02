@@ -79,7 +79,7 @@
    and gets the same faces (the parity rule). Fraunces pulls the `opsz` axis so headings render at a
    display optical size; the body and mono faces need only `wght`. */
 @import '@fontsource-variable/fraunces/opsz.css';
-@import '@fontsource-variable/source-sans-3/index.css';
+@import '@fontsource-variable/lora/index.css';
 @import '@fontsource-variable/source-code-pro/index.css';
 
 /* The bespoke reading surface (Task 5), kept in its own file but pulled in here so it ships in this
@@ -104,10 +104,11 @@
   prefersdark: false;
   color-scheme: light;
 
-  /* warm-stone paper under warm slate ink (warm-balanced, never cream) */
-  --color-base-100: oklch(98.4% 0.0035 80);
-  --color-base-200: oklch(96.4% 0.005 80);
-  --color-base-300: oklch(90.8% 0.006 78);
+  /* editorial-serif redirection: warm paper stock, not stone. Chroma lifts well past the base
+     theme's near-neutral paper so the surface reads as a cream leaf, not a gray one. */
+  --color-base-100: oklch(97.5% 0.017 85);
+  --color-base-200: oklch(94.5% 0.024 82);
+  --color-base-300: oklch(88.5% 0.03 80);
   --color-base-content: oklch(25% 0.014 70);
   /* the one brand accent: a deep, confident ink-blue. Re-skin by rotating the hue. */
   --color-primary: oklch(45% 0.1 248);
@@ -152,9 +153,11 @@
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: oklch(24% 0.01 78);
-  --color-base-200: oklch(20% 0.01 78);
-  --color-base-300: oklch(32% 0.012 78);
+  /* editorial-serif redirection: a warmer, ink-adjacent dark stock (a touch more chroma than the
+     base theme) so the dark surface still reads paper-toned rather than neutral gray. */
+  --color-base-100: oklch(23% 0.018 75);
+  --color-base-200: oklch(19% 0.018 75);
+  --color-base-300: oklch(31% 0.02 75);
   --color-base-content: oklch(92% 0.007 80);
   --color-primary: oklch(74% 0.1 248);
   --color-primary-content: oklch(22% 0.03 248);
@@ -189,20 +192,23 @@
    `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
    own face). */
 @theme {
+  /* editorial-serif redirection: both faces go serif (Fraunces stays for display; the body swaps
+     from Source Sans to Lora, a text-optimized literary serif). font-mono is untouched. */
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
-  --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Lora Variable', Georgia, 'Times New Roman', serif;
   --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds.
-     In @theme so Tailwind generates the `text-step-*` utilities the chrome markup folds onto; the
-     vars are still emitted at :root, so prose.css's `var(--text-step-*)` keeps resolving. */
+  /* editorial-serif redirection: the ratio between steps widens from ~1.24 toward ~1.33 (a
+     perfect-fourth), so the masthead and section heads tower over body text the way a magazine
+     spread does, while step-0 and step--1 (body, caption) hold close to the base scale for
+     readability. */
   --text-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
   --text-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
-  --text-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
-  --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
-  --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
-  --text-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
-  --text-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
+  --text-step-1: clamp(1.32rem, 1.22rem + 0.5vw, 1.63rem);    /* lead, h4 */
+  --text-step-2: clamp(1.68rem, 1.5rem + 0.87vw, 2.21rem);    /* h3, index title */
+  --text-step-3: clamp(2.14rem, 1.85rem + 1.43vw, 3.01rem);   /* h2 */
+  --text-step-4: clamp(2.72rem, 2.27rem + 2.25vw, 4.1rem);    /* section display, stat */
+  --text-step-5: clamp(3.02rem, 2.32rem + 3.5vw, 5.02rem);    /* h1, masthead */
 
   /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
      (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */
@@ -219,17 +225,20 @@
      `tracking-tight`/`tracking-eyebrow`; the values override Tailwind's default leading/tracking
      utilities, which is intended (the template's own rhythm). The vars still emit at :root for the
      CSS consumers (prose.css, the routes). */
-  --leading-body: 1.65;
+  /* editorial-serif redirection: a serif text face carries a touch more leading than the sans
+     body it replaces, so --leading-body lifts slightly; the display faces are unchanged. */
+  --leading-body: 1.72;
   --leading-snug: 1.4;
   --leading-tight: 1.12;
   --tracking-tight: -0.011em;
   --tracking-eyebrow: 0.12em;
 
-  /* The reading measure, about 66ch; structural, so figures and pull-quotes break past it. In @theme
-     so Tailwind generates `max-w-measure`/`max-w-measure-wide` (the `--container-*` namespace powers
-     the max-w-* utilities); the vars still emit at :root for the CSS consumers. */
-  --container-measure: 44rem;
-  --container-measure-wide: 58rem;
+  /* editorial-serif redirection: a generous, magazine-width measure, wider than the base ~66ch
+     column. In @theme so Tailwind generates `max-w-measure`/`max-w-measure-wide` (the
+     `--container-*` namespace powers the max-w-* utilities); the vars still emit at :root for
+     the CSS consumers. */
+  --container-measure: 50rem;
+  --container-measure-wide: 66rem;
 
   /* The muted on-surface ink and the card-border hairline, as color roles so Tailwind generates
      `text-muted`/`border-muted` and `border-card-border`. These are the light values; the dark

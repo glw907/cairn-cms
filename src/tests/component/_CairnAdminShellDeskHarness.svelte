@@ -8,7 +8,7 @@ stand down) without mounting the whole editor. The harness forwards the shell's 
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
   import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
-  import DeskChild from './DeskChild.svelte';
+  import DeskChild from './_DeskChild.svelte';
 
   let { data }: { data: ComponentProps<typeof CairnAdminShell>['data'] } = $props();
 </script>

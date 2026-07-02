@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import Smoke from './Smoke.svelte';
+import Smoke from './_Smoke.svelte';
 
 describe('component test project', () => {
   it('renders a Svelte 5 component and reacts to a click', async () => {

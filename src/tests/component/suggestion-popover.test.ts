@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
-import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './fake-spell-worker.js';
+import { makeFakeWorker, COLD_START, WARNING_INK, pinWarningInk } from './_fake-spell-worker.js';
 
 describe('suggestion popover', () => {
   // The flat-props form MarkdownEditor's tests use (not `{ props: {...} }`): two NON-adjacent occurrences

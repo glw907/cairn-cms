@@ -2,65 +2,26 @@
 // entry's pending branch (cut lazily from main), never on main, and carries no manifest
 // change; createAction refuses a slug whose pending branch already exists.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
-function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
-    concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
-        summaryFields: [],
-        validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+function runtime() {
+  return baseRuntime({
+    concepts: [postsConcept({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true }], validate: () => ({ ok: true as const, data: { title: 'Hi' } }) })],
     manifestPath: MANIFEST_PATH,
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
+  });
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
 function saveEvent(id: string, form: Record<string, string>) {
-  const body = new URLSearchParams(form);
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}`),
-    params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: `https://t.example/admin/posts/${id}`, params: { concept: 'posts', id }, form });
 }
 
 function createEvent(form: Record<string, string>) {
-  const body = new URLSearchParams(form);
-  return {
-    url: new URL('https://t.example/admin/posts'),
-    params: { concept: 'posts' },
-    request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form });
 }
 
 /** Run an action expected to throw a SvelteKit redirect, returning its location. */

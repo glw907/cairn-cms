@@ -4,7 +4,7 @@ import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
 import type { ResolvedNavEntry } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
-import CairnAdminShellDeskHarness from './CairnAdminShellDeskHarness.svelte';
+import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 

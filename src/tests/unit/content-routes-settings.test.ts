@@ -7,44 +7,24 @@
 // actions test.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
+import { runtime as baseRuntime, contentEvent, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 const CONFIG_PATH = 'src/lib/site.config.yaml';
 
 function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
     navMenu: { configPath: CONFIG_PATH, menuName: 'primary', label: 'Primary nav', maxDepth: 2 },
     tidy: { enabled: true, model: 'claude-sonnet-4-6' },
     ...over,
-  };
+  });
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
 function saveEvent(conventionsJson: string) {
-  const body = new URLSearchParams({ conventions: conventionsJson });
-  return {
-    url: new URL('https://t.example/admin/settings'),
-    params: {},
-    request: new Request('https://t.example/admin/settings', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: 'https://t.example/admin/settings', form: { conventions: conventionsJson } });
 }
 
 // The committed YAML the read step returns, carrying the developer-tier facts plus a comment, so the
@@ -70,12 +50,8 @@ describe('settingsSave', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     const conventions = JSON.stringify({ fixes: true, oxfordComma: 'always', timeFormat: '5 PM' });
-    try {
-      await routes.settingsSave(saveEvent(conventions) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/settings?saved=1');
-    }
+    const { location } = await expectRedirect(() => routes.settingsSave(saveEvent(conventions) as never));
+    expect(location).toBe('/admin/settings?saved=1');
     // The commit names the session editor as author.
     const commitPost = gh.calls.find((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))!;
     expect((commitPost.body as { author: unknown }).author).toEqual({ name: 'Ed Editor', email: 'ed@t' });
@@ -111,13 +87,9 @@ describe('settingsSave', () => {
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime());
     // oxfordComma carries a value outside its allowed set.
-    try {
-      await routes.settingsSave(saveEvent('{"oxfordComma":"sometimes"}') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/\/admin\/settings\?error=/);
-    }
+    const { status, location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"oxfordComma":"sometimes"}') as never));
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/settings\?error=/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -137,12 +109,8 @@ describe('settingsSave', () => {
       return new Response('{}', { status: 200 });
     }));
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.settingsSave(saveEvent('{"fixes":true}') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
-    }
+    const { location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"fixes":true}') as never));
+    expect(location).toMatch(/error=.*changed%20since/i);
   });
 
   it('404s when the config file is gone at save time', async () => {
@@ -154,13 +122,7 @@ describe('settingsSave', () => {
 
 describe('settingsLoad', () => {
   function loadEvent(env: Record<string, unknown> = {}) {
-    return {
-      url: new URL('https://t.example/admin/settings'),
-      params: {},
-      request: new Request('https://t.example/admin/settings'),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-      platform: { env },
-    };
+    return contentEvent({ url: 'https://t.example/admin/settings', env });
   }
 
   it('opens the editor tier only when tidy is enabled AND the key is present (truthful gate)', () => {

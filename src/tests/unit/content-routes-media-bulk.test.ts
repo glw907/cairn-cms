@@ -5,8 +5,6 @@
 // These tests use the same GithubDouble harness as the single-delete suite, with a multi-hash event
 // builder that repeats the `hash` field.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { MediaBulkDeleteResult } from '../../lib/sveltekit/content-routes.js';
@@ -15,8 +13,7 @@ import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type Media
 import { r2Key } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { ResolvedAssetConfig } from '../../lib/media/config.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -33,35 +30,21 @@ const MEDIA_ON: ResolvedAssetConfig = {
 };
 
 function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
+  return baseRuntime({
     concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
+      postsConcept({
         fields: [
           { type: 'text', name: 'title', label: 'Title', required: true },
           { type: 'image', name: 'image', label: 'Hero', seo: true },
         ],
-        schema: fieldset({}),
-        summaryFields: [],
         validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
+      }),
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
     manifestPath: MANIFEST_PATH,
     mediaManifestPath: MEDIA_PATH,
     resolvedAssets: MEDIA_ON,
-    vocabulary: [],
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const HASH_A = '0000000000000aaa';
 const HASH_B = '0000000000000bbb';
@@ -125,17 +108,11 @@ function bulkEvent(hashes: string[], bucket: { delete: ReturnType<typeof vi.fn> 
   }));
   const params = new URLSearchParams();
   for (const h of hashes) params.append('hash', h);
-  return {
-    url: new URL('https://t.example/admin/media'),
-    params: {},
-    request: new Request('https://t.example/admin/media', {
-      method: 'POST',
-      headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-    }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket } },
-  };
+  return contentEvent({
+    url: 'https://t.example/admin/media',
+    form: params,
+    env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: bucket },
+  });
 }
 
 afterEach(() => vi.restoreAllMocks());

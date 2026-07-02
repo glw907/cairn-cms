@@ -1,7 +1,8 @@
-import { isRedirect, isHttpError } from '@sveltejs/kit';
 import { env } from 'cloudflare:test';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor, Role } from '../../lib/auth/types.js';
+
+export { expectRedirect, expectHttpError } from '../_redirect-assertions.js';
 
 /** Insert an editor row directly. The editor table is the allowlist, so a row is "may sign in". */
 export async function seedEditor(email: string, displayName: string, role: Role, now = Date.now()): Promise<void> {
@@ -69,26 +70,4 @@ export function makeEvent(input: {
     },
     setHeaders: () => {},
   };
-}
-
-/** Run a handler that should throw a redirect; return its status and location. */
-export async function expectRedirect(fn: () => Promise<unknown>): Promise<{ status: number; location: string }> {
-  try {
-    await fn();
-  } catch (e) {
-    if (isRedirect(e)) return { status: e.status, location: e.location };
-    throw e;
-  }
-  throw new Error('expected a redirect, none thrown');
-}
-
-/** Run a handler that should throw an HTTP error; return its status. */
-export async function expectHttpError(fn: () => Promise<unknown>): Promise<{ status: number }> {
-  try {
-    await fn();
-  } catch (e) {
-    if (isHttpError(e)) return { status: e.status };
-    throw e;
-  }
-  throw new Error('expected an HTTP error, none thrown');
 }

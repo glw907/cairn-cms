@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { sortItems } from '@rodrigodagostino/svelte-sortable-list';
-import SortableProbe from './SortableProbe.svelte';
+import SortableProbe from './_SortableProbe.svelte';
 
 describe('svelte-sortable-list under Svelte 5', () => {
   it('mounts a sortable list and renders its items', async () => {

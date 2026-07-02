@@ -1,33 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { fieldset } from '../../lib/content/fieldset.js';
+import { runtime, REPO, contentEvent, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
-
-function runtime(): CairnRuntime {
-  const ok = () => ({ ok: true as const, data: {} });
-  return {
-    siteName: 'T',
-    concepts: [
-      { id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts', routing: { routable: true, dated: true, inFeeds: true }, permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [], validate: ok },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
-}
-
-// The read/commit backend every event's `locals.backend` rides, so createContentRoutes needs no
-// deps injection: production and test both resolve through the same locals seam.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 
@@ -44,14 +22,8 @@ function contentsReads(gh: GithubDouble): string[] {
   return gh.calls.filter((c) => c.method === 'GET' && c.url.includes('/contents/')).map((c) => c.url);
 }
 
-function listEvent(params: Record<string, string>, search = '', eventBackend: Backend = backend) {
-  return {
-    url: new URL(`https://t.example/admin/posts${search}`),
-    params,
-    request: new Request('https://t.example'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend: eventBackend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+function listEvent(params: Record<string, string>, search = '', eventBackend?: Backend) {
+  return contentEvent({ url: `https://t.example/admin/posts${search}`, params, editor: { email: 'e@t', displayName: 'E', role: 'editor' }, eventBackend });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -62,14 +34,11 @@ function makeEvent(opts: {
   editor: { email: string; displayName: string; role: 'owner' | 'editor' };
   cookies?: Record<string, string>;
 }) {
-  return {
-    url: new URL(`https://t.example${opts.pathname}`),
-    params: {},
-    request: new Request('https://t.example'),
-    locals: { editor: opts.editor, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+  return contentEvent({
+    url: `https://t.example${opts.pathname}`,
+    editor: opts.editor,
     cookies: { get: (name: string) => opts.cookies?.[name], set: () => {}, delete: () => {} },
-  };
+  });
 }
 
 /** Narrow the shell payload to its authed member, failing the test loudly otherwise. */
@@ -391,49 +360,36 @@ describe('listLoad without a manifest (fallback crawl)', () => {
 });
 
 describe('createAction', () => {
+  const CREATE_EDITOR = { email: 'e@t', displayName: 'E', role: 'editor' as const };
+
   function createEvent(form: Record<string, string>) {
-    const body = new URLSearchParams(form);
-    return {
-      url: new URL('https://t.example/admin/posts'),
-      params: { concept: 'posts' },
-      request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
+    return contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form, editor: CREATE_EDITOR });
   }
 
   it('redirects to the editor for a fresh slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-hello-world?new=1');
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' }) as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toBe('/admin/posts/2026-05-01-hello-world?new=1');
   });
 
   it('bounces back with an error for an invalid slug', async () => {
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ title: 'X', slug: 'Bad Slug!' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/\/admin\/posts\?error=/);
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.createAction(createEvent({ title: 'X', slug: 'Bad Slug!' }) as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/posts\?error=/);
   });
 
   it('refuses to clobber an existing file', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('exists', { status: 200 })));
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=.*already%20exists/i);
-    }
+    const { location } = await expectRedirect(() => routes.createAction(createEvent({ title: 'X', slug: 'existing', date: '2026-05-01' }) as never));
+    expect(location).toMatch(/error=.*already%20exists/i);
   });
 
   /** A runtime whose posts concept truncates the date prefix to the month. */
@@ -463,85 +419,49 @@ describe('createAction', () => {
   }
 
   function pagesEvent(form: Record<string, string>) {
-    const body = new URLSearchParams(form);
-    return {
-      url: new URL('https://t.example/admin/pages'),
-      params: { concept: 'pages' },
-      request: new Request('https://t.example/admin/pages', { method: 'POST', body }),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
+    return contentEvent({ url: 'https://t.example/admin/pages', params: { concept: 'pages' }, form, editor: CREATE_EDITOR });
   }
 
   it('composes a day-granular dated id from the date and slug', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-06-15-snowball?new=1');
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' }) as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toBe('/admin/posts/2026-06-15-snowball?new=1');
   });
 
   it('truncates the dated id to the concept granularity (month)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(monthRuntime());
-    try {
-      await routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-welcome?new=1');
-    }
+    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never));
+    expect(location).toBe('/admin/posts/2026-05-welcome?new=1');
   });
 
   it('bounces when a dated concept gets no date', async () => {
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ slug: 'welcome' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=/);
-    }
+    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome' }) as never));
+    expect(location).toMatch(/error=/);
   });
 
   it('bounces when a dated slug carries its own date-like prefix', async () => {
     const routes = createContentRoutes(runtime());
-    try {
-      await routes.createAction(createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=/);
-    }
+    const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: '2026-05-31-x', date: '2026-06-15' }) as never));
+    expect(location).toMatch(/error=/);
   });
 
   it('uses the slug verbatim as the id for a non-dated concept', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(pagesRuntime());
-    try {
-      await routes.createAction(pagesEvent({ slug: 'about' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/pages/about?new=1');
-    }
+    const { location } = await expectRedirect(() => routes.createAction(pagesEvent({ slug: 'about' }) as never));
+    expect(location).toBe('/admin/pages/about?new=1');
   });
 });
 
 describe('listDeleteAction', () => {
   function deleteFormEvent(form: Record<string, string>) {
-    const body = new URLSearchParams(form);
-    return {
-      url: new URL('https://t.example/admin/posts'),
-      params: { concept: 'posts' },
-      request: new Request('https://t.example/admin/posts', { method: 'POST', body }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
-  }
-
-  function json(body: unknown, status = 200): Response {
-    return new Response(JSON.stringify(body), { status });
+    return contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form });
   }
 
   // The delete path: one manifest read, then the commitFiles sequence (GET ref, GET commit,
@@ -553,14 +473,14 @@ describe('listDeleteAction', () => {
       const method = init?.method ?? 'GET';
       // The cross-branch reference gate lists open branches via matching-refs; this double has no open
       // branch, so it returns an empty ref list and the strict index resolves to no inbound references.
-      if (method === 'GET' && url.includes('/git/matching-refs/')) return json([]);
+      if (method === 'GET' && url.includes('/git/matching-refs/')) return new Response(JSON.stringify([]), { status: 200 });
       if (method === 'GET' && url.includes('/contents/')) return new Response(manifestRaw, { status: 200 });
       if (method === 'DELETE' && url.includes('/git/refs/')) return new Response('Not Found', { status: 404 }); // no pending branch
-      if (method === 'GET' && url.includes('/git/ref/')) return json({ object: { sha: 'head1' } });
-      if (method === 'GET' && url.includes('/git/commits/')) return json({ tree: { sha: 'basetree' } });
-      if (method === 'POST' && url.endsWith('/git/trees')) return json({ sha: 'newtree' });
-      if (method === 'POST' && url.endsWith('/git/commits')) return json({ sha: 'commit1' });
-      if (method === 'PATCH' && url.includes('/git/refs/')) return json({ ref: 'refs/heads/main' });
+      if (method === 'GET' && url.includes('/git/ref/')) return new Response(JSON.stringify({ object: { sha: 'head1' } }), { status: 200 });
+      if (method === 'GET' && url.includes('/git/commits/')) return new Response(JSON.stringify({ tree: { sha: 'basetree' } }), { status: 200 });
+      if (method === 'POST' && url.endsWith('/git/trees')) return new Response(JSON.stringify({ sha: 'newtree' }), { status: 200 });
+      if (method === 'POST' && url.endsWith('/git/commits')) return new Response(JSON.stringify({ sha: 'commit1' }), { status: 200 });
+      if (method === 'PATCH' && url.includes('/git/refs/')) return new Response(JSON.stringify({ ref: 'refs/heads/main' }), { status: 200 });
       return new Response('unexpected', { status: 500 });
     });
     vi.stubGlobal('fetch', fetchMock);
@@ -575,13 +495,9 @@ describe('listDeleteAction', () => {
     commitFetch(manifest);
     const routes = createContentRoutes(runtime());
     const event = deleteFormEvent({ id: '2026-05-01-hello' });
-    try {
-      await routes.listDeleteAction(event as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toBe('/admin/posts');
-    }
+    const { status, location } = await expectRedirect(() => routes.listDeleteAction(event as never));
+    expect(status).toBe(303);
+    expect(location).toBe('/admin/posts');
   });
 
   it('blocks the delete and returns the inbound links when something links to the entry', async () => {

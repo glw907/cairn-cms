@@ -1,67 +1,35 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest } from '../../lib/content/manifest.js';
-import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import { runtime as baseRuntime, postsConcept, contentEvent, json, expectRedirect } from './_content-harness.js';
+import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 
 // The posts concept uses a day prefix, so a fixture id is 2026-05-01-<slug> and its slug strips to
 // <slug>. The pages concept is non-dated, so its id is its whole slug and a linker page can point at
 // the renamed post. renameId('2026-05-01-hi', 'new', 'day') yields 2026-05-01-new.
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
-  return {
-    siteName: 'T',
+  const fields = [{ type: 'text' as const, name: 'title', label: 'Title', required: true }];
+  return baseRuntime({
     concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
-        summaryFields: [],
-        validate,
-      },
+      postsConcept({ fields, validate }),
       {
         id: 'pages', label: 'Pages', singular: 'Pages', dir: 'src/content/pages',
         routing: { routable: true, dated: false, inFeeds: false },
         permalink: '/:slug',
         datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+        fields,
         schema: fieldset({}),
         summaryFields: [],
         validate,
       },
     ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
+  });
 }
-
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function renameEvent(id: string, slug: string) {
-  const body = new URLSearchParams({ slug });
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}`),
-    params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
-}
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status });
+  return contentEvent({ url: `https://t.example/admin/posts/${id}`, params: { concept: 'posts', id }, form: { slug } });
 }
 
 interface TreeChange {
@@ -120,12 +88,8 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    try {
-      await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-new?renamed=1');
-    }
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     const tree = treeOf(calls);
     expect(tree.find((t) => t.path === 'src/content/posts/2026-05-01-hi.md')!.sha).toBeNull();
     expect(tree.find((t) => t.path === 'src/content/posts/2026-05-01-new.md')!.content).toContain('title: Hi');
@@ -149,12 +113,8 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    try {
-      await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-new?renamed=1');
-    }
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     const tree = treeOf(calls);
     const home = tree.find((t) => t.path === 'src/content/pages/home.md')!;
     expect(home.content).toContain('cairn:posts/2026-05-01-new');
@@ -176,10 +136,7 @@ describe('renameAction', () => {
     ]);
     const calls = renameFetch(files);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    try {
-      await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
-      throw new Error('should have redirected');
-    } catch { /* redirected */ }
+    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
     const tree = treeOf(calls);
     const moved = tree.find((t) => t.path === 'src/content/posts/2026-05-01-new.md')!;
     expect(moved.content).toContain('cairn:posts/2026-05-01-new');
@@ -242,12 +199,8 @@ describe('renameAction with a pending branch', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
-    try {
-      await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-01-new?renamed=1');
-    }
+    const { location } = await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+    expect(location).toBe('/admin/posts/2026-05-01-new?renamed=1');
     expect(gh.read('main', 'src/content/posts/2026-05-01-new.md')).toContain('title: Hi');
     expect(gh.read('main', ENTRY_PATH)).toBeNull();
   });

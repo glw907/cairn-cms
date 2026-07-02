@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 // EditPage's lifecycle controls render into the topbar context portal, not a header of its own, so
 // this harness mounts it joined to that band the same way EditPage.test.ts does.
-import EditPage from './EditPageDesk.svelte';
+import EditPage from './_EditPageDesk.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import type { AdvisoryNotice } from '../../lib/content/advisories.js';

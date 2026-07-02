@@ -19,7 +19,7 @@ vi.mock('../../lib/components/client-ingest.js', async () => {
 // one header band through the topbar context portal, not in a header of their own. This harness
 // mounts EditPage joined to that band the way CairnAdmin/CairnAdminShell do, so a standalone render
 // still exercises the desk controls. The band carries data-testid="cairn-band".
-import EditPage from './EditPageDesk.svelte';
+import EditPage from './_EditPageDesk.svelte';
 import type { NamedField, SiteRender } from '../../lib/content/types.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 import { createRenderer } from '../../lib/render/pipeline.js';
@@ -27,9 +27,9 @@ import { defineComponent, defineRegistry, type ComponentDef } from '../../lib/re
 import { fields } from '../../lib/content/fields.js';
 import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 // The same module instance EditPage receives for $app/navigation via the project alias.
-import { beforeNavigateCallbacks } from './app-navigation.js';
+import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
-import { page as appPage } from './app-state.js';
+import { page as appPage } from './_app-state.js';
 
 function postProps(over = {}) {
   return {

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
-import { COLD_START, makeFakeWorker } from './fake-spell-worker.js';
+import { COLD_START, makeFakeWorker } from './_fake-spell-worker.js';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 

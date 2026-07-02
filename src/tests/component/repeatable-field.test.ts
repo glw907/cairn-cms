@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { page } from 'vitest/browser';
 import RepeatableField from '../../lib/components/RepeatableField.svelte';
-import TwoRepeatableFields from './TwoRepeatableFields.svelte';
+import TwoRepeatableFields from './_TwoRepeatableFields.svelte';
 import type { NamedField } from '../../lib/content/types.js';
 import type { ArrayField } from '../../lib/content/fields.js';
 

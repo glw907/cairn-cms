@@ -3,14 +3,12 @@
 // the manifest row upserted in one commit, and deletes the branch only when its head still
 // matches the commit the action made; discard deletes the branch and routes by main existence.
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
-import type { CairnRuntime } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+import type { CairnRuntime } from '../../lib/content/types.js';
+import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -18,28 +16,10 @@ const BRANCH = 'cairn/posts/2026-05-01-hi';
 const PENDING_MD = '---\ntitle: Hi\ndate: 2026-05-01\n---\npending body';
 
 function runtime(): CairnRuntime {
-  return {
-    siteName: 'T',
-    concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
-        summaryFields: [],
-        validate: () => ({ ok: true as const, data: { title: 'Hi' } }),
-      },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
+  return baseRuntime({
+    concepts: [postsConcept({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true }], validate: () => ({ ok: true as const, data: { title: 'Hi' } }) })],
     manifestPath: MANIFEST_PATH,
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
+  });
 }
 
 /** The posts runtime with a non-dated pages concept added, for the multi-concept batch. */
@@ -77,27 +57,12 @@ function pagesRuntime(): CairnRuntime {
   };
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
 function actionEvent(id: string, form: Record<string, string> = {}) {
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}`),
-    params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: `https://t.example/admin/posts/${id}`, params: { concept: 'posts', id }, form });
 }
 
 function pagesActionEvent(id: string, form: Record<string, string> = {}) {
-  return {
-    url: new URL(`https://t.example/admin/pages/${id}`),
-    params: { concept: 'pages', id },
-    request: new Request(`https://t.example/admin/pages/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
+  return contentEvent({ url: `https://t.example/admin/pages/${id}`, params: { concept: 'pages', id }, form });
 }
 
 /** Run an action expected to throw a SvelteKit redirect, returning its location. */
@@ -382,13 +347,7 @@ describe('publishAllAction', () => {
   const NEW_MD = '---\ntitle: New\ndate: 2026-06-02\n---\nnew body';
 
   function listActionEvent(concept = 'posts') {
-    return {
-      url: new URL(`https://t.example/admin/${concept}`),
-      params: { concept },
-      request: new Request(`https://t.example/admin/${concept}`, { method: 'POST', body: new URLSearchParams() }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
+    return contentEvent({ url: `https://t.example/admin/${concept}`, params: { concept }, form: {} });
   }
 
   it('lands a multi-concept batch atomically and consumes every branch', async () => {

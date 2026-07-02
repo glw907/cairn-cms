@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { hydrateIslands } from '../../lib/islands/index.js';
-import Echo from './islands/Echo.svelte';
+import Echo from './islands/_Echo.svelte';
 
 // Build one island boundary in the document and return it. The fallback is a <span> so we can assert it is
 // replaced by the mounted component.

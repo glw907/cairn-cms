@@ -1,56 +1,21 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
-import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { CommitConflictError } from '../../lib/github/types.js';
 import { manifestEntryFromFile, serializeManifest } from '../../lib/content/manifest.js';
+import { runtime as baseRuntime, postsConcept, REPO, contentEvent, json, expectRedirect } from './_content-harness.js';
 import type { CairnRuntime, ValidationResult } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
-import { fieldset } from '../../lib/content/fieldset.js';
-const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(validate: (fm: Record<string, unknown>, body: string) => ValidationResult): CairnRuntime {
-  return {
-    siteName: 'T',
-    concepts: [
-      {
-        id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-        routing: { routable: true, dated: true, inFeeds: true },
-        permalink: '/posts/:slug',
-        datePrefix: 'day',
-        fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
-        schema: fieldset({}),
-        summaryFields: [],
-        validate,
-      },
-    ],
-    backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-    sender: { from: 'cms@test' },
-    render: ({ body }) => Promise.resolve(body),
-    manifestPath: 'src/content/.cairn/index.json',
-    mediaManifestPath: 'src/content/.cairn/media.json',
-    resolvedAssets: { enabled: false },
-    vocabulary: [],
-  };
+  return baseRuntime({
+    concepts: [postsConcept({ fields: [{ type: 'text', name: 'title', label: 'Title', required: true }], validate })],
+  });
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
-const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-
-function saveEvent(id: string, form: Record<string, string>, eventBackend: Backend = backend) {
-  const body = new URLSearchParams(form);
-  return {
-    url: new URL(`https://t.example/admin/posts/${id}`),
-    params: { concept: 'posts', id },
-    request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend: eventBackend },
-    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-  };
-}
-
-function json(body: unknown, status = 200): Response {
-  return new Response(JSON.stringify(body), { status });
+function saveEvent(id: string, form: Record<string, string>, eventBackend?: Backend) {
+  return contentEvent({ url: `https://t.example/admin/posts/${id}`, params: { concept: 'posts', id }, form, eventBackend });
 }
 
 /** A scripted fetch double for the save path: one manifest read, the pending-branch ref probe
@@ -90,12 +55,10 @@ describe('saveAction', () => {
     const gh = new GithubDouble({ main: { 'src/content/.cairn/index.json': manifest } });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'See [about](cairn:pages/about) for more.' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
 
     // The saved content lands on the pending branch; main is untouched.
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: Hi');
@@ -126,12 +89,10 @@ describe('saveAction', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'New' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'New', body: 'fresh body' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     // The branch carries the new content; main still serves the old file and the old manifest row.
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: New');
     expect(gh.read('main', 'src/content/posts/2026-05-hi.md')).toContain('title: Old');
@@ -142,13 +103,11 @@ describe('saveAction', () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: false, errors: { title: 'Title is required' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-x', { title: '', body: 'b' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/error=.*Title/);
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-x', { title: '', body: 'b' }) as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toMatch(/error=.*Title/);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -175,12 +134,8 @@ describe('saveAction', () => {
     });
     vi.stubGlobal('fetch', fetchMock);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toMatch(/error=.*changed%20since/i);
-    }
+    const { location } = await expectRedirect(() => routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never));
+    expect(location).toMatch(/error=.*changed%20since/i);
   });
 
   it('blocks a save that links to an absent target, with no commit', async () => {
@@ -201,12 +156,10 @@ describe('saveAction', () => {
     gh.install();
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
     const syncBackend = makeGithubBackend(REPO, () => 'sync-token');
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }, syncBackend) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toContain('title: Hi');
   });
 
@@ -218,14 +171,11 @@ describe('saveAction', () => {
     const manifest = serializeManifest({ version: 1, entries: [{ ...draftRow, concept: 'pages', id: 'wip', draft: true }] });
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      const loc = (e as { location: string }).location;
-      expect(loc).toMatch(/saved=1/);
-      expect(loc).toMatch(/draft/i);
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [wip](cairn:pages/wip)' }) as never),
+    );
+    expect(location).toMatch(/saved=1/);
+    expect(location).toMatch(/draft/i);
   });
 
   it('does not draft-warn a draft entry that links to itself', async () => {
@@ -236,14 +186,11 @@ describe('saveAction', () => {
     const manifest = serializeManifest({ version: 1, entries: [{ ...selfRow, concept: 'posts', id: '2026-05-hi', draft: true }] });
     commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi', draft: true } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      const loc = (e as { location: string }).location;
-      expect(loc).toBe('/admin/posts/2026-05-hi?saved=1');
-      expect(loc).not.toMatch(/drafts=/);
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [self](cairn:posts/2026-05-hi)' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
+    expect(location).not.toMatch(/drafts=/);
   });
 
   it('commits cleanly when every link resolves to a published target', async () => {
@@ -252,12 +199,10 @@ describe('saveAction', () => {
     const manifest = serializeManifest({ version: 1, entries: [{ ...liveRow, concept: 'pages', id: 'home', draft: false }] });
     const calls = commitFetch(manifest);
     const routes = createContentRoutes(runtime(() => ({ ok: true, data: { title: 'Hi' } })));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'see [home](cairn:pages/home)' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     expect(calls.some((c) => (c.init?.method ?? 'GET') === 'POST' && c.url.endsWith('/git/trees'))).toBe(true);
   });
 
@@ -320,12 +265,8 @@ describe('saveAction', () => {
       e.name = 'CommitConflictError';
       throw e;
     }));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location?: string }).location).toMatch(/error=.*changed%20since/i);
-    }
+    const { location } = await expectRedirect(() => routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never));
+    expect(location).toMatch(/error=.*changed%20since/i);
   });
 });
 
@@ -334,43 +275,28 @@ describe('saveAction taxonomy enforcement', () => {
    *  vocabulary. The validate echoes the decoded frontmatter back as `data`, so the committed
    *  file carries the posted `topics` (the orphan-survival assertion reads it). */
   function taxonomyRuntime(vocabulary: { value: string; label: string }[]): CairnRuntime {
-    return {
-      siteName: 'T',
+    return baseRuntime({
       concepts: [
-        {
-          id: 'posts', label: 'Posts', singular: 'Posts', dir: 'src/content/posts',
-          routing: { routable: true, dated: true, inFeeds: true },
-          permalink: '/posts/:slug',
-          datePrefix: 'day',
+        postsConcept({
           fields: [
             { type: 'text', name: 'title', label: 'Title', required: true },
             { type: 'multiselect', name: 'topics', label: 'Topics', taxonomy: true, creatable: true },
           ],
-          schema: fieldset({}),
-          summaryFields: [],
           validate: (fm) => ({ ok: true, data: fm }),
-        },
+        }),
       ],
-      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
-      sender: { from: 'cms@test' },
-      render: ({ body }) => Promise.resolve(body),
-      manifestPath: 'src/content/.cairn/index.json',
-      mediaManifestPath: 'src/content/.cairn/media.json',
-      resolvedAssets: { enabled: false },
       vocabulary,
-    };
+    });
   }
 
   it('commits a posted tag that is in the vocabulary', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'a', body: 'plain', new: '1' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
     expect(saved).toContain('title: Hi');
     expect(saved).toContain('a');
@@ -380,14 +306,12 @@ describe('saveAction taxonomy enforcement', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { status: number }).status).toBe(303);
-      expect((e as { location: string }).location).toMatch(/error=.*brandnew/i);
-      expect((e as { location: string }).location).toMatch(/new=1/);
-    }
+    const { status, location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'brandnew', body: 'plain', new: '1' }) as never),
+    );
+    expect(status).toBe(303);
+    expect(location).toMatch(/error=.*brandnew/i);
+    expect(location).toMatch(/new=1/);
     // No commit landed: the branch was never written.
     expect(gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md')).toBeNull();
   });
@@ -406,19 +330,9 @@ describe('saveAction taxonomy enforcement', () => {
     form.append('topics', 'a');
     form.append('topics', 'legacy');
     form.append('body', 'fresh body');
-    const event = {
-      url: new URL('https://t.example/admin/posts/2026-05-hi'),
-      params: { concept: 'posts', id: '2026-05-hi' },
-      request: new Request('https://t.example/admin/posts/2026-05-hi', { method: 'POST', body: form }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
-      platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
-    };
-    try {
-      await routes.saveAction(event as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const event = contentEvent({ url: 'https://t.example/admin/posts/2026-05-hi', params: { concept: 'posts', id: '2026-05-hi' }, form });
+    const { location } = await expectRedirect(() => routes.saveAction(event as never));
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
     expect(saved).toContain('legacy');
     expect(saved).toContain('title: Hi');
@@ -428,12 +342,10 @@ describe('saveAction taxonomy enforcement', () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(taxonomyRuntime([]));
-    try {
-      await routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' }) as never);
-      throw new Error('should have redirected');
-    } catch (e) {
-      expect((e as { location: string }).location).toBe('/admin/posts/2026-05-hi?saved=1');
-    }
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', topics: 'anything', body: 'plain', new: '1' }) as never),
+    );
+    expect(location).toBe('/admin/posts/2026-05-hi?saved=1');
     const saved = gh.read('cairn/posts/2026-05-hi', 'src/content/posts/2026-05-hi.md');
     expect(saved).toContain('anything');
   });

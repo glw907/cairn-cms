@@ -281,3 +281,17 @@ save-paragraph, previously judged the repo's best prose, is the passage Geoff qu
 unsalvageable — mechanism-first, jargon-dense, reader-less. The corrected bar: an
 introduction introduces (genre first — see any real CMS), prose leads with the reader's
 stakes, and mechanism follows meaning.
+
+## Supersession (Geoff, 2026-07-02, final word on the corpus): toss the docs, start fresh
+
+The existing docs are not source material — not for prose, not for content. Every page in the
+IA inventory is written from zero: facts come from the code and are verified by the gates
+(snippets compile, names/signatures/tiers gate-checked), structure comes from the IA and the
+reviewed outlines, craft comes from the best-in-class exemplar studies (the SvelteKit-ecosystem
+developer-docs study and the CMS/writing-tool editor-docs study) plus the CMS-intro genre
+study. The survive/rewrite-source vocabulary is retired; the only classes are the IA inventory
+and the kills. The old corpus stays reachable as a standing example of what not to do on the
+never-merged branch `opus-docs-anti-exemplar` (pointed at the last pre-rewrite main), and page
+briefs may cite it only as contrast. The Task 1 snippet gate keeps its full value (the
+mechanism outlives the corpus it first ran on); its fixes to old-page snippets are accepted
+waste, discarded as each page is replaced.

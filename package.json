@@ -45,6 +45,7 @@
     "lint": "eslint src/lib",
     "check:comments": "bash scripts/check-comments.sh",
     "check:dev-package": "node scripts/check-dev-package.mjs",
+    "check:consumers": "npm run package && node scripts/check-consumers.mjs",
     "prepare": "npm run package",
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "vitest run",

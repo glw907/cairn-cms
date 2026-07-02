@@ -30,6 +30,10 @@ jobs:
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package
+      # The showcase lockfile is committed and installed with `npm ci` so this job resolves the
+      # exact toolchain a developer reproduces locally, the same convention e2e.yml follows.
+      - run: npm ci --prefix examples/showcase
+      - run: npm run check:consumers
       - name: Install Vale 3.15.1
         run: |
           curl -sfL https://github.com/errata-ai/vale/releases/download/v3.15.1/vale_3.15.1_Linux_64-bit.tar.gz \

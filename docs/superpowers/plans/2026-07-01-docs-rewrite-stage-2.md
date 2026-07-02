@@ -321,3 +321,13 @@ waste, discarded as each page is replaced.
   (Geoff, 2026-07-02, the register law).** The intro must state the core problems cairn solves
   (named, concrete) and who it obviously ISN'T for (in the intro itself, flatly, not delegated
   to a link). Disqualifying the wrong reader early is a feature of the intro, not a cost.
+
+- **The punctuation tell is per VOICE, not per document (Geoff, 2026-07-02).** Third-person
+  documentation prose following Google conventions uses Google's punctuation, em dashes
+  included. Prose that speaks as "I" claims a human author and must read as one: periods,
+  commas, parentheses, human rhythm; no em-dash interpolation pairs, colon payoffs, or
+  semicolon splices. Density matters everywhere (three interpolation pairs on a page is a
+  fingerprint in any register); the hard line is the first person, because our audience is
+  developers and that is where their authenticity detector runs hottest. The same per-voice
+  logic covers the structural tells: the not-X-but-Y contrast frame is banned outright (a
+  caught instance: "Those aren't gaps to be fixed; they're the trade...").

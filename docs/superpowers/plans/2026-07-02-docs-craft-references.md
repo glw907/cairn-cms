@@ -283,3 +283,79 @@ All three research agents have reported. Synthesizing now into the structured re
 ---
 
 **Report complete.** All quotes verbatim from fetched sources; attribution by platform. Gaps acknowledged: Reddit unreachable (HN + review sites substitute), Drizzle praise did not verify (found the opposite), and the "condescended" category is thin because it is genuinely rare in the wild, not under-searched — a finding in itself for the editor-docs register.
+
+---
+
+# Study 5: editor-docs craft (iA Writer, Obsidian, Bear, Kirby-as-counter-example)
+
+# Editor-class documentation craft study: iA Writer, Obsidian, Bear, Kirby
+
+**Coverage note:** Ghost's slice never returned; this synthesizes four sources — iA Writer (ia.net/writer/support), Obsidian (help.obsidian.md), Bear (bear.app), and Kirby (getkirby.com, which functions as the cautionary counter-example). Ghost's non-developer docs remain unexamined; if the study needs a fifth voice, that fetch is a cheap follow-up. All quotes below are verbatim from live pages fetched 2026-07-01.
+
+## 1. Opening moves for the nervous non-technical reader
+
+The reassurance budget varies by page type, and the best sources all agree on the split:
+
+- **Getting-started/concept pages spend 1–3 sentences on reassurance, then act.** Obsidian's "Create your first note" opens with three sentences of *structural* reassurance before the first keystroke: "Notes in Obsidian are stored as plain text files. This means your data is durable and not locked into a proprietary format. By writing your notes in plain text, they'll outlive any app—even Obsidian itself." First instruction is sentence 4 ("Press `Ctrl+N`…"). Bear's getting-started gives three sentences of framing, then "Open Bear, click the **New Note button**, and start typing."
+- **Task pages spend zero-to-one sentence, fused with the verb.** iA Writer's content-blocks page: "On Mac, effortlessly insert images, text files, code, or CSV tables into your documents with Content Blocks." The instruction verb is in the opening sentence. Obsidian's embed page gives one context sentence whose payoff is implicit reassurance ("stay up to date when the source file changes" = you can't get stale copies), then the instruction in sentence 2.
+- **Fear is named at most once, in one sentence, immediately defused.** iA Writer is the only source that addresses fear directly: "If you are not familiar with Markdown, it might look a little scary at first. Once you get the basics, you will quickly love it as it allows you to format your text without taking your hands off the keyboard." One acknowledgment, one payoff, no dwelling.
+- **The counter-example:** Kirby's editor-facing pages open with zero reassurance and immediate mechanism inventory: "Kirby comes with different text editing fields… From Markdown and Kirbytext to the visual Blocks and Layout field…" — five unexplained nouns in sentence 1.
+
+## 2. How markdown is explained to someone who has never heard the word
+
+Three convergent moves in the good sources, one anti-pattern in Kirby:
+
+- **Define by what it lets you do, anchored to "plain text."** Bear: "Markdown is a simple way to add style, lists, links, and other formatting to plain text." No "syntax," "markup," or "language" in the definition.
+- **Teach one symbol producing one visible effect, immediately.** Obsidian: "Obsidian supports Markdown syntax to make text bold, italic, and add links and headings. … The hash symbol (`#`) turns a line of text into a heading." That single sentence is the entire theory lesson.
+- **Analogy to what the reader already knows.** iA Writer (via the Gruber quote): "asterisks around a word actually look like emphasis. Markdown lists look like, well, lists. Even blockquotes look like quoted passages of text, assuming you've ever used email."
+- **Anti-pattern (Kirby glossary, the only markdown definition its editor pages link to):** "A markup language that uses plain text formatting syntax and can be converted to HTML and other formats. Created by John Gruber in 2004." — defines a beginner term using three terms the beginner also lacks, plus trivia instead of utility.
+
+## 3. Tone devices
+
+- **Reassurance delivered as fact, not comfort.** Obsidian never says "don't worry"; it states durability facts whose emotional payload is *you won't lose your work, you aren't trapped*. This is the strongest device found: warmth without a single warm word.
+- **Short declaratives, one idea per sentence.** Obsidian: "Embedded files display their content inline in a note and stay up to date when the source file changes." Bear: "The first line of every note is its title, the rest is up to you." iA Writer: "iA Writer is a simple app. That's by design." Kirby, by contrast, runs 34-word three-idea openers.
+- **Reader mistakes and fears: near-total silence, by design.** Across all Bear, Obsidian, and most iA Writer pages, no "it's okay if," no "mistakes happen," no undo-anxiety framing. The single fear-naming instance (iA Writer's "scary at first") is about the syntax, never about the reader's competence.
+- **Steps are single physical actions.** Obsidian: "1. Press `Ctrl+N` (or `Cmd+N` on macOS)… 2. Type 'Obsidian' as the name of your note and press `Enter`." Platform differences fold inline in parentheses, never as a "Note: Mac users…" block.
+- **Rhetorical question as task-page section opener (Bear).** "Want to add photos, PDFs, or other attachments? Click the **BIU button** again…" — reads the reader's goal aloud before naming the button.
+
+## 4. What they never do
+
+- **No stack vocabulary.** "Parser," "renderer," "HTML," "markup language," "repository," "compile" are absent from every good source's editor-facing sentence. Obsidian describes git-adjacent durability with zero git words.
+- **No feature-first framing.** No page opens "X has a feature called Y that…"; feature names arrive *after* the reader knows what the thing does for them (iA Writer names "Content Blocks" only at the end of a sentence that already said "insert images… into your documents").
+- **No hedging.** No "you might want to," "in most cases," "generally." Instructions are flat imperatives: Click, Open, Press, Type.
+- **No apology, no self-deprecation, no support-ticket register** ("please note," "kindly," "as mentioned above") — confirmed absent across all fetched pages.
+- **No theory before action.** Nobody explains how markdown works before the reader has made one thing bold.
+
+## On the "just/simply/obviously" ban (per the coordinator's addition)
+
+Evidence is split, and it splits along quality lines in cairn's favor. **Obsidian — the strictest and structurally best source — already fully complies:** its researcher explicitly confirmed "no 'simply,' 'just,' 'don't worry,' 'it's easy'" anywhere; all its reassurance is factual. **iA Writer and Bear violate it:** iA Writer leans on "simply drag and drop" and "effortlessly insert" as its primary warmth carriers; Bear has one "Simply type" across all fetched pages (sparing, but present). "Obviously" appears in none of the four sources. Practical implication: the ban is compatible with best-in-class practice, but it removes iA Writer's main warmth device, so cairn must carry warmth the Obsidian way — through consequence-facts and short sentences — not through minimizer adverbs. Imitate iA Writer's structure and fear-naming, not its adverbs.
+
+## 5. Three pinned exemplar passages
+
+**A. Obsidian, "Create your first note"** (help.obsidian.md/Getting+started/Create+your+first+note):
+> "Notes in Obsidian are stored as plain text files. This means your data is durable and not locked into a proprietary format. By writing your notes in plain text, they'll outlive any app—even Obsidian itself."
+
+Why: sells the tool's core mechanic purely as reader self-interest, zero technical words — the exact template for explaining cairn's markdown-in-git without saying "git."
+
+**B. iA Writer, "Markdown Guide"** (ia.net/writer/support/basics/markdown-guide):
+> "Our apps use Markdown formatting. This lets you apply basic formatting by adding a few punctuation characters. If you are not familiar with Markdown, it might look a little scary at first. Once you get the basics, you will quickly love it as it allows you to format your text without taking your hands off the keyboard."
+
+Why: the one legitimate fear-naming move — acknowledge "scary" once, promise the payoff in the same breath, move on. (This passage happens to be ban-compliant: no just/simply.)
+
+**C. Obsidian, "Create your first note"** (same URL as A):
+> "Obsidian supports Markdown syntax to make text bold, italic, and add links and headings. Copy and paste the following text at the top of the Obsidian note: `# Sharpen your thinking.` The hash symbol (`#`) turns a line of text into a heading."
+
+Why: the whole "what is markdown" lesson in 45 words — name it once in service of concrete outcomes, then one symbol, one visible effect, no theory.
+
+## Craft rules for cairn's editor-class pages
+
+1. **Reassure with facts, not comfort words.** State the consequence that removes the fear ("your words are saved as plain text and can never be trapped in this tool"), never "don't worry" or minimizer adverbs. This is how warmth survives the just/simply ban.
+2. **Budget reassurance by page type:** getting-started and concept pages get up to three sentences before the first action; task pages get at most one, fused with the instruction verb; reference pages get zero.
+3. **Define markdown as "a way to add formatting to plain text," teach it by one symbol producing one visible effect,** and never utter "syntax," "markup language," or "HTML" on an editor page.
+4. **Name a fear at most once per page, in one sentence, with the payoff in the same or next sentence** ("it might look a little scary at first — once you get the basics…"). Never dwell, never revisit.
+5. **Outcome before feature name.** Open with what the editor accomplishes ("add a photo to your post"); the feature's name, if it needs one, arrives after its job is clear. Never open "cairn has a feature called…".
+6. **One idea per sentence, one physical action per step.** Fold variations (keyboard vs. mouse, Mac vs. Windows) into inline parentheses, never a caveat block.
+7. **Flat imperatives, no hedging.** "Click Publish." — never "you might want to," "in most cases," or a qualifier stack.
+8. **Anchor every new concept to something the reader already knows** (email quoting, a document title, a filing cabinet), the Gruber move — an analogy beats a definition.
+9. **A rhetorical question may open a task section** ("Want to add a photo?") to read the goal aloud — Bear's device; use sparingly.
+10. **The Kirby test before publishing any page:** if a sentence contains a word the site's least-technical editor couldn't define (branch, commit, frontmatter, deploy, field type), the sentence is rewritten or the word is doing the developer docs' job on the wrong page.

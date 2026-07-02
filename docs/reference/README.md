@@ -12,6 +12,27 @@ a large signature (an actions record shown as `Record<string, ...>`, say) names 
 `ALLOWLIST` at the top of `scripts/check-reference-signatures.mjs`, keyed `${subpath}#${name}` with a
 reason.
 
+## Stability tiers
+
+Every export carries exactly one stability tier, marked either inline on its own section
+(`Stability tier: <tier> API.`) or as the Stability column of a Types table row. `check:reference`
+enforces this both ways: every enumerated export must carry a tier, and a name that appears in a
+Types table row, a bare export heading, or a `declare` signature but is no longer a real export
+anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
+
+- **Extension API.** The frozen contract: the adapter and schema constructors, the composed
+  runtime's read surface, the single-mount facade, and the components a site mounts directly.
+  Breaking it after the beta freeze is a deliberate major-version event, not an everyday one.
+- **Scaffold API.** Also frozen, but for the copied wiring a scaffolded site owns rather than a
+  seam it imports and calls: the shape a `create-cairn-site` template writes into a consumer's own
+  route files, which the same major-version discipline covers.
+- **Unstable API.** Importable today, with no stability promise across minor versions: it may
+  change shape or leave the package in any release with no deprecation window. This covers the
+  advanced per-view components and the piecewise per-route factories (the recomposition seam a
+  site uses only when it mounts routes by hand instead of the single-mount facade), their own
+  config, deps, and result types, and any export the audit kept for a real but narrow reason
+  without yet committing to its shape.
+
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.
 - [The canonical admin mount](./admin-routes.md): the two-file catch-all mount and the composer a site copies.

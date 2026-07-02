@@ -157,7 +157,7 @@ register each handler under that name; a `default` action does not receive a nam
 
 ### `createAuthRoutes`
 
-Stability tier: Scaffold API.
+Stability tier: Unstable API.
 
 ```ts
 type RequestResult =
@@ -198,7 +198,7 @@ export const actions = { request: auth.requestAction };
 
 ### `createEditorRoutes`
 
-Stability tier: Scaffold API.
+Stability tier: Unstable API.
 
 ```ts
 declare function createEditorRoutes(): {
@@ -229,7 +229,7 @@ export const actions = {
 
 ### `createContentRoutes`
 
-Stability tier: Scaffold API.
+Stability tier: Unstable API.
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
@@ -445,7 +445,7 @@ export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig 
 
 ### `createNavRoutes`
 
-Stability tier: Scaffold API.
+Stability tier: Unstable API.
 
 ```ts
 declare function createNavRoutes(runtime: CairnRuntime): {
@@ -577,9 +577,9 @@ imports the matching `*Data` type to type its `data` prop.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `AuthRoutesConfig` | Extension API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink }` | The config `createAuthRoutes` takes: the email branding and an optional custom sender. |
-| `RequestResult` | Extension API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
-| `UploadResult` | Extension API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
+| `AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink }` | The config `createAuthRoutes` takes: the email branding and an optional custom sender. |
+| `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
+| `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role }; concepts: NavConcept[]; customNav: ResolvedNavEntry[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: Promise<{ concept; id }[] \| null> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor, the nav, the active path, the CSRF token, and the pending entries, adds the developer's role-filtered `customNav`, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
@@ -590,20 +590,19 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaUsageInfo` | Extension API | `interface MediaUsageInfo { count: number; entries: UsageEntry[] }` | One asset's where-used overlay: the distinct-entry count (by concept and id) and every row (published and edit-branch origins), kept separate from `MediaLibraryEntry` so the picker projection stays decoupled. |
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's optional support contact. |
-| `ContentEvent` | Extension API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | Extension API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number } }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads: `tidy.client` so a test's tidy action calls a stubbed model, and `tidy.timeoutMs` to assert the deadline path. |
-| `SaveFailure` | Extension API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
-| `DeleteRefusal` | Extension API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
-| `RenameFailure` | Extension API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
-| `MediaDeleteRefusal` | Extension API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
-| `MediaUpdateFailure` | Extension API | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
-| `MediaReplaceFailure` | Extension API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
-| `MediaAltPropagateFailure` | Extension API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
-| `MediaBulkFailure` | Extension API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
-| `ContentFormFailure` | Extension API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
+| `ContentEvent` | Unstable API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
+| `ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number } }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads: `tidy.client` so a test's tidy action calls a stubbed model, and `tidy.timeoutMs` to assert the deadline path. |
+| `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
+| `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
+| `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
+| `MediaDeleteRefusal` | Unstable API | `interface MediaDeleteRefusal { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media delete: the one-line summary, the asset's content hash, the where-used rows (published first, then by branch) the in-use face lists, and the distinct-entry count. `usage` is empty and `foundIn` is zero for an uncommitted asset or a media-off refusal. |
+| `MediaUpdateFailure` | Unstable API | `interface MediaUpdateFailure { error: string }` | A refused media metadata edit (an asset not committed on the default branch, or an invalid slug): just the one-line summary. |
+| `MediaReplaceFailure` | Unstable API | `interface MediaReplaceFailure { error: string; hash: string; usage: UsageEntry[]; foundIn: number }` | A refused media replace: the one-line summary, the asset's content hash, the where-used rows, and the distinct-entry count. Mirrors `MediaDeleteRefusal`: a fresh usage read found the asset still in use without the typed-slug override (409), or usage could not be verified or the bucket is unbound (503). |
+| `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
+| `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
+| `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[] }` | The tag-vocabulary screen's load data, returned by `vocabularyLoad`: the committed `{ value, label }` entries in config order, each value's cross-branch in-use count (`usage`), and the in-use-but-unlisted tags with their counts (`unlisted`, the seed candidates). The usage overlay degrades to an empty `usage`/`unlisted` on a failed read while the committed `vocabulary` stays visible. |
 | <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink }; tidy?: ContentRoutesDeps['tidy'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the two bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes. `tidy` forwards verbatim to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |

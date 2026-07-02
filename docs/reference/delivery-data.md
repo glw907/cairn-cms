@@ -104,7 +104,7 @@ Build a sitemap XML document from a list of `SitemapUrl` entries, each a `loc` a
 
 ### `feedView`
 
-Stability tier: Extension API.
+Stability tier: Unstable API.
 
 ```ts
 function feedView(

@@ -168,3 +168,9 @@ site without having chosen the tool. Every For-editors page (and the general int
 that reader: no stack vocabulary, no assumed git/web knowledge, and the ownership/safety
 questions a manager actually has answered plainly. This is the register criterion for the
 editor-guides sweep, not just the welcome page.
+
+**Dev-intro single-sourcing (Geoff, 2026-07-02):** the repo README's content IS the developer
+introduction — no separate dev-intro page exists or gets written. `why-cairn.md` is the argued
+depth the README links into, not a parallel intro. When docs.cairn.pub hosts the docs (Topo),
+its developer-introduction page renders from the same source as the README rather than forking
+it; add that to the Topo constraints ledger so the two surfaces cannot drift.

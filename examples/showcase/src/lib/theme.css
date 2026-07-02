@@ -78,7 +78,8 @@
    exactly. Loading them here, not in the layout, means the editor preview frame links this same sheet
    and gets the same faces (the parity rule). Fraunces pulls the `opsz` axis so headings render at a
    display optical size; the body and mono faces need only `wght`. */
-@import '@fontsource-variable/inter/index.css';
+@import '@fontsource-variable/baloo-2/index.css';
+@import '@fontsource-variable/nunito/index.css';
 @import '@fontsource-variable/source-code-pro/index.css';
 
 /* The bespoke reading surface (Task 5), kept in its own file but pulled in here so it ships in this
@@ -103,22 +104,26 @@
   prefersdark: false;
   color-scheme: light;
 
-  /* dense-corporate redirection: cool neutrals, not warm stone. Hue swings from the base theme's
-     ~78 (warm) to ~255 (blue-gray) and chroma drops further toward true neutral. */
-  --color-base-100: oklch(98% 0.003 255);
-  --color-base-200: oklch(95.5% 0.005 256);
-  --color-base-300: oklch(89% 0.008 258);
-  --color-base-content: oklch(22% 0.012 258);
-  /* the one brand accent: a deep, confident ink-blue. Re-skin by rotating the hue. */
-  --color-primary: oklch(45% 0.1 248);
-  --color-primary-content: oklch(99% 0.01 248);
-  --color-secondary: oklch(48% 0.015 255);
-  --color-secondary-content: oklch(99% 0.003 255);
-  --color-accent: oklch(52% 0.07 235);
-  --color-accent-content: oklch(99% 0.01 235);
-  /* the cool near-black used for the inverted CTA house-ad in light mode */
-  --color-neutral: oklch(24% 0.012 258);
-  --color-neutral-content: oklch(97% 0.003 255);
+  /* playful-rounded redirection: the paper and ink go back to the base theme's warm stone (this
+     redirection does not ask for a paper change, only the accent, the corners, the spacing, and
+     the weight pairing). */
+  --color-base-100: oklch(98.4% 0.0035 80);
+  --color-base-200: oklch(96.4% 0.005 80);
+  --color-base-300: oklch(90.8% 0.006 78);
+  --color-base-content: oklch(25% 0.014 70);
+  /* playful-rounded redirection: a saturated accent triad, not the base theme's restrained
+     ink-blue. Primary jumps to a vivid magenta-pink at real chroma; secondary and accent pick up
+     a coordinated saturated teal and marigold so the whole brand set reads as playful, not just
+     the one role. */
+  --color-primary: oklch(58% 0.22 340);
+  --color-primary-content: oklch(99% 0.02 340);
+  --color-secondary: oklch(68% 0.17 165);
+  --color-secondary-content: oklch(18% 0.03 165);
+  --color-accent: oklch(78% 0.16 80);
+  --color-accent-content: oklch(20% 0.03 80);
+  /* a playful, plum-tinted near-black for the inverted CTA house-ad in light mode */
+  --color-neutral: oklch(28% 0.03 300);
+  --color-neutral-content: oklch(97% 0.01 300);
   /* status fills (dark-enough for near-white content, except warning which takes dark ink). The
      info and success lightnesses are pinned at the AA floor the dual-gamut gate (check:public-tokens)
      measures for their near-white -content: info L=55% holds 4.6:1, success L=54% holds 4.7:1, both
@@ -132,11 +137,12 @@
   --color-error: oklch(58% 0.19 27);
   --color-error-content: oklch(99% 0.01 27);
 
-  /* dense-corporate redirection: squared corners throughout, a flat enterprise-grid geometry
-     instead of the base theme's soft stone radii. depth/noise stay off. */
-  --radius-selector: 0rem;
-  --radius-field: 0rem;
-  --radius-box: 0rem;
+  /* playful-rounded redirection: rounded radii everywhere, well past the base theme's modest
+     stone geometry, so every field, chip, and card reads as a soft rounded shape. depth/noise
+     stay off. */
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1.75rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -153,20 +159,20 @@
   prefersdark: true;
   color-scheme: dark;
 
-  /* dense-corporate redirection: the same cool blue-gray hue as the light block, at dark
-     lightness, instead of the base theme's warm dark stone. */
-  --color-base-100: oklch(20% 0.01 258);
-  --color-base-200: oklch(16% 0.01 258);
-  --color-base-300: oklch(27% 0.012 258);
-  --color-base-content: oklch(93% 0.006 255);
-  --color-primary: oklch(74% 0.1 248);
-  --color-primary-content: oklch(22% 0.03 248);
-  --color-secondary: oklch(70% 0.015 255);
-  --color-secondary-content: oklch(22% 0.008 255);
-  --color-accent: oklch(76% 0.08 235);
-  --color-accent-content: oklch(22% 0.03 235);
-  --color-neutral: oklch(86% 0.006 255);
-  --color-neutral-content: oklch(22% 0.008 255);
+  /* playful-rounded redirection: back to the base theme's warm dark stone for the paper and ink;
+     the accent triad lifts to lighter, still-saturated tones for dark-mode contrast. */
+  --color-base-100: oklch(24% 0.01 78);
+  --color-base-200: oklch(20% 0.01 78);
+  --color-base-300: oklch(32% 0.012 78);
+  --color-base-content: oklch(92% 0.007 80);
+  --color-primary: oklch(78% 0.19 340);
+  --color-primary-content: oklch(20% 0.04 340);
+  --color-secondary: oklch(78% 0.15 165);
+  --color-secondary-content: oklch(18% 0.03 165);
+  --color-accent: oklch(82% 0.15 80);
+  --color-accent-content: oklch(20% 0.03 80);
+  --color-neutral: oklch(88% 0.02 300);
+  --color-neutral-content: oklch(20% 0.02 300);
   --color-info: oklch(70% 0.1 235);
   --color-info-content: oklch(24% 0.04 235);
   --color-success: oklch(66% 0.12 150);
@@ -176,9 +182,9 @@
   --color-error: oklch(66% 0.17 27);
   --color-error-content: oklch(24% 0.05 27);
 
-  --radius-selector: 0rem;
-  --radius-field: 0rem;
-  --radius-box: 0rem;
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1.75rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
   --border: 1px;
@@ -192,62 +198,65 @@
    `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
    own face). */
 @theme {
-  /* dense-corporate redirection: one grotesque sans (Inter) for both display and body, replacing
-     the editorial serif pairing. font-mono is untouched. */
-  --font-display: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-body: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* playful-rounded redirection: a friendly weight-contrast pairing, not the base editorial mix.
+     Baloo 2 is a chunky, naturally rounded display face (its own glyph corners echo the radius
+     tokens below); Nunito is a soft, rounded body face at a lighter default weight, so the two
+     faces read as a deliberate bold-versus-soft contrast rather than one weight throughout.
+     font-mono is untouched. */
+  --font-display: 'Baloo 2 Variable', ui-rounded, 'Segoe UI', sans-serif;
+  --font-body: 'Nunito Variable', ui-rounded, 'Segoe UI', sans-serif;
   --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* dense-corporate redirection: the ratio between steps tightens hard, from the base ~1.24
-     toward ~1.13, and every step drops in absolute size, so the whole scale reads as compact
-     enterprise-UI type rather than an editorial display scale. */
-  --text-step--1: clamp(0.7rem, 0.69rem + 0.06vw, 0.74rem);   /* caption, meta */
-  --text-step-0: clamp(0.86rem, 0.84rem + 0.09vw, 0.92rem);   /* body */
-  --text-step-1: clamp(0.98rem, 0.95rem + 0.13vw, 1.05rem);   /* lead, h4 */
-  --text-step-2: clamp(1.11rem, 1.07rem + 0.18vw, 1.2rem);    /* h3, index title */
-  --text-step-3: clamp(1.26rem, 1.2rem + 0.27vw, 1.38rem);    /* h2 */
-  --text-step-4: clamp(1.43rem, 1.35rem + 0.37vw, 1.58rem);   /* section display, stat */
-  --text-step-5: clamp(1.62rem, 1.51rem + 0.5vw, 1.8rem);     /* h1, masthead */
+  /* playful-rounded redirection: the type scale is not one of this redirection's levers, so it
+     stays at the base theme's ratio and sizes unchanged. */
+  --text-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
+  --text-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
+  --text-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
+  --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
+  --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
+  --text-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
+  --text-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
 
-  /* dense-corporate redirection: the space scale compresses by roughly a third across every
-     step, for a tighter information-dense rhythm. In @theme so Tailwind generates the spacing
-     utilities (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS
-     consumers. */
-  --spacing-3xs: clamp(0.2rem, 0.19rem + 0.03vw, 0.22rem);
-  --spacing-2xs: clamp(0.32rem, 0.31rem + 0.07vw, 0.36rem);
-  --spacing-xs: clamp(0.48rem, 0.46rem + 0.1vw, 0.54rem);
-  --spacing-s: clamp(0.64rem, 0.62rem + 0.14vw, 0.72rem);
-  --spacing-m: clamp(0.96rem, 0.92rem + 0.21vw, 1.08rem);
-  --spacing-l: clamp(1.28rem, 1.22rem + 0.28vw, 1.44rem);
-  --spacing-xl: clamp(1.92rem, 1.81rem + 0.56vw, 2.24rem);
-  --spacing-2xl: clamp(2.56rem, 2.4rem + 0.83vw, 3.04rem);
+  /* playful-rounded redirection: every space-scale step lifts about a quarter past the base
+     theme, a looser, bouncier rhythm with more air between blocks. In @theme so Tailwind
+     generates the spacing utilities (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit
+     at :root for the CSS consumers. */
+  --spacing-3xs: clamp(0.39rem, 0.38rem + 0.06vw, 0.43rem);
+  --spacing-2xs: clamp(0.63rem, 0.6rem + 0.14vw, 0.7rem);
+  --spacing-xs: clamp(0.94rem, 0.9rem + 0.2vw, 1.05rem);
+  --spacing-s: clamp(1.25rem, 1.2rem + 0.28vw, 1.41rem);
+  --spacing-m: clamp(1.88rem, 1.79rem + 0.41vw, 2.11rem);
+  --spacing-l: clamp(2.5rem, 2.39rem + 0.54vw, 2.81rem);
+  --spacing-xl: clamp(3.75rem, 3.54rem + 1.09vw, 4.38rem);
+  --spacing-2xl: clamp(5rem, 4.68rem + 1.63vw, 5.94rem);
 
   /* Leading and tracking. In @theme so Tailwind generates `leading-tight`/`-snug`/`-body` and
      `tracking-tight`/`tracking-eyebrow`; the values override Tailwind's default leading/tracking
      utilities, which is intended (the template's own rhythm). The vars still emit at :root for the
      CSS consumers (prose.css, the routes). */
-  /* dense-corporate redirection: every leading value tightens for a denser block of text, and
-     tracking pulls in slightly for a more clinical letterform. */
-  --leading-body: 1.45;
-  --leading-snug: 1.28;
-  --leading-tight: 1.05;
-  --tracking-tight: -0.015em;
-  --tracking-eyebrow: 0.08em;
+  /* playful-rounded redirection: leading opens up a touch to match the bouncier space scale, and
+     tracking relaxes toward neutral, a friendlier, less clinical letterform than the base tight
+     tracking. */
+  --leading-body: 1.7;
+  --leading-snug: 1.45;
+  --leading-tight: 1.18;
+  --tracking-tight: -0.005em;
+  --tracking-eyebrow: 0.14em;
 
-  /* dense-corporate redirection: a narrower, denser column than the base ~66ch measure, so more
-     of the information-dense list fits the viewport at once. In @theme so Tailwind generates
+  /* playful-rounded redirection: the reading measure is not one of this redirection's levers, so
+     it stays at the base theme's ~66ch column. In @theme so Tailwind generates
      `max-w-measure`/`max-w-measure-wide` (the `--container-*` namespace powers the max-w-*
      utilities); the vars still emit at :root for the CSS consumers. */
-  --container-measure: 40rem;
-  --container-measure-wide: 52rem;
+  --container-measure: 44rem;
+  --container-measure-wide: 58rem;
 
   /* The muted on-surface ink and the card-border hairline, as color roles so Tailwind generates
      `text-muted`/`border-muted` and `border-card-border`. These are the light values; the dark
      siblings override them in the prefers-color-scheme block below. DaisyUI does not define these
      roles, and the public @theme emits at :root only on the (site) layout, so the admin sheet's own
      scoped `--color-muted` does not collide. */
-  /* dense-corporate redirection: the muted ink follows the base hue to cool blue-gray. */
-  --color-muted: oklch(46% 0.013 258);
+  /* playful-rounded redirection: back to the base theme's warm on-surface ink. */
+  --color-muted: oklch(46% 0.013 72);
   --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
 }
 
@@ -268,8 +277,9 @@
      measure values) live in the @theme block above, where Tailwind generates their named utilities.
      @theme re-emits each at :root, so the var() references throughout this file resolve unchanged. */
 
-  /* dense-corporate redirection: the owl-selector rhythm tightens along with the space scale. */
-  --flow-space: 0.9em;
+  /* playful-rounded redirection: the owl-selector rhythm opens up along with the bouncier space
+     scale. */
+  --flow-space: 1.5em;
 
   /* The code-block ramp. Each token reads a role, so a re-skin recolors code with no edit. The
      engine's build-time highlighter emits the .cairn-tok-* token classes (a fixed contract it
@@ -315,8 +325,8 @@
 @media (prefers-color-scheme: dark) {
   :root {
     /* On-surface inks (dark) lift with the surface, keeping AA on the dark bases. */
-    /* dense-corporate redirection: follows the base hue to cool blue-gray. */
-    --color-muted: oklch(70% 0.012 258);
+    /* playful-rounded redirection: back to the base theme's warm on-surface ink. */
+    --color-muted: oklch(70% 0.012 76);
     --cairn-success-ink: oklch(78% 0.11 150);
     --cairn-warning-ink: oklch(82% 0.12 76);
     --cairn-error-ink: oklch(76% 0.14 27);

@@ -1,5 +1,9 @@
 # Docs craft references (external exemplars, binding on every page dispatch)
 
+**The register, in Geoff's words (2026-07-02, the master sentence): "The core of this voice
+needs to be a talented developer explaining his choices and architecture to peers. We're not
+trying to sell cairn."** Every rule below serves that sentence.
+
 Assembled 2026-07-02, per Geoff: the rewrite imitates best-in-class documentation, never the
 prior cairn corpus (tossed; the `opus-docs-anti-exemplar` branch holds the what-not-to-do).
 Covers structure AND content. Two studies banked below; the editor-craft study (iA
@@ -359,3 +363,90 @@ Why: the whole "what is markdown" lesson in 45 words — name it once in service
 8. **Anchor every new concept to something the reader already knows** (email quoting, a document title, a filing cabinet), the Gruber move — an analogy beats a definition.
 9. **A rhetorical question may open a task section** ("Want to add a photo?") to read the goal aloud — Bear's device; use sparingly.
 10. **The Kirby test before publishing any page:** if a sentence contains a word the site's least-technical editor couldn't define (branch, commit, frontmatter, deploy, field type), the sentence is rewritten or the word is doing the developer docs' job on the wrong page.
+
+---
+
+# Study 6: developer-blog craft (antirez, jvns, Willison, BurntSushi, Hashimoto, Luu)
+
+# Developer-blog craft study: register source for cairn-cms docs/README
+
+Sources fetched and verified (HN citation / common-reference reputation confirmed for all): antirez.com/news/164 (Redis array type), jvns.ca/blog/2021/12/15/mess-with-dns/, simonwillison.net/2026/Jun/21/sqlite-utils-40rc1/, burntsushi.net/ripgrep/, mitchellh.com/writing/libghostty-is-coming, danluu.com/corp-eng-blogs/ (meta-essay on what makes engineering writing good, useful for negative-space contrast). A rachelbythebay fetch 404'd on the specific URL tested; excluded rather than approximated.
+
+## 1. Opening moves (first 3-4 sentences)
+
+- **antirez**: "I started working on the new Array data type for Redis in the first days of January. The PR landed the repository only now, so this code was cooked for four months." — states what he did and when, no throat-clearing, no "in this post I will."
+- **Julia Evans**: "Hello! I've been thinking about how to explain DNS a bunch in the last year. I like to learn in a very hands-on way." — greeting, then the motivation stated as personal fact.
+- **Simon Willison**: "sqlite-utils is my combined Python library and CLI tool for working with SQLite databases. It provides an extensive set of higher-level operations on top of Python's default sqlite3 package..." — names the thing, states ownership ("my"), then one factual sentence of what it does.
+- **BurntSushi**: "In this article I will introduce a new command line search tool, `ripgrep`, that combines the usability of The Silver Searcher... with the raw performance of GNU grep." — the one source that does state intent explicitly, but immediately anchors it against two named, linked prior tools rather than an abstract claim.
+- **Mitchell Hashimoto**: "Over two years ago, in one of my first public talks about Ghostty, I shared my vision for `libghostty`" — opens mid-timeline, presupposes the reader knows roughly what Ghostty is, doesn't re-pitch it.
+
+Common move: zero preamble, zero "in today's post." Either state what was built/decided (antirez, Willison) or place the reader in a timeline already in progress (Hashimoto). Nobody opens with a hook, a rhetorical question, or a claim about why the reader should care.
+
+## 2. First person and design refusals
+
+Frequency is high and unremarkable across all five — "I" is the default subject for any claim about intent, and it is never softened into passive voice ("it was decided that...").
+
+Refusal without defensiveness, verbatim:
+- Willison: "The system is deliberately small: it doesn't provide reverse migrations, so any mistakes you make should be fixed by deploying a fresh migration to undo them." — the refusal (no reverse migrations) is stated as a design property, then immediately followed by the consequence and the workaround, no apology.
+- Evans, on not implementing full DNS RFC compliance: "I think there are some rules I'm not following... But I'm lazy so I did not implement that." — she names the gap and gives the real reason (not enough value for an educational tool), using "lazy" as shorthand rather than a hedge.
+- antirez: "I really wanted people to be able to do `ARSET myarray 293842948324 foo`... The two levels of directory + slices (sparse and dense) I had were not enough." — states that his own earlier design was insufficient, in past tense, no self-flagellation.
+- BurntSushi, on scope creep he initially resisted: "Despite initially not wanting to add every feature under the sun to ripgrep, over time, ripgrep has grown support for most features found in other file searching tools." — reports the reversal of his own stance as a fact, not a confession.
+
+The mechanism: state the decision, state the reason, move on. No "I want to be transparent that," no "to be fair," no apologetic framing before or after.
+
+## 3. Sentence mechanics
+
+- **Rhythm**: short declarative sentences carry the claims; longer sentences carry the mechanism or the caveat. antirez: "I worked at the implementation kinda part time (kinda because many weeks were actually full time, sometimes to detach yourself from the keyboard is complicated)..." — one long sentence with a parenthetical correction mid-stream, conversational, almost spoken.
+- **Hedging is near zero but not absent, and it's load-bearing when present.** BurntSushi hedges explicitly where he's genuinely uncertain: "I'd probably," "My hypothesis," "I could be wrong" — but these appear at actual uncertainty, not as reflexive softening of a claim he's sure of. Elsewhere he asserts flatly: "In fact, this is not at all true."
+- **Paragraph length**: short, often single-claim paragraphs (Willison, Evans); antirez runs longer, more digressive paragraphs closer to spoken narration.
+- **Humor dosage**: dry and infrequent, never a bit or a running gag. Hashimoto: "If you look at the internal-only C header, please ignore the mess. It isn't a *good* C API." Evans quotes her own self-scolding: "JULIA, you need to write TESTS, come on, this is ridiculous." Both are single-use, self-directed, not audience-directed.
+- **Punctuation**: em dashes appear but sparingly, mostly for a single aside per post, not chained. Parentheses are common and used for a genuine side-note (antirez, Evans) or a technical qualifier (Willison: "(functions and types)" in Hashimoto). Semicolons are rare across all five; these writers prefer two sentences over one semicolon-joined one.
+- Rhetorical questions appear only in BurntSushi, used to set up a "you'd think X, but actually Y" beat, not decoratively.
+
+## 4. Honest trade-offs without the AI "balanced pros/cons" smell
+
+None of these present a trade-off as a bulleted pro/con list. The pattern is always: state the property, state the specific cost, stop — no "however, it's worth noting" transition, no closing reassurance.
+
+- Willison: "This feature is a lot less exercised than migrations, so it deserves more attention from testers." — a plain warning to the reader, not a caveat sandwiched between reassurances.
+- BurntSushi: "The downside of a whitelist is obvious: you might end up missing search results simply because `ucg` didn't know about a particular file extension." Elsewhere: "In other words, pick two: space, time or correctness." — the trade-off is stated as a law, not softened into "it depends."
+- Evans: "Right now the single process is in Virginia, so that means the HTTP API and DNS responses are going to be slower if you're in Tokyo... I decided this was okay because it's an educational site — it's ok if it's a little slow!" — names the limitation, names the reasoning, accepts it, does not promise a future fix.
+- Hashimoto: "The 'alpha' quality is with respect to the API (functions and types) itself. The core logic is shared with Ghostty and is extremely stable and proven in the real world." — scopes exactly which part is unstable rather than a blanket "it's still early days" disclaimer.
+
+The tell that's absent everywhere: no sentence of the shape "While X has some limitations, it also offers significant benefits." The trade-off is always asymmetric and specific, one real cost tied to one real reason, not a rhetorically balanced pair.
+
+## 5. Negative space — what none of them do
+
+- No adjectives selling the thing ("powerful," "seamless," "robust," "cutting-edge"). Willison's own tool gets no adjective warmer than "extensive."
+- No rule-of-three lists used as a rhythmic device (the AI tell). Where lists appear, they're genuinely enumerable technical items, not rhetorical triads.
+- No "Let's dive in" / "In this post, we'll explore" framing sentences.
+- No closing "In conclusion" or summary recap; posts just end (Hashimoto ends with "Boo. 👻").
+- No hedged epistemic throat-clearing before an opinion ("I think it's fair to say that," "arguably"). Opinion is stated as fact and owned by the "I" already in the sentence.
+- No apologizing for complexity, length, or the reader's time.
+- Per Dan Luu's own meta-essay on corporate blogs, the thing that kills this register is exactly what a PR/marketing process introduces: "Vague, high-level fluff about how amazing everything is, content marketing," produced by "approval/editing process [that] mainly de-risks posts, removes references to specifics, makes posts vaguer." The register these writers use is definitionally what survives *without* that filter — specific, risk-tolerant, first-person, unglossed.
+
+## 6. Four verbatim exemplar passages (pinned for transferability to cairn's README/docs)
+
+1. **Willison, on a scoping decision**: "The system is deliberately small: it doesn't provide reverse migrations, so any mistakes you make should be fixed by deploying a fresh migration to undo them." (30 words)
+   *Earns pinning*: this is the exact shape cairn needs for "cairn doesn't do X" boundary statements — property, consequence, no apology, one sentence.
+
+2. **Evans, on accepting a limitation**: "Right now the single process is in Virginia, so that means the HTTP API and DNS responses are going to be slower if you're in Tokyo or something. I decided this was okay because it's an educational site — it's ok if it's a little slow!" (48 words)
+   *Earns pinning*: models how to state a real limitation of a small self-hosted tool (cairn's situation exactly) with a named reason tied to the tool's actual scope, not a promise to fix it later.
+
+3. **BurntSushi, on a trade-off law**: "The downside of a whitelist is obvious: you might end up missing search results simply because `ucg` didn't know about a particular file extension." (24 words)
+   *Earns pinning*: shows how to name a competitor's specific weakness plainly, without a hedge or a softening compliment first, useful register for cairn's "why not use X CMS" framing.
+
+4. **Hashimoto, on API immaturity**: "The 'alpha' quality is with respect to the API (functions and types) itself. The core logic is shared with Ghostty and is extremely stable and proven in the real world." (30 words)
+   *Earns pinning*: exact model for cairn's own "Unstable API" tier language, scoping instability precisely instead of a blanket disclaimer.
+
+## Imitable craft rules for cairn's first-person and explanatory prose
+
+1. Open by stating what exists or what was decided, in the first sentence. No "in this doc we'll cover."
+2. Use "I" (or "cairn does X because...") directly as the subject of every design claim. Never passive-voice a decision ("it was decided") to distance from it.
+3. State a refusal as a property, not a confession: "cairn doesn't do X" + the one real reason, then stop. No "unfortunately," no "to be clear," no apology before or after.
+4. A trade-off gets one asymmetric sentence: the cost, tied to the reason, no reassurance clause. Never write "while X has limitations, it also offers..."
+5. Hedge only at genuine uncertainty ("I'm not sure," "probably"), never as a reflex softener on a claim already backed by evidence or by having built the thing.
+6. Keep sentences short for claims, longer only when carrying real mechanism (how something works) or a genuine parenthetical correction mid-thought.
+7. One em dash or parenthetical aside per passage, at most, used for a real digression, not a rhythmic tic.
+8. Ban adjectives that sell ("powerful," "seamless," "robust," "modern") and ban the rule-of-three list used purely for cadence. If three items are named, they must be independently true and enumerable.
+9. No summary-recap closings ("In conclusion," "To summarize"). End on the last true thing that needed saying.
+10. When comparing to another tool or approach, name its specific weakness plainly (per BurntSushi's whitelist example) rather than a diplomatic "it depends on your use case."

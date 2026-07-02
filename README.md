@@ -38,8 +38,6 @@ costs.
 npm install @glw907/cairn-cms
 ```
 
-A few details that tend to matter to developers evaluating this:
-
 - Sign-in is an emailed link. The editor list is rows in your D1 database, managed from the
   admin by owners.
 - Saving and publishing are separate steps. A save waits on its holding branch, and a

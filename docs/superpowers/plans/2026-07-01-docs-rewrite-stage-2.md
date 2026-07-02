@@ -183,9 +183,28 @@ end ritual for a docs pass: full doc-gate suite plus the snippet gate, a
 `prose-voice-reviewer` fan-out over the pass's pages, post-mortem with both budget numbers,
 STATUS roll, merge decision.
 
+**Also in this task — the standing hygiene model (Geoff, 2026-07-02: "once these docs are
+built, they need to stay up-to-date"):** ship `docs/internal/docs-maintenance.md`, the short
+doc that makes docs freshness a system rather than an intention, with three layers stated
+plainly: (1) the machine layer — the full gate inventory and what each catches
+(`check:reference` + tiers + reverse stale-name, `check:reference:signatures`,
+`check:snippets`, `check:docs`, `check:surface`, Vale), which after this pass covers names,
+signatures, code blocks, links, and tiers; (2) the pass layer — the existing
+docs-is-a-pass-dimension convention (a change is not done until its docs match; grep for the
+old name; prune ROADMAP and the friction log as you go), restated as the one human rule the
+gates cannot replace; (3) the drift layer — semantic prose drift is the one thing neither
+gates nor pass discipline catches (a claim that was true when written and quietly stopped
+being true), so pass end creates a **monthly docs-freshness routine** (schedule skill, cloud
+agent, Sonnet): sample three published pages per run, adversarially fact-check every claim
+against the current code, report only confirmed drift with file:line evidence, and
+self-report "no drift" in one line otherwise. The Topo-era additions (docs-build link gate in
+CI, llms.txt regeneration) stay in the IA's constraints ledger and join this doc when Topo
+lands.
+
 **Acceptance:** the shipped tree matches the IA inventory exactly — every inventory page
 exists and does its stated job, every kill is gone (this is the pass's definition of done);
-all gates green; ROADMAP and friction log consistent.
+all gates green; ROADMAP and friction log consistent; `docs-maintenance.md` shipped and the
+freshness routine created and recorded there by id.
 
 - [ ] Repo-health files, kills, ROADMAP/CHANGELOG, ritual, merge decision
 

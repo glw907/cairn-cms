@@ -18,7 +18,8 @@ not outlined. Each outline opens with its one-line job from the IA.
 - **Is cairn right for you?** — Three bullets for, three against (no Cloudflare account, React
   team, open-ended collections), linking `why-cairn` for the argued version.
 - **Documentation** — The four arms in one line each, linking the docs front door.
-- **Status** — Pre-1.0 posture, versioning promise, the two production sites, CHANGELOG pointer.
+- **Status** — Pre-1.0 posture in one line, LINKING upgrade-cairn for the scheme (single
+  owner, F6) and CHANGELOG for history; the two production sites.
 - **License** — One line.
 
 ## 2. `docs/README.md` (the docs front door)
@@ -37,8 +38,9 @@ not outlined. Each outline opens with its one-line job from the IA.
 
 **Job:** the positioning page — who cairn is for and not for, with the stack argued.
 
-- *(opening)* — The dual-mode thesis as cairn's charter seen from the user's side; Wayfinder
-  named as its visible instantiation, not its carrier.
+- *(opening)* — The two-persona statement leads (the developer who owns everything; the editor
+  who gets a humane tool), then the dual-mode thesis as cairn's charter seen from the user's
+  side; Wayfinder named as its visible instantiation, not its carrier. *(F1)*
 - **What cairn is** — The one job (markdown content + editor/admin frame) and the thin-seam
   boundary; fixed concepts, not collections.
 - **Who it serves** — The two personas, each in its own short section (the developer's
@@ -46,11 +48,14 @@ not outlined. Each outline opens with its one-line job from the IA.
 - **Why this stack** — Three subsections, each an argued trade-off with its cost named:
   *Why Cloudflare* (complete small-site substrate; the refused portability layer is what keeps
   the engine small), *Why SvelteKit* (form actions before JavaScript match the admin; islands
-  match mostly-static sites), *Why DaisyUI, for the admin only* (extension in the most
-  copyable idiom).
+  match mostly-static sites; the cost named inline: a React team looks elsewhere),
+  *Why DaisyUI, for the admin only* (extension in the most copyable idiom; the cost named
+  inline: it is Tailwind's idiom or none). Each subsection carries its own trade-off; the
+  exclusions section consolidates, it is not the costs' only home. *(F2)*
 - **Who should not choose cairn** — The honest section: the three named exclusions, plainly.
 - **Where cairn sits** — One short paragraph: the Kirby/Eleventy/iA Writer triangle, no
-  competitor bashing, Ghost as the road deliberately not taken.
+  competitor bashing; at most one neutral clause on the hosted-platform path not taken,
+  no named contrast. *(F3)*
 
 ## 4. `docs/tutorial/build-your-first-cairn-site.md` (milestone-level outline)
 
@@ -60,9 +65,10 @@ skeleton. Milestones (payoff moments marked ★, diagrams marked ◆):
 - **M0 Orientation** — What you'll build; the "fastest path" seam (scaffolder mount point).
 - **M1 Project shell** — SvelteKit + adapter + the wiring files.
 - **M2 The adapter** — defineAdapter/defineConcept; fields.
-- **M3 Content on disk** — First markdown entries; the manifest. ◆ *the two-file config
-  boundary (adapter vs site.config.yaml)*
-- **M4 Rendering** — createRenderer, the render seam, first page in the browser. ★ *first page*
+- **M3 Content on disk** — First markdown entries; the manifest; the two-file config
+  boundary explained in prose (the IA's diagram inventory is closed; no drive-by). *(F4)*
+- **M4 Rendering** — createRenderer, the render seam, first page in the browser (plain
+  prose satisfaction; the ★ budget stays at the IA's three). *(F5)*
 - **M5 The delivery surface** — createSiteIndexes, routes, feeds/sitemap/robots.
 - **M6 Auth + D1** — Magic-link store; the bindings idiom (`CairnPlatformBindings`).
 - **M7 The GitHub App** — Identity as adapter config; the key as the one secret.
@@ -82,7 +88,8 @@ skeleton. Milestones (payoff moments marked ★, diagrams marked ◆):
 - **Translate the frontmatter** — Field-by-field mapping table pattern; dates and the URL
   identity (permalink preservation, `datePrefix`).
 - **Shortcodes and embeds** — The honest section: theme shortcodes map to cairn components or
-  get rebuilt as your own; a worked example (one shortcode → one `defineComponent`).
+  get rebuilt as your own; a worked example (one shortcode → one `defineComponent`,
+  linked on first use, F13).
 - **Verify** — Manifest, build, a permalink spot-check list.
 
 ## 6. `docs/guides/add-authors.md`
@@ -92,9 +99,10 @@ skeleton. Milestones (payoff moments marked ★, diagrams marked ◆):
 - *(opening)* — The reframe: "does cairn support authors?" is the wrong question; concepts are
   yours to declare, and this guide is the pattern for a whole class of such questions.
 - **Declare the concept** — An `authors` concept: dir, fields, no routing.
-- **Reference it** — `fields.reference` on posts; what the editor sees; rename/delete safety
-  for free.
-- **Render it** — resolveReferences on the site's routes; a byline component sketch.
+- **Reference it** — `fields.reference` on posts in three lines, DELEGATING the mechanics
+  (picker, rename/delete safety, resolveReferences) to link-content-with-references; this
+  page's weight stays on the concept-declaration move. *(F8)*
+- **Render it** — A byline sketch only; the resolver mechanics live in the delegated guide.
 - **The pattern generalized** — One paragraph: projects, events, testimonials — same move.
 
 ## 7. `docs/guides/troubleshooting.md`
@@ -116,8 +124,11 @@ skeleton. Milestones (payoff moments marked ★, diagrams marked ◆):
 - *(opening)* — The promise and the mechanism, three sentences.
 - **Upgrade** — Bump the range; read `Consumers must:` between your versions; run doctor;
   run your gate.
-- **How cairn versions** — The scheme in one paragraph (post-beta: compatibility SemVer;
-  pre-release semantics during beta).
+- **How cairn versions** — THE owning home of the scheme (F6), rendered precisely per the
+  ratified beta-gate ruling (F7): today's 0.x scale meaning (minor = new subsystem or
+  surface, patch = everything else, `Consumers must:` carries compatibility), and the
+  announced switch — compatibility SemVer from beta day, `1.0.0-beta.N` under the beta
+  dist-tag.
 - **When something breaks anyway** — File an issue with the log record; the support promise.
 
 ## 9. `docs/explanation/security-model.md` (restructure)
@@ -158,8 +169,8 @@ in their own pages.
   grep-for-the-old-name discipline.
 - **The drift layer** — The monthly sampled fact-check routine: what it does, its id, how to
   read its reports.
-- **When Topo lands** — The constraints ledger items that join this doc (docs-build CI,
-  llms.txt).
+- **When Topo lands** — One line pointing at the IA's constraints ledger; nothing
+  pre-documented. *(F12)*
 
 ## 12. `examples/showcase/README.md`
 
@@ -169,5 +180,6 @@ in their own pages.
 - **Running it** — Three commands; where the dev backend fits.
 - **Using it as a starting point** — The scaffolder relationship; what to change first
   (tokens, content, config) — three lines each.
-- **Keeping it honest** — One paragraph: this example is the template cairn ships and the
-  live site at cairn.pub; treat changes accordingly.
+- **Keeping it honest** — One paragraph: this example is the template cairn ships and,
+  once ladder step 5 lands, the live site at cairn.pub (both pages hedge identically until
+  then, F11); treat changes accordingly.

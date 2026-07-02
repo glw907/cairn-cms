@@ -99,7 +99,12 @@ the named human gates only):**
    are already banked; findings to Geoff).
 5. **Deploy the finished Wayfinder example to cairn.pub** — the intro site IS the reviewed
    example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
-   front-door work; the template's permanent living demo.
+   front-door work; the template's permanent living demo. Audience-per-surface (Geoff,
+   2026-07-02): the repo and npm page are dev-first surfaces and read that way; **cairn.pub is
+   the broad-audience front door** — its first reader is the less-technical manager or editor
+   deciding whether to trust this thing, with the developer pitch one click deep; and
+   docs.cairn.pub (Topo, later) is the shared source both audiences get linked into, which is
+   what makes the editor-class pages publicly reachable rather than buried in a GitHub tree.
 6. **The scaffolder** (the pre-B3 DX slot, B3/B4, then the Part C generator), baking the
    reviewed template.
 7. **Rebuild ecxc.ski and 907.life from Wayfinder, via the scaffolder where possible** — one

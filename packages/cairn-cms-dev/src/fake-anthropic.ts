@@ -1,7 +1,7 @@
 // Showcase fixture: a deterministic Anthropic client for the tidy action. It returns a CANNED
 // corrected string for the seeded copy-edit entry so the review diff is stable across runs, and no
 // network call or real key is ever made. The real SDK client is used in production; this is injected
-// only through createCairnAdmin's `anthropic` dep when CAIRN_DEV_BACKEND is set.
+// only through createCairnAdmin's `tidy.client` dep when CAIRN_DEV_BACKEND is set.
 //
 // The TidyClient contract (src/lib/sveltekit/content-routes.ts) is structural: messages.create takes
 // the prompt and returns a Message-shaped object. The action reads the user message's text, so the
@@ -9,18 +9,19 @@
 import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
 import { SEED_EDITOR } from './fake-github.js';
 
+// NonNullable<ContentRoutesDeps['tidy']>['client'] is the optional client factory; unwrap it once
+// more so its return type (the structural TidyClient) is reachable for the messages.create body.
+type TidyClientFactory = NonNullable<NonNullable<ContentRoutesDeps['tidy']>['client']>;
+
 // The body the engine's tidy action sends to messages.create, derived from the client contract so
-// the stub stays in lockstep with it. ContentRoutesDeps['anthropic'] is the optional client factory;
-// its return is the structural TidyClient, whose messages.create takes this body as its first argument.
-type TidyCreateBody = Parameters<
-  ReturnType<NonNullable<ContentRoutesDeps['anthropic']>>['messages']['create']
->[0];
+// the stub stays in lockstep with it.
+type TidyCreateBody = Parameters<ReturnType<TidyClientFactory>['messages']['create']>[0];
 
 /**
- * Build the fake client factory the showcase passes to createCairnAdmin's `anthropic` dep. The
+ * Build the fake client factory the showcase passes to createCairnAdmin's `tidy.client` dep. The
  * factory ignores the key (it never calls the network) and returns one client per tidy request.
  */
-export function createFakeAnthropic(): ContentRoutesDeps['anthropic'] {
+export function createFakeAnthropic(): NonNullable<ContentRoutesDeps['tidy']>['client'] {
   return () => ({
     messages: {
       async create(params: TidyCreateBody) {

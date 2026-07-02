@@ -27,7 +27,7 @@ import { buildUsageIndex } from './usage.js';
  *  diff, and the rewritten markdown a later apply commits. `P` is the transform's placement type
  *  (a RepointPlacement for replace, an AltPlacement for fill-alt).
  */
-export interface PlannedEntry<P = unknown> {
+interface PlannedEntry<P = unknown> {
   /** The concept id, e.g. "posts". */
   concept: string;
   /** The entry id (its filename stem). */

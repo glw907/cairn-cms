@@ -90,7 +90,7 @@ The original decision framing, for the record:
 the named human gates only):**
 
 1. ~~Polish pass close + merge~~ — DONE, merged 2026-07-02.
-2. **The pre-beta cut** (rolls the pruning + polish window; `cairn-release` mechanics).
+2. ~~The pre-beta cut~~ — DONE: `v0.79.0` published 2026-07-02, the last `0.x`.
 3. **In parallel: the docs rewrite Stage 2** (its plan is written; human gate: Geoff reads the
    front-door drafts) **and the Wayfinder starter component set** (human gate: one batched
    taste question settles the final component list at its plan's start; no file contention

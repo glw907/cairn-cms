@@ -13,7 +13,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-02, LATEST): code polish MERGED; NEXT = the pre-beta cut (ladder step 2), then docs Stage 2 ∥ Wayfinder component set
+## Immediate next action (2026-07-02, LATEST): 0.79.0 PUBLISHED (the last 0.x); ladder step 3 IN FLIGHT — docs Stage 2 ∥ Wayfinder component set
 
 **The code polish pass is merged to `main`** (merge `0d72870`; plan + post-mortem at
 `docs/superpowers/plans/2026-07-01-code-polish-pass.md`). The window: the idiom charter
@@ -24,9 +24,9 @@ the admin-css content scope (shipped sheet −31%), the form-renderer merge's re
 renames + editor-mutation log events), and the security review + simplifier backstop, all green.
 Holds unpublished under `## Unreleased` with the pruning window.
 
-**The pre-beta ladder (ROADMAP `## Now`) is the plan; step 1 done.** NEXT: **step 2, the pre-beta
-cut** (the last `0.x`; `cairn-release` owns mechanics; number verified free before promising).
-Then step 3 launches in parallel: the docs rewrite Stage 2 (plan written; twelve outlines drafted,
+**The pre-beta ladder (ROADMAP `## Now`) is the plan; steps 1-2 done.** `v0.79.0` is on the
+registry as `latest` (release `f6523ee`; the pruning + polish window, two `Consumers must:`
+sections; the rebuilds consume it at step 7). Step 3 runs in parallel: the docs rewrite Stage 2 (plan written; twelve outlines drafted,
 adversarially reviewed, thirteen findings folded — `2026-07-02-docs-rewrite-outlines.md`; gate:
 Geoff reads the front-door drafts) and the Wayfinder starter component set (list DECIDED by Geoff:
 figure, gallery, video embed, pull quote, CTA, FAQ/details + existing callout/alert; converter

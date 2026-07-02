@@ -20,7 +20,6 @@ const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: p
 
 export const site = indexes.site;
 export const posts = indexes.posts;
-export const pages = indexes.pages;
 
 export const ORIGIN = 'https://showcase.test';
 export const SITE_DESCRIPTION = 'The cairn showcase site.';

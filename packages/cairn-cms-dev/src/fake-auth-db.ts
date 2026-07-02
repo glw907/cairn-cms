@@ -7,7 +7,10 @@
 // Dispatch is on the store's exact SQL strings, matched as normalized substrings. Unknown SQL
 // throws with the SQL in the message, deliberately: when a store change adds or rewords a
 // statement, dev fails loudly here instead of silently no-opping. The brittleness is confined
-// to this fixture and is the point.
+// to this fixture and is the point. The two fixtures share their FakeStatement contract and
+// closure factory via fake-d1-statement.ts.
+
+import { createFakeStatement, type FakeExecResult, type FakeStatement } from './fake-d1-statement.js';
 
 type Role = 'owner' | 'editor';
 
@@ -16,20 +19,6 @@ interface EditorRow {
   email: string;
   display_name: string;
   role: Role;
-}
-
-/** What one statement execution yields; `run()` and `first()`/`all()` each read their slice. */
-interface ExecResult {
-  row: EditorRow | null;
-  rows: EditorRow[];
-  changes: number;
-}
-
-interface FakeStatement {
-  bind(...args: unknown[]): FakeStatement;
-  first<T = unknown>(): Promise<T | null>;
-  run(): Promise<{ meta: { changes: number } }>;
-  all<T = unknown>(): Promise<{ results: T[] }>;
 }
 
 export interface FakeAuthDb {
@@ -48,9 +37,9 @@ export function createFakeAuthDb(): FakeAuthDb {
 
   const ownerCount = () => [...editors.values()].filter((e) => e.role === 'owner').length;
 
-  function execute(rawSql: string, args: unknown[]): ExecResult {
+  function execute(rawSql: string, args: unknown[]): FakeExecResult<EditorRow> {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
-    const none: ExecResult = { row: null, rows: [], changes: 0 };
+    const none: FakeExecResult<EditorRow> = { row: null, rows: [], changes: 0 };
 
     // resolveSession: the fixture hook injects locals.editor directly and the engine guard is
     // not installed in dev, so no session row ever exists. Answer null rather than throwing.
@@ -114,23 +103,7 @@ export function createFakeAuthDb(): FakeAuthDb {
   }
 
   function statement(sql: string): FakeStatement {
-    let bound: unknown[] = [];
-    const stmt: FakeStatement = {
-      bind(...args: unknown[]) {
-        bound = args;
-        return stmt;
-      },
-      async first<T>() {
-        return execute(sql, bound).row as T | null;
-      },
-      async run() {
-        return { meta: { changes: execute(sql, bound).changes } };
-      },
-      async all<T>() {
-        return { results: execute(sql, bound).rows as T[] };
-      },
-    };
-    return stmt;
+    return createFakeStatement(sql, execute);
   }
 
   return {

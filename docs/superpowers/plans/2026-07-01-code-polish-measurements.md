@@ -293,3 +293,124 @@ spans. A finding that appears in more than one table (`content-routes.ts`, `Cair
 - This task changes no `src/lib`/`src/tests`/`scripts` source, so the full `npm test` run is not
   required by the plan's per-task gate; not run for this task.
 - `npm run check:docs`: to be confirmed after this file is committed.
+
+## Deltas (Task 8, post-sweep)
+
+Re-run with the exact invocations above, 2026-07-02 on `code-polish-1` after Tasks 4-7 (the sweep
+and the three riders) landed, plus Task 8's own two surface changes. `knip` picked up a patch
+bump (6.23.0 to 6.24.0, an unpinned `npx` resolving the latest release, not a repo edit);
+`jscpd` held at `cpd 5.0.11`.
+
+### knip
+
+| Category | Before | After | Delta |
+|---|---|---|---|
+| Unused files | 0 | 0 | 0 |
+| Unused dependencies | 1 | 0 | -1 |
+| Unused devDependencies | 8 | 8 | 0 |
+| Unlisted dependencies | 11 | 0 | -11 |
+| Unresolved imports | 0 | 0 | 0 |
+| Unused exports | 14 | 2 | -12 |
+| Unused exported types | 27 | 5 | -22 |
+| Configuration hints | 0 | 0 | 0 |
+| **Total findings** | **61** | **15** | **-46** |
+
+The 8 unused devDependencies are the same CSS-`@import`-only false positives justified in the
+baseline (`daisyui`/`tailwindcss` root and showcase, the three Fontsource packages,
+`@vitest/browser`); knip has no CSS plugin wired, so the finding is stable and expected, not a
+regression. The remaining 7 findings are new residuals, not baseline holdovers:
+
+- `expectHttpError`, `ED_EDITOR` (`src/tests/unit/_content-harness.ts`) — new. The `tests`
+  cluster's harness convergence (`32c3822`) created this shared harness; both symbols are
+  consumed by other test files through their *original* modules
+  (`_redirect-assertions.ts`, direct import), not through this barrel re-export, the same
+  dead-internal-re-export-shim class the M3 charter rule already names (`resolveTidyConventions`
+  in the baseline). Left open; a future pass's `tests` cluster touch is the natural place to close
+  it.
+- `DoctorArgs` (`src/lib/doctor/index.ts`) — new, from the sweep's own M2 doctor split
+  (`f6f2b5f`): `index.ts` became a pure re-export barrel over the new `assemble.ts`. Its sibling
+  `DerivationSources` has an external consumer and does not trip the signal; `DoctorArgs` does not
+  yet. Same M3 shim class as above.
+- `TidyConfig` (`src/lib/nav/site-config.ts`) — survived from the baseline (same finding, line
+  120 to 122). It types `CairnRuntime.tidy` in `content/types.ts` only through an inline
+  `import('../nav/site-config.js').TidyConfig` type reference, which knip's static import scan
+  does not trace as a consumer; a real public-surface type, exported for documentation, per the
+  baseline's own "used to type a signature, no named import elsewhere" disposition class.
+  Justified, not fixed.
+- `AdvisoryNotice`, `AdvisoryAction` (`src/lib/sveltekit/content-routes-core.ts`) — new, from the
+  `content-routes.ts` decomposition (`ade6061`/`f79e491`): the middle barrel hop
+  (`content-routes-core.ts` re-exporting from `content/advisories.js`) is dead because every
+  external caller imports from `content-routes.ts`'s own re-export instead. Same M3 shim class.
+- `TidyResult` (`src/lib/sveltekit/content-routes.ts:65`) — new, same decomposition, same M3 shim
+  class: the type is admin-internal (per the sveltekit reference doc, not exported on the
+  `/sveltekit` subpath) and the internal re-export line has no in-repo named-import consumer.
+
+None of the five is a behavior risk; all read as small, real M3 dead-shim residuals a future
+`sveltekit routes` or `tests`-cluster touch can close, not something this consolidation task
+should carry a sweep-shaped fix for.
+
+### jscpd
+
+| Format | Before | After | Delta |
+|---|---|---|---|
+| typescript | 43 | 18 | -25 |
+| html | 35 | 35 | 0 |
+| javascript | 6 | 0 | -6 |
+| css | 2 | 9 | +7 |
+| txt | 0 | 2 | +2 |
+| **Total clone pairs** | **86** | **64** | **-22** |
+
+The `content-routes.ts` self-duplication (16 hits) and its `nav-routes.ts` cross-hit (1) are gone:
+the file dropped from 3,435 to 128 lines (a thin composer), decomposed per the charter's
+"Structural decisions" into `content-routes-core.ts`, `-media.ts`, `-tidy.ts`, `-settings.ts`,
+`-dictionary.ts`, `-context.ts`. A smaller residual persists inside the new files
+(`content-routes-media.ts` self, 7; `content-routes-core.ts` self, 1;
+`content-routes-settings.ts` self, 1) — the parallel CSRF-then-session-then-commit-and-retry
+shape each action handler follows, structurally inherent to the domain rather than copy-paste,
+matching the baseline's own "per-field-type switch" justification class.
+
+**`CairnMediaLibrary.svelte`'s 25-hit `html` self-duplication survived unchanged, by explicit
+charter decision** (`docs/internal/code-idioms.md`, "Structural decisions": *"`CairnMediaLibrary.svelte`
+is NOT split this pass. Component splits couple template, state, and focus behavior (the phase-3a
+lesson); the S3 extractions remove several hundred script lines instead, and a component split is
+filed to ROADMAP as its own future pass."*). S3 (the shared check-and-tint class helper, the typed-
+confirm gate, the fetch/deserialize/stale-guard round-trip, the origin-refocus lifecycle) closed
+the file's *script*-level duplication (part of the typescript delta above); the *markup*-level
+duplication jscpd's `html` format measures is untouched on purpose, since a template split risks the
+same multi-instance-focus hazard Task 7 guards against. This is the html format's entire unchanged
+count (35 before and after is this one file, unchanged; every other `html` pair in the before table
+also persisted, none regressed or newly appeared). Filed to ROADMAP in this task (see the ROADMAP
+diff), closing the charter's promised filing.
+
+The `javascript` format (6 hits, baseline) reads as 0 now: the `vite+doctor+bins+scripts` cluster's
+convergence (`check-cm-internals.mjs`/`check-custom-surface.mjs`,
+`check-reference-signatures.mjs`/`reference-coverage.mjs`/`check-surface.mjs`) closed every
+baseline `javascript`-format finding; jscpd's per-file format classification otherwise held
+stable between the two runs (same 5.0.11 build).
+
+`css` grew from 2 to 9 and a new `txt` category (2, the bundled OFL font-license bodies
+cross-matching each other's boilerplate legal text) appeared; neither is a regression this pass
+introduced carelessly:
+
+- `SiteFooter.svelte` ↔ `SiteHeader.svelte` (css, 12 lines) — survived from the baseline, still
+  `fix-in-sweep, low priority`, not closed.
+- `theme.css` self (11 lines, the light/dark `@plugin "daisyui/theme"` geometry blocks) and
+  `cairn-admin.css` self (2 hits, the light/dark `[data-theme=...]` font-family preambles) — new,
+  but structural: DaisyUI's per-theme-block API requires each theme to restate its own geometry
+  and font variables, so light and dark inevitably duplicate the shared subset. The same class as
+  the baseline's own "per-field-type switch is inherent to the type" justification.
+- `prose.css` ↔ `styleguide/+page.svelte` (4 hits) and the styleguide's own self-duplication (1,
+  survived from the baseline) — the styleguide route intentionally demonstrates prose tokens
+  live, which duplicates `prose.css`'s rules by design; same "documentation page, not production
+  duplication" disposition the baseline already gave the styleguide's self-match.
+- The two `txt` hits (bundled OFL font-license files cross-matching each other) are boilerplate
+  legal text jscpd's tokenizer now buckets under a `txt` format rather than falling out of scope;
+  not source duplication, not actionable.
+
+**Disposition tally.** Of the 87 baseline findings, the sweep closed roughly 68 (the entire knip
+dependency/export/type set save the 5 residuals above, the `content-routes.ts` and
+`vite+doctor+bins+scripts` jscpd clusters, most of the low-priority single-hit jscpd rows). The
+`CairnMediaLibrary.svelte` file-for-decision and the form-renderer family (Task 7's guarded rider;
+see its own outcome note) were the two findings the baseline explicitly flagged as out of the
+sweep's scope, and both resolved exactly as flagged: the former deferred to ROADMAP, the latter to
+Task 7's guard-or-revert protocol.

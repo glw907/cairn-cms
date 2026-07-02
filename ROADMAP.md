@@ -179,9 +179,14 @@ the named human gates only):**
   curated set of content components common across the sites cairn is likely to manage (clubs and
   small orgs, personal and small-business sites) — reasonable, deliberately not exhaustive. Today the
   showcase defines `callout`, `alert`, and the `converter` island demo; the demo is showcase-ware,
-  not a template component, so the real set is two. Candidates to curate at plan time (a taste pass,
-  brainstorm the final list): figure/gallery, the callout family, a CTA/button, video embed, pull
-  quote, FAQ/details. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
+  not a template component, so the real set is two. The list is DECIDED (Geoff, 2026-07-02, survey-informed:
+  `docs/superpowers/plans/2026-07-02-wayfinder-component-survey.md`): figure, gallery, video
+  embed, pull quote, CTA/button, FAQ/details, and inline icon (the survey's one
+  frequency-justified addition — 99 uses on the next migration target), joining the existing
+  callout and alert; the converter island demo is replaced by an expiring-announcement banner
+  (frontmatter-date-driven, auto-hides after expiry — teaches the countdown's date mechanics
+  while replacing a real feature of the aksailingclub migration). Plan:
+  `docs/superpowers/plans/2026-07-02-wayfinder-component-set.md`. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.

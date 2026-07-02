@@ -175,7 +175,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   the main loop as design critic over the live rendered output (both color modes, the stress
   fixtures, the component set) plus the template's token and utility architecture, with findings
   ranked by which lens they fall under. Runs after the Wayfinder starter component set lands and
-  before the cairn.org intro site or the beta ships the template.
+  before the cairn.pub intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
@@ -198,7 +198,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
   Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
   produces the content Topo hosts); gives the scaffolder its first real template choice.
-- **The project sites: cairn.org on Wayfinder, docs.cairn.org on Topo.** Two sites, not one, because
+- **The project sites: cairn.pub on Wayfinder, docs.cairn.pub on Topo (domain DECIDED 2026-07-02: cairn.pub, standard tier, registered via the dashboard since the Registrar API does not yet carry .pub; every single-word alternative was taken and the .pub TLD reads "publish", cairn's signature verb; the cairn.dev acquisition inquiry remains the optional endgame, yielding via redirect if it ever lands).** Two sites, not one, because
   a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
   either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
   of its template: the intro site is the Pages-plus-Posts shape cairn targets, and the click-through
@@ -206,7 +206,7 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Wayfinder
   derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
   Wayfinder as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
-  hosts them. Domain procurement is its own small first step.
+  hosts them. Domain procurement: cairn.pub (see above).
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX

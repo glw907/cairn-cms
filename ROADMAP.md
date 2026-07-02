@@ -224,6 +224,11 @@ the named human gates only):**
   by then; this tests the chain the way a beta user experiences it. A cloud agent runs the mechanical
   path and reports friction; the steps needing real accounts (Cloudflare, GitHub App) are a short
   attended session.
+- **Third site migration: aksailingclub.org onto cairn/Wayfinder (Geoff, 2026-07-02: "the next
+  major site I'll move").** Follows the ecxc/907 rebuilds and rides their playbook (scaffolder
+  path, permalinks preserved, build-alongside swap). Its content patterns are surveyed as input to
+  the Wayfinder starter-component set, so the set serves the known-next migration, not just the
+  existing two.
 - **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
   documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
   prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than

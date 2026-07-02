@@ -134,7 +134,7 @@ describe('mediaOrphanScan', () => {
     const bucket = fakeBucket(stored, timeline);
     const routes = createContentRoutes(runtime());
 
-    const scan = (await routes.mediaOrphanScan(scanEvent(bucket) as never)) as OrphanScan;
+    const scan = (await routes.mediaOrphanScanAction(scanEvent(bucket) as never)) as OrphanScan;
 
     // The orphan key (stored, no row) is purgeable.
     expect(scan.orphanedBytes).toHaveLength(1);
@@ -177,7 +177,7 @@ describe('mediaOrphanScan', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaOrphanScan(event as never);
+    const result = await routes.mediaOrphanScanAction(event as never);
 
     expect(result).toMatchObject({ status: 503 });
     // No scan shape leaked through (a fail() has no orphanedBytes).
@@ -204,7 +204,7 @@ describe('mediaPurgeOrphans', () => {
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     const claimedKey = r2Key(HASH_REFERENCED, 'jpg');
     // Two selected, so the typed confirm is the count "2".
-    const result = (await routes.mediaPurgeOrphans(
+    const result = (await routes.mediaPurgeOrphansAction(
       purgeEvent([orphanKey, claimedKey], '2', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -233,7 +233,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected but confirm is empty: the count gate fails.
-    const result = await routes.mediaPurgeOrphans(purgeEvent([orphanKey], '', bucket) as never);
+    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();
@@ -262,7 +262,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One selected, so the typed confirm is the count "1".
-    const result = (await routes.mediaPurgeOrphans(
+    const result = (await routes.mediaPurgeOrphansAction(
       purgeEvent([orphanKey], '1', bucket) as never,
     )) as MediaOrphanPurgeResult;
 
@@ -301,7 +301,7 @@ describe('mediaPurgeOrphans', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaPurgeOrphans(event as never);
+    const result = await routes.mediaPurgeOrphansAction(event as never);
 
     expect(result).toMatchObject({ status: 503 });
     // No delete happened: the irreversible purge fails closed when usage cannot be verified.
@@ -324,7 +324,7 @@ describe('mediaPurgeOrphans', () => {
 
     const orphanKey = r2Key(HASH_ORPHAN, 'jpg');
     // One key selected, confirm "2": does not match the count of 1.
-    const result = await routes.mediaPurgeOrphans(purgeEvent([orphanKey], '2', bucket) as never);
+    const result = await routes.mediaPurgeOrphansAction(purgeEvent([orphanKey], '2', bucket) as never);
 
     expect(result).toMatchObject({ status: 400 });
     expect(bucket.delete).not.toHaveBeenCalled();

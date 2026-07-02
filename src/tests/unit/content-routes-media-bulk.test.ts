@@ -131,7 +131,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted.sort()).toEqual([HASH_A, HASH_B].sort());
     expect(result.skipped).toEqual([]);
@@ -160,7 +160,7 @@ describe('mediaBulkDelete deletes a clean selection', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never);
+    await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_B], bucket, timeline) as never);
 
     expect(timeline.filter((m) => m === 'commit')).toHaveLength(1);
   });
@@ -180,7 +180,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     expect(result.skipped).toHaveLength(1);
@@ -210,7 +210,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, HASH_UNCOMMITTED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     expect(result.skipped).toHaveLength(1);
@@ -230,7 +230,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_USED], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([]);
     expect(result.skipped.map((s) => s.hash)).toEqual([HASH_USED]);
@@ -252,7 +252,7 @@ describe('mediaBulkDelete skip-and-report', () => {
     const bucket = fakeBucket(timeline);
     const routes = createContentRoutes(runtime());
 
-    const result = (await routes.mediaBulkDelete(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline) as never)) as MediaBulkDeleteResult;
+    const result = (await routes.mediaBulkDeleteAction(bulkEvent([HASH_A, 'NOT-A-HASH'], bucket, timeline) as never)) as MediaBulkDeleteResult;
 
     expect(result.deleted).toEqual([HASH_A]);
     // The malformed value never reaches the plan, so it is not even a skip.
@@ -286,7 +286,7 @@ describe('mediaBulkDelete fails closed', () => {
       return wrapped(input, init);
     }));
 
-    const result = await routes.mediaBulkDelete(event as never);
+    const result = await routes.mediaBulkDeleteAction(event as never);
     expect(result).toMatchObject({ status: 503 });
     const data = (result as { data: { error: string } }).data;
     expect(data.error).toMatch(/could not verify/i);

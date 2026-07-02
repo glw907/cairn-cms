@@ -130,5 +130,5 @@ The runtime emits log events for each outcome (`tidy.done`, `tidy.error`, `tidy.
   the personal dictionary, and tidy.
 - [The editor copy-edit](../explanation/editor-copyedit.md) for the voice-preservation and
   local-spellcheck design reasoning.
-- [The sveltekit reference](../reference/sveltekit.md) for the `tidyAction` and `addDictionaryWord`
+- [The sveltekit reference](../reference/sveltekit.md) for the `tidyAction` and `addDictionaryWordAction`
   request shapes.

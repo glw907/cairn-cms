@@ -461,7 +461,7 @@ describe('media bulk-delete, orphan-scan, and purge actions (composer wiring)', 
     expect(result).toMatchObject({ status: 503 });
   });
 
-  it('mediaPurge on the media view reaches mediaPurgeOrphans (refused 503 when media is off)', async () => {
+  it('mediaPurge on the media view reaches mediaPurgeOrphansAction (refused 503 when media is off)', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     const result = await admin.actions.mediaPurge(actionEvent('/admin/media') as never);

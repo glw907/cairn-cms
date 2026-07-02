@@ -181,7 +181,7 @@ describe('mediaAltPreview', () => {
     const gh = mixedRepo();
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = (await routes.mediaAltPreview(
+    const result = (await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }) as never,
     )) as MediaAltPreviewPlan;
 
@@ -229,7 +229,7 @@ describe('mediaAltPreview', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltPreview(
+    const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }, { csrf: 'wrong' }) as never,
     );
     expect(result).toMatchObject({ status: 403 });
@@ -247,7 +247,7 @@ describe('mediaAltPreview', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltPreview(
+    const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: 'not-a-hash' }) as never,
     );
     expect(result).toMatchObject({ status: 400 });
@@ -269,7 +269,7 @@ describe('mediaAltPreview', () => {
       cookies: cookieJar(CSRF),
     });
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltPreview(event as never);
+    const result = await routes.mediaAltPreviewAction(event as never);
     expect(result).toMatchObject({ status: 400 });
   });
 
@@ -282,7 +282,7 @@ describe('mediaAltPreview', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltPreview(
+    const result = await routes.mediaAltPreviewAction(
       // OTHER_HASH is not in media.json: the asset is not committed.
       previewEvent({ hash: OTHER_HASH }) as never,
     );
@@ -311,7 +311,7 @@ describe('mediaAltPreview', () => {
       return inner(input, init);
     }));
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltPreview(
+    const result = await routes.mediaAltPreviewAction(
       previewEvent({ hash: HASH }) as never,
     );
     expect(result).toMatchObject({ status: 503 });
@@ -327,7 +327,7 @@ describe('mediaAltApply', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
 
     // Exactly one commit landed on main.
@@ -354,7 +354,7 @@ describe('mediaAltApply', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH, overwrite: 'on' }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH, overwrite: 'on' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
 
     expect(commitCount(gh)).toBe(1);
@@ -377,7 +377,7 @@ describe('mediaAltApply', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH, overwrite: 'true' }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH, overwrite: 'true' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
     // The custom alt is overwritten, proving "true" toggled the opt-in.
     expect(gh.read('main', 'src/content/posts/2026-05-custom.md')).toBe(
@@ -392,7 +392,7 @@ describe('mediaAltApply', () => {
     const routes = createContentRoutes(runtime());
     // No confirmSlug at all: the apply still fills the empty alt and commits.
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
     expect(commitCount(gh)).toBe(1);
     expect(gh.read('main', 'src/content/posts/2026-05-empty.md')).toContain(`![${DEFAULT_ALT}]`);
@@ -416,7 +416,7 @@ describe('mediaAltApply', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
     // NO commit landed.
     expect(commitCount(gh)).toBe(0);
@@ -445,7 +445,7 @@ describe('mediaAltApply', () => {
       return inner(input, init);
     }));
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltApply(
+    const result = await routes.mediaAltApplyAction(
       applyEvent({ hash: HASH }) as never,
     );
     expect(result).toMatchObject({ status: 503 });
@@ -465,7 +465,7 @@ describe('mediaAltApply', () => {
     });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.mediaAltApply(
+    const result = await routes.mediaAltApplyAction(
       applyEvent({ hash: OTHER_HASH }) as never,
     );
     expect(result).toMatchObject({ status: 404 });
@@ -479,7 +479,7 @@ describe('mediaAltApply', () => {
     gh.install();
     const routes = createContentRoutes(runtime());
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: 'bad' }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: 'bad' }) as never),
     ).rejects.toMatchObject({ status: 400 });
     expect(commitCount(gh)).toBe(0);
   });
@@ -488,7 +488,7 @@ describe('mediaAltApply', () => {
     const gh = mixedRepo();
     gh.install();
     const routes = createContentRoutes(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
-    const result = await routes.mediaAltApply(
+    const result = await routes.mediaAltApplyAction(
       applyEvent({ hash: HASH }) as never,
     );
     expect(result).toMatchObject({ status: 503 });
@@ -504,7 +504,7 @@ describe('mediaAltApply', () => {
     const routes = createContentRoutes(runtime());
 
     // Compute a preview to mirror the real flow (the client previews, then applies).
-    await routes.mediaAltPreview(previewEvent({ hash: HASH }) as never);
+    await routes.mediaAltPreviewAction(previewEvent({ hash: HASH }) as never);
 
     // Now mutate main out of band: the custom-alt entry's body gains a second, EMPTY-alt reference to
     // the asset. A stale-plan apply (one that reused the preview's markdown) would miss this fill.
@@ -515,7 +515,7 @@ describe('mediaAltApply', () => {
     );
 
     await expect(
-      routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
+      routes.mediaAltApplyAction(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
 
     const committed = gh.read('main', 'src/content/posts/2026-05-custom.md')!;

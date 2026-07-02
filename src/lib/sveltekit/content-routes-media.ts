@@ -131,7 +131,7 @@ export interface MediaBulkFailure {
 
 /**
  * A refused upload: the pre-store gates (session, media-off, missing bucket, oversized or
- *  disallowed content) and the mediaLibraryUpload commit's own conflict bounce. Just the one-line
+ *  disallowed content) and the mediaLibraryUploadAction commit's own conflict bounce. Just the one-line
  *  summary; a refusal here never stores bytes or commits a row. Module-internal: the client reads
  *  the envelope's `error` string loosely, so no other module names this type.
  */
@@ -586,7 +586,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
    *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
    */
-  async function mediaLibraryUpload(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function mediaLibraryUploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     const result = await ingestAndStore(event);
     if (!('record' in result)) return result;
     const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
@@ -749,7 +749,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
    *  (deleted / skipped with reasons / failed); there is no success redirect.
    */
-  async function mediaBulkDelete(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
+  async function mediaBulkDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
     const editor = requireSession(event);
     const backend = ctx.resolveBackend(event);
 
@@ -852,7 +852,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown with their
    *  where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
-  async function mediaOrphanScan(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
+  async function mediaOrphanScanAction(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
     requireSession(event);
     const backend = ctx.resolveBackend(event);
 
@@ -909,7 +909,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
    *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
    */
-  async function mediaPurgeOrphans(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
+  async function mediaPurgeOrphansAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireSession(event);
     const backend = ctx.resolveBackend(event);
 
@@ -1033,7 +1033,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  with the MediaReplaceFailure shape (the same fail shape the apply uses), so the client reads
    *  `type`/`status` from the body, never the HTTP status.
    */
-  async function mediaReplacePreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
+  async function mediaReplacePreviewAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
     // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
     // upload action. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1115,7 +1115,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
    *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
    */
-  async function mediaReplaceApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaReplaceApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const backend = ctx.resolveBackend(event);
 
@@ -1227,7 +1227,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope with the
    *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body.
    */
-  async function mediaAltPreview(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
+  async function mediaAltPreviewAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // replace-preview actions. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1304,7 +1304,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
    */
-  async function mediaAltApply(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaAltApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireSession(event);
     const backend = ctx.resolveBackend(event);
 
@@ -1366,16 +1366,16 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   return {
     mediaLibraryLoad,
     uploadAction,
-    mediaLibraryUpload,
+    mediaLibraryUploadAction,
     mediaDeleteAction,
-    mediaBulkDelete,
-    mediaOrphanScan,
-    mediaPurgeOrphans,
+    mediaBulkDeleteAction,
+    mediaOrphanScanAction,
+    mediaPurgeOrphansAction,
     mediaUpdateAction,
-    mediaReplacePreview,
-    mediaReplaceApply,
-    mediaAltPreview,
-    mediaAltApply,
+    mediaReplacePreviewAction,
+    mediaReplaceApplyAction,
+    mediaAltPreviewAction,
+    mediaAltApplyAction,
   };
 }
 

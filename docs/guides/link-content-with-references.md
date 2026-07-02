@@ -17,6 +17,7 @@ A reference is a `fields.*` descriptor like any other, with one required option:
 Add it to a concept's `fieldset`. Use `fields.reference` for a single edge and `fields.array(fields.reference(...))`
 for many.
 
+<!-- snippet-check-skip: the content group omits backend/email/rendering on purpose, to keep the focus on the fields -->
 ```ts
 // src/lib/cairn.config.ts
 import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
@@ -67,6 +68,7 @@ On the public site, resolve a reference edge to its target's identity with
 resolver, the only layer that reaches another concept's entries, so a post's `author` edge resolves to the
 `pages` entry it points at.
 
+<!-- snippet-check-skip: routes is the site's own existing catch-all load, not shown here -->
 ```ts
 // src/routes/(site)/[...path]/+page.server.ts
 import { resolveReferences } from '@glw907/cairn-cms/delivery';

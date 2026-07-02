@@ -177,6 +177,7 @@ the adapter turns media on.
 A site that already has a `handle` hook (for example, injecting a saved theme into the SSR'd
 `<html data-theme>`) keeps it by sequencing the engine guard after its own:
 
+<!-- snippet-check-skip: theme and sequence's import are the site's own existing hook, not shown here -->
 ```ts
 // src/hooks.server.ts
 export const handle = sequence(theme, createAuthGuard());
@@ -225,6 +226,7 @@ The auth guard gates every `/admin/*` path. A deploy health check has to be reac
 session, so it cannot live under `/admin`. Mount it at the site root and call the engine's
 `healthLoad(event, runtime)` (event first):
 
+<!-- snippet-check-skip: json, healthLoad, and runtime come from imports and the composer shown elsewhere on this page -->
 ```ts
 // src/routes/healthz/+server.ts
 export const prerender = false;  // see below

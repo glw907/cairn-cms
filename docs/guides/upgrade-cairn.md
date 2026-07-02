@@ -330,6 +330,7 @@ admin. A width menu on the Preview tab sizes the frame to Desktop, Tablet, Phone
 Consumers should: wire the adapter's new `preview` member so the frame has stylesheets to link.
 The `?url` import resolves the compiled asset's URL at build time:
 
+<!-- snippet-check-skip: a diff-style excerpt of the preview member inside an existing defineAdapter call -->
 ```ts
 import siteCss from './site.css?url';
 

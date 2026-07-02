@@ -111,6 +111,7 @@ The adapter is the one seam the engine consumes. It declares your content concep
 
 `Field Notes` has two concepts, the same two cairn ships first. `posts` are dated and `pages` are not. Each concept declares its fields with `fieldset` and the `fields.*` constructors. Create `src/lib/cairn.config.ts`:
 
+<!-- snippet-check-skip: the adapter's rendering group is intentionally still missing here; milestone 4 adds it, and the prose above tells the reader to expect the compiler to flag exactly this -->
 ```ts
 import { defineAdapter, defineConcept, fieldset, fields, githubApp } from '@glw907/cairn-cms';
 
@@ -267,6 +268,7 @@ Each key in the `icons` map is a name, and each value is the SVG path data for o
 
 Build the registry from the component, then pass it to `createRenderer` and register it on the adapter so both the render path and the editor palette can see it:
 
+<!-- snippet-check-skip: continues the milestone-2 adapter; callout is the component declared just above, and the posts/pages fields aren't restated -->
 ```ts
 const registry = defineRegistry({ components: [callout] });
 const { renderMarkdown } = createRenderer(registry);
@@ -311,6 +313,7 @@ The content exists and renders, and no public page serves it yet. The delivery s
 
 Start with each concept's URL policy, because the rest of the surface reads it. A concept declares its `routing`, `permalink`, and date granularity in `defineConcept`, beside the fields they describe. Open `src/lib/cairn.config.ts` and add `permalink` and `datePrefix` to the concepts you declared in milestone 2:
 
+<!-- snippet-check-skip: continues the milestone-2 concepts, adding the URL policy; the field lists aren't restated -->
 ```ts
 posts: defineConcept({
   dir: 'src/content/posts',
@@ -419,7 +422,7 @@ A single catch-all route serves every post and page permalink, so when a visitor
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
 export const prerender = true;
 
@@ -459,7 +462,7 @@ Next come the feeds, the sitemap, and the robots file. Each is a prerendered `+s
 import type { RequestHandler } from './$types';
 import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
 export const prerender = true;
 
@@ -574,6 +577,7 @@ Your site reads the menu at build time with `parseSiteConfig` and `extractMenu`,
 
 The admin nav editor needs to know which menu in the YAML it edits, so tell the adapter. Open `src/lib/cairn.config.ts` and add a `nav` entry to the adapter's `editor` group, naming the config file, the menu, and how deep the tree may nest:
 
+<!-- snippet-check-skip: shows only the adapter's editor.nav addition -->
 ```ts
   editor: {
     nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
@@ -621,18 +625,41 @@ The `dev` guard and the dynamic `import()` fold away in a production build, so t
 
 ### Mount the admin
 
-The whole admin mounts as one catch-all route pair plus a composer, three files in all. The composer builds the runtime once and hands it to `createCairnAdmin`, the facade that serves every admin view through one `load` and one `actions` record. Create `src/lib/cairn.server.ts`:
+The whole admin mounts as a catch-all route pair, a shared shell layout pair, and a composer, five files in all. The composer builds the runtime once and hands it to `createCairnAdmin`, the facade that serves every admin view through one `load` and one `actions` record. Create `src/lib/cairn.server.ts`:
 
 ```ts
-// Composes the runtime once and builds the single-mount admin. mintToken stubs the GitHub App
-// token mint so the admin runs in dev without a real App key; the in-memory backend answers the
-// commits, so the token is never spent.
+// Composes the runtime once and builds the single-mount admin. The in-memory dev backend rides
+// event.locals.backend (wired in the previous section), so the admin needs no GitHub App key here.
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from './cairn.config.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
-export const admin = createCairnAdmin(runtime, { mintToken: async () => 'dev-token' });
+export const admin = createCairnAdmin(runtime);
+```
+
+The shared shell layout pair wraps the whole `/admin` subtree in cairn's chrome (the sidebar, the top bar, the command palette, the theme), so every `/admin/**` route renders inside one shell. Create `src/routes/admin/+layout.server.ts`:
+
+```ts
+// The shared admin shell's load: the chrome (nav, user, theme, streamed pending count) for every
+// /admin/** route.
+import { admin } from '$lib/cairn.server.js';
+
+export const load = admin.shellLoad;
+```
+
+Create `src/routes/admin/+layout.svelte`:
+
+```svelte
+<script lang="ts">
+  import { CairnAdminShell } from '@glw907/cairn-cms/components';
+  import type { AdminShellData } from '@glw907/cairn-cms/sveltekit';
+  import type { Snippet } from 'svelte';
+
+  let { data, children }: { data: { shell: AdminShellData }; children: Snippet } = $props();
+</script>
+
+<CairnAdminShell data={data.shell}>{@render children()}</CairnAdminShell>
 ```
 
 The catch-all route server re-exports the facade's load and actions. Create `src/routes/admin/[...path]/+page.server.ts`:
@@ -648,7 +675,7 @@ export const load = admin.load;
 export const actions = admin.actions;
 ```
 
-Its page mounts the engine's `CairnAdmin`, which reads the discriminated view data the load returned and renders the right screen for whatever admin URL was requested. The adapter's render, registry, and icons pass through, so the preview, the component palette, and the icon picker all work. Create `src/routes/admin/[...path]/+page.svelte`:
+Its page renders bare inside the shell above, mounting the engine's `CairnAdmin`, which reads the discriminated view data the load returned and renders the right screen for whatever admin URL was requested. The adapter's render, registry, and icons pass through, so the preview, the component palette, and the icon picker all work. Create `src/routes/admin/[...path]/+page.svelte`:
 
 ```svelte
 <script lang="ts">

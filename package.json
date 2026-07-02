@@ -36,6 +36,7 @@
     "check:surface": "npm run package && node scripts/check-surface.mjs",
     "check:readiness": "npm run package && node scripts/check-readiness.mjs",
     "check:docs": "node scripts/docs-links.mjs",
+    "check:snippets": "npm run package && node scripts/check-snippets.mjs",
     "check:version": "node scripts/check-version.mjs",
     "check:prose": "node scripts/check-admin-prose.mjs",
     "check:public-tokens": "node scripts/check-public-tokens.mjs",

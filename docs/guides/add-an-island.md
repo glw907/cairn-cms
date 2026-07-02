@@ -87,6 +87,7 @@ checks the registration at declaration: a `hydrate` component with no island ent
 with no `hydrate` component, fails the build and names the offending directive. So the registration and
 the `hydrate` flag stay in step.
 
+<!-- snippet-check-skip: shows only the rendering.islands addition to an existing adapter -->
 ```ts
 // src/lib/cairn.config.ts
 import Converter from '$lib/islands/Converter.svelte';

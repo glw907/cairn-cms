@@ -151,6 +151,7 @@ on a production screen so the result is announced.
 Add the screen to the admin sidebar with an `adminNav` entry in your adapter's `editor` group. The entry
 is plain data, validated when the runtime composes:
 
+<!-- snippet-check-skip: shows only the adapter's editor.adminNav addition, not the whole config file -->
 ```ts
 // src/lib/cairn.config.ts (the editor group)
 editor: {

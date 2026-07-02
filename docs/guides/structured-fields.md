@@ -17,6 +17,7 @@ An `array` repeats one item. Pass the item descriptor first and the array's own 
 array carries the `label`. Use the optional `itemLabel` to name a row from one of its leaf field keys,
 so the editor's row header reads the row's content rather than a bare index.
 
+<!-- snippet-check-skip: the content group omits backend/email/rendering on purpose, to keep the focus on the fields -->
 ```ts
 // src/lib/cairn.config.ts
 import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
@@ -55,6 +56,7 @@ objects, and `gallery` serializes as a list of `media:` image values.
 
 An `object` groups leaf fields under one key without repeating. Give it a `label` for the group legend.
 
+<!-- snippet-check-skip: shows only the fieldset addition, continuing the array example above -->
 ```ts
 fields: fieldset({
   title: fields.text({ label: 'Title', required: true }),

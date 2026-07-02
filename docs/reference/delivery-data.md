@@ -167,7 +167,7 @@ then hands them to the responder.
 import type { RequestHandler } from './$types';
 import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
 export const prerender = true;
 
@@ -261,6 +261,7 @@ Build the plain-data head for a page: the title, the meta tags, the link tags, a
 object. All URLs in `SeoInput` are absolute, built from the site origin. The `/delivery`
 `createPublicRoutes` loader calls this so a public entry ships a full head.
 
+<!-- snippet-check-skip: entry and siteConfig come from the site's own route module, not shown here -->
 ```ts
 import { buildSeoMeta } from '@glw907/cairn-cms/delivery/data';
 
@@ -290,6 +291,7 @@ Build the whole-corpus manifest from a site's adapter, config, and per-concept g
 included and flagged, so the admin picker and the link guards see the full graph. The Vite plugin and
 the manifest bin call this in a plain-Node context, which is why it lives on this node-safe surface.
 
+<!-- snippet-check-skip: cairn, siteConfig, postsRaw, and pagesRaw come from the site's own build script, not shown here -->
 ```ts
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
 
@@ -330,6 +332,7 @@ throwing. The build's `verifyReferences` gate already fails a true dangling edge
 at request time is a mid-flight or draft target. A route reads the resolved map alongside the entry
 and renders each target as a link.
 
+<!-- snippet-check-skip: postsDescriptor and entry come from the site's own route module, not shown here -->
 ```ts
 import { resolveReferences } from '@glw907/cairn-cms/delivery';
 import { site } from '$lib/content';

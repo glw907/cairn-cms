@@ -32,6 +32,7 @@ Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the a
 headers. Wire it in `hooks.server.ts`. A site with its own hook keeps it by sequencing the guard
 last, so the site hook sees every request and the guard owns admin gating.
 
+<!-- snippet-check-skip: theme is the site's own existing hook, not shown here -->
 ```ts
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';

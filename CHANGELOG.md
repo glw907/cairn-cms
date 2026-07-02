@@ -2,7 +2,7 @@
 
 All notable changes to this project are recorded here, most recent first.
 
-## Unreleased
+## 0.79.0
 
 <!-- release-size: minor -->
 
@@ -116,7 +116,7 @@ to `mediaBulkDeleteAction`, `mediaOrphanScan` to `mediaOrphanScanAction`, `media
 `mediaReplaceApply` to `mediaReplaceApplyAction`, `mediaAltPreview` to `mediaAltPreviewAction`,
 `mediaAltApply` to `mediaAltApplyAction`, `addDictionaryWord` to `addDictionaryWordAction`); the
 SvelteKit named-action wire names (`?/mediaBulkDelete` and kin) are unchanged. Unstable API tier
-makes the rename legal across minors, and the unpublished window makes it cheap.
+makes the rename legal across minors, and this pre-beta window makes it cheap.
 
 The owner-gated editor-management actions (add, remove, role change) now log `editor.added`,
 `editor.removed`, and `editor.role_changed`, each carrying the acting owner's and the target

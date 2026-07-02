@@ -816,7 +816,7 @@ Consumers must: remove any `import type { LayoutData }`. `LayoutData` is removed
 `@glw907/cairn-cms/sveltekit`; read the admin payload from `AdminShellData` (via `page.data.shell`)
 instead.
 
-## Unreleased: a concept's tags come from a field marked `taxonomy: true` (breaking)
+## 0.78.0: a concept's tags come from a field marked `taxonomy: true` (breaking)
 
 A concept declares its tag field by marking one top-level multiselect `taxonomy: true`. The content
 index reads that marked field's validated value for each entry's tags, and the content index and the
@@ -827,7 +827,7 @@ after `0.77.0` publishes; the version is set at release time.
 Consumers must: add `taxonomy: true` to each concept's top-level tag multiselect. A concept with no tag
 field needs no change.
 
-## Unreleased: the public route loaders narrow to one `entryLoad` (breaking)
+## 0.78.0: the public route loaders narrow to one `entryLoad` (breaking)
 
 `createPublicRoutes` resolves one entry per request path. It returns `{ entryLoad, entries }`;
 `entryLoad(event)` returns the entry payload and throws `error(404)` on a miss. The pre-`0.77.0`
@@ -839,7 +839,7 @@ Consumers must: drop any call to the removed `archiveLoad`, `tagIndexLoad`, or `
 surfaces from `site.concept(id).all()` and `ContentSummary.tags` in site code. The catch-all keeps
 calling `entryLoad`; no `data.kind` branching is needed.
 
-## Unreleased: an opt-in tag vocabulary makes the taxonomy field a closed picker (non-breaking)
+## 0.78.0: an opt-in tag vocabulary makes the taxonomy field a closed picker (non-breaking)
 
 A site can configure an editor-owned tag vocabulary through a new `vocabulary` key in
 `site.config.yaml`, a list of `{ value, label }` entries read at build through the new public
@@ -854,7 +854,7 @@ Consumers must: nothing. The vocabulary is opt-in. A site with no `vocabulary` k
 creatable taxonomy field, and the build-time tags-as-data read is unchanged; enforcement is a
 save-and-edit concern only.
 
-## Unreleased: an admin screen curates the tag vocabulary (non-breaking)
+## 0.78.0: an admin screen curates the tag vocabulary (non-breaking)
 
 A new `vocabulary` admin view at `/admin/vocabulary`, with a `saveVocabulary` action, lets an editor
 curate the vocabulary from the admin: add a tag, rename a tag's label, delete an unused tag, and seed
@@ -867,7 +867,7 @@ the same release as the preceding taxonomy entries.
 Consumers must: nothing. The screen mounts with the rest of the admin and writes only when an editor
 saves.
 
-## Unreleased: the surface-pruning pass demotes ~106 exports and reshapes the mount contract (breaking)
+## 0.79.0: the surface-pruning pass demotes ~106 exports and reshapes the mount contract (breaking)
 
 The pre-beta surface-pruning pass demotes every export an adversarial audit convicted for having no
 real consumer import (the exhaustive list is `docs/internal/api-surface.md`'s diff for this pass) and
@@ -907,3 +907,15 @@ authoritative list if you maintain a fork.
 Consumers must: nothing for `src/lib` leaving the npm tarball, or for the new gate-enforced
 `Unstable API` stability tier and `MarkdownEditor`'s narrowed eleven-prop stable contract (every
 other prop was already `EditPage` wiring, now documented rather than reshaped).
+
+## 0.79.0: the media-era action handlers gain the `Action` suffix (breaking)
+
+The code-polish pass converged the handler names on `createContentRoutes`'s return onto the
+`Action` suffix the core handlers already carried (`mediaBulkDelete` became
+`mediaBulkDeleteAction`, and likewise the orphan-scan, purge, replace, alt, dictionary, and
+library-upload handlers). The SvelteKit `?/name` wire names on `createCairnAdmin`'s `actions`
+record are unchanged, so a site on the canonical mount needs nothing.
+
+This is breaking. Consumers must: rename any direct call onto the `createContentRoutes` return
+that used a suffix-less media-era handler name; the current names are on the
+[/sveltekit reference](../reference/sveltekit.md).

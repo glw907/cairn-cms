@@ -82,14 +82,15 @@ function mediaEntry(hash: string, slug: string): MediaEntry {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function editEvent(id: string, search = '') {
   return {
     url: new URL(`https://t.example/admin/posts/${id}${search}`),
     params: { concept: 'posts', id },
     request: new Request('https://t.example'),
-    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+    locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -109,7 +110,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('editLoad', () => {
   it('loads an existing file with parsed, form-ready frontmatter and body', async () => {
     editFetch('---\ntitle: Hello\ndate: 2026-05-01\n---\nThe body.');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data).toMatchObject({
       conceptId: 'posts', id: '2026-05-hello', label: 'Posts', title: 'Hello',
@@ -124,7 +125,7 @@ describe('editLoad', () => {
 
   it('defaults the spellcheck dictionary to US English when the runtime omits it', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.spellcheckDictionary).toBe('dictionary-en-us.txt');
   });
@@ -133,7 +134,7 @@ describe('editLoad', () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     // composeRuntime resolves this from the site config's dialect; the load hands it straight through.
     const withDialect = { ...runtime(), spellcheckDictionary: 'dictionary-en-gb.txt' };
-    const routes = createContentRoutes(withDialect, deps);
+    const routes = createContentRoutes(withDialect);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.spellcheckDictionary).toBe('dictionary-en-gb.txt');
   });
@@ -152,7 +153,7 @@ describe('editLoad', () => {
         'The body.',
       ),
     );
-    const routes = createContentRoutes(withImage, deps);
+    const routes = createContentRoutes(withImage);
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.frontmatter.image).toEqual({
       src: 'media:a.0123456789abcdef',
@@ -172,7 +173,7 @@ describe('editLoad', () => {
 
   it('returns a blank document for ?new=1 when the file is missing', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1') as never);
     expect(data.isNew).toBe(true);
     expect(data.body).toBe('');
@@ -183,24 +184,24 @@ describe('editLoad', () => {
 
   it('404s an unknown existing file that is not new', async () => {
     editFetch(null);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(routes.editLoad(editEvent('missing') as never)).rejects.toMatchObject({ status: 404 });
   });
 
   it('rejects an invalid id with a 400', async () => {
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(routes.editLoad(editEvent('Bad Id!') as never)).rejects.toMatchObject({ status: 400 });
   });
 
   it('ships the runtime preview knob, and null when the adapter sets none', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
-    const bare = createContentRoutes(runtime(), deps);
+    const bare = createContentRoutes(runtime());
     const without = await bare.editLoad(editEvent('2026-05-hello') as never);
     expect(without.preview).toBeNull();
 
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = { stylesheets: ['/assets/site.css'], bodyClass: 'site', containerClass: 'prose' };
-    const styled = createContentRoutes({ ...runtime(), preview }, deps);
+    const styled = createContentRoutes({ ...runtime(), preview });
     const data = await styled.editLoad(editEvent('2026-05-hello') as never);
     expect(data.preview).toEqual(preview);
   });
@@ -213,7 +214,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { bodyClass: 'post-body', containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const routes = createContentRoutes({ ...runtime(), preview });
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -231,7 +232,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { pages: { bodyClass: 'page-body' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const routes = createContentRoutes({ ...runtime(), preview });
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -248,7 +249,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const routes = createContentRoutes({ ...runtime(), preview });
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.preview).toEqual({
       stylesheets: ['/assets/site.css'],
@@ -265,7 +266,7 @@ describe('editLoad', () => {
       containerClass: 'page-measure',
       byConcept: { posts: { bodyClass: undefined, containerClass: 'post-module' } },
     };
-    const routes = createContentRoutes({ ...runtime(), preview }, deps);
+    const routes = createContentRoutes({ ...runtime(), preview });
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.preview?.bodyClass).toBe('static-page');
     expect(data.preview?.containerClass).toBe('post-module');
@@ -277,7 +278,7 @@ describe('editLoad', () => {
       entries: [{ id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [] }],
     });
     editFetch('---\ntitle: Hello\n---\nThe body.', manifest);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const withManifest = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(withManifest.linkTargets).toContainEqual({
       concept: 'pages', id: 'about', permalink: '/about', title: 'About', date: undefined, draft: false,
@@ -298,7 +299,7 @@ describe('editLoad', () => {
       ],
     });
     editFetch('---\ntitle: Hello\n---\nx', manifest);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.inboundLinks).toEqual([{ concept: 'posts', id: '2026-05-b', title: 'Post B', permalink: '/posts/b' }]);
   });
@@ -306,14 +307,14 @@ describe('editLoad', () => {
   it('ships the current slug for the rename dialog', async () => {
     // The posts concept uses a day prefix, so 2026-05-01-hello strips to the slug hello.
     editFetch('---\ntitle: Hello\n---\nx');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-01-hello') as never);
     expect(data.slug).toBe('hello');
   });
 
   it('reads saved and error flags from the query', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('hi', '?saved=1&error=Nope') as never);
     expect(data.saved).toBe(true);
     expect(data.error).toBe('Nope');
@@ -321,14 +322,14 @@ describe('editLoad', () => {
 
   it('reads the renamed flag from the query', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('hi', '?renamed=1') as never);
     expect(data.renamed).toBe(true);
   });
 
   it('reads the published and discarded flashes from the query', async () => {
     editFetch('---\ntitle: Hi\n---\nx');
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const published = await routes.editLoad(editEvent('hi', '?published=1') as never);
     expect(published.publishedFlash).toBe(true);
     expect(published.discardedFlash).toBe(false);
@@ -351,7 +352,7 @@ describe('editLoad with a pending branch', () => {
       'cairn/posts/2026-05-hello': { [ENTRY_PATH]: '---\ntitle: Edited\n---\nBranch body.' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.pending).toBe(true);
     expect(data.published).toBe(true);
@@ -367,7 +368,7 @@ describe('editLoad with a pending branch', () => {
       'cairn/posts/2026-05-fresh': { 'src/content/posts/2026-05-fresh.md': '---\ntitle: Fresh\n---\nNew body.' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-05-fresh') as never);
     expect(data.pending).toBe(true);
     expect(data.published).toBe(false);
@@ -386,7 +387,7 @@ describe('editLoad with a pending branch', () => {
       { type: 'date', name: 'date', label: 'Date', default: 'today' },
     ];
     editFetch(null);
-    const routes = createContentRoutes(withDefault, deps);
+    const routes = createContentRoutes(withDefault);
     const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1') as never);
     const today = new Date().toISOString().slice(0, 10);
     expect(data.frontmatter.date).toBe(today);
@@ -418,7 +419,7 @@ describe('editLoad address-collision advisory', () => {
       url: new URL(`https://t.example/admin/pages/${id}${search}`),
       params: { concept: 'pages', id },
       request: new Request('https://t.example'),
-      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const } },
+      locals: { editor: { email: 'e@t', displayName: 'E', role: 'editor' as const }, backend },
       platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     };
   }
@@ -441,7 +442,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(pagesRuntime(), deps);
+    const routes = createContentRoutes(pagesRuntime());
     const data = await routes.editLoad(pagesEvent('about') as never);
     expect(data.advisories).toHaveLength(1);
     const notice = data.advisories[0];
@@ -464,7 +465,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(pagesRuntime(), deps);
+    const routes = createContentRoutes(pagesRuntime());
     const data = await routes.editLoad(pagesEvent('contact') as never);
     expect(data.advisories).toEqual([]);
   });
@@ -490,7 +491,7 @@ describe('editLoad address-collision advisory', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.editLoad(editEvent('2026-01-15-hello') as never);
     expect(data.advisories).toEqual([]);
   });
@@ -511,7 +512,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
 
     // The default-branch media.json was read.
@@ -532,7 +533,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
 
     // One read serves both projections.
@@ -562,7 +563,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: media },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
 
     const row = data.mediaLibrary.a1b2c3d4e5f60718;
@@ -587,7 +588,7 @@ describe('editLoad media targets', () => {
         return inner(url as never);
       }),
     );
-    const routes = createContentRoutes(mediaRuntime(MEDIA_ON), deps);
+    const routes = createContentRoutes(mediaRuntime(MEDIA_ON));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(data.mediaTargets).toEqual({});
     expect(data.mediaLibrary).toEqual({});
@@ -599,7 +600,7 @@ describe('editLoad media targets', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\n---\nx', [MEDIA_PATH]: serializeMediaManifest({}) },
     });
     gh.install();
-    const routes = createContentRoutes(mediaRuntime({ enabled: false }), deps);
+    const routes = createContentRoutes(mediaRuntime({ enabled: false }));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     expect(readsOf(gh, MEDIA_PATH)).toBe(0);
     expect(data.mediaTargets).toEqual({});
@@ -646,7 +647,7 @@ describe('editLoad taxonomy enforcement', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([{ value: 'a', label: 'A' }]));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     const topics = topicsField(data);
     // The closed picker: options = vocabulary union orphan, creatable false.
@@ -663,7 +664,7 @@ describe('editLoad taxonomy enforcement', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hello\ntopics:\n  - a\n  - legacy\n---\nThe body.' },
     });
     gh.install();
-    const routes = createContentRoutes(taxonomyRuntime([]), deps);
+    const routes = createContentRoutes(taxonomyRuntime([]));
     const data = await routes.editLoad(editEvent('2026-05-hello') as never);
     const topics = topicsField(data);
     // The open creatable multiselect is unchanged: no options injected, creatable stays true.

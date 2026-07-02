@@ -59,7 +59,8 @@ function runtime(assets: ResolvedAssetConfig): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A server-owned media record, the shape the upload action returns and the client re-posts. */
 function entry(hash: string, slug: string): MediaEntry {
@@ -84,7 +85,7 @@ function saveEvent(id: string, form: Record<string, string>) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body: new URLSearchParams(form) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -110,7 +111,7 @@ describe('saveToBranch media merge', () => {
   it('commits the body and a media.json with both rows in one branch commit', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
     const media = JSON.stringify([entry('0000000000000001', 'one'), entry('0000000000000002', 'two')]);
     const loc = await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b', media }) as never));
     expect(loc).toBe('/admin/posts/2026-05-hi?saved=1');
@@ -129,7 +130,7 @@ describe('saveToBranch media merge', () => {
   it('promotes both rows to main media.json in the publish commit', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
     const media = JSON.stringify([entry('0000000000000001', 'one'), entry('0000000000000002', 'two')]);
     const loc = await redirectedTo(routes.publishAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b', media }) as never));
     expect(loc).toBe('/admin/posts/2026-05-hi?published=1');
@@ -146,7 +147,7 @@ describe('saveToBranch media merge', () => {
   it('merges each save onto the default-branch base, not the pending branch', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
 
     // First entry saves a row, on its own branch. Main stays empty (not published).
     await redirectedTo(
@@ -167,7 +168,7 @@ describe('saveToBranch media merge', () => {
   it('commits no media.json when media is disabled', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime({ enabled: false }), deps);
+    const routes = createContentRoutes(runtime({ enabled: false }));
     const media = JSON.stringify([entry('0000000000000001', 'one')]);
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b', media }) as never));
     expect(gh.read('cairn/posts/2026-05-hi', MEDIA_PATH)).toBeNull();
@@ -177,7 +178,7 @@ describe('saveToBranch media merge', () => {
   it('produces a byte-identical media.json on a re-save of the same records (idempotent)', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
     const media = JSON.stringify([entry('0000000000000001', 'one'), entry('0000000000000002', 'two')]);
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b', media }) as never));
     const first = gh.read('cairn/posts/2026-05-hi', MEDIA_PATH);
@@ -190,7 +191,7 @@ describe('saveToBranch media merge', () => {
   it('drops malformed media JSON to no records and commits no media.json', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b', media: 'not json {{{' }) as never));
     expect(gh.read('cairn/posts/2026-05-hi', MEDIA_PATH)).toBeNull();
   });
@@ -198,7 +199,7 @@ describe('saveToBranch media merge', () => {
   it('commits no media.json when media is on but no records are posted', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: seededManifest('2026-05-hi') } });
     gh.install();
-    const routes = createContentRoutes(runtime(MEDIA_ON), deps);
+    const routes = createContentRoutes(runtime(MEDIA_ON));
     await redirectedTo(routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'b' }) as never));
     expect(gh.read('cairn/posts/2026-05-hi', MEDIA_PATH)).toBeNull();
   });

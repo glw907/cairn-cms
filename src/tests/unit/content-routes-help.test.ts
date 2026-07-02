@@ -10,6 +10,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { markdownReference } from '../../lib/components/markdown-reference.js';
 import { serializeManifest, type Manifest } from '../../lib/content/manifest.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -51,12 +52,15 @@ const ONE_PUBLISHED_POST: Manifest = {
   ],
 };
 
-function event() {
+// The default read backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, async () => 'tok');
+
+function event(eventBackend: Backend = backend) {
   return {
     url: new URL('https://test.example/admin/help'),
     params: {},
     request: new Request('https://test.example/admin/help'),
-    locals: { editor: { email: 'e@test', displayName: 'Ed', role: 'editor' as const } },
+    locals: { editor: { email: 'e@test', displayName: 'Ed', role: 'editor' as const }, backend: eventBackend },
     platform: { env: {} },
   };
 }
@@ -67,7 +71,7 @@ describe('helpLoad', () => {
   it('derives progress from the committed manifest, returns the reference, and passes the support contact through', async () => {
     const gh = new GithubDouble({ main: { [MANIFEST_PATH]: serializeManifest(ONE_PUBLISHED_POST) } });
     gh.install();
-    const routes = createContentRoutes(runtime(), { backend: makeGithubBackend(REPO, async () => 'tok')});
+    const routes = createContentRoutes(runtime());
     const result = await routes.helpLoad(event() as never);
 
     // One published post completes the write and publish steps; no page leaves the third open.
@@ -86,12 +90,11 @@ describe('helpLoad', () => {
 
   it('degrades to an empty corpus (0 of 3) when GitHub is unreachable, never throwing', async () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const routes = createContentRoutes(runtime(), {
-      backend: makeGithubBackend(REPO, async () => {
-        throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
-      }),
+    const routes = createContentRoutes(runtime());
+    const failingBackend = makeGithubBackend(REPO, async () => {
+      throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });
-    const result = await routes.helpLoad(event() as never);
+    const result = await routes.helpLoad(event(failingBackend) as never);
 
     expect(result.gettingStarted).toEqual({
       wrotePost: false,

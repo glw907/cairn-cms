@@ -69,7 +69,8 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 const HASH = '0000000000000aaa';
 const OTHER_HASH = '0000000000000ccc';
@@ -145,7 +146,7 @@ function previewEvent(
     url,
     params: {},
     request: new Request(url, { method: 'POST', headers, body: JSON.stringify(payload) }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: cookieJar('cookieCsrf' in opts ? opts.cookieCsrf : CSRF),
   };
@@ -162,7 +163,7 @@ function applyEvent(fields: { hash?: string; overwrite?: string; confirmSlug?: s
     url,
     params: {},
     request: new Request(url, { method: 'POST', body: form }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', MEDIA_BUCKET: {} } },
   };
 }
@@ -203,7 +204,7 @@ describe('mediaAltPreview', () => {
   it('returns the three buckets, their counts, and the per-entry placements and titles', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = (await routes.mediaAltPreview(
       previewEvent({ hash: HASH }) as never,
     )) as MediaAltPreviewPlan;
@@ -251,7 +252,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltPreview(
       previewEvent({ hash: HASH }, { csrf: 'wrong' }) as never,
     );
@@ -269,7 +270,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltPreview(
       previewEvent({ hash: 'not-a-hash' }) as never,
     );
@@ -290,11 +291,11 @@ describe('mediaAltPreview', () => {
       url,
       params: {},
       request: new Request(url, { method: 'POST', headers, body: '{ not json' }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed', role: 'editor' as const } },
+      locals: { editor: { email: 'ed@t', displayName: 'Ed', role: 'editor' as const }, backend },
       platform: { env: {} },
       cookies: cookieJar(CSRF),
     };
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltPreview(event as never);
     expect(result).toMatchObject({ status: 400 });
   });
@@ -307,7 +308,7 @@ describe('mediaAltPreview', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltPreview(
       // OTHER_HASH is not in media.json: the asset is not committed.
       previewEvent({ hash: OTHER_HASH }) as never,
@@ -336,7 +337,7 @@ describe('mediaAltPreview', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltPreview(
       previewEvent({ hash: HASH }) as never,
     );
@@ -351,7 +352,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(
       routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -378,7 +379,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(
       routes.mediaAltApply(applyEvent({ hash: HASH, overwrite: 'on' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -401,7 +402,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(
       routes.mediaAltApply(applyEvent({ hash: HASH, overwrite: 'true' }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -415,7 +416,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // No confirmSlug at all: the apply still fills the empty alt and commits.
     await expect(
       routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
@@ -440,7 +441,7 @@ describe('mediaAltApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(
       routes.mediaAltApply(applyEvent({ hash: HASH }) as never),
     ).rejects.toMatchObject({ status: 303, location: '/admin/media?altPropagated=1' });
@@ -470,7 +471,7 @@ describe('mediaAltApply', () => {
       if (url.includes('2026-05-flaky')) return Promise.reject(new Error('transient'));
       return inner(input, init);
     }));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltApply(
       applyEvent({ hash: HASH }) as never,
     );
@@ -490,7 +491,7 @@ describe('mediaAltApply', () => {
       },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const result = await routes.mediaAltApply(
       applyEvent({ hash: OTHER_HASH }) as never,
     );
@@ -503,7 +504,7 @@ describe('mediaAltApply', () => {
   it('throws error(400) on a malformed hash', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     await expect(
       routes.mediaAltApply(applyEvent({ hash: 'bad' }) as never),
     ).rejects.toMatchObject({ status: 400 });
@@ -513,7 +514,7 @@ describe('mediaAltApply', () => {
   it('returns fail(503) when media is disabled, committing nothing', async () => {
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }), deps);
+    const routes = createContentRoutes(runtime({ resolvedAssets: { ...MEDIA_ON, enabled: false } }));
     const result = await routes.mediaAltApply(
       applyEvent({ hash: HASH }) as never,
     );
@@ -527,7 +528,7 @@ describe('mediaAltApply', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const gh = mixedRepo();
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     // Compute a preview to mirror the real flow (the client previews, then applies).
     await routes.mediaAltPreview(previewEvent({ hash: HASH }) as never);

@@ -63,7 +63,8 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A rename POST for posts/<id> to <slug>. */
 function renameEvent(id: string, slug: string) {
@@ -72,7 +73,7 @@ function renameEvent(id: string, slug: string) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -92,7 +93,7 @@ function entry(
 /** Rename the target and either return the thrown redirect location or the fail() result. */
 async function rename(gh: GithubDouble, id: string, slug: string): Promise<{ location?: string; status?: number; error?: string }> {
   gh.install();
-  const routes = createContentRoutes(runtime(), deps);
+  const routes = createContentRoutes(runtime());
   try {
     const result = (await routes.renameAction(renameEvent(id, slug) as never)) as unknown as {
       status: number; data: { error: string };

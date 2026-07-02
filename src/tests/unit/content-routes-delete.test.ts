@@ -33,14 +33,15 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function deleteEvent(id: string) {
   return {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST' }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -87,7 +88,7 @@ describe('deleteAction', () => {
       ],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     const result = (await routes.deleteAction(deleteEvent('2026-05-hi') as never)) as unknown as {
       status: number; data: { error: string; inboundLinks: { id: string }[]; id: string };
     };
@@ -104,7 +105,7 @@ describe('deleteAction', () => {
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
     const calls = commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi') as never);
       throw new Error('should have redirected');
@@ -127,7 +128,7 @@ describe('deleteAction', () => {
       entries: [{ id: '2026-05-hi', concept: 'posts', title: 'Hi', permalink: '/p/hi', draft: false, links: [] }],
     });
     commitFetch(manifest);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi') as never);
     } catch {
@@ -154,7 +155,7 @@ describe('deleteAction with a pending branch', () => {
     });
     gh.createBranch('cairn/posts/2026-05-hi', 'main');
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi') as never);
       throw new Error('should have redirected');
@@ -188,7 +189,7 @@ describe('deleteAction with a pending branch', () => {
       }
       return double(input, init);
     });
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi') as never);
       throw new Error('should have redirected');
@@ -207,7 +208,7 @@ describe('deleteAction with a pending branch', () => {
       'cairn/posts/2026-05-hi': { [MANIFEST_PATH]: empty, [ENTRY_PATH]: '---\ntitle: Hi\n---\npending only' },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.deleteAction(deleteEvent('2026-05-hi') as never);
       throw new Error('should have redirected');

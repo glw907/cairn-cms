@@ -46,7 +46,8 @@ function runtime(validate: (fm: Record<string, unknown>, body: string) => Valida
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function renameEvent(id: string, slug: string) {
   const body = new URLSearchParams({ slug });
@@ -54,7 +55,7 @@ function renameEvent(id: string, slug: string) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -118,7 +119,7 @@ describe('renameAction', () => {
       ['src/content/.cairn/index.json', manifest],
     ]);
     const calls = renameFetch(files);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
       throw new Error('should have redirected');
@@ -147,7 +148,7 @@ describe('renameAction', () => {
       ['src/content/pages/home.md', '---\ntitle: Home\n---\nsee [hi](cairn:posts/2026-05-01-hi)'],
     ]);
     const calls = renameFetch(files);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
       throw new Error('should have redirected');
@@ -174,7 +175,7 @@ describe('renameAction', () => {
       ['src/content/.cairn/index.json', manifest],
     ]);
     const calls = renameFetch(files);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
       throw new Error('should have redirected');
@@ -191,7 +192,7 @@ describe('renameAction', () => {
       ['src/content/.cairn/index.json', JSON.stringify({ version: 1, entries: [] })],
     ]);
     const calls = renameFetch(files);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
       status: number; data: { error: string };
     };
@@ -203,7 +204,7 @@ describe('renameAction', () => {
   it('rejects a no-op slug with no commit', async () => {
     const files = new Map<string, string | null>([['src/content/.cairn/index.json', JSON.stringify({ version: 1, entries: [] })]]);
     const calls = renameFetch(files);
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'hi') as never)) as unknown as {
       status: number; data: { error: string };
     };
@@ -226,7 +227,7 @@ describe('renameAction with a pending branch', () => {
     });
     gh.createBranch('cairn/posts/2026-05-01-hi', 'main');
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     const result = (await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never)) as unknown as {
       status: number; data: { error: string };
     };
@@ -240,7 +241,7 @@ describe('renameAction with a pending branch', () => {
       main: { [ENTRY_PATH]: '---\ntitle: Hi\n---\nbody', [MANIFEST_PATH]: manifest },
     });
     gh.install();
-    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })), deps);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
     try {
       await routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never);
       throw new Error('should have redirected');

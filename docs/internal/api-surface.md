@@ -240,10 +240,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/sveltekit`
 
 - `AdminData`: { view: "login"; page: { siteName: string; error: string | null; csrf: string } } | { view: "confirm"; page: { token: string; siteName: string; error: string | null; csrf: string } } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "editors"; page: { editors: Editor[]; self: string } } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData }
-- `AdminNavEntry`: { label: string; icon: "list" | "anchor" | "calendar" | "clipboard-list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly?: boolean }
-- `AdminNavIcon`: "list" | "anchor" | "calendar" | "clipboard-list" | "users" | "package" | "inbox" | "table" | "wrench"
+- `AdminNavEntry`: { label: string; icon: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly?: boolean }
+- `AdminNavIcon`: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"
 - `AdminShellData`: { public: true; siteName: string } | { public: false; siteName: string; user: { displayName: string; email: string; role: Role }; concepts: NavConcept[]; customNav: ResolvedNavEntry[]; pathname: string; canManageEditors: boolean; navLabel: string | null; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[]; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null> }
-- `AdminView`: { view: "index" } | { view: "login" } | { view: "confirm" } | { view: "list"; concept: ConceptDescriptor } | { view: "edit"; concept: ConceptDescriptor; id: string } | { view: "editors" } | { view: "nav" } | { view: "media" } | { view: "settings" } | { view: "vocabulary" } | { view: "help" }
 - `AdvisoryAction`: { label: string; href?: string }
 - `AdvisoryNotice`: { kind: string; severity: "warn"; message: string; actions?: AdvisoryAction[] }
 - `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> } }
@@ -252,7 +251,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnAdminDeps`: { branding?: AuthBranding; send?: SendMagicLink; anthropic?: ((opts: { apiKey: string }) => TidyClient); tidyTimeoutMs?: number }
 - `ContentEvent`: { params: { [x: string]: string }; cookies?: CookieJar; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend }; platform?: PlatformContext<BackendEnv> }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }
-- `ContentRoutesDeps`: { backend?: Backend; anthropic?: ((opts: { apiKey: string }) => TidyClient); tidyTimeoutMs?: number }
+- `ContentRoutesDeps`: { anthropic?: ((opts: { apiKey: string }) => TidyClient); tidyTimeoutMs?: number }
 - `CookieJar`: { get: (name: string) => string; set: (name: string, value: string, opts: CookieSetOptions) => void; delete: (name: string, opts: { path: string }) => void }
 - `createAuthGuard`: () => ({ event, resolve }: HandleInput) => Promise<Response>
 - `createAuthRoutes`: (config: AuthRoutesConfig) => { loginLoad: (event: RequestContext) => { siteName: string; error: string | null; csrf: string }; requestAction: (event: RequestContext) => Promise<RequestResult>; confirmLoad: (event: RequestContext) => { token: string; siteName: string; error: string | null; csrf: string }; confirmAction: (event: RequestContext) => Promise<never>; logoutAction: (event: RequestContext) => Promise<never> }
@@ -260,7 +259,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createContentRoutes`: (runtime: CairnRuntime, deps?: ContentRoutesDeps) => { shellPayload: (event: ContentEvent) => { shell: AdminShellData }; helpLoad: (event: ContentEvent) => Promise<HelpData>; indexRedirect: () => never; listLoad: (event: ContentEvent) => Promise<ListData>; mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>; settingsLoad: (event: ContentEvent) => SettingsData; settingsSave: (event: ContentEvent) => Promise<never>; vocabularyLoad: (event: ContentEvent) => Promise<VocabularyLoadData>; vocabularySave: (event: ContentEvent) => Promise<never>; createAction: (event: ContentEvent) => Promise<never>; editLoad: (event: ContentEvent) => Promise<EditData>; saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; publishAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; publishAllAction: (event: ContentEvent) => Promise<never>; discardAction: (event: ContentEvent) => Promise<never>; deleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>; mediaLibraryUpload: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>; mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; mediaBulkDelete: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>; mediaOrphanScan: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>; mediaPurgeOrphans: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>; mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>; mediaReplacePreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>; mediaReplaceApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>; mediaAltPreview: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>; mediaAltApply: (event: ContentEvent) => Promise<ActionFailure<unknown>>; addDictionaryWord: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>; tidyAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | TidyResult> }
 - `createEditorRoutes`: () => { editorsLoad: (event: RequestContext) => Promise<{ editors: Editor[]; self: string }>; addEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>; removeEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>; setRoleAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }> }
 - `createMediaRoute`: (resolved: ResolvedAssetConfig) => RequestHandler
-- `createNavRoutes`: (runtime: CairnRuntime, deps?: NavRoutesDeps) => { navLoad: (event: ContentEvent) => Promise<NavLoadData>; navSave: (event: ContentEvent) => Promise<never> }
+- `createNavRoutes`: (runtime: CairnRuntime) => { navLoad: (event: ContentEvent) => Promise<NavLoadData>; navSave: (event: ContentEvent) => Promise<never> }
 - `DeleteRefusal`: { error: string; inboundLinks: InboundLink[]; id: string }
 - `EditData`: { conceptId: string; id: string; label: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; saved: boolean; renamed: boolean; error: string | null; slug: string; linkTargets: LinkTarget[]; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: InboundLink[]; pending: boolean; published: boolean; publishedFlash: boolean; discardedFlash: boolean; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
 - `EntrySummary`: { id: string; title: string; date: string | null; draft: boolean; status: "published" | "edited" | "new"; summary: string | null }
@@ -268,7 +267,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string } } }
 - `healthLoad`: (event: { platform?: { env?: BackendEnv } }, runtime: CairnRuntime) => Promise<HealthData>
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
-- `isPublicAdminPath`: (pathname: string) => boolean
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `MediaAltPropagateFailure`: { error: string }
 - `MediaBulkFailure`: { error: string }
@@ -280,14 +278,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavConcept`: { id: string; label: string }
 - `NavLoadData`: { menu: { name: string; label: string; maxDepth: number }; tree: NavNode[]; pages: NavPageOption[]; saved: boolean; error: string | null }
 - `NavPageOption`: { label: string; url: string }
-- `NavRoutesDeps`: { backend?: Backend }
-- `parseAdminPath`: (pathname: string, concepts: ConceptDescriptor[]) => AdminView | null
 - `RenameFailure`: { error: string }
 - `RequestContext`: { cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend }; platform?: PlatformContext<AuthEnv> }
 - `RequestResult`: { status: "sent"; sent: true } | { status: "send_error"; sent: false } | { status: "throttled"; sent: false }
 - `requireOwner`: (event: { locals: { editor?: Editor | null } }) => Editor
 - `requireSession`: (event: { locals: { editor?: Editor | null } }) => Editor
-- `ResolvedNavEntry`: { label: string; iconName: "list" | "anchor" | "calendar" | "clipboard-list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly: boolean }
+- `ResolvedNavEntry`: { label: string; iconName: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly: boolean }
 - `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 

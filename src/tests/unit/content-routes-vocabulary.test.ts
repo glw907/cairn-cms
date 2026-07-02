@@ -55,7 +55,8 @@ function runtime(over: Partial<CairnRuntime> = {}): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token')) };
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 // The committed config: a siteName plus a two-entry vocabulary (svelte in use, rust unused), with a
 // comment so the round-trip-preserves-comments invariant has something to assert.
@@ -98,7 +99,7 @@ function loadEvent() {
     url: new URL('https://t.example/admin/vocabulary'),
     params: {},
     request: new Request('https://t.example/admin/vocabulary'),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -109,7 +110,7 @@ function saveEvent(vocabularyJson: string) {
     url: new URL('https://t.example/admin/vocabulary'),
     params: {},
     request: new Request('https://t.example/admin/vocabulary', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -119,7 +120,7 @@ afterEach(() => vi.restoreAllMocks());
 describe('vocabularyLoad', () => {
   it('returns the committed vocabulary, a per-value usage count, and the unlisted seed set', async () => {
     seeded();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.vocabularyLoad(loadEvent() as never);
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
@@ -148,7 +149,7 @@ describe('vocabularyLoad', () => {
       if (method === 'GET' && url.includes('/git/matching-refs/')) return new Response('boom', { status: 500 });
       return new Response('{}', { status: 200 });
     }));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.vocabularyLoad(loadEvent() as never);
     expect(data.vocabulary).toEqual([
       { value: 'svelte', label: 'Svelte' },
@@ -160,7 +161,7 @@ describe('vocabularyLoad', () => {
 
   it('degrades the vocabulary to empty when the config read fails, not the error page', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const data = await routes.vocabularyLoad(loadEvent() as never);
     expect(data.vocabulary).toEqual([]);
     expect(data.usage).toEqual({});
@@ -171,7 +172,7 @@ describe('vocabularyLoad', () => {
 describe('vocabularySave', () => {
   it('commits a renamed label with no value change, head-guarded, with the editor as author', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // Rename Svelte -> SvelteKit, value unchanged; rust unchanged.
     const posted = JSON.stringify([
       { value: 'svelte', label: 'SvelteKit' },
@@ -196,7 +197,7 @@ describe('vocabularySave', () => {
 
   it('commits an added entry', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const posted = JSON.stringify([
       { value: 'svelte', label: 'Svelte' },
       { value: 'rust', label: 'Rust' },
@@ -214,7 +215,7 @@ describe('vocabularySave', () => {
 
   it('rejects removing an in-use value, naming it, with no commit', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // Drop svelte, which the seeded post carries: blocked by the strict cross-branch gate.
     const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
     try {
@@ -233,7 +234,7 @@ describe('vocabularySave', () => {
 
   it('commits when an unused value is removed', async () => {
     const gh = seeded();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // Drop rust, which no entry carries: allowed.
     const posted = JSON.stringify([{ value: 'svelte', label: 'Svelte' }]);
     try {
@@ -249,7 +250,7 @@ describe('vocabularySave', () => {
   it('bounces a malformed posted vocabulary back to the form and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // A value that violates SAFE_TAG_VALUE makes validateVocabulary throw.
     try {
       await routes.vocabularySave(saveEvent('[{"value":"Not A Slug","label":"x"}]') as never);
@@ -281,7 +282,7 @@ describe('vocabularySave', () => {
       }
       return new Response('{}', { status: 200 });
     }));
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     // A pure label rename (no removed value) reaches the commit, where the head moves under it.
     const posted = JSON.stringify([
       { value: 'svelte', label: 'SvelteKit' },

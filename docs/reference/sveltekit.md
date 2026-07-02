@@ -53,10 +53,10 @@ declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps):
 The single-mount admin facade. It instantiates the auth, content, editor, and nav route
 factories over the composed runtime and serves every admin view through one `load`, so a site
 mounts the whole admin with a single catch-all route instead of a tree of per-route files. The
-load parses `event.url.pathname` with `parseAdminPath` and dispatches: an unrecognized path is a
-404, `/admin` redirects to the first concept's list, the public login and confirm views return
-bare page data, and every authed view returns its own `page` data. The nav view is a 404 unless
-the runtime configures a `navMenu`.
+load parses `event.url.pathname` internally and dispatches: an unrecognized path is a 404,
+`/admin` redirects to the first concept's list, the public login and confirm views return bare
+page data, and every authed view returns its own `page` data. The nav view is a 404 unless the
+runtime configures a `navMenu`.
 
 `shellLoad` is the shared `/admin/+layout.server.ts` load. It returns the lean shell payload that
 [`CairnAdminShell`](./components.md#cairnadminshell) renders: the streamed pending count for an authed
@@ -107,20 +107,6 @@ export const actions = admin.actions;
 The matching `+page.svelte` mounts [`CairnAdmin`](./components.md#cairnadmin) against the
 discriminated `AdminData` the load returns.
 
-### `parseAdminPath`
-
-Stability tier: Extension API.
-
-```ts
-declare function parseAdminPath(pathname: string, concepts: ConceptDescriptor[]): AdminView | null;
-```
-
-The path authority behind `createCairnAdmin`. It maps a raw `URL.pathname` (never a SvelteKit
-rest param) to the `AdminView` it names, or null for any shape it does not recognize, which the
-caller maps to a 404. One trailing slash is tolerated; segments are percent-decoded one at a
-time, so an encoded slash can never escape its segment. Reserved first segments (`login`,
-`auth`, `editors`, `nav`) win before concept lookup.
-
 ### `requireSession`
 
 Stability tier: Extension API.
@@ -162,16 +148,6 @@ export const load = (event) => {
   return { canManage: true };
 };
 ```
-
-### `isPublicAdminPath`
-
-```ts
-declare function isPublicAdminPath(pathname: string): boolean;
-```
-
-Whether a `/admin` pathname is public: true for the login page (`/admin/login`) and the auth
-endpoints (`/admin/auth/*`), false for every gated admin path. The guard and the shell load use it to
-decide whether a path skips the session gate and the chrome. Stability tier: Extension API.
 
 The four factories below are the advanced per-route seam. `createCairnAdmin` wraps them, so a
 site on the single mount never calls them directly; a site that mounts routes by hand wires each
@@ -471,7 +447,7 @@ export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig 
 Stability tier: Scaffold API.
 
 ```ts
-declare function createNavRoutes(runtime: CairnRuntime, deps?: NavRoutesDeps): {
+declare function createNavRoutes(runtime: CairnRuntime): {
   navLoad: (event: ContentEvent) => Promise<NavLoadData>;
   navSave: (event: ContentEvent) => Promise<never>;
 };
@@ -480,9 +456,9 @@ declare function createNavRoutes(runtime: CairnRuntime, deps?: NavRoutesDeps): {
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
 tree and the page options for the URL picker, and `navSave` commits an edited tree to the
 git-committed site-config file. Like the content routes, a handler resolves its backend from
-`event.locals.backend`, falling back to the runtime's connected backend, so a test injects a
-`deps.backend` double rather than a token-mint stub. The `NavTree` component posts the named `?/save`
-action, so a hand-mounted route registers `navSave` under `save`.
+`event.locals.backend`, falling back to the runtime's connected backend. A production caller
+passes no second argument. The `NavTree` component posts the named `?/save` action, so a
+hand-mounted route registers `navSave` under `save`.
 
 ```ts
 // src/routes/admin/(app)/nav/+page.server.ts (per-route mounting)
@@ -614,7 +590,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's optional support contact. |
 | `ContentEvent` | Extension API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | Extension API | `interface ContentRoutesDeps { backend?: Backend; anthropic?: (opts: { apiKey: string }) => TidyClient; tidyTimeoutMs?: number }` | Injectable dependencies for `createContentRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint, `anthropic` so the tidy action calls a stubbed model, and `tidyTimeoutMs` to assert the deadline path. |
+| `ContentRoutesDeps` | Extension API | `interface ContentRoutesDeps { anthropic?: (opts: { apiKey: string }) => TidyClient; tidyTimeoutMs?: number }` | Injectable dependencies for `createContentRoutes`: `anthropic` so a test's tidy action calls a stubbed model, and `tidyTimeoutMs` to assert the deadline path. |
 | `SaveFailure` | Extension API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Extension API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
 | `RenameFailure` | Extension API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -626,11 +602,9 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | Extension API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| `NavRoutesDeps` | Extension API | `interface NavRoutesDeps { backend?: Backend }` | Injectable dependencies for `createNavRoutes`; tests inject a `Backend` so the read and commit paths run with no real token mint. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[] }` | The tag-vocabulary screen's load data, returned by `vocabularyLoad`: the committed `{ value, label }` entries in config order, each value's cross-branch in-use count (`usage`), and the in-use-but-unlisted tags with their counts (`unlisted`, the seed candidates). The usage overlay degrades to an empty `usage`/`unlisted` on a failed read while the committed `vocabulary` stays visible. |
 | `CairnAdminDeps` | Extension API | `interface CairnAdminDeps { branding?: AuthBranding; send?: SendMagicLink; anthropic?: ContentRoutesDeps['anthropic']; tidyTimeoutMs?: ContentRoutesDeps['tidyTimeoutMs'] }` | Injectable dependencies for `createCairnAdmin`. Branding defaults from the runtime's `siteName` and `sender`; `anthropic` and `tidyTimeoutMs` pass through to the wrapped content routes, which the tidy action reads. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
-| `AdminView` | Extension API | `type AdminView = { view: 'index' \| 'login' \| 'confirm' \| 'editors' \| 'nav' \| 'media' } \| { view: 'list'; concept } \| { view: 'edit'; concept; id }` | The parsed admin view `parseAdminPath` returns, discriminated for the dispatcher's switch. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `RequestContext` | Extension API | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |

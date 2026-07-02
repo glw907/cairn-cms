@@ -61,7 +61,8 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A save POST for posts/my-post setting `title` and an `author` reference id. */
 function saveEvent(author: string) {
@@ -70,7 +71,7 @@ function saveEvent(author: string) {
     url: new URL('https://t.example/admin/posts/my-post'),
     params: { concept: 'posts', id: 'my-post' },
     request: new Request('https://t.example/admin/posts/my-post', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -84,7 +85,7 @@ function entry(concept: string, id: string, draft: boolean) {
  *  save and reading the thrown redirect's location. Throws if the action did not redirect. */
 async function savedRefs(gh: GithubDouble, author: string): Promise<string[]> {
   gh.install();
-  const routes = createContentRoutes(runtime(), deps);
+  const routes = createContentRoutes(runtime());
   try {
     await routes.saveAction(saveEvent(author) as never);
   } catch (e) {

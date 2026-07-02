@@ -15,6 +15,7 @@ import { hashBytes, shortHash } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 const MEDIA_PATH = 'src/content/.cairn/media.json';
@@ -50,7 +51,8 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token')) };
+// The default read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A fake cookie jar that returns the csrf cookie under the https `__Host-` name. */
 function cookieJar(csrf: string | undefined): CookieJar {
@@ -72,7 +74,7 @@ interface UploadOpts {
 
 /** Build the ContentEvent for an upload POST. The raw body is the bytes; the filename travels in a
  *  percent-encoded request header, exactly as the editor upload does. */
-function uploadEvent(opts: UploadOpts): ContentEvent {
+function uploadEvent(opts: UploadOpts & { backend?: Backend }): ContentEvent {
   const headers = new Headers();
   headers.set('content-type', 'image/png');
   headers.set('content-length', String(opts.bytes.length));
@@ -84,7 +86,7 @@ function uploadEvent(opts: UploadOpts): ContentEvent {
     url,
     params: {},
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { editor: opts.hasEditor === false ? null : editor, backend: opts.backend ?? backend },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
   };
@@ -114,7 +116,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('commits a new media.json row to main on upload', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 
@@ -148,7 +150,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
     gh.install();
     // Pre-put the bytes too, so ingestAndStore's dedup reuses rather than puts (irrelevant to the
     // commit assertion, but keeps the scenario realistic).
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
     const before = gh.read('main', MEDIA_PATH);
 
     const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG_2, filename: 'dupe.png' }))) as ActionResult;
@@ -163,7 +165,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses without a session, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
 
@@ -175,7 +177,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
   it('refuses with a bad CSRF, and commits nothing', async () => {
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, csrf: 'wrong-token' }))) as ActionResult;
 
@@ -190,12 +192,12 @@ describe('mediaLibraryUpload (Task 2)', () => {
     // backend so the guarded commit's 5th argument is directly observable.
     const gh = new GithubDouble({ main: { [MEDIA_PATH]: mediaManifest() } });
     gh.install();
-    const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
-    const commitSpy = vi.spyOn(backend, 'commit');
-    const routes = createContentRoutes(runtime(), { backend });
+    const spiedBackend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
+    const commitSpy = vi.spyOn(spiedBackend, 'commit');
+    const routes = createContentRoutes(runtime());
     const head = gh.headSha('main');
 
-    await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }));
+    await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png', backend: spiedBackend }));
 
     expect(commitSpy).toHaveBeenCalledWith(
       'main',
@@ -246,7 +248,7 @@ describe('mediaLibraryUpload (Task 2)', () => {
         return doubleFetch(input, init);
       }),
     );
-    const routes = createContentRoutes(runtime(), deps);
+    const routes = createContentRoutes(runtime());
 
     const res = (await routes.mediaLibraryUpload(uploadEvent({ bytes: PNG, filename: 'first.png' }))) as ActionResult;
 

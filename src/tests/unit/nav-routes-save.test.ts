@@ -22,7 +22,8 @@ function runtime(): CairnRuntime {
   };
 }
 
-const deps = { backend: makeGithubBackend(REPO, () => Promise.resolve('test-token'))};
+// The read/commit backend every event's `locals.backend` rides.
+const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 function saveEvent(treeJson: string) {
   const body = new URLSearchParams({ tree: treeJson });
@@ -30,7 +31,7 @@ function saveEvent(treeJson: string) {
     url: new URL('https://t.example/admin/nav'),
     params: {},
     request: new Request('https://t.example/admin/nav', { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const }, backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }
@@ -43,7 +44,7 @@ describe('navSave', () => {
     // main with the YAML and answers the ref read, the head-guarded commit sequence, and the write.
     const gh = new GithubDouble({ main: { 'src/lib/site.config.yaml': 'siteName: S\nmenus:\n  primary:\n    - label: Old\n' } });
     gh.install();
-    const routes = createNavRoutes(runtime(), deps);
+    const routes = createNavRoutes(runtime());
     try {
       await routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never);
       throw new Error('should have redirected');
@@ -61,7 +62,7 @@ describe('navSave', () => {
   it('bounces an invalid tree back to the form and never commits', async () => {
     const fetchMock = vi.fn(async () => new Response('{}', { status: 200 }));
     vi.stubGlobal('fetch', fetchMock);
-    const routes = createNavRoutes(runtime(), deps);
+    const routes = createNavRoutes(runtime());
     try {
       await routes.navSave(saveEvent(JSON.stringify([{ url: '/no-label' }])) as never);
       throw new Error('should have redirected');
@@ -74,7 +75,7 @@ describe('navSave', () => {
 
   it('404s when the config file is gone at save time', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
-    const routes = createNavRoutes(runtime(), deps);
+    const routes = createNavRoutes(runtime());
     await expect(routes.navSave(saveEvent(JSON.stringify([{ label: 'Home' }])) as never)).rejects.toMatchObject({ status: 404 });
   });
 
@@ -95,7 +96,7 @@ describe('navSave', () => {
       }
       return new Response('{}', { status: 200 });
     }));
-    const routes = createNavRoutes(runtime(), deps);
+    const routes = createNavRoutes(runtime());
     try {
       await routes.navSave(saveEvent(JSON.stringify([{ label: 'Home', url: '/' }])) as never);
       throw new Error('should have redirected');

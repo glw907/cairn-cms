@@ -269,3 +269,15 @@ freshness routine created and recorded there by id.
   flip (the toggle cannot be enabled while private); Task 7 files the trigger.
 - The quickstart is intentionally absent (IA ruling 3); Task 3's "fastest path" seam is its
   future mount point.
+
+## Recalibration (Geoff, 2026-07-02, binding on every task)
+
+The existing docs corpus is Opus-authored and its prose is not trusted at any grade. The
+Stage 1 "survives" grades remain valid for STRUCTURE and factual currency only; **no
+existing sentence survives on the grade's authority**. Every page the pass touches gets
+rewrite-grade prose regardless of its triage class, and the Task 4/6 "register sweep" of
+survivor pages is a prose rewrite, not a touch-up. Calibration sample: the old README's
+save-paragraph, previously judged the repo's best prose, is the passage Geoff quoted as
+unsalvageable — mechanism-first, jargon-dense, reader-less. The corrected bar: an
+introduction introduces (genre first — see any real CMS), prose leads with the reader's
+stakes, and mechanism follows meaning.

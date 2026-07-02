@@ -76,7 +76,12 @@ major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and t
   full test suite as the behavior contract. Anything that wants a public-surface change gets filed
   for one batched decision, never done in the sweep. Riders: the form-renderer merge (Later) and the
   queued admin-build content-scope plan. Goal: consistent, boring, maximally clean code before beta.
-- **Cross both production sites onto `0.78.2` (a beta prerequisite, not parallel work).** The
+- **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then cross both
+  production sites onto it (a beta prerequisite, not parallel work).** One deliberate cut rolls the
+  pruning + polish window (verify the next number free via `npm view` before promising it; the
+  `cairn-release` skill owns the mechanics), so the cutovers put production miles on the frozen
+  contract itself — the evidence the 1.0 checklist asks for — and the sites cross one
+  `Consumers must:` list once. The
   cutovers carry the owed live admin smoke against a real Worker, the last unexercised verification
   class before an admin real editors use ships to beta. The developer-extensibility seam and the editor tag
   vocabulary shipped in `0.78.0` (which rolled the held `0.77.0`), and `0.78.2` rolled the four held

@@ -316,3 +316,8 @@ waste, discarded as each page is replaced.
   solo project and the honest pronoun is **"I"** wherever a person speaks (the ripgrep and
   re-frame precedent), never a fictitious "we". Length may breathe when the extra sentences
   are doing real work.
+
+- **"To a developer, something that sounds like a commercial pitch is probably an anti-pitch"
+  (Geoff, 2026-07-02, the register law).** The intro must state the core problems cairn solves
+  (named, concrete) and who it obviously ISN'T for (in the intro itself, flatly, not delegated
+  to a link). Disqualifying the wrong reader early is a feature of the intro, not a cost.

@@ -4,7 +4,7 @@ The tool you'll write in is called cairn. Nothing you do while drafting can brea
 
 ## Signing in
 
-Go to your site's `/admin` page and type your email address. A sign-in link arrives in your inbox, and clicking it signs you in on this device. There is no password; access rides on your email address. If the link doesn't arrive within a minute or two, check spam, then ask the person who runs your site to confirm your address is on the editor list.
+Signing in happens entirely by email. Enter your address at your site's `/admin` page, and a sign-in link arrives in your inbox; following it signs you in on that device. There is no password; access rides on your email address. If a link doesn't arrive within a minute or two, check spam, then confirm with your site's administrator that your address is on the editor list.
 
 ## Writing
 
@@ -26,7 +26,7 @@ The [writing guide](./write-in-the-editor.md) tours the whole surface: headings,
 
 ## Beyond plain text
 
-Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. You never have to build these by hand; the insert menu asks a couple of questions and writes the block for you. A block can fold down to a single line from the marker in its margin, to keep a long draft readable, and a folded block unfolds itself the moment your typing or your cursor touches it, so you can never change text you can't see. Edit the words inside a block freely, and leave its marker lines as they are; if one is ever damaged, the insert menu can produce a fresh one.
+Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. The insert menu composes these: it asks for the block's particulars and writes the markup itself. A block can fold down to a single line from the marker in its margin, to keep a long draft readable, and a folded block unfolds itself the moment your typing or your cursor touches it, so you can never change text you can't see. Edit the words inside a block freely, and leave its marker lines as they are; if one is ever damaged, the insert menu can produce a fresh one.
 
 ## Tidy, if your site has it
 
@@ -34,10 +34,10 @@ Some sites turn on tidy, a button that offers a light copy-edit of your draft: s
 
 ## Saving and publishing are separate steps
 
-Save keeps your work privately. A saved draft waits for you, and readers never see it. Publish is the step that puts your words on the live site, and until you press it, nothing changes for readers. The [publishing guide](./publish-and-discard.md) covers the details, including how to discard a draft.
+Save keeps your work private: a draft persists indefinitely, and readers never see it. Publish is the deliberate step that puts words on the live site; until you take it, nothing changes for readers. The [publishing guide](./publish-and-discard.md) covers the details, including how to discard a draft.
 
 If someone else edited the same entry while you were writing, cairn refuses to save over their work. Neither of you can lose words to the other.
 
 ## When something looks wrong
 
-Ask the person who runs your site. There is usually a support contact in the editor's help screen. Everything you publish is kept in the site's history, so the person who runs your site can restore an earlier version if something goes wrong.
+Your site's administrator is the first call, and there is usually a support contact in the editor's help screen. Everything you publish is kept in the site's history, so the administrator can restore an earlier version if something goes wrong.

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Media storage: bytes in R2, a logical reference in git
 
 cairn keeps content as markdown in git, which is the right home for text and the wrong home for

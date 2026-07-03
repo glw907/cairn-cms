@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # The editor copy-edit: local spellcheck, voice-preserving tidy
 
 cairn's editor carries two copy-edit features that sit at opposite ends of a spectrum. Spellcheck runs

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Write in the editor
 
 Open any post or page from the admin and you land in the editor. The title sits at the top, large

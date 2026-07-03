@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Core (`@glw907/cairn-cms`)
 
 The root export is the engine. It carries the adapter and schema contract your site declares, the

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Add an island
 
 An island is a directive component that renders a static fallback on the server and mounts a live Svelte

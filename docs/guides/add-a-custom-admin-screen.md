@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Add a custom admin screen
 
 You can add your own screen to the cairn admin: a concrete SvelteKit route under `/admin/`, rendered

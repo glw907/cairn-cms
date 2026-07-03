@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Reference: log events
 
 cairn emits structured diagnostic events through `console`, which Cloudflare Workers Logs ingests

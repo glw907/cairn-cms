@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Media (`@glw907/cairn-cms/media`)
 
 This subpath holds the node-safe media surface a site actually reaches into: the config normalizer,

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Wire the delivery surface
 
 This guide takes your content public through the typed read model, the permalink route, the feeds, and the build-time manifest wiring.

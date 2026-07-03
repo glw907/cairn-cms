@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Islands (`@glw907/cairn-cms/islands`)
 
 This subpath holds the client runtime for content islands: the seam that mounts a site's live Svelte

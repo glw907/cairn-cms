@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Delivery data (`@glw907/cairn-cms/delivery/data`)
 
 This subpath holds the index builders, the feed, sitemap, and robots builders and responders, the

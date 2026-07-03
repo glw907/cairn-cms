@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Ambient types (`/ambient`)
 
 A type-only module whose import side effect augments SvelteKit's `App.Locals` with the `editor`

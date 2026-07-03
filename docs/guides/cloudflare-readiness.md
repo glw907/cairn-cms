@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Cloudflare readiness
 
 Goal: take a default 2026 Cloudflare account to one that runs a cairn site, where editors sign in by email and publishes commit to GitHub. Work the sections in order. `cairn doctor` is the automated pass over this same list: each condition id below names a doctor check, and the doctor's report prints the same remediation the section spells out.

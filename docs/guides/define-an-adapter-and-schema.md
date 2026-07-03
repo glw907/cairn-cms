@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Define an adapter and schema
 
 The adapter is the one object that tells cairn what your site's concepts are, how their slugs encode, and what fields each concept carries. This guide walks you through writing it.

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # The canonical admin mount
 
 A cairn site mounts the whole `/admin` surface with one catch-all route pair plus one server

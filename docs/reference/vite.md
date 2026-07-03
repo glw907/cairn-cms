@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Vite (`@glw907/cairn-cms/vite`)
 
 This subpath holds the build-time manifest plugin. The `cairnManifest()` plugin evaluates a site's

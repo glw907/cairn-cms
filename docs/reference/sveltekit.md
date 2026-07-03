@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # SvelteKit (`@glw907/cairn-cms/sveltekit`)
 
 This subpath holds the server side of the admin. The canonical wiring is the single mount:

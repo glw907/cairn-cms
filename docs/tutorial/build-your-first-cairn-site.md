@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Build your first cairn site
 
 This tutorial takes you from an empty directory to a working cairn site running on your own machine. You will build a small blog called `Field Notes`, and along the way you will touch everything cairn currently ships, including the adapter and schema, the render pipeline, a custom component, internal links, the delivery surface, the nav menu, and the admin editor. The repository carries a complete consumer site at [`examples/showcase`](../../examples/showcase); keep it open alongside this page, because every file you write here has a finished counterpart there.

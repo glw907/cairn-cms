@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Deploy to Cloudflare
 
 Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub and the push redeploys, which is how held edits become live content.

@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Render authoring (`@glw907/cairn-cms/render`)
 
 The component-authoring toolkit a site reaches for inside a component's `build(ctx)`. These helpers

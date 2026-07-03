@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # The `cairn-doctor` CLI
 
 `cairn-doctor` is the setup preflight. It probes the configuration a deployed cairn site depends

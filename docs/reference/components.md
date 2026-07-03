@@ -1,3 +1,5 @@
+<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
+
 # Components (`@glw907/cairn-cms/components`)
 
 This subpath holds the admin Svelte UI. It spans the layout shell, the sign-in and confirm pages,

@@ -459,8 +459,11 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   lines — flag those rather than silently keeping them.
 
 - **The three-gate stack applies to ALL writing (Geoff, 2026-07-03).** Register (the slop
-  catalogue and Vale gate), logic (the aggressive Russell pass), and the EMPIRICAL check:
-  every factual claim verified against the code, the reference docs, or the world before
-  Geoff reads. The README claims-audit is the model (it caught the auth-seam overstatement,
+  catalogue and Vale gate), logic (the aggressive Russell pass), and the EMPIRICAL check,
+  which runs in both directions (Geoff, 2026-07-03: "statements need to conform to facts and
+  be supported by them"): no statement may contradict a checkable fact, AND every substantive
+  statement must trace to positive support — code, a measurement, a documented behavior, or
+  Geoff's testimony. Merely unfalsified is not enough; an unsupported statement gets evidence
+  or gets cut. The README claims-audit is the model (it caught the auth-seam overstatement,
   the wrong component roster, and the misleading still-builds claim). A page is not
   review-ready until it has survived all three.

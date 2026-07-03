@@ -6,6 +6,10 @@ This page explains why I wrote cairn in detail. It also explains why you might (
 
 A fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. An admin your site mounts with a handful of files. A commit pipeline: saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function, yours, that the editor's preview and your public pages both call. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.
 
+## Who is cairn for?
+
+Small organizations, and the developers who help them. I like helping small organizations with their technical problems, and the pattern repeats: a club, a nonprofit, or a small business needs a site its own people can keep current, and one developer stands behind it. Cairn is built for both halves of that arrangement.
+
 ## Love your editors
 
 The people who write for a small site are normal human beings, not developers. The git-based CMSes get the storage right, keeping content as plain files in your own repo, but they were built by developers for developers, and they keep asking editors to think in commits, branches, and merge conflicts. For most people who write, that's a bridge too far, and they either give up or hand every edit back to you.
@@ -28,7 +32,7 @@ Your public site carries none of this, since render is yours. The admin skeleton
 
 ## Built to be built on
 
-I like helping small organizations with their technical problems, and I'd rather develop than support. Both shaped cairn. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
+I'd rather develop than support, and that shaped cairn as much as anything. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
 
 The engine's side of that bargain is a narrow public surface, versioned and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
 

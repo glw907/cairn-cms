@@ -64,14 +64,14 @@ I'd rather develop than support, and that shaped cairn as much as anything. The 
 
 The engine's side of that bargain is a narrow public surface, versioned and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
 
-## When you shouldn't use cairn
+## Where cairn sits
+
+The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature, and cairn does too. iA Writer takes the act of writing more seriously than any CMS does, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.
+
+## Why not cairn?
 
 Cairn is opinionated about most things, and the opinions aren't negotiable. It's the wrong tool if:
 
 - **You don't have (or don't want) a Cloudflare account.** The stack is the product. Cairn won't meet you halfway on hosting.
 - **Your team works in React**, or anything that isn't Svelte. That's a grain judgment, not a value judgment: everything from the seams to the starter template assumes Svelte.
 - **You need open-ended, user-defined collections.** Cairn's concepts are declared up front, because an engine with opinions about what a Post is can protect editors in ways a generic collection builder can't. If your content model is itself user-generated, you want a different kind of tool.
-
-## Where cairn sits
-
-The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature, and cairn does too. iA Writer takes the act of writing more seriously than any CMS does, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.

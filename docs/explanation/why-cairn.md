@@ -18,6 +18,8 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 ## Why the stack?
 
+Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool.
+
 ### Cloudflare
 
 Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade. No Cloudflare account, no cairn.

@@ -31,9 +31,8 @@ me all three.
 
 Cairn is deliberately small. It manages markdown content and the admin where editors write,
 and that's it. Anything else your site does, you build next to cairn, and there are
-documented seams where your code has to touch the engine. The admin itself is a scaffold
-that's intentionally easy to extend: your own screens mount inside it in the same DaisyUI
-and Tailwind idiom it's built from. The stack is fixed: SvelteKit, Cloudflare, GitHub, no
+documented seams where your code has to touch the engine. Your own admin screens mount
+inside cairn's, in the same DaisyUI and Tailwind idiom the scaffold is built from. The stack is fixed: SvelteKit, Cloudflare, GitHub, no
 abstraction layers over any of them.
 [Why cairn](./docs/explanation/why-cairn.md) explains both the rationale and the practical
 limits of my choices.
@@ -50,18 +49,18 @@ The short version of a build: describe your content in an adapter (concepts, the
 target, your render function), mount the admin with a handful of files, bind a D1 database
 and an email sender in `wrangler.jsonc`, and deploy. The
 [tutorial](./docs/tutorial/build-your-first-cairn-site.md) walks that whole path, from an
-empty directory to a deployed site with a working admin, and it's the right starting point.
+empty directory to a deployed site with a working admin.
 
-After that, the docs split by what you need:
+After that, the [docs](./docs/README.md) split by what you need:
 [guides](./docs/guides/README.md) are task recipes, for developers and for editors
 separately; the [reference](./docs/reference/README.md) documents every export, one page per
 entry point, checked against the code in CI; and
-[explanation](./docs/explanation/README.md) covers the architecture and the security model,
-and why they are the way they are. The [docs index](./docs/README.md) ties them together.
+[explanation](./docs/explanation/README.md) covers the architecture, the security model,
+and the reasoning behind both.
 
 Cairn is pre-1.0, and it runs two production sites today, [ecxc.ski](https://ecxc.ski) and
 [907.life](https://907.life). If you remove it someday, you're left with a repo of markdown
-that still builds, which is how leaving a CMS should work. Versioning and upgrades are the
+that still builds. Versioning and upgrades are the
 [upgrade guide](./docs/guides/upgrade-cairn.md)'s job, history lives in the
 [CHANGELOG](./CHANGELOG.md), security reporting in the [policy](./SECURITY.md), and the
 license is [MIT](./LICENSE).

@@ -449,8 +449,11 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   arguments. And the reader is fully SvelteKit literate: never gloss a framework concept
   (form actions, hydration, `locals`, adapters); speak in them, precisely.
 
-- **The Russell pass (Geoff, 2026-07-03).** Every prose review checks logical consistency,
-  not just register: non-sequiturs, equivocation (the same word doing positive work in one
-  section and negative in another), universal claims that overstate, arguments whose middle
-  step is missing, and internal contradictions across the page. Challenge stupidity; nothing
-  logically broken passes because it sounds good.
+- **The Russell pass is MANDATORY and aggressive (Geoff, 2026-07-03: "the aggressive logical
+  review is important").** Every draft gets it before Geoff reads, and it ranks with the slop
+  gate, not below it: non-sequiturs, equivocation (the same word doing positive work in one
+  section and negative in another), universal claims that overstate, arguments with a missing
+  middle step, and contradictions across the page (the git-exposure repair is the type
+  specimen: two sections arguing incompatible critiques of the same tools). Challenge
+  stupidity; nothing logically broken passes because it sounds good, including Geoff's own
+  lines — flag those rather than silently keeping them.

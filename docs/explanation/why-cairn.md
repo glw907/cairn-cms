@@ -20,15 +20,27 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 ### Cloudflare
 
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero. That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the largest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. The cost is plain. No Cloudflare account, no cairn.
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade. No Cloudflare account, no cairn.
 
 ### SvelteKit
 
-The admin is built on form actions that work before JavaScript loads, which is SvelteKit's native grain, and it means an editor on hotel Wi-Fi still has a working tool. Public pages are server-rendered markdown with islands of interactivity where you declare them, which is the shape of a content site. And the component model the seams speak is the one you already work in. A React team should pick a different CMS rather than fight this.
+The admin runs on form actions that work before JavaScript loads, which is SvelteKit's native grain, and it means an editor on hotel Wi-Fi still gets a working tool. Public pages are server-rendered markdown with islands of interactivity where you declare them, and that's exactly the shape of a content site. The component model the seams speak is the one you already work in. If your team lives in React, pick a different CMS rather than fight the grain.
 
 ### DaisyUI, for the admin only
 
-Your public site carries none of this, since render is yours. The admin skeleton uses DaisyUI over Tailwind because extending it means working in the most copyable idiom in the ecosystem instead of learning a bespoke design system. The cost: it's Tailwind's idiom or none. There is no theming API to adapt the admin to some other system.
+Your public site carries none of this (render is yours). The admin skeleton uses DaisyUI over Tailwind because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
+
+## Why not use other tools?
+
+A fair question, because good tools do run on Cloudflare, and I've used several of them.
+
+**Sveltia, Decap, and the git-based admins.** The closest family, and the site that taught me the most ran Sveltia before cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But they're config-driven dashboards: editors get a CMS-shaped control panel rather than a writing tool, and the moment a site needs more than content editing, you're building a second admin somewhere else and asking volunteers to learn both.
+
+**Keystatic.** Thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
+
+**The hosted headless services (Sanity, Contentful, and friends).** They pair fine with a Cloudflare frontend, and the editing UIs are polished. But your content lives in their database under their pricing, and leaving is an export project. I wasn't willing to make that trade.
+
+**WordPress, Ghost, and the server CMSes.** They don't run on Workers at all. They need a real server somewhere, which brings back exactly the cost and attack surface that moving to Cloudflare removes.
 
 ## Built to be built on
 
@@ -38,9 +50,11 @@ The engine's side of that bargain is a narrow public surface, versioned and enfo
 
 ## When you shouldn't use cairn
 
-- Teams without (or against) a Cloudflare account. The stack is the product, and cairn won't meet you halfway on hosting.
-- React shops, or any team not working in Svelte. This is a grain judgment, not a value judgment. Everything from the seams to the starter template assumes Svelte.
-- Sites that need open-ended, user-defined collections. Cairn's concepts are declared up front, because an engine with opinions about what a Post is can protect editors in ways a generic collection builder can't. If your content model is itself user-generated, you want a different kind of tool.
+Cairn is opinionated about most things, and the opinions aren't negotiable. It's the wrong tool if:
+
+- **You don't have (or don't want) a Cloudflare account.** The stack is the product. Cairn won't meet you halfway on hosting.
+- **Your team works in React**, or anything that isn't Svelte. That's a grain judgment, not a value judgment: everything from the seams to the starter template assumes Svelte.
+- **You need open-ended, user-defined collections.** Cairn's concepts are declared up front, because an engine with opinions about what a Post is can protect editors in ways a generic collection builder can't. If your content model is itself user-generated, you want a different kind of tool.
 
 ## Where cairn sits
 

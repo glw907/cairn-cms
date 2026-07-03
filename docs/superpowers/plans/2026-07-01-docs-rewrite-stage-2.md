@@ -405,3 +405,7 @@ lives in shape. The protocol, binding on every voice-bearing page:
 
 Structured genres (reference, guides, tutorial) carry lower register risk; their drafts miss
 on details the gates catch, and they proceed at normal dispatch cadence.
+
+- **Sections open with actual sentences (Geoff, 2026-07-02).** No verbless fragment openers
+  ("A fixed set of content concepts you declare..."); the first line under any header is a
+  complete sentence with a subject, usually naming cairn or the reader.

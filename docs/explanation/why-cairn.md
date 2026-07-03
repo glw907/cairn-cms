@@ -1,7 +1,5 @@
 # Why cairn
 
-The reasons behind cairn's choices, and what each one costs.
-
 ## What cairn is
 
 A fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. An admin your site mounts with a handful of files. A commit pipeline: saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function, yours, that the editor's preview and your public pages both call. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.

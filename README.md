@@ -2,7 +2,7 @@
 
 Cairn is my embedded CMS and admin-interface scaffold for SvelteKit sites on Cloudflare.
 
-I built cairn for my own sites. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, but unfortunately committing to Cloudflare limits your choice of tools. And I wanted the people who write content for sites to get a tool that takes their writing seriously, without making them learn git.
+I built cairn for my own sites. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, but unfortunately committing to Cloudflare limits your choice of tools. The git-based CMSes that remain get the storage right, keeping content as plain files in your own repo, but they still ask editors to think in git, and for normal human beings who write, that's a bridge too far. I wanted the people who write content for sites to get a tool that takes their writing seriously and keeps the version control invisible.
 
 ## Love your editors!
 

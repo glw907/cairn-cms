@@ -35,9 +35,9 @@ publish, and if two people collide, cairn refuses the save rather than merging b
 
 ## Why Cloudflare
 
-Workers, D1, R2, and Email Sending cover everything a small site needs, from one vendor, at
-prices that round to zero for small-site traffic. That alone wouldn't justify locking to one
-host. The stronger reason is what refusing portability buys: a host-abstraction layer would
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2,
+and Email Sending cover everything a small site needs, from one vendor, at prices that round
+to zero for small-site traffic. That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would
 be the largest single abstraction in the codebase, and every abstraction cairn doesn't carry
 is a seam that can't break. The cost is plain. No Cloudflare account, no cairn.
 

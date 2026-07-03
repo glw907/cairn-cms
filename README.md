@@ -7,10 +7,12 @@ holding branch, one per entry. Publishing copies the entry to `main` with the ed
 commit author, and from there the site deploys like any other push. There's no hosted
 service and no database anywhere in this.
 
-I built cairn for my own sites. I kept needing to hand a site over to people who write,
-without teaching them git, and I never liked the available answers: the platform CMSes want
-to own the whole site, and the hosted ones keep your content in their database. So
-cairn is deliberately small. It manages markdown content and the admin where editors write,
+I built cairn for my own sites. I host everything on Cloudflare, because nothing else does
+bulletproof, security-forward hosting at almost no cost, but committing to Cloudflare limits
+your choice of tools. And I wanted the people who write for a site, non-technical editors,
+to get a first-class experience without learning git. Nothing I found gave me both. The
+platform CMSes want to own the whole site, and the hosted ones keep your content in their
+own database. So cairn is deliberately small. It manages markdown content and the admin where editors write,
 and that's it. Anything else your site does, you build next to cairn, and there are
 documented seams where your code has to touch the engine. The stack is fixed: SvelteKit,
 Cloudflare, GitHub, no abstraction layers over any of them. "Out of scope" is an answer I

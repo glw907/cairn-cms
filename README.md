@@ -9,8 +9,7 @@ service and no database anywhere in this.
 
 I built cairn for my own sites. I kept needing to hand a site over to people who write,
 without teaching them git, and I never liked the available answers: the platform CMSes want
-to own the whole site, and the hosted ones keep your content in their database. I'd also
-been burned before by tools where every update meant reworking my own code around them. So
+to own the whole site, and the hosted ones keep your content in their database. So
 cairn is deliberately small. It manages markdown content and the admin where editors write,
 and that's it. Anything else your site does, you build next to cairn, and there are
 documented seams where your code has to touch the engine. The stack is fixed: SvelteKit,

@@ -345,3 +345,14 @@ waste, discarded as each page is replaced.
   a subordinate clause, one barely counts as a choice). Announcement sentences ("The stack
   picks have reasons you can check.") are the same defect: a meta-line doing setup instead of
   saying the first real thing.
+
+- **Imitation-first drafting, and the cadence catalogue (Geoff, 2026-07-02).** Drafting
+  rule-filters its own cadence poorly; the reliable process is holding a specific exemplar in
+  ear while writing (Willison's "sqlite-utils is my combined Python library and CLI tool...",
+  antirez's narration), then checking against the named cadence patterns: the
+  fragment-plus-balanced-pair opener, the staccato-then-elaboration metronome, balanced
+  two-beat closures ("code in your app, and files in your repo"), echo pairs ("small enough
+  to..., and small enough that..."), every paragraph ending on its strongest line, uniform
+  information density. Counter-moves: plain long spec sentences that just inform, uneven
+  lengths, flat endings, asymmetric constructions, stopping before the "strong" close. Every
+  prose review checks the named patterns explicitly.

@@ -8,9 +8,29 @@ Go to your site's `/admin` page and type your email address. A sign-in link arri
 
 ## Writing
 
-You write in plain text and add formatting with a few punctuation marks: `#` makes a heading, `**bold**` makes bold, and a blank line starts a new paragraph. (This way of writing is called markdown.) The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site. It might look unusual at first, but the toolbar types the marks for you, and the preview beside your writing shows your words exactly as readers see them, in the site's real styling.
+You write in plain text and add formatting with a few punctuation marks. This way of writing is called markdown, and a little of it goes a long way:
+
+```
+## A heading
+
+Some words matter more than others, so you can make them **bold** or
+give them *emphasis*. A blank line starts a new paragraph, and
+[a link](https://example.com) is a bracketed phrase followed by its address.
+```
+
+The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
+
+Markdown is also not a quirk of this tool. The writing apps many authors swear by (iA Writer, Ulysses, Bear) store their documents this way, documentation teams at large software companies write in it, and researchers who need work to stay readable for decades choose plain text deliberately, because it survives every change of tool and never locks words inside an app. Your site keeps your writing in the same durable form.
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
+
+## Pictures, callouts, and other pieces
+
+Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. You never have to build these by hand; the insert menu asks a couple of questions and writes the block for you.
+
+## Tidy, if your site has it
+
+Some sites turn on tidy, a button that offers a light copy-edit of your draft: spelling, punctuation, and the small conventions that keep a site consistent when several people write for it. Cairn is a tool for humans writing prose, and tidy is scoped to match. It proposes small fixes, shows you each one, and changes nothing until you accept it, so your text is never quietly rewritten. It is not meant to draft your prose, and it will not take your voice.
 
 ## Saving and publishing are separate steps
 

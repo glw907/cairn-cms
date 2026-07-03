@@ -25,7 +25,7 @@ give them *emphasis*. A blank line starts a new paragraph, and
 
 The toolbar enters the marks for you, the editor keeps a cheat-sheet for the rest, a spellchecker runs as you type, and a Zen mode hides everything except your words. The preview beside your writing shows your words exactly as readers see them, in the site's real styling. The division of labor is deliberate: your marks say only what something is, a heading or an emphasis, and the site decides how everything looks, so every page you write stays consistent with the rest of the site.
 
-The convention is not peculiar to this tool. iA Writer, Ulysses, and Bear all have their writers work in markdown or a close dialect of it, documentation teams at large software companies write in it, and it is the form researchers choose when work has to stay readable for decades. Every version you save is kept, so earlier wording is never lost. Cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
+The convention is not peculiar to this tool. If you've written in iA Writer, Ulysses, or Bear, the marks will already look familiar, and if you haven't, you'll be learning the same convention those tools teach. Every version you save is kept, so earlier wording is never lost. Cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
 

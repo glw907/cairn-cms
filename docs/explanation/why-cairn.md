@@ -18,7 +18,7 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 ### For developers
 
-Cairn is a developer's tool as much as an editor's. A new site starts quickly (the starter template plus a few steps of wiring), whatever you build next to it stays yours, and pulling updates is boring on purpose, because the public surface is narrow and checked by gates. The admin is a scaffold you extend in place rather than a black box you work around. The details are in [Built to be built on](#built-to-be-built-on), below.
+Cairn is a developer's tool as much as an editor's. A new site starts quickly (the starter template plus a few steps of wiring), whatever you build next to it stays yours, and pulling updates is boring on purpose, because the public surface is narrow and checked by gates. The admin is a scaffold you extend in place rather than a black box you work around. And it contains very real developer affordances: a fully typed adapter (your content schema typechecks), a doctor command that diagnoses a misconfigured site, structured logs for every operationally meaningful event, and a local dev backend so you can build without touching real GitHub. The details are in [Built to be built on](#built-to-be-built-on), below.
 
 ## Why markdown and not a WYSIWYG editor?
 

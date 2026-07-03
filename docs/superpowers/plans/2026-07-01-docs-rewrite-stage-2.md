@@ -456,7 +456,12 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   middle step, and contradictions across the page (the git-exposure repair is the type
   specimen: two sections arguing incompatible critiques of the same tools). Challenge
   stupidity; nothing logically broken passes because it sounds good, including Geoff's own
-  lines — flag those rather than silently keeping them.
+  lines — flag those rather than silently keeping them. And the principle is constructive,
+  not only critical (Geoff, 2026-07-03: "logical argument and structure is a foundation for
+  all cairn writing"): pages are STRUCTURED as arguments, premises before conclusions,
+  dependencies ordered (the stack chain — Cloudflare premise, JS/TS constraint, SvelteKit,
+  DaisyUI — is the type specimen), and a counterfactual that proves a constraint real ("I'd
+  write cairn in Python or Go if I could") beats an assertion that it is.
 
 - **The three-gate stack applies to ALL writing (Geoff, 2026-07-03).** Register (the slop
   catalogue and Vale gate), logic (the aggressive Russell pass), and the EMPIRICAL check,

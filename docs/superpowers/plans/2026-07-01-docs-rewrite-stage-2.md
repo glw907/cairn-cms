@@ -536,3 +536,10 @@ LEGACY TEXT banner and is never cited, quoted, or fact-checked against by anyone
 or agent); the Stage 1 corpus grades are void for all purposes; facts come from `src/` and
 the four ratified pages only. Every rewrite task DELETES its target page first and writes
 from zero — no editing legacy text. The banners die with the pages they mark.
+
+- **Two leannesses, only one of them a virtue (Geoff, 2026-07-03: "I may have pushed too hard
+  on making the docs lean").** Lean INVENTORY stands: few pages, no cargo-cult files, scope
+  discipline. Lean PROSE is retired as a goal: a page runs as deep as its subject deserves,
+  and the sentiment research always said completeness and self-sufficiency are what readers
+  love. Compression targets redundancy and filler, never depth. The restatement rule guards
+  against bloat; the reading-time floors guard against over-compression.

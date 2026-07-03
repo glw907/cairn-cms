@@ -1,6 +1,6 @@
 # Write in the editor
 
-Everything your site publishes gets written in cairn's editor, and this guide covers all of it at working depth. It assumes you've never used a tool quite like this one, so each part starts with what a thing is before how to use it. Read it start to finish once, or come back with one question; the table of contents knows the way either way. If what you want right now is a ten-minute orientation instead of the full tour, that's [Welcome, editors](./editor-welcome.md).
+Everything your site publishes is written in cairn's editor, and this guide covers all of it. Each section explains what something is before showing how to use it, so you can read start to finish or use the table of contents to jump to one question. For a shorter orientation, read [Welcome, editors](./editor-welcome.md) first.
 
 - [The editor at a glance](#the-editor-at-a-glance)
 - [Find and create entries](#find-and-create-entries)
@@ -26,7 +26,7 @@ Two more things are worth knowing before anything else. `Ctrl /` opens the edito
 
 ## Find and create entries {#find-and-create-entries}
 
-The admin's front page is the inventory of everything the site has: posts in one list, pages in another, and any other kinds your site defines in their own. Each row shows the entry's title, a short excerpt, and a status. **Published** means the live site carries it. **Edited** means it's published, but changes are waiting that readers haven't seen. **New** means it has never been published; it exists only as a draft. When the lists grow long, a filter narrows them to the entries that need attention, meaning anything not simply published and current.
+The admin's front page is the inventory of everything the site has: posts in one list, pages in another, and any other kinds your site defines in their own. Each row shows the entry's title, a short excerpt, and a status. **Published** means the live site carries it. An entry marked **Edited** is published too, but has changes waiting that readers haven't seen. **New** entries have never been published at all and exist only as drafts. When the lists grow long, a filter narrows them to the entries that need attention, meaning anything not simply published and current.
 
 To create an entry, use the New row at the foot of the list you want it in. Which list matters: a post is dated writing that flows into the site's archives, and a page is the standing kind, a distinction [Welcome, editors](./editor-welcome.md#posts-and-pages) covers if it's unfamiliar. The dialog asks for a title, and as you type it, an address for the entry (its URL) takes shape beneath, derived from the title. You can adjust the address before creating. Afterward it lives in the [details panel](#the-details-panel) and never changes on its own, no matter how the title changes, because a published address is something readers bookmark and other sites link to.
 
@@ -34,7 +34,7 @@ To create an entry, use the New row at the foot of the list you want it in. Whic
 
 Writing in cairn is writing plain text, plus a small set of punctuation marks that tell the site what a piece of text is: a heading, an emphasis, a list, a link. The marks are the markdown convention, and they were chosen to look like what they mean, so a marked-up draft reads naturally even before anything renders it. You don't need to learn them before you start. The toolbar enters every one of them for you, the cheat-sheet (`Ctrl /`) lists them, and most writers find they've absorbed the few they use within a day or two.
 
-One idea makes the whole system click: your marks say only what something *is*, and the site decides how it *looks*. You never choose a font, a size, or a color, because those decisions belong to the site's design and get made once for every page. That's why everything you write comes out looking like it belongs on your site—it can't come out any other way.
+The marks record what a piece of text *is*, and the site's design decides how it *looks*. You never choose a font, a size, or a color; those belong to the site's design, which is set once and applied to every page. So everything you write comes out looking like the rest of your site.
 
 The sections below cover every mark the editor understands, one at a time, each with an example of what you type. The preview shows what renders.
 
@@ -63,7 +63,7 @@ A heading is a line that starts with `#` marks and a space, and the number of ma
 The text of the section continues as ordinary paragraphs.
 ```
 
-Your entry's title is its own field above the draft, so it takes the top level for you; headings inside the text normally start at the second level (`##`) and step down one level at a time. Keeping the levels in order matters more than it looks: readers who navigate by screen reader move through a page by its heading structure, and a skipped level is a missing stair.
+Your entry's title is its own field above the draft, so it takes the top level for you; headings inside the text normally start at the second level (`##`) and step down one level at a time. Keeping the levels in order matters more than it looks: readers who navigate by screen reader move through a page by its heading structure, and a skipped level leaves a gap a screen-reader user has no way around.
 
 `Ctrl Alt 2` makes the current line a heading and `Ctrl Alt 3` a smaller one. For paragraphs, the rule is short: a blank line starts a new paragraph, and without the blank line, the text runs on in the same one.
 
@@ -127,7 +127,7 @@ Results are posted on [the racing page](https://example.org/racing).
 
 The bracketed phrase is what readers see and click, so make it say where the link goes. "The racing page" tells a reader what they'll get; "click here" tells them nothing, and readers using a screen reader often hear a page's links as a bare list, where "click here" is useless. The easiest way to make an external link is to select the phrase and press `Ctrl K`, and the editor writes the brackets and asks for the address.
 
-Links to your own site's entries work differently, and better. Type `[[` and start typing a name, and a picker of your entries opens; choose one, and the editor inserts a link addressed to the entry itself rather than to a URL. That kind of link keeps working even if the entry's address changes later. The toolbar's link-to-page button opens the same picker.
+Links to your own site's entries work differently. Type `[[` and start typing a name, and a picker of your entries opens; choose one, and the editor inserts a link addressed to the entry itself rather than to a URL. That kind of link keeps working even if the entry's address changes later. The toolbar's link-to-page button opens the same picker.
 
 Bare web addresses also turn into links on their own—paste `https://example.org` into your text and it renders clickable—though a written-out address is rarely as readable as a phrase.
 
@@ -157,7 +157,7 @@ A table is drawn with pipes for columns and a row of dashes under the header:
 
 The alignment in your draft doesn't have to be neat, because the rendered table aligns itself; the pipes only have to be present. Even so, hand-drawing one is tedious, and the toolbar's table button inserts a starter table for you to fill in. For working on a table that's already large, the [Markup posture](#postures-and-modes) shows the text denser, which makes the columns easier to track.
 
-Tables are for tabular information—results, schedules, comparisons. For laying out a page visually, they're the wrong tool, and the site's design will fight them.
+Tables are for tabular information—results, schedules, comparisons. They are the wrong tool for laying out a page visually, and the site's design will not style them for that.
 
 ### Footnotes {#footnotes}
 
@@ -169,7 +169,7 @@ The race was decided on handicap.[^1]
 [^1]: Under the club's 2025 rating table.
 ```
 
-The published page gathers all the notes at the bottom in order, links each mark to its note, and links each note back to its mark. Where you keep the note lines in the draft is up to you; directly under the paragraph that references them is the easiest to maintain.
+The published page gathers all the notes at the bottom in order, links each mark to its note and back again. Where you keep the note lines in the draft is up to you; directly under the paragraph that references them is the easiest to maintain.
 
 ### Escaping {#escaping}
 
@@ -177,7 +177,7 @@ Occasionally you want a mark to be just a character: an asterisk that means mult
 
 ## Postures and modes {#postures-and-modes}
 
-Different moments in writing want different surfaces. Drafting a paragraph wants comfortable type and nothing in the way; reworking a table wants density and precision; a final read-through wants the reader's view, not the writer's. The editor covers these with a set of postures and modes, every one of them optional, and none of them ever changes your text.
+How you want the writing surface to look changes with the task. Drafting goes best with comfortable type and an uncluttered screen. Reworking a table is easier when the text is packed tightly, so the columns line up. For a final read you want to see the page the way a reader will. The editor gives you postures and modes for all of this. They are optional, and none of them changes your text.
 
 The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type, and it's where most writing happens. **Markup** shows the same text denser and closer to the raw marks, which earns its keep on tables, long link lists, and structural cleanup. One toolbar click switches them.
 
@@ -233,7 +233,7 @@ An alert is the callout's stronger sibling, for the message a reader must not mi
 
 ### Icon {#icon}
 
-An icon is a small glyph from your site's declared set, placed as its own short line. The insert form lists the available icons by name, and what's in the set is up to your site. Icons carry no text of their own; they mark, rather than say.
+An icon is a small glyph from your site's declared set, placed as its own short line. The insert form lists the available icons by name, and what's in the set is up to your site. An icon carries no text of its own; it stands in for a word or marks a spot on the page.
 
 ### Video {#video}
 
@@ -253,11 +253,11 @@ A FAQ block is a question that opens to its answer when the reader clicks. The q
 
 ### Banner {#banner}
 
-A banner is a time-limited announcement with an expiry date. It shows until the date passes and then hides itself, with no further attention from anyone. Use it for the notice that has a natural end—registration closing, a weather hold, a date-specific reminder—and let it retire on schedule. The published page simply stops showing it; your draft keeps the block, so the history stays visible to editors.
+A banner is a time-limited announcement with an expiry date. It shows until the date passes and then hides itself, with no further attention from anyone. Use it for the notice that has a natural end—registration closing, a weather hold, a date-specific reminder—and let it retire on schedule. The published page stops showing it. Your draft keeps the block, so editors can still see it.
 
 ## Images and the media library {#images-and-the-media-library}
 
-Your site keeps every image in one shared place, the media library, rather than attaching copies to individual pages. The arrangement pays off in ways that matter over time: a photograph uploaded for one post is available to every page after it, replacing an image in the library updates it everywhere it appears, and [the library screen](./manage-the-media-library.md) shows where each image is used before you delete or replace anything.
+Your site keeps every image in one shared place, the media library, rather than attaching copies to individual pages. A photograph uploaded for one post is available to every page after it, and replacing an image in the library updates it everywhere it appears. Before you delete or replace anything, [the library screen](./manage-the-media-library.md) shows where each image is used.
 
 Inserting an image opens that library. Pick an existing picture or upload a new one, and the editor places it in your draft as a figure—the image and its caption as one block, styled as one unit on the published page. The caption is optional and lives directly under the image in your draft, where it's easy to edit in place.
 
@@ -283,7 +283,7 @@ The count of open issues sits at the edge of the editor, and `F8` steps through 
 
 Tidy is the optional AI copy-edit, built on Claude. Its remit—small fixes only, your voice untouched—is covered in [Welcome, editors](./editor-welcome.md#tidy-if-your-site-has-it), and this section is the working procedure.
 
-Tidy isn't complicated, but it's probably a feature you haven't seen before, so it's worth knowing what to expect the first time. Nothing about it is automatic: you invoke it, it reads, and it comes back with marked proposals sitting in your draft where they would apply, each one visible before anything changes. The experience is closer to a copy editor returning your manuscript with penciled marks than to autocorrect, and the pencil is the point.
+Tidy isn't complicated, but it's probably a feature you haven't seen before, so it's worth knowing what to expect the first time. Nothing about it is automatic: you invoke it, it reads, and it comes back with marked proposals sitting in your draft where they would apply, each one visible before anything changes. The experience is closer to a copy editor returning your manuscript with penciled marks than to autocorrect.
 
 Run it over the whole draft, or select a passage first to tidy just that part. When the proposals arrive, the review is yours:
 
@@ -333,7 +333,7 @@ The tables below are the complete set. They're conveniences: typing markdown alw
 
 ## The details panel {#the-details-panel}
 
-Beyond its text, every entry carries a small amount of information about itself: when it was written, what it's about, where it lives on the site. The site uses this metadata to order archives, build topic pages, and describe the entry in lists and search results. The details panel is where you set it—`Ctrl .` or the toolbar opens it, organized into Details, Visibility, and Address.
+Beyond its text, every entry carries a small amount of information about itself, like its date and its address on the site. The site uses this metadata to order the archives and to describe the entry in lists and search results. The details panel is where you set it—`Ctrl .` or the toolbar opens it, organized into Details, Visibility, and Address.
 
 | Field | What it does |
 | --- | --- |
@@ -348,7 +348,7 @@ Your site can add fields of its own to this panel; they behave the same way, and
 
 ## Save, review, and publish {#save-review-and-publish}
 
-The idea underneath cairn's workflow is that writing and publishing are different acts, and the editor keeps them separate on purpose. While you write, your work is private: saved, safe, versioned, and invisible to readers, no matter how long it sits or how rough it is. Publishing is a separate, deliberate step, taken when you decide the words are ready, and it's the only action that changes what readers see. This is different from tools where every save is live, and it's the reason nothing you do while drafting can embarrass the site.
+The idea underneath cairn's workflow is that writing and publishing are different acts, and the editor keeps them separate on purpose. While you write, your work stays private, no matter how long it sits or how rough it is. Every save is kept, and readers see none of it. Publishing is a separate, deliberate step, taken when you decide the words are ready, and it's the only action that changes what readers see. This is different from tools where every save is live, and it's the reason nothing you do while drafting can embarrass the site.
 
 Concretely, a draft moves through three states, and the moves between them are always yours:
 
@@ -369,4 +369,4 @@ One collision rule protects everyone: if someone else edited the same entry whil
 
 ## When something looks wrong {#when-something-looks-wrong}
 
-The [welcome page's closing section](./editor-welcome.md#when-something-looks-wrong) covers the ordinary oddities and how to report the rest. The short version: your site's administrator is the first call, and a useful report names the page and what you saw. Everything you publish is kept in the site's history, so nothing here is expensive to undo.
+The [welcome page's closing section](./editor-welcome.md#when-something-looks-wrong) covers the ordinary oddities and how to report the rest. In brief: your site's administrator is the first call, and a useful report names the page and what you saw. Everything you publish is kept in the site's history, so nothing here is expensive to undo.

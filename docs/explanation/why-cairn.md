@@ -42,7 +42,7 @@ The same logic picks the storage: the best store for each thing. Git is perfect 
 
 ## Why markdown and not a WYSIWYG editor?
 
-Mostly because of what a year of WYSIWYG editing does to a site. The case for it is real: everyone has used Word, nobody has to learn anything, and the modern block editors are well made. It's also a long-running argument that I'm not trying to win here. Cairn is an expression of which side of the argument I believe to be the better one.
+Mostly because a website is not a document. Plenty of great prose gets written in Word, and for a standalone document, where the author owns the presentation, WYSIWYG is the right tool. A site is different: presentation belongs to the design system, and an editor that invites presentational choices hands authors a responsibility that was never theirs. It's a long-running argument that I'm not trying to win here. Cairn is an expression of which side of the argument I believe to be the better one.
 
 What you see in a WYSIWYG editor is what the editor renders, which is never quite what the site renders, and the gap widens with use: pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when what the site actually needs is structure ("this is a heading"). A year of that, and every page has its own private styling, with the cleanup landing on the developer.
 

@@ -1,6 +1,6 @@
 # Welcome, editors
 
-This site's writing room is a tool called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, so nothing you write can be trapped here. And nothing you do while drafting can break the live site, since your work stays private until you publish it.
+You're here to write for your site, and the writing is the point. Cairn, the tool behind the site, is built to stay out of its way: your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
 
 ## Signing in
 
@@ -8,7 +8,7 @@ Go to your site's `/admin` page and type your email address. A sign-in link arri
 
 ## Writing
 
-You write in plain text and add formatting with a few punctuation marks: `#` makes a heading, `**bold**` makes bold, and a blank line starts a new paragraph. (This way of writing is called markdown.) It might look unusual at first, but the toolbar types the marks for you, and the preview beside your writing shows your words exactly as readers see them, in the site's real styling.
+You write in plain text and add formatting with a few punctuation marks: `#` makes a heading, `**bold**` makes bold, and a blank line starts a new paragraph. (This way of writing is called markdown.) The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site. It might look unusual at first, but the toolbar types the marks for you, and the preview beside your writing shows your words exactly as readers see them, in the site's real styling.
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
 

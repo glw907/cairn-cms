@@ -506,4 +506,8 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   explanation, not repetition. The nervous-manager framing is retired as the default (it
   survives only for genuinely fear-adjacent moments like first sign-in). And this reader is
   strongly turned off by marketing slop, exactly like Geoff — the anti-slop law is
-  audience-universal, not a developer-register rule.
+  audience-universal, not a developer-register rule. The editor frame (Geoff, 2026-07-03,
+  verbatim): "For them, cairn isn't a product. It's simply a tool that helps them get an
+  important job done." Editor pages are about the READER'S JOB — the writing, the site, the
+  organization's work — with cairn instrumental and receding. A page that centers the tool
+  instead of the work has the frame backwards.

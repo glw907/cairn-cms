@@ -1,8 +1,6 @@
 # Why cairn
 
-Cairn exists for two people at once. The developer installs a library and keeps every route, template, and byte of CSS. The editor gets a writing surface behind an emailed sign-in link, with a live preview of the real site. Most tools pick one of these people and make the other suffer.
-
-The README tells the short version of why I built it. This page argues each choice properly, including what it costs you.
+The reasons behind cairn's choices, and what each one costs.
 
 ## What cairn is
 

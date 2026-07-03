@@ -4,7 +4,7 @@ This page explains why I wrote cairn in detail. It also explains why you might (
 
 ## What cairn is
 
-Cairn is a fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. It's an admin your site mounts with a handful of files, and a commit pipeline where saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function (yours) serves both the editor's preview and your public pages. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.
+Cairn is a SvelteKit library that turns a repo of markdown files into a site your editors can manage from the browser. You declare your content as concepts (Posts and Pages ship with it, and you can add your own), and each concept is a directory of markdown files with a typed frontmatter schema. The admin mounts into your site as a handful of routes. When an editor saves, cairn commits the markdown to a branch named for the entry, and when they publish, it copies the entry to `main` and your normal deploy takes it from there. Rendering is one function your site provides, and both the editor's preview and your public pages call it. That's the whole job. Everything a site needs beyond it is your code, and cairn's seams exist so your code can plug in without touching engine internals.
 
 ## Who is cairn for?
 
@@ -14,7 +14,7 @@ Cairn is for small organizations, and for the developers who help them. I like h
 
 The people who write for a small site are normal human beings, not developers. The git-based CMSes get the storage right, keeping content as plain files in your own repo, but they were built by developers for developers, and they keep asking editors to think in commits, branches, and merge conflicts. For most people who write, that's a bridge too far, and they either give up or hand every edit back to you.
 
-Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the words "commit" or "branch."
+Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose (in the spirit of iA Writer, with a low-distraction mode), and the preview renders through the site's own pipeline, so what an editor sees is what readers get. A save can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the word "commit."
 
 ### For developers
 
@@ -36,7 +36,7 @@ Cairn is aggressively opinionated about its development stack, and that's exactl
 
 ### Cloudflare
 
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade: no Cloudflare account, no cairn.
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason shows up in the code: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade: no Cloudflare account, no cairn.
 
 ### SvelteKit
 

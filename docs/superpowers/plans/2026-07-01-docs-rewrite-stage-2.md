@@ -543,3 +543,9 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   and the sentiment research always said completeness and self-sufficiency are what readers
   love. Compression targets redundancy and filler, never depth. The restatement rule guards
   against bloat; the reading-time floors guard against over-compression.
+
+- **The writer-relevance test (Geoff, 2026-07-03, fired twice on editor-welcome).** Every fact
+  on an editor page must matter to the writer at work. Ownership, storage formats, databases,
+  portability, and vendor questions are organization and developer concerns; they live on
+  those surfaces. What survives the test on editor pages: the work is safe, earlier wording
+  is recoverable, nothing breaks, the tool respects the writing.

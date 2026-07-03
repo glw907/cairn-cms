@@ -141,6 +141,12 @@ the named human gates only):**
 
 ## Next
 
+- **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
+  A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
+  resolve the absent specifier even behind the dev gate (resolution precedes dead-code
+  elimination). The scaffolder must strip the dev-gated blocks (`hooks.server.ts`,
+  `cairn.server.ts`), and the template should isolate all dev wiring behind one deletable
+  module so the strip is a file deletion, not an edit.
 - **Scaffold content is self-documenting placeholder (Geoff, 2026-07-02).** The scaffold's
   placeholder content orients whoever looks at it: the About page says what the site is and
   that the content is deliberate placeholder, the masthead names Wayfinder, and demo posts

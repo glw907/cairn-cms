@@ -6,7 +6,7 @@ I built cairn for my own sites. I host everything on Cloudflare, because nothing
 
 ## Love your editors!
 
-Cairn gives non-technical content editors a first-class writing experience with all the modern affordances: a markdown editor built for prose in the spirit of [iA Writer](https://ia.net/writer), a live preview that renders through the same function as your public pages (so editors see exactly what ships), focus and typewriter modes, a Zen mode, a local spellchecker with a per-site dictionary, and an optional AI copy-edit (tidy, built on [Claude](https://www.anthropic.com/claude)) that proposes fixes and never rewrites quietly. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. The editors' own front door is [Welcome, editors](./docs/guides/editor-welcome.md), which is also the fastest way to feel what cairn is for.
+Cairn gives non-technical content editors a first-class writing experience with all the modern affordances: a markdown editor built for prose in the spirit of [iA Writer](https://ia.net/writer), a live preview that renders through the same function as your public pages (so editors see exactly what ships), focus, typewriter, and Zen modes, a spellchecker with a per-site dictionary, and an optional AI copy-edit (tidy, built on [Claude](https://www.anthropic.com/claude)) that proposes fixes and never rewrites quietly. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. The editors' own front door is [Welcome, editors](./docs/guides/editor-welcome.md).
 
 ## Content storage and types
 
@@ -24,7 +24,7 @@ The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over an
 
 ## Wayfinder and Topo
 
-Cairn ships with a starter template called Wayfinder: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced rather than obeyed. The unmodified template runs live at [cairn.pub](https://cairn.pub), which is both the demonstration and the honest starting point, since a scaffolded site begins as exactly that site. Wayfinder is deliberately dual-natured: close to a finished site for a basic content-managed project, and a foundation to build past for one that grows.
+Cairn ships with a starter template called Wayfinder: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced. The unmodified template runs live at [cairn.pub](https://cairn.pub), and a scaffolded site begins as exactly that site. For a basic content-managed site, Wayfinder is close to finished; for one that grows, it's the starting structure.
 
 A second template, Topo, is planned: a documentation-first derivative of Wayfinder that will carry cairn's own docs when it lands.
 

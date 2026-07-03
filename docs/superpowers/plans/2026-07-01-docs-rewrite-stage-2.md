@@ -430,3 +430,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   is a peer who might use, read, or patch the code, never a customer. The register tradition
   is the maintainer README (ripgrep, sqlite-utils, re-frame), which never sells because there
   is nothing to sell.
+
+- **The noir overcorrection (Geoff, 2026-07-02: "a robot that reads too many spy thrillers").**
+  Over-applying the singleton-punch rule produces clipped dramatic declaratives at a density
+  the measured corpus never shows. Geoff's baseline is unhurried: long, even-keeled compound
+  sentences with parenthetical caveats, reporting even problems without alarm. A punch lands
+  about once per section, not once per paragraph, and the verbs stay mild.

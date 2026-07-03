@@ -379,3 +379,10 @@ waste, discarded as each page is replaced.
   when the constraints are woven through the prose (the fixed stack, "limits your choice of
   tools"); the flat argued version lives in why-cairn. The register law's intro-disqualification
   requirement is satisfied that way for the README specifically.
+
+- **Openings are the highest-risk surface (Geoff, 2026-07-02, after two failed why-cairn
+  openings).** Asked to write an "opening," the drafting default produces crafted-symmetric-
+  punchy rhetoric, and regenerating it swaps furniture while keeping the shape (echo pairs,
+  setup colons, parallel personas, punchline cappers). When an opening fails the register
+  twice, do not generate a third: delete it. One flat orientation line, then the first real
+  section. Explanation pages need no essay intro; the human polish adds voice where it wants.

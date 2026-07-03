@@ -1,8 +1,8 @@
 # Write in the editor
 
-Everything your site publishes is written in cairn's editor, and this guide covers all of it. The heart of the matter is markdown, the small set of punctuation marks that shape plain text into formatted pages; the guide teaches every mark the editor understands. It also covers components (the framed blocks that carry more than prose), the editor's writing surfaces and modes, the checks that run while you type, and the path a draft travels from private work to published page. None of it assumes prior experience, and each section explains what something is before showing how to use it.
+Everything your site publishes is written in cairn's editor. The heart of the matter is markdown, the small set of punctuation marks that shape plain text into formatted pages, and this guide covers every mark the editor understands. It also covers components (the framed blocks that carry more than prose), the editor's writing surfaces and modes, the checks that run while you type, and the path a draft travels from private work to published page. None of it assumes prior experience.
 
-Two working notes before anything else. Nothing you try can hurt the live site, because a draft stays private until you deliberately publish it, so the best way through this guide is with the editor open, trying things as you go. And there is no need to read everything before writing: the table of contents jumps to any one question, and if a ten-minute orientation would serve you better first, that's [Welcome, editors](./editor-welcome.md).
+Two working notes first. Nothing you try can hurt the live site, because a draft stays private until you deliberately publish it, so the best way through this guide is with the editor open, trying things as you go. And there is no need to read everything before writing: the table of contents jumps to any one question, and if a ten-minute orientation would serve you better first, that's [Welcome, editors](./editor-welcome.md).
 
 - [The editor at a glance](#the-editor-at-a-glance)
 - [Find and create entries](#find-and-create-entries)
@@ -24,7 +24,7 @@ Open any entry and the layout is the same. The title sits at the top and stays v
 
 <!-- LIVE-UI: the editor's zones, reproduced with the real components once the docs render through cairn -->
 
-Two more things are worth knowing before anything else. `Ctrl /` opens the editor's built-in cheat-sheet, a compact list of every mark and shortcut, so the answer to "how do I make a heading again" never requires leaving your draft. And as you type, the editor marks spelling and mechanical slips with a quiet amber underline; the [Checks](#checks-as-you-type) section covers how to act on them.
+`Ctrl /` opens the editor's built-in cheat-sheet, a compact list of every mark and shortcut, so the answer to "how do I make a heading again" never requires leaving your draft. And as you type, the editor marks spelling and mechanical slips with a quiet amber underline; the [Checks](#checks-as-you-type) section covers how to act on them.
 
 ## Find and create entries {#find-and-create-entries}
 

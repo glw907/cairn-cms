@@ -29,8 +29,8 @@ build it beside the engine, and the seams are documented contracts rather than i
 hope stay still. Leaving is cheap because your content was markdown in your repo all along.
 
 The editor gets a tool that respects the work. Signing in is clicking a link in email.
-Writing is markdown in an editor built for prose, with the site's real rendering as the
-preview. Saving can't destroy anything, because edits hold on a branch until a deliberate
+Writing is markdown in an editor built for prose, in the spirit of iA Writer, with a
+low-distraction mode and the site's real rendering as the preview. Saving can't destroy anything, because edits hold on a branch until a deliberate
 publish, and if two people collide, cairn refuses the save rather than merging by guesswork.
 
 ## Why Cloudflare

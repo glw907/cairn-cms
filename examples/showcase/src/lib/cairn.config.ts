@@ -6,7 +6,8 @@ import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw9
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
-import Converter from '$lib/islands/Converter.svelte';
+import Banner from '$lib/islands/Banner.svelte';
+import { isBannerExpired } from '$lib/islands/banner-expiry.js';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
@@ -20,7 +21,8 @@ const icons: IconSet = {
   // A speech glyph for the callout picker row and a triangle-bang for the alert row.
   callout: 'M216 48H40a8 8 0 0 0-8 8v160l40-32h144a8 8 0 0 0 8-8V56a8 8 0 0 0-8-8Z',
   alert: 'M128 24 8 224h240L128 24Zm0 72v56m0 32v8',
-  // A trail-marker pennant, both the icon component's own picker row and a selectable content glyph.
+  // A trail-marker pennant: the icon component's own picker row, a selectable content glyph, and the
+  // banner component's picker row (a banner is, literally, a flag).
   flag: 'M64 24v208M64 32h128l-32 32 32 32H64',
   // A solid right-pointing triangle, the video facade's picker row and its thumbnail glyph.
   play: 'M80 32v192l152-96Z',
@@ -270,27 +272,40 @@ const faq = defineComponent({
   },
 });
 
-// A hydrate (island) component: attribute-only, so its static fallback states the conversion and the live
-// component (Converter.svelte) adds the interactive input. The fallback is class-driven (no inline style),
-// because rehypeSinkGuard strips style/on* from build() output.
-const converter = defineComponent({
-  name: 'converter',
-  label: 'Unit converter',
-  description: 'A live two-way unit converter.',
+// A hydrate (island) component: a time-boxed announcement that removes itself once its `expires` date
+// passes, on the server and independently again at hydration (see banner-expiry.ts, which build() and
+// the live component (Banner.svelte) both call). A missing or unparsable `expires` counts as expired
+// too, so a broken date fails silent-to-hidden rather than showing forever or throwing: a banner is a
+// low-stakes aside, and hiding it is always the safe failure. The fallback is class-driven (no inline
+// style, since rehypeSinkGuard strips it) and states the same message the live component shows, so the
+// swap on mount never shifts the layout.
+const banner = defineComponent({
+  name: 'banner',
+  label: 'Announcement banner',
+  description: 'A time-boxed announcement that removes itself once its expiry date passes.',
+  use: 'Post a launch, a closure, or any other announcement that should not linger past its date.',
+  group: 'Notices',
+  icon: 'flag',
   hydrate: true,
-  insertTemplate: ':::converter{from="mi" to="km" rate="1.609"}\n:::',
+  insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
+  preview: { attributes: { message: 'The trailhead lot reopens in the spring.', expires: '2999-01-01' } },
   attributes: {
-    from: fields.text({ label: 'From unit', required: true }),
-    to: fields.text({ label: 'To unit', required: true }),
-    rate: fields.number({ label: 'Rate', required: true }),
+    message: fields.text({ label: 'Announcement', required: true }),
+    expires: fields.date({
+      label: 'Expires',
+      required: true,
+      help: 'The banner shows through the end of this date, then renders nothing.',
+    }),
   },
-  build: (ctx) =>
-    h('div', { className: ['island-converter-fallback'] }, [
-      h('p', [`1 ${strAttr(ctx, 'from') ?? ''} = ${strAttr(ctx, 'rate') ?? ''} ${strAttr(ctx, 'to') ?? ''}`]),
-    ]),
+  build: (ctx) => {
+    const message = strAttr(ctx, 'message') ?? '';
+    const expires = strAttr(ctx, 'expires');
+    if (isBannerExpired(expires)) return h('div', { hidden: true, className: ['banner-expired'] }, []);
+    return h('div', { className: ['banner'], role: 'status' }, [h('p', { className: ['banner-message'] }, [message])]);
+  },
 });
 
-const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, faq, converter] });
+const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, faq, banner] });
 
 // The real render path: parse markdown through the engine so registered components render.
 const { renderMarkdown } = createRenderer(registry);
@@ -382,7 +397,7 @@ export const cairn = defineAdapter({
       renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
     components: registry,
     icons,
-    islands: { converter: Converter },
+    islands: { banner: Banner },
   },
   editor: {
     nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },

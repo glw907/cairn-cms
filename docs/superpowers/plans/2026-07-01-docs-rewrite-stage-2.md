@@ -552,3 +552,8 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   facts too (Geoff: most Bear or Ulysses users never think about what format their app works
   in) — editor pages speak in EXPERIENCE terms ("the marks will already look familiar"),
   never in adoption or format taxonomy.
+
+- **Function and content before drafting (Geoff, 2026-07-03).** Every page begins with a
+  short conversation settling what the page is FOR (who arrives, with what question, leaving
+  with what) and what belongs on it, before any prose exists. The dialog replaces the outline
+  gate for voice-bearing pages; structured pages may settle it in one exchange.

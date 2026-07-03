@@ -86,6 +86,12 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Shortcut-table drift gate (from the 2026-07-03 docs benchmark).** The editor guide's
+  keyboard tables and the in-product sheet (`editor-shortcuts.ts`) share content that nothing
+  machine-checks; a small `check:*`-idiom script diffing the doc tables against the keymap
+  source closes the classic docs-drift hole before it opens. Rider: the in-product sheet
+  omits undo/redo; add the rows when touching it.
+
 **The pre-beta sequence (Geoff, 2026-07-02; the order is the plan, executed continuously with
 the named human gates only):**
 

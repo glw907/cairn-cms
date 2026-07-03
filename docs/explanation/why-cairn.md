@@ -52,7 +52,7 @@ Your public site carries none of this (render is yours). The admin skeleton uses
 
 Good tools do run on Cloudflare, and I've used several of them.
 
-**Sveltia, Decap, and the git-based admins.** The closest family, and the site that taught me the most ran Sveltia before cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But they're config-driven dashboards, and that shows up in two ways that matter.
+**Sveltia, Decap, and the git-based admins.** These are the closest tools to what cairn does, and I ran Sveltia myself before building cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But they're config-driven dashboards, and that shows up in two ways that matter.
 
 The first is what editors see. A dashboard treats writing as one more form to fill out: a field list (title here, body there, tags in that box), a preview that approximates the site rather than rendering through it, and an interface that looks like database administration because that's what it is. Nobody opens a tool like that and wants to write. Cairn starts from the other end. The editor lands in a markdown surface built for prose, the preview is the real site, and the metadata stays out of the way until you need it. A polished writing tool invites people to actually write.
 

@@ -1,5 +1,3 @@
-<!-- LEGACY TEXT, UNRELIABLE: this page predates the from-zero rewrite and must never be cited as fact. Facts come from src/ and the four ratified pages only. It will be deleted and rewritten. -->
-
 # Add authors to your site
 
 > **Stub.** Skeleton per the reviewed outline

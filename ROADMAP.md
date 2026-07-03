@@ -141,6 +141,13 @@ the named human gates only):**
 
 ## Next
 
+- **Scaffold content is self-documenting placeholder (Geoff, 2026-07-02).** The scaffold's
+  placeholder content orients whoever looks at it: the About page says what the site is and
+  that the content is deliberate placeholder, the masthead names Wayfinder, and demo posts
+  say which component they demonstrate. First installment shipped with the vanilla cairn.pub
+  deploy; the full treatment rides the step-5 finalization.
+
+
 - **The `checkOrigin` pre-beta mitigation.** Adopt-now guidance rather than waiting on the upstream
   removal: document the edge Transform Rule that injects `Origin` on `/admin` POSTs in the deploy
   guide, and add a `cairn-doctor --probe` assertion that an `Origin` header actually reaches

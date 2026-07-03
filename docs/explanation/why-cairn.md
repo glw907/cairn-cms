@@ -36,7 +36,7 @@ I'd rather develop than support, and that shaped cairn as much as anything. I ne
 
 The engine's side of that bargain is a narrow public surface, versioned and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
 
-## Who should not choose cairn
+## When you shouldn't use cairn
 
 - Teams without (or against) a Cloudflare account. The stack is the product, and cairn won't meet you halfway on hosting.
 - React shops, or any team not working in Svelte. This is a grain judgment, not a value judgment. Everything from the seams to the starter template assumes Svelte.

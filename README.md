@@ -1,35 +1,42 @@
 # cairn
 
-Cairn is my embedded CMS for SvelteKit sites on Cloudflare. It gives the people who write
-for a site a browser editor with a live preview, behind an email-link sign-in, and it stores
-everything they write as markdown committed to the site's own GitHub repo. Saves go to a
-holding branch, one per entry. Publishing copies the entry to `main` with the editor as
-commit author, and from there the site deploys like any other push. There's no hosted
-service and no database anywhere in this.
+Cairn is my embedded CMS and admin-interface scaffold for SvelteKit sites on Cloudflare. It
+gives non-technical content editors a first-class writing experience with all the modern
+affordances, including a polished markdown editor in the spirit of iA Writer, a
+pixel-precise preview (the editor's preview and your public pages render through the same
+function, so editors see exactly what ships), and a low-distraction mode. Cairn provides
+default magic-link authentication for editors, and includes an auth seam so a developer can
+tie cairn to any other identity management solution.
+
+Cairn stores all site content as markdown committed to the site's own GitHub repo, but in no
+way requires editors to understand git or version control. Saves go to a holding branch, one
+per entry, and a conflicting edit is refused rather than merged by guesswork. Publishing
+copies the entry to `main` with the editor as commit author, and from there the site deploys
+like any other push. (The default magic-link authentication requires a small D1 database.)
+
+Content is a fixed set of concepts you declare. Posts and Pages are available out of the
+box, and you can add others if you need them, each with a typed frontmatter schema. Inside
+the markdown, content components render through remark directives: the starter set covers
+callouts, figures, pull quotes, FAQs, video, and an expiring announcement banner, each with
+a schema-driven insert form in the editor, and you declare your own the same way.
 
 I built cairn for my own sites. I host everything on Cloudflare, because nothing else does
-bulletproof, security-forward hosting at almost no cost, but committing to Cloudflare limits
-your choice of tools. And I wanted the people who write for a site, non-technical editors,
-to get a first-class experience without learning git. That means the affordances a good
-writer expects: a markdown surface in the spirit of iA Writer, a live preview that shows the
-real site, and a low-distraction writing mode. And most of the sites I build have some
-degree of functionality beyond being a good CMS, so whatever managed the content had to be
-easy to extend once I wrote it. Nothing I found gave me all three. The
-platform CMSes want to own the whole site, and the hosted ones keep your content in their
-own database. So cairn is deliberately small. It manages markdown content and the admin where editors write,
-and that's it. Anything else your site does, you build next to cairn, and there are
-documented seams where your code has to touch the engine. The stack is fixed: SvelteKit,
-Cloudflare, GitHub, no abstraction layers over any of them. "Out of scope" is an answer I
-use a lot, and it's most of why the engine stays small.
+bulletproof, security-forward hosting at almost no cost, but unfortunately committing to
+Cloudflare limits your choice of tools. And I wanted the people who write content for sites
+to have a professional and polished writing experience without learning git.
 
-SvelteKit was the easy call. Content sites are what it does best (server-rendered pages,
-form actions that work before JavaScript loads), and it's the rare framework developers seem
-to genuinely enjoy. Cloudflare needs more defending. Workers, D1, and R2 cover everything a
-small site needs, running a small site there costs almost nothing, and the whole substrate
-comes from one vendor. GitHub barely counted as a choice, since your content's history,
-attribution, and deploy hooks already live there, and cairn uses them rather than rebuilding
-them. [Why cairn](./docs/explanation/why-cairn.md) has the full arguments, including the
-costs.
+Most of the sites I build have some degree of functionality beyond being a good CMS, so
+whatever managed the content had to be easy to extend once I wrote it. Nothing I found gave
+me all three.
+
+Cairn is deliberately small. It manages markdown content and the admin where editors write,
+and that's it. Anything else your site does, you build next to cairn, and there are
+documented seams where your code has to touch the engine. The admin itself is a scaffold
+that's intentionally easy to extend: your own screens mount inside it in the same DaisyUI
+and Tailwind idiom it's built from. The stack is fixed: SvelteKit, Cloudflare, GitHub, no
+abstraction layers over any of them.
+[Why cairn](./docs/explanation/why-cairn.md) explains both the rationale and the practical
+limits of my choices.
 
 <!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
@@ -39,28 +46,22 @@ costs.
 npm install @glw907/cairn-cms
 ```
 
-- Sign-in is an emailed link. The editor list is rows in your D1 database, managed from the
-  admin by owners.
-- Saving and publishing are separate steps. A save waits on its holding branch, and a
-  conflicting edit is refused rather than merged by guesswork.
-- The editor's preview and your public pages render through the same function, the one your
-  site supplies. Editors see exactly what ships.
-- Content is a fixed set of concepts you declare. Posts and Pages to start, others if you add
-  them, each with a typed frontmatter schema.
-- If you remove cairn, you're left with a repo of markdown that still builds.
+The short version of a build: describe your content in an adapter (concepts, the GitHub
+target, your render function), mount the admin with a handful of files, bind a D1 database
+and an email sender in `wrangler.jsonc`, and deploy. The
+[tutorial](./docs/tutorial/build-your-first-cairn-site.md) walks that whole path, from an
+empty directory to a deployed site with a working admin, and it's the right starting point.
 
-Cairn is obviously not for you if you don't have (or don't want) a Cloudflare account, if
-your team works in React or another framework, or if you need open-ended user-defined
-collections rather than a fixed set of declared concepts. Each of those is a deliberate
-choice, and [Why cairn](./docs/explanation/why-cairn.md) argues them one by one.
+After that, the docs split by what you need:
+[guides](./docs/guides/README.md) are task recipes, for developers and for editors
+separately; the [reference](./docs/reference/README.md) documents every export, one page per
+entry point, checked against the code in CI; and
+[explanation](./docs/explanation/README.md) covers the architecture and the security model,
+and why they are the way they are. The [docs index](./docs/README.md) ties them together.
 
-Start with the
-[tutorial](./docs/tutorial/build-your-first-cairn-site.md): an empty directory to a deployed
-site with a working admin. The [docs](./docs/README.md) cover the rest:
-[guides](./docs/guides/README.md), [reference](./docs/reference/README.md),
-[explanation](./docs/explanation/README.md).
-
-Cairn is pre-1.0 and runs two production sites, [ecxc.ski](https://ecxc.ski) and
-[907.life](https://907.life). The [upgrade guide](./docs/guides/upgrade-cairn.md) covers
-versioning, the [CHANGELOG](./CHANGELOG.md) covers history, and the
-[security policy](./SECURITY.md) covers reporting. MIT [licensed](./LICENSE).
+Cairn is pre-1.0, and it runs two production sites today, [ecxc.ski](https://ecxc.ski) and
+[907.life](https://907.life). If you remove it someday, you're left with a repo of markdown
+that still builds, which is how leaving a CMS should work. Versioning and upgrades are the
+[upgrade guide](./docs/guides/upgrade-cairn.md)'s job, history lives in the
+[CHANGELOG](./CHANGELOG.md), security reporting in the [policy](./SECURITY.md), and the
+license is [MIT](./LICENSE).

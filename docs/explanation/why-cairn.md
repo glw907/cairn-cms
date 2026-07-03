@@ -12,7 +12,7 @@ Cairn is for small organizations, and for the developers who help them. I like h
 
 ### For editors
 
-The people who write for a small site are normal human beings, not developers. The git-based CMSes get the storage right, keeping content as plain files in your own repo, but they were built by developers for developers, and they keep asking editors to think in commits, branches, and merge conflicts. For most people who write, that's a bridge too far, and they either give up or hand every edit back to you.
+The people who write for a small site are normal human beings, not developers. Content wants to live in git (plain files, history, attribution), but asking editors to actually use git, with its commits, branches, and merge conflicts, is a bridge too far for most people who write, and they either give up or hand every edit back to you.
 
 Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose (in the spirit of iA Writer, with a low-distraction mode), and the preview renders through the site's own pipeline, so what an editor sees is what readers get. A save can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the word "commit."
 
@@ -66,11 +66,11 @@ And when the site grows past content editing, the dashboards don't have anywhere
 
 I'd rather develop than support, and that shaped cairn as much as anything. The more user-focused the tool, the more of my time goes to development and the less to technical support. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
 
-The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your routes read the signed-in identity through `locals.editor`. The magic-link flow is a default, and a developer can replace the auth outright. And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, not rescuing the words.
+The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, not rescuing the words.
 
 ## Where cairn sits
 
-The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.
+The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly, though none of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.
 
 ## Why not cairn?
 

@@ -8,7 +8,7 @@ Cairn is a fixed set of content concepts you declare (Posts and Pages out of the
 
 ## Who is cairn for?
 
-Small organizations, and the developers who help them. I like helping small organizations with their technical problems, and the pattern repeats: a club, a nonprofit, or a small business needs a site its own people can keep current, and one developer stands behind it. Cairn is built for both halves of that arrangement.
+Cairn is for small organizations, and for the developers who help them. I like helping small organizations with their technical problems, and the pattern repeats: a club, a nonprofit, or a small business needs a site its own people can keep current, and one developer stands behind it. Cairn is built for both halves of that arrangement.
 
 ### For editors
 

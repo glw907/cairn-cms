@@ -1,25 +1,21 @@
 # cairn
 
-An embedded CMS for SvelteKit sites on Cloudflare. Editors write markdown in the browser,
-and publishing is a git commit.
+Cairn is my embedded CMS for SvelteKit sites on Cloudflare. It gives the people who write
+for a site a browser editor with a live preview, behind an email-link sign-in, and it stores
+everything they write as markdown committed to the site's own GitHub repo. Saves go to a
+holding branch, one per entry. Publishing copies the entry to `main` with the editor as
+commit author, and from there the site deploys like any other push. There's no hosted
+service and no database anywhere in this.
 
-Cairn installs into your site as a library. An editor signs in from an emailed link (no
-GitHub account, no password) and writes in an editor with a live preview of the real site.
-Saving commits the markdown to a holding branch in your repo, one branch per entry, where the
-draft waits. Publishing copies it to `main`, authored in the editor's name, and your site
-redeploys the same as if you'd pushed from a terminal. There's no hosted service and no
-database. The CMS is code in your app, and the content is files in your repo.
-
-I built cairn for my own sites. The people who write for a small site need to edit and
-publish without learning git, and the tools built for them mostly come in two shapes:
-platforms that absorb your whole site, and hosted services that keep your content in their
-database. I didn't want either, and I also didn't want a CMS where pulling updates meant
-reworking whatever I'd built around it. So cairn is small on purpose. It manages markdown
-content and the admin where editors write it, and that's the whole job. Your routes, data,
-auth, and design stay yours, reachable through a few documented seams. The stack is fixed
-(SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them) and I say "out of
-scope" a lot. That refusal is what keeps the engine small enough to understand, and small
-enough that updates don't break what you built around it.
+I built cairn for my own sites. I kept needing to hand a site over to people who write,
+without teaching them git, and I never liked the available answers: the platform CMSes want
+to own the whole site, and the hosted ones keep your content in their database. I'd also
+been burned before by tools where every update meant reworking my own code around them. So
+cairn is deliberately small. It manages markdown content and the admin where editors write,
+and that's it. Anything else your site does, you build next to cairn, and there are
+documented seams where your code has to touch the engine. The stack is fixed: SvelteKit,
+Cloudflare, GitHub, no abstraction layers over any of them. "Out of scope" is an answer I
+use a lot, and it's most of why the engine stays small.
 
 SvelteKit was the easy call. Content sites are what it does best (server-rendered pages,
 form actions that work before JavaScript loads), and it's the rare framework developers seem

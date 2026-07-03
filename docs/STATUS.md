@@ -13,6 +13,16 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+
+## Immediate next action (2026-07-03)
+
+The docs rewrite Stage 2 fan-out is executing on `docs-rewrite-1` (the proven four-gate
+per-page pipeline; the editor arm is done and ratified). Task 1 (snippet gate) is dispatched;
+Tasks 3-7 (tutorial, guides, explanation, reference, repo health) follow per
+`docs/superpowers/plans/2026-07-01-docs-rewrite-stage-2.md`. Resume prompt: "Continue the
+docs Stage 2 fan-out on the docs-rewrite-1 worktree; read the plan and the
+cairn-docs-rewrite-initiative memory."
+
 ## Immediate next action (2026-07-02, LATEST): cairn.pub LIVE (vanilla Wayfinder); README polish loop with Geoff underway
 
 **cairn.pub serves the vanilla Wayfinder scaffold** (repo `glw907/cairn-pub`, worker

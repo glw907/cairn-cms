@@ -426,4 +426,7 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   attractor is summoned by conceiving of the subject as a product; the escape is the frame
   itself. Every page is a developer explaining code he wrote: what it does, why it's shaped
   that way, what it costs to use. Nobody markets a function. If a draft sentence would fit on
-  a landing page, the frame has already slipped.
+  a landing page, the frame has already slipped. And it's an open-source project: the reader
+  is a peer who might use, read, or patch the code, never a customer. The register tradition
+  is the maintainer README (ripgrep, sqlite-utils, re-frame), which never sells because there
+  is nothing to sell.

@@ -30,7 +30,7 @@ Not everything on a page is plain text. A photo with a caption, a callout box, a
 
 ## Tidy, if your site has it
 
-Some sites turn on tidy, a button that offers a light copy-edit of your draft: spelling, punctuation, and the small conventions that keep a site consistent when several people write for it. Cairn is a tool for humans writing prose, and tidy is scoped to match. It proposes small fixes, shows you each one, and changes nothing until you accept it, so your text is never quietly rewritten. It is not meant to draft your prose, and it will not take your voice.
+Some sites turn on tidy, an AI copy-editing tool built on Claude, Anthropic's language model. It reads your draft, or a passage you select, and proposes the kind of small fixes a copy editor would: spelling, punctuation, and the conventions that keep a site consistent when several people write for it. Cairn is a tool for humans writing prose, and tidy is scoped to match: it shows you each proposed fix, changes nothing until you accept it, and your text is never quietly rewritten. It is not meant to draft your prose, and it will not take your voice.
 
 ## Saving and publishing are separate steps
 

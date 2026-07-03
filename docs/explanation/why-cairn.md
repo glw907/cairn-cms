@@ -24,13 +24,11 @@ Cairn is a developer's tool as much as an editor's. A new site starts quickly (t
 
 This is the choice most likely to raise an eyebrow. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are slick. It's a long-running debate, and I'm not trying to win it here. Cairn is just an expression of which side of the argument I believe to be the better one.
 
-The problem is that WYSIWYG editors lie a little, and it compounds. What you see is what the editor renders, not what the site renders, so the page never quite matches the preview. Pasting from Word drags invisible formatting along with it. Authors reach for presentation ("make this big and blue") when a site needs meaning ("this is a heading"), and after a year of that, every page has its own look and someone has to clean it up. (That someone is the developer. See "I'd rather develop than support," below.)
+What you see in a WYSIWYG editor is what the editor renders, not what the site renders. Pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when the site needs structure ("this is a heading"). A year later every page has its own style, and cleaning that up lands on the developer.
 
-With markdown, the author marks meaning and the site decides how it looks. A heading is a heading everywhere. The text itself stays plain, so it survives tool migrations and even reads fine in an email. (It also diffs cleanly, which matters more than it sounds like it should.)
+With markdown, the author marks meaning and the site decides how it looks. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
 
-The syntax is a smaller hurdle than people expect. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout. iA Writer built a beloved product on exactly that bet, and cairn borrows it openly.
-
-If your editors genuinely need page-layout control, cairn is the wrong tool (see below). For writing posts, pages, and announcements, markdown plus a real preview gets you what WYSIWYG promises, without the mess.
+If your editors need page-layout control, cairn is the wrong tool. For writing posts, pages, and announcements, it isn't a hardship, and the live preview closes most of the gap WYSIWYG claims to fill.
 
 ## Why the stack?
 
@@ -42,7 +40,7 @@ Nothing else does bulletproof, security-forward hosting at almost no cost. Worke
 
 ### SvelteKit
 
-The admin runs on form actions that work before JavaScript loads, which is SvelteKit's native grain, and it means an editor on hotel Wi-Fi still gets a working tool. Public pages are server-rendered markdown with islands of interactivity where you declare them, and that's exactly the shape of a content site. The component model the seams speak is the one you already work in. If your team lives in React, pick a different CMS rather than fight the grain.
+The admin runs on form actions that work before JavaScript loads, so an editor on hotel Wi-Fi still gets a working tool. Server-rendered pages with islands of interactivity are exactly the shape of a content site, and the component model cairn's seams speak is the one you already work in. If your team lives in React, pick a different CMS.
 
 ### DaisyUI, for the admin only
 
@@ -68,7 +66,7 @@ And when the site grows, the dashboard has no answer. A club needs sign-ups, a s
 
 I'd rather develop than support, and that shaped cairn as much as anything. The more user-focused the tool, the more of my time goes to development and the less to technical support. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
 
-The engine's side of that bargain is a narrow public surface, versioned and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
+The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your routes read the signed-in identity through `locals.editor`. The magic-link flow is a default, and a developer can replace the auth outright. And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, not rescuing the words.
 
 ## Where cairn sits
 

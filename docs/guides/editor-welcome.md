@@ -1,6 +1,6 @@
 # Welcome, editors
 
-You're here to write for your site, and the writing is the point. Cairn, the tool behind the site, is built to stay out of its way: your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
+The tool you'll write in is called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
 
 ## Signing in
 

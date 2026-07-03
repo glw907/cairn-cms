@@ -557,3 +557,11 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   short conversation settling what the page is FOR (who arrives, with what question, leaving
   with what) and what belongs on it, before any prose exists. The dialog replaces the outline
   gate for voice-bearing pages; structured pages may settle it in one exchange.
+
+- **No screenshots at this stage; live UI reproductions instead (Geoff, 2026-07-03).** Avoid
+  or minimize screenshots everywhere (the GitHub App guide's OAuth screens remain the lone
+  budgeted exception). Where showing the UI genuinely helps, use components to reproduce the
+  element live — a rendered callout beside its source, the shortcut grid as a real table, a
+  styled toolbar reproduction — since Topo renders the docs through cairn itself. Until Topo
+  hosts, markdown-native devices carry the load (tables, syntax/result pairs), and a
+  `<!-- LIVE-UI: ... -->` comment marks where a live reproduction lands later.

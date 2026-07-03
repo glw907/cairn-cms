@@ -34,7 +34,7 @@ Only options that run on Cloudflare are candidates at all. Within that field, an
 
 ### DaisyUI, for the admin only
 
-DaisyUI follows the same way, because it dovetails with SvelteKit and Tailwind. Your public site carries none of this (render is yours); the admin skeleton uses it because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
+DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. Your public site carries none of this (render is yours); the admin skeleton uses it because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
 
 ## Why markdown and not a WYSIWYG editor?
 

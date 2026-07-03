@@ -14,7 +14,7 @@ Cairn is for small organizations, and for the developers who help them. I like h
 
 The people who write for a small site are normal human beings, not developers. The git-based CMSes get the storage right, keeping content as plain files in your own repo, but they were built by developers for developers, and they keep asking editors to think in commits, branches, and merge conflicts. For most people who write, that's a bridge too far, and they either give up or hand every edit back to you.
 
-Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor never hears the words "commit" or "branch." They just write.
+Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the words "commit" or "branch."
 
 ### For developers
 
@@ -22,9 +22,9 @@ Cairn is a developer's tool as much as an editor's. A new site starts quickly (t
 
 ## Why markdown and not a WYSIWYG editor?
 
-This is the choice most likely to raise an eyebrow. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are genuinely slick. It's a long-running debate, and I'm not trying to win it here. Cairn is just an expression of which side of the argument I believe to be the better one.
+This is the choice most likely to raise an eyebrow. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are slick. It's a long-running debate, and I'm not trying to win it here. Cairn is just an expression of which side of the argument I believe to be the better one.
 
-The problem is that WYSIWYG editors lie a little, and the lies compound. What you see is what the editor renders, not what the site renders, so the page never quite matches the preview. Pasting from Word drags invisible formatting along with it. Authors reach for presentation ("make this big and blue") when a site needs meaning ("this is a heading"), and after a year of that, every page has its own look and someone has to clean it up. (That someone is the developer. See "I'd rather develop than support," below.)
+The problem is that WYSIWYG editors lie a little, and it compounds. What you see is what the editor renders, not what the site renders, so the page never quite matches the preview. Pasting from Word drags invisible formatting along with it. Authors reach for presentation ("make this big and blue") when a site needs meaning ("this is a heading"), and after a year of that, every page has its own look and someone has to clean it up. (That someone is the developer. See "I'd rather develop than support," below.)
 
 With markdown, the author marks meaning and the site decides how it looks. A heading is a heading everywhere. The text itself stays plain, so it survives tool migrations and even reads fine in an email. (It also diffs cleanly, which matters more than it sounds like it should.)
 
@@ -38,7 +38,7 @@ Cairn is aggressively opinionated about its development stack, and that's exactl
 
 ### Cloudflare
 
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade. No Cloudflare account, no cairn.
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade: no Cloudflare account, no cairn.
 
 ### SvelteKit
 
@@ -58,7 +58,7 @@ A dashboard treats writing as one more form to fill out: a field list (title her
 
 And when the site grows, the dashboard has no answer. A club needs sign-ups, a small business needs a booking list, and none of that lives in a content CMS, so you build it somewhere else: a separate route with its own login, its own look, and its own bookmark that half the volunteers lose. Now the newsletter editor works in one tool and the membership coordinator works in another, and you support both. Cairn's answer is one admin. Your screens mount inside it, everyone who runs the site sees a single interface, and adding a feature doesn't add a tool.
 
-**Keystatic.** Thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
+**Keystatic.** Keystatic is thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
 
 **The hosted headless services (Sanity, Contentful, and friends).** They pair fine with a Cloudflare frontend, and the editing UIs are polished. But your content lives in their database under their pricing, and leaving is an export project. I wasn't willing to make that trade.
 
@@ -72,7 +72,7 @@ The engine's side of that bargain is a narrow public surface, versioned and enfo
 
 ## Where cairn sits
 
-The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature, and cairn does too. iA Writer takes the act of writing more seriously than any CMS does, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.
+The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.
 
 ## Why not cairn?
 

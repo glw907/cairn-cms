@@ -483,3 +483,8 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   "lie," frameworks don't "fight you," platforms don't "betray." The drama stands in for the
   mechanism, and the mechanism is always the stronger sentence ("the editor renders one
   thing, the site renders another").
+
+- **Aphoristic equations are silly (Geoff, 2026-07-03: "The stack is the product").** The
+  "X is the Y" slogan shape asserts a profundity it doesn't earn; the sentence behind it is
+  always a plain fact ("cairn is built directly on Cloudflare's primitives"), and the fact is
+  the better sentence.

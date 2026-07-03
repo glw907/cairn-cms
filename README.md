@@ -2,11 +2,11 @@
 
 Cairn is my embedded CMS and admin-interface scaffold for SvelteKit sites on Cloudflare.
 
-I built cairn for my own sites. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, but unfortunately committing to Cloudflare limits your choice of tools. And I wanted the people who write content for sites to have a professional and polished writing experience without learning git.
+I built cairn for my own sites. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, but unfortunately committing to Cloudflare limits your choice of tools. And I wanted the people who write content for sites to get a tool that takes their writing seriously, without making them learn git.
 
 ## Love your editors!
 
-Cairn gives non-technical content editors a first-class writing experience with all the modern affordances, including a polished markdown editor in the spirit of iA Writer, a live preview that renders through the same function as your public pages (so editors see exactly what ships), and a low-distraction mode. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright.
+Cairn gives non-technical content editors a first-class writing experience with all the modern affordances: a markdown editor built for prose in the spirit of iA Writer, a live preview that renders through the same function as your public pages (so editors see exactly what ships), and a low-distraction mode. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright.
 
 ## Content storage and types
 

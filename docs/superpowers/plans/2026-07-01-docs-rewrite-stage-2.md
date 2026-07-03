@@ -269,3 +269,9 @@ freshness routine created and recorded there by id.
   flip (the toggle cannot be enabled while private); Task 7 files the trigger.
 - The quickstart is intentionally absent (IA ruling 3); Task 3's "fastest path" seam is its
   future mount point.
+
+- **Length calibration (Geoff, 2026-07-03):** the editor front-door runs a bit longer than
+  the developer front-door. The editor reader gets markdown introduced with examples and
+  grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
+  prose; proposes, never drafts, never takes a voice) — orientation the developer README
+  delegates to the docs tree instead.

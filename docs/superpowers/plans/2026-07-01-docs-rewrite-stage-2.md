@@ -472,7 +472,11 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   be supported by them"): no statement may contradict a checkable fact, AND every substantive
   statement must trace to positive support — code, a measurement, a documented behavior, or
   Geoff's testimony. Merely unfalsified is not enough; an unsupported statement gets evidence
-  or gets cut. The README claims-audit is the model (it caught the auth-seam overstatement,
+  or gets cut. And the check includes FRAME-level truth (Geoff, 2026-07-03: "cairn
+  deliberately isn't [a hosted platform]" was patently false because free code never had a
+  hosted business to decline): a sentence can be false by presupposition while every checkable
+  detail in it is fine. The fact-check asks what each sentence presupposes, not only what it
+  asserts. The README claims-audit is the model (it caught the auth-seam overstatement,
   the wrong component roster, and the misleading still-builds claim). A page is not
   review-ready until it has survived all three.
 

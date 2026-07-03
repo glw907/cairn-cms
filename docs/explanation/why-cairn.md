@@ -18,7 +18,7 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 ### For developers
 
-Cairn is a developer's tool as much as an editor's. A new site starts quickly (the starter template plus a few steps of wiring), whatever you build next to it stays yours, and pulling updates is boring on purpose, because the public surface is narrow and checked by gates. The admin is a scaffold you extend in place rather than a black box you work around. And it contains very real developer affordances: a fully typed adapter (your content schema typechecks), a doctor command that diagnoses a misconfigured site, structured logs for every operationally meaningful event, and a local dev backend so you can build without touching real GitHub. The details are in [Built to be built on](#built-to-be-built-on), below.
+Cairn is a developer's tool as much as an editor's. A new site starts quickly (the starter template plus a few steps of wiring), whatever you build next to it stays yours, and pulling updates is boring on purpose, because the public surface is narrow and checked by gates. The admin is a scaffold you extend in place rather than a black box you work around. And it carries developer affordances: a fully typed adapter (your content schema typechecks), a doctor command that diagnoses a misconfigured site, structured logs for every operationally meaningful event, and a local dev backend so you can build without touching real GitHub. The details are in [Built to be built on](#built-to-be-built-on), below.
 
 ## Why the stack?
 
@@ -34,7 +34,7 @@ Only options that run on Cloudflare are candidates at all. Within that field, an
 
 ### DaisyUI
 
-DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. It's the idiom of the admin skeleton and the starter template both, so extending either means working in the most copyable idiom on the web instead of learning my bespoke design system. Your public site isn't locked to it (render is yours, and the template is built to be restyled), but the scaffold you start from speaks DaisyUI throughout, although you could certainly build your own template without it. The admin skeleton is the one place the idiom is fixed: extending it means Tailwind's idiom or none, since there's no theming API to point it at another system.
+DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. It's the idiom of the admin skeleton and the starter template both, so extending either means working in the most copyable idiom on the web instead of learning my bespoke design system. Your public site isn't locked to it (render is yours, and the template is built to be restyled), but the scaffold you start from speaks DaisyUI throughout. The admin skeleton is the one place the idiom is fixed: extending it means Tailwind's idiom or none, since there's no theming API to point it at another system.
 
 ### Storage, by fit
 

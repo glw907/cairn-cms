@@ -1,8 +1,6 @@
 # Why cairn
 
-Cairn makes a handful of choices for you: the host, the framework, the content model, even the auth. Each has a real reason, and each costs something. This page goes through them.
-
-The test behind all of it is whether a choice serves two people at once: the developer, who owns the site and everything around it, and the editor, who writes and shouldn't have to care how any of it works. Most tools serve one and tolerate the other.
+The reasons behind cairn's choices, and what each one costs.
 
 ## What cairn is
 

@@ -137,7 +137,26 @@ Three modes shape the writing itself, and all of them are optional. **Focus mode
 
 ## Components {#components}
 
-Components are the blocks that go beyond prose: callouts, video, pull quotes, and whatever else your site defines. The insert menu adds one to your draft through a short guided form—it asks for the block's particulars, shows a live preview of the result beside the form, and writes the markup itself. An inserted block sits in your draft as plain, labeled text between `:::` markers, folds down to one line when you want it out of the way, and can be edited in place: change the words freely, and leave the marker lines as they are.
+Components are the blocks that go beyond prose: callouts, video, pull quotes, and whatever else your site defines. They're also the one place the editor shows you something that looks less like writing and more like structure, so this section takes them slowly. The short version: the insert menu builds every block for you through a guided form with a live preview, and you never have to write one by hand.
+
+### How a block works {#how-a-block-works}
+
+A component block is ordinary text with a frame around it, and reading one part by part takes the mystery out:
+
+```md
+:::callout[Bring a life jacket]{tone="tip"}
+The club has loaners at the boathouse, but the ones that fit
+best are the ones you own.
+:::
+```
+
+The first line is the frame's opening: three colons, the component's name, its title in square brackets, and its settings in braces. The last line, three colons alone, closes the frame. Everything between them is the block's body, and the body is ordinary markdown — write in it, emphasize in it, link from it, exactly as anywhere else on the page.
+
+The frame and the body live by different rules. The body is yours to edit freely, as much and as often as you like. The frame is structural: the colons, the name, and the braces are how the site recognizes the block, so they're best left exactly as the insert menu wrote them. To change a title or a setting, edit the block through its form rather than retyping the frame: the same guided dialog that created it reopens on it, and the markup rewrites itself correctly.
+
+If a frame does get damaged anyway (a deleted closing line, a mangled brace), nothing is lost. Your words are all still in the draft as plain text; the block stops appearing in its styled form, which is how you'll notice, and the repair is to rebuild the frame with the insert menu and move the body back inside. A block also folds down to a single line from the marker in its margin when you want it out of the way while writing, and a folded block unfolds itself the moment your cursor touches it.
+
+### The starter set {#the-starter-set}
 
 Which components exist is your site's decision, not cairn's. The set below is the typical starter library a cairn site begins with; yours may differ, and if the library doesn't meet your needs, a new component is exactly the kind of thing your site's developer can build. It will appear in the same insert menu beside the others.
 

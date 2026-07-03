@@ -36,4 +36,4 @@ Most of the sites I build have some degree of functionality beyond being a good 
 
 ## Where cairn sits
 
-If you know the neighborhood: cairn aims for the point where Kirby's two-persona honesty, Eleventy's leanness creed, and iA Writer's respect for the act of writing intersect, on the one stack it refuses to abstract away. There was also a hosted-platform road this project deliberately didn't take. The price of that choice is that hosting is yours; the payoff is that nothing about your site lives anywhere you don't control.
+The nearest comparisons aren't technical. Kirby is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature, and cairn does too. iA Writer takes the act of writing more seriously than any CMS does, and cairn's editor borrows from it openly. None of the three overlap cairn's stack. There are also hosted platforms that do parts of this job well, and cairn deliberately isn't one. You run the hosting, and nothing about your site lives anywhere you don't control.

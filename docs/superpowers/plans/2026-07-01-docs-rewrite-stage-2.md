@@ -437,8 +437,13 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   sentences with parenthetical caveats, reporting even problems without alarm. A punch lands
   about once per section, not once per paragraph, and the verbs stay mild.
 
-- **The audience is a philosophy major who can program (Geoff, 2026-07-02).** Don't fear a
-  complex sentence: both failure modes (marketing and noir) were too staccato. The reader is
-  intelligent and educated; subordinate clauses, developed distinctions, and periodic
-  sentences are welcome where the thought genuinely carries them. Geoff's own default is a
-  25-40 word compound sentence; simplicity is for facts, complexity for arguments.
+- **The audience is a philosophy major who can program: deeply intelligent, and hates
+  shortform video (Geoff, 2026-07-02/03).** Don't fear a complex sentence: both failure modes
+  (marketing and noir) were too staccato, and the reader despises soundbite compression.
+  Subordinate clauses, developed distinctions, and periodic sentences are welcome where the
+  thought carries them; arguments may build across a paragraph and trust the reader to hold a
+  premise from three sentences back. And the intelligence must be in the IDEAS, not only the
+  syntax: distinctions that clarify ("markdown separates two decisions WYSIWYG collapses into
+  one"), reasons that actually explain, no simplification that costs truth. Geoff's own
+  default is a 25-40 word compound sentence; simplicity is for facts, complexity for
+  arguments.

@@ -39,7 +39,7 @@ The editor itself is built for sustained writing, and it borrows deliberately fr
 
 The preview beside your writing doesn't approximate your site's look; it renders your draft through the site's own machinery, typography and all. When you're deciding whether a heading breaks where it should or a quotation carries the weight you want, you're deciding against the real thing.
 
-The convention is not peculiar to this tool, and it has a longer history than its plain appearance suggests. Markdown was introduced in 2004 by John Gruber, working with Aaron Swartz, with the stated design goal that a formatted document remain "publishable as-is, as plain text" ([daringfireball.net](https://daringfireball.net/projects/markdown/)). The deeper idea predates the name by decades: document systems going back to the late seventies (Brian Reid's Scribe, Donald Knuth's TeX, the SGML standard) separated what a passage is from how it looks, and the scholarly case for that separation was put formally by Coombs, Renear, and DeRose in *Communications of the ACM* in 1987, who argued that descriptive markup lets authors "focus their attention on the content." Markdown is the everyday descendant of that tradition, light enough to learn in an afternoon.
+The convention is not peculiar to this tool, and it has a longer history than its plain appearance suggests. Markdown was introduced in 2004 by John Gruber, working with Aaron Swartz, with the stated design goal that a formatted document remain "publishable as-is, as plain text" ([daringfireball.net](https://daringfireball.net/projects/markdown/)). The deeper idea predates the name by decades: document systems going back to the late seventies ([Brian Reid's Scribe](https://en.wikipedia.org/wiki/Scribe_(markup_language)), [Donald Knuth's TeX](https://en.wikipedia.org/wiki/TeX), [the SGML standard](https://en.wikipedia.org/wiki/Standard_Generalized_Markup_Language)) separated what a passage is from how it looks, and the scholarly case for that separation was put formally by Coombs, Renear, and DeRose in *Communications of the ACM* in 1987, who argued that descriptive markup lets authors "focus their attention on the content." Markdown is the everyday descendant of that tradition, light enough to learn in an afternoon.
 
 Its popularity among writers, rather than programmers, has its own logic. Formatting through menus interrupts composition: hands leave the keys, attention leaves the sentence, and both have to find their way back. Markdown keeps both where they were, which is much of why the minimalist writing apps of the last fifteen years (iA Writer arrived in 2010) could exist at all: the convention did the structural work, so the app could shrink to a page and a cursor. The same marks now work in far more places than dedicated writing tools, since note-taking systems, message boards, and chat apps adopted the convention as it spread. And a markdown draft written today will open, unchanged, in whatever tool exists in twenty years, which is not something computing can promise about much else.
 
@@ -47,9 +47,13 @@ If you've written in [iA Writer](https://ia.net/writer), [Ulysses](https://ulyss
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
 
-## Beyond plain text
+## Components
 
-Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. The set a site starts with covers callouts and alerts, figures with captions, pull quotes, collapsible question-and-answer blocks, video, and a time-limited announcement banner, and a site can add its own. The insert menu composes these: it asks for the block's particulars and writes the markup itself. A finished callout, for example, looks like this in your draft:
+Markdown covers prose. For the pieces of a page that are more than prose (a photo with a caption, a callout box, a pull quote, a video), cairn uses components, built on [remark](https://github.com/remarkjs/remark), an accepted way of extending markdown so that more complex formatting can live inside a plain-text document without breaking its readability. A component arrives through the insert menu as a small labeled block: in the plain text it reads as what it is, and in the preview it appears as the site's styled version.
+
+Sites usually come with a library of components. A typical starting set covers callouts and alerts, figures with captions, pull quotes, collapsible question-and-answer blocks, video, and a time-limited announcement banner. And the library isn't fixed: if it doesn't meet your needs, a new component is exactly the kind of thing your site's developer can build for you, and it will appear in the same insert menu beside the others.
+
+The insert menu composes these: it asks for the block's particulars and writes the markup itself. A finished callout, for example, looks like this in your draft:
 
 ```
 :::callout[Bring a life jacket]{tone="tip"}
@@ -84,4 +88,8 @@ If someone else edited the same entry while you were writing, cairn refuses to s
 
 ## When something looks wrong
 
-Your site's administrator is the first call, and there is usually a support contact in the editor's help screen. Everything you publish is kept in the site's history, so the administrator can restore an earlier version if something goes wrong.
+Your site's administrator is the first call, and there is usually a support contact in the editor's help screen. A useful report names the page, what you did, and what you saw; a screenshot spares everyone a paragraph of description.
+
+Some oddities are ordinary. A page you just published can take a short while to appear, because the live site rebuilds itself after each publish. A photo that looks fine in the preview but wrong on the page usually means the site's design handles that image size differently in context, which is worth showing the administrator rather than fighting alone. And if the spellchecker keeps flagging a name or a term your site uses constantly, the word can be added to the site's dictionary, where it stays accepted for every writer from then on.
+
+Behind all of it sits the same guarantee the first paragraph of this page made: everything you publish is kept in the site's history, so the administrator can restore an earlier version of any page, and nothing you can do in the writing environment is expensive to undo. The worst case is asking for help, not losing work.

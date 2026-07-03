@@ -213,6 +213,11 @@ the named human gates only):**
   document (and where needed, harden) the hand-off that lets a site bring its own login and
   issue cairn sessions — the seam only, not built-in auth options. The claim must be true
   before the repo goes public.
+- **Components fold by default in the editor (pre-beta; Geoff, 2026-07-03).** Directive
+  blocks open folded so long drafts read clean; the shipped safety invariant (a folded range
+  auto-unfolds when a change or the cursor touches it) already covers editing, so this is a
+  small change to the fold module's initial state. Editor-welcome's folding sentence updates
+  to "folded by default" when it ships.
 - **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).** Two
   scoped engine items: (1) **the gallery enabler** — component attributes reject `image`/`array`
   types and repeatable slots render bare text inputs regardless of `itemFields`; a schema-driven

@@ -18,7 +18,7 @@ give them *emphasis*. A blank line starts a new paragraph, and
 [a link](https://example.com) is a bracketed phrase followed by its address.
 ```
 
-The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. The editor also has a Zen mode that hides everything but the writing, for when you want the room quiet. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
+The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. The editor also has a Zen mode that hides everything except your words. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
 
 Markdown is also not a quirk of this tool. The writing apps many authors swear by (iA Writer, Ulysses, Bear) store their documents this way, documentation teams at large software companies write in it, and researchers who need work to stay readable for decades choose plain text deliberately, because it survives every change of tool and never locks words inside an app. Your site keeps your writing in the same durable form, and cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
 
@@ -40,4 +40,4 @@ If someone else edited the same entry while you were writing, cairn refuses to s
 
 ## When something looks wrong
 
-Ask the person who runs your site. There is usually a support contact in the writing room's help screen. Everything you publish is kept in the site's history, so the person who runs your site can restore an earlier version if something goes wrong.
+Ask the person who runs your site. There is usually a support contact in the editor's help screen. Everything you publish is kept in the site's history, so the person who runs your site can restore an earlier version if something goes wrong.

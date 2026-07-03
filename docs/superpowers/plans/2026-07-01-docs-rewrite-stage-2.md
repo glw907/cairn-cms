@@ -564,4 +564,11 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   element live — a rendered callout beside its source, the shortcut grid as a real table, a
   styled toolbar reproduction — since Topo renders the docs through cairn itself. Until Topo
   hosts, markdown-native devices carry the load (tables, syntax/result pairs), and a
-  `<!-- LIVE-UI: ... -->` comment marks where a live reproduction lands later.
+  `<!-- LIVE-UI: ... -->` comment marks where a live reproduction lands later. Geoff's
+  rationale, verbatim: "Harder to build, but they won't go stale."
+
+- **Adversarial TOC review before prose (Geoff, 2026-07-03).** For a comprehensive
+  reference-shaped page, the TOC/outline gets its own adversarial review before drafting:
+  completeness against the code-derived feature inventory, organization against the
+  researched conventions, and overlap against sibling pages. Findings fold, Geoff sees the
+  outline, then prose begins.

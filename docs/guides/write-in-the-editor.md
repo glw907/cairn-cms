@@ -26,6 +26,8 @@ Two more things are worth knowing before anything else. `Ctrl /` opens the edito
 
 ## Find and create entries {#find-and-create-entries}
 
+<!-- LIVE-UI: the entry list with New, Edited, and Published rows visible -->
+
 The admin's front page is the inventory of everything the site has: posts in one list, pages in another, and any other kinds your site defines in their own. Each row shows the entry's title, a short excerpt, and a status. **Published** means the live site carries it. An entry marked **Edited** is published too, but has changes waiting that readers haven't seen. **New** entries have never been published at all and exist only as drafts. When the lists grow long, a filter narrows them to the entries that need attention, meaning anything not simply published and current.
 
 To create an entry, use the New row at the foot of the list you want it in. Which list matters: a post is dated writing that flows into the site's archives, and a page is the standing kind, a distinction [Welcome, editors](./editor-welcome.md#posts-and-pages) covers if it's unfamiliar. The dialog asks for a title, and as you type it, an address for the entry (its URL; the dialog labels it Slug) takes shape beneath, derived from the title. You can adjust the address before creating. Afterward it lives in the [details panel](#the-details-panel) and never changes on its own, no matter how the title changes, because a published address is something readers bookmark and other sites link to.
@@ -35,6 +37,8 @@ To create an entry, use the New row at the foot of the list you want it in. Whic
 Writing in cairn is writing plain text, plus a small set of punctuation marks that tell the site what a piece of text is: a heading, an emphasis, a list, a link. The marks are the markdown convention, and they were chosen to look like what they mean, so a marked-up draft reads naturally even before anything renders it. You don't need to learn them before you start. The toolbar enters every one of them for you, the cheat-sheet (`Ctrl /`) lists them, and most writers find they've absorbed the few they use within a day or two.
 
 The marks record what a piece of text *is*, and the site's design decides how it *looks*. You never choose a font, a size, or a color; those belong to the site's design, which is set once and applied to every page. So everything you write comes out looking like the rest of your site.
+
+Pasting text from Word, Google Docs, or a web page keeps the words and drops the formatting, so re-mark any emphasis or headings with the toolbar after a large paste. Pasting an image works too: the editor offers to add it to the media library on the spot. And a practical note on hardware: the editor is designed for a desktop or laptop browser, where a keyboard and a full-width page do the writing justice.
 
 The sections below cover every mark the editor understands, one at a time, each with an example of what you type. The preview shows what renders.
 
@@ -191,6 +195,8 @@ Three modes shape the writing itself. **Focus mode** (`Ctrl Shift F`) dims every
 
 Components are the blocks that go beyond prose: callouts, video, pull quotes, and whatever else your site defines. They're also the one place the editor shows you something that looks less like writing and more like structure, so this section takes them slowly. The short version: the insert menu builds every block for you through a guided form with a live preview, and you never have to write one by hand.
 
+<!-- LIVE-UI: the insert form beside its live preview, mid-composition -->
+
 ### How a block works {#how-a-block-works}
 
 A component block is ordinary text with a frame around it, and reading one part by part takes the mystery out:
@@ -273,6 +279,8 @@ If a tag you need is missing, the list can be extended in the admin, and the add
 
 The editor reads along as you write, and it deliberately limits what it comments on: things that are objectively wrong, never your choices. Two kinds of issue get the same quiet amber underline.
 
+<!-- LIVE-UI: the suggestion popover open on an underlined word -->
+
 **Spelling.** The spellchecker runs locally in the editor, using your site's dialect. Click an underlined word, or press `Alt Enter` with the cursor on it, and a small popover offers up to five suggestions plus two standing choices. **Add to dictionary** teaches the word to the whole site, so a name or a term of art gets flagged exactly once in the site's life, for whichever writer meets it first. **Ignore** dismisses the mark without teaching anything.
 
 **Mechanical slips.** Alongside spelling, the editor catches a short list of objective mistakes: a doubled word ("the the"), a double space, repeated punctuation. Each comes with a one-click fix in the same popover. The list is deliberately mechanical, and there is no style or grammar opinion anywhere in it—nothing about your phrasing, your word choice, or your sentences is ever flagged. Style belongs to you, and if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject.
@@ -285,6 +293,8 @@ Tidy is the optional AI copy-edit, built on Claude. Its remit—small fixes only
 
 Tidy isn't complicated, but it's probably a feature you haven't seen before, so it's worth knowing what to expect the first time. Nothing about it is automatic: you invoke it, it reads, and it comes back with marked proposals sitting in your draft where they would apply, each one visible before anything changes. The experience is closer to a copy editor returning your manuscript with penciled marks than to autocorrect.
 
+<!-- LIVE-UI: a tidy review in progress, proposals marked in the draft -->
+
 Run it over the whole draft, or select a passage first to tidy just that part. When the proposals arrive, the review is yours:
 
 1. Step through the proposals and **accept** or **reject** each one individually.
@@ -296,7 +306,7 @@ While a review is open the draft is read-only, the same way Preview is, so new t
 
 ## Keyboard shortcuts {#keyboard-shortcuts}
 
-The tables below are the complete set. They're conveniences: typing markdown always works, and the keys are never requirements.
+The tables below cover the editor's whole set, plus the standard undo and redo. They're conveniences: typing markdown always works, and the keys are never requirements.
 
 **Formatting**
 
@@ -315,6 +325,7 @@ The tables below are the complete set. They're conveniences: typing markdown alw
 
 | Action | Shortcut |
 | --- | --- |
+| Undo / redo | `Ctrl Z` / `Ctrl Y` |
 | Save | `Ctrl S` |
 | Publish | `Ctrl Shift S` |
 | Details panel | `Ctrl .` |
@@ -334,6 +345,8 @@ The tables below are the complete set. They're conveniences: typing markdown alw
 ## The details panel {#the-details-panel}
 
 Beyond its text, every entry carries a small amount of information about itself, like its date and its address on the site. The site uses this metadata to order the archives and to describe the entry in lists and search results. The details panel is where you set it—`Ctrl .` or the toolbar opens it, organized into Details, Visibility, and Address.
+
+<!-- LIVE-UI: the details panel open, its three groups visible -->
 
 | Field | What it does |
 | --- | --- |
@@ -370,3 +383,11 @@ One collision rule protects everyone: if someone else edited the same entry whil
 ## When something looks wrong {#when-something-looks-wrong}
 
 The [welcome page's closing section](./editor-welcome.md#when-something-looks-wrong) covers the ordinary oddities and how to report the rest. In brief: your site's administrator is the first call, and a useful report names the page and what you saw. Everything you publish is kept in the site's history, so nothing here is expensive to undo.
+
+Three situations are worth exact steps.
+
+**Your save was refused because someone else edited the entry.** Your text is still on your screen, and the refusal protects both of you. Select all of your draft and copy it somewhere safe (a note, an email to yourself). Then reload the entry to get your colleague's version, add your changes back where they belong, and save again.
+
+**A component block shows up as plain text with stray `:::` lines.** The frame got damaged, and the words are all still there. Select the body text and cut it, delete the leftover marker lines, insert a fresh block of the same kind from the insert menu, and paste the body into it.
+
+**The draft won't take typing.** Either a tidy review is open (finish it or choose Reject all) or you're on the Preview tab (switch back to Write). Both are the editor protecting a decision in progress, not a fault.

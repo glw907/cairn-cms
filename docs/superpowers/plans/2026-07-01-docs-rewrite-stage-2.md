@@ -478,3 +478,8 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   person in a specific little place. For a literate reader, the technical fact carries
   itself; a scenario earns its place only when it's real (the club's actual volunteers, an
   actual support case), never manufactured for vividness.
+
+- **Tools don't lie (Geoff, 2026-07-03).** No anthropomorphized accusations: editors don't
+  "lie," frameworks don't "fight you," platforms don't "betray." The drama stands in for the
+  mechanism, and the mechanism is always the stronger sentence ("the editor renders one
+  thing, the site renders another").

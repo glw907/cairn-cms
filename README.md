@@ -41,13 +41,15 @@ limits of my choices.
      resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as
      author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
 
+## Quickstart
+
 ```sh
 npm install @glw907/cairn-cms
 ```
 
-The short version of a build: describe your content in an adapter (concepts, the GitHub
-target, your render function), mount the admin with a handful of files, bind a D1 database
-and an email sender in `wrangler.jsonc`, and deploy. The
+Then four steps: describe your content in an adapter (concepts, the GitHub target, your
+render function), mount the admin with a handful of files, bind a D1 database and an email
+sender in `wrangler.jsonc`, and deploy. The
 [tutorial](./docs/tutorial/build-your-first-cairn-site.md) walks that whole path, from an
 empty directory to a deployed site with a working admin.
 

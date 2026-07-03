@@ -504,4 +504,6 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   as it does, in plain words, and may carry complex sentences where the thought does. Do not
   write down to this reader; warmth stays as consequence-facts, and reassurance is earned by
   explanation, not repetition. The nervous-manager framing is retired as the default (it
-  survives only for genuinely fear-adjacent moments like first sign-in).
+  survives only for genuinely fear-adjacent moments like first sign-in). And this reader is
+  strongly turned off by marketing slop, exactly like Geoff — the anti-slop law is
+  audience-universal, not a developer-register rule.

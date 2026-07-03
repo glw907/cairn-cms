@@ -472,3 +472,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   or gets cut. The README claims-audit is the model (it caught the auth-seam overstatement,
   the wrong component roster, and the misleading still-builds claim). A page is not
   review-ready until it has survived all three.
+
+- **Invented concrete scenarios are a tell (Geoff, 2026-07-03: "an editor on hotel Wi-Fi
+  still gets a working tool").** AI dramatizes technical facts by conjuring a specific little
+  person in a specific little place. For a literate reader, the technical fact carries
+  itself; a scenario earns its place only when it's real (the club's actual volunteers, an
+  actual support case), never manufactured for vividness.

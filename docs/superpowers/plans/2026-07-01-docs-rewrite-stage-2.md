@@ -511,3 +511,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   important job done." Editor pages are about the READER'S JOB — the writing, the site, the
   organization's work — with cairn instrumental and receding. A page that centers the tool
   instead of the work has the frame backwards.
+
+- **Length calibration (Geoff, 2026-07-03):** the editor front-door runs a bit longer than
+  the developer front-door. The editor reader gets markdown introduced with examples and
+  grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
+  prose; proposes, never drafts, never takes a voice) — orientation the developer README
+  delegates to the docs tree instead.

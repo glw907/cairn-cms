@@ -18,7 +18,7 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 ## Why markdown and not a WYSIWYG editor?
 
-This is the choice most likely to raise an eyebrow, so it deserves a real answer. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are genuinely slick. I take that seriously, and cairn still says no.
+This is the choice most likely to raise an eyebrow, so it deserves a real answer. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are genuinely slick. It's a long-running debate, and I'm not trying to win it here. Cairn is just an expression of which side of the argument I believe to be the better one.
 
 The problem is that WYSIWYG editors lie a little, and the lies compound. What you see is what the editor renders, not what the site renders, so the page never quite matches the preview. Pasting from Word drags invisible formatting along with it. Authors reach for presentation ("make this big and blue") when a site needs meaning ("this is a heading"), and after a year of that, every page has its own look and someone has to clean it up. (That someone is the developer. See "I'd rather develop than support," below.)
 

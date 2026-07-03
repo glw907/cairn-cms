@@ -68,9 +68,9 @@ And when the site grows past content editing, the dashboards don't have anywhere
 
 ## Built to be built on
 
-I'd rather develop than support, and that shaped cairn as much as anything. The more user-focused the tool, the more of my time goes to development and the less to technical support. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
+I'd rather develop than support, and that shaped cairn as much as anything. The more user-focused the tool, the more of my time goes to development and the less to technical support. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS.
 
-The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, not rescuing the words.
+The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, and the markdown was already yours.
 
 ## Where cairn sits
 

@@ -13,7 +13,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-02, LATEST): 0.79.0 PUBLISHED (the last 0.x); ladder step 3 IN FLIGHT — docs Stage 2 ∥ Wayfinder component set
+## Immediate next action (2026-07-02, LATEST): step-3 component set MERGED (gallery gated on the filed enabler); docs Stage 2 at the front-door gate (Geoff reads four drafts on docs-rewrite-1)
 
 **The code polish pass is merged to `main`** (merge `0d72870`; plan + post-mortem at
 `docs/superpowers/plans/2026-07-01-code-polish-pass.md`). The window: the idiom charter

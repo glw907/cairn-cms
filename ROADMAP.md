@@ -186,7 +186,10 @@ the named human gates only):**
   callout and alert; the converter island demo is replaced by an expiring-announcement banner
   (frontmatter-date-driven, auto-hides after expiry — teaches the countdown's date mechanics
   while replacing a real feature of the aksailingclub migration). Plan:
-  `docs/superpowers/plans/2026-07-02-wayfinder-component-set.md`. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
+  `docs/superpowers/plans/2026-07-02-wayfinder-component-set.md`. **BUILT and merged
+  2026-07-02:** icon, video, pull-quote, cta, faq, and the expiring-banner island (converter
+  retired); gallery waits on the filed image-attribute enabler; figure needs no component
+  (engine-native). The design review (step 4) receives the set with the fixtures branch. Each ships as a worked `defineComponent` — schema-driven form, icon, and a
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.

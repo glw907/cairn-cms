@@ -1,0 +1,10 @@
+extends: existence
+message: "Announcement scaffolding ('%s'): say the first real thing instead of describing what the text will do."
+level: error
+ignorecase: true
+tokens:
+  - in this (section|guide|document), we
+  - we will (cover|explore|discuss)
+  - let's dive
+  - dive in
+  - dive deeper

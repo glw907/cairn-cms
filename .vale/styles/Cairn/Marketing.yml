@@ -1,0 +1,17 @@
+extends: existence
+message: "Marketing lexicon ('%s'): cairn is code, not a product. State the checkable fact instead."
+level: error
+ignorecase: true
+tokens:
+  - seamless
+  - blazing
+  - cutting-edge
+  - world-class
+  - best-in-class
+  - game-chang
+  - revolutioniz
+  - supercharge
+  - effortless
+  - unlock the
+  - elevate your
+  - empower

@@ -1,0 +1,6 @@
+extends: existence
+message: "Contrast frame ('%s'): the not-X-but-Y reversal is a tell. State the point directly."
+level: error
+ignorecase: true
+raw:
+  - 'not (just|only|merely) [a-z][^.;:]{0,50}(, but|but also| but )'

@@ -1,0 +1,14 @@
+extends: existence
+message: "Virtue-claim intensifier ('%s'): the claim of candor replaces the demonstration. Delete it; let the sentences demonstrate."
+level: error
+ignorecase: true
+tokens:
+  - a real answer
+  - the honest (truth|answer)
+  - to be honest
+  - to be clear
+  - a fair question
+  - "frankly,"
+  - it's worth noting
+  - it is worth noting
+  - worth mentioning

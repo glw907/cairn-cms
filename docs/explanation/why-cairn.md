@@ -2,23 +2,21 @@
 
 Cairn exists for two people at once. The developer installs a library and keeps every route, template, and byte of CSS. The editor gets a writing surface behind an emailed sign-in link, with a live preview of the real site. Most tools pick one of these people and make the other suffer.
 
-There's a longer version of that. I host everything on Cloudflare, because nothing else does bulletproof, security-forward hosting at almost no cost, and committing to Cloudflare narrows your CMS options considerably. I wanted non-technical editors to get a first-class writing tool, meaning the affordances a good writer expects, and most of what runs on Cloudflare treats the editor as an afterthought. And most sites I build eventually do more than serve content, so whatever managed the content had to stay out of the way of my own code. Cairn is what satisfying all three at once turned out to look like.
-
-The same design reads two ways, and both are intended. For a basic content-managed site, cairn plus its starter template is close to the whole job. For many sites that's legitimately the finish line. For a site that keeps growing, cairn is a foundation. The seams are documented and narrow, the template is built to be restyled, and your own routes and data live beside the engine without touching it.
+The README tells the short version of why I built it. This page argues each choice properly, including what it costs you.
 
 ## What cairn is
 
 A fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. An admin your site mounts with a handful of files. A commit pipeline: saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function, yours, that the editor's preview and your public pages both call. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.
 
-## Who it serves
+## Love your editors
 
-The developer keeps ownership in the ways that matter. The public surface is narrow, versioned, and enforced by gates, so pulling updates doesn't rework your site. When you need what cairn doesn't do (your own data, your own auth outside the admin, whole subsystems), you build it beside the engine, and the seams are documented contracts rather than internals you hope stay still. Leaving is cheap because your content was markdown in your repo all along.
+The people who write for a small site are normal human beings, not developers. The git-based CMSes get the storage right, keeping content as plain files in your own repo, but they were built by developers for developers, and they keep asking editors to think in commits, branches, and merge conflicts. For most people who write, that's a bridge too far, and they either give up or hand every edit back to you.
 
-The editor gets a tool that respects the work. Signing in is clicking a link in email. Writing is markdown in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and the site's real rendering as the preview. Saving can't destroy anything, because edits hold on a branch until a deliberate publish. If two people collide, cairn refuses the save rather than merging by guesswork.
+Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor never hears the words "commit" or "branch." They just write.
 
 ## Why Cloudflare
 
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs, from one vendor, at prices that round to zero for small-site traffic. That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the largest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. The cost is plain. No Cloudflare account, no cairn.
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero. That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the largest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. The cost is plain. No Cloudflare account, no cairn.
 
 ## Why SvelteKit
 
@@ -27,6 +25,10 @@ The admin is built on form actions that work before JavaScript loads, which is S
 ## Why DaisyUI, for the admin only
 
 Your public site carries none of this, since render is yours. The admin skeleton uses DaisyUI over Tailwind because extending it means working in the most copyable idiom in the ecosystem instead of learning a bespoke design system. The cost: it's Tailwind's idiom or none. There is no theming API to adapt the admin to some other system.
+
+## Built to be built on
+
+Most of the sites I build have some degree of functionality beyond being a good CMS, so cairn assumes yours will too. The public surface is narrow, versioned, and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own admin screens mount inside cairn's, in the same DaisyUI and Tailwind idiom the scaffold is built from. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
 
 ## Who should not choose cairn
 

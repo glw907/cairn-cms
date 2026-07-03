@@ -4,7 +4,7 @@ This page explains why I wrote cairn in detail. It also explains why you might (
 
 ## What cairn is
 
-Cairn is a SvelteKit library that turns a repo of markdown files into a site your editors can manage from the browser. You declare your content as concepts (Posts and Pages ship with it, and you can add your own), and each concept is a directory of markdown files with a typed frontmatter schema. The admin mounts into your site as a handful of routes. When an editor saves, cairn commits the markdown to a branch named for the entry, and when they publish, it copies the entry to `main` and your normal deploy takes it from there. Rendering is one function your site provides, and both the editor's preview and your public pages call it. That's the whole job. Everything a site needs beyond it is your code, and cairn's seams exist so your code can plug in without touching engine internals.
+Cairn is a SvelteKit library that turns a repo of markdown files into a site your editors can manage from the browser. You declare your content as concepts (Posts and Pages ship with it, and you can add your own), and each concept is a directory of markdown files with a typed frontmatter schema. The admin mounts as a catch-all route and a layout pair inside your own app. When an editor saves, cairn commits the markdown to a branch named for the entry, and when they publish, it copies the entry to `main` and your normal deploy takes it from there. Rendering is one function your site provides, and both the editor's preview and your public pages call it. That's the whole job. Everything a site needs beyond it is your code, and cairn's seams exist so your code can plug in without touching engine internals.
 
 ## Who is cairn for?
 
@@ -26,7 +26,7 @@ Mostly because WYSIWYG editors lie a little. The case for them is obvious (every
 
 What you see in a WYSIWYG editor is what the editor renders, which is never quite what the site renders, and the gap widens with use: pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when what the site actually needs is structure ("this is a heading"). A year of that, and every page has its own private styling, with the cleanup landing on the developer.
 
-Markdown separates two decisions that WYSIWYG collapses into one: the author decides what something is (a heading, a list, emphasis), and the site decides, once and for everything, how such things look. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
+Markdown separates two decisions that WYSIWYG collapses into one: the author decides what something is (a heading, a list, emphasis), and the site decides, once and for everything, how such things look. It's the old separation of content from presentation, enforced at the point of writing rather than promised in a style guide nobody reads. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
 
 If your editors need page-layout control, cairn is the wrong tool. For writing posts, pages, and announcements, it isn't a hardship, and the live preview closes most of the gap WYSIWYG claims to fill.
 
@@ -40,7 +40,7 @@ Nothing else does bulletproof, security-forward hosting at almost no cost. Worke
 
 ### SvelteKit
 
-The admin runs on form actions that work before JavaScript loads, so an editor on hotel Wi-Fi still gets a working tool. Server-rendered pages with islands of interactivity are exactly the shape of a content site, and the component model cairn's seams speak is the one you already work in. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
+The admin is built on form actions, so every editor operation works as a plain HTML form before hydration, and an editor on hotel Wi-Fi still gets a working tool. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
 
 ### DaisyUI, for the admin only
 

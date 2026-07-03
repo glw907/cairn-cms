@@ -16,6 +16,16 @@ The people who write for a small site are normal human beings, not developers. T
 
 Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor never hears the words "commit" or "branch." They just write.
 
+## Why markdown and not a WYSIWYG editor?
+
+This is the choice most likely to raise an eyebrow, so it deserves a real answer. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are genuinely slick. I take that seriously, and cairn still says no.
+
+The problem is that WYSIWYG editors lie a little, and the lies compound. What you see is what the editor renders, not what the site renders, so the page never quite matches the preview. Pasting from Word drags invisible formatting along with it. Authors reach for presentation ("make this big and blue") when a site needs meaning ("this is a heading"), and after a year of that, every page has its own look and someone has to clean it up. (That someone is the developer. See "I'd rather develop than support," below.)
+
+Markdown flips the trade. The author marks meaning (a heading, a list, emphasis) with a few punctuation characters, and the site's design system decides what those things look like, everywhere, consistently. The text stays plain, so it diffs cleanly, survives every tool migration, and reads fine in an email. And the syntax burden is smaller than it sounds: the marks were chosen to look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and the live preview shows the real page as you go. iA Writer built a beloved writing product on exactly this bet, and cairn borrows it deliberately.
+
+If your editors genuinely need page-layout control, cairn is the wrong tool (see below). For writing posts, pages, and announcements, markdown plus a real preview gets you what WYSIWYG promises, without the mess.
+
 ## Why the stack?
 
 Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool.

@@ -4,7 +4,7 @@ This page explains why I wrote cairn in detail. It also explains why you might (
 
 ## What cairn is
 
-A fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. An admin your site mounts with a handful of files. A commit pipeline: saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function, yours, that the editor's preview and your public pages both call. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.
+Cairn is a fixed set of content concepts you declare (Posts and Pages out of the box, your own beside them), each a directory of markdown files with a frontmatter schema. It's an admin your site mounts with a handful of files, and a commit pipeline where saves hold on a per-entry branch, publishing copies to `main`, and your deploy takes over. One render function (yours) serves both the editor's preview and your public pages. That's the job. Everything a site needs beyond it belongs to you, and cairn serves it with a seam rather than a feature.
 
 ## Who is cairn for?
 

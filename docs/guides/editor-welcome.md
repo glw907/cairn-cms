@@ -8,7 +8,7 @@ Go to your site's `/admin` page and type your email address. A sign-in link arri
 
 ## Writing
 
-You write in plain text and add formatting with a few punctuation marks. This way of writing is called markdown, and a little of it goes a long way:
+You write in markdown, a convention for indicating structure in plain text that has become the standard for serious writing tools. It was designed in 2004 around one principle: a marked-up document should remain fully readable as ordinary text, because the marks mirror what they mean. Asterisks around a phrase emphasize it even before anything renders, a line beginning with `#` reads as the heading it is, and a bracketed phrase followed by an address is recognizably a link:
 
 ```
 ## A heading
@@ -18,7 +18,7 @@ give them *emphasis*. A blank line starts a new paragraph, and
 [a link](https://example.com) is a bracketed phrase followed by its address.
 ```
 
-The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. The editor also has a Zen mode that hides everything except your words. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
+The toolbar enters the marks for you, the editor keeps a cheat-sheet for the rest, and a Zen mode hides everything except your words. The preview beside your writing shows your words exactly as readers see them, in the site's real styling. The division of labor is deliberate: your marks say only what something is, a heading or an emphasis, and the site decides how everything looks, so every page you write stays consistent with the rest of the site.
 
 Markdown is also not a quirk of this tool. The writing apps many authors swear by (iA Writer, Ulysses, Bear) store their documents this way, documentation teams at large software companies write in it, and researchers who need work to stay readable for decades choose plain text deliberately, because it survives every change of tool and never locks words inside an app. Your site keeps your writing in the same durable form, and cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
 

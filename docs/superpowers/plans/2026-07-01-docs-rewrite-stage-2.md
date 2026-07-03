@@ -279,3 +279,18 @@ freshness routine created and recorded there by id.
 - **Editor front-door length (Geoff, 2026-07-03):** three to five minutes of reading time
   (roughly 700-1150 words) is reasonable; do not over-compress. Length is earned by more of
   the system explained truthfully, never by padding.
+
+## Two system faults found at write-in-the-editor (Geoff, 2026-07-03: "something must still be
+fundamentally wrong with the drafting system")
+
+1. **Genre-matched exemplars, mandatory.** The ratified corpus is positioning prose and
+   cannot calibrate instructional documentation. Each genre drafts against its own exemplar:
+   positioning pages against the README/why-cairn snapshots; INSTRUCTIONAL editor docs
+   against Geoff's own club handbook (the Sveltia passages in the voice corpus, passage 10 —
+   plain declaratives, instructions that instruct, no clefts, no antitheses, no cappers,
+   no cleverness) plus Obsidian; developer how-tos against the SvelteKit-ecosystem craft
+   exemplars. Drafting with the wrong genre's exemplar in ear produces essay-avoidance prose,
+   which is how a triad, a balanced pair, and two cappers survived maximum-attention samples.
+2. **Nothing ungated reaches Geoff, including chat samples.** Every piece of fresh prose —
+   drafts, calibration samples, proposed rewrites shown in conversation — passes the register
+   editor before his eyes. The samples that failed went keyboard-to-Geoff with zero gates.

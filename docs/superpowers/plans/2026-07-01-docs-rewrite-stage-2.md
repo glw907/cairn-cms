@@ -448,3 +448,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   default is a 25-40 word compound sentence; simplicity is for facts, complexity for
   arguments. And the reader is fully SvelteKit literate: never gloss a framework concept
   (form actions, hydration, `locals`, adapters); speak in them, precisely.
+
+- **The Russell pass (Geoff, 2026-07-03).** Every prose review checks logical consistency,
+  not just register: non-sequiturs, equivocation (the same word doing positive work in one
+  section and negative in another), universal claims that overstate, arguments whose middle
+  step is missing, and internal contradictions across the page. Challenge stupidity; nothing
+  logically broken passes because it sounds good.

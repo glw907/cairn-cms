@@ -12,7 +12,9 @@ bulletproof, security-forward hosting at almost no cost, but committing to Cloud
 your choice of tools. And I wanted the people who write for a site, non-technical editors,
 to get a first-class experience without learning git. That means the affordances a good
 writer expects: a markdown surface in the spirit of iA Writer, a live preview that shows the
-real site, and a low-distraction writing mode. Nothing I found gave me both. The
+real site, and a low-distraction writing mode. And most of the sites I build have some
+degree of functionality beyond being a good CMS, so whatever managed the content had to be
+easy to extend once I wrote it. Nothing I found gave me all three. The
 platform CMSes want to own the whole site, and the hosted ones keep your content in their
 own database. So cairn is deliberately small. It manages markdown content and the admin where editors write,
 and that's it. Anything else your site does, you build next to cairn, and there are

@@ -14,7 +14,7 @@ Cairn is for small organizations, and for the developers who help them. I like h
 
 The people who write for a small site are normal human beings, not developers. Content wants to live in git (plain files, history, attribution), but asking editors to actually use git, with its commits, branches, and merge conflicts, is a bridge too far for most people who write, and they either give up or hand every edit back to you.
 
-Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose (in the spirit of iA Writer, with a low-distraction mode), and the preview renders through the site's own pipeline, so what an editor sees is what readers get. A save can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the word "commit."
+Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose (in the spirit of [iA Writer](https://ia.net/writer), with a low-distraction mode), and the preview renders through the site's own pipeline, so what an editor sees is what readers get. A save can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor just writes, and never hears the word "commit."
 
 ### For developers
 
@@ -22,7 +22,7 @@ Cairn is a developer's tool as much as an editor's. A new site starts quickly (t
 
 ## Why the stack?
 
-Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool. The choices also aren't independent: cairn starts from the premise that Cloudflare is a great hosting platform, and each choice after that follows from working within the limits of the one before it.
+Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool. The choices also aren't independent: cairn starts from the premise that [Cloudflare](https://www.cloudflare.com/) is a great hosting platform, and each choice after that follows from working within the limits of the one before it.
 
 ### Cloudflare
 
@@ -30,11 +30,11 @@ Nothing else does bulletproof, security-forward hosting at almost no cost. Worke
 
 ### SvelteKit
 
-Only options that run on Cloudflare are candidates at all. Within that field, and because cairn was a greenfield project with no legacy to serve, the right move was to pick the framework developers actually love, and by that measure Svelte and SvelteKit have sat at or near the top of the developer satisfaction surveys for years. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`.
+Only options that run on Cloudflare are candidates at all. Within that field, and because cairn was a greenfield project with no legacy to serve, the right move was to pick the framework developers actually love, and by that measure [Svelte and SvelteKit](https://svelte.dev/) have sat at or near the top of the developer satisfaction surveys for years. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`.
 
 ### DaisyUI
 
-DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. It's the idiom of the admin skeleton and the starter template both, so extending either means working in the most copyable idiom on the web instead of learning my bespoke design system. Your public site isn't locked to it (render is yours, and the template is built to be restyled), but the scaffold you start from speaks DaisyUI throughout. The admin skeleton is the one place the idiom is fixed: extending it means Tailwind's idiom or none, since there's no theming API to point it at another system.
+[DaisyUI](https://daisyui.com/) follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. It's the idiom of the admin skeleton and the starter template both, so extending either means working in the most copyable idiom on the web instead of learning my bespoke design system. Your public site isn't locked to it (render is yours, and the template is built to be restyled), but the scaffold you start from speaks DaisyUI throughout. The admin skeleton is the one place the idiom is fixed: extending it means Tailwind's idiom or none, since there's no theming API to point it at another system.
 
 ### Storage, by fit
 
@@ -54,15 +54,15 @@ If your editors need page-layout control, cairn is the wrong tool. For writing p
 
 Good tools do run on Cloudflare, and I've used several of them.
 
-**Sveltia, Decap, and the git-based admins.** These are the closest tools to what cairn does, and I ran Sveltia myself before building cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But all of them are config-driven dashboards at heart, and that shapes how they feel to use.
+**[Sveltia](https://github.com/sveltia/sveltia-cms), [Decap](https://decapcms.org/), and the git-based admins.** These are the closest tools to what cairn does, and I ran Sveltia myself before building cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But all of them are config-driven dashboards at heart, and that shapes how they feel to use.
 
 A dashboard treats writing as one more form to fill out: a field list (title here, body there, tags in that box), a preview that approximates the site rather than rendering through it, and an interface built for administering records, because that's what it's doing. Cairn starts from the other end. The editor lands in a markdown surface built for prose, the preview is the real site, and the metadata stays out of the way until you need it. A polished writing tool invites people to actually write.
 
 And when the site grows past content editing, the dashboards don't have anywhere for that to go. A club needs sign-ups, a small business needs a booking list, and none of that lives in a content CMS, so you build it somewhere else: a separate route with its own login, its own look, and its own bookmark that half the volunteers lose. Now the newsletter editor works in one tool and the membership coordinator works in another, and you support both. Cairn's answer is to keep everything in one admin: your screens mount inside it, so everyone who runs the site sees a single interface, and adding a feature doesn't mean adding a tool.
 
-**Keystatic.** Keystatic is thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
+**[Keystatic](https://keystatic.com/).** Keystatic is thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
 
-**The hosted headless services (Sanity, Contentful, and friends).** They pair fine with a Cloudflare frontend, and the editing UIs are polished. But your content lives in their database under their pricing, and leaving is an export project. I wasn't willing to make that trade.
+**The hosted headless services ([Sanity](https://www.sanity.io/), [Contentful](https://www.contentful.com/), and friends).** They pair fine with a Cloudflare frontend, and the editing UIs are polished. But your content lives in their database under their pricing, and leaving is an export project. I wasn't willing to make that trade.
 
 **WordPress, Ghost, and the server CMSes.** They don't run on Workers at all. They need a real server somewhere, which brings back exactly the cost and attack surface that moving to Cloudflare removes.
 

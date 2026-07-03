@@ -6,7 +6,7 @@ I built cairn for my own sites. I host everything on Cloudflare, because nothing
 
 ## Love your editors!
 
-Cairn gives non-technical content editors a first-class writing experience with all the modern affordances, including a polished markdown editor in the spirit of iA Writer, a live preview that renders through the same function as your public pages (so editors see exactly what ships), and a low-distraction mode. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing.
+Cairn gives non-technical content editors a first-class writing experience with all the modern affordances, including a polished markdown editor in the spirit of iA Writer, a live preview that renders through the same function as your public pages (so editors see exactly what ships), and a low-distraction mode. Editors sign in from an emailed link (no GitHub account, no password), and cairn exposes the signed-in identity to your own routes, so what you build next to cairn knows who's editing. The magic-link flow is a default, not a requirement: a developer can replace the auth outright.
 
 ## Content storage and types
 
@@ -20,7 +20,7 @@ Most of the sites I build have some degree of functionality beyond being a good 
 
 Cairn is deliberately small. It manages markdown content and the admin where editors write, and that's it. Anything else your site does, you build next to cairn, and there are documented seams where your code has to touch the engine. Your own admin screens mount inside cairn's, in the same DaisyUI and Tailwind idiom the scaffold is built from.
 
-The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them. [Why cairn](./docs/explanation/why-cairn.md) explains both the rationale and the practical limits of my choices.
+The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them. [Why cairn](./docs/explanation/why-cairn.md) explains the rationale and the limits of my choices.
 
 <!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
 resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
@@ -35,4 +35,4 @@ Then four steps: describe your content in an adapter (concepts, the GitHub targe
 
 After that, the [docs](./docs/README.md) split by what you need: [guides](./docs/guides/README.md) are task recipes, for developers and for editors separately; the [reference](./docs/reference/README.md) documents every export, one page per entry point, checked against the code in CI; and [explanation](./docs/explanation/README.md) covers the architecture, the security model, and the reasoning behind both.
 
-Cairn is pre-1.0, and it runs two production sites today, [ecxc.ski](https://ecxc.ski) and [907.life](https://907.life). If you remove it someday, your content is still plain markdown in your own repo. You'd rewire the rendering, but nothing traps the words. Versioning and upgrades are the [upgrade guide](./docs/guides/upgrade-cairn.md)'s job, history lives in the [CHANGELOG](./CHANGELOG.md), security reporting in the [policy](./SECURITY.md), and the license is [MIT](./LICENSE).
+Cairn is pre-1.0, and it runs two production sites today, [ecxc.ski](https://ecxc.ski) and [907.life](https://907.life). If you remove it someday, your content is still plain markdown in your own repo. You'd rewire the rendering, but nothing traps the words. Versioning and upgrades are the [upgrade guide](./docs/guides/upgrade-cairn.md)'s job. History lives in the [CHANGELOG](./CHANGELOG.md), security reporting in the [policy](./SECURITY.md), and the license is [MIT](./LICENSE).

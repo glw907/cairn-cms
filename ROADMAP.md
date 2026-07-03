@@ -218,12 +218,14 @@ the named human gates only):**
   auto-unfolds when a change or the cursor touches it) already covers editing, so this is a
   small change to the fold module's initial state. Editor-welcome's folding sentence updates
   to "folded by default" when it ships.
-- **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).** Two
-  scoped engine items: (1) **the gallery enabler** — component attributes reject `image`/`array`
-  types and repeatable slots render bare text inputs regardless of `itemFields`; a schema-driven
-  gallery component needs either an image-typed repeatable-slot widget in `ComponentForm` or an
-  `image` carve-in for component attributes. Additive contract change; its own designed task (the
-  phase-3a focus hazard lives in that component). Gallery joins the starter set when it lands.
+- **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).**
+  **DEFERRED PAST LAUNCH (Geoff, 2026-07-03): the gallery** — complex, highly taste-related,
+  and gated on a real engine enabler (component attributes reject `image`/`array` types;
+  repeatable slots render bare text inputs regardless of `itemFields`; the fix is an
+  image-typed repeatable-slot widget in `ComponentForm` or an `image` carve-in for component
+  attributes, an additive contract change and its own designed task given the phase-3a focus
+  hazard). The launch component set is complete without it; the aksailingclub migration's
+  photo debt revisits this after launch.
   (2) **Inline icons** — the directive vocabulary is container-only by design, so the shipped icon
   component is block-level; the aksailingclub migration's 99x inline usage needs either a site-level
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text

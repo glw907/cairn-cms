@@ -12,21 +12,25 @@ The people who write for a small site are normal human beings, not developers. T
 
 Cairn keeps the version control invisible. Signing in is clicking a link in email. Writing happens in an editor built for prose, in the spirit of iA Writer, with a low-distraction mode and a live preview that renders through the site's own pipeline, so what an editor sees is what readers get. Saving can't destroy anything, because drafts hold on a branch until a deliberate publish, and if two people edit the same entry, cairn refuses the second save rather than merging by guesswork. The editor never hears the words "commit" or "branch." They just write.
 
-## Why Cloudflare
+## Why the stack?
+
+### Cloudflare
 
 Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero. That alone wouldn't justify locking to one host. The stronger reason is what refusing portability buys: a host-abstraction layer would be the largest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. The cost is plain. No Cloudflare account, no cairn.
 
-## Why SvelteKit
+### SvelteKit
 
 The admin is built on form actions that work before JavaScript loads, which is SvelteKit's native grain, and it means an editor on hotel Wi-Fi still has a working tool. Public pages are server-rendered markdown with islands of interactivity where you declare them, which is the shape of a content site. And the component model the seams speak is the one you already work in. A React team should pick a different CMS rather than fight this.
 
-## Why DaisyUI, for the admin only
+### DaisyUI, for the admin only
 
 Your public site carries none of this, since render is yours. The admin skeleton uses DaisyUI over Tailwind because extending it means working in the most copyable idiom in the ecosystem instead of learning a bespoke design system. The cost: it's Tailwind's idiom or none. There is no theming API to adapt the admin to some other system.
 
 ## Built to be built on
 
-Most of the sites I build have some degree of functionality beyond being a good CMS, so cairn assumes yours will too. The public surface is narrow, versioned, and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own admin screens mount inside cairn's, in the same DaisyUI and Tailwind idiom the scaffold is built from. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
+I like helping small organizations with their technical problems, and I'd rather develop than support. Both shaped cairn. I needed a tool that let me get a site started quickly in a Cloudflare environment and then gave me a groundwork for ongoing development, because most of the sites I build have some degree of functionality beyond being a good CMS. And I wanted the people using those sites to see one interface: your own admin screens mount inside cairn's, so the volunteer who publishes the newsletter and the one who manages signups work in the same place, and nobody has to learn a second idiom for the site's other tasks.
+
+The engine's side of that bargain is a narrow public surface, versioned and enforced by gates in CI, which is what makes pulling updates boring: nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, so the features you add know who's editing without touching engine internals. The magic-link flow is a default, not a requirement: a developer can replace the auth outright. And leaving is cheap, because your content was plain markdown in your own repo all along. You'd rewire the rendering, but nothing traps the words.
 
 ## Who should not choose cairn
 

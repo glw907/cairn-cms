@@ -374,3 +374,8 @@ waste, discarded as each page is replaced.
 - **Soft returns (Geoff, 2026-07-02):** docs prose uses one line per paragraph, no hard wraps,
   so human editing never fights rewrapping. List items are single lines too. Applies to every
   page this pass writes.
+
+- **Isn't-for amendment (Geoff, 2026-07-02):** the README's disqualification can stay implicit
+  when the constraints are woven through the prose (the fixed stack, "limits your choice of
+  tools"); the flat argued version lives in why-cairn. The register law's intro-disqualification
+  requirement is satisfied that way for the README specifically.

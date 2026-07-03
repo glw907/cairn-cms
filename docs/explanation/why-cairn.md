@@ -30,7 +30,7 @@ Nothing else does bulletproof, security-forward hosting at almost no cost. Worke
 
 ### SvelteKit
 
-Given a JavaScript runtime, Svelte and SvelteKit are the next logical choice, for all the reasons developers love them. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration, and an editor on hotel Wi-Fi still gets a working tool. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
+Only options that run on Cloudflare are candidates at all. Within that field, and because cairn was a greenfield project with no legacy to serve, the right move was to pick the framework developers actually love, and by that measure Svelte and SvelteKit have sat at or near the top of the developer surveys for years. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration, and an editor on hotel Wi-Fi still gets a working tool. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
 
 ### DaisyUI, for the admin only
 

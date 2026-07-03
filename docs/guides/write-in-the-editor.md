@@ -1,6 +1,8 @@
 # Write in the editor
 
-Everything your site publishes is written in cairn's editor, and this guide covers all of it. Each section explains what something is before showing how to use it, so you can read start to finish or use the table of contents to jump to one question. For a shorter orientation, read [Welcome, editors](./editor-welcome.md) first.
+Everything your site publishes is written in cairn's editor, and this guide covers all of it. The heart of the matter is markdown, the small set of punctuation marks that shape plain text into formatted pages; the guide teaches every mark the editor understands. It also covers components (the framed blocks that carry more than prose), the editor's writing surfaces and modes, the checks that run while you type, and the path a draft travels from private work to published page. None of it assumes prior experience, and each section explains what something is before showing how to use it.
+
+Two working notes before anything else. Nothing you try can hurt the live site, because a draft stays private until you deliberately publish it, so the best way through this guide is with the editor open, trying things as you go. And there is no need to read everything before writing: the table of contents jumps to any one question, and if a ten-minute orientation would serve you better first, that's [Welcome, editors](./editor-welcome.md).
 
 - [The editor at a glance](#the-editor-at-a-glance)
 - [Find and create entries](#find-and-create-entries)

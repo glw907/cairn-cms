@@ -1,6 +1,6 @@
 # Write in the editor
 
-This is the complete reference for cairn's writing environment: every markdown element the editor understands, every mode and shortcut, the component system, and the path from draft to published page. It's meant to be consulted rather than read straight through; the table of contents below jumps anywhere. If you're new to cairn, [Welcome, editors](./editor-welcome.md) is the shorter orientation, and this page picks up where it leaves off.
+The editor understands every standard markdown mark, and adds a component system, several writing modes, checks that run as you type, and its own save-to-publish flow. This page documents all of it, and the table of contents jumps to any part. If you're new to cairn, [Welcome, editors](./editor-welcome.md) is the shorter orientation.
 
 - [The editor at a glance](#the-editor-at-a-glance)
 - [Find and create entries](#find-and-create-entries)
@@ -22,11 +22,11 @@ Opening an entry puts the title at the top, always visible, with the writing sur
 
 <!-- LIVE-UI: the editor's zones, reproduced with the real components once the docs render through cairn -->
 
-The editor keeps its own quick reference: `Ctrl /` opens a cheat-sheet of the markdown marks and the keyboard shortcuts without leaving your draft. This page is the long version of that sheet.
+The editor keeps its own quick reference: `Ctrl /` opens a cheat-sheet of the markdown marks and the keyboard shortcuts without leaving your draft.
 
 ## Find and create entries {#find-and-create-entries}
 
-The admin's front page lists your entries by kind, posts and pages each in their own list. Every row shows where that entry stands: **Published** means the live site carries it, **Edited** means it's published but has unpublished changes waiting, and **New** means it has never been published at all. A filter above the list narrows it to the entries that need attention, which is worth knowing on a site where drafts accumulate.
+The admin's front page lists your entries by kind, posts and pages each in their own list. Every row shows where that entry stands: **Published** means the live site carries it, **Edited** means it's published but has unpublished changes waiting, and **New** means it has never been published at all. A filter above the list narrows it to the entries that need attention.
 
 Creating an entry starts from the list: the New row at the foot of each list opens a dialog asking for a title. The address (the entry's URL) derives from the title as you type, and you can adjust it before creating; after that, the address lives in the details panel and changes only when you deliberately change it. Which list you start from decides what you're creating, and the difference between posts and pages is covered in [Welcome, editors](./editor-welcome.md#posts-and-pages).
 
@@ -109,7 +109,7 @@ The fence is in the toolbar's overflow menu.
 | Kestrel | Chen    | 2nd    |
 ```
 
-The pipes mark columns and the dashed row separates the header. The toolbar's table button inserts a starter table to fill in, which is easier than typing the pipes by hand. Alignment and spacing inside the source don't need to be tidy; the rendered table is.
+The pipes mark columns and the dashed row separates the header. The toolbar's table button inserts a starter table to fill in. The source doesn't need neat alignment or spacing; the rendered table comes out aligned regardless.
 
 ### Footnotes {#footnotes}
 
@@ -127,9 +127,9 @@ To show a mark literally instead of formatting with it, put a backslash before i
 
 ## Postures and modes {#postures-and-modes}
 
-The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type, the right surface for writing. **Markup** shows the same text denser and closer to the raw marks, which is the better view for reworking tables, long link lists, or anything where you want to see more structure at once. One click on the toolbar switches them, and nothing about the text changes—only how it's set.
+The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type. **Markup** shows the same text denser and closer to the raw marks, which is the better view for reworking tables, long link lists, or anything where you want to see more structure at once. One toolbar click switches them.
 
-**Write and Preview** are the toolbar's two tabs (`Ctrl Alt P` switches them). Preview renders your draft through the site's own machinery, so what you see is the page as readers will see it. While Preview is up, a width selector shows the page at desktop, tablet, phone, and small-phone sizes, which answers the "how does this look on a phone" question without a phone.
+**Write and Preview** are the toolbar's two tabs (`Ctrl Alt P` switches them). Preview renders your draft through the site's own machinery, so what you see is the page as readers will see it. While Preview is up, a width selector shows the page at desktop, tablet, phone, and small-phone sizes, so you can check the phone layout without a phone.
 
 Three modes shape the writing itself, and all of them are optional. **Focus mode** (`Ctrl Shift F`) dims every paragraph except the one you're working in. **Typewriter scrolling** keeps your current line vertically centered, so your eyes stay in one place while the page moves. **Zen** (`Ctrl Shift .`) clears everything but your words. None of these change the text.
 
@@ -158,7 +158,7 @@ If a frame does get damaged anyway (a deleted closing line, a mangled brace), no
 
 ### The starter set {#the-starter-set}
 
-Which components exist is your site's decision, not cairn's. The set below is the typical starter library a cairn site begins with; yours may differ, and if the library doesn't meet your needs, a new component is exactly the kind of thing your site's developer can build. It will appear in the same insert menu beside the others.
+Which components exist is your site's decision, not cairn's. The set below is the typical starter library a cairn site begins with; yours may differ, and if the library doesn't meet your needs, a new component is the kind of thing your site's developer can build. New components appear in the same insert menu.
 
 ### Callout {#callout}
 
@@ -173,7 +173,7 @@ best are the ones you own.
 
 ### Alert {#alert}
 
-A stronger sibling of the callout for the things a reader must not miss—a cancellation, a safety notice. Same shape, more visual weight.
+A stronger sibling of the callout for the things a reader must not miss—a cancellation, a safety notice. It has the same shape as a callout, with more visual weight.
 
 ### Icon {#icon}
 
@@ -185,7 +185,7 @@ A video block takes a YouTube or Vimeo address and a title, and renders a styled
 
 ### Pull quote {#pull-quote}
 
-A sentence lifted from the text and set large, with an optional attribution—the magazine device, for the line that deserves it.
+A sentence lifted from the text and set large, with an optional attribution.
 
 ### CTA {#cta}
 
@@ -197,7 +197,7 @@ A question that opens to its answer when the reader clicks. The answer is ordina
 
 ### Banner {#banner}
 
-A time-limited announcement with an expiry date. It shows until the date passes and then hides itself, so a "registration closes Friday" notice never lingers into stale embarrassment.
+A time-limited announcement with an expiry date. It shows until the expiry date passes, then hides itself, so a dated notice never lingers after its date.
 
 ## Images and the media library {#images-and-the-media-library}
 
@@ -205,7 +205,7 @@ Inserting an image opens the media library: choose an existing picture or upload
 
 Every image asks for a short written description (alt text). Readers who use a screen reader hear that description in place of the picture, and writing a good one is part of the craft: the test is whether the description carries what the picture contributes in context. "Two dinghies rounding the windward mark in light air" serves a racing story; "sailboats on a lake" does not. The editor marks images that still need a description, including an entry's hero image in the details panel.
 
-The library is shared across the whole site. A photograph uploaded for one post is available to every page, replacing an image in the library updates it everywhere it appears, and the library screen shows where each image is used before you delete or replace anything.
+The library is shared across the whole site, so a photograph uploaded for one post is available to every page. Replacing an image in the library updates it everywhere it appears, and [the library screen](./manage-the-media-library.md) shows where each image is used before you delete or replace it. [Add an image](./add-an-image.md) walks the insert flow step by step.
 
 ## Tags {#tags}
 
@@ -215,7 +215,7 @@ Tagging a post means picking from your site's shared tag list, in the details pa
 
 The editor underlines two kinds of issue as you write, both in the same quiet amber.
 
-**Spelling.** The spellchecker runs locally in the editor with your site's dialect. Clicking an underlined word opens a small popover with up to five suggestions, plus two other choices: **Add to dictionary**, which teaches the word to the whole site so it stays accepted for every writer from then on, and **Ignore**. Names, jargon, and terms of art belong in the dictionary; the first writer to add one spares everyone after.
+**Spelling.** The spellchecker runs locally in the editor with your site's dialect. Clicking an underlined word opens a small popover with up to five suggestions, plus two other choices: **Add to dictionary**, which adds the word site-wide, and **Ignore**. Names, jargon, and terms of art belong in the dictionary; adding one accepts it for every writer afterward.
 
 **Mechanical slips.** Alongside spelling, the editor catches a small set of objective mistakes—a doubled word ("the the"), a double space, repeated punctuation—each with a one-click fix in the same popover. These checks are deliberately mechanical: there is no style or grammar opinion in them, and nothing about your phrasing is ever flagged. Style belongs to you (and, if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject).
 
@@ -225,6 +225,8 @@ A count of open issues sits at the edge of the editor, and `F8` and `Shift F8` s
 
 Tidy is the optional AI copy-edit, and its remit—small fixes only, your voice untouched—is covered in [Welcome, editors](./editor-welcome.md#tidy-if-your-site-has-it). This section is the working procedure.
 
+Tidy isn't complicated, but it's probably a feature you haven't seen before, so it's worth knowing what to expect the first time. Nothing about it is automatic: you invoke it, it reads, and it comes back with marked proposals sitting in your draft where they would apply, each one visible before anything changes. The experience is closer to a copy editor returning your manuscript with penciled marks than to autocorrect, and the pencil is the point. Every mark waits for your decision, the draft stays read-only while you decide, and declining everything leaves the text exactly as you wrote it.
+
 Run it over the whole draft, or select a passage first to tidy just that part. Tidy reads the text and comes back with its proposed edits shown in place, each one marked in your draft where it would apply. Then the review is yours:
 
 1. Step through the proposals and **accept** or **reject** each one individually.
@@ -232,7 +234,7 @@ Run it over the whole draft, or select a passage first to tidy just that part. T
 3. **Reject all** clears the whole round.
 4. An accepted round lands as a single change, so one undo takes the whole tidy back.
 
-While a review is open the draft is read-only, the same way Preview is, so proposals can't tangle with new typing. Sometimes tidy returns with nothing to fix and says so without opening a review. Your text is never changed by anything you didn't accept.
+While a review is open the draft is read-only, the same way Preview is, so new typing can't overwrite a proposal you haven't ruled on yet. Sometimes tidy returns with nothing to fix and says so without opening a review. Your text is never changed by anything you didn't accept.
 
 ## Keyboard shortcuts {#keyboard-shortcuts}
 
@@ -284,7 +286,7 @@ The tables below are the complete set. They're conveniences: typing markdown alw
 | Hidden | Keeps a published entry off the site's lists while its address still works. |
 | Address | The entry's URL. Change URL is deliberate and separate, because addresses are promises readers bookmark. |
 
-Your site's schema can add fields of its own to this panel; they behave the same way, and they're saved with everything else.
+Your site can add fields of its own to this panel; they behave the same way, and they're saved with everything else.
 
 ## Save, review, and publish {#save-review-and-publish}
 
@@ -299,10 +301,10 @@ stateDiagram-v2
     Published --> Editing: Edit again
 ```
 
-**Save** (`Ctrl S`) commits your work privately. A saved draft persists indefinitely, readers never see it, and every save is kept, so no version of your work is ever lost. **Publish** (`Ctrl Shift S`) is the deliberate step that puts the entry on the live site—and it publishes exactly what the preview shows, nothing more or older. Editing a published entry starts the cycle again: your changes wait privately (the entry shows **Edited** in the list) until the next publish.
+**Save** (`Ctrl S`) stores your work privately. A saved draft persists indefinitely, readers never see it, and every save is kept, so no version of your work is ever lost. **Publish** (`Ctrl Shift S`) is the deliberate step that puts the entry on the live site—and it publishes exactly what the preview shows. Editing a published entry starts the cycle again: your changes wait privately (the entry shows **Edited** in the list) until the next publish.
 
 A draft you've thought better of can be **discarded**, which throws away the unpublished changes and leaves the published page exactly as it was. **Delete**, in the entry's overflow menu, removes the entry itself, and asks first. And if someone else edited the same entry while you were writing, cairn refuses to save over their work rather than merging by guesswork; neither of you can lose words to the other.
 
 ## When something looks wrong {#when-something-looks-wrong}
 
-The [welcome page's closing section](./editor-welcome.md#when-something-looks-wrong) covers the ordinary oddities and how to report the rest; the short version is that your site's administrator is the first call, a useful report names the page and what you saw, and everything you publish is kept in the site's history, so nothing here is expensive to undo.
+The [welcome page's closing section](./editor-welcome.md#when-something-looks-wrong) covers the ordinary oddities and how to report the rest; the short version: your site's administrator is the first call, and a useful report names the page and what you saw. Everything you publish is kept in the site's history, so nothing here is expensive to undo.

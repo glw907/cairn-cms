@@ -106,10 +106,15 @@ An alert is a heavier signal than a callout, set in a bordered card with an icon
 ## Islands
 
 An island is a directive that renders a static, no-JavaScript fallback on the server, then a small client
-runtime mounts a live Svelte component over it. The converter below shows its fallback first, then becomes
-interactive once the page hydrates.
+runtime mounts a live Svelte component over it. The banner below shows its fallback first, then becomes
+interactive once the page hydrates, re-checking its own expiry rather than trusting the server's render.
+The second banner has already expired, so it renders nothing, on the server and again independently once
+the page hydrates.
 
-:::converter{from="mi" to="km" rate="1.609"}
+:::banner{message="Trail conditions updates move to the new radio channel next month." expires="2999-01-01"}
+:::
+
+:::banner{message="Early registration for the spring clinic has closed." expires="2020-01-01"}
 :::
 `;
 

@@ -4,7 +4,7 @@ An island is a directive component that renders a static fallback on the server 
 component over it in the browser. The fallback is real content for a no-JS reader and the page's first
 paint; the live component adds interactivity on top. This guide walks you through declaring a hydrate
 component, writing its live component, registering it, and wiring the client runtime. The worked example
-is a two-way unit converter.
+is an expiring-announcement banner: it shows until a date passes, then renders nothing.
 
 Islands are opt-in and additive. A site that registers none is unchanged and never ships the runtime.
 
@@ -21,30 +21,33 @@ A hydrate component is an ordinary [`defineComponent`](../reference/core.md#defi
 pipeline's sink guard strips inline `style`) and high-fidelity: state the same content the live component
 starts with, at the same size, so the swap on mount does not shift the layout.
 
-The converter is attribute-only, so its fallback states the conversion and the live component adds the
-input:
+The banner is attribute-only, so its fallback states the announcement and the live component adds the
+interactivity: re-checking `expires` on its own once it hydrates, rather than trusting the server's
+snapshot.
 
 ```ts
 // src/lib/cairn.config.ts
 import { defineComponent, fields } from '@glw907/cairn-cms';
 import { strAttr } from '@glw907/cairn-cms/render';
 import { h } from 'hastscript';
+import { isBannerExpired } from './islands/banner-expiry.js';
 
-const converter = defineComponent({
-  name: 'converter',
-  label: 'Unit converter',
-  description: 'A live two-way unit converter.',
+const banner = defineComponent({
+  name: 'banner',
+  label: 'Announcement banner',
+  description: 'A time-boxed announcement that removes itself once its expiry date passes.',
   hydrate: true,
-  insertTemplate: ':::converter{from="mi" to="km" rate="1.609"}\n:::',
+  insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
   attributes: {
-    from: fields.text({ label: 'From unit', required: true }),
-    to: fields.text({ label: 'To unit', required: true }),
-    rate: fields.number({ label: 'Rate', required: true }),
+    message: fields.text({ label: 'Announcement', required: true }),
+    expires: fields.date({ label: 'Expires', required: true }),
   },
-  build: (ctx) =>
-    h('div', { className: ['island-converter-fallback'] }, [
-      h('p', [`1 ${strAttr(ctx, 'from') ?? ''} = ${strAttr(ctx, 'rate') ?? ''} ${strAttr(ctx, 'to') ?? ''}`]),
-    ]),
+  build: (ctx) => {
+    const message = strAttr(ctx, 'message') ?? '';
+    const expires = strAttr(ctx, 'expires');
+    if (isBannerExpired(expires)) return h('div', { hidden: true }, []);
+    return h('div', { className: ['banner'] }, [h('p', [message])]);
+  },
 });
 ```
 
@@ -62,22 +65,25 @@ rules keep an island safe and stable:
   route one into a sink: `{@html}`, an `href` or `src` that could carry a `javascript:` scheme, or an
   inline `style`.
 
+The banner's `Banner.svelte` shares its expiry check (`isBannerExpired`) with `build()`, so the two agree
+on "expired" without any shared state: each evaluates it fresh, at its own render or hydration moment,
+which is what lets a banner that expires between the build and the visit hide itself at hydration rather
+than trusting a now-stale server render.
+
 ```svelte
-<!-- src/lib/islands/Converter.svelte -->
+<!-- src/lib/islands/Banner.svelte -->
 <script lang="ts">
-  let { from = '', to = '', rate = 1 }: { from?: string; to?: string; rate?: number } = $props();
-  let amount = $state(1);
-  const converted = $derived(Math.round(amount * rate * 1000) / 1000);
+  import { isBannerExpired } from './banner-expiry.js';
+
+  let { message = '', expires }: { message?: string; expires?: string } = $props();
+  const expired = $derived(isBannerExpired(expires));
 </script>
 
-<div class="island-converter" data-testid="converter-live">
-  <label>
-    {from}
-    <input type="number" bind:value={amount} />
-  </label>
-  <span class="equals">=</span>
-  <output>{converted} {to}</output>
-</div>
+{#if !expired}
+  <div class="banner" data-testid="banner-live">
+    <p>{message}</p>
+  </div>
+{/if}
 ```
 
 ## Register the island
@@ -89,14 +95,14 @@ the `hydrate` flag stay in step.
 
 ```ts
 // src/lib/cairn.config.ts
-import Converter from '$lib/islands/Converter.svelte';
+import Banner from '$lib/islands/Banner.svelte';
 
 export const cairn = defineAdapter({
   // ...content, backend, email...
   rendering: {
     render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
-    components: registry, // the registry that includes `converter`
-    islands: { converter: Converter },
+    components: registry, // the registry that includes `banner`
+    islands: { banner: Banner },
   },
 });
 ```
@@ -132,13 +138,13 @@ on a non-empty registry, so a static site never ships the island client code.
 An author inserts the directive from the editor's block palette, or types it in markdown:
 
 ```md
-:::converter{from="mi" to="km" rate="1.609"}
+:::banner{message="The trailhead lot closes for paving through Friday." expires="2026-08-01"}
 :::
 ```
 
-The page renders the fallback (`1 mi = 1.609 km`) on the server, and the live converter mounts over it in
-the browser. The edit page's preview shows the fallback, never the live island, because the preview frame
-is sandboxed: verify the live behavior on the deployed page.
+The page renders the fallback (the announcement) on the server, and the live banner mounts over it in
+the browser, re-checking `expires` on its own. The edit page's preview shows the fallback, never the live
+island, because the preview frame is sandboxed: verify the live behavior on the deployed page.
 
 ## See also
 

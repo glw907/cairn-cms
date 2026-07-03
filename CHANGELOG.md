@@ -1,3 +1,19 @@
+## Unreleased
+
+### Wayfinder starter components (showcase/template only; no consumer action)
+
+- The starter template gains six content components, each a worked `defineComponent` with a
+  schema-driven picker form: `icon` (renders only names from the adapter's declared icon set,
+  loud failure on an unknown name), `video` (a zero-request static facade that links out;
+  in-page embedding would need `iframe` through the sanitize floor and is deliberately not
+  done), `pull-quote`, `cta`, and `faq` (native `details`, markdown-capable answer slot).
+- The converter island demo is retired. Its replacement exemplar is an expiring-announcement
+  banner: frontmatter-date-driven, hides itself after expiry (checked at both build and
+  hydration), renders nothing on an invalid date.
+- Not shipped, recorded: `figure` needs no component (the engine owns `:::figure` natively;
+  the name is reserved), and `gallery` waits on the component-attribute image gap filed in
+  ROADMAP.
+
 # Changelog
 
 All notable changes to this project are recorded here, most recent first.

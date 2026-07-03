@@ -421,3 +421,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   chat prose doesn't. Technique: draft a section as a chat answer to Geoff ("so here's the
   deal with markdown..."), then formalize only the surface, never the sentence bones. The
   audience is Geoff-the-specific-person, not "developers"-the-category.
+
+- **Cairn isn't a product. It's code. (Geoff, 2026-07-02, the frame rule.)** The marketing
+  attractor is summoned by conceiving of the subject as a product; the escape is the frame
+  itself. Every page is a developer explaining code he wrote: what it does, why it's shaped
+  that way, what it costs to use. Nobody markets a function. If a draft sentence would fit on
+  a landing page, the frame has already slipped.

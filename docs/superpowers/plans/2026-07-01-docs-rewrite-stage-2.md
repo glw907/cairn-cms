@@ -275,3 +275,7 @@ freshness routine created and recorded there by id.
   grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
   prose; proposes, never drafts, never takes a voice) — orientation the developer README
   delegates to the docs tree instead.
+
+- **Editor front-door length (Geoff, 2026-07-03):** three to five minutes of reading time
+  (roughly 700-1150 words) is reasonable; do not over-compress. Length is earned by more of
+  the system explained truthfully, never by padding.

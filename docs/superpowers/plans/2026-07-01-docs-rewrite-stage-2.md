@@ -446,4 +446,5 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   syntax: distinctions that clarify ("markdown separates two decisions WYSIWYG collapses into
   one"), reasons that actually explain, no simplification that costs truth. Geoff's own
   default is a 25-40 word compound sentence; simplicity is for facts, complexity for
-  arguments.
+  arguments. And the reader is fully SvelteKit literate: never gloss a framework concept
+  (form actions, hydration, `locals`, adapters); speak in them, precisely.

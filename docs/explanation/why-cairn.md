@@ -36,11 +36,11 @@ Cairn is aggressively opinionated about its development stack, and that's exactl
 
 ### Cloudflare
 
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason shows up in the code: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. That's the trade: no Cloudflare account, no cairn.
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason shows up in the code: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is a seam that can't break. The trade is that cairn runs on Cloudflare or not at all.
 
 ### SvelteKit
 
-The admin runs on form actions that work before JavaScript loads, so an editor on hotel Wi-Fi still gets a working tool. Server-rendered pages with islands of interactivity are exactly the shape of a content site, and the component model cairn's seams speak is the one you already work in. If your team lives in React, pick a different CMS.
+The admin runs on form actions that work before JavaScript loads, so an editor on hotel Wi-Fi still gets a working tool. Server-rendered pages with islands of interactivity are exactly the shape of a content site, and the component model cairn's seams speak is the one you already work in. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
 
 ### DaisyUI, for the admin only
 
@@ -50,11 +50,11 @@ Your public site carries none of this (render is yours). The admin skeleton uses
 
 Good tools do run on Cloudflare, and I've used several of them.
 
-**Sveltia, Decap, and the git-based admins.** These are the closest tools to what cairn does, and I ran Sveltia myself before building cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But they're config-driven dashboards.
+**Sveltia, Decap, and the git-based admins.** These are the closest tools to what cairn does, and I ran Sveltia myself before building cairn. They get the storage right (content as files in your repo), and Sveltia in particular is fast and light. But all of them are config-driven dashboards at heart, and that shapes how they feel to use.
 
 A dashboard treats writing as one more form to fill out: a field list (title here, body there, tags in that box), a preview that approximates the site rather than rendering through it, and an interface that looks like database administration because that's what it is. Nobody opens a tool like that and wants to write. Cairn starts from the other end. The editor lands in a markdown surface built for prose, the preview is the real site, and the metadata stays out of the way until you need it. A polished writing tool invites people to actually write.
 
-And when the site grows, the dashboard has no answer. A club needs sign-ups, a small business needs a booking list, and none of that lives in a content CMS, so you build it somewhere else: a separate route with its own login, its own look, and its own bookmark that half the volunteers lose. Now the newsletter editor works in one tool and the membership coordinator works in another, and you support both. Cairn's answer is one admin. Your screens mount inside it, everyone who runs the site sees a single interface, and adding a feature doesn't add a tool.
+And when the site grows past content editing, the dashboards don't have anywhere for that to go. A club needs sign-ups, a small business needs a booking list, and none of that lives in a content CMS, so you build it somewhere else: a separate route with its own login, its own look, and its own bookmark that half the volunteers lose. Now the newsletter editor works in one tool and the membership coordinator works in another, and you support both. Cairn's answer is to keep everything in one admin: your screens mount inside it, so everyone who runs the site sees a single interface, and adding a feature doesn't mean adding a tool.
 
 **Keystatic.** Keystatic is thoughtful, and its GitHub mode covers similar ground. It lives in the React, Next, and Astro world, which is the wrong grain for a Svelte shop.
 

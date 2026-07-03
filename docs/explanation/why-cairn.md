@@ -36,6 +36,10 @@ Only options that run on Cloudflare are candidates at all. Within that field, an
 
 DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. Your public site carries none of this (render is yours); the admin skeleton uses it because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
 
+### Storage, by fit
+
+The same logic picks the storage: the best store for each thing. Git is perfect for markdown site content, which wants exactly what git gives away for free: versions, attribution, review, and a deploy hook. What could be better? Auth is a different need entirely. Magic links want short-lived tokens and session rows a Worker can check in a few milliseconds, and that's what D1 is adapted to. Media bytes are big and immutable, so they land in R2, with only their references living in git.
+
 ## Why markdown and not a WYSIWYG editor?
 
 Mostly because WYSIWYG editors lie a little. The case for them is obvious (everyone has used Word, nobody has to learn anything, and the modern block editors are slick), and it's a long-running debate I'm not trying to win here. Cairn is just an expression of which side of the argument I believe to be the better one.

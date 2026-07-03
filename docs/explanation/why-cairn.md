@@ -24,9 +24,9 @@ Cairn is a developer's tool as much as an editor's. A new site starts quickly (t
 
 Mostly because WYSIWYG editors lie a little. The case for them is obvious (everyone has used Word, nobody has to learn anything, and the modern block editors are slick), and it's a long-running debate I'm not trying to win here. Cairn is just an expression of which side of the argument I believe to be the better one.
 
-What you see in a WYSIWYG editor is what the editor renders, not what the site renders. Pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when the site needs structure ("this is a heading"). A year later every page has its own style, and cleaning that up lands on the developer.
+What you see in a WYSIWYG editor is what the editor renders, which is never quite what the site renders, and the gap widens with use: pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when what the site actually needs is structure ("this is a heading"). A year of that, and every page has its own private styling, with the cleanup landing on the developer.
 
-With markdown, the author marks meaning and the site decides how it looks. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
+Markdown separates two decisions that WYSIWYG collapses into one: the author decides what something is (a heading, a list, emphasis), and the site decides, once and for everything, how such things look. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
 
 If your editors need page-layout control, cairn is the wrong tool. For writing posts, pages, and announcements, it isn't a hardship, and the live preview closes most of the gap WYSIWYG claims to fill.
 

@@ -38,7 +38,7 @@ DaisyUI follows because it shares SvelteKit's less-is-more philosophy: component
 
 ### Storage, by fit
 
-The same logic picks the storage: the best store for each thing. Git is perfect for markdown site content, which wants exactly what git gives away for free: versions, attribution, review, and a deploy hook. What could be better? Auth is a different need entirely. Magic links want short-lived tokens and session rows a Worker can check in a few milliseconds, and that's what D1 is adapted to. Media bytes are big and immutable, so they land in R2, with only their references living in git.
+The same logic picks the storage: the best store for each thing. Git is perfect for markdown site content, which wants exactly what git gives away for free: versions, attribution, review, and a deploy hook. What could be better? Auth is a different need entirely. Magic links want short-lived tokens and session rows a Worker can check in a few milliseconds, and that's what D1 is adapted to, while the sign-in mail itself goes out through Cloudflare's Email Sending, so even the mail needs stay on the platform. Media bytes are big and immutable, so they land in R2, with only their references living in git.
 
 ## Why markdown and not a WYSIWYG editor?
 

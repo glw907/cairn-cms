@@ -1,8 +1,8 @@
 # Why cairn
 
-Cairn exists for two people at once. The developer installs a library and keeps every route, template, and byte of CSS. The editor gets a writing surface behind an emailed sign-in link, with a live preview of the real site. Most tools pick one of these people and make the other suffer.
+Cairn makes a handful of choices for you: the host, the framework, the content model, even the auth. Each has a real reason, and each costs something. This page goes through them.
 
-The README tells the short version of why I built it. This page argues each choice properly, including what it costs you.
+The test behind all of it is whether a choice serves two people at once: the developer, who owns the site and everything around it, and the editor, who writes and shouldn't have to care how any of it works. Most tools serve one and tolerate the other.
 
 ## What cairn is
 

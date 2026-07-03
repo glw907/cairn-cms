@@ -356,3 +356,9 @@ waste, discarded as each page is replaced.
   information density. Counter-moves: plain long spec sentences that just inform, uneven
   lengths, flat endings, asymmetric constructions, stopping before the "strong" close. Every
   prose review checks the named patterns explicitly.
+
+- **The local exemplar shelf (Geoff, 2026-07-02).** Full texts of choice developer-blog posts
+  matching the register live at `~/.claude/docs/register-exemplars/cairn/` (machine-local,
+  outside the repo since the repo goes public). Imitation-first drafting reads one before
+  writing; prose reviews may quote them. Transient: toss the shelf once the voice is settled
+  across the docs.

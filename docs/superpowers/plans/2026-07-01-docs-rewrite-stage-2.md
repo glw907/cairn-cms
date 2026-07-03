@@ -503,7 +503,11 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   experience), but the reasoning ceiling lifts: editor pages may explain WHY the tool works
   as it does, in plain words, and may carry complex sentences where the thought does. Do not
   write down to this reader; warmth stays as consequence-facts, and reassurance is earned by
-  explanation, not repetition. The nervous-manager framing is retired as the default (it
+  explanation, not repetition. The standard is a professional academic introduction
+  throughout (Geoff, 2026-07-03: "college-educated, not high school children") — concepts get
+  their real names, origins, and design principles; folksy softeners ("a little goes a long
+  way," "swear by," "gets tangled," "no password to forget") are down-writing residue and a
+  tell. The nervous-manager framing is retired as the default (it
   survives only for genuinely fear-adjacent moments like first sign-in). And this reader is
   strongly turned off by marketing slop, exactly like Geoff — the anti-slop law is
   audience-universal, not a developer-register rule. The editor frame (Geoff, 2026-07-03,

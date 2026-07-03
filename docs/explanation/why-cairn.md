@@ -80,6 +80,6 @@ The nearest comparisons aren't technical. Kirby is honest about serving a develo
 
 Cairn is opinionated about most things, and the opinions aren't negotiable. It's the wrong tool if:
 
-- **You don't have (or don't want) a Cloudflare account.** The stack is the product. Cairn won't meet you halfway on hosting.
+- **You don't have (or don't want) a Cloudflare account.** Cairn is built directly on Cloudflare's primitives and won't meet you halfway on hosting.
 - **Your team works in React**, or anything that isn't Svelte. That's a grain judgment, not a value judgment: everything from the seams to the starter template assumes Svelte.
 - **You need open-ended, user-defined collections.** Cairn's concepts are declared up front, because an engine with opinions about what a Post is can protect editors in ways a generic collection builder can't. If your content model is itself user-generated, you want a different kind of tool.

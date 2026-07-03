@@ -386,3 +386,22 @@ waste, discarded as each page is replaced.
   setup colons, parallel personas, punchline cappers). When an opening fails the register
   twice, do not generate a third: delete it. One flat orientation line, then the first real
   section. Explanation pages need no essay intro; the human polish adds voice where it wants.
+
+## The drafting protocol (Geoff, 2026-07-02: "how do we keep initial drafts from missing?")
+
+The root cause of missed drafts: generation-then-filtering. Rules filter words; the register
+lives in shape. The protocol, binding on every voice-bearing page:
+
+1. Fragments first: collect Geoff's raw material (chat quotes, his polished corpus, his
+   edits) before drafting; where a topic has none, ask for a two-minute rough dump BEFORE
+   drafting, never after failing.
+2. Exemplar in ear, mechanically: reread 200 words of a shelf post immediately before
+   writing.
+3. Body first; openings are one flat line unless Geoff's words provide one.
+4. One page, one verdict, then the next; each polished page joins the local exemplar shelf
+   (Geoff's polished README and why-cairn outrank the external posts as exemplars).
+5. The adversarial review pair (register + claims) runs before Geoff reads, not after.
+6. A surface that fails the register twice gets deleted, not regenerated.
+
+Structured genres (reference, guides, tutorial) carry lower register risk; their drafts miss
+on details the gates catch, and they proceed at normal dispatch cadence.

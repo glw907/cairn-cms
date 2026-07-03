@@ -74,7 +74,7 @@ The engine's side of that bargain is a narrow public surface, checked by gates i
 
 ## Where cairn sits
 
-The nearest comparisons aren't technical. Kirby, a paid product, is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly, though none of the three overlap cairn's stack.
+The nearest comparisons aren't technical. Kirby, a paid product, is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer, also paid, takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly, though none of the three overlap cairn's stack.
 
 ## Why not cairn?
 

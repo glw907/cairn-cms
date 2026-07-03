@@ -370,3 +370,7 @@ waste, discarded as each page is replaced.
   re-explaining a thing the reader was just told. The test per sentence: does it add a fact
   or a judgment not already present? If not, cut it. Applies doubly when folding a human's
   edits — the human's cuts are load-bearing; do not pad around them.
+
+- **Soft returns (Geoff, 2026-07-02):** docs prose uses one line per paragraph, no hard wraps,
+  so human editing never fights rewrapping. List items are single lines too. Applies to every
+  page this pass writes.

@@ -22,13 +22,13 @@ Open any entry and the layout is the same. The title sits at the top and stays v
 
 <!-- LIVE-UI: the editor's zones, reproduced with the real components once the docs render through cairn -->
 
-Two more things are worth knowing before anything else. `Ctrl /` opens the editor's built-in cheat-sheet, a compact list of every mark and shortcut, so the answer to "how do I make a heading again" never requires leaving your draft. And near the edge of the editor sits a small count of open issues (spelling and the like), which the [Checks](#checks-as-you-type) section explains.
+Two more things are worth knowing before anything else. `Ctrl /` opens the editor's built-in cheat-sheet, a compact list of every mark and shortcut, so the answer to "how do I make a heading again" never requires leaving your draft. And as you type, the editor marks spelling and mechanical slips with a quiet amber underline; the [Checks](#checks-as-you-type) section covers how to act on them.
 
 ## Find and create entries {#find-and-create-entries}
 
 The admin's front page is the inventory of everything the site has: posts in one list, pages in another, and any other kinds your site defines in their own. Each row shows the entry's title, a short excerpt, and a status. **Published** means the live site carries it. An entry marked **Edited** is published too, but has changes waiting that readers haven't seen. **New** entries have never been published at all and exist only as drafts. When the lists grow long, a filter narrows them to the entries that need attention, meaning anything not simply published and current.
 
-To create an entry, use the New row at the foot of the list you want it in. Which list matters: a post is dated writing that flows into the site's archives, and a page is the standing kind, a distinction [Welcome, editors](./editor-welcome.md#posts-and-pages) covers if it's unfamiliar. The dialog asks for a title, and as you type it, an address for the entry (its URL) takes shape beneath, derived from the title. You can adjust the address before creating. Afterward it lives in the [details panel](#the-details-panel) and never changes on its own, no matter how the title changes, because a published address is something readers bookmark and other sites link to.
+To create an entry, use the New row at the foot of the list you want it in. Which list matters: a post is dated writing that flows into the site's archives, and a page is the standing kind, a distinction [Welcome, editors](./editor-welcome.md#posts-and-pages) covers if it's unfamiliar. The dialog asks for a title, and as you type it, an address for the entry (its URL; the dialog labels it Slug) takes shape beneath, derived from the title. You can adjust the address before creating. Afterward it lives in the [details panel](#the-details-panel) and never changes on its own, no matter how the title changes, because a published address is something readers bookmark and other sites link to.
 
 ## Write markdown {#write-markdown}
 
@@ -47,7 +47,7 @@ The sections below cover every mark the editor understands, one at a time, each 
 | ~~Strikethrough~~ | `~~strikethrough~~` | toolbar |
 | `Inline code` | `` `inline code` `` | `Ctrl E` |
 
-Select some text and press the shortcut, and the marks wrap the selection; press it again to unwrap. With nothing selected, the shortcut inserts the marks and puts your cursor between them, ready to type. Emphasis nests, so `**bold with *italic* inside**` gives you **bold with *italic* inside**.
+Select some text and press the shortcut, and the marks wrap the selection; press it again to unwrap. With nothing selected, the shortcut inserts the marks and puts your cursor between them, ready to type. (The italic shortcut writes `_italic_`, an equivalent mark that renders identically.) Emphasis nests, so `**bold with *italic* inside**` gives you **bold with *italic* inside**.
 
 Strikethrough shows text as deleted without deleting it, which is occasionally the right tool for a correction you want readers to see. Inline code sets a short run of text in a monospaced face, exactly as typed; writers outside technical subjects rarely need it.
 
@@ -277,7 +277,7 @@ The editor reads along as you write, and it deliberately limits what it comments
 
 **Mechanical slips.** Alongside spelling, the editor catches a short list of objective mistakes: a doubled word ("the the"), a double space, repeated punctuation. Each comes with a one-click fix in the same popover. The list is deliberately mechanical, and there is no style or grammar opinion anywhere in it—nothing about your phrasing, your word choice, or your sentences is ever flagged. Style belongs to you, and if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject.
 
-The count of open issues sits at the edge of the editor, and `F8` steps through them one at a time (`Shift F8` goes back). Sweeping the count to zero is a quick pre-publish habit worth forming.
+`F8` steps through the open issues one at a time, and `Shift F8` goes back; for screen-reader users, a running count is announced as issues appear and resolve. A sweep with `F8` until nothing is left is a quick pre-publish habit.
 
 ## Tidy {#tidy}
 

@@ -175,3 +175,19 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   `VocabularyLoadData` and `SettingsData` are facade-returned members like `ListData`/`EditData` but
   are not exported from `/sveltekit` (the tier sweep's reverse check caught a stale doc row for the
   former). Additive fix if a consumer ever needs to name them; decide then, not now.
+
+## 2026-07-03 — editor vocabulary: "Slug" label vs the docs' "address" (editor perspective)
+
+Writing the editor guide's create-entry section forced a vocabulary fork: the docs say
+"address" (the editor-friendly word for a URL), but the create dialog labels the field
+"Slug", a developer term no non-technical writer knows. The guide papers over it with a
+parenthetical. The friendlier fix is in the product: label the field "Address" (or "Web
+address") in the create dialog and the details panel, matching the docs vocabulary.
+
+## 2026-07-03 — no visible open-issues count (editor perspective)
+
+The diagnostics system announces a running issue count to screen-reader users but shows
+sighted editors nothing beyond the underlines; the guide originally claimed a visible count
+because one plausibly should exist. A small count near the word count in the editor footer
+would give sighted editors the same pre-publish sweep signal. Candidate for a future
+editor-experience pass.

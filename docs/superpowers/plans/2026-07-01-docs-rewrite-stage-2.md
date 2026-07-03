@@ -572,3 +572,21 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   completeness against the code-derived feature inventory, organization against the
   researched conventions, and overlap against sibling pages. Findings fold, Geoff sees the
   outline, then prose begins.
+
+## Two system faults found at write-in-the-editor (Geoff, 2026-07-03)
+
+1. **Genre-matched exemplars, mandatory.** The ratified corpus is positioning prose and
+   cannot calibrate instructional documentation. Each genre drafts against its own exemplar:
+   positioning against the README/why-cairn snapshots; instructional editor docs against
+   Geoff's club handbook (the Sveltia passages in the voice corpus: plain declaratives,
+   instructions that instruct, no clefts, no antitheses, no cappers) plus Obsidian; developer
+   how-tos against the SvelteKit-ecosystem craft exemplars.
+2. **Nothing ungated reaches Geoff, including chat samples.** Every piece of fresh prose
+   passes the register editor before his eyes. Proven necessary twice: maximum-attention
+   samples still carried a triad, a balanced pair, and cappers both times; the gate caught
+   what drafting could not.
+
+- **Length is dictated by function (Geoff, 2026-07-03, the governing length principle).** Not
+  reading-time targets, word counts, or peer comparisons — those are gauges. Per page: what
+  must the reader be able to do when they finish, and how many words does teaching that take?
+  Over- and under-shooting are the same error.

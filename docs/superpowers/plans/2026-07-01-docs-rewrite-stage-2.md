@@ -422,7 +422,10 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   deal with markdown..."), then formalize only the surface, never the sentence bones. The
   audience is Geoff-the-specific-person, not "developers"-the-category.
 
-- **Cairn isn't a product. It's code. (Geoff, 2026-07-02, the frame rule.)** The marketing
+- **Cairn isn't a product. It's code. There is NO product here. (Geoff, 2026-07-02/03, the
+  frame rule.)** Marketing prose about cairn isn't off-register, it's FALSE: it asserts a
+  product, a customer, and a sale, none of which exist. It fails the empirical gate before it
+  reaches the style rules. The marketing
   attractor is summoned by conceiving of the subject as a product; the escape is the frame
   itself. Every page is a developer explaining code he wrote: what it does, why it's shaped
   that way, what it costs to use. Nobody markets a function. If a draft sentence would fit on

@@ -1,6 +1,6 @@
 # Welcome, editors
 
-The tool you'll write in is called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
+The tool you'll write in is called cairn, and it is, at some level, trying to be an iA Writer or Ulysses for small teams publishing on the web. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
 
 ## Signing in
 

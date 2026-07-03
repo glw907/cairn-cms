@@ -415,3 +415,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   rigor) instead of demonstrating it, the same move as AI's reflexive "honest." Delete the
   claim; the demonstration is the following sentences or it's nothing. ("Real" survives only
   as a literal: "the preview is the real site.")
+
+- **Draft in conversation mode (Geoff, 2026-07-02, from "why is chat fine but docs sloppy?").**
+  Composition mode summons the learned Good Writing template, which is the slop; reactive
+  chat prose doesn't. Technique: draft a section as a chat answer to Geoff ("so here's the
+  deal with markdown..."), then formalize only the surface, never the sentence bones. The
+  audience is Geoff-the-specific-person, not "developers"-the-category.

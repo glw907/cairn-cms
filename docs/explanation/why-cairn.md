@@ -72,10 +72,6 @@ I'd rather develop than support, and that shaped cairn as much as anything. The 
 
 The engine's side of that bargain is a narrow public surface, checked by gates in CI, so nothing you built on a documented seam breaks without a major version saying so. Your own routes read the signed-in identity through `locals.editor`, and the magic-link flow is only a default (a developer can replace the auth outright). And your content was plain markdown in your repo all along, so leaving cairn means rewiring the rendering, and the markdown was already yours.
 
-## Where cairn sits
-
-The nearest comparisons aren't technical. Kirby, a paid product, is honest about serving a developer and an editor at the same time, and cairn shares that goal. Eleventy treats staying small as a feature (cairn does too). iA Writer, also paid, takes the act of writing more seriously than any CMS, and cairn's editor borrows from it openly, though none of the three overlap cairn's stack.
-
 ## Why not cairn?
 
 Cairn is opinionated about most things, and the opinions aren't negotiable. It's the wrong tool if:

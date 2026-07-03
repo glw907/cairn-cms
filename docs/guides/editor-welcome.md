@@ -1,6 +1,6 @@
 # Welcome, editors
 
-The tool you'll write in is called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
+The tool you'll write in is called cairn. Nothing you do while drafting can break the live site, since your work stays private until you publish it, and every save is kept.
 
 ## Signing in
 

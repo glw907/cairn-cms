@@ -526,3 +526,13 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
   prose; proposes, never drafts, never takes a voice) — orientation the developer README
   delegates to the docs tree instead.
+
+## The legacy corpus is destroyed as a source (Geoff, 2026-07-03: "destroy all the old docs
+and memory thereof; they're polluting the system")
+
+The tidy-button error came from quoting a legacy page as fact. In force immediately: the
+`opus-docs-anti-exemplar` branch is deleted; every not-yet-rewritten doc page carries a
+LEGACY TEXT banner and is never cited, quoted, or fact-checked against by anyone (main loop
+or agent); the Stage 1 corpus grades are void for all purposes; facts come from `src/` and
+the four ratified pages only. Every rewrite task DELETES its target page first and writes
+from zero — no editing legacy text. The banners die with the pages they mark.

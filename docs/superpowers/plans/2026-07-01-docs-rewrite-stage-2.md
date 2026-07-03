@@ -362,3 +362,11 @@ waste, discarded as each page is replaced.
   outside the repo since the repo goes public). Imitation-first drafting reads one before
   writing; prose reviews may quote them. Transient: toss the shelf once the voice is settled
   across the docs.
+
+- **Restated and filler content is a named AI failure (Geoff, 2026-07-02).** The signatures:
+  trailing evaluative tails that editorialize what the sentence already said ("which is how
+  leaving a CMS should work"), summary-tie sentences that add no fact ("The docs index ties
+  them together"), echo phrases recycled across pages ("why they are the way they are"), and
+  re-explaining a thing the reader was just told. The test per sentence: does it add a fact
+  or a judgment not already present? If not, cut it. Applies doubly when folding a human's
+  edits — the human's cuts are load-bearing; do not pad around them.

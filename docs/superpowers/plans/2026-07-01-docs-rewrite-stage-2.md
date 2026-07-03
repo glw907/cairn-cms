@@ -409,3 +409,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
 - **Sections open with actual sentences (Geoff, 2026-07-02).** No verbless fragment openers
   ("A fixed set of content concepts you declare..."); the first line under any header is a
   complete sentence with a subject, usually naming cairn or the reader.
+
+- **Virtue-claim intensifiers are a tell (Geoff, 2026-07-02).** "A real answer," "the honest
+  truth," "a fair question," "to be clear," "frankly": each claims a virtue (candor, fairness,
+  rigor) instead of demonstrating it, the same move as AI's reflexive "honest." Delete the
+  claim; the demonstration is the following sentences or it's nothing. ("Real" survives only
+  as a literal: "the preview is the real site.")

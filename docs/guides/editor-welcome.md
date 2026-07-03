@@ -20,7 +20,7 @@ Signing in happens entirely by email. Enter your address at your site's `/admin`
 
 Everything you write is either a post or a page, and the difference is the one you'd guess from any publication. A post is dated: news, announcements, anything that belongs to a moment. Posts accumulate newest-first and feed the site's archives, and they are what a reader means by "what's new." A page stands outside time: About, Join, Contact, the writing that describes the organization rather than reports on it. Pages tend to live in the site's navigation, and they change by revision rather than by succession.
 
-When you create something new, the choice between them comes first, and it's usually obvious. If it could go out in a newsletter, it's a post. The standing facts of the organization (how to join, where to find you, who to contact) are pages. Some sites add kinds of their own — a club might keep bulletins or race results as separate lists — and each behaves like one of the two: dated or standing.
+When you create something new, the choice between them comes first, and it's usually obvious. If it could go out in a newsletter, it's a post. The standing facts of the organization (how to join, where to find you, who to contact) are pages. Some sites add kinds of their own (a club might keep bulletins or race results as separate lists), and each behaves like one of the two: dated or standing.
 
 ## Writing
 

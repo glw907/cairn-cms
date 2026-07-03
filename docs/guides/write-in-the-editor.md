@@ -1,6 +1,6 @@
 # Write in the editor
 
-The editor understands every standard markdown mark, and adds a component system, several writing modes, checks that run as you type, and its own save-to-publish flow. This page documents all of it, and the table of contents jumps to any part. If you're new to cairn, [Welcome, editors](./editor-welcome.md) is the shorter orientation.
+Everything your site publishes is written in this editor, and this guide covers it at working depth, assuming you've never used a tool quite like it. You'll find the punctuation marks that shape plain text into formatted pages (that convention is called markdown, and the guide teaches all of it), the framed blocks that carry more than text (cairn calls them components), the settings that change how the editor behaves while you write, and the path a draft travels from private work to published page. Each of those gets its background before its mechanics, so nothing here requires prior experience. When you come back later with a single question, the table of contents above each section knows the way, and if what you want right now is a ten-minute orientation instead of the full tour, that's [Welcome, editors](./editor-welcome.md).
 
 - [The editor at a glance](#the-editor-at-a-glance)
 - [Find and create entries](#find-and-create-entries)
@@ -32,7 +32,9 @@ Creating an entry starts from the list: the New row at the foot of each list ope
 
 ## Write markdown {#write-markdown}
 
-The reference below covers every mark the editor understands. Each example shows what you type; the preview, and the published page, show the result in your site's own styling. The toolbar enters any of these marks for you, so none of them need memorizing.
+Writing in cairn is writing plain text, with a small set of punctuation marks that tell the site what each piece of text is: a heading, an emphasis, a list, a link. The marks are the markdown convention, chosen decades ago to look like what they mean, so a draft stays readable even before anything renders it. You don't have to learn them to start writing, because the toolbar enters any of them for you and the cheat-sheet (`Ctrl /`) lists them all; most writers absorb the handful they use within a day or two and stop thinking about them.
+
+The reference below covers every mark the editor understands, one small section per mark. Each example shows what you type, and the preview beside your draft shows the result in your site's own styling.
 
 ### Emphasis {#emphasis}
 
@@ -127,6 +129,8 @@ To show a mark literally instead of formatting with it, put a backslash before i
 
 ## Postures and modes {#postures-and-modes}
 
+Different moments in writing want different surfaces: drafting a paragraph wants comfortable type and few distractions, while reworking a table or a run of links wants density and precision. The editor accommodates both without ever changing your text, through postures and modes you can switch freely or ignore entirely.
+
 The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type. **Markup** shows the same text denser and closer to the raw marks, which is the better view for reworking tables, long link lists, or anything where you want to see more structure at once. One toolbar click switches them.
 
 **Write and Preview** are the toolbar's two tabs (`Ctrl Alt P` switches them). Preview renders your draft through the site's own machinery, so what you see is the page as readers will see it. While Preview is up, a width selector shows the page at desktop, tablet, phone, and small-phone sizes, so you can check the phone layout without a phone.
@@ -201,7 +205,7 @@ A time-limited announcement with an expiry date. It shows until the expiry date 
 
 ## Images and the media library {#images-and-the-media-library}
 
-Inserting an image opens the media library: choose an existing picture or upload a new one, and the editor places it in your draft as a figure, with a spot for a caption beneath it. Figures are built into cairn itself, so an image with its caption is one coherent block in the draft and one styled figure on the page.
+Your site keeps all of its images in one place, the media library, rather than attaching copies to individual pages. Inserting an image opens that library: choose an existing picture or upload a new one, and the editor places it in your draft as a figure, with a spot for a caption beneath it. Figures are built into cairn itself, so an image with its caption is one coherent block in the draft and one styled figure on the page.
 
 Every image asks for a short written description (alt text). Readers who use a screen reader hear that description in place of the picture, and writing a good one is part of the craft: the test is whether the description carries what the picture contributes in context. "Two dinghies rounding the windward mark in light air" serves a racing story; "sailboats on a lake" does not. The editor marks images that still need a description, including an entry's hero image in the details panel.
 
@@ -213,7 +217,7 @@ Tagging a post means picking from your site's shared tag list, in the details pa
 
 ## Checks as you type {#checks-as-you-type}
 
-The editor underlines two kinds of issue as you write, both in the same quiet amber.
+The editor reads along as you write, the way any modern writing tool does, and it deliberately limits what it comments on: things that are objectively wrong, never your choices. It underlines two kinds of issue, both in the same quiet amber.
 
 **Spelling.** The spellchecker runs locally in the editor with your site's dialect. Clicking an underlined word (or pressing `Alt Enter` with the cursor on it) opens a small popover with up to five suggestions, plus two other choices: **Add to dictionary**, which adds the word site-wide, and **Ignore**. Names, jargon, and terms of art belong in the dictionary; adding one accepts it for every writer afterward.
 
@@ -227,7 +231,7 @@ Tidy is the optional AI copy-edit, and its remit—small fixes only, your voice 
 
 Tidy isn't complicated, but it's probably a feature you haven't seen before, so it's worth knowing what to expect the first time. Nothing about it is automatic: you invoke it, it reads, and it comes back with marked proposals sitting in your draft where they would apply, each one visible before anything changes. The experience is closer to a copy editor returning your manuscript with penciled marks than to autocorrect, and the pencil is the point. Every mark waits for your decision, the draft stays read-only while you decide, and declining everything leaves the text exactly as you wrote it.
 
-Run it over the whole draft, or select a passage first to tidy just that part. Tidy reads the text and comes back with its proposed edits shown in place, each one marked in your draft where it would apply. Then the review is yours:
+Run it over the whole draft, or select a passage first to tidy just that part. When the proposals arrive, the review is yours:
 
 1. Step through the proposals and **accept** or **reject** each one individually.
 2. **Accept fixes** takes all the objective corrections (spelling-grade fixes) in one move, leaving the judgment calls for you.
@@ -275,7 +279,7 @@ The tables below are the complete set. They're conveniences: typing markdown alw
 
 ## The details panel {#the-details-panel}
 
-`Ctrl .` (or the toolbar) opens the entry's metadata, grouped into Details, Visibility, and Address.
+Beyond its text, every entry carries a small amount of information about itself: when it was written, what it's about, where it lives on the site. The site uses this metadata to order archives, build topic pages, and describe your entry in lists and search results, and the details panel is where you set it. `Ctrl .` (or the toolbar) opens it, grouped into Details, Visibility, and Address.
 
 | Field | What it does |
 | --- | --- |
@@ -290,7 +294,9 @@ Your site can add fields of its own to this panel; they behave the same way, and
 
 ## Save, review, and publish {#save-review-and-publish}
 
-A draft moves through three states, and the moves between them are always yours:
+The idea underneath cairn's workflow is that writing and publishing are different acts, and the editor keeps them separate on purpose. While you write, your work is private: saved, safe, versioned, and invisible to readers, no matter how long it sits or how rough it is. Publishing is a separate, deliberate step, taken when you decide the words are ready, and it's the only action that changes what readers see. This is different from tools where every save is live, and it's the reason nothing you do while drafting can embarrass the site.
+
+Concretely, a draft moves through three states, and the moves between them are always yours:
 
 ```mermaid
 %%{init: {"theme": "neutral"}}%%

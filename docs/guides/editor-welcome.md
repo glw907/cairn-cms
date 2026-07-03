@@ -1,6 +1,6 @@
 # Welcome, editors
 
-This site's writing room is a tool called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, so nothing you write can be trapped here. And nothing you do in the writing room can break the site.
+This site's writing room is a tool called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, so nothing you write can be trapped here. And nothing you do while drafting can break the live site, since your work stays private until you publish it.
 
 ## Signing in
 
@@ -20,4 +20,4 @@ If someone else edited the same entry while you were writing, cairn refuses to s
 
 ## When something looks wrong
 
-Ask the person who runs your site. There is usually a support contact in the writing room's help screen. Everything you publish is kept in the site's history, so a mistake can always be undone.
+Ask the person who runs your site. There is usually a support contact in the writing room's help screen. Everything you publish is kept in the site's history, so the person who runs your site can restore an earlier version if something goes wrong.

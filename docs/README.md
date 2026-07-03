@@ -1,6 +1,6 @@
 # cairn-cms documentation
 
-Cairn is a small system that gives a website a writing room. The people who write for the site sign in from a link in their email, edit in the browser with a live preview, and publish when they're ready. The site's developer keeps everything as ordinary files on infrastructure they control. There are no accounts to administer and no database to run. Nothing a writer does can break the site.
+Cairn is a small system that gives a website a writing room. The people who write for the site sign in from a link in their email, edit in the browser with a live preview, and publish when they're ready. The site's content lives as ordinary files that the site's developer controls, with no content database and no passwords for anyone to manage. Nothing a writer does while drafting can break the live site, because work waits as a private draft until it's deliberately published.
 
 **If you write for a site built on cairn**, start with [Welcome, editors](./guides/editor-welcome.md). It's short, and it covers what you'll need. **If you're the developer**, start with [Why cairn](./explanation/why-cairn.md) to decide whether it fits, then build with the tutorial below.
 
@@ -13,8 +13,8 @@ Cairn is a small system that gives a website a writing room. The people who writ
 ## The four arms
 
 - **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end.
-- **[How-to guides](./guides/README.md)** answer task questions, grouped **for developers** (the GitHub App, auth and D1, the adapter, rendering, delivery, deploying, migrating existing content, troubleshooting) and **for editors** (writing, images, the media library, tags, publishing).
-- **[Reference](./reference/README.md)** documents each package export, one page per subpath, plus the admin route contract and the log-event table. Every page is gated against the code.
+- **[How-to guides](./guides/README.md)** answer task questions (the GitHub App, auth and D1, the adapter, rendering, deploying, troubleshooting), with the editor-facing guides (writing, images, the media library, tags, publishing) grouped separately.
+- **[Reference](./reference/README.md)** documents each package export, one page per subpath, plus the admin route contract and the log-event table. The export pages are gated against the code.
 - **[Explanation](./explanation/README.md)** covers the architecture and the design rules: the security model, render safety, the content model, and the reasoning behind each. [Why cairn](./explanation/why-cairn.md) lives here too.
 
 ## Vocabulary

@@ -104,8 +104,8 @@ body {
 .banner {
   display: flex;
   align-items: center;
-  gap: var(--spacing-s, 0.5rem);
-  padding: var(--spacing-s, 0.75rem) var(--spacing-m, 1rem);
+  gap: var(--spacing-s);
+  padding: var(--spacing-s) var(--spacing-m);
   border-left: 3px solid var(--cairn-info-ink);
   border-radius: 0.25rem;
   background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));

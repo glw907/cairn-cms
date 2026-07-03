@@ -1,6 +1,6 @@
 # Welcome, editors
 
-The tool you'll write in is called cairn, and it is, at some level, trying to be an iA Writer or Ulysses for small teams publishing on the web. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
+The tool you'll write in is called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, and nothing you do while drafting can break the live site, since your work stays private until you publish it.
 
 ## Signing in
 
@@ -18,15 +18,15 @@ give them *emphasis*. A blank line starts a new paragraph, and
 [a link](https://example.com) is a bracketed phrase followed by its address.
 ```
 
-The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
+The marks were chosen to look like what they mean, the toolbar types them for you, and there's a cheat-sheet in the editor for the rest. The editor also has a Zen mode that hides everything but the writing, for when you want the room quiet. It might look unusual at first, but the preview beside your writing shows your words exactly as readers see them, in the site's real styling. The site decides how everything looks, so your marks only ever say what something is, a heading or an emphasis, and every page you write stays consistent with the rest of the site.
 
-Markdown is also not a quirk of this tool. The writing apps many authors swear by (iA Writer, Ulysses, Bear) store their documents this way, documentation teams at large software companies write in it, and researchers who need work to stay readable for decades choose plain text deliberately, because it survives every change of tool and never locks words inside an app. Your site keeps your writing in the same durable form.
+Markdown is also not a quirk of this tool. The writing apps many authors swear by (iA Writer, Ulysses, Bear) store their documents this way, documentation teams at large software companies write in it, and researchers who need work to stay readable for decades choose plain text deliberately, because it survives every change of tool and never locks words inside an app. Your site keeps your writing in the same durable form, and cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
 
 ## Pictures, callouts, and other pieces
 
-Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. You never have to build these by hand; the insert menu asks a couple of questions and writes the block for you.
+Not everything on a page is plain text. A photo with a caption, a callout box, a pull quote, or a video arrives through the insert menu, which adds it to your draft as a small labeled block. In the plain text the block reads as what it is (a callout starts with `:::callout` and ends with `:::`), and in the preview it appears as the site's styled version. You never have to build these by hand; the insert menu asks a couple of questions and writes the block for you. A block can fold down to a single line from the marker in its margin, to keep a long draft readable, and a folded block unfolds itself the moment your typing or your cursor touches it, so you can never change text you can't see. Edit the words inside a block freely, and leave its marker lines as they are; if one ever gets tangled, the insert menu can build a fresh one.
 
 ## Tidy, if your site has it
 

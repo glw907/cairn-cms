@@ -2,7 +2,7 @@
 
 Cairn is a small system that gives a website a writing room. The people who write for the site sign in from a link in their email, edit in the browser with a live preview, and publish when they're ready. The site's developer keeps everything as ordinary files on infrastructure they control. There are no accounts to administer and no database to run. Nothing a writer does can break the site.
 
-**If you write for a site built on cairn**, start with [Welcome, editors](./guides/editor-welcome.md). It's short, and it's everything you need. **If you're the developer**, start with [Why cairn](./explanation/why-cairn.md) to decide whether it fits, then build with the tutorial below.
+**If you write for a site built on cairn**, start with [Welcome, editors](./guides/editor-welcome.md). It's short, and it covers what you'll need. **If you're the developer**, start with [Why cairn](./explanation/why-cairn.md) to decide whether it fits, then build with the tutorial below.
 
 ## Start here
 

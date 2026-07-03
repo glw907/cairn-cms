@@ -1,6 +1,6 @@
 # Welcome, editors
 
-This site's writing room is a tool called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, so nothing you write can be trapped here. And nothing you do in the writing room can break the site. This page is the two-minute version of everything an editor needs.
+This site's writing room is a tool called cairn. Your words are saved as ordinary files that belong to your organization, not to cairn and not to any company, so nothing you write can be trapped here. And nothing you do in the writing room can break the site.
 
 ## Signing in
 

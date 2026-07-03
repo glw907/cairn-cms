@@ -22,7 +22,7 @@ Cairn is a developer's tool as much as an editor's. A new site starts quickly (t
 
 ## Why markdown and not a WYSIWYG editor?
 
-This is the choice most likely to raise an eyebrow. The case for WYSIWYG is obvious: everyone has used Word, nobody has to learn anything, and the modern block editors are slick. It's a long-running debate, and I'm not trying to win it here. Cairn is just an expression of which side of the argument I believe to be the better one.
+Mostly because WYSIWYG editors lie a little. The case for them is obvious (everyone has used Word, nobody has to learn anything, and the modern block editors are slick), and it's a long-running debate I'm not trying to win here. Cairn is just an expression of which side of the argument I believe to be the better one.
 
 What you see in a WYSIWYG editor is what the editor renders, not what the site renders. Pasted Word formatting comes along invisibly, and authors reach for looks ("make this big and blue") when the site needs structure ("this is a heading"). A year later every page has its own style, and cleaning that up lands on the developer.
 

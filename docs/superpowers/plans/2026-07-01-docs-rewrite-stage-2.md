@@ -548,4 +548,7 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   on an editor page must matter to the writer at work. Ownership, storage formats, databases,
   portability, and vendor questions are organization and developer concerns; they live on
   those surfaces. What survives the test on editor pages: the work is safe, earlier wording
-  is recoverable, nothing breaks, the tool respects the writing.
+  is recoverable, nothing breaks, the tool respects the writing. The test reaches format
+  facts too (Geoff: most Bear or Ulysses users never think about what format their app works
+  in) — editor pages speak in EXPERIENCE terms ("the marks will already look familiar"),
+  never in adoption or format taxonomy.

@@ -15,8 +15,9 @@ mode:
 - `2026-07-06-one-long-paragraph.md`: a single unbroken ~400-word paragraph, no line breaks.
 - `2026-07-07-full-gear-checklist.md`: a list nested four levels deep with mixed ordered and
   unordered markers, and an eleven-column comparison table.
-- `2026-07-08-conditions-safety-and-conversions.md`: every directive component the showcase
-  registry declares (`callout`, `alert`, `converter`) dropped mid-prose.
+- `2026-07-08-conditions-safety-and-conversions.md`: `callout` and `alert` dropped mid-prose, plus
+  the `banner` island in both its states, an active announcement and one already past its `expires`
+  date.
 - `2026-07-09-fixing-the-gpx-timestamp-bug.md`: heavy inline code and three long fenced code
   blocks (bash, Python, XML).
 

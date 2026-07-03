@@ -1,7 +1,7 @@
 ---
-title: Trail Conditions, a Safety Note, and the Metric Conversion Everyone Keeps Asking For
+title: Trail Conditions, a Safety Note, and Two Announcements
 date: 2026-07-08
-description: Current conditions on the ridge loop, a caution about the washout below the saddle, and the mile-to-kilometer converter members keep requesting.
+description: Current conditions on the ridge loop, a caution about the washout below the saddle, and two announcement banners, one still live and one already past its date.
 topics:
   - trail-reports
   - weather
@@ -24,9 +24,12 @@ Most of the loop is unremarkable this time of year, which is exactly what you wa
 The trail has slumped nearly two feet along a thirty-meter stretch, and the drop-off below it is not survivable. Stay on the marked detour even though it adds ten minutes; do not attempt the old line, however solid it looks from above.
 :::
 
-For members coming from clubs that measure everything in kilometers, the loop is a little over eleven miles round trip. Here is the converter people keep asking us to link:
+For members coming from clubs that measure everything in kilometers, the loop is a little over eleven miles round trip.
 
-:::converter{from="mi" to="km" rate="1.609"}
+:::banner{message="The gear swap meet moves to the lodge this Saturday, weather permitting." expires="2099-01-01"}
+:::
+
+:::banner{message="Sign-ups for the August work party have closed." expires="2020-01-01"}
 :::
 
 Bring the usual layers for the exposed ridge section, and check back here before you go if the forecast looks unsettled.

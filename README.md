@@ -26,7 +26,7 @@ The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over an
 
 Cairn ships with a starter template called Wayfinder: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced rather than obeyed. The unmodified template runs live at [cairn.pub](https://cairn.pub), which is both the demonstration and the honest starting point, since a scaffolded site begins as exactly that site. Wayfinder is deliberately dual-natured: close to a finished site for a basic content-managed project, and a foundation to build past for one that grows.
 
-A second template, Topo, is planned: a documentation-first derivative of Wayfinder that will carry cairn's own docs when it lands. One engine, two templates, and both replaceable is the intended shape.
+A second template, Topo, is planned: a documentation-first derivative of Wayfinder that will carry cairn's own docs when it lands.
 
 <!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
 resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->

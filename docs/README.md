@@ -15,7 +15,7 @@ Cairn is a small system that gives a website a writing room. The people who writ
 - **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end.
 - **[How-to guides](./guides/README.md)** answer task questions, grouped **for developers** (the GitHub App, auth and D1, the adapter, rendering, delivery, deploying, migrating existing content, troubleshooting) and **for editors** (writing, images, the media library, tags, publishing).
 - **[Reference](./reference/README.md)** documents each package export, one page per subpath, plus the admin route contract and the log-event table. Every page is gated against the code.
-- **[Explanation](./explanation/README.md)** covers the architecture and the design rules: the security model, render safety, the content model, and the reasoning behind each.
+- **[Explanation](./explanation/README.md)** covers the architecture and the design rules: the security model, render safety, the content model, and the reasoning behind each. [Why cairn](./explanation/why-cairn.md) lives here too.
 
 ## Vocabulary
 

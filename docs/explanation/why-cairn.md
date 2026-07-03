@@ -32,9 +32,9 @@ Nothing else does bulletproof, security-forward hosting at almost no cost. Worke
 
 Only options that run on Cloudflare are candidates at all. Within that field, and because cairn was a greenfield project with no legacy to serve, the right move was to pick the framework developers actually love, and by that measure Svelte and SvelteKit have sat at or near the top of the developer surveys for years. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`.
 
-### DaisyUI, for the admin only
+### DaisyUI
 
-DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. Your public site carries none of this (render is yours); the admin skeleton uses it because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
+DaisyUI follows because it shares SvelteKit's less-is-more philosophy: components as plain class names, no runtime, nothing to configure before you can use it. It's the idiom of the admin skeleton and the starter template both, so extending either means working in the most copyable idiom on the web instead of learning my bespoke design system. Your public site isn't locked to it (render is yours, and the template is built to be restyled), but the scaffold you start from speaks DaisyUI throughout. The cost: it's Tailwind's idiom or none. There's no theming API to point any of it at another system.
 
 ### Storage, by fit
 

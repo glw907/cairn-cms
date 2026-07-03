@@ -20,6 +20,22 @@ Cairn keeps the version control invisible. Signing in is clicking a link in emai
 
 Cairn is a developer's tool as much as an editor's. A new site starts quickly (the starter template plus a few steps of wiring), whatever you build next to it stays yours, and pulling updates is boring on purpose, because the public surface is narrow and checked by gates. The admin is a scaffold you extend in place rather than a black box you work around. And it contains very real developer affordances: a fully typed adapter (your content schema typechecks), a doctor command that diagnoses a misconfigured site, structured logs for every operationally meaningful event, and a local dev backend so you can build without touching real GitHub. The details are in [Built to be built on](#built-to-be-built-on), below.
 
+## Why the stack?
+
+Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool. The choices also aren't independent: cairn starts from the premise that Cloudflare is a great hosting platform, and each choice after that follows from working within the limits of the one before it.
+
+### Cloudflare
+
+Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and at that scale a small site is a rounding error, which is why their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason shows up in the code: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is code that can't break. The trade is that cairn runs on Cloudflare or not at all. And the premise sets the terms for everything downstream: Workers run JavaScript and TypeScript, so the rest of the stack has to live there.
+
+### SvelteKit
+
+Given a JavaScript runtime, Svelte and SvelteKit are the next logical choice, for all the reasons developers love them. The admin is built on form actions, so every editor operation works as a plain HTML form before hydration, and an editor on hotel Wi-Fi still gets a working tool. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
+
+### DaisyUI, for the admin only
+
+DaisyUI follows the same way, because it dovetails with SvelteKit and Tailwind. Your public site carries none of this (render is yours); the admin skeleton uses it because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
+
 ## Why markdown and not a WYSIWYG editor?
 
 Mostly because WYSIWYG editors lie a little. The case for them is obvious (everyone has used Word, nobody has to learn anything, and the modern block editors are slick), and it's a long-running debate I'm not trying to win here. Cairn is just an expression of which side of the argument I believe to be the better one.
@@ -29,22 +45,6 @@ What you see in a WYSIWYG editor is what the editor renders, which is never quit
 Markdown separates two decisions that WYSIWYG collapses into one: the author decides what something is (a heading, a list, emphasis), and the site decides, once and for everything, how such things look. It's the old separation of content from presentation, enforced at the point of writing rather than promised in a style guide nobody reads. The marks look like what they mean (asterisks around a word *look* like emphasis), the toolbar types them for you, and cairn includes a friendly cheat-sheet for the rest. A little investment in markdown frees writers up to focus on writing and not layout.
 
 If your editors need page-layout control, cairn is the wrong tool. For writing posts, pages, and announcements, it isn't a hardship, and the live preview closes most of the gap WYSIWYG claims to fill.
-
-## Why the stack?
-
-Cairn is aggressively opinionated about its development stack, and that's exactly what lets it be a much leaner tool.
-
-### Cloudflare
-
-Nothing else does bulletproof, security-forward hosting at almost no cost. Workers, D1, R2, and Email Sending cover everything a small site needs from one vendor, and a small site's bill rounds to zero (Cloudflare handles roughly 20% of all web traffic, and at that scale a small site is a rounding error, which is why their free tier isn't a loss leader). That alone wouldn't justify locking to one host. The stronger reason shows up in the code: a host-abstraction layer would be the biggest single abstraction in the codebase, and every abstraction cairn doesn't carry is code that can't break. The trade is that cairn runs on Cloudflare or not at all.
-
-### SvelteKit
-
-The admin is built on form actions, so every editor operation works as a plain HTML form before hydration, and an editor on hotel Wi-Fi still gets a working tool. Content pages are what SvelteKit's server rendering exists for, the islands cairn renders into your markdown hydrate as ordinary Svelte components, and the seams speak the idiom you already work in: props, snippets, `locals`. If your team lives in React, cairn will fight you the whole way, and there are better choices for that world.
-
-### DaisyUI, for the admin only
-
-Your public site carries none of this (render is yours). The admin skeleton uses DaisyUI over Tailwind because extending the admin means working in the most copyable idiom on the web instead of learning my bespoke design system. The cost: it's Tailwind's idiom or none. There's no theming API to point the admin at something else.
 
 ## Why not use other tools?
 

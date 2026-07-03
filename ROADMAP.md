@@ -206,6 +206,13 @@ the named human gates only):**
   render implementation in the template's design — so the set doubles as the reference example of
   the component-authoring seam. Rides the scaffolder/template work below and pairs with the docs
   rewrite's authoring guidance.
+- **Auth-replacement seam, documented and hardened (pre-beta; Geoff, 2026-07-02).** The
+  README claims a developer can replace the auth outright; today only identity read-through
+  (`locals.editor` + `requireSession`/`requireOwner`) and the magic-link transport override
+  ship as documented seams, and full replacement lives in an internal design doc. The item:
+  document (and where needed, harden) the hand-off that lets a site bring its own login and
+  issue cairn sessions — the seam only, not built-in auth options. The claim must be true
+  before the repo goes public.
 - **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).** Two
   scoped engine items: (1) **the gallery enabler** — component attributes reject `image`/`array`
   types and repeatable slots render bare text inputs regardless of `itemFields`; a schema-driven

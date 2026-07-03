@@ -436,3 +436,9 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   the measured corpus never shows. Geoff's baseline is unhurried: long, even-keeled compound
   sentences with parenthetical caveats, reporting even problems without alarm. A punch lands
   about once per section, not once per paragraph, and the verbs stay mild.
+
+- **The audience is a philosophy major who can program (Geoff, 2026-07-02).** Don't fear a
+  complex sentence: both failure modes (marketing and noir) were too staccato. The reader is
+  intelligent and educated; subordinate clauses, developed distinctions, and periodic
+  sentences are welcome where the thought genuinely carries them. Geoff's own default is a
+  25-40 word compound sentence; simplicity is for facts, complexity for arguments.

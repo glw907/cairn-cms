@@ -83,9 +83,9 @@ Lists nest by indenting an item beneath its parent. `Ctrl Shift 8` starts a bull
 
 ### Links {#links}
 
-An external link is a bracketed phrase followed by its address: `[the club's history](https://example.org/history)`. Select a phrase and press `Ctrl K`, and the editor writes the brackets and asks for the destination—which can be a web address or one of your site's own entries, picked from a list.
+An external link is a bracketed phrase followed by its address: `[the club's history](https://example.org/history)`. Select a phrase and press `Ctrl K`, and the editor writes the brackets and asks for the address.
 
-Internal links have a shorter form as well: `[[page-name]]` links to another entry by its name, and the site resolves it to the right address even if that entry's URL later changes. This is the more durable way to link your own pages.
+Links to your own entries have a better path. Type `[[` and start typing a name, and a picker of your site's entries opens; choosing one inserts a link that keeps working even if that entry's address later changes. The toolbar's link-to-page button opens the same picker. Either way, what lands in your draft is an ordinary bracketed link whose destination is the entry itself rather than a web address, which is why it survives renames.
 
 ### Code {#code}
 
@@ -150,7 +150,7 @@ best are the ones you own.
 :::
 ```
 
-The first line is the frame's opening: three colons, the component's name, its title in square brackets, and its settings in braces. The last line, three colons alone, closes the frame. Everything between them is the block's body, and the body is ordinary markdown — write in it, emphasize in it, link from it, exactly as anywhere else on the page.
+The first line is the frame's opening: three colons, the component's name, its title in square brackets, and its settings in braces. The last line, three colons alone, closes the frame. Everything between them is the block's body, and the body is ordinary markdown—write in it, emphasize in it, link from it, exactly as anywhere else on the page.
 
 The frame and the body live by different rules. The body is yours to edit freely, as much and as often as you like. The frame is structural: the colons, the name, and the braces are how the site recognizes the block, so they're best left exactly as the insert menu wrote them. To change a title or a setting, edit the block through its form rather than retyping the frame: the same guided dialog that created it reopens on it, and the markup rewrites itself correctly.
 
@@ -177,7 +177,7 @@ A stronger sibling of the callout for the things a reader must not miss—a canc
 
 ### Icon {#icon}
 
-A small inline glyph from your site's declared icon set, for the places a symbol reads faster than a word. The insert form lists the available icons by name.
+A small glyph from your site's declared icon set, placed as its own short line. The insert form lists the available icons by name.
 
 ### Video {#video}
 
@@ -215,7 +215,7 @@ Tagging a post means picking from your site's shared tag list, in the details pa
 
 The editor underlines two kinds of issue as you write, both in the same quiet amber.
 
-**Spelling.** The spellchecker runs locally in the editor with your site's dialect. Clicking an underlined word opens a small popover with up to five suggestions, plus two other choices: **Add to dictionary**, which adds the word site-wide, and **Ignore**. Names, jargon, and terms of art belong in the dictionary; adding one accepts it for every writer afterward.
+**Spelling.** The spellchecker runs locally in the editor with your site's dialect. Clicking an underlined word (or pressing `Alt Enter` with the cursor on it) opens a small popover with up to five suggestions, plus two other choices: **Add to dictionary**, which adds the word site-wide, and **Ignore**. Names, jargon, and terms of art belong in the dictionary; adding one accepts it for every writer afterward.
 
 **Mechanical slips.** Alongside spelling, the editor catches a small set of objective mistakes—a doubled word ("the the"), a double space, repeated punctuation—each with a one-click fix in the same popover. These checks are deliberately mechanical: there is no style or grammar opinion in them, and nothing about your phrasing is ever flagged. Style belongs to you (and, if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject).
 

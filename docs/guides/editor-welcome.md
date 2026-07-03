@@ -2,7 +2,9 @@
 
 ## What cairn is
 
-Your organization's website runs on a system called cairn. Most of it works out of sight, and the part that concerns you is the one it was built around: a writing environment where the people of your organization draft, revise, and publish the site's pages themselves, with no technician in the loop for the everyday work of writing. A developer set the site up once and remains behind it; from that point on, the words belong to the writers.
+Your organization's website runs on a system called cairn: open-source software built to make it easy for small teams to manage websites together. Cairn sites run on [Cloudflare](https://www.cloudflare.com/), the infrastructure company that carries roughly 20% of all internet traffic, with a core focus on security and uptime. And unlike many comparable systems, cairn is focused on providing the best possible writing experience for its editors.
+
+Most of the system works out of sight. The part that concerns you is the one it was built around: a writing environment where the people of your organization draft, revise, and publish the site's pages themselves, with no technician in the loop for the everyday work of writing. A developer set the site up once and remains behind it; from that point on, the words belong to the writers.
 
 Two facts about the arrangement are worth holding from the start. Nothing you do while drafting can break the live site, since your work stays private until you deliberately publish it. And every save is kept, so no version of your work is ever lost. The rest of this page fills in what sits between those two facts: how you sign in, how the writing works, and what happens when you publish.
 
@@ -41,7 +43,7 @@ The convention is not peculiar to this tool, and it has a longer history than it
 
 Its popularity among writers, rather than programmers, has its own logic. Formatting through menus interrupts composition: hands leave the keys, attention leaves the sentence, and both have to find their way back. Markdown keeps both where they were, which is much of why the minimalist writing apps of the last fifteen years (iA Writer arrived in 2010) could exist at all: the convention did the structural work, so the app could shrink to a page and a cursor. The same marks now work in far more places than dedicated writing tools, since note-taking systems, message boards, and chat apps adopted the convention as it spread. And a markdown draft written today will open, unchanged, in whatever tool exists in twenty years, which is not something computing can promise about much else.
 
-If you've written in iA Writer, Ulysses, or Bear, the marks will already look familiar, and if you haven't, you'll be learning the same convention those tools teach. Cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
+If you've written in [iA Writer](https://ia.net/writer), [Ulysses](https://ulysses.app/), or [Bear](https://bear.app/), the marks will already look familiar, and if you haven't, you'll be learning the same convention those tools teach. Cairn is, at some level, trying to be that kind of tool for small teams publishing on the web.
 
 The [writing guide](./write-in-the-editor.md) tours the whole surface: headings, links, images, the insert menu, spellcheck. The [images guide](./add-an-image.md) covers adding and describing pictures, and the [media library](./manage-the-media-library.md) is where all of a site's images live.
 
@@ -68,7 +70,7 @@ Posts carry tags, and the tags come from a single list the site maintains, rathe
 
 ## Tidy, if your site has it
 
-Some sites turn on tidy, an AI copy-editing tool built on Claude, Anthropic's language model. It reads your draft, or a passage you select, and proposes the kind of small fixes a professional copy editor would mark: a misspelling, a doubled word, a comma that splices two sentences, a subject and verb that lost agreement mid-revision, and the small conventions that keep a site consistent when several people write for it (one spelling of email, one style of dash, one way of writing dates).
+Some sites turn on tidy, an AI copy-editing tool built on [Claude](https://www.anthropic.com/claude), Anthropic's language model. It reads your draft, or a passage you select, and proposes the kind of small fixes a professional copy editor would mark: a misspelling, a doubled word, a comma that splices two sentences, a subject and verb that lost agreement mid-revision, and the small conventions that keep a site consistent when several people write for it (one spelling of email, one style of dash, one way of writing dates).
 
 Its remit stops where your choices begin. Word choice, sentence rhythm, structure, argument, and tone are yours; a stylistic decision is not an error, and tidy is instructed to leave it alone. Cairn is a tool for humans writing prose, and tidy is scoped to match. Mechanically, it is conservative in the same spirit: it shows you each proposed fix beside your original, changes nothing until you accept it, an accepted round can be undone in one step, and your text is never quietly rewritten. Sometimes it returns with nothing to fix, and says so. It is not meant to draft your prose, and it will not take your voice.
 

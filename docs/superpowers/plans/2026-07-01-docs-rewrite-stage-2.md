@@ -507,7 +507,12 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   throughout (Geoff, 2026-07-03: "college-educated, not high school children") — concepts get
   their real names, origins, and design principles; folksy softeners ("a little goes a long
   way," "swear by," "gets tangled," "no password to forget") are down-writing residue and a
-  tell. The nervous-manager framing is retired as the default (it
+  tell. So is the consumer-help POSTURE itself (Geoff, 2026-07-03: "reads like software
+  documentation trying to be easy on the general population"): micro-instructed actions
+  ("type your email address," "clicking it"), hand-holding reassurance ("you never have
+  to..."), and anonymous circumlocutions ("the person who runs your site"). The professional
+  posture is declarative system-description that trusts the reader to act; imperatives are
+  for genuine instructions, not babysitting. The nervous-manager framing is retired as the default (it
   survives only for genuinely fear-adjacent moments like first sign-in). And this reader is
   strongly turned off by marketing slop, exactly like Geoff — the anti-slop law is
   audience-universal, not a developer-register rule. The editor frame (Geoff, 2026-07-03,

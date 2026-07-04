@@ -1,6 +1,6 @@
 # Why cairn
 
-Before cairn, every content change on the small sites I run ended up as my git commit. An editor would email me the new schedule or a corrected paragraph, I'd make the edit, and the deploy would carry it live. That works, but every change waits on me, down to a corrected paragraph, and the people who actually write the site never edit it directly. With cairn, an editor clicks a link in email and writes in a markdown editor, and a publish sends it live. The commit happens the same as before, in the site's own repo with the editor's name on it, but no developer stands in the loop for the everyday work of writing. This page explains the reasoning in detail, and why you might (or might not) want to use it.
+Before cairn, every content change on the small sites I run ended up as my git commit. An editor would email me the new schedule or a corrected paragraph, I'd make the edit, and the deploy would carry it live. That works, but every change waits on me, however small, and the people who actually write the site never edit it directly. With cairn, an editor clicks a link in email and writes in a markdown editor, and a publish sends it live. The commit happens the same as before, in the site's own repo with the editor's name on it, but no developer stands in the loop for the everyday work of writing. This page explains the reasoning in detail, and why you might (or might not) want to use it.
 
 ## What cairn is
 

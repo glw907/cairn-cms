@@ -16,6 +16,11 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-07-03, updated)
 
+**DOCS REWRITE: COMPLETE AND MERGED TO MAIN (2026-07-04).** The full tree per the IA, the
+four-gate method proven at fleet scale, the gate lattice live (check:snippets new; the three
+suspended gates re-enabled; monthly drift routine trig_015UPQostYVisXuExTHTH2vu), post-mortem
+in the Stage-2 plan. Holds unpublished under ## Unreleased.
+
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
 EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings

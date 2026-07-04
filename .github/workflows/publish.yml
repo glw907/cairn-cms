@@ -41,4 +41,3 @@ jobs:
       # fail the publish. Drop this env when the repo goes public to restore provenance.
       - run: npm publish --access public
         env:
-          NPM_CONFIG_PROVENANCE: false

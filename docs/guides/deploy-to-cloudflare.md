@@ -1,8 +1,9 @@
 # Deploy to Cloudflare
 
 Deploying a cairn site means wiring its admin and provisioning its Worker's Cloudflare
-bindings. The admin is five files: a composer in `src/lib`, plus a layout pair and a
-catch-all pair under `src/routes/admin`. The Worker reads three bindings — `AUTH_DB` (a D1
+bindings. The admin is six files (a composer in `src/lib`, the guard in
+`src/hooks.server.ts`, plus a layout pair and a catch-all pair under `src/routes/admin`)
+and one build-config line. The Worker reads three bindings — `AUTH_DB` (a D1
 database) for the magic-link store, `EMAIL` (Email Sending) for the sign-in links, and, if
 your adapter uses media, `MEDIA_BUCKET` (an R2 bucket). This guide assumes you've declared
 your adapter (see [Define an adapter and schema](./define-an-adapter-and-schema.md)) and
@@ -37,6 +38,21 @@ view through `admin.load` and `admin.actions`. Copy them from
 guide's own showcase runs. Keep `export const prerender = false` on the catch-all's
 `+page.server.ts`: the admin is session-gated, and a site that prerenders by default would
 otherwise bake a build-time snapshot of it.
+
+One build-config line completes the mount. The package ships its admin components as real
+`.svelte` files, which Vite externalizes by default for a registry install, breaking the
+admin build. Tell Vite to bundle them:
+
+```ts
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: [sveltekit()],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+});
+```
 
 ## Wire the guard
 

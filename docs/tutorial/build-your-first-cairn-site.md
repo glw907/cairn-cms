@@ -240,7 +240,7 @@ Editors never see this code. They see a "Callout" entry in the insert menu, a fo
 
 ## Milestone 6: Wire the delivery surface
 
-The public site reads the same content the admin edits. cairn's delivery factory turns your concepts into SvelteKit loads: listings, entries, and tags as data.
+The public site reads the same content the admin edits. cairn gives you the pieces as data and a route factory: a concept index for listings, and `createPublicRoutes` for the entry pages.
 
 One content layer builds the typed indexes every route reads:
 
@@ -404,7 +404,7 @@ Then read the menu once in the site layout:
 
 ## Milestone 8: Run the admin locally
 
-Everything so far was the site. Now the admin: five files, all of them mounting machinery cairn provides.
+Everything so far was the site. Now the admin: six small files and one build-config line, all of them mounting machinery cairn provides.
 
 The `(site)` group and the bare root layout from Milestone 6 already do the one thing the admin needs from your side: they keep your site's own chrome from wrapping `/admin`, so nothing here has to move.
 
@@ -569,7 +569,8 @@ export default defineConfig({
 
 Add the regenerate script and run it:
 
-```json
+```jsonc
+// package.json (the "scripts" block)
 {
   "scripts": {
     "cairn:manifest": "cairn-manifest"

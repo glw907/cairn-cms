@@ -368,9 +368,14 @@ test('the component picker groups the catalog, opens the callout two-pane with i
   const dialog = page.locator('dialog[aria-labelledby="cairn-insert-dialog-title"]');
   await expect(dialog).toBeVisible();
 
-  // The catalog groups by the config's `group` headings (Callouts, Notices), in declaration order.
-  const headings = dialog.locator('[data-testid="cairn-pk-group-heading"]');
-  await expect(headings).toHaveText(['Callouts', 'Notices']);
+  // The catalog groups by the config's `group` headings, in declaration order. The registry keeps
+  // growing (Media, Quotes, Actions, and Structure have since joined Callouts and Notices), so assert
+  // the two groups this test exercises by name and relative order rather than the full list, so a
+  // newly registered component group elsewhere in the catalog does not break this test.
+  const headingTexts = await dialog.locator('[data-testid="cairn-pk-group-heading"]').allTextContents();
+  expect(headingTexts).toContain('Callouts');
+  expect(headingTexts).toContain('Notices');
+  expect(headingTexts.indexOf('Callouts')).toBeLessThan(headingTexts.indexOf('Notices'));
 
   // Pick the callout. It declares a `preview`, so the configure step opens two-pane: the form on
   // the left and the live preview frame on the right.

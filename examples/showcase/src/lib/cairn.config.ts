@@ -300,7 +300,17 @@ const banner = defineComponent({
   build: (ctx) => {
     const message = strAttr(ctx, 'message') ?? '';
     const expires = strAttr(ctx, 'expires');
-    if (isBannerExpired(expires)) return h('div', { hidden: true, className: ['banner-expired'] }, []);
+    if (isBannerExpired(expires)) {
+      // An expired banner never needs a live re-check: a past expires date stays past, so hydration
+      // has nothing to catch that this build() has not already caught. The engine serializes
+      // ctx.attributes into data-cairn-props right after build() returns, reading the same object
+      // this function holds, so clearing it here keeps the announcement text and date out of the
+      // static markup entirely rather than shipping them inert in an attribute a reader's view-source
+      // still exposes. The island still mounts with no props, and Banner.svelte's own expiry check (a
+      // missing expires counts as expired) renders the same empty output.
+      ctx.attributes = {};
+      return h('div', { hidden: true, className: ['banner-expired'] }, []);
+    }
     return h('div', { className: ['banner'], role: 'status' }, [h('p', { className: ['banner-message'] }, [message])]);
   },
 });

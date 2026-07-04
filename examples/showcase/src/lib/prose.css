@@ -42,6 +42,12 @@
      -------------------------------------------------------------------------- */
   .prose {
     max-width: var(--container-measure);
+    /* A long unbroken token (a bare URL with no spaces) is wider than the column and has nowhere to
+       break; the ancestor body's `overflow-x: clip` (site.css, the full-bleed-figure guard) then hides
+       the overflow instead of showing it, so the token silently vanishes past the edge. Breaking
+       anywhere it must keeps every token inside the column, at the cost of a mid-word break only on
+       the rare token that cannot fit otherwise; ordinary prose never notices it. */
+    overflow-wrap: anywhere;
   }
   .prose > * + * {
     margin-top: var(--flow-space);
@@ -420,6 +426,21 @@
     margin-top: var(--spacing-2xs);
   }
 
+  /* Icon: a single glyph with no card and no title, sitting directly in the prose flow rather than
+     nested inside another component (the alert head, the video-facade thumb, the cta link, the faq
+     marker all size their own `.ec-glyph` above and below). The direct-child combinator scopes this
+     rule to exactly that standalone case, so it never fights the more specific nested rules. With no
+     sizing rule at all the bare SVG falls back to the browser's default replaced-element box, reading
+     as an oversized glyph instead of a modest inline marker; text-height scale keeps it reading like a
+     large character, the same restraint as the rest of the directive set. */
+  .prose > .ec-icon {
+    display: inline-flex;
+  }
+  .prose > .ec-icon > .ec-glyph {
+    width: 1.75em;
+    height: 1.75em;
+  }
+
   /* Video facade: a bordered 16:9 panel with a centered play glyph and the platform name, the whole
      thing one link. No thumbnail image (see the component's own comment for why); the panel ground
      and border are the same card tokens the callout and alert borrow. */
@@ -489,7 +510,14 @@
   }
 
   /* CTA: a restrained button-link, not the fuller marketing panel the styleguide's `.sg-cta` shows.
-     Primary reuses the site's own CTA button token pair; secondary is a bordered ghost variant. */
+     Primary reuses the site's own accent-button pair, the same `--color-primary` treatment the
+     styleguide's `.btn-primary` and every other on-page call-to-action use; secondary is a bordered
+     ghost variant. Primary does NOT reuse `--cairn-cta-btn-bg`/`-btn-content`: that pair is tuned to
+     sit on top of the `--cairn-cta-bg` panel (see `.sg-cta`), a backdrop this inline link never gets.
+     In light mode `--cairn-cta-btn-bg` resolves to `--color-base-100`, the page's own paper, so a
+     link sitting directly on the page (not on the panel) would render with an invisible background;
+     it happened to read fine in dark mode only because `--cairn-cta-btn-bg` there resolves to
+     `--color-primary`, the same accent used below in both themes. */
   .prose .cta {
     --flow-space: var(--spacing-m);
   }
@@ -503,8 +531,8 @@
     text-decoration: none;
   }
   .prose .cta-primary {
-    background: var(--cairn-cta-btn-bg);
-    color: var(--cairn-cta-btn-content);
+    background: var(--color-primary);
+    color: var(--color-primary-content);
   }
   .prose .cta-secondary {
     background: transparent;

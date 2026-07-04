@@ -38,6 +38,13 @@ All notable changes to this project are recorded here, most recent first.
   docs already used. The matching validation errors (an invalid value, a collision, a no-op
   rename) read "address" instead of "slug" too. The stored field name and every internal
   identifier stay `slug`; only the editor-facing copy changed.
+- Pasting rich text from Word, Google Docs, or a web page now converts its formatting to
+  markdown instead of dropping it: headings, bold and italic emphasis (including Google Docs'
+  style-attribute runs), links, and bulleted or numbered lists all arrive as the matching
+  marks. Anything else (a table, an image, code, a blockquote, strikethrough) degrades to its
+  plain text. Plain-text paste and image paste are unchanged. New dependencies: `rehype-parse`
+  and `rehype-remark`, both official unified.js packages already alongside `rehype-sanitize`
+  and `remark-rehype`.
 
 ## 0.79.0
 

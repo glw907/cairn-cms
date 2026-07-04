@@ -1245,6 +1245,59 @@ describe('MarkdownEditor', () => {
     expect(ingested).toEqual([]);
   });
 
+  it('converts a rich-text paste to markdown: headings, bold/italic, links, and lists', async () => {
+    const screen = render(MarkdownEditor, { value: '', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const dt = new DataTransfer();
+    dt.setData(
+      'text/html',
+      '<h2>Trail notes</h2><p>Some <strong>strong</strong> and <em>emphasis</em> text with a ' +
+        '<a href="https://example.com/route">route link</a>.</p><ul><li>Water</li><li>Snacks</li></ul>',
+    );
+    content.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    await expect.poll(() => hiddenValue(screen.container)).toContain('## Trail notes');
+    const value = hiddenValue(screen.container);
+    expect(value).toContain('**strong**');
+    expect(value).toContain('_emphasis_');
+    expect(value).toContain('[route link](https://example.com/route)');
+    expect(value).toContain('- Water');
+    expect(value).toContain('- Snacks');
+  });
+
+  it('degrades an out-of-scope structure (a table) to plain text on a rich-text paste', async () => {
+    const screen = render(MarkdownEditor, { value: '', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const dt = new DataTransfer();
+    dt.setData('text/html', '<table><tr><td>Ridge</td><td>4mi</td></tr></table>');
+    content.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    await expect.poll(() => hiddenValue(screen.container)).toContain('Ridge');
+    expect(hiddenValue(screen.container)).not.toContain('|');
+  });
+
+  it('still routes a pasted image file to ingest, not the html converter', async () => {
+    const ingested: File[] = [];
+    const screen = render(MarkdownEditor, {
+      value: '',
+      name: 'body',
+      onImageIngest: (file: File) => {
+        ingested.push(file);
+      },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+    const dt = new DataTransfer();
+    dt.items.add(imageFile());
+    // A paste can carry both an image file and an html flavor (e.g. a copied image with a caption);
+    // the image intercept must win, and the html must never reach the buffer.
+    dt.setData('text/html', '<p>a caption that must not be inserted</p>');
+    content.dispatchEvent(new ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }));
+    await expect.poll(() => ingested.length).toBe(1);
+    expect(ingested[0].name).toBe('shot.png');
+    expect(hiddenValue(screen.container)).toBe('');
+  });
+
   it('decorates a media: token with its display name and a needs-alt marker', async () => {
     const doc = [
       `Here is ![A trail map](media:trail-map.${HASH_A}) the map.`,

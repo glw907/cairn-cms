@@ -40,7 +40,7 @@ Writing in cairn is writing plain text, plus a small set of punctuation marks th
 
 The marks record what a piece of text *is*, and the site's design decides how it *looks*. You never choose a font, a size, or a color; those belong to the site's design, which is set once and applied to every page. So everything you write comes out looking like the rest of your site.
 
-Pasting text from Word, Google Docs, or a web page keeps the words and drops the formatting, so re-mark any emphasis or headings with the toolbar after a large paste. Pasting an image works too: the editor offers to add it to the media library on the spot. And a practical note on hardware: the editor is designed for a desktop or laptop browser, where a keyboard and a full-width page do the writing justice.
+Pasting text from Word, Google Docs, or a web page carries its formatting across automatically: headings, bold and italic emphasis, links, and bulleted or numbered lists all arrive as the matching marks, no re-marking needed. Anything the marks don't cover, a table, an image, a color, a font, comes across as its plain words, so a paste never leaves behind markup the toolbar can't also produce. Pasting an image works too: the editor offers to add it to the media library on the spot. And a practical note on hardware: the editor is designed for a desktop or laptop browser, where a keyboard and a full-width page do the writing justice.
 
 The sections below cover every mark the editor understands, one at a time, each with an example of what you type. The preview shows what renders.
 

@@ -12,6 +12,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
   import { applyMarkdownFormat, figureAtImage, insertImage as insertImageFormat, insertInlineLink, type FigureAtImage, type FormatKind, type FormatResult } from './markdown-format.js';
   import { fenceScan, caretContainerRange, directiveOpenerName } from './markdown-directives.js';
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
+  import { htmlToMarkdown } from './paste-html-to-markdown.js';
   import type { MediaLibrary } from '../media/library-entry.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
@@ -717,11 +718,27 @@ through the adapter's render. Swapping the editor stays a one-file change.
               onImageIngest?.(file);
               return true;
             },
-            paste(event) {
+            paste(event, pasteView) {
               const file = event.clipboardData ? firstImageFile(event.clipboardData) : null;
-              if (!file) return false; // a text or markdown paste falls through untouched
+              if (file) {
+                event.preventDefault();
+                onImageIngest?.(file);
+                return true;
+              }
+              // Rich-text paste conversion: a clipboard carrying a text/html flavor converts its
+              // headings, bold/italic, links, lists, and paragraphs to markdown; everything else
+              // degrades to plain text (paste-html-to-markdown.ts). getData returns '' when the
+              // flavor is absent, which is also what the browser's own paste-as-plain-text chord
+              // leaves behind, so both cases fall through to CodeMirror's default paste below.
+              const html = event.clipboardData?.getData('text/html') ?? '';
+              const markdown = html ? htmlToMarkdown(html) : '';
+              if (!markdown) return false;
               event.preventDefault();
-              onImageIngest?.(file);
+              const { from, to } = pasteView.state.selection.main;
+              pasteView.dispatch({
+                changes: { from, to, insert: markdown },
+                selection: { anchor: from + markdown.length },
+              });
               return true;
             },
           }),

@@ -16,6 +16,12 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-07-03, updated)
 
+THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
+green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
+EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings
+gate to Geoff, fold, then the reviewed Wayfinder deploys to cairn.pub as the living demo.
+Topo out of scope until the docs need their hosted home.
+
 QUEUED BEHIND THE DOCS CLOSE: the pre-beta engine pass
 (`docs/superpowers/plans/2026-07-03-pre-beta-engine-pass.md`), Geoff-approved to run AS A
 WORKFLOW as soon as the docs tree is polish-complete (tutorial gated, snippet gate green,

@@ -135,8 +135,8 @@ itself the deploy trigger. Auth state, an editor's session and a magic-link toke
 lives in a self-owned D1 database (bound as `AUTH_DB`), because a login has to be checked and
 invalidated in milliseconds and git has no such operation. Media bytes, when a site turns them
 on, live in an R2 bucket (bound as `MEDIA_BUCKET`). Only a stable `media:<slug>.<hash>`
-reference to them ever reaches git, so a file rename never breaks a link and the repository
-never carries binary weight. See [where each kind of state lives](./data-tiers.md) for the rule
+reference to them ever reaches git, so a file rename leaves every link intact and keeps binary
+weight out of the repository. See [where each kind of state lives](./data-tiers.md) for the rule
 this split follows and [media storage](./media-storage.md) for the reference scheme in full.
 
 ## Distribution and versioning
@@ -144,8 +144,9 @@ this split follows and [media storage](./media-storage.md) for the reference sch
 The engine ships to public npm as `@glw907/cairn-cms` under the MIT license, in `0.x`, where a
 minor version can carry a breaking change. Pin a version range and read `CHANGELOG.md`'s
 `Consumers must:` lines between the version you're on and the one you're moving to before you
-bump. The subpath exports this page names are the supported surface; a path reaching inside
-`dist` directly is not. An engine fix or a new admin feature reaches your site through the
+bump. Treat the subpath exports this page names as the supported surface. A path that reaches
+inside `dist` directly is unsupported and can break on any version bump. An engine fix or a new
+admin feature reaches your site through the
 version bump alone, so there is no per-site route table or action list to keep in sync by hand.
 See [the core reference](../reference/core.md) for the adapter contract and [the reference
 index](../reference/README.md) for one page per export subpath.

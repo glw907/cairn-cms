@@ -215,5 +215,5 @@ binding, the GitHub App signing chain, and the checkOrigin and edge settings fro
 this guide, and its `--probe` flag drives a real sign-in envelope against `/admin/login`
 without spending a real email.
 [Cloudflare readiness](./cloudflare-readiness.md) walks the same checks by hand, one section
-per condition, if you'd rather read than run a command. If the site passes the doctor but
-still won't let an editor in, see [Troubleshooting](./troubleshooting.md).
+per condition. If the site passes the doctor but still won't let an editor in, see
+[Troubleshooting](./troubleshooting.md).

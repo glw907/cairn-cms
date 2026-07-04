@@ -7,9 +7,8 @@ picks it over the engine's `[...path]` catch-all whenever both could match the s
 example below is the showcase's own `/admin/signups` screen, a small list of newsletter signups
 that lives entirely in the developer's own D1 table and that cairn never reads. It assumes the
 canonical single mount from [The canonical admin
-mount](../reference/admin-routes.md) is already wired in. Keep
-[`examples/showcase/src/routes/admin/signups`](../../examples/showcase/src/routes/admin/signups)
-open alongside, since every snippet below is that route, close to verbatim.
+mount](../reference/admin-routes.md) is already wired in. Keep `examples/showcase/src/routes/admin/signups` open alongside, since every snippet below is
+that route, close to verbatim.
 
 ## Add the route
 
@@ -159,8 +158,8 @@ in the SvelteKit reference.
 
 ## Reach your own data
 
-`event.platform.env` carries whatever bindings your `wrangler.jsonc` declares, cairn's and yours
-side by side. Add your own D1 database next to the engine's, the same way the showcase adds
+`event.platform.env` carries whatever bindings your `wrangler.jsonc` declares. Add your own D1
+database next to the engine's, the same way the showcase adds
 `APP_DB` next to `AUTH_DB`:
 
 ```jsonc

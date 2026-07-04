@@ -82,8 +82,7 @@ Alt text is one of two choices you make the moment you name a picture, whether y
 fresh or setting the hero image below: write a description, or mark the picture decorative. Decorative
 is the right call for a picture that carries no information of its own, a divider or a plain texture.
 cairn records that choice and never flags that picture again. Leaving alt text unset without choosing
-decorative is different: cairn treats it as debt, a gap still open, and keeps the picture on its
-checklist until you close it.
+decorative is different: cairn keeps that picture on its checklist until you describe it.
 
 A checklist at the top of the editor names every picture still missing a description, hero image
 included, and shrinks as you fill each one in. For a picture in your draft, its row's Add alt text
@@ -100,11 +99,11 @@ becomes
 ```
 
 Keep the `media:` part exactly as it was, and put your words between the square brackets. For the hero
-image, Add alt text is gentler: it opens the hero's own dialog with the description field already
-focused, ready to type.
+image, Add alt text opens the hero's own dialog instead, with the description field already focused and
+ready to type.
 
-One case is worth knowing about. Marking the hero image decorative sticks: cairn remembers the choice,
-and a decorative hero never comes back onto the checklist. Marking a picture in the body of your draft
+Marking the hero image decorative sticks: cairn remembers the choice, and a decorative hero never comes
+back onto the checklist. Marking a picture in the body of your draft
 decorative doesn't persist the same way, because the plain `![]()` markdown has no place to record it.
 Reload the entry later, and that picture reads as needing alt text again, even though you decided
 otherwise. Leaving it that way is safe. The checklist reads a blank reference as an open item; it has no way to

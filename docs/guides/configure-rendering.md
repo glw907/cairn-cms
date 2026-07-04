@@ -75,9 +75,9 @@ const render: SiteRender = async ({ body, concept, frontmatter, resolve, resolve
 };
 ```
 
-Both arguments are optional for a reason. The admin's standalone component-insert preview, proving
-a single directive before you commit to it in a document, calls the same renderer with neither set.
-A render function that reads `concept` or `frontmatter` should treat both as possibly absent.
+Both arguments can be absent. The admin's standalone component-insert preview, proving a single
+directive before you commit to it in a document, calls the same renderer with neither set, so a
+render function that reads `concept` or `frontmatter` should treat both as possibly absent.
 
 ## Share render with the editor preview and public pages
 
@@ -114,9 +114,9 @@ const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
 });
 ```
 
-Start from the argument, not a fresh object: the default schema is what keeps a `<script>` tag or
-an inline event handler in an editor's markdown from becoming a stored XSS payload, and rebuilding
-it from scratch drops that floor by accident. `unsafeDisableSanitize: true` removes the floor
+Spread the default schema rather than rebuilding one. The default keeps a `<script>` tag or an
+inline event handler in an editor's markdown from becoming a stored XSS payload, and building the
+schema from scratch drops that floor by accident. `unsafeDisableSanitize: true` removes the floor
 entirely. It exists for a site whose content is fully developer-controlled. Set it in code; it is
 never an editor-facing option.
 

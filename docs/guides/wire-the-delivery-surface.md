@@ -136,8 +136,8 @@ export const load: PageServerLoad = async ({ url }) => {
 ```
 
 `resolveReferences` drops an id with no live target instead of throwing. The build's
-`verifyReferences` gate is what fails a genuinely dangling edge, so an unresolved id at request
-time is a mid-flight or draft target, not a bug in your route.
+`verifyReferences` gate fails a genuinely dangling edge, so an id still unresolved at request time
+points at a target that is mid-flight or a draft.
 
 ## Read tags as data
 
@@ -279,4 +279,5 @@ reference](../reference/delivery-data.md#feeds-sitemap-and-robots) documents bot
 from. [`resolveReferences`](../reference/delivery-data.md#resolvereferences) documents the
 reference-resolution helper on its own. [Configure rendering](./configure-rendering.md) covers the
 `render` function this guide's routes call. The [media reference](../reference/media.md) covers
-`resolveMedia` and the hero-image projection `createPublicRoutes` derives when media is on.
+`makeMediaResolver` and the `resolveMedia` render option that resolves a `media:` reference to its
+delivery URL.

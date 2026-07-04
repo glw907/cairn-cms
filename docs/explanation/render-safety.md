@@ -38,8 +38,8 @@ The extensions are narrow and named:
 
 - The directive markers (`data-primitive`, `data-slot`, `data-role`, `data-rise`, and one
   `data-attr-<key>` per declared component attribute) are inert `data-*` strings the dispatch step
-  reads back after the floor runs. They carry no behavior of their own; stripping them would just
-  break the dispatch, not close a hole.
+  reads back after the floor runs. They carry no behavior of their own, so stripping them would
+  break the dispatch without closing any hole.
 - A handful of benign tags an author's content legitimately uses: `nav`, `details`, `summary`,
   plus `figure` and `figcaption` for the engine's built-in figure handling.
 - A free-form `className` on every element and `target`/`rel` on anchors, so author-applied classes
@@ -48,8 +48,8 @@ The extensions are narrow and named:
   ever runs, so the normal case leaves nothing to admit. The scheme stays on the allowlist for the
   case where a caller passes no resolver at all (the admin's standalone component-insert preview,
   which renders one directive with neither `resolve` nor `resolveMedia` set): an unresolved token
-  then survives to the output as inert text in an `href`, a visible broken-link signal, never as a
-  scheme a browser acts on.
+  then survives to the output as inert text in an `href`, a visible broken-link signal the browser
+  will not act on as a scheme.
 
 A site can extend this schema (`sanitizeSchema` on `RendererOptions`, covered in
 [Configure rendering](../guides/configure-rendering.md#extend-the-sanitize-allowlist)) to admit
@@ -65,8 +65,8 @@ An author writing markdown never gets to hand-write hast. A directive can only n
 your registry actually declared, and the registry fixes its shape at declaration, not at parse
 time: each attribute is one of a closed set of scalar types (`text`, `textarea`, `number`,
 `select`, `url`, `email`, `date`, `datetime`, `boolean`, `icon`), validated the same way a
-concept's own fields are, and an attribute key the component didn't declare is a validation error,
-not a value that reaches `build()`. An empty required slot fails the same way. An author controls
+concept's own fields are, and an attribute key the component didn't declare fails validation
+before `build()` ever runs. An empty required slot fails the same way. An author controls
 which declared attributes and slots to fill in. The registry fixes the tags around them.
 
 That closed vocabulary is why the floor doesn't need to sanitize `build()`'s output the way it
@@ -78,9 +78,9 @@ implementation except through typed, validated fields your own code declared the
 A `hydrate` component's static output ships as usual, but its declared attributes also travel to
 the browser as a JSON string in a `data-cairn-props` attribute, escaped on emit and `JSON.parse`-d
 on the client inside a try/catch. Turning that string into a script would need `JSON.parse` itself
-to fail its own escaping, which doesn't happen. The engine's guarantee stops at "the prop arrives
-as escaped data," not at what your island component does with it afterward. The props are
-still author-controlled, so an island must never route one into `{@html}`, an `href` or `src` that
+to fail its own escaping, which doesn't happen. The engine's guarantee covers one thing: the prop
+arrives as escaped data. What your island component does with it afterward is outside that line.
+The props are still author-controlled, so an island must never route one into `{@html}`, an `href` or `src` that
 could carry a scheme, or an inline `style`. [Islands](../reference/islands.md#props-are-untrusted)
 covers the exact contract. It's the one place safety is the component author's job rather than the
 engine's.

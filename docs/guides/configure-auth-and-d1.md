@@ -169,7 +169,7 @@ services while your Worker code still runs locally:
 ```
 
 1. **Confirm you have a seeded owner in the remote database**, using an email address you can
-   actually receive mail at. [Seed the first owner](#seed-the-first-owner) already did this if you
+   receive mail at. [Seed the first owner](#seed-the-first-owner) already did this if you
    ran the insert with `--remote`.
 2. **Start the dev server** and note the origin it prints (`wrangler dev`, or `npm run dev` on a
    site built with `@sveltejs/adapter-cloudflare`). Your `PUBLIC_ORIGIN` var has to equal that

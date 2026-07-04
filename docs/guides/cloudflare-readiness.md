@@ -140,9 +140,8 @@ minted and nobody signs in. Create the database, apply the schema with
 `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` need to resolve to
 an App whose key parses and signs, whose installation mints a token, and whose installation can
 read the target repository. This is the same chain a save or a publish walks in production, so a
-green check here means the commit pipeline's credentials actually work, not just that they're
-set. The [set up the GitHub App guide](./set-up-the-github-app.md) covers creating the App and its
-key.
+green check here confirms the credentials run it live. The [set up the GitHub App
+guide](./set-up-the-github-app.md) covers creating the App and its key.
 
 ## Probe the deployed admin
 

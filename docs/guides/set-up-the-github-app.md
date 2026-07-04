@@ -89,16 +89,13 @@ Push the result to the Worker as `GITHUB_APP_PRIVATE_KEY_B64`:
 npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
 ```
 
-That's the only GitHub App value the Worker's bindings carry. `appId` and `installationId` stay in
-your adapter's source, not `platform.env`. The [`CairnPlatformBindings`
+That's the only GitHub App value the Worker's bindings carry. The [`CairnPlatformBindings`
 type](../reference/sveltekit.md#cairnplatformbindings) names this secret alongside the site's
-other required bindings, so a forgotten one fails `app.d.ts` at compile time instead of surfacing
-as a runtime error.
+other required bindings, so a forgotten one fails `app.d.ts` at compile time.
 
 You'll notice a format mismatch. GitHub issued the key as PKCS#1, and Web Crypto's
 `importKey('pkcs8', ...)` only takes PKCS#8. The engine converts the key in process before every
-sign, so you store the PKCS#1 PEM's base64 exactly as downloaded, and never handle the conversion
-yourself.
+sign, so you store the PKCS#1 PEM's base64 exactly as downloaded.
 
 ## Verify
 

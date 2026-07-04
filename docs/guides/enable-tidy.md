@@ -103,7 +103,6 @@ toggles an editor sets for their own site, saved straight back into `site.config
 `tidy.conventions` block. The developer-tier facts you just set, whether tidy is on, whether the
 key is set, and which model, show there too, read-only.
 
-Past that screen, tidy is an editing feature: an editor invokes it from the
-toolbar, reviews proposals inline, and accepts or rejects each one. That whole flow, and tidy's
-remit of small fixes that never touch voice or structure, is
+Past that screen, tidy is an editing feature the editor drives from the toolbar. That flow, and
+tidy's remit of small fixes that never touch voice or structure, is
 [Write in the editor's tidy section](./write-in-the-editor.md#tidy).

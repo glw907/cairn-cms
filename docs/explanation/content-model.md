@@ -132,11 +132,12 @@ concept's entries for `reference`, and so on. A schema that instead accepted arb
 need a developer to hand-build a widget for each one, and the editor's form would fall out of sync
 with the validator the moment someone changed one and not the other. Because the widget, the
 validator, and the type all read the same descriptor, adding a field to a concept means adding one
-line to its `fieldset`, nothing else.
+line to its `fieldset`.
 
 ## Why containers nest one level
 
-`fields.object` groups leaves under one frontmatter key, and `fields.array` repeats one item. Both
+`fields.object` groups several leaf fields under a single frontmatter key. `fields.array` is the
+list container, repeating one item shape down as many rows as the editor adds. Both
 stop after one level: an `object`'s leaves are always non-container fields, and an `array`'s item is a scalar or
 a flat `object`, never another `array` or an `object` of objects. Nest deeper and `fieldset()`
 throws immediately, at declaration, the same fail-loud posture as an invalid permalink.
@@ -154,8 +155,7 @@ the image the social card falls back to, and at most one `taxonomy: true`, the t
 pools across entries. Both markers are top-level only. Nesting either inside an `object` or an
 `array` throws at declaration, because the code that resolves a social-card image or builds the
 tag index reads the concept's top-level descriptors directly. Keeping both markers unique and
-top-level means that code never has to search a nested shape to answer a question that should
-have exactly one answer.
+top-level means the lookup never has to search a nested shape.
 
 ## What's next
 

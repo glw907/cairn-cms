@@ -4,15 +4,14 @@ A `fields.reference` edge is a promise: this entry points at that one, forever, 
 either entry is later called. The developer-facing how-to, with the field declaration and the
 resolver call, is [Link content with references](../guides/link-content-with-references.md).
 
-## One id, never a copy
+## A reference stores only the id
 
-A reference field stores the target's permanent id and nothing else: not its title, not its
-permalink, not a rendered link. `extractReferenceEdges` reads that id straight off the frontmatter
-value, but it takes the edge's target *concept* from the field's own descriptor, never from
-whatever the frontmatter happens to say. A `posts` entry's `author` field always targets `pages`,
-because the schema says so, regardless of what a hand-edited file claims. That closes off the one
-way a raw edit outside the editor could misdirect an edge: there is no `concept` string for it to
-tamper with.
+A reference field stores the target's permanent id and nothing else. `extractReferenceEdges` reads
+that id straight off the frontmatter value, but it takes the edge's target *concept* from the
+field's own descriptor, never from whatever the frontmatter happens to say. A `posts` entry's
+`author` field always targets `pages`, because the schema says so, regardless of what a hand-edited
+file claims. That closes off the one way a raw edit outside the editor could misdirect an edge:
+there is no `concept` string for it to tamper with.
 
 Storing only the id is also what lets a rename work at all. A title or a permalink is a snapshot,
 good until the target changes; an id is the one thing a rename explicitly does not touch. Every
@@ -22,14 +21,14 @@ permalink are always looked up fresh.
 
 ## Who points at this, cheaply
 
-Deleting or renaming an entry means answering "who references this one?" before the fact, not
-after. Crawling every file in the corpus to answer that on every delete would work but doesn't
-scale, so cairn keeps the answer pre-computed: the content manifest already records each entry's
-outbound reference edges (`manifestEntryFromFile` extracts them at the same pass that builds the
-rest of the row), and `buildReferenceIndex` reverses that into a map keyed by *target*, so the
-delete and rename gates get an O(1) lookup instead of a crawl.
+Deleting or renaming an entry means first answering "who references this one?" Crawling every file
+in the corpus to answer that on every delete would work but doesn't scale, so cairn keeps the
+answer pre-computed: the content manifest already records each entry's outbound reference edges
+(`manifestEntryFromFile` extracts them at the same pass that builds the rest of the row), and
+`buildReferenceIndex` reverses that into a map keyed by *target*, so the delete and rename gates
+get an O(1) lookup instead of a crawl.
 
-The key is the pair `concept/id`, never a bare id. Ids are unique only within a concept:
+The key is the pair `concept/id`. Ids are unique only within a concept:
 `pages/about` and `posts/about` are different entries that happen to share a filename stem, and a
 reverse index keyed on id alone would confuse a delete of one for a reference to the other. The
 index and both gates key on the pair for this reason.
@@ -60,8 +59,8 @@ change to make to someone else's edge.
 
 Deleting the target leaves an inbound edge nowhere to point, so delete simply refuses whenever the
 index holds any row for it, naming every referencing entry, published or still on a branch. There
-is no repair available: the target is gone, so the edge has to go too, and that's the author's
-call to make, not cairn's.
+is no repair available: the target is gone, so the edge has to go too, and cairn leaves that to
+the author.
 
 Renaming doesn't have that problem, because the target still exists at a new id, so rename fixes
 the edges instead of blocking on them. Every inbound reference on `main` gets repointed in the same
@@ -87,8 +86,8 @@ Every check so far runs at request time, against the manifest as cairn currently
 of them are unconditionally trustworthy: the manifest can be stale, a branch read can fail
 transiently, and nothing stops a raw git edit made outside the editor entirely. So the delete and
 rename gates run `buildReferenceIndex` in strict mode, which turns a branch-read failure from
-"treat as unreferenced" into a thrown error the route turns into a 503 or 409. Guessing that
-silence means safety is exactly the failure mode strict mode exists to rule out.
+"treat as unreferenced" into a thrown error the route turns into a 503 or 409, rather than letting
+a delete proceed on a read that never completed.
 
 Even a strict index, correctly built, only covers what a request handler can see. The actual
 backstop runs later and reads differently: `verifyReferences` re-derives the whole reference graph
@@ -100,8 +99,7 @@ a dangling token fails the prerender of whatever page contains it. A reference h
 moment, since `resolveReferences` drops a dangling id quietly rather than throwing, on the
 reasoning that `verifyReferences` already refused to ship one. That gate is therefore the one
 authority in the whole system that a bypassed editor, a stale manifest, or an unlucky race can't
-talk around: whatever got past every earlier guard either resolves at the build or the build
-refuses to ship it.
+talk around.
 
 ```mermaid
 %%{init: {"theme": "neutral"}}%%

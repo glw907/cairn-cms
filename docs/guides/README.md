@@ -16,7 +16,7 @@ later, or the upkeep of a running site.
 - **[Configure rendering](./configure-rendering.md)**: build the render function every public
   page and the admin preview both call
 - **[Configure auth and D1](./configure-auth-and-d1.md)**: provision the auth database and walk
-  a real magic-link sign-in end to end
+  a magic-link sign-in end to end
 - **[Set up the GitHub App](./set-up-the-github-app.md)**: create and install the App that signs
   every save and publish
 - **[Deploy to Cloudflare](./deploy-to-cloudflare.md)**: mount the admin's five files and wire
@@ -45,8 +45,8 @@ later, or the upkeep of a running site.
   or whatever came before onto cairn's concepts
 - **[Upgrade cairn](./upgrade-cairn.md)**: bump the version range and run the doctor over the
   `Consumers must:` lines
-- **[Troubleshooting](./troubleshooting.md)**: symptom, log event, fix, for the day a site is
-  already live
+- **[Troubleshooting](./troubleshooting.md)**: trace a symptom to its log event and the fix, for
+  the day a site is already live
 
 ## For editors
 

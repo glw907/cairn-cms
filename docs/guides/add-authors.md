@@ -75,11 +75,11 @@ concept the site knows about, routable or not, so a post's `author` field resolv
 the showcase's already does against `pages`.
 
 What that resolution gives back, [a `title`, a `permalink`, and an optional
-`summary`](../reference/delivery-data.md#types), is enough for a byline. `title` is the author's
-name. `summary` is the excerpt cairn already [derives](../reference/delivery-data.md#deriveexcerpt)
-from the author entry's own markdown body, the reason the bio belongs in the body and not a field.
-`permalink` still resolves to a URL, computed the same way every concept's is, but embedded means
-nothing serves it, so the byline below leaves it alone.
+`summary`](../reference/delivery-data.md#types), is enough for a byline, with the `title` holding
+the author's name. The `summary`, when the entry has one, is the excerpt cairn already
+[derives](../reference/delivery-data.md#deriveexcerpt) from its own markdown body, which is why the
+bio belongs in the body and not a field. A `permalink` resolves too, computed the same way every
+concept's is, but embedded means nothing serves it, so the byline below leaves it alone.
 
 ```svelte
 <script lang="ts">

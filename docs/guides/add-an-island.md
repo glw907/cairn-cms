@@ -1,8 +1,8 @@
 # Add an island
 
-Most of what a directive component renders is static, and that's fine. cairn's render pipeline
-runs on the server, and a callout or an alert never needs to run any client code. Some content
-wants to be interactive, though, and cairn's seam for that is the `hydrate` flag on
+cairn's render pipeline runs on the server, so a directive component renders to static HTML: a
+callout or an alert never needs client code. Some content wants to be interactive, though, and
+cairn's seam for that is the `hydrate` flag on
 [`defineComponent`](../reference/core.md#definecomponent) paired with a matching entry on your
 adapter's [`rendering.islands`](../reference/core.md#renderingislands-adapter-member). This guide
 wires one up end to end, using the showcase's own `converter` directive throughout, a live

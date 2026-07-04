@@ -18,8 +18,7 @@ takes the `page` default. When an old type has no obvious analog, an events cale
 directory, it usually still wants its own concept: nothing stops a site from declaring `events` or
 `staff` alongside `posts` and `pages`, each with its own directory and fields.
 
-Something in your old site has no cairn home, and that's worth naming rather than working around.
-Hugo and Jekyll generate taxonomy pages, a page per tag, a page per category, straight from the
+A couple of things from your old site won't map to a concept at all. Hugo and Jekyll generate taxonomy pages, a page per tag, a page per category, straight from the
 theme at build time. Cairn has no equivalent generator: a tag-filtered list is a route your site
 writes over the content index, the same way every other list page on a cairn site is a route
 someone wrote. [Wire the delivery surface](./wire-the-delivery-surface.md) covers building that

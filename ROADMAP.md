@@ -86,6 +86,13 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Docs-effectiveness infrastructure from the Superforms study (2026-07-03), Topo-era:**
+  Pagefind-class Ctrl+K search on the docs site (the single biggest perceived-quality lever
+  at zero infra), a FAQ/help top-nav page, a task-tagged examples gallery, an /llms
+  machine-consumption page, and the CHANGELOG's Consumers-must lines compiled into a durable
+  upgrade page. Timed to Topo carrying the docs; the drafting-level practices are already in
+  the craft references.
+
 - **SECURITY.md go-public trim: NOW DUE (the repo went public 2026-07-03).** The timed
   go-public toggle fired early; the policy needs its public-repo form (reporting path,
   supported versions) in the go-public pass or sooner.

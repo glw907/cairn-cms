@@ -28,7 +28,7 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `github.unreachable` | warn | The admin layout's pending-entries read fails because GitHub does not answer. | `scope` (`layout`), `error` |
 | `guard.rejected` | warn or error | The admin guard refuses a request before `resolve()`. `error` with `reason: "bindings"` when any admin request, the public login and auth paths included, finds no `AUTH_DB` binding, or `reason: "dev_backend_in_prod"` (a 503) when `CAIRN_DEV_BACKEND` is set in a deployed runtime; `warn` otherwise. | `reason` (`csrf`, `origin`, `https`, `bindings`, or `dev_backend_in_prod`), `path`, `conditionId` on `bindings` |
 | `media.uploaded` | info | New bytes are stored to R2 and the manifest row is written. | `editor`, `hash`, `bytes`, `ext` |
-| `media.upload_failed` | warn or error | An upload fails: oversize, the wrong type, a network error, or a missing binding. | `editor`, `reason`, `code` (optional) |
+| `media.upload_failed` | warn | cairn refuses an upload: media turned off, an invalid or oversize length, CSRF, an expired session, an unsupported type, a short-hash collision, or a missing storage binding. | `editor`, `reason` |
 | `media.delivery_failed` | warn | The delivery route cannot serve the bytes because the Worker has no media bucket bound. | `reason`, `binding` |
 | `media.orphan_reconcile` | info | The reconcile read finishes, comparing stored R2 keys against the manifest hashes. | `orphaned`, `missing` |
 | `media.resolve_missing` | warn | A `media:` reference resolves against the manifest and finds no entry for its hash. | `hash` |

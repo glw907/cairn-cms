@@ -58,25 +58,16 @@ describe('media events', () => {
     });
   });
 
-  it('emits media.upload_failed at warn with reason and code', () => {
+  it('emits media.upload_failed at warn with the editor and reason', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'oversize', code: 'E_TOO_LARGE' });
+    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'too-large' });
     const record = spy.mock.calls[0][0] as Record<string, unknown>;
     expect(record).toMatchObject({
       level: 'warn',
       event: 'media.upload_failed',
       editor: 'a@b.test',
-      reason: 'oversize',
-      code: 'E_TOO_LARGE',
+      reason: 'too-large',
     });
-  });
-
-  it('emits media.upload_failed without the optional code', () => {
-    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    log.warn('media.upload_failed', { editor: 'a@b.test', reason: 'wrong-type' });
-    const record = spy.mock.calls[0][0] as Record<string, unknown>;
-    expect(record).toMatchObject({ level: 'warn', event: 'media.upload_failed', reason: 'wrong-type' });
-    expect(record).not.toHaveProperty('code');
   });
 
   it('emits media.deleted at info with editor and hash', () => {

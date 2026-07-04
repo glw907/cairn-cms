@@ -13,7 +13,7 @@ one, retiring one, and what happens to a post that already carries a tag you ret
 - [Adding a tag already in use](#adding-a-tag-already-in-use)
 - [Saving your changes](#saving-your-changes)
 
-## Viewing your tags {#viewing-your-tags}
+## Viewing your tags
 
 <!-- LIVE-UI: the Tags screen's list, name/stored-as/in-use columns, one row highlighted -->
 
@@ -25,7 +25,7 @@ The display name lives only on this screen. [A post's own details
 panel](./write-in-the-editor.md#the-details-panel) shows and stores the slug directly, the same
 string that's checked against a post and written into its file.
 
-## Adding a tag {#adding-a-tag}
+## Adding a tag
 
 Type a name in the field at the top of the screen and press Add tag. As you type, the screen
 shows the slug your name is stored as, derived automatically by lowercasing the name and
@@ -38,7 +38,7 @@ already have is also refused, since two rows storing the same slug would be indi
 to a post that carries it. Either way, the space under the field explains the problem before
 you press Add tag.
 
-## Renaming a tag {#renaming-a-tag}
+## Renaming a tag
 
 Click into a row's name and edit it directly, the same field the list already shows you. This
 changes only the display name on this screen. The stored slug underneath never changes once a
@@ -47,7 +47,7 @@ slug, untouched by the rename. Renaming "Snow Report" to "Snow Reports" updates 
 on this screen, without touching a single post file or the tag picker editors use when tagging
 a post.
 
-## Retiring a tag {#retiring-a-tag}
+## Retiring a tag
 
 <!-- LIVE-UI: a row with an active delete control beside one with the guarded, inactive version -->
 
@@ -57,7 +57,7 @@ label names the count. A post still points at that slug, and the screen will not
 while a post is using it. Remove the tag from every post that carries it first, in each post's
 own details panel, and once its count reaches zero here, the delete control opens up.
 
-## What a retired tag leaves behind {#what-a-retired-tag-leaves-behind}
+## What a retired tag leaves behind
 
 Retiring a tag changes the shared list. It never reaches into a post and removes a tag already
 checked there, and ordinarily you won't notice the difference, because the delete control
@@ -68,7 +68,7 @@ its tag doesn't vanish. The post's own details panel still shows the tag, checke
 small note that it isn't in your tag list anymore, and it stays exactly as checked as it was
 until someone clears it.
 
-## Adding a tag already in use {#adding-a-tag-already-in-use}
+## Adding a tag already in use
 
 <!-- LIVE-UI: the "already on your posts" section beneath the main list, with its Add to list rows -->
 
@@ -79,7 +79,7 @@ with how many carry it. Add to list turns it into an ordinary entry. cairn propo
 the slug, turning its hyphens back into spaces and capitalizing the first letter, and you can
 rename it right away if you'd rather call it something else.
 
-## Saving your changes {#saving-your-changes}
+## Saving your changes
 
 Every add, rename, and retirement you make on this screen stays local to your screen until you
 press Save changes at the bottom. Nothing is written to your site's configuration before that,

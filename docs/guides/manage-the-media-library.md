@@ -15,7 +15,7 @@ its name and its description, replacing it everywhere at once, and safely deleti
 - [Deleting several at once](#deleting-several-at-once)
 - [Finding orphaned files](#finding-orphaned-files)
 
-## Finding an image {#finding-an-image}
+## Finding an image
 
 <!-- LIVE-UI: the Library grid with the search box, the triage filter, and the density toggle -->
 
@@ -33,7 +33,7 @@ A density toggle switches between the grid and a list. The grid shows each image
 thumbnail, best when you recognize an image by sight. The list gives a compact row of name, alt
 status, usage, and date that sorts by date added, which suits scanning a long library.
 
-## Uploading an image {#uploading-an-image}
+## Uploading an image
 
 <!-- LIVE-UI: the Upload button opening the capture card, and the page-wide drop target -->
 
@@ -49,7 +49,7 @@ and keeps the one copy, so nothing is duplicated.
 A freshly uploaded image is not placed anywhere yet, so it reads "no references found" until
 you use it in a post or page.
 
-## The asset panel {#the-asset-panel}
+## The asset panel
 
 Opening a tile slides a panel in from the side, holding everything about that one image: a
 large preview, its name and its `media:` reference (with a button to copy it), its alt text,
@@ -61,7 +61,7 @@ never rewrites the alt already saved on a page that already uses the image, so a
 caption is never silently overwritten. Save applies the change without requiring an alt text,
 so you can fill in the name now and the description later.
 
-## Where an image is used {#where-an-image-is-used}
+## Where an image is used
 
 The panel's "Where used" section lists every post and page that carries the image, published
 entries first, then anything still sitting in an unpublished edit with its branch named beside
@@ -72,7 +72,7 @@ visible before you act.
 cairn can list these placements because every reference to an image is a plain line of text in
 a committed file, so it searches the content directly instead of estimating usage.
 
-## Replacing an image everywhere {#replacing-an-image-everywhere}
+## Replacing an image everywhere
 
 <!-- LIVE-UI: the Replace dialog's upload step and its impact review -->
 
@@ -96,7 +96,7 @@ guess and holds the replacement rather than risk missing a reference. The file y
 uploaded stays ready, and a "Check usage again" button re-runs the check once the branch is
 reachable.
 
-## Pushing alt text to every placement {#pushing-alt-text-to-every-placement}
+## Pushing alt text to every placement
 
 An image's default alt (see [The asset panel](#the-asset-panel)) only fills in the next time
 you insert the image. If the image is already used in a dozen places from before it had a good
@@ -108,7 +108,7 @@ overwrite it, the one destructive choice in this flow, so it needs a deliberate 
 decorative image marked that way on purpose is only reported, never overwritten. As with
 Replace, an unverifiable placement holds the whole push rather than risk missing one.
 
-## Deleting one image {#deleting-one-image}
+## Deleting one image
 
 <!-- LIVE-UI: the safe-delete dialog's in-use face, naming the entries it would break -->
 
@@ -121,7 +121,7 @@ you type the image's slug (shown in the dialog).
 Deleting an image never destroys its history. The row is removed from the library, but every
 version stays in git, so a developer can bring it back later if it turns out you needed it.
 
-## Deleting several at once {#deleting-several-at-once}
+## Deleting several at once
 
 The grid and the list both support multi-select: Space toggles a focused tile, a row's checkbox
 does the same in the list, Shift with an arrow key extends a range, and Ctrl (or Cmd on a Mac)
@@ -135,7 +135,7 @@ deletes, and anything found in use between your selection and that moment is ski
 in the summary rather than silently dropped. As with a single delete, everything removed stays
 in git history.
 
-## Finding orphaned files {#finding-orphaned-files}
+## Finding orphaned files
 
 <!-- LIVE-UI: the orphan-scan result, its purge-bytes section beside the broken-references readout -->
 

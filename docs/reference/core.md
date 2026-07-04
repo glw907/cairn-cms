@@ -389,7 +389,7 @@ an `object` and an `seo` image inside any container are not supported yet, and a
 nested reference, or a nested `seo` image throws at the `fieldset()` call. No field key may contain a
 dot, top-level or nested, because the editor addresses a nested value by a dotted path. See
 [Structured fields](../guides/structured-fields.md) and [The one-level nesting
-cap](../explanation/structured-fields.md) for the why and the escape hatch.
+cap](../explanation/content-model.md) for the why and the escape hatch.
 
 Every constructor also accepts an optional `help`: one author-facing sentence the editor renders under
 the field in the Details panel, associated with the input through `aria-describedby`. It is not a

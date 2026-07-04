@@ -17,7 +17,7 @@ runs at all, or the request gets through and the magic-link send itself fails.
 | What you see | Event | What it means |
 |---|---|---|
 | Every admin path serves the same branded error page, login screen included | `guard.rejected`, `reason: "bindings"` | The Worker deployed with no `AUTH_DB` binding. See [Admin returns a 500 on a missing binding](#admin-returns-a-500-on-a-missing-binding). |
-| The sign-in form posts and comes back with a 403 | `guard.rejected`, `reason: "csrf"` or `"origin"` | A stale tab or blocked cookies (`csrf`), or a POST that arrived from somewhere other than the site (`origin`). [Hand cairn the CSRF authority](./cloudflare-readiness.md#hand-cairn-the-csrf-authority) covers both. |
+| The sign-in form posts and comes back with a 403 | `guard.rejected`, `reason: "csrf"` or `"origin"` | A stale tab or blocked cookies (`csrf`), or a POST that arrived from somewhere other than the site (`origin`). [Hand cairn the CSRF authority](./cloudflare-readiness.md#wire-cairns-csrf-guard) covers both. |
 | The site answers over plain `http://` and login never completes | `guard.rejected`, `reason: "https"` | The zone isn't forcing HTTPS. [Force HTTPS at the edge](./cloudflare-readiness.md#force-https-at-the-edge). |
 | The editor sees "We're having trouble sending sign-in links right now" | `auth.link.send_failed` | The send itself failed. The `conditionId` field names the cause; see [Email isn't arriving](#email-isnt-arriving). |
 

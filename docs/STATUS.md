@@ -21,6 +21,12 @@ four-gate method proven at fleet scale, the gate lattice live (check:snippets ne
 suspended gates re-enabled; monthly drift routine trig_015UPQostYVisXuExTHTH2vu), post-mortem
 in the Stage-2 plan. Holds unpublished under ## Unreleased.
 
+**PRE-BETA ENGINE PASS: COMPLETE AND MERGED (2026-07-04, bb30112).** All nine tasks: the
+Address/Library vocabulary, the visible issue count (a11y-fixed at review), cheat-sheet undo
+rows, fold-by-default, the showcase csrf fix, the log-field reconciliation, and rich-text
+paste conversion (rehype-remark based, Google-Docs-span-aware). Docs riders applied
+throughout; CHANGELOG under ## Unreleased; holds unpublished. NEXT: the template effort.
+
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
 EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings

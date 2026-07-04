@@ -129,6 +129,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  diagnostics-summary announcer, so a visible footer count can track it without a second,
      *  independently timed read of the diagnostic set. */
     onDiagnosticsCounts?: (counts: import('./editor-diagnostics-announcer.js').DiagnosticCounts) => void;
+    /** Whether every component block folds the moment the editor mounts, so an entry opens with its
+     *  blocks collapsed and its prose readable at a glance (Geoff's pre-beta ruling). Off by default,
+     *  since most render callers, and every fold-invariant test, want blocks open on mount; EditPage
+     *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
+     *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
+    foldOnMount?: boolean;
   }
 
   let {
@@ -162,6 +168,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     spellcheckTest,
     tidyMode = false,
     onDiagnosticsCounts,
+    foldOnMount = false,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -756,6 +763,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
         ],
       }),
     });
+
+    // Fold every component block before the author can act, so an entry opens with its blocks
+    // collapsed and only the prose reads at a glance. One transaction, before any registration
+    // below hands out a live api, so nothing observes the pre-fold state.
+    if (foldOnMount) foldingMod.foldContainersOnLoad(view);
 
     registerInsert?.(insertAtCursor);
     registerInsertLink?.(insertLink);

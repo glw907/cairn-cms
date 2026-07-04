@@ -454,6 +454,23 @@ function foldGutterColumn(): Extension {
 // built; do not invent a lint system to satisfy a rule with no input.
 
 /**
+ * Folds every paired container in the view's current document, in one transaction. Called once,
+ * right after the view mounts (MarkdownEditor's `foldOnMount`), so an entry opens with its
+ * component blocks collapsed and only the prose reads at a glance. The safety invariant governs a
+ * fold this creates exactly as it governs a manual one: a touch or an edit reaching it springs it
+ * open again.
+ */
+export function foldContainersOnLoad(view: EditorView): void {
+  const { ranges } = foldScanFor(view.state);
+  const effects: StateEffect<unknown>[] = [];
+  for (const range of ranges) {
+    const span = foldCharRange(view.state, range);
+    if (span) effects.push(foldEffect.of(span));
+  }
+  if (effects.length) view.dispatch({ effects });
+}
+
+/**
  * The cairn fold extension: the CodeMirror fold system with the pill placeholder, the gutter chevron
  * and folded-row wash affordance, the safety invariant, and the Ctrl+Shift+[ / ] keymap.
  * Session-local and never persisted: the fold state lives in CodeMirror's foldState field, which

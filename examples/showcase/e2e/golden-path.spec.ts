@@ -458,6 +458,45 @@ test('the component round-trips: place a callout, the caret enables Edit block, 
   await expect(editor.locator('.cm-line', { hasText: '::::callout[' })).toHaveCount(1);
 });
 
+test('an entry opens with its component blocks folded, and the safety invariant still unfolds one on touch', async ({
+  page,
+}) => {
+  // A fresh, self-contained post (the fresh-post isolation container-fields.spec.ts uses): the
+  // seeded 2026-06-hello entry is a shared fixture other tests in this file overwrite and save, so
+  // this proves fold-on-open against a body only this test ever wrote.
+  const slug = `fold-on-open-${Date.now()}`;
+  await page.goto('/admin/posts');
+  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
+  await expect(createDialog).toBeVisible();
+  await createDialog.locator('input[name="title"]').fill('Fold On Open');
+  await createDialog.locator('input[name="slug"]').fill(slug);
+  await createDialog.getByRole('button', { name: 'Create' }).click();
+  await expect(page).toHaveURL(/new=1/, { timeout: 10_000 });
+  const id = new URL(page.url()).pathname.split('/').pop() ?? '';
+
+  await page.locator('input[name="title"]').fill('Fold On Open');
+  const editor = page.locator('.cm-content');
+  await editor.click();
+  await page.keyboard.type('Intro line.\n\n:::note\nHidden detail one.\nHidden detail two.\n:::');
+  await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./, { timeout: 2000 });
+  await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
+  await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
+
+  // Reload the editor from scratch: a fresh mount, the moment EditPage turns foldOnMount on.
+  await page.goto(`/admin/posts/${id}`);
+  await expect(editor).toBeVisible();
+  const pill = editor.locator('.cm-cairn-fold-pill');
+  await expect(pill).toBeVisible();
+  await expect(editor).not.toContainText('Hidden detail one.');
+  // The block's own hidden text never left the doc; only the view collapses it.
+  await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./);
+
+  // Clicking the pill springs it open, the same unfold path a manual fold takes.
+  await pill.click();
+  await expect(editor).toContainText('Hidden detail one.');
+});
+
 test('the v2 status select round-trips: set it, save, reload, the value persists', async ({ page }) => {
   // A unique slug per run so a reused local server (reuseExistingServer) does not collide.
   const slug = `status-roundtrip-${Date.now()}`;

@@ -191,7 +191,7 @@ The writing surface has two postures. **Prose**, the default, sets your text at 
 
 Three modes shape the writing itself. **Focus mode** (`Ctrl Shift F`) dims every paragraph except the one you're working in, which quiets a long draft down to the sentence at hand. **Typewriter scrolling** keeps your current line vertically centered, so your eyes stay in one place while the page moves under them; it's a toolbar toggle. **Zen** (`Ctrl Shift .`) clears away everything except your words, and pairs naturally with either of the other two.
 
-**Folding** belongs to [component blocks](#components): a block collapses to a single line from the marker in its margin (`Ctrl Shift [` folds, `Ctrl Shift ]` unfolds), which keeps a block-heavy draft readable. A folded block unfolds itself the moment your typing or cursor touches it, so text can never be edited while hidden.
+**Folding** belongs to [component blocks](#components): a block collapses to a single line from the marker in its margin (`Ctrl Shift [` folds, `Ctrl Shift ]` unfolds), which keeps a block-heavy draft readable. Every component block starts folded when you open an entry, so a long draft reads as prose first. Unfold the ones you want to work in. A folded block unfolds itself the moment your typing or cursor touches it, so text can never be edited while hidden.
 
 ## Components
 

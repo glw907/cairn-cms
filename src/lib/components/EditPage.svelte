@@ -1717,6 +1717,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           spellcheckDictionary={data.spellcheckDictionary}
           siteDictionary={data.siteDictionary}
           {pendingAdditions}
+          foldOnMount
         />
         <!-- The accumulated uploaded records ride the save form alongside the body. The save action
              reads `media` and merges these records into media.json (publish submits the same form). -->

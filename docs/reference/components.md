@@ -495,6 +495,7 @@ control.
 | `pendingAdditions` | `Set<string>` | The caller-owned pending personal-dictionary additions set. `EditPage` commits it through the save-time dictionary action and reconciles it against the merged response. |
 | `spellcheckTest` | `{ createWorker?: () => SpellWorker; assumeReady?: boolean }` | A test-only seam for the spellcheck Worker (the real wasm and dictionary assets do not load under the component test runner). Never set this outside a test. |
 | `tidyMode` | `boolean` | Makes the surface read-only while a tidy review is open, the way Preview disables the toolbar, so the author cannot edit underneath a pending review. |
+| `foldOnMount` | `boolean` | Folds every component block the moment the surface mounts. `EditPage` turns this on so an entry opens with its blocks collapsed; off by default. |
 
 ### `DeleteDialog`
 

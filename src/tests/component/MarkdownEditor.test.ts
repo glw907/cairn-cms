@@ -960,6 +960,23 @@ describe('MarkdownEditor', () => {
     expect(foldPill(screen.container)).toBeNull();
   });
 
+  it('folds every component block on mount when foldOnMount is set', async () => {
+    // Off by default (every other fold test above renders with an open block); EditPage turns this
+    // on for the real entry-editing surface (Geoff's pre-beta ruling: blocks open folded).
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', foldOnMount: true });
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    // The body never rendered open; the pill and the gutter button already read collapsed.
+    expect(lineWith(screen.container, 'body one')).toBeFalsy();
+    const pill = foldPill(screen.container)!;
+    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
+    expect(foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
+    // The fold is view-only: the hidden field still mirrors the full, untouched source.
+    expect(hiddenValue(screen.container)).toBe(FOLD_DOC);
+    // The safety invariant governs a mount-time fold the same as a manual one: the pill unfolds it.
+    await userEvent.click(pill);
+    await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+  });
+
   it('reports the component container at the caret and dedupes within a block', async () => {
     // A leading plain line parks the default caret outside, then a labeled callout block. The
     // reporter fires with the container's name, the block markdown, and the document character

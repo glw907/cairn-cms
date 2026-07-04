@@ -68,7 +68,7 @@ best are the ones you own.
 :::
 ```
 
-Readers see a styled box with that title and that advice, in whatever visual form the site's design gives callouts. The `tone` controls the flavor (a note, a tip, a warning), and everything between the markers is ordinary markdown. A block can fold down to a single line from the marker in its margin, to keep a long draft readable, and a folded block unfolds itself the moment your typing or your cursor touches it, so you can never change text you can't see. Edit the words inside a block freely, and leave its marker lines as they are; if one is ever damaged, the insert menu can produce a fresh one.
+Readers see a styled box with that title and that advice, in whatever visual form the site's design gives callouts. The `tone` controls the flavor (a note, a tip, a warning), and everything between the markers is ordinary markdown. A block collapses to a single line from the marker in its margin, and every block starts folded when you open an entry, so a long draft reads as prose first. A folded block unfolds itself the moment your typing or your cursor touches it, so you can never change text you can't see. Edit the words inside a block freely, and leave its marker lines as they are; if one is ever damaged, the insert menu can produce a fresh one.
 
 ## Images and the media library
 

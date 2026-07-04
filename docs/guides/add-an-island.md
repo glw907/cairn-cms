@@ -5,10 +5,11 @@ callout or an alert never needs client code. Some content wants to be interactiv
 cairn's seam for that is the `hydrate` flag on
 [`defineComponent`](../reference/core.md#definecomponent) paired with a matching entry on your
 adapter's [`rendering.islands`](../reference/core.md#renderingislands-adapter-member). This guide
-wires one up end to end, using the showcase's own `converter` directive throughout, a live
-two-way unit converter you can run yourself:
+wires one up end to end, using the showcase's own `banner` directive throughout, a time-boxed
+announcement that renders until its `expires` date passes and checks that date again, independently,
+at hydration:
 [`cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts) declares it and
-[`Converter.svelte`](../../examples/showcase/src/lib/islands/Converter.svelte) is the component
+[`Banner.svelte`](../../examples/showcase/src/lib/islands/Banner.svelte) is the live component
 that mounts over it. This guide assumes you already have a directive component rendering through
 your registry. [Configure rendering](./configure-rendering.md) builds one from nothing.
 
@@ -20,30 +21,45 @@ as declared: they're what the live component receives as props, so keep them sca
 
 ```ts
 import { defineComponent, fields } from '@glw907/cairn-cms';
+import { strAttr } from '@glw907/cairn-cms/render';
 import { h } from 'hastscript';
+import { isBannerExpired } from './banner-expiry.js';
 
-const converter = defineComponent({
-  name: 'converter',
-  label: 'Unit converter',
-  description: 'A live two-way unit converter.',
+const banner = defineComponent({
+  name: 'banner',
+  label: 'Announcement banner',
+  description: 'A time-boxed announcement that removes itself once its expiry date passes.',
   hydrate: true,
-  insertTemplate: ':::converter{from="mi" to="km" rate="1.609"}\n:::',
+  insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
   attributes: {
-    from: fields.text({ label: 'From unit', required: true }),
-    to: fields.text({ label: 'To unit', required: true }),
-    rate: fields.number({ label: 'Rate', required: true }),
+    message: fields.text({ label: 'Announcement', required: true }),
+    expires: fields.date({
+      label: 'Expires',
+      required: true,
+      help: 'The banner shows through the end of this date, then renders nothing.',
+    }),
   },
-  build: (ctx) =>
-    h('div', { className: ['island-converter-fallback'] }, [
-      h('p', [`1 ${ctx.attributes.from} = ${ctx.attributes.rate} ${ctx.attributes.to}`]),
-    ]),
+  build: (ctx) => {
+    const message = strAttr(ctx, 'message') ?? '';
+    const expires = strAttr(ctx, 'expires');
+    if (isBannerExpired(expires)) return h('div', { hidden: true, className: ['banner-expired'] }, []);
+    return h('div', { className: ['banner'], role: 'status' }, [
+      h('p', { className: ['banner-message'] }, [message]),
+    ]);
+  },
 });
 ```
 
+`isBannerExpired` is a small helper the showcase shares between `build()` and the live component
+(`examples/showcase/src/lib/islands/banner-expiry.ts`), so the server and the client agree on what
+"expired" means without sharing any state across that boundary: each evaluates the same rule fresh, at
+its own render or hydration moment.
+
 With `hydrate` set, the render pipeline wraps this `build()` output in an island boundary rather
 than emitting it as-is: a `<div>` carrying the directive name and the attributes, serialized to
-JSON, as inert `data-*` attributes. `rate`'s declared type is `number`, so it round-trips as a
-real JSON number. Every other attribute stays the literal string the author wrote. The
+JSON, as inert `data-*` attributes. `message` and `expires` are both string-shaped fields, so both
+stay the literal string the author wrote. A `number` or `boolean`-typed attribute would round-trip
+as a real JSON value instead. The
 [islands reference](../reference/islands.md#the-island-boundary) documents the boundary's exact
 shape.
 
@@ -54,34 +70,36 @@ them the same way and give each a default, since an inserted directive might not
 attribute yet:
 
 ```svelte
-<!-- src/lib/islands/Converter.svelte -->
+<!-- src/lib/islands/Banner.svelte -->
 <script lang="ts">
+  import { isBannerExpired } from './banner-expiry.js';
+
   interface Props {
-    from?: string;
-    to?: string;
-    rate?: number;
+    message?: string;
+    expires?: string;
   }
 
-  let { from = '', to = '', rate = 1 }: Props = $props();
-  let amount = $state(1);
-  const converted = $derived(Number.isFinite(amount) ? Math.round(amount * rate * 1000) / 1000 : 0);
+  let { message = '', expires }: Props = $props();
+  const expired = $derived(isBannerExpired(expires));
 </script>
 
-<div class="island-converter">
-  <input type="number" aria-label={from ? `Amount in ${from}` : 'Amount'} bind:value={amount} />
-  <span aria-hidden="true">{from}</span>
-  <span aria-hidden="true">=</span>
-  <output aria-live="polite">{converted} {to}</output>
-</div>
+{#if !expired}
+  <div class="banner" role="status">
+    <p class="banner-message">{message}</p>
+  </div>
+{/if}
 ```
 
-`converted` is a `$derived` value rather than an `$effect`. An effect that wrote `amount` back from
-a prop could loop, whereas a derived value only ever computes from its inputs.
+`expired` is a `$derived` value rather than an `$effect`, so the check runs once, lazily, on first
+read, with no interval timer. A banner doesn't need to vanish partway through a visit, only stay
+correct across a fresh mount: a statically built or long-cached page can outlive its `expires` date,
+so the client re-checks it independently rather than trusting whatever the server decided at build
+time.
 
 The props arriving here are author-controlled and untrusted. They're an editor's own directive
 attributes, escaped by the pipeline and parsed on the client, but never validated against your
 component's expectations beyond their declared type. Bind every one of them to text, the way
-`from` and `to` land as plain interpolated strings in the preceding component. Never route a prop into
+`message` lands as a plain interpolated string in the preceding component. Never route a prop into
 `{@html}`, an `href` or `src` that could carry a `javascript:` scheme, or an inline `style`. The
 engine only guarantees the prop arrives as escaped data. Where it goes next is up to your
 component, so keep it out of those sinks. The [props section of the islands
@@ -93,9 +111,9 @@ Key the live component by the directive's name, the type-safe join between the t
 
 ```ts
 import type { IslandRegistry } from '@glw907/cairn-cms/islands';
-import Converter from '$lib/islands/Converter.svelte';
+import Banner from '$lib/islands/Banner.svelte';
 
-const islands: IslandRegistry = { converter: Converter };
+const islands: IslandRegistry = { banner: Banner };
 ```
 
 `defineAdapter` checks this join in both directions at module load, the same moment
@@ -136,7 +154,7 @@ the previous mount before creating the new one. Call it from `afterNavigate`, no
 `hydrate: true` mounts eagerly, on first load and after every navigation. `hydrate: 'visible'`
 defers the same mount to the moment the island's boundary first scrolls into view, then stops
 watching it. Reach for `'visible'` on an island that sits low on a long page, so a reader who
-never scrolls that far never pays for the mount at all. A converter near the top of a post, the
+never scrolls that far never pays for the mount at all. A banner near the top of a page, the
 one built here, is exactly the eager case: it's likely to be visible already, so there's nothing
 to gain by deferring it.
 

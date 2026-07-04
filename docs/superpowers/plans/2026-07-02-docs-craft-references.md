@@ -450,3 +450,22 @@ The tell that's absent everywhere: no sentence of the shape "While X has some li
 8. Ban adjectives that sell ("powerful," "seamless," "robust," "modern") and ban the rule-of-three list used purely for cadence. If three items are named, they must be independently true and enumerable.
 9. No summary-recap closings ("In conclusion," "To summarize"). End on the last true thing that needed saying.
 10. When comparing to another tool or approach, name its specific weakness plainly (per BurntSushi's whitelist example) rather than a diplomatic "it depends on your use case."
+
+## The developer-genre exemplar: Superforms (selected 2026-07-03)
+
+Superforms (superforms.rocks, solo-authored, ~25 pages, shape-matched to cairn) is the
+size-honest SvelteKit docs study; Lucia (deprecated, but the citable-praise champion:
+lucia-auth#1707 "outstanding") supplies the tutorial code convention. The practices bound
+into cairn's drafting and folding:
+
+1. Explanation pages are per-mechanism, not essay-shaped: a reader with a nested-data
+   question lands on THE page for it.
+2. Every export's reference page carries a worked snippet, not just a signature (gate-able:
+   "every reference page contains a code block").
+3. Tutorial and guide code blocks are complete runnable files with their repo path as the
+   first line (`// src/routes/.../+server.ts`), the Lucia convention.
+4. The debugging tools (cairn-doctor, log-events) are front-door docs, not reference burial.
+5. Front doors open with before/after where honest (a SvelteKit site without cairn vs with).
+6. Deferred to Topo/later (filed on ROADMAP): Pagefind-class Ctrl+K search, the FAQ/help
+   top-nav page, a task-tagged examples gallery, an /llms machine-consumption page, the
+   Consumers-must lines compiled into a durable upgrade page.

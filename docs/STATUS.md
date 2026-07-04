@@ -27,6 +27,17 @@ rows, fold-by-default, the showcase csrf fix, the log-field reconciliation, and 
 paste conversion (rehype-remark based, Google-Docs-span-aware). Docs riders applied
 throughout; CHANGELOG under ## Unreleased; holds unpublished. NEXT: the template effort.
 
+**THE WAYFINDER RULING (Geoff, 2026-07-04, locked): Wayfinder becomes the NEUTRAL scaffold;
+the Waymark identity (Fraunces, warm stone, cairn-glyph rules, hanging pull-quotes, diamond
+bullets) extracts into a THEME LAYER applied at cairn.pub — the living demo of making
+Wayfinder your own, and the restyle recipe's worked example.** The craft stays in Wayfinder
+(rhythm, tokens, the dark system, the reading surface); the persona moves. Design-review
+fold order: (1) the five confirmed bugs (giant icon, light-CTA collapse, image aspect,
+token clipping, banner props), (2) the neutral/Waymark split + cairn.pub theming, (3) the
+should-fix craft items (column alignment, eyebrow dosage, the extensible cluster, home
+composition — designed against the NEUTRAL default), (4) the cheap considers ride along.
+Full findings in the design-review workflow journal (wf_003a12ef-bf3).
+
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
 EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings

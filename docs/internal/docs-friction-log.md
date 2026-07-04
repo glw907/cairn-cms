@@ -191,3 +191,19 @@ sighted editors nothing beyond the underlines; the guide originally claimed a vi
 because one plausibly should exist. A small count near the word count in the editor footer
 would give sighted editors the same pre-publish sweep signal. Candidate for a future
 editor-experience pass.
+
+## 2026-07-03 — conflict recovery is a manual copy-reload-reapply (editor perspective)
+
+The editor guide's recovery section had to teach: copy your whole draft somewhere safe,
+reload to get your colleague's version, re-apply your changes by hand. The refusal itself is
+right (never merge by guesswork), but the editor's own text could be preserved for them --
+shown side by side, or held in a recoverable buffer -- instead of asking a non-technical
+writer to improvise a backup. A docs section this procedural is a UX gap wearing a hat.
+
+## 2026-07-03 — no rich-text paste conversion (editor perspective)
+
+The guide instructs "re-mark any emphasis or headings with the toolbar after a large paste"
+because pasting from Word or Google Docs drops all formatting. For a writer-first tool whose
+audience lives in those apps, HTML-to-markdown paste conversion (headings, emphasis, lists,
+links surviving the paste) is a real editor-experience item. The image-paste path already
+shows the pattern: intercept, convert, offer.

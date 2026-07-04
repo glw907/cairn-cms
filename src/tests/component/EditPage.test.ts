@@ -51,6 +51,7 @@ import { editorShortcuts } from '../../lib/components/editor-shortcuts.js';
 import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
 import { page as appPage } from './_app-state.js';
+import { COLD_START } from './_fake-spell-worker.js';
 
 function postProps(over = {}) {
   return {
@@ -1754,6 +1755,20 @@ describe('EditPage', () => {
     await screen.getByRole('button', { name: /link to page/i }).click();
     await screen.getByRole('button', { name: /About Us/ }).click();
     await expect.element(screen.getByText('3 words')).toBeInTheDocument();
+  });
+
+  it('shows a live, aria-hidden issue count in the footer sourced from the same diagnostics as the announcer', async () => {
+    // "the the" is a deterministic objective-error finding (spellcheck.ts's objective source runs
+    // without a Worker), so the count settles without a fake spell Worker.
+    const screen = render(EditPage, postProps({ body: 'the the cat' }));
+    const count = () => screen.container.querySelector('[data-testid="cairn-issue-count"]');
+    await expect.element(screen.getByText('3 words')).toBeInTheDocument(); // the editor has mounted
+    expect(count()?.textContent).toBe('0 issues');
+    expect(count()?.getAttribute('aria-hidden')).toBe('true');
+    await expect.poll(() => count()?.textContent, COLD_START).toBe('1 issue');
+    // The count sits inside the same footer strip as the word count, not off in its own region.
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    expect(card.contains(count()!)).toBe(true);
   });
 
   it('opens the Markdown help dialog from the editor footer and lists the cheat rows', async () => {

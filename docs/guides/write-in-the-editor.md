@@ -287,7 +287,7 @@ The editor reads along as you write, and it deliberately limits what it comments
 
 **Mechanical slips.** Alongside spelling, the editor catches a short list of objective mistakes: a doubled word ("the the"), a double space, repeated punctuation. Each comes with a one-click fix in the same popover. The list is deliberately mechanical, and there is no style or grammar opinion anywhere in it—nothing about your phrasing, your word choice, or your sentences is ever flagged. Style belongs to you, and if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject.
 
-`F8` steps through the open issues one at a time, and `Shift F8` goes back; for screen-reader users, a running count is announced as issues appear and resolve. A sweep with `F8` until nothing is left is a quick pre-publish habit.
+A small live count of open issues sits in the editor's footer, next to the word count, so you can see at a glance how many checks are still open. `F8` steps through the open issues one at a time, and `Shift F8` goes back; for screen-reader users, the same running count is announced as issues appear and resolve. A sweep with `F8` until nothing is left is a quick pre-publish habit.
 
 ## Tidy
 

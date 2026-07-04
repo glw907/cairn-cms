@@ -125,6 +125,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  toolbar, so the author cannot edit underneath a pending review. The host sets this when it opens
      *  the review and clears it on apply or cancel. Off by default. */
     tidyMode?: boolean;
+    /** Reports the settled spelling and style diagnostic counts on the same debounced cadence as the
+     *  diagnostics-summary announcer, so a visible footer count can track it without a second,
+     *  independently timed read of the diagnostic set. */
+    onDiagnosticsCounts?: (counts: import('./editor-diagnostics-announcer.js').DiagnosticCounts) => void;
   }
 
   let {
@@ -157,6 +161,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     pendingAdditions = new Set<string>(),
     spellcheckTest,
     tidyMode = false,
+    onDiagnosticsCounts,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -727,7 +732,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // The diagnostics-summary announcer: general and top-level (any lint source), unlike the
           // spellcheck-specific suggestion popover, which stays inside spellcheckCompartment. Always on;
           // accessibility is not opt-in.
-          announcerMod.cairnDiagnosticsAnnouncer({ view: viewMod, lint: lintMod }),
+          announcerMod.cairnDiagnosticsAnnouncer({ view: viewMod, lint: lintMod }, onDiagnosticsCounts),
           // Diagnostic traversal: F8/Shift-F8 jump the caret to the next/previous diagnostic range and
           // land it in the cairn recipe popover (never the stock lint tooltip, which tooltipFilter
           // suppresses; see spellcheck.ts). The stock exported commands, not lintKeymap (which also binds

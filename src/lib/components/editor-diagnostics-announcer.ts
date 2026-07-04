@@ -42,9 +42,14 @@ export function summarizeDiagnostics(counts: DiagnosticCounts): string {
  * The diagnostics-summary announcer extension: a top-level `ViewPlugin` owning one visually hidden
  * polite live region. Debounces the announcement (~1s) so typing does not chatter, and dedupes by the
  * composed summary string so an unchanged count never re-announces. An emptied diagnostic set
- * announces "No issues" once.
+ * announces "No issues" once. The optional `onCounts` callback fires on the same debounced settle,
+ * so a caller can drive a visible (aria-hidden) count from the identical source the announcer speaks,
+ * without a second, independently timed read of the diagnostic set.
  */
-export function cairnDiagnosticsAnnouncer(modules: DiagnosticsAnnouncerModules): Extension {
+export function cairnDiagnosticsAnnouncer(
+  modules: DiagnosticsAnnouncerModules,
+  onCounts?: (counts: DiagnosticCounts) => void,
+): Extension {
   const { ViewPlugin } = modules.view;
   const { forEachDiagnostic } = modules.lint;
 
@@ -79,6 +84,7 @@ export function cairnDiagnosticsAnnouncer(modules: DiagnosticsAnnouncerModules):
           if (diagnostic.source === 'cairn-objective') counts.style += 1;
           else if (diagnostic.source === 'cairn-spellcheck') counts.spelling += 1;
         });
+        onCounts?.(counts);
         const summary = summarizeDiagnostics(counts);
         const next = summary || (this.prevAnnounced ? 'No issues' : '');
         if (next && next !== this.prevAnnounced) {

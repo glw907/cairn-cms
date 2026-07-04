@@ -70,6 +70,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
   import { postFormAction } from './client-action.js';
   import { arbitrateChecked } from './spellcheck.js';
+  import type { DiagnosticCounts } from './editor-diagnostics-announcer.js';
 
   interface Props {
     /** The edit load's data, plus the site name for the heading. */
@@ -1140,6 +1141,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   const wordCount = $derived(countedBody.trim() ? countedBody.trim().split(/\s+/).length : 0);
   const wordLabel = $derived(wordCount === 1 ? '1 word' : `${wordCount} words`);
 
+  // The visible issue count (Task 3): the same settled spelling-plus-style diagnostics the
+  // announcer speaks, read off its identical debounced report rather than a second, independently
+  // timed pass over the document. Starts at zero before the editor's first report lands.
+  let diagnosticsCounts = $state<DiagnosticCounts>({ spelling: 0, style: 0 });
+  const issueCount = $derived(diagnosticsCounts.spelling + diagnosticsCounts.style);
+  const issueLabel = $derived(issueCount === 1 ? '1 issue' : `${issueCount} issues`);
+
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
   const resolveLink = $derived(manifestLinkResolver(data.linkTargets));
@@ -1700,6 +1708,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           registerImagePlaceholders={(api) => (placeholders = api)}
           registerInsertImage={(fn) => (insertImageFn = fn)}
           onImageIngest={(file) => mediaPopover?.open('capture', file)}
+          onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}
           {mediaLibrary}
           {focusMode}
@@ -1770,7 +1779,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            an overflow menu. -->
       {#if !zen}
       <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted">
-        <span>{wordLabel}</span>
+        <span class="flex items-center gap-1.5">
+          <span>{wordLabel}</span>
+          <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
+               already speaks this settled count in its own polite live region, so exposing this
+               span too would announce the same information twice (WCAG 4.1.3 speaks to exactly
+               this: one designed channel per piece of status information). -->
+          <span aria-hidden="true" class="opacity-50">·</span>
+          <span aria-hidden="true" data-testid="cairn-issue-count" class="opacity-70">{issueLabel}</span>
+        </span>
         <div class="flex items-center gap-3.5">
           <!-- The posture pair is one bordered segmented control: the shared border carries the
                pick-one semantics, so no group label is needed (the spec considered and declined

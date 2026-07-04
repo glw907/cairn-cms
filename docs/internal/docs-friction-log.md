@@ -58,9 +58,10 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   "Add to library"), or confirm the shared wording is acceptable. LOW.
 - **editor** (the diagnostics-summary announcer has no visual counterpart): the debounced live region
   ("2 spelling suggestions, 1 style issue") speaks the count to a screen reader, but a sighted mouse user
-  has no on-screen equivalent, such as a small badge, and must still scan the page for underlines. Left
-  out of the a11y hardening pass because it is a new UI surface, not a gap in the existing one. Candidate
-  for a future pass if editors ask for one. LOW.
+  has no on-screen equivalent, such as a small badge near the word count in the editor footer, and must
+  still scan the page for underlines. Left out of the a11y hardening pass because it is a new UI surface,
+  not a gap in the existing one. Resurfaced 2026-07-03 while writing the editor guide, whose draft had
+  claimed a visible count that does not exist; now queued in the pre-beta engine pass plan. LOW.
 
 ### Gates and test infrastructure
 
@@ -127,10 +128,11 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   robots route), and the `prerender.handleHttpError: 'warn'` policy for the uncrawled feed and robots
   routes. Part B (the showcase as the deployable template) fixes most of this by construction; confirm
   the remainder and have the engine detect and warn on the robots collision.
-- **developer** (docs on-ramp gaps the scaffolder makes acute): a quickstart distinct from the full
-  tutorial, a positioning ("is cairn right for you?") page, a day-two operability and troubleshooting
-  guide, and an "after scaffolding: what you got and what to change" orientation. Candidates for the docs
-  rewrite that lands with the scaffolder.
+- **developer** (docs on-ramp gap: no "after scaffolding" orientation): an "after scaffolding: what you got
+  and what to change" orientation page is still open, gated on the scaffolder landing so it can describe
+  real generated output rather than a hypothetical one. The rest of this finding is resolved: the docs IA
+  ruling deliberately keeps no separate quickstart pre-scaffolder, and the positioning page and the
+  day-two operability guide shipped as `why-cairn.md` and `troubleshooting.md` in the docs rewrite.
 
 ### From extensibility Plan 1 (2026-06-28)
 
@@ -140,20 +142,6 @@ The `create-cairn-site` scaffolder initiative owns these; each is re-verified at
   silently builds against main's engine until a from-scratch `npm install` in the worktree showcase
   repoints both `file:` deps to the worktree. Candidate: document the worktree e2e setup (or a helper
   script) so a future worktree pass running the showcase e2e does not prove the wrong engine.
-- **developer** (a process-global dev double breaks a fixed-seed e2e under retries): the Plan 1
-  custom-screen e2e wrote to the fake `APP_DB`, which is process-global, and CI runs `retries: 2`, so a
-  fixed seed name accumulated duplicate rows across retries and a strict-count assertion failed. The fix
-  was a unique per-run row name with a row-scoped delete. Lesson for any e2e writing to a process-global
-  dev double: assert on unique per-run data, not a fixed seed.
-- **developer** (reference prose drift not covered by a gate): `sveltekit.md` and `admin-routes.md` still
-  describe a `mintToken` dep on `createCairnAdmin`/`createContentRoutes` that `CairnAdminDeps` no longer
-  carries (the dev backend rides `event.locals.backend`). No doc gate covers this prose. Candidate: a
-  reference-prose cleanup pass; the signature gates only check declared types, not surrounding prose.
-- **developer** (`LayoutData` is dead public surface) — RESOLVED in extensibility Plan 2 (`0.77.0`):
-  `LayoutData` was removed from `/sveltekit`, its declaration, re-export, and reference row deleted and the
-  surviving comparative prose reworded, with a `Consumers must` line and a regenerated `check:surface`
-  snapshot recording the drop. The new `check:surface` gate now catches a dead or drifted public type at
-  build time, so this class of friction surfaces loud rather than lingering as documented-but-unused surface.
 
 ### From the surface-pruning pass (2026-07-01)
 
@@ -183,14 +171,6 @@ Writing the editor guide's create-entry section forced a vocabulary fork: the do
 "Slug", a developer term no non-technical writer knows. The guide papers over it with a
 parenthetical. The friendlier fix is in the product: label the field "Address" (or "Web
 address") in the create dialog and the details panel, matching the docs vocabulary.
-
-## 2026-07-03 — no visible open-issues count (editor perspective)
-
-The diagnostics system announces a running issue count to screen-reader users but shows
-sighted editors nothing beyond the underlines; the guide originally claimed a visible count
-because one plausibly should exist. A small count near the word count in the editor footer
-would give sighted editors the same pre-publish sweep signal. Candidate for a future
-editor-experience pass.
 
 ## 2026-07-03 — conflict recovery is a manual copy-reload-reapply (editor perspective)
 

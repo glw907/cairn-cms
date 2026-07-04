@@ -207,3 +207,15 @@ because pasting from Word or Google Docs drops all formatting. For a writer-firs
 audience lives in those apps, HTML-to-markdown paste conversion (headings, emphasis, lists,
 links surviving the paste) is a real editor-experience item. The image-paste path already
 shows the pattern: intercept, convert, offer.
+
+## 2026-07-03 — showcase omits csrf checkOrigin while the deploy guide instructs it (developer)
+
+The claims gate caught examples/showcase/svelte.config.js missing the `csrf: { checkOrigin:
+false }` the deploy guide teaches (cairn owns CSRF; the kit check must yield). Align the
+showcase with its own guide.
+
+## 2026-07-03 — sidebar says "Media", everything else says "the Library" (editor)
+
+The admin nav labels the screen "Media" (CairnAdminShell.svelte:82) while the docs vocabulary
+and the initiative memory call it the Library. One word, two names; rename the nav item or
+settle the vocabulary.

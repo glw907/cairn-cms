@@ -38,6 +38,7 @@ last, so the site hook sees every request and the guard owns admin gating.
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { theme } from './theme-handle.js';
 
 export const handle = sequence(theme, createAuthGuard());
 ```

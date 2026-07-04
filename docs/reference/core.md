@@ -42,6 +42,11 @@ return value is the adapter itself, narrowed. The adapter has six groups: `conte
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
+import { defineAdapter, defineConcept, fieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
+import { registry, icons } from './components.js';
+
+const { renderMarkdown } = createRenderer(registry);
+
 export const cairn = defineAdapter({
   content: {
     posts: defineConcept({
@@ -102,6 +107,7 @@ to `defineAdapter`. It also validates the concept's URL policy at declaration, s
 concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
 and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
 
+<!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
 ```ts
 posts: defineConcept({
   dir: 'src/content/posts',
@@ -118,6 +124,7 @@ A free-form string the in-admin help points a stuck editor to: an email address,
 instruction. `composeRuntime` passes it to the runtime untouched, and the help renders the hand-off
 only when it is set, so an unset contact yields no dead button. Optional.
 
+<!-- snippet-check-skip: illustrates one adapter editor member's value in isolation -->
 ```ts
 supportContact: 'help@example.org',
 ```
@@ -153,6 +160,7 @@ over the top-level values, key by key: a missing override key keeps the top-leve
 a string replaces it. Stylesheets are always shared. `editLoad` ships the already-resolved flat
 shape, so the map itself never reaches the client.
 
+<!-- snippet-check-skip: illustrates the preview member's shape in isolation; the worked example below shows it in full context -->
 ```ts
 preview: {
   stylesheets: [siteCssUrl],
@@ -174,8 +182,10 @@ client and the server build pipelines separately, so two hashed copies of the sa
 page links the client copy, the preview frame links the server copy. That is by design, not a defect,
 so do not be alarmed to find both in the build output.
 
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the editor.preview member -->
 ```ts
 // src/lib/cairn.config.ts
+import { defineAdapter } from '@glw907/cairn-cms';
 import appCssUrl from './app.css?url';
 
 export const cairn = defineAdapter({
@@ -258,6 +268,9 @@ Build a component registry from a site's component definitions. The render pipel
 stamp plus the rehype dispatch) and the editor palette both read it.
 
 ```ts
+import { defineRegistry } from '@glw907/cairn-cms';
+import { callout, alert } from './components.js';
+
 const registry = defineRegistry({ components: [callout, alert] });
 ```
 
@@ -289,6 +302,9 @@ keep it class-driven and high-fidelity. Absent leaves the component static and s
 boundary.
 
 ```ts
+import { defineComponent, fields } from '@glw907/cairn-cms';
+import { h } from 'hastscript';
+
 const callout = defineComponent({
   name: 'callout',
   label: 'Callout',
@@ -352,6 +368,8 @@ other item renders the repeatable-row editor with add, remove, and reorder. The 
 `itemLabel` names a row from one leaf field key.
 
 ```ts
+import { fieldset, fields } from '@glw907/cairn-cms';
+
 const set = fieldset({
   // a repeatable group of flat rows; the array labels the group, the object carries no label
   faq: fields.array(
@@ -380,6 +398,8 @@ so the date never reads as if it schedules publishing; a field `help` replaces t
 date hint cannot be suppressed entirely.
 
 ```ts
+import { fieldset, fields } from '@glw907/cairn-cms';
+
 const set = fieldset({
   title: fields.text({ label: 'Title', required: true }),
   status: fields.select({ label: 'Status', options: ['draft', 'published'], default: 'draft' }),
@@ -450,9 +470,12 @@ sanitize and anchor controls.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
+import { createRenderer } from '@glw907/cairn-cms';
+import { registry } from './components.js';
+
 const { renderMarkdown } = createRenderer(registry);
 // the adapter's render delegates to it:
-render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+// render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
 
 #### `SiteRender`
@@ -478,7 +501,7 @@ supplies them, and the standalone component-insert preview omits them.
 #### `rendering.islands` (adapter member)
 
 ```ts
-islands?: IslandRegistry;
+{ islands?: IslandRegistry }
 ```
 
 The live Svelte components for hydrated directives, keyed by directive name, declared beside `render`
@@ -489,6 +512,7 @@ static, and the client runtime is never imported. The runtime that consumes it l
 [`/islands`](./islands.md) subpath; that page carries the boundary contract and the props trust
 boundary.
 
+<!-- snippet-check-skip: illustrates the rendering member's islands key inside the adapter's rendering object opened above -->
 ```ts
 rendering: {
   render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
@@ -512,6 +536,10 @@ Parse a markdown file into its frontmatter and body. The write side, reassemblin
 committing, is the engine's own save-path concern, not a construction-time call a site makes.
 
 ```ts
+import { parseMarkdown } from '@glw907/cairn-cms';
+
+declare const fileText: string;
+
 const { frontmatter, body } = parseMarkdown(fileText);
 ```
 
@@ -533,6 +561,7 @@ declare function headRow(title: ElementContent[], icon?: Element): Element;
 `ec-icon` span. `cardShell` builds a `<section>` wrapper with a card body. `headRow` builds a
 title-plus-optional-icon head row.
 
+<!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
 const makeIcon = (name, role) => iconSpan(glyph(name, icons), role);
@@ -561,6 +590,10 @@ permalinks cannot diverge.
 
 ```ts
 // src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
+
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime);
 ```
@@ -582,6 +615,7 @@ home; any other unrecognized key throws listing the known keys.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
+import { parseSiteConfig } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);
 ```
@@ -597,6 +631,9 @@ declare function extractMenu(config: SiteConfig, name: string, maxDepth: number)
 Extract one named menu from a parsed config and validate it. Returns `[]` when the menu is absent.
 
 ```ts
+import { extractMenu } from '@glw907/cairn-cms';
+import { siteConfig } from './cairn.config.js';
+
 const primary = extractMenu(siteConfig, 'primary', 2);
 ```
 
@@ -614,6 +651,9 @@ taxonomy field. `composeRuntime` calls this to set `CairnRuntime.vocabulary`, th
 and edit paths read.
 
 ```ts
+import { extractVocabulary } from '@glw907/cairn-cms';
+import { siteConfig } from './cairn.config.js';
+
 const vocabulary = extractVocabulary(siteConfig);
 ```
 
@@ -641,6 +681,11 @@ reference edge points at a missing target, naming the source entry, the field, a
 References have no prerender backstop, so this build gate is their only integrity authority.
 
 ```ts
+import { verifyManifest, type Manifest } from '@glw907/cairn-cms';
+
+declare const built: Manifest;
+declare const committedRaw: string;
+
 verifyManifest(built, committedRaw); // throws on drift
 ```
 

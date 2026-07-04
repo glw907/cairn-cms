@@ -161,6 +161,47 @@ export function rewriteLocalImports(code) {
     .join('\n');
 }
 
+// Blank out every top-level `declare global { ... }` augmentation (an `app.d.ts` ambient-typing
+// snippet, the doc corpus's own convention for showing an `App.Platform`/`App.Locals` extension),
+// replacing its text with a same-line-count placeholder so a later diagnostic's line still maps
+// correctly. Every unit compiles as its own root file, but they all share ONE TypeScript program
+// (for the gate's own performance; a separate program per unit measured two orders of magnitude
+// slower over this corpus), and a `declare global` augmentation is process-wide by design, so two
+// snippets naming different shapes for the same augmented interface member (a plain site's
+// `App.Platform.env` versus a media-enabled site's, which adds `CairnMediaBindings`) collide with
+// each other's DIFFERENT member type, exactly the "same interface, two incompatible member types"
+// error `ts.getPreEmitDiagnostics` reports. That collision is an artifact of the shared program,
+// never a defect in either doc. The surrounding import statements are left in place and still
+// typecheck for real, so a retired or renamed name in one still fails the gate; only the
+// augmentation body itself, which does not add any check beyond what its own imports already
+// prove, is elided.
+/** @param {string} code */
+export function stripGlobalAugmentations(code) {
+  const source = ts.createSourceFile('check.ts', code, ts.ScriptTarget.ES2022, true);
+  // `ts.isGlobalScopeAugmentation` exists at runtime but is not part of the published `typescript`
+  // types, so the flag check below is the public-API equivalent: a `declare global { ... }`
+  // augmentation is a `ModuleDeclaration` whose `flags` carry `NodeFlags.GlobalAugmentation`.
+  const globals = source.statements.filter(
+    (stmt) => ts.isModuleDeclaration(stmt) && (stmt.flags & ts.NodeFlags.GlobalAugmentation) !== 0,
+  );
+  if (globals.length === 0) return code;
+
+  let result = code;
+  // Replace from the last statement to the first so an earlier replacement's offset stays valid
+  // for the ones still to come.
+  for (const stmt of [...globals].sort((a, b) => b.pos - a.pos)) {
+    const start = stmt.getStart(source);
+    const span = code.slice(start, stmt.end);
+    const lineCount = span.split('\n').length;
+    const placeholder = [
+      '// snippet-check: elided global augmentation (checked separately to avoid cross-block declaration merging)',
+      ...Array(lineCount - 1).fill(''),
+    ].join('\n');
+    result = result.slice(0, start) + placeholder + result.slice(stmt.end);
+  }
+  return result;
+}
+
 /**
  * Every fenced ```ts/```typescript/```svelte block in a Markdown doc, with its 1-based fence
  * line and, when the line immediately above (skipping blanks) carries a `snippet-check-skip:`
@@ -280,13 +321,17 @@ export function collectUnits() {
           excluded++;
           continue;
         }
-        units.push({ file, lineBase: block.fenceLine + script.lineOffset, code: rewriteLocalImports(script.code) });
+        units.push({
+          file,
+          lineBase: block.fenceLine + script.lineOffset,
+          code: rewriteLocalImports(stripGlobalAugmentations(script.code)),
+        });
       } else {
         if (isDeclarationOnly(block.body)) {
           excluded++;
           continue;
         }
-        units.push({ file, lineBase: block.fenceLine, code: rewriteLocalImports(block.body) });
+        units.push({ file, lineBase: block.fenceLine, code: rewriteLocalImports(stripGlobalAugmentations(block.body)) });
       }
     }
   }

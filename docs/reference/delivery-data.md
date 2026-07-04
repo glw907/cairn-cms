@@ -167,7 +167,7 @@ then hands them to the responder.
 import type { RequestHandler } from './$types';
 import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
 import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
 export const prerender = true;
 
@@ -262,7 +262,11 @@ object. All URLs in `SeoInput` are absolute, built from the site origin. The `/d
 `createPublicRoutes` loader calls this so a public entry ships a full head.
 
 ```ts
-import { buildSeoMeta } from '@glw907/cairn-cms/delivery/data';
+import { buildSeoMeta, type ContentEntry } from '@glw907/cairn-cms/delivery/data';
+import { ORIGIN } from '$lib/content';
+import { siteConfig } from '$lib/cairn.config';
+
+declare const entry: ContentEntry;
 
 const seo = buildSeoMeta({
   title: entry.title,
@@ -292,6 +296,8 @@ the manifest bin call this in a plain-Node context, which is why it lives on thi
 
 ```ts
 import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
+import { cairn, siteConfig } from '$lib/cairn.config';
+import { postsRaw, pagesRaw } from './content-globs.js';
 
 const manifest = buildSiteManifest(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
 ```
@@ -331,8 +337,12 @@ at request time is a mid-flight or draft target. A route reads the resolved map 
 and renders each target as a link.
 
 ```ts
-import { resolveReferences } from '@glw907/cairn-cms/delivery';
+import { resolveReferences, type ResolvedReference, type ContentEntry } from '@glw907/cairn-cms/delivery';
+import type { ConceptDescriptor } from '@glw907/cairn-cms';
 import { site } from '$lib/content';
+
+declare const postsDescriptor: ConceptDescriptor;
+declare const entry: ContentEntry;
 
 const refs = resolveReferences(site, postsDescriptor, entry.frontmatter);
 const author = refs.author as ResolvedReference | undefined;

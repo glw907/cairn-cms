@@ -179,6 +179,10 @@ A site that already has a `handle` hook (for example, injecting a saved theme in
 
 ```ts
 // src/hooks.server.ts
+import { sequence } from '@sveltejs/kit/hooks';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { theme } from './theme-handle.js';
+
 export const handle = sequence(theme, createAuthGuard());
 ```
 
@@ -227,6 +231,10 @@ session, so it cannot live under `/admin`. Mount it at the site root and call th
 
 ```ts
 // src/routes/healthz/+server.ts
+import { json } from '@sveltejs/kit';
+import { healthLoad } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '$lib/cairn.server.js';
+
 export const prerender = false;  // see below
 export const GET = async (event) => json(await healthLoad(event, runtime));
 ```

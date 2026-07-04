@@ -4,8 +4,10 @@ import {
   isPackageSpecifier,
   isRealSpecifier,
   rewriteLocalImports,
+  stripGlobalAugmentations,
   svelteScript,
   isDeclarationOnly,
+  typecheckUnits,
 } from '../../../scripts/check-snippets.mjs';
 
 describe('extractBlocks', () => {
@@ -112,6 +114,87 @@ describe('rewriteLocalImports', () => {
   it('stubs a side-effect-only local import as a comment', () => {
     const out = rewriteLocalImports("import '$lib/app.css';");
     expect(out).toContain('// snippet-check: stubbed side-effect import');
+  });
+});
+
+describe('stripGlobalAugmentations', () => {
+  it('leaves code with no global augmentation untouched', () => {
+    const code = "import { defineAdapter } from '@glw907/cairn-cms';";
+    expect(stripGlobalAugmentations(code)).toBe(code);
+  });
+
+  it('blanks a declare global block, preserving the line count', () => {
+    const code = [
+      "import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';",
+      "declare global {",
+      "  namespace App {",
+      "    interface Platform {",
+      "      env: CairnPlatformBindings;",
+      "    }",
+      "  }",
+      "}",
+    ].join('\n');
+    const out = stripGlobalAugmentations(code);
+    expect(out.split('\n')).toHaveLength(code.split('\n').length);
+    expect(out).toContain("import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';");
+    expect(out).not.toContain('interface Platform');
+    expect(out).toContain('elided global augmentation');
+  });
+
+  it('leaves the import alongside an elided block intact, so a retired name still fails there', () => {
+    const code = [
+      "import type { NotARealExport } from '@glw907/cairn-cms/sveltekit';",
+      'declare global {',
+      '  namespace App {',
+      '    interface Platform {',
+      '      env: NotARealExport;',
+      '    }',
+      '  }',
+      '}',
+    ].join('\n');
+    // The import itself, not the augmentation body, carries the checkable claim.
+    expect(stripGlobalAugmentations(code)).toContain(
+      "import type { NotARealExport } from '@glw907/cairn-cms/sveltekit';",
+    );
+  });
+});
+
+describe('the shared-program cross-block global augmentation regression', () => {
+  it('does not let two units with differently-shaped App.Platform.env augmentations collide', () => {
+    const unitA = {
+      file: 'docs/reference/a.md',
+      lineBase: 0,
+      code: stripGlobalAugmentations(
+        [
+          "import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';",
+          'declare global {',
+          '  namespace App {',
+          '    interface Platform {',
+          '      env: CairnPlatformBindings;',
+          '    }',
+          '  }',
+          '}',
+        ].join('\n'),
+      ),
+    };
+    const unitB = {
+      file: 'docs/guides/b.md',
+      lineBase: 0,
+      code: stripGlobalAugmentations(
+        [
+          "import type { CairnPlatformBindings, CairnMediaBindings } from '@glw907/cairn-cms/sveltekit';",
+          'declare global {',
+          '  namespace App {',
+          '    interface Platform {',
+          '      env: CairnPlatformBindings & CairnMediaBindings;',
+          '    }',
+          '  }',
+          '}',
+        ].join('\n'),
+      ),
+    };
+    const problems = typecheckUnits([unitA, unitB]);
+    expect(problems).toEqual([]);
   });
 });
 

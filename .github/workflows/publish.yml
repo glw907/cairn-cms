@@ -40,4 +40,3 @@ jobs:
       # requires a public repository; npm would otherwise auto-enable it under OIDC and
       # fail the publish. Drop this env when the repo goes public to restore provenance.
       - run: npm publish --access public
-        env:

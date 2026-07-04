@@ -1,6 +1,6 @@
 # Build your first cairn site
 
-This tutorial builds a working cairn site from an empty directory: a public site rendering markdown content, an admin where editors write, and at the end, a deploy to Cloudflare. Everything is built by hand so you can see what every file does. If you want the running site faster and the understanding later, `create-cairn-site` (the scaffolder) scaffolds the same result in one command, and you can come back here to learn what it wrote.
+This tutorial builds a working cairn site from an empty directory: a public site rendering markdown content, an admin where editors write, and at the end, a deploy to Cloudflare. Everything is built by hand so you can see what every file does. (A `create-cairn-site` scaffolder that produces the same result in one command is planned; today, this page is the path.)
 
 You'll need Node 22 or later and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so you need no GitHub App, no database, and no email setup to run the editor locally. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them.
 
@@ -65,7 +65,7 @@ Then declare the three Cloudflare bindings the admin will need:
 }
 ```
 
-The bindings in `wrangler.jsonc` are declared now and used later: D1 backs the admin's sessions, the email binding sends sign-in links, and R2 holds images. Locally, the development backend stands in for all three, so declaring them costs nothing today and saves a deploy-day surprise.
+The bindings in `wrangler.jsonc` are declared now and used later: D1 backs the admin's sessions, the email binding sends sign-in links, and R2 holds images. Locally, the development backend supplies doubles for the database and the bucket and replaces the email loop by signing you in directly, so declaring all three costs nothing today and saves a deploy-day surprise.
 
 ## Milestone 2: Define the adapter and schema
 
@@ -151,7 +151,7 @@ I write about racing and training. This site is where the notes live.
 
 Save that as `src/content/pages/about.md`.
 
-The filename is the entry's identity: the stem becomes the id, and for dated concepts the leading date is canonical. You'll never rename these by hand once editors exist, because addresses are promises, but it's useful to have seen the shape once.
+The filename is the entry's identity: the stem becomes the id, and for dated concepts the leading date is stripped to form the slug, while the entry's date comes from the `date` frontmatter field. You'll never rename these by hand once editors exist, because addresses are promises, but it's useful to have seen the shape once.
 
 ## Milestone 4: Configure rendering
 
@@ -584,7 +584,7 @@ npm run cairn:manifest
 
 The command writes `src/content/.cairn/index.json` and exits zero. From here on, run it any time you edit content by hand; the admin keeps the manifest current on its own whenever an editor publishes.
 
-Because the link resolves by id, it survives a rename of the file. The manifest is how the editor's pickers and the delivery surface know what exists without scanning the repo on every request.
+Because the link resolves by id, it survives a rename of the file. The manifest is how the editor's pickers know what exists without a per-request repo crawl; the public build reads its content from bundled imports, and the manifest additionally verifies the internal-link graph at build time.
 
 ## Milestone 10: Deploy
 

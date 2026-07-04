@@ -1,9 +1,10 @@
 # Manage the media library
 
 Every image on your site lives in one shared library, separate from any single post or page.
-The Library screen (the Media item in the sidebar) sits in the admin beside Posts and Pages and manages your site's images in
-one place. This guide covers finding an image, uploading one, seeing where it is used, fixing
-its name and its description, replacing it everywhere at once, and safely deleting it.
+The Library screen sits in the admin sidebar beside Posts and Pages and manages your site's
+images in one place. This guide covers finding an image, uploading one, seeing where it is
+used, fixing its name and its description, replacing it everywhere at once, and safely
+deleting it.
 
 - [Finding an image](#finding-an-image)
 - [Uploading an image](#uploading-an-image)

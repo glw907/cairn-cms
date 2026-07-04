@@ -78,9 +78,10 @@ discriminant, not the fields, gates the chrome).
             icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON,
             href: e.href,
           })),
-          // Media is a content peer, immediately after the concepts.
-          { label: 'Media', icon: ImageIcon, href: '/admin/media' },
-          // Tags is the shared tag-vocabulary screen, after Media.
+          // Library is a content peer, immediately after the concepts (the media screen; the route
+          // stays /admin/media, but the settled editor-facing label is Library, not Media).
+          { label: 'Library', icon: ImageIcon, href: '/admin/media' },
+          // Tags is the shared tag-vocabulary screen, after Library.
           { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
           ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
           { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },

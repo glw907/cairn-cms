@@ -98,6 +98,12 @@ describe('CairnAdminShell', () => {
     await expect.element(screen.getByRole('link', { name: 'Primary nav' })).toBeInTheDocument();
   });
 
+  it('labels the media-library nav entry Library, not Media', async () => {
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    await expect.element(screen.getByRole('link', { name: 'Library' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Media', exact: true }).query()).toBeNull();
+  });
+
   it('shows the user identity and a sign-out control in the sidebar', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('ed@example.com')).toBeInTheDocument();

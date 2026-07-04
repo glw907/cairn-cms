@@ -1,106 +1,134 @@
 # Add an image
 
-Images go straight into your post or page from the editor. There are three ways to start, the
-editor handles the upload for you, and a saved image rides along when you publish. This page walks
-through it from an editor's seat.
+[Write in the editor](./write-in-the-editor.md#images-and-the-media-library) introduces images and
+the media library: one shared library, a picture reused across every page it appears on, and a short
+description every image needs. It walks the mechanics of bringing a picture into a draft, describing
+it, giving it a caption and placement, and setting an entry's hero image.
 
-## Three ways to add one
+## Insert a picture
 
-Pick whichever fits what you are doing:
+Click the toolbar's Insert image button and a popover opens with the library search below an upload
+button. You can also paste a picture from the clipboard or drag one from the desktop; the popover then
+opens straight to naming and describing it.
 
-- **Paste from the clipboard.** Copy an image anywhere, click into your page where you want it, and
-  paste. A screenshot works the same way.
-- **Drag and drop.** Drag an image file from your desktop onto the editor and let go where you want
-  it to land.
-- **The toolbar button.** Click Insert image in the toolbar. It lets you choose a file from your
-  computer, or reuse one already on your site.
+<!-- LIVE-UI: the insert popover, open in its chooser state -->
 
-All three end up in the same place: a short card where you name the image and describe it.
+## Choose from the library, or upload
 
-## The card you fill in
+The popover's chooser leads with an Upload an image button and, below it, a search box over the
+library. Type into the search and it filters by name and by alt text as you go. If your library holds
+more than one kind of file, the picker adds a filter chip for each kind, Images, Documents, and so on,
+alongside the search box. Pick a result and it drops into your draft at the cursor, carrying whatever
+alt text you gave that picture the first time you described it.
 
-When you add an image, a small card opens at your cursor. The name is already filled in from the
-file's name, so you can usually leave it. Below that you describe the image for people who cannot
-see it. This is the alt text, and the next section explains why it matters.
+Choosing Upload an image, or a file a paste or drag already handed over, opens a small form: a name
+for the picture. The name is pre-filled from the filename when the filename reads as words:
+`blue-shoes.png` becomes "blue-shoes," tagged Suggested. A camera's `IMG_4821.jpg` gets no guess, and
+the field stays blank. Alongside the name sits the alt text choice, covered under [Write the alt
+text](#write-the-alt-text), below.
 
-You do not have to write the alt text right now. You can mark the image decorative if it carries no
-meaning, or you can insert it and come back to the alt text later. Either way the image goes into
-your page right away.
+cairn accepts JPEG, PNG, WebP, and GIF pictures, and it converts an iPhone's HEIC photo to a standard
+format for you before it uploads. An animated GIF keeps its animation. Submitting the form places a
+placeholder at your cursor at once, so you see the picture while it uploads, and swaps in the finished
+reference the moment the upload completes. If the exact same bytes are already in the library under any
+name, cairn reuses that entry instead of storing a duplicate, and says so briefly. A failed upload
+leaves your draft exactly as it was, with a plain reason and a Retry button. If your session has
+expired, it tells you and asks you to sign in again.
 
-## What you see after inserting
+## Add a caption
 
-Once the image is in, two things show it is there. In your writing, the image appears as a small
-chip with a thumbnail and its name, so the line stays readable instead of filling with a long
-address. Switch to Preview and the image renders the way your site will show it.
+A freshly inserted picture is a bare reference. It has no caption and no set placement, and it sizes to
+the width of your text. To add either, put your cursor on the picture and click the Figure control in the
+toolbar, next to Insert image. It stays dim until the cursor is actually on a picture, and its label
+changes to say which case you're in: "Wrap the image at the cursor in a figure" for a bare one, "Edit
+the figure at the cursor" once it already has one.
 
-While the upload is still finishing, the chip shows a thumbnail with a progress bar. It settles into
-the named chip as soon as the upload is done.
+<!-- LIVE-UI: the figure dialog, caption field and placement control both visible -->
 
-## Give an image a caption and a placement
+The dialog that opens asks for a caption, the line shown under the picture for every reader and
+distinct from the alt text beneath it, and a placement: one of four choices. Measure keeps the picture
+at the width of your text, the default and the right choice most of the time. Center does the same, but
+centers a picture narrower than that width rather than stretching it. Wide and Full let the picture
+spread beyond the column, wider, and then edge to edge. How far depends on your site's own design.
 
-Put your cursor on an image and the toolbar's Figure button turns on. It opens a small form with two
-things: a caption and a placement.
+Submitting wraps the picture in a figure, and the toolbar control becomes "Edit the figure at the
+cursor" from then on: reopen it any time to change the caption or the placement, or to Unwrap it back to
+a bare picture with the caption dropped. Your draft holds a figure as its own small block:
 
-The caption is a line shown under the image, to everyone. It is different from the alt text. Alt text
-describes the picture for a reader who cannot see it; the caption adds context for every reader, like
-naming the place or the moment. An image can have both, and they say different things.
+```md
+:::figure{.wide}
+![Two dinghies rounding the windward mark in light air](media:regatta.a1b2c3d4e5f60718)
 
-The placement is how wide the image sits on the page:
+The fleet at the first mark, Saturday's race.
+:::
+```
 
-- **Measure** keeps it at the width of your text, the right choice for most images.
-- **Center** holds a smaller image in the column and centers it, good for a tall photo or a detail shot.
-- **Wide** breaks past the text to a broader band.
-- **Full** runs the image edge to edge across the page.
+a frame around the picture and its caption, the same shape [other
+components](./write-in-the-editor.md#how-a-block-works) use. You'll rarely need to edit it directly.
+The Figure control writes and rewrites it for you.
 
-Pick one and the image updates. The Figure button also lets you change a caption or placement later,
-or unwrap the image back to a plain one. Behind the scenes this writes plain markdown you can read and
-edit by hand: the image wraps in a `:::figure` block with the caption as its text. The chip in your
-writing shows the placement, so what you see matches what is saved.
+The same dialog also shows the picture's alt status, either Described or Needs alt. If you've marked a
+picture
+decorative and still give it a caption, cairn flags the combination: a screen reader skips a decorative
+picture, but it still reads the caption, so the two send readers different signals.
 
-If you mark an image decorative but also give it a caption, the form warns you. A decorative image is
-hidden from screen readers, so a caption on it reads without anything to anchor it. Describe the image
-or drop the caption.
+## Write the alt text
 
-## Reusing an image already on your site
+[Write in the editor](./write-in-the-editor.md#images-and-the-media-library) already covers why alt
+text matters: a reader using a screen reader hears it in place of the picture, so it should carry what
+the picture contributes in context.
 
-The Insert image button opens with an upload area first, and under it a section headed "or reuse an
-image." Start typing there to search every image you have already added, then pick one from the
-list. Reusing keeps your site lean, because the same image is stored once no matter how many pages
-show it.
+Alt text is one of two choices you make the moment you name a picture, whether you're uploading it
+fresh or setting the hero image below: write a description, or mark the picture decorative. Decorative
+is the right call for a picture that carries no information of its own, a divider or a plain texture.
+cairn records that choice and never flags that picture again. Leaving alt text unset without choosing
+decorative is different: cairn keeps that picture on its checklist until you describe it.
 
-## Why alt text matters
+A checklist at the top of the editor names every picture still missing a description, hero image
+included, and shrinks as you fill each one in. For a picture in your draft, its row's Add alt text
+action selects the picture's whole reference in the text, ready to retype with a description added:
 
-Alt text is the short description a screen reader speaks aloud, and what shows if the image ever
-fails to load. It is how a reader who cannot see the picture still gets what it shows. Write a plain
-sentence describing the image. Mark an image decorative only when it adds nothing a reader would
-miss, like a divider or a background flourish.
+```md
+![](media:regatta.a1b2c3d4e5f60718)
+```
 
-If you insert an image without alt text, the editor keeps a gentle reminder for you. A "needs alt
-text" notice sits near the top of the page with a count, and it can jump you to each image still
-waiting for a description. The notice never stops you from saving or publishing. It is there so the
-gap does not slip out the door unnoticed.
+becomes
 
-## Set a hero image
+```md
+![Two dinghies rounding the windward mark in light air](media:regatta.a1b2c3d4e5f60718)
+```
 
-A hero is the lead picture for a whole post or page, separate from the images in the body. You set it
-in the Details panel, not in the writing area. Open Details, find the "Hero image" field, and click
-"Add a hero image". The same chooser opens: upload a new picture, or pick one you have already added.
+Keep the `media:` part exactly as it was, and put your words between the square brackets. For the hero
+image, Add alt text opens the hero's own dialog instead, with the description field already focused and
+ready to type.
 
-After you pick, a panel shows the image with two things to fill in. Write the alt text, or mark the
-image decorative if it carries no meaning a reader would miss. Then, if you want, add a caption, the
-line your site can show under the picture. Alt and caption are different jobs: alt is spoken to
-readers who cannot see the image, the caption is shown to everyone. Click "Use this image" to set the
-hero. Nothing is committed until you save the entry, the same as the rest of your changes.
+Marking the hero image decorative sticks: cairn remembers the choice, and a decorative hero never comes
+back onto the checklist. Marking a picture in the body of your draft
+decorative doesn't persist the same way, because the plain `![]()` markdown has no place to record it.
+Reload the entry later, and that picture reads as needing alt text again, even though you decided
+otherwise. Leaving it that way is safe. The checklist reads a blank reference as an open item; it has no way to
+see that you meant the picture to be decorative.
 
-One hero does two jobs. It leads the page, and it is the picture shown when the post is shared on
-social media, so there is one image to set, not two. The same "needs alt text" notice counts a hero
-with no alt text, and can jump you straight to its description. To swap the picture, open the
-field again and choose Replace; to clear it, choose Remove.
+The description you give a picture the first time it's uploaded also becomes its entry in the library,
+so picking that same picture again later, from the library rather than uploading it fresh, carries the
+same alt text forward. Editing that stored description, or seeing everywhere else a picture is already
+used, is the [media library](./manage-the-media-library.md)'s job, not this one.
 
-## Saving and publishing
+## Set the hero image
 
-A new image is stored the moment you add it, but it does not reach your live site on its own. It
-commits together with the post when you Publish, the same deliberate step that ships your words.
-Until then the image lives with your held edits, visible in your preview and waiting with the rest
-of your changes. See [Publish and discard](./publish-and-discard.md) for that half of the flow, and
-[Write in the editor](./write-in-the-editor.md) for the writing surface around it.
+Every post or page can carry one hero image, the picture that leads it and stands in as the card a
+social network shows when someone shares the entry. [Write in the
+editor](./write-in-the-editor.md#the-details-panel) lists it among the details panel's fields.
+
+Open the [details panel](./write-in-the-editor.md#the-details-panel) (`Ctrl .`) and find Hero image.
+Empty, it's a slim drop zone: drop a picture onto it, or click it to open the same chooser the insert
+popover uses, and either upload a picture or pick one from the library. Once you set a hero, the row
+shows its thumbnail, its name, and its alt status at a glance, with an Edit control beside it (or
+Add, when the hero still needs alt text).
+
+<!-- LIVE-UI: the hero image field, both its empty and its set states -->
+
+Editing opens a dialog with a 16:9 preview, so you see the picture the way it actually appears, both as
+the entry's lead and as its social card. Below the preview sits the same describe-or-decorative choice
+as any other picture, a caption, shown under the hero only if your site's design places it there, and
+Replace or Remove, for when you've changed your mind about the picture itself.

@@ -1,36 +1,67 @@
-# How-to guides
+# Guides
 
-Task-oriented guides for a returning adopter. Each answers one question and links the
-[reference](../reference/README.md) for the exact surface and the
-[explanation](../explanation/README.md) arm for the why.
+Each guide here covers one task. The guides under For developers take a site from its adapter
+through deploy and day-to-day upkeep. The two under For editors cover writing in one. Every
+developer guide assumes [Define an adapter and schema](./define-an-adapter-and-schema.md) is
+already done, since every other developer task builds on the adapter it produces.
 
-## Set up the backend
+## For developers
 
-- [Set up the GitHub App](./set-up-the-github-app.md): register and install the App so saves commit as `cairn-cms[bot]`.
-- [Configure auth and D1](./configure-auth-and-d1.md): stand up the magic-link auth store on D1.
-- [Deploy to Cloudflare](./deploy-to-cloudflare.md): the Worker, the bindings, and the publish-and-deploy loop.
-- [Cloudflare readiness](./cloudflare-readiness.md): every account and zone delta a cairn site needs, in setup order, with `cairn doctor` as the automated pass.
+The first eight guides below build a site in roughly the order the
+[tutorial](../tutorial/build-your-first-cairn-site.md) follows. The rest are additions you make
+later, or the upkeep of a running site.
 
-## Build the site
+- **[Define an adapter and schema](./define-an-adapter-and-schema.md)**: declare your content,
+  your GitHub target, and your render function in the one module the engine reads
+- **[Configure rendering](./configure-rendering.md)**: build the render function every public
+  page and the admin preview both call
+- **[Configure auth and D1](./configure-auth-and-d1.md)**: provision the auth database and walk
+  a magic-link sign-in end to end
+- **[Set up the GitHub App](./set-up-the-github-app.md)**: create and install the App that signs
+  every save and publish
+- **[Deploy to Cloudflare](./deploy-to-cloudflare.md)**: mount the admin's five files and wire
+  its three Cloudflare bindings
+- **[Cloudflare readiness](./cloudflare-readiness.md)**: run `cairn-doctor` against your config,
+  account, and credentials before a real editor signs in
+- **[Wire the delivery surface](./wire-the-delivery-surface.md)**: build the catch-all route,
+  feed, and sitemap that turn declared content into a site
+- **[Add an island](./add-an-island.md)**: hydrate one interactive Svelte component inside
+  otherwise-static rendered content
+- **[Add a custom admin screen](./add-a-custom-admin-screen.md)**: add your own SvelteKit route
+  under `/admin`, with no plugin API to register against
+- **[Link content with references](./link-content-with-references.md)**: connect one concept's
+  entries to another's with a typed reference field
+- **[Declare structured fields](./structured-fields.md)**: the rest of the field vocabulary,
+  every type, its editor widget, and what validation checks on save
+- **[Add authors to your site](./add-authors.md)**: declare your own concept and connect it to
+  Posts with the reference-field pattern
+- **[Enable tidy](./enable-tidy.md)**: turn on the optional AI copy-edit and see what a tidy call
+  costs
+- **[Read cairn's logs](./read-cairn-logs.md)**: read the structured events a running site emits,
+  and find the one a symptom points at
+- **[Rotate the GitHub App private key](./rotate-the-github-app-key.md)**: generate a new key
+  with no window where the App can't authenticate
+- **[Migrate existing content](./migrate-existing-content.md)**: map markdown from Hugo, Jekyll,
+  or whatever came before onto cairn's concepts
+- **[Upgrade cairn](./upgrade-cairn.md)**: bump the version range and run the doctor over the
+  `Consumers must:` lines
+- **[Troubleshooting](./troubleshooting.md)**: trace a symptom to its log event and the fix, for
+  the day a site is already live
 
-- [Define an adapter and schema](./define-an-adapter-and-schema.md): the concepts, the slug codec, and the fields.
-- [Configure rendering](./configure-rendering.md): markdown to delivered HTML, the registry, and the sanitize floor.
-- [Wire the delivery surface](./wire-the-delivery-surface.md): the read model, the permalink route, the feeds, and the manifest.
-- [Link content with references](./link-content-with-references.md): declare a reference field, pick a target in the editor, and render the resolved target.
-- [Structured fields](./structured-fields.md): declare an `object` group and a repeatable `array`, and edit them on the edit page.
-- [Add an island](./add-an-island.md): make a directive interactive in the browser with a hydrate component and the islands runtime.
-- [Add a custom admin screen](./add-a-custom-admin-screen.md): add your own SvelteKit route under /admin, in cairn's chrome, with a sidebar entry.
-- [Enable tidy and the editor copy-edit](./enable-tidy.md): the spellcheck dialect, turning tidy on with the `ANTHROPIC_API_KEY` secret, and the convention config.
+## For editors
 
-## Edit content
+- **[Welcome, editors](./editor-welcome.md)**: a short orientation before you open the editor
+  for the first time
+- **[Write in the editor](./write-in-the-editor.md)**: the full guide, markdown, components, the
+  editor's surfaces, and the path from draft to published page
+- **[Add an image](./add-an-image.md)**: bring a picture into your draft, whether chosen from
+  the library or freshly uploaded, and write the caption, alt text, and hero placement it needs
+- **[Publish and discard](./publish-and-discard.md)**: move an entry through save, publish, and
+  discard, and read what each status means
+- **[Manage the media library](./manage-the-media-library.md)**: find, upload, rename, and
+  safely delete the images your site shares across every page
+- **[Manage your tag vocabulary](./manage-your-tag-vocabulary.md)**: add, rename, and retire the
+  tags every post draws from one shared list
 
-- [Write in the editor](./write-in-the-editor.md): the toolbar, links, layout blocks, Preview, and saving, from an editor's seat.
-- [Add an image](./add-an-image.md): paste, drag, or insert an image, write its alt text, and publish it with the post.
-- [Manage the media library](./manage-the-media-library.md): find an image, read where it is used, fix its name and default alt, and delete it safely.
-- [Manage your tag vocabulary](./manage-your-tag-vocabulary.md): add a tag, rename its label, delete an unused tag, and seed the list from tags already on your posts.
-- [Publish and discard](./publish-and-discard.md): the editor-facing flow, from a held save to the live site.
-
-## Maintain
-
-- [Upgrade cairn](./upgrade-cairn.md): the `0.x` rename list, oldest first.
-- [Read cairn's logs](./read-cairn-logs.md): turn on Workers Logs and query the diagnostic events.
+Start with Welcome if you're new. It's a ten-minute read. Open Write in the editor when you have
+a specific question; its table of contents takes you to the answer.

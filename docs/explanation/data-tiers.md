@@ -1,88 +1,85 @@
 # Where each kind of state lives
 
-cairn keeps several kinds of state, and they do not all belong in the same place. This document is
-the one home for that decision. When you are placing a new kind of state, start with the rule
-below. The three tiers show what already sits where, and the worked precedents record the cases
-settled so far, so the next one is a lookup rather than a fresh argument.
+Cairn keeps its content and config state in git, its runtime state in a self-owned D1 database,
+and the media bytes that fit neither in R2, with only a reference in git. [The architecture
+overview](./architecture.md#where-state-lives) names what lands in each store, content, site
+config, and auth, and this page is the rule behind that split: what a new kind of state has to be
+true of it before it earns a place in any of them, and the three precedents, plus one exception,
+that rule has already decided.
 
-## The governing rule
+## The question that decides it
 
-Content is the source of truth, and it lives as markdown in git. Everything else gets placed by one
-test, asked in order:
+Git's atomic unit is a commit: a batch of file changes that either all land or none do, with a
+full history of who changed what and when. Git fits anything whose value comes from having a
+past. It fits poorly when a value has to be checked and safely changed inside a single request,
+especially when another request might be racing it for the same answer. A commit can't express
+"read this, confirm it still holds, and change it before anyone else gets the chance," because
+there's no live row to hold a lock on between the read and the write. D1 is the opposite shape: a table, a `WHERE` clause, and a transaction give exactly that
+guarantee, at the cost of carrying no history at all. So the question a new kind of state has to
+answer is which of those two things it actually needs: a past, or a guarded read-then-mutate.
+Everything cairn stores today falls cleanly on one side.
 
-1. Does the build read it to compile a page? The sites are statically generated, so anything the
-   build needs must be reachable without a database. That points to git.
-2. Is it derived from the content corpus? A projection of the content belongs beside the content,
-   version-controlled and reconciled by the build, rather than sitting in a separate store that can
-   drift.
-3. Does a change need to take effect immediately, or does it need atomic semantics? Access control
-   and single-use tokens need a transactional store whose change lands on the next request. That
-   points to D1.
-4. Is it written on every login or request, or does it expire? High-frequency, short-lived state
-   with a TTL cannot sit in git. That points to D1.
+## Content: the state that wants a past
 
-A yes on 1 or 2 sends state to git. A yes on 3 or 4 sends it to D1. The two groups have not
-collided, because build-time and content-derived state is the opposite category from runtime access
-state. When a new kind of state seems to answer yes on both sides, that is your signal to split it.
-The build-read projection goes to git and the runtime control goes to D1, which is how the link
-graph and the editor allowlist already sit.
+An entry's markdown and frontmatter, the content manifest that indexes them, and the media
+manifest all live in git, because a past is the entire point. An editor's save is attributable, a
+publish is a commit any later reader can inspect, and a mistake is recoverable by reverting that
+commit. [The content model](./content-model.md) covers why a concept's shape is fixed rather than
+open-ended, and [the commit pipeline](./architecture.md#the-commit-pipeline-holding-branch-to-publish)
+covers the holding-branch-to-publish mechanics in full. What matters here is narrower: content is
+a draft until an editor says otherwise, so its save writes to a branch named for the entry,
+`cairn/<concept>/<id>`, and only publish copies it to `main`. Nothing about content asks git to do
+a guarded, request-time mutation, so nothing about it needs D1.
 
-## The three tiers
+## Config: the same store, a different draft state
 
-**Markdown content in git.** The posts and pages, the corpus itself, the source of truth. Your
-authors edit it in the admin and save to `main` through the GitHub App, or you edit it directly in
-git. The build reads it through `import.meta.glob`.
+A site's nav menus, its tidy conventions, and its tag vocabulary also live in git, in the
+`site.config.yaml` file the engine's `parseSiteConfig` reads and an admin screen's save writes
+back. That's the same answer to "does this want a past" that content gave: a nav change deserves
+attribution and a rollback exactly as much as a content edit does. But config takes a different
+path to get there. Saving a nav tree or a tidy setting commits straight to `main`, guarded by an
+expected-head check against a concurrent write, with no holding branch in between. The reason is
+what the state actually is: a tag vocabulary or a nav label has no meaningful draft state a reader
+shouldn't see yet. The moment an editor saves it, it's supposed to apply, the same moment its
+commit triggers the site's redeploy. Content's whole reason to exist as a holding branch is that a
+reader hasn't seen the draft; config never has a draft in that sense, so it never needs one.
 
-**Content-derived, build-read structure in git.** Committed files the build reads and the admin
-edits through the same GitHub-App commit pipeline. The YAML site-config and nav live here, and so
-does the content-graph manifest, the build-verified projection carrying each entry's id, title,
-permalink, and outbound links. These must be reachable at build (so a database is out), and the
-build regenerates and verifies the derived ones, so they cannot silently drift from the content.
+That's the second question a new kind of state runs through once the first has already put it in
+git: does it have a draft state distinct from live? If a change should show up the moment it's
+saved, it commits straight to `main`, the way nav and tidy settings do. If it shouldn't show up
+until someone deliberately says so, it earns a holding branch, the way content does.
 
-**Runtime admin state in D1.** The per-site auth store (`AUTH_DB`) holds sessions, magic tokens, and
-the editor allowlist with each editor's display name and role. The engine reads it on the request
-hot path, never at build, and a change to it must take effect immediately (a removed editor loses
-access on the next request) under atomic invariants (single-use tokens, the
-never-remove-the-last-owner rule). It is access control and ephemeral session state rather than
-content, so it stays in the database.
+## Runtime state: the state that wants a guarded mutation
 
-## The decision procedure
+An editor's magic-link token, their session, and the allowlist that says who's an owner and who's
+an editor all live together in D1, in three tables a single `AUTH_DB` binding reaches. They belong
+together as one transactional domain, even though they look like three separate concerns sharing
+a database. Consuming a magic-link token deletes its row and returns the email it belonged to in
+one statement. A link that's already used or expired isn't there for a second request to consume,
+no matter how closely the two race. Refusing to remove the last remaining owner works the same
+way, by folding a live count into the same `DELETE`'s `WHERE` clause, so two concurrent removals
+can't both pass a separate check and strand the allowlist at zero owners between them. And because
+resolving a session joins it to the editor's row live rather than trusting a cached claim, a
+demoted or removed editor's existing session stops working on the very next request instead of
+waiting for it to expire on its own. None of those three guarantees is available to a commit: git
+has no compare-and-mutate a concurrent request could race, only a linear history taken one commit
+at a time. [The security model](./security-model.md) covers what each guarantee means for who may
+open the admin. What carries over here is narrower: checking whether a token is still good,
+whether an owner is the last one, and whether a session is still live are all the same
+request-time question, and D1 is the only store cairn has that answers it safely under a race.
 
-When a new kind of state appears, run the test before reaching for a store:
+## Media bytes fail the first question too, for a different reason
 
-- Does the build read it to compile a page? If yes, git.
-- Is it computed from the content corpus? Then it goes to git too, as a build-verified projection.
-- Is it access control, or must a change land immediately? That sends it to D1.
-- Is it written on every login or request, or does it expire? D1 again.
-- Does it answer yes on both sides? Split it. The build-read part goes to git, the runtime-control
-  part to D1.
+Media asks the same first question content and config already answered, and fails it, but not
+because it lacks a past. An uploaded image's identity is as permanent as a published entry's, and
+in principle it could earn a history the same way. It fails on a more basic ground: a binary file
+doesn't diff, so every re-save stores a full new copy rather than a change against the last one,
+and a repo that kept media that way would grow without bound. So the bytes go to R2 instead, and
+only a small logical reference, stable across a rename because it's keyed to the file's own hash
+rather than its name, ever reaches git. [Media storage](./media-storage.md) covers the reference
+scheme and why it's shaped that way. The lesson for a future kind of state is that "wants a past"
+and "can afford to live in the store that keeps one" are two different questions, and a state has
+to clear both before it lands in git.
 
-When you settle one, record the answer here as a worked precedent, and the next similar case
-becomes a lookup.
-
-## Worked precedents
-
-**Site config and nav to git (2026-05-27).** We weighed D1 first, then moved to a git-committed YAML
-file the build reads, so the sites keep compiling without a database and the structure stays
-version-controlled. The edge-SSR consumption D1 would have served got dropped along the way.
-
-**The content-graph manifest to git (content-graph initiative, 2026-06-02).** The internal-link
-resolver and the build-fail backstop run at build, where a runtime D1 binding is unreachable, so the
-link graph cannot live in D1 (and it is derived from content besides). It is a committed JSON
-projection the build regenerates and verifies, updated atomically with each content commit. See
-`docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`.
-
-**The editor allowlist stays in D1 (2026-06-02).** Names and roles are runtime access control, read
-on the auth hot path and never at build, and a removal or a role change must land on the next
-request. The allowlist sits beside the sessions and tokens it joins with, as one coherent store.
-Holding it in git would gate revocation on a redeploy and split the auth model. Same test as the
-link graph, opposite answer.
-
-## Related documents
-
-- The functional spec (`docs/superpowers/specs/2026-05-28-cairn-rebuild-functional-spec.md`) holds the
-  system architecture and the locked stack.
-- The content-graph design (`docs/superpowers/specs/2026-06-02-cairn-content-graph-design.md`) details
-  the manifest and the atomic commit primitive.
-- The self-owned magic-link auth model is in the functional spec's behavior section and the rebuild
-  auth plan under `docs/superpowers/plans/`.
+A new kind of state runs the same two tests—does it want a past, and does it have a draft state
+distinct from live—and bytes too large to diff go to R2 regardless.

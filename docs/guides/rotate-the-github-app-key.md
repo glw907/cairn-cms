@@ -1,52 +1,92 @@
-# GitHub App private-key rotation (cairn-cms)
+# Rotate the GitHub App private key
 
-The commit path signs a GitHub App JWT in-Worker with Web Crypto (no octokit). The App's
-machine identity is separate from the editor auth, so rotating its key never touches your
-editors' sessions. This page walks you through a rotation and the one brittle step in it
-(the key-format conversion).
+One Worker secret, `GITHUB_APP_PRIVATE_KEY_B64`, is what every save and publish signs with. [Set
+up the GitHub App](./set-up-the-github-app.md) covers generating it once; this one covers
+replacing it without a gap in the App's ability to authenticate. Rotate it on a schedule
+you're comfortable with, or the moment you suspect the `.pem` or its base64 form leaked, such as an
+accidental commit or an offboarded teammate who once held a copy.
 
-## What's stored
+## Before you begin
 
-Each site holds the App private key as a single-line base64 of the PEM, in the worker secret
-**`GITHUB_APP_PRIVATE_KEY_B64`**. `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` aren't worker
-secrets; they're non-secret identity facts baked into the adapter's `githubApp({ appId,
-installationId, ... })` call in source. The machine-local copy of all three lives in
-`~/.dotfiles/secrets/values.age` and `~/.local/secrets`; the workspace `CLAUDE.md` records the IDs.
+- Owner access on the account or organization that owns the App, the same access [creating
+  it](./set-up-the-github-app.md#create-the-app) required.
+- `wrangler` authenticated against the Worker that holds the secret.
+- A shell to run `npx cairn-doctor` from, the same one you'd run it from for any other check.
 
-## The conversion step (why it's brittle)
+## Generate the new key
 
-GitHub issues App keys in **PKCS#1** (`-----BEGIN RSA PRIVATE KEY-----`), and Web Crypto's
-`importKey('pkcs8', …)` only accepts **PKCS#8**, so `github.ts` wraps the PKCS#1 DER in a PKCS#8
-envelope in-process (`pkcs1ToPkcs8`: a fixed RSA `AlgorithmIdentifier` plus DER length octets).
-A malformed key, a PKCS#8-format key, or a botched base64 round-trip breaks signing, and you
-only find out when an editor saves.
+1. Go to the App's own settings page and scroll to **Private keys**.
+2. Choose **Generate a private key**. GitHub does not revoke the key you're currently running on
+   when you do this; an App holds however many keys you've generated until you delete one
+   yourself. That's what makes this rotation safe: nothing about the App's ability to sign a
+   request changes until you delete a key. That deletion is the final step, below.
+3. GitHub downloads a new `.pem`. Leave this settings page open, or note the fingerprint next to
+   your current key, so you can find the right one to delete later once two are listed side by
+   side.
 
-Two guards already cover you. A unit test signs and verifies a JWT from a PKCS#1 fixture
-(`github-commit.test.ts`), and `/admin/healthz` signs a dummy JWT against the *live* key and
-returns `{ ok, checks.githubAppSigning }` (signed-in editors only). Hit `/admin/healthz` right
-after any rotation or deploy, so you confirm the key still loads and signs before relying on save.
+## Push it to your Worker
 
-## Rotation procedure
+Convert the new `.pem` to the single-line base64 string the Worker secret takes, the same
+conversion [Store the private key](./set-up-the-github-app.md#store-the-private-key) walks the
+first time:
 
-1. **Generate a new key** in the GitHub App settings (Settings, then Developer settings, then
-   GitHub Apps, then cairn-cms, then Private keys, then *Generate a private key*). GitHub
-   downloads a `.pem` (PKCS#1). Keep the old key valid until step 5.
-2. **Base64-encode it single-line:** `base64 -w0 cairn-cms.YYYY-MM-DD.private-key.pem`.
-3. **Update the encrypted registry.** Write the new value to `GITHUB_APP_PRIVATE_KEY_B64` in
-   `~/.dotfiles/secrets/values.age` and `~/.local/secrets`, then shred the loose `.pem`. Record
-   the rotation in `~/.dotfiles/secrets/registry.md`.
-4. **Push to each worker:** `wrangler secret put GITHUB_APP_PRIVATE_KEY_B64` for `ecnordic` and
-   `907-life` (or the `sync.sh` that wraps it). The App ID and installation ID are unchanged.
-5. **Verify, then revoke the old key.** Sign in to each site's `/admin`, open `/admin/healthz`,
-   and expect `{"ok":true,…}`. Then delete the old key in the GitHub App settings.
+```sh
+base64 -w0 your-new-key.pem
+```
 
-If `/admin/healthz` returns `ok:false`, the `detail` field names the failure (bad base64, import
-rejected, etc.) without leaking the key. Fix the secret and re-push before revoking the old key.
+Paste the result into wrangler:
 
-## Why not `jose`/`importPKCS8`?
+```sh
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
+```
 
-`jose` is the mainstream pick, but `importPKCS8` still needs a PKCS#8 PEM, so GitHub's PKCS#1 key
-would *still* require the same `pkcs1ToPkcs8` conversion. Adopting it removes the JWT-assembly
-code without touching the brittle DER step. The detection guards above (the fixture test plus
-`/admin/healthz`) cover the actual failure mode, so the lean zero-dependency signer stays.
-Revisit if a future need (richer JWS handling, for example) justifies the dependency.
+This replaces the secret directly; you don't need to run `wrangler deploy` afterward for the new
+value to take effect. If you also run this site with `wrangler dev`, update the same line in
+`.dev.vars`, since local dev reads that file instead of asking Cloudflare for the secret:
+
+```
+GITHUB_APP_PRIVATE_KEY_B64=<the new base64 string>
+```
+
+Keep the new `.pem` (or its base64 string) somewhere until the next section passes. If the new key
+turns out to be bad, that's what you'll use to tell.
+
+## Verify before you retire the old key
+
+Confirm the new key signs before you go near the old one. `cairn-doctor` walks the same chain a save
+walks: the key parses and signs, the signature exchanges for an installation token, and the token
+reads your repository. `GITHUB_APP_ID` and `GITHUB_APP_INSTALLATION_ID` haven't changed, only the
+key has:
+
+```sh
+npx cairn-doctor --repo you/your-site
+```
+
+with `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and the new `GITHUB_APP_PRIVATE_KEY_B64` in the
+environment. If the site is already deployed, hit its `/healthz` endpoint too; a JSON body whose
+top-level `ok` is `true` runs the same signing self-test against the value you just pushed, live.
+Past a green doctor run and a green `/healthz`, sign in to `/admin` and save something. The
+resulting commit's committer is still the App, `[bot]` suffix and all, which only the new key
+could have produced.
+
+## Retire the old key
+
+Once verification passes, go back to the App's **Private keys** section and delete the key whose
+fingerprint you noted earlier. This is the step that invalidates the old key, which is why it
+comes last.
+
+## If verification fails
+
+Nothing is broken on GitHub's side yet: you haven't deleted the old key, so it's still installed
+and still valid. If you kept the old key's base64 string, paste it back with `npx wrangler secret
+put GITHUB_APP_PRIVATE_KEY_B64` to restore the working state while you debug. Either way, the
+doctor's stage-by-stage output names whether the failure is the key parse, the token mint, or the
+repo read. If you didn't keep the old value, generate another new key and repeat the push and
+verify steps; nothing is deleted until the final step.
+
+## What's next
+
+[The security model](../explanation/security-model.md) explains why the App holds write access at
+all and what a save is and isn't allowed to do with it. [Troubleshooting](./troubleshooting.md)
+covers the symptom on the other side of a bad key, a save or publish that fails outright, and the
+log event ([Log events](../reference/log-events.md)) that names why.

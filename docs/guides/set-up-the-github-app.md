@@ -1,40 +1,127 @@
 # Set up the GitHub App
 
-Goal: register and install a GitHub App so an editor's saves and publishes in `/admin` commit to the repo as `cairn-cms[bot]`.
+Every commit cairn makes travels through one GitHub App, the thing your adapter names in
+`backend: githubApp({ owner, repo, branch, appId, installationId })`. You create the App on
+GitHub, install it on your content repository, and give your Worker its private key. After that,
+saving an entry in `/admin` writes a real GitHub commit. The commit's author is the signed-in
+editor; the committer is the App.
 
-## Prerequisites
+## Before you begin
 
-- A GitHub repository holding the site's content (the markdown the editor will commit to).
-- Owner access on the account or organization that owns the repo (creating and installing an App needs it).
-- The site's Cloudflare Worker, which holds the App's private key as a secret. See [Deploy to Cloudflare](./deploy-to-cloudflare.md).
+- A GitHub repository to hold the site's content, the one your adapter's `owner` and `repo`
+  name.
+- Owner access on the account or organization that owns that repository. Creating and installing a
+  GitHub App both require it.
+- An adapter that already declares a `backend`, even with placeholder values. [Define an adapter
+  and schema](./define-an-adapter-and-schema.md) builds one from nothing if you don't have it yet.
+- A Cloudflare Worker to hold the private key as a secret. You don't need to deploy it yet.
 
-This guide assumes you already have a running cairn site. If you are building one for the first time, start from the tutorial, then come back here.
+## Create the app
 
-## Steps
+1. Go to **Settings > Developer settings > GitHub Apps > New GitHub App**.
+2. Give it a name. Every commit the App makes shows this name with a `[bot]` suffix as the
+   committer, so pick one an editor would recognize in a commit log, not a placeholder.
+3. Under **Repository permissions**, set **Contents** to **Read and write**. The commit path reads
+   files, lists branches, and writes commits, and nothing else it does needs a broader grant.
+4. Under **Webhook**, clear the **Active** checkbox. Cairn never receives a webhook call, so
+   leaving it active only gives GitHub an endpoint to retry against.
 
-1. **Create the App.** Go to Settings, then Developer settings, then GitHub Apps, then New GitHub App. Pick the name with the commit history in mind, because an editor's commits show the App name with a `[bot]` suffix as the bot identity (for example `cairn-cms[bot]`). Under Repository permissions, grant **Contents: Read and write**; the commit path needs nothing else. A webhook is not required, so clear the Active checkbox under Webhook.
+<!-- SCREENSHOT: the New GitHub App form scrolled to Repository permissions, with Contents set to
+Read and write and every other permission left at No access -->
 
-2. **Generate and download the private key.** On the App's settings page, under Private keys, choose Generate a private key. GitHub hands you a `.pem` file in **PKCS#1** form (its first line reads `-----BEGIN RSA PRIVATE KEY-----`). Keep this file out of git.
+## Generate the private key
 
-3. **Install the App on the content repo.** From the App's settings, choose Install App, pick the account that owns the content repo, and scope the install to that repo. After installing, open the installation's settings page and look at its URL; the trailing number is the installation ID. Record it.
+Every install needs a key the App signs its requests with.
 
-4. **Record the three credentials the site needs.** Only one of them is a Worker secret:
-   - `GITHUB_APP_ID`: the App ID shown on the App's settings page. Not a secret; pass it as the `appId` your adapter hands to `githubApp({ appId, installationId, ... })` in source.
-   - `GITHUB_APP_INSTALLATION_ID`: the installation ID from step 3. Also not a secret; pass it as `installationId` alongside `appId`.
-   - `GITHUB_APP_PRIVATE_KEY_B64`: the base64 of the `.pem`, on a single line (`base64 -w0 your-key.pem`). This one is the Worker secret: `npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64`.
+1. On the App's own settings page, scroll to **Private keys** and choose **Generate a private
+   key**.
+2. GitHub downloads a `.pem` file. Its first line reads `-----BEGIN RSA PRIVATE KEY-----`, which
+   names the format: PKCS#1. Keep this file out of git; you'll convert it to the one string your
+   Worker needs in [Store the private key](#store-the-private-key), below.
 
-   The App ID and installation ID stay out of `platform.env` because the adapter builds the backend at module scope, before a request and its `platform.env` exist. Only the private key is a runtime binding. The Worker decodes the private key's base64 with `atob()` in process before it signs, which is why the secret stays a single line. For key encoding, rotation, and the brittle conversion step, follow [GitHub App private-key rotation](./rotate-the-github-app-key.md) rather than hand-rolling it here.
+<!-- SCREENSHOT: the Private keys section of the App's settings page, showing the Generate a
+private key button and a previously generated key's fingerprint -->
 
-You may notice the format mismatch in step 4. GitHub issues the key in PKCS#1, and Web Crypto's `importKey('pkcs8', ...)` accepts only PKCS#8, so the Worker converts the key in process. That conversion lives in the signer. You store the key as the base64 of the PKCS#1 PEM, and the engine handles the rest.
+## Install the app on your repo
+
+1. From the App's settings page, choose **Install App**.
+2. Pick the account or organization that owns your content repository, and scope the install to
+   that one repository rather than every repository on the account.
+3. After installing, open the installation's settings page and read the number at the end of its
+   URL. That's the installation ID; your adapter's `installationId` takes it as a string.
+
+<!-- SCREENSHOT: the installation's settings page with its URL bar visible, the trailing
+installation ID circled -->
+
+## Configure the identity in your adapter
+
+Two of the App's identifiers aren't secrets at all. `appId` is the number on the App's own
+settings page, and `installationId` is the one you just read off the installation's URL. Both are
+compile-time config, not runtime bindings, because the adapter builds its backend at module scope,
+before a request and its bindings exist:
+
+```ts
+import { githubApp } from '@glw907/cairn-cms';
+
+const backend = githubApp({
+  owner: 'your-org',
+  repo: 'your-site',
+  branch: 'main',
+  appId: '123456',
+  installationId: '987654',
+});
+```
+
+The private key is the one member of this identity that never appears in source. It lives as a
+Worker secret, read at request time to mint a short-lived installation token.
+
+## Store the private key
+
+The Worker needs the `.pem` from earlier as one base64 string on a single line:
+
+```sh
+base64 -w0 your-key.pem
+```
+
+Push the result to the Worker as `GITHUB_APP_PRIVATE_KEY_B64`:
+
+```sh
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
+```
+
+That's the only GitHub App value the Worker's bindings carry. The [`CairnPlatformBindings`
+type](../reference/sveltekit.md#cairnplatformbindings) names this secret alongside the site's
+other required bindings, so a forgotten one fails `app.d.ts` at compile time.
+
+You'll notice a format mismatch. GitHub issued the key as PKCS#1, and Web Crypto's
+`importKey('pkcs8', ...)` only takes PKCS#8. The engine converts the key in process before every
+sign, so you store the PKCS#1 PEM's base64 exactly as downloaded.
 
 ## Verify
 
-A save needs the editor auth in place first, so configure that before this check. See [Configure auth and D1](./configure-auth-and-d1.md).
+`cairn-doctor` runs the same steps a save runs. It parses and signs with the key, exchanges the
+signature for an installation token, and uses that token to read your repository.
 
-With auth working, sign in to `/admin`, edit a page, and save. Open the resulting commit on GitHub and look at the two identities on it. The **author** is the signed-in editor (their name and email), and the **committer** is `cairn-cms[bot]`. That split is the engine's design: `commitFile` sends the editor as the commit author and omits the committer, so GitHub attributes the commit to the App.
+```sh
+npx cairn-doctor --repo your-org/your-site
+```
 
-## See also
+Run it with `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and `GITHUB_APP_PRIVATE_KEY_B64` in the
+environment. A missing one skips the check rather than failing it, and the skip names what's
+still absent. The [doctor reference](../reference/doctor.md#the-checks) documents every stage of
+this check and what a failure at each stage means.
 
-- [Core reference](../reference/core.md#auth-and-github-app) for the public auth surface. The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them behind the content routes.
-- [The security model](../explanation/security-model.md#commit-trust) for why the App holds the write capability and how the save path constrains it.
-- [GitHub App private-key rotation](./rotate-the-github-app-key.md) for rotating the key and the `/admin/healthz` check that confirms the live key still signs.
+A green doctor run proves the credentials work. It doesn't prove that an editor's save reaches
+GitHub the way you expect, so check that too. Sign in to `/admin`, edit an entry, and save. Open
+the resulting commit on GitHub. It carries two identities. GitHub shows the signed-in editor as
+the author, by name and email, and the App, with `[bot]` appended, as the committer. The engine
+sends the editor as the commit's author and omits the committer entirely, so GitHub attributes the
+commit to whichever identity signed the request, the App.
+
+## What's next
+
+[GitHub App private-key rotation](./rotate-the-github-app-key.md) covers rotating this key without
+a save-path outage. The [security model](../explanation/security-model.md) explains why the App
+holds write access at all and what a save is and isn't allowed to do with it. And the [core
+reference](../reference/core.md#githubapp) documents `githubApp`'s full signature alongside the
+rest of the adapter's construction surface.

@@ -1,90 +1,121 @@
 # Reference integrity
 
-A reference field lifts cairn's content graph from body links into typed frontmatter. A post declares
-`author: jane-doe` and `related: [a-post, b-post]`, and cairn treats each value as an edge to another entry,
-not as an opaque string. This page explains how cairn keeps those edges correct across renames, deletes, and
-the build, and why the design refuses rather than guesses.
+A `fields.reference` edge is a promise: this entry points at that one, forever, no matter what
+either entry is later called. The developer-facing how-to, with the field declaration and the
+resolver call, is [Link content with references](../guides/link-content-with-references.md).
 
-The model rests on one decision: the stored value is the target's permanent id, never its title or its URL.
-Everything else follows from it.
+## A reference stores only the id
 
-## The stored value is the permanent id
+A reference field stores the target's permanent id and nothing else. `extractReferenceEdges` reads
+that id straight off the frontmatter value, but it takes the edge's target *concept* from the
+field's own descriptor, never from whatever the frontmatter happens to say. A `posts` entry's
+`author` field always targets `pages`, because the schema says so, regardless of what a hand-edited
+file claims. That closes off the one way a raw edit outside the editor could misdirect an edge:
+there is no `concept` string for it to tamper with.
 
-An entry's id is its filename stem, fixed for the life of the entry. A reference stores that id, so the edge
-is independent of the target's title, its slug, its date, and its permalink pattern. A page can change its
-title from "Jane Doe" to "J. Doe" and every post that references it keeps pointing at the same entry, because
-the title was never part of the link.
+Storing only the id is also what lets a rename work at all. A title or a permalink is a snapshot,
+good until the target changes; an id is the one thing a rename explicitly does not touch. Every
+downstream piece of reference integrity, the reverse index, the delete refusal, the rename
+repoint, follows from this one choice: an edge stores a pointer, so the target's current title and
+permalink are always looked up fresh.
 
-This is the same choice the `cairn:` body-link scheme makes, for the same reason. A name-keyed link, such as a
-`[[wikilink]]`, rots on a rename unless the tool rewrites every reference. An id-keyed edge survives a rename
-of everything except the id itself, and cairn rewrites the id when it changes.
+## Who points at this, cheaply
 
-## Build-verified: the only integrity authority
+Deleting or renaming an entry means first answering "who references this one?" Crawling every file
+in the corpus to answer that on every delete would work but doesn't scale, so cairn keeps the
+answer pre-computed: the content manifest already records each entry's outbound reference edges
+(`manifestEntryFromFile` extracts them at the same pass that builds the rest of the row), and
+`buildReferenceIndex` reverses that into a map keyed by *target*, so the delete and rename gates
+get an O(1) lookup instead of a crawl.
 
-The build is where cairn enforces reference integrity. `verifyReferences` walks every entry's recorded reference
-edges and fails the build when an edge points at a target absent from the corpus, naming the source entry, the
-field, and the missing target. A dangling reference never reaches production.
+The key is the pair `concept/id`. Ids are unique only within a concept:
+`pages/about` and `posts/about` are different entries that happen to share a filename stem, and a
+reverse index keyed on id alone would confuse a delete of one for a reference to the other. The
+index and both gates key on the pair for this reason.
 
-This gate runs inside the generated manifest build, beside `verifyManifest`, where the freshly built manifest
-is in scope. It runs in the build, not the request path, because the manifest the build regenerates from the
-actual files is the authoritative graph.
+## The gap only an open branch can hide
 
-References differ from body links in one structural way: they have no prerender backstop. A dangling `cairn:`
-body link fails the prerender when the link resolver throws, so the page build catches it. A reference is
-frontmatter, not rendered markup, so no prerender pass touches it. `verifyReferences` is therefore the only
-integrity authority for references, which is why the build gate is non-optional and the save-time check is
-advisory. A save warns on a reference to a draft or absent target and holds the edit anyway; the build is what
-refuses to ship a broken graph.
+The manifest is authoritative for what's published on `main`, but a save never touches `main`; it
+lands on that entry's own `cairn/<concept>/<id>` branch and waits there until publish. An editor
+partway through drafting a new post can add a `related` reference to some target entry days before
+publishing it, and for those days that reference exists nowhere the main-only manifest can see. If
+the delete and rename gates checked only `main`, that unpublished edge would look like no edge at
+all, and deleting or renaming the target would strand it: a real reference, about to go dangling,
+with nobody protected against it.
 
-## Rename-safe: rewrite, then refuse the unsafe case
+So the index unions two arms. The main arm is the free one: it reads the manifest's already-
+extracted edges, no file reads required. The branch arm has no manifest to read from, since the
+manifest is never committed to a branch, so for every open `cairn/*` branch it reconstructs the
+one file the branch edited from the branch's own name, reads that single file, and re-runs the
+same edge extractor directly against its frontmatter. It reads exactly one file per branch, never
+the whole tree, because the branch name already encodes which entry it edited. Both arms feed the
+same map, and a target with no row in it is not referenced anywhere cairn can currently read, main
+or any open draft.
 
-Renaming a target changes its id, so every edge that points at the old id would dangle. Cairn keeps the edges
-correct in two moves.
+## Delete refuses; rename repoints
 
-First, it repoints. A surgical YAML-value rewriter finds each inbound reference on `main` and rewrites the old
-id to the new one in place, byte for byte, preserving the rest of the frontmatter. The rewriter operates only
-inside the named field's value range and re-quotes a new id that would otherwise reparse as a non-string. An id
-such as `true`, `123`, or a date-shaped `2026-01-02` is a valid id token but a YAML keyword, number, or date,
-so an unquoted substitution would reparse as a boolean, a number, or a `Date`, and the edge's id guard would
-silently drop it. The rewriter quotes any such id so it reparses as the string it is. The same pass rewrites
-the moved entry's own self-references on the moved file, since the inbound set excludes a self-edge.
+Given that index, delete and rename make different calls, because they're different kinds of
+change to make to someone else's edge.
 
-Second, it refuses the case it cannot safely rewrite. The cross-branch reference index unions `main` and every
-open `cairn/*` editing branch. A rename refuses when a third-party open branch holds an inbound reference,
-because rewriting that branch's frontmatter would commit onto another author's edit. This mirrors the existing
-pending-edit guard: a rename already refuses when another branch is editing the target, and an inbound
-reference on another branch is the same class of conflict. Cairn repoints published inbound references on
-`main`, and only a third-party branch reference refuses.
+Deleting the target leaves an inbound edge nowhere to point, so delete simply refuses whenever the
+index holds any row for it, naming every referencing entry, published or still on a branch. There
+is no repair available: the target is gone, so the edge has to go too, and cairn leaves that to
+the author.
 
-## Delete-protected: fail closed across branches
+Renaming doesn't have that problem, because the target still exists at a new id, so rename fixes
+the edges instead of blocking on them. Every inbound reference on `main` gets repointed in the same
+commit as the move, using `rewriteFrontmatterReference`, a byte-preserving splice that touches only
+the matched id token in one frontmatter value and leaves the rest of the file, and the rest of the
+YAML, untouched. The moved entry rewrites its own self-references the same way, so an entry whose
+`related` field lists its own old id doesn't ship a dangling self-edge at the new one. Rename only
+refuses when a *different, still-open* branch holds an inbound edge: that editor's draft would
+otherwise repoint out from under them without their say, so cairn asks them to publish or discard
+first instead.
 
-Deleting a target that something still references would strand a live edge. The delete gate builds the same
-strict cross-branch reference index and refuses when any entry on `main` or any open branch references the
-target, listing the referencing entries.
+Save, by contrast, never refuses over a reference at all. A body `cairn:` link to a missing page
+hard-blocks the save, because publishing that page before its target exists would fail the build
+outright. A reference field gets only a warning under the same condition, because pointing at a
+page that's still a draft, not yet published, is exactly what an `author` or `related` field does
+most of the time; refusing that save would make drafting in dependency order impossible. The
+warning checks against the same manifest the link check uses, and that manifest can be stale, so
+it is advisory rather than authoritative.
 
-The gate fails closed. Building the index reads open branches over the network, and a read can fail. When the
-index build throws, the delete refuses rather than proceeding, on the principle that an unverifiable delete is
-an unsafe delete. The refusal returns a try-again error, never a silent allow. This is stricter than the
-body-link delete guard, which stays main-only this phase and degrades to allow when the manifest is absent.
-References don't degrade: an unverified reference graph blocks the delete.
+## The build is the only gate that can't be fooled
+
+Every check so far runs at request time, against the manifest as cairn currently sees it, and none
+of them are unconditionally trustworthy: the manifest can be stale, a branch read can fail
+transiently, and nothing stops a raw git edit made outside the editor entirely. So the delete and
+rename gates run `buildReferenceIndex` in strict mode, which turns a branch-read failure from
+"treat as unreferenced" into a thrown error the route turns into a 503 or 409, rather than letting
+a delete proceed on a read that never completed.
+
+Even a strict index, correctly built, only covers what a request handler can see. The actual
+backstop runs later and reads differently: `verifyReferences` re-derives the whole reference graph
+straight from the manifest that's about to ship and throws if any edge's target is absent from it,
+naming the source entry, the field, and the missing target. It runs inside the production build,
+alongside `verifyManifest`, with no request-time shortcuts and no branches to degrade. A body
+`cairn:` link gets its own version of this backstop: the build's link resolver throws on a miss, so
+a dangling token fails the prerender of whatever page contains it. A reference has no equivalent
+moment, since `resolveReferences` drops a dangling id quietly rather than throwing, on the
+reasoning that `verifyReferences` already refused to ship one. That gate is therefore the one
+authority in the whole system that a bypassed editor, a stale manifest, or an unlucky race can't
+talk around.
 
 ```mermaid
+%%{init: {"theme": "neutral"}}%%
 flowchart TD
-  delete["delete target"] --> build{"build strict\ncross-branch index"}
-  build -->|read fails| refuse503["refuse: try again"]
-  build -->|referenced| refuse409["refuse: still referenced"]
-  build -->|no references| proceed["commit the delete"]
+    A[Delete requested] --> B{Any entry links to it\nin the manifest?}
+    B -- yes --> R1[Refuse: pages link to it]
+    B -- no --> C[Build the cross-branch\nreference index, strict]
+    C -- index build fails --> R2[Refuse: could not verify]
+    C -- built --> D{Any row for\nthis concept/id?}
+    D -- yes --> R3[Refuse: entries reference it]
+    D -- no --> E[Delete proceeds]
 ```
 
-## Why refuse instead of guess
+The diagram is the delete path. Rename runs the same reference lookup but repoints main-side
+inbound links and references, refusing only when a third-party open branch holds one.
 
-Each gate refuses rather than picking a likely outcome. A rename onto a conflicting branch could merge,
-a delete with an unreadable branch could assume no reference, and a build with a dangling edge could drop it.
-Cairn refuses all three, because a content graph that silently loses an edge is worse than one that asks the
-author to resolve the conflict. The author sees a named refusal and acts on it; a silent guess corrupts the
-graph with no signal.
-
-The reference field's surface is documented in [the core reference](../reference/core.md#field-types), the
-build gate in [`verifyReferences`](../reference/core.md#manifest-serialize-and-verify), and the
-read-model resolver in [`resolveReferences`](../reference/delivery-data.md#resolvereferences). For the wider
-content graph the references join, see [the content model](./content-model.md#the-content-graph).
+This is a correctness guarantee about the content graph, not a security boundary. It assumes a
+cooperating author; a hostile one with raw git access is a different problem, covered in
+[the security model](./security-model.md).

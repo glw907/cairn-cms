@@ -1,133 +1,152 @@
 # Architecture
 
-cairn is a CMS that lives inside your SvelteKit site and commits to git. An editor logs in by
-email, writes markdown with a live preview a tab away, and hits Save; the save becomes a commit on the
-entry's pending branch, and a deliberate Publish copies it to `main`, where your deploy does the
-rest. cairn is design-agnostic. The engine ships the
-machinery; your site supplies an adapter declaring its content concepts, its frontmatter
-schema, its slug codec, and its `render` method. Two sites can run the same engine version
-and look nothing alike.
-
-This page draws the picture: what the engine owns, what your site owns, and what happens
-between Save and the redeployed page.
+cairn lives inside your SvelteKit site and commits to your GitHub repo. An editor signs in
+from an emailed link, writes markdown with a live preview a tab away, and hits Save. The save
+becomes a commit on the entry's own holding branch, and a deliberate Publish copies it to
+`main`, where your existing deploy takes over. cairn is design-agnostic: the engine ships the
+machinery, and your site supplies an adapter declaring its content concepts, their frontmatter
+schemas, and its own `render`, so two sites on the same engine version can look nothing alike.
 
 ## The layered model
 
+Your site is a full SvelteKit app on Cloudflare. You own the code and import the engine. You
+declare the adapter, then mount the admin and the public routes. The engine is the
+`@glw907/cairn-cms` npm package, split into subpath exports so a site imports only what a
+given file needs. The root `.` carries the adapter and schema constructors plus the composed
+runtime. The admin lives under `/sveltekit` (the admin facade, the auth guard, the per-route
+factories) and `/components` (its UI). A site's own public routes read from `/delivery`. A few
+narrower subpaths back specific jobs: `/render` and `/islands` for component authoring and
+client hydration, `/media` for the R2-backed asset resolver, and `/vite` for the build-time
+manifest plugin.
+
 ```mermaid
+%%{init: {"theme": "neutral"}}%%
 flowchart TB
-  subgraph site["Consumer site (SvelteKit on Cloudflare)"]
-    adapter["adapter: concepts, schema, slug codec, render"]
-    mount["the admin mount + delivery routes"]
+  subgraph site["Your site (SvelteKit on Cloudflare)"]
+    adapter["cairn.config.ts: the adapter (concepts, backend, render)"]
+    mount["the admin mount + the public delivery routes"]
   end
-  subgraph engine["@glw907/cairn-cms (the engine)"]
-    core["core (.): runtime, render, content graph, auth, GitHub App"]
-    components["/components: admin UI"]
-    sk["/sveltekit: route factories"]
-    delivery["/delivery: public read model"]
+  subgraph engine["@glw907/cairn-cms"]
+    core["core ( . ): the adapter contract, the composed runtime"]
+    sk["/sveltekit: createCairnAdmin, the guard, route factories"]
+    comp["/components: the admin UI"]
+    deliv["/delivery: the public read model"]
   end
-  store["content in git + the manifest"]
-  d1[("D1: sessions, tokens, editors")]
-  site --> engine
-  engine --> store
-  engine --> d1
+  git[("git: markdown entries + the manifest")]
+  d1[("D1: sessions + magic-link tokens")]
+  r2[("R2: media bytes")]
+  adapter --> core
+  mount --> sk
+  mount --> comp
+  mount --> deliv
+  core --> git
+  sk --> d1
+  sk --> r2
 ```
 
-Three things sit in the picture. The engine is the `@glw907/cairn-cms` npm package, exposing
-its surface through subpath exports: the root `.`, `/components`, `/sveltekit`, `/delivery`,
-and a few narrower entries. Your site is a full SvelteKit app on Cloudflare: you own the
-code, you import the engine, you supply the adapter, and you mount the whole admin with one
-catch-all route. In return the engine hands you two surfaces: `/admin`, the editing app, and
-the delivery surface, the public read model your own pages call.
+`composeRuntime` is where these two halves meet. It folds your adapter together with your
+site's git-committed `site.config.yaml` into one `CairnRuntime`, the shape every admin route
+and the health check read from. `parseSiteConfig` enforces the split rather than trusting
+convention: it throws if a key that belongs on the adapter (`content`, `backend`, `email`,
+`rendering`, `media`, `editor`) turns up in the YAML instead, and the reverse. Your concepts
+and their render are code, so they live in `cairn.config.ts`. Nav menus and the tag vocabulary
+change without a deploy, so they live in the YAML that your editors' own admin screens commit
+back to git.
 
-The engine is fat and your site is thin. That's deliberate: anything security-critical or
-fix-prone (auth, the commit path, the admin route table, the admin shell, the render machinery)
-lives in the engine, so when something needs fixing you bump a version instead of patching
-sites. What you own is presentation: the adapter, the component registry data, the CSS, and a
-handful of thin routes that hand the engine the request.
+## The admin mount
 
-## The engine and site line
+A site mounts the whole `/admin` surface with one catch-all route pair and one server
+composer, not a route per view. `createCairnAdmin` serves every admin URL through a single
+`load` and a single `actions` record: the list, the entry editor, login, the media library,
+the vocabulary editor, and the rest all dispatch from the same two exports, parsed off
+`event.url.pathname`. A shared shell layout wraps the whole subtree in cairn's chrome (the
+sidebar, the top bar, the theme), so a site's own custom screen, dropped in as a concrete
+route under `/admin/`, renders inside the same shell the engine's views do. The mount itself
+does no access control. A separate auth guard, wired once in `hooks.server.ts`, gates every
+`/admin/**` path before any load runs and sets `event.locals.editor`, the signed-in identity a
+site's own routes can read the same way. See [the canonical admin
+mount](../reference/admin-routes.md) for the exact files to copy.
 
-The engine owns the runtime: the magic-link auth on D1, the `/admin` guard, the GitHub-App
-commit path, the admin shell and components, the SvelteKit route factories, and the render
-pipeline machinery. You own the adapter and the presentation.
+## The commit pipeline: holding branch to publish
 
-The seams are where your code plugs in:
-
-- The adapter contract, the single `CairnAdapter` object the engine consumes.
-- The slug codec, which maps a content id to a public URL and back.
-- The frontmatter schema, one `fieldset` declaration per concept that drives the editor
-  form, the validator, and the inferred frontmatter type at once.
-- The `render` method, your one markdown-to-HTML function, which the editor preview and every
-  public page call.
-
-See [the content model](./content-model.md) for the schema and concept detail, and
-[the core reference](../reference/core.md) for the seam signatures.
-
-## The commit and publish flow
-
-A save is a commit, held back from the live site. When an editor hits Save, the admin app sends
-the edited file to the GitHub App, which commits it to the entry's pending branch,
-`cairn/<concept>/<id>`, cut from `main`'s head on the first save. The committer is
-`cairn-cms[bot]` and the author is the editor, so the git history records who wrote each change
-while the machine identity does the writing. The live site does not change and no deploy fires.
-
-Publish is the deliberate step. The per-page Publish rides the edit form, so it first holds the
-posted content like a save (publish-what-you-see), then commits that markdown to `main`, with its
-manifest row upserted, in one commit, and deletes the branch. The delete is sha-guarded: it runs
-only when the branch head still matches the commit publish made, so a save landing mid-publish
-leaves the entry pending instead of vanishing. That push triggers your existing Cloudflare build,
-which redeploys. A site-wide publish-all ships every pending entry's last saved version the same
-way in one atomic commit. Discard deletes the branch, so a published entry returns to its live
-version and a never-published one disappears.
+Saving and publishing are both commits, made through a GitHub App whose machine identity is
+separate from the editor's own session. A save writes to a branch named
+`cairn/<concept>/<id>`, cut lazily from `main`'s head the first time an editor touches that
+entry. The branch's mere existence is the entry's whole pending state, and there is no
+metadata file and no database row tracking it. Publish is a content copy, not a merge: it takes the branch's
+current markdown, upserts that entry's row into the content manifest, and lands both in one
+atomic commit to `main`, with the editor as author and `cairn-cms[bot]` as committer. Publish
+is publish-what-you-see, so text typed since the last save goes live too, and the branch
+deletes only if its head still matches the commit publish just made. A save that lands in the
+same instant leaves the entry pending instead of losing it. That commit to `main` is what
+triggers your site's existing deploy.
 
 ```mermaid
+%%{init: {"theme": "neutral"}}%%
 sequenceDiagram
   actor Editor
   participant Admin as Admin (/admin)
   participant App as GitHub App
-  participant Branch as pending branch (cairn/...)
-  participant Repo as GitHub repo (main)
-  participant CI as Cloudflare build
-  Editor->>Admin: edit markdown, save
-  Admin->>App: request commit (author = editor)
+  participant Branch as holding branch (cairn/…)
+  participant Main as main
+  participant CI as Your deploy
+  Editor->>Admin: edit markdown, Save
+  Admin->>App: commit (author = editor)
   App->>Branch: commit as cairn-cms[bot]
-  Editor->>Admin: publish
+  Editor->>Admin: Publish
   Admin->>App: copy entry + manifest to main
-  App->>Repo: one commit, then delete the branch
-  Repo->>CI: push triggers build
+  App->>Main: one commit, then delete the branch
+  Main->>CI: push triggers your build
   CI-->>Editor: site redeploys
 ```
 
-The ref's existence is the only pending state. There is no metadata file and no database row, so
-deleting a stray branch by hand in GitHub leaves nothing to reconcile. Publish is a content copy,
-never a git merge: the branch differs from `main` only at the entry's path, so branch base
-staleness is irrelevant, no matter how far `main` has advanced since the branch was cut.
+Because a branch differs from `main` only at its one entry's path, how far `main` has moved
+since the branch was cut never matters; there is nothing to rebase. See [the security
+model](./security-model.md) for how the GitHub App's identity and the editor's magic-link
+session relate, and what each one is trusted to do.
 
-The GitHub App holds a machine identity separate from the editor's magic-link session. See
-[the security model](./security-model.md) for the commit trust model and how the two
-identities relate.
+## One renderer for preview and public
 
-## The render pipeline shape
+Your adapter declares exactly one `render` function, and it is the only renderer cairn ever
+calls: the same call, with the same markdown body, runs behind the live-editing preview and
+behind every public page. There is no separate preview renderer to drift from the real one.
+`render` takes the entry's markdown body plus a `resolve` and a `resolveMedia` callback, which
+rewrite a `cairn:` content link and a `media:` asset reference to their live URLs, and it
+returns the HTML your site serves. A component your registry marks for client hydration
+renders its static, no-JS markup through this same call; the live Svelte version mounts over
+it in the browser afterward, from the `/islands` runtime, only where the page actually needs
+it.
 
-Author markdown runs through one render pipeline. It parses the markdown with the unified
-toolchain, dispatches any directive components through your component registry, and passes
-the result through a sanitize floor before emitting HTML, which your site delivers with
-`{@html}`. The same `render` runs in the editor preview and on the public page, so the author
-sees the live design while editing.
+The public side of this seam is not a live read from GitHub. `/delivery`'s route loader
+resolves a request path against a site resolver built at build time from globbed content
+files, so a deployed page renders from a build-time projection of the manifest, never a
+request-time API call to your repo. The admin side does read live: every admin view goes
+through the connected GitHub backend on each request, since an editor is looking at branches a
+build has never seen. What the render call keeps constant across both is the sanitizing floor
+between an author's markdown and the HTML a visitor's browser executes. See [the render
+sanitize floor](./render-safety.md) for exactly what it strips and what it guarantees.
 
-The sanitize floor is the primary XSS control. It runs on every render by default. A second
-post-dispatch guard covers a component's `build()` output, which the floor runs too early to
-see. See [the security model](./security-model.md) for the floor, the allowlist
-extension point, and the guard.
+## Where state lives
+
+cairn keeps state in three places, each matched to what its data needs. Content markdown, the
+content manifest, the media manifest, and the site's YAML config all live in git, because that
+is what a small site's content actually needs: versions, attribution, and a commit that is
+itself the deploy trigger. Auth state, an editor's session and a magic-link token's single use,
+lives in a self-owned D1 database (bound as `AUTH_DB`), because a login has to be checked and
+invalidated in milliseconds and git has no such operation. Media bytes, when a site turns them
+on, live in an R2 bucket (bound as `MEDIA_BUCKET`). Only a stable `media:<slug>.<hash>`
+reference to them ever reaches git, so a file rename leaves every link intact and keeps binary
+weight out of the repository. See [where each kind of state lives](./data-tiers.md) for the rule
+this split follows and [media storage](./media-storage.md) for the reference scheme in full.
 
 ## Distribution and versioning
 
-The engine ships to public npm as `@glw907/cairn-cms` under MIT. It is in `0.x`, where a
-minor bump can carry a breaking change, so pin a version range and read the changelog before
-upgrading. The subpath exports (`.`, `/components`, `/sveltekit`, `/delivery`, and the
-narrower entries) are the supported surface; importing from a deep path inside `dist` is not.
-Your site tracks the engine by semver and regenerates its lockfile, so an engine fix
-propagates on your next bump.
-
-See [the core reference](../reference/core.md) for the engine API and the
-[reference index](../reference/README.md) for one page per export subpath.
+The engine ships to public npm as `@glw907/cairn-cms` under the MIT license, in `0.x`, where a
+minor version can carry a breaking change. Pin a version range and read `CHANGELOG.md`'s
+`Consumers must:` lines between the version you're on and the one you're moving to before you
+bump. Treat the subpath exports this page names as the supported surface. A path that reaches
+inside `dist` directly is unsupported and can break on any version bump. An engine fix or a new
+admin feature reaches your site through the
+version bump alone, so there is no per-site route table or action list to keep in sync by hand.
+See [the core reference](../reference/core.md) for the adapter contract and [the reference
+index](../reference/README.md) for one page per export subpath.

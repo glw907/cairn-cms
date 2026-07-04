@@ -1,5 +1,8 @@
 # What cairn is
 
+> The public-facing content of this charter was absorbed by [why cairn](../explanation/why-cairn.md) in
+> the 2026-07 docs rewrite; this file remains the internal scope charter.
+
 The canonical statement of cairn's purpose and boundary. `CLAUDE.md` carries the short version; this is
 the fuller why. Read it before any change that adds an abstraction, a subsystem, an actor, or new surface.
 

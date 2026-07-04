@@ -1,181 +1,159 @@
 # Manage the media library
 
-The Media Library is its own screen in the admin, beside Posts and Pages under Content. Open it and
-you see every image your site has, whether it is live or still riding along with an unpublished
-edit. The screen does one job: it manages your media. You upload a new image, find one you already
-have, check where it is used, fix its name and its description, and delete one you no longer need.
-This page walks through it from an editor's seat.
+Every image on your site lives in one shared library, separate from any single post or page.
+The Library screen (the Media item in the sidebar) sits in the admin beside Posts and Pages and manages your site's images in
+one place. This guide covers finding an image, uploading one, seeing where it is used, fixing
+its name and its description, replacing it everywhere at once, and safely deleting it.
+
+- [Finding an image](#finding-an-image)
+- [Uploading an image](#uploading-an-image)
+- [The asset panel](#the-asset-panel)
+- [Where an image is used](#where-an-image-is-used)
+- [Replacing an image everywhere](#replacing-an-image-everywhere)
+- [Pushing alt text to every placement](#pushing-alt-text-to-every-placement)
+- [Deleting one image](#deleting-one-image)
+- [Deleting several at once](#deleting-several-at-once)
+- [Finding orphaned files](#finding-orphaned-files)
 
 ## Finding an image
 
-The screen opens on a grid of thumbnails, your full set of images at a glance. The grid is the
-fastest way to recognize a picture, because you see the picture itself rather than a filename. Click
-a tile, or press Space or Enter while it is focused, to open its details on the right.
+<!-- LIVE-UI: the Library grid with the search box, the triage filter, and the density toggle -->
 
-Search sits at the top of the toolbar. Type a word and the grid narrows to images whose name or alt
-text matches, so a half-remembered description finds the file. The match runs over every image, not
-just the ones currently on screen.
+The screen opens on a grid of thumbnails, your whole library at a glance. Click a tile, or
+focus it and press Enter, to open its details.
 
-Beside search is a grid-or-list toggle. The grid is best for spotting an image by sight. Switch to
-the list for scanning by name and date, or when you want to sort. The list shows each image as a row
-with its name, when it was added, its alt-text status, and where it is used, and you can sort by the
-Added column. Your pick of grid or list is remembered for next time.
+Search sits at the top of the toolbar and matches an image's name or its alt text, over your
+whole library rather than only the tiles on screen. Beside it, a filter narrows the grid to
+**All**, **Needs alt**, or **No references found**, each with a live count. Needs alt lists
+every image still missing its description. No references found lists every image the site
+cannot currently trace to a page; treat it as a starting point rather than proof the image is
+safe to delete.
+
+A density toggle switches between the grid and a list. The grid shows each image as a
+thumbnail, best when you recognize an image by sight. The list gives a compact row of name, alt
+status, usage, and date that sorts by date added, which suits scanning a long library.
 
 ## Uploading an image
 
-You can add an image to the Library directly, without opening a post first. Two Upload buttons do
-it, one in the header and one in the empty state you see before any media exists. You can also drop
-a file anywhere on the page. Each path takes one image at a time.
+<!-- LIVE-UI: the Upload button opening the capture card, and the page-wide drop target -->
 
-Choosing or dropping a file opens a card that asks you to name the image. The name fills in from the
-filename, so usually you just confirm it. You can write the alt text here as well, or mark the image
-decorative, but neither is required. An image uploaded without alt lands with its description still
-owed, and you can add it later from the details panel. Submit the card, and cairn stores the file
-and commits its record, so the new image shows up in the grid.
+Add an image to the library directly, without opening a post first. The Upload button in the
+header does it, and so does dropping a file anywhere on the page. Either way opens a card that
+asks for the image's name, prefilled from the filename, and its alt text. Neither the name nor
+the alt is required to finish the upload; an image saved without alt lands with its description
+still owed, and you can add it later from its panel.
 
-A freshly uploaded image is not placed anywhere yet, so its where-used reads "no references found"
-until you use it in a page. That is a normal resting state rather than a problem. Uploading the same
-file twice does no harm, because cairn recognizes the bytes and keeps the one copy it already has.
+Uploading the same file a second time does no harm. cairn recognizes the bytes it already has
+and keeps the one copy, so nothing is duplicated.
+
+A freshly uploaded image is not placed anywhere yet, so it reads "no references found" until
+you use it in a post or page.
+
+## The asset panel
+
+Opening a tile slides a panel in from the side, holding everything about that one image: a
+large preview, its name and its `media:` reference (with a button to copy it), its alt text,
+where it is used, its dimensions and file size, and the actions below.
+
+The name and the alt text are editable right there. The alt field is the image's *default*,
+the description it carries into a placement the next time you insert it; changing it here
+never rewrites the alt already saved on a page that already uses the image, so an established
+caption is never silently overwritten. Save applies the change without requiring an alt text,
+so you can fill in the name now and the description later.
 
 ## Where an image is used
 
-Open any image and the details panel tells you where it appears. This is the part most tools cannot
-do, and cairn gets it from the way your content is stored in git.
+The panel's "Where used" section lists every post and page that carries the image, published
+entries first, then anything still sitting in an unpublished edit with its branch named beside
+it. Each row links straight to that entry. An image with no rows reads "No references found.
+Deleting this changes nothing readers see," so the effect of a deletion or replacement is
+visible before you act.
 
-The where-used list groups its answer in two. "Published on the site" lists the live pages that show
-the image. "In an unpublished edit" lists pages where someone has placed the image in a held edit
-that has not been published yet, and it names the edit so you can tell whose draft it is. Each entry
-is a link straight to that page's editor, so checking a use is one click away.
+cairn can list these placements because every reference to an image is a plain line of text in
+a committed file, so it searches the content directly instead of estimating usage.
 
-The wording is careful on purpose. cairn finds references by reading your content, and an image
-dropped into a raw-HTML block is something it cannot see. So the panel says "found in N entries" or
-"no references found", never a flat "unused". An image with no references found is almost certainly
-safe to remove, and the next section is built around that "almost".
+## Replacing an image everywhere
 
-## Fixing the name and the description
+<!-- LIVE-UI: the Replace dialog's upload step and its impact review -->
 
-The details panel lets you edit two things about an image: its display name (and the slug that rides
-its web address) and its default alt text. Change either and press Save, and cairn commits the
-update. Renaming is cheap and safe. The pages that already use the image keep working, because cairn
-looks an image up by its content, not by its name.
+Sometimes you need to swap the file itself while the placement stays right, for instance when a
+better photo of the same subject or an updated logo comes along. Replace swaps the file while
+keeping everything about how it's used. Open an image's panel and choose **Replace image**,
+then upload the new file.
 
-The alt text here is the default for the next time you place the image, not a rewrite of pages that
-already use it. Each placement carries its own alt text, the words you wrote when you dropped the
-image into that particular page. The public site shows that per-placement alt. Editing the alt in
-the Library sets the value that fills in the next time someone inserts this image, and it leaves
-every existing placement exactly as its author wrote it. The field is labeled as the default so the
-distinction stays clear.
+cairn identifies an image by its content, not its filename, so a replacement gets a new
+identity of its own. The review step that follows lists every published entry that uses the
+current image and explains what changes: the name stays the same, only the underlying file
+does, so every one of those entries is repointed to the new file in a single commit, and
+readers see the new image once the site rebuilds. An edit still sitting on its own branch is
+left alone and keeps the old file until it publishes again; the review names any such branch
+so nothing is a surprise later.
 
-## Replacing an image
+Because a replacement touches everything at once, the confirmation is deliberate: type the
+image's slug (shown in the dialog) to apply it. If cairn cannot read every place the image
+might be used, for instance because one edit's branch will not load, the review refuses to
+guess and holds the replacement rather than risk missing a reference. The file you already
+uploaded stays ready, and a "Check usage again" button re-runs the check once the branch is
+reachable.
 
-Sometimes the picture is right but the file is wrong: a typo in a chart, a crop that needs redoing, a
-photo you re-exported at a better quality. Replace swaps the file behind an image without you having
-to revisit every page that uses it. Open the image, choose Replace, and upload the corrected version.
+## Pushing alt text to every placement
 
-The review tells you the scope before anything changes. It counts how many published entries use the
-image and names them, the same grouping the where-used list uses. The name stays the same and only
-the file behind it changes, so every page that already shows the image picks up the new version. cairn
-asks you to type the image's slug to confirm, because a replace rewrites your published pages in one
-commit and could break a draft that was mid-edit.
+An image's default alt (see [The asset panel](#the-asset-panel)) only fills in the next time
+you insert the image. If the image is already used in a dozen places from before it had a good
+description, **Push alt to placements** applies the current default retroactively.
 
-Two things stay where they were. An edit held on its own branch keeps the old file until that edit is
-republished, so a draft you have not published yet is never rewritten under you. And the old file is
-not erased: it stays in your git history, so a replace you regret can be undone from the repository.
-The review names any open edits that are still on the old file, so you know what to expect when they
-publish.
+The review sorts every placement into three groups. An empty alt gets filled automatically.
+Existing custom text is left alone by default, listed but unchanged, unless you check a box to
+overwrite it, the one destructive choice in this flow, so it needs a deliberate opt-in. A
+decorative image marked that way on purpose is only reported, never overwritten. As with
+Replace, an unverifiable placement holds the whole push rather than risk missing one.
 
-## Filling in missing alt text
+## Deleting one image
 
-Alt text describes a picture for a reader who cannot see it, and it is easy to drop an image into a
-page without writing any. Push alt fills those gaps from one place. The image's default alt, the
-description you set in the Library, copies into every placement that has none. Open the image and
-choose Push alt to start it.
+<!-- LIVE-UI: the safe-delete dialog's in-use face, naming the entries it would break -->
 
-By default it only fills the blanks and leaves any alt an author already wrote alone, because that
-text is their words for that page. An opt-in lets you overwrite the placements that already have their
-own alt too. It is off by default, since turning it on replaces what an author wrote, so reach for it
-only when you mean to standardize on the Library's description.
+Every image's panel carries a Delete action, and what it asks of you depends on whether the
+image is still in use. For an image with no references found, the dialog asks for a plain
+confirmation. For an image still used somewhere, the dialog lists every entry that deleting it
+would break, published entries and open edits alike, and keeps the delete button disabled until
+you type the image's slug (shown in the dialog).
 
-A hero image marked decorative is skipped, because its empty alt is a deliberate choice rather than a
-gap. The fill lands as one commit across every page it touches, and git keeps every version, so this
-too can be walked back from history.
+Deleting an image never destroys its history. The row is removed from the library, but every
+version stays in git, so a developer can bring it back later if it turns out you needed it.
 
-## Deleting an image safely
+## Deleting several at once
 
-Delete is in the details panel, and it has two faces depending on whether the image is in use.
+The grid and the list both support multi-select: Space toggles a focused tile, a row's checkbox
+does the same in the list, Shift with an arrow key extends a range, and Ctrl (or Cmd on a Mac)
+plus A selects everything currently visible. Selecting anything raises an action bar at the
+bottom of the screen with a live count and a Delete button.
 
-When the image is in use, the dialog names the pages that would break if you deleted it, grouped the
-same way the where-used list is, published pages first and then unpublished edits. Deleting one
-anyway is possible, but you have to mean it: the dialog asks you to type the image's slug to confirm.
-That gate is there so a destructive delete is never one stray click.
+That confirmation is itself a preview: it splits your selection into what has no references
+and will be deleted, and what is still used and will be held back. Nothing you can still see in
+use is removed by a bulk delete; every image is checked again, individually, at the moment it
+deletes, and anything found in use between your selection and that moment is skipped and named
+in the summary rather than silently dropped. As with a single delete, everything removed stays
+in git history.
 
-When the image has no references found, the dialog is a calm confirm. It notes that the delete is
-recoverable, because your content lives in git and the image's record stays in your history. So even
-a delete you regret can be undone from the repository.
+## Finding orphaned files
 
-cairn checks usage fresh at the moment you confirm, not from what the screen showed a minute ago. If
-someone placed the image into a draft while you had the dialog open, the delete is refused and the
-dialog flips to its in-use face with the new list. The check fails closed: if cairn cannot confirm
-the image is safe to remove, it does not remove it.
+<!-- LIVE-UI: the orphan-scan result, its purge-bytes section beside the broken-references readout -->
 
-## Deleting several images at once
+A rarer, more technical control lives beside the density toggle: **Find orphaned files**. Where
+the rest of this screen manages the library's records, this scans the site's raw storage
+directly, looking for stored files no library record points to any longer, and separately, for
+records whose stored file has gone missing. Most days there is nothing to find here, and it is
+worth reaching for only when a developer asks you to check, or storage costs draw your
+attention to it.
 
-When you want to clear out a batch, you do not have to open each image and delete it one by one.
-Select the ones you mean, in the grid or the list, and a bar appears along the bottom with the count
-and a Delete button. Tick a tile or a row to add it, tick again to drop it, and the bar keeps a
-running total of what you have picked.
+An orphaned file the scan finds can be purged, permanently. Unlike every other delete on this
+page, a purge has no git history to fall back on, because it acts on raw storage bytes rather
+than a tracked record, so cairn asks you to type the exact number of files you are about to
+purge before it proceeds. If the scan cannot confirm every branch's usage, it refuses to report
+a list at all rather than risk purging something still in use.
 
-Bulk delete runs the same safe check on every image you selected, all at once. cairn looks up where
-each one is used, deletes the ones nothing points at, and leaves the rest alone. An image still in
-use is skipped, not deleted, and the result tells you which ones it skipped and why. So you can
-select a whole page of thumbnails without worrying that an in-use image slips through. The dialog is
-a plain confirm with the count, no slug to type, because nothing in use can be removed this way.
+---
 
-A whole batch is one commit, the same as a single safe delete, so it is recoverable. The images'
-records stay in your git history, and a delete you regret can be undone from the repository. If cairn
-cannot work out usage for the batch (a branch it cannot read, say), it refuses the whole thing and
-removes nothing, rather than guess.
-
-## Cleaning up orphaned files
-
-Over time a site collects stored files that nothing uses any more: an image you uploaded and never
-placed, or one left behind when its only page changed. Find orphaned files, a control on the
-toolbar, hunts these down. It compares what is stored against what your content actually references,
-across the live site and every open edit, and reports back in two sections.
-
-One section is "Orphaned files". These are stored files with no record in the library and no
-reference anywhere in your content, on the live site or in any open edit. A file someone uploaded on
-a branch but has not placed yet is left out of this list, because that branch still points at it. So
-the files here really are unused bytes taking up room. You can purge them.
-
-Purging these is the one media action you cannot undo. Everything else in the Library lives in git,
-so a delete can be walked back from history. Raw files have no git record, so once purged they are
-gone for good. Because of that, the purge asks you to type the number of files you are about to
-remove, as a deliberate stop before an action with no undo. At the moment you confirm, cairn checks
-again and re-derives the list fresh, so a file that gained a use since you ran the scan is dropped
-from the purge and kept. It removes only files that are still orphaned right then.
-
-The second section is "Broken references". These are the reverse case: a record in the library whose
-stored file is missing. It is a read-only health readout, with no delete button, because there is
-nothing to remove. A broken reference means a page is pointing at a file that is not there, so the
-fix is to re-upload the file or remove the reference from the page. cairn shows you the list so you
-know where to look.
-
-If a scan cannot read one of your edit branches, it stops before reporting anything and offers you
-Check again, rather than show a half-answer that might call an in-use file orphaned. A clean scan is
-one cairn could run all the way through.
-
-## One step to make where-used accurate
-
-Where-used reads your published content from a small index cairn keeps beside your content, the
-content manifest. For an existing site, that index does not record media references until you
-regenerate it once. Run `cairn-manifest` and commit the result, and the "Published on the site" half
-of where-used becomes accurate for everything already live. New saves keep it current from there.
-Until you regenerate, the published half may read empty even for images that are in use, so do this
-once at upgrade. The unpublished-edit half works without it.
-
-## Where this fits
-
-The Library manages the images in your site, and now adds them too. You can also add an image while
-you write, by inserting it into a post, covered by [Add an image](./add-an-image.md). Saving and
-publishing an entry, image and all, is in [Publish and discard](./publish-and-discard.md).
+Once an image is placed on a page, [Add an image](./add-an-image.md) covers inserting it into a
+draft, and [Write in the editor](./write-in-the-editor.md#images-and-the-media-library) covers
+how a figure and its caption sit in your markdown.

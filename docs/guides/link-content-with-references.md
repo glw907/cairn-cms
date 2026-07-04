@@ -1,114 +1,113 @@
 # Link content with references
 
-A reference field stores a typed edge from one entry to another in frontmatter: a post's author, a page's
-related posts. The stored value is the target's permanent id, not its title or its URL, so a target rename
-or a slug change never breaks the link. This guide walks you through declaring a reference field, picking a
-target in the editor, and rendering the resolved target on the public site.
+Two different mechanisms connect one piece of content to another. A `cairn:` link is a token an
+author types into the markdown body; the editor's link picker inserts it and the renderer resolves
+it to a permalink. [Content authoring syntax](../reference/authoring-syntax.md#cairn-internal-links)
+covers that one. A `reference` field is different: your schema declares it, a typed frontmatter
+edge from one concept's entry to a specific entry of another concept, and an editor fills it from a
+picker in the entry form rather than typing it inline. This guide covers the reference field:
+declaring one, resolving it in your render code, and the checks that keep an edge from dangling
+when its target is renamed or deleted.
 
-## Prerequisites
+The running example is the showcase's `posts` concept, which carries both shapes of the field:
+`author`, a single edge to one `pages` entry, and `related`, a many edge to other `posts` entries.
+Both come from
+[`examples/showcase/src/lib/cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts),
+and this guide's snippets restate them.
 
-- A running cairn site with an adapter (see [Define an adapter and schema](./define-an-adapter-and-schema.md)).
-- At least two concepts, so one can reference the other. The showcase references its `pages` concept from
-  `posts`.
+## Declare a reference between concepts
 
-## Declare the field
-
-A reference is a `fields.*` descriptor like any other, with one required option: the `concept` it points at.
-Add it to a concept's `fieldset`. Use `fields.reference` for a single edge and `fields.array(fields.reference(...))`
-for many.
+`fields.reference` declares a single edge. Wrap it in `fields.array` for a many edge.
 
 ```ts
-// src/lib/cairn.config.ts
-import { defineAdapter, fieldset, fields } from '@glw907/cairn-cms';
+import { fields } from '@glw907/cairn-cms';
 
-export const cairn = defineAdapter({
-  content: {
-    posts: {
-      dir: 'src/content/posts',
-      label: 'Posts',
-      fields: fieldset({
-        title: fields.text({ label: 'Title', required: true }),
-        author: fields.reference({ concept: 'pages', label: 'Author' }),
-        related: fields.array(fields.reference({ concept: 'posts' }), { label: 'Related posts' }),
-      }),
-    },
-    pages: {
-      dir: 'src/content/pages',
-      label: 'Pages',
-      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
-    },
-    // ...backend, email, rendering...
-  },
+const author = fields.reference({ concept: 'pages', label: 'Author' });
+const related = fields.array(fields.reference({ concept: 'posts', label: 'Related post' }), {
+  label: 'Related posts',
 });
 ```
 
-The `concept` value must be a key under `content`. The build fails at the adapter declaration when it names a
-concept your site doesn't enable, so a typo surfaces at build, not at a save. An `array` also holds a leaf or
-a flat `object` of leaves for non-reference data; see [Structured fields](./structured-fields.md). For the
-full signatures, see [`fields.reference` and `fields.array`](../reference/core.md#field-types).
+`concept` names which concept's entries populate the editor's picker: `author` offers every
+`pages` entry, `related` offers every `posts` entry, including the one an editor is currently
+editing. The stored value is the target's permanent id, a single string for `reference` and a list of strings
+for `array(reference)`, never the target's title or permalink, so the edge survives a rename or a
+permalink change on either side. [Declare structured fields](./structured-fields.md#reference-another-concept)
+covers the picker widget itself, a combobox for one edge and a removable chip list for many.
 
-## Pick a target in the editor
+Name a concept you've declared. cairn catches a typo, but not at `defineConcept`: it
+surfaces when your adapter composes into the runtime the admin serves from, the first point cairn
+knows the full set of declared concepts.
 
-A reference field renders in the Details panel of the edit page, beside the other frontmatter fields. Open
-Details, and a single reference shows a picker over every entry of the target concept; an array shows a
-removable chip per selected entry plus the picker. The picker searches by title and groups by concept, so an
-editor names the target rather than typing an id. The field stores the chosen entry's id.
+```
+cairn: concept "posts" reference field "author" names concept "author", which is not declared under content
+```
 
-A reference to a target that is still a draft, or absent on `main`, saves with a non-blocking warning rather
-than a hard error. The save holds the edit on its branch as usual. The integrity guarantee comes from the
-build, not the save: `verifyReferences` fails the deploy on a frontmatter edge whose target is missing from
-the corpus, naming the source entry, the field, and the missing target. References carry no prerender
-backstop, so this build gate is their only integrity authority.
+## Query a reference at render time
 
-## Render the resolved target
-
-On the public site, resolve a reference edge to its target's identity with
-[`resolveReferences`](../reference/delivery-data.md#resolvereferences). It lives on the cross-concept site
-resolver, the only layer that reaches another concept's entries, so a post's `author` edge resolves to the
-`pages` entry it points at.
+A public route reads a reference the same way it reads any other frontmatter field, except that
+resolving it to something to link to, a title and a permalink, means reaching a different
+concept's entries. Because that lookup crosses concepts, it lives on the `site` resolver rather
+than the per-concept content index, in `resolveReferences`.
 
 ```ts
-// src/routes/(site)/[...path]/+page.server.ts
-import { resolveReferences } from '@glw907/cairn-cms/delivery';
-import { site } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { resolveReferences, type ResolvedReference } from '@glw907/cairn-cms/delivery';
+import type { ConceptDescriptor } from '@glw907/cairn-cms';
+import type { SiteResolver } from '@glw907/cairn-cms/delivery';
 
-export const load = ({ url }) => {
-  const data = routes.entryLoad({ url }); // your existing catch-all load
-  const descriptor = cairn.content[data.concept];
-  const refs = resolveReferences(site, descriptor, data.entry.frontmatter);
-  return { ...data, refs };
-};
+function resolveAuthor(
+  site: SiteResolver,
+  descriptor: ConceptDescriptor,
+  frontmatter: Record<string, unknown>,
+): ResolvedReference | undefined {
+  const refs = resolveReferences(site, descriptor, frontmatter);
+  return refs.author as ResolvedReference | undefined;
+}
 ```
 
-Each resolved value is a [`ResolvedReference`](../reference/delivery-data.md#types) for a single
-field, or a `ResolvedReference[]` for an array field, in edge order. It carries the target's `title` and
-`permalink`, so the template renders a link without a second lookup.
+`resolveReferences` reads every `reference` and `array(reference)` field off the concept's
+descriptor and looks each stored id up in `site`, keyed by field name in the result. A single
+`reference` resolves to one `ResolvedReference` (`id`, `concept`, `title`, `permalink`, and an
+optional `summary` carried from the target's excerpt). An `array(reference)` resolves to a list in
+edge order. `resolveReferences` drops an id with no live target rather than throwing, since the
+build's `verifyReferences` gate fails a genuinely dangling edge already, so an unresolved id at
+request time means the target is mid-flight or still a draft, and your route can render around it.
+[Wire the delivery
+surface](./wire-the-delivery-surface.md#serve-one-entry-through-the-catch-all-route) shows this
+call wired into a real `[...path]` route, and the [delivery data
+reference](../reference/delivery-data.md#resolvereferences) documents the full signature and the
+`ResolvedReference` shape.
 
-```svelte
-<script lang="ts">
-  let { data } = $props();
-  const author = data.refs.author;
-</script>
+## Check reference integrity
 
-{#if author}
-  <p>By <a href={author.permalink}>{author.title}</a></p>
-{/if}
+An edge can go stale in either direction: the target gets deleted, or it never existed to begin
+with. Four checkpoints catch a stale edge at different moments. Only the build check blocks a
+deploy; the earlier three keep a dangling edge from being created in the first place.
+
+| Checkpoint | When it runs | What happens |
+| --- | --- | --- |
+| Save | Every save | Warns, doesn't block, when a reference targets an entry that's missing or still a draft. The edge is valid; it just doesn't resolve to anything published yet. |
+| Delete | Deleting the target entry | Refuses, naming every entry that still references it, published or held on another editor's pending branch. |
+| Rename | Renaming the target entry | Repoints every inbound reference on `main` automatically. Refuses if a still-open edit on another branch holds an inbound edge, so you can't rename out from under someone else's unpublished draft. |
+| Build | Every production build | Throws if any edge still points at a target that doesn't exist, naming the source entry, the field, and the missing target. |
+
+The build check is `verifyReferences`. References carry no prerender backstop the way a body
+`cairn:` link does, so a reference that slips past every earlier guard, a raw git edit outside the
+editor, say, still fails here rather than shipping quietly broken.
+
+```
+content reference is dangling: posts/first-trail field "author" points at pages/founder, which does not exist.
 ```
 
-The resolver drops an id with no live target rather than throwing, since the build gate already failed a true
-dangling edge. An unresolved id at request time is a mid-flight or draft target, so the template guards the
-field before it reads.
+## See also
 
-## Rename and delete safety
-
-Once a reference points at a target, cairn protects the edge across every open editing branch.
-
-- **Rename repoints inbound references.** Renaming a target rewrites every reference on `main` that points at
-  it, in one commit, so the link survives the new id. A rename refuses when a third-party open branch holds an
-  inbound reference, the same way a pending edit blocks a rename.
-- **Delete refuses when referenced.** Deleting a target refuses when any entry on `main` or any open branch
-  references it, so an author can't strand a live link. The refusal fails closed: a branch read error refuses
-  the delete rather than allowing it.
-
-For the integrity model behind both, see [Reference integrity](../explanation/reference-integrity.md).
+- [Declare structured fields](./structured-fields.md#reference-another-concept) for the field
+  vocabulary the reference type belongs to, and the picker widget it renders.
+- [Add authors to your site](./add-authors.md) walks the `author` example end to end as a
+  dedicated concept.
+- [Define an adapter and schema](./define-an-adapter-and-schema.md) covers the rest of the adapter
+  a reference field lives inside.
+- [Wire the delivery surface](./wire-the-delivery-surface.md) covers the public routes that call
+  `resolveReferences`.
+- [Content authoring syntax](../reference/authoring-syntax.md) covers the `cairn:` body link, the
+  other way one entry points at another.

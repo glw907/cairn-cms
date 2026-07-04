@@ -1,37 +1,37 @@
 # cairn-cms documentation
 
-cairn-cms is an embedded, magic-link, GitHub-committing CMS for SvelteKit sites on
-Cloudflare. It runs two production sites today, [ecnordic.ski](https://ecnordic.ski) and
-[907.life](https://907.life). It is `0.x` and breaks between minor versions, and the project
-stays closely held while the author works through the core roadmap.
+Cairn is a small system that gives a website a writing room. The people who write for the site sign in from a link in their email, edit in the browser with a live preview, and publish when they're ready. The site's content lives as ordinary files that the site's developer controls, with no content database and no passwords for anyone to manage. Nothing a writer does while drafting can break the live site, because work waits as a private draft until it's deliberately published.
 
-## First visit
+**If you write for a site built on cairn**, start with [Welcome, editors](./guides/editor-welcome.md). It's short, and it covers what you'll need. **If you're the developer**, start with [Why cairn](./explanation/why-cairn.md) to decide whether it fits, then build with the tutorial below.
 
-If you're new, this order works:
+## Start here
 
-1. Read [Architecture](./explanation/architecture.md). It gives you the mental model: the
-   engine/site line, what a save actually does, and where your code stops and the engine
-   starts.
-2. Do the tutorial, [Build your first cairn site](./tutorial/build-your-first-cairn-site.md).
-   It goes from an empty directory to a deployed site with a working `/admin`.
-3. Keep [`examples/showcase`](../examples/showcase) open alongside. It is a complete consumer
-   site, and every shape the docs describe appears in it wired and running.
-4. After that, come back for a [guide](./guides/README.md) when a task comes up, and the
-   [reference](./reference/README.md) while you code.
+1. [Why cairn](./explanation/why-cairn.md) — what it is, who it's for, and why the stack is chosen for you.
+2. [Build your first cairn site](./tutorial/build-your-first-cairn-site.md) — an empty directory to a deployed site with a working `/admin`. Keep [`examples/showcase`](../examples/showcase) open alongside; it's a complete consumer site, and every shape the docs describe appears in it wired and running.
+3. After that, come back for a [guide](./guides/README.md) when a task comes up, and the [reference](./reference/README.md) while you code.
 
 ## The four arms
 
 - **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end.
-- **[How-to guides](./guides/README.md)** answer task questions: setting up the GitHub App,
-  configuring auth and D1, defining an adapter, configuring rendering, wiring delivery,
-  deploying, rotating the App key, and upgrading.
-- **[Reference](./reference/README.md)** documents each package export, one page per subpath,
-  plus the admin route contract and the log-event table.
-- **[Explanation](./explanation/README.md)** covers the architecture and the design rules,
-  including the security model and render safety.
+- **[How-to guides](./guides/README.md)** answer task questions (the GitHub App, auth and D1, the adapter, rendering, deploying, troubleshooting), with the editor-facing guides (writing, images, the media library, tags, publishing) grouped separately.
+- **[Reference](./reference/README.md)** documents each package export, one page per subpath, plus the admin route contract and the log-event table. The export pages are gated against the code.
+- **[Explanation](./explanation/README.md)** covers the architecture and the design rules: the security model, render safety, the content model, and the reasoning behind each. [Why cairn](./explanation/why-cairn.md) lives here too.
+
+## Vocabulary
+
+Eight words the docs use precisely:
+
+- **Concept** — a first-class content kind your adapter declares (Posts, Pages, or your own), a directory of markdown with a frontmatter schema.
+- **Adapter** — the one place your site describes itself to the engine: concepts, the GitHub target, the sender address, your `render`.
+- **Render** — your markdown-to-HTML function; the editor preview and your public pages both call it, so there is exactly one way content looks.
+- **Owner / editor** — the two roles: owners manage the editor list; editors write and publish.
+- **Holding branch** — where a save waits (`cairn/<concept>/<id>`, one per entry) until a deliberate Publish copies it to `main`.
+- **Seam** — a documented extension point (a custom admin screen, the identity hand-off, your own routes beside the engine's) with a stability promise attached.
+- **Island** — an interactive Svelte component hydrated inside otherwise-static rendered content.
+- **Manifest** — the committed index of your content the build verifies, so links and references stay whole.
 
 ## Project files
 
-[README](../README.md), [ROADMAP](../ROADMAP.md), [SECURITY](../SECURITY.md),
-[CHANGELOG](../CHANGELOG.md). Maintainer-facing material (the design system, the smoke test,
-DX feedback, and superseded history) lives under [internal/](./internal/README.md).
+[README](../README.md), [ROADMAP](../ROADMAP.md), [SECURITY](../SECURITY.md), [CHANGELOG](../CHANGELOG.md). Maintainer-facing material (the design system, the smoke test, and superseded history) lives under [internal/](./internal/README.md).
+
+When something breaks: [cairn-doctor](./reference/doctor.md) diagnoses a misconfigured site, [the logs](./guides/read-cairn-logs.md) explain a misbehaving one, and [troubleshooting](./guides/troubleshooting.md) maps symptoms to fixes.

@@ -1,125 +1,235 @@
 # Deploy to Cloudflare
 
-Goal: deploy the site Worker to Cloudflare so editor publishes commit to GitHub and the push redeploys, which is how held edits become live content.
+Deploying a cairn site means wiring its admin and provisioning its Worker's Cloudflare
+bindings. The admin is six files (a composer in `src/lib`, the guard in
+`src/hooks.server.ts`, plus a layout pair and a catch-all pair under `src/routes/admin`)
+and one build-config line. The Worker reads three bindings — `AUTH_DB` (a D1
+database) for the magic-link store, `EMAIL` (Email Sending) for the sign-in links, and, if
+your adapter uses media, `MEDIA_BUCKET` (an R2 bucket). This guide assumes you've declared
+your adapter (see [Define an adapter and schema](./define-an-adapter-and-schema.md)) and
+registered the GitHub App (see [Set up the GitHub App](./set-up-the-github-app.md)).
 
-## Prerequisites
+## Mount the admin
 
-- The GitHub App created and its credentials in hand. If you have not done that, start from [Set up the GitHub App](./set-up-the-github-app.md).
-- The auth store provisioned. See [Configure auth and D1](./configure-auth-and-d1.md) for the `AUTH_DB` D1 database and the magic-link wiring.
-- The delivery surface wired so the public site renders. See [Wire the delivery surface](./wire-the-delivery-surface.md).
-- A Cloudflare account on the Workers Paid plan, which Email Sending requires; the sending domain itself is onboarded in a step below. The paid plan's subrequest limit also matters: an admin list page makes one GitHub read per entry, which outgrows the free plan's cap around 45 entries.
-- The zone set to force HTTPS, which the magic-link login depends on ([Force HTTPS on the zone](#force-https) below covers why and how).
+```
+src/lib/cairn.server.ts
+src/routes/admin/+layout.server.ts
+src/routes/admin/+layout.svelte
+src/routes/admin/[...path]/+page.server.ts
+src/routes/admin/[...path]/+page.svelte
+```
 
-## Steps
+The composer builds the runtime once and wraps it in the single-mount facade:
 
-1. **Choose the SvelteKit Cloudflare adapter.** Install `@sveltejs/adapter-cloudflare` and set it in `svelte.config.js` so the build emits a Worker. This is the only adapter the engine targets.
+```ts
+// src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
 
-2. **Add the bindings the Worker needs.** Declare them in `wrangler.toml`. The auth store binds as `AUTH_DB` (the D1 database from the auth guide), and the magic-link sender binds as `EMAIL`:
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime);
+```
 
-   ```toml
-   [[d1_databases]]
-   binding = "AUTH_DB"
-   database_name = "your-site-auth"
-   database_id = "<your-d1-id>"
+You copy the four route files verbatim and leave them alone. The layout pair renders the
+shared admin shell around every `/admin/**` route. The catch-all pair serves every admin
+view through `admin.load` and `admin.actions`. Copy them from
+[the canonical admin mount](../reference/admin-routes.md), which is the exact listing this
+guide's own showcase runs. Keep `export const prerender = false` on the catch-all's
+`+page.server.ts`: the admin is session-gated, and a site that prerenders by default would
+otherwise bake a build-time snapshot of it.
 
-   [[send_email]]
-   name = "EMAIL"
-   ```
+One build-config line completes the mount. The package ships its admin components as real
+`.svelte` files, which Vite externalizes by default for a registry install, breaking the
+admin build. Tell Vite to bundle them:
 
-   The `EMAIL` binding serves both Cloudflare email products through the one declaration. The engine calls it as `env.EMAIL.send({ to, from, subject, html, text })`, which is the Email Sending shape that reaches arbitrary recipients.
+```ts
+// vite.config.ts
+import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
 
-   Type those bindings for the build with an `app.d.ts` that imports the engine's ambient `App.Locals` augmentation and intersects `CairnPlatformBindings` into `platform.env`. Copy this block verbatim:
+export default defineConfig({
+  plugins: [sveltekit()],
+  ssr: { noExternal: ['@glw907/cairn-cms'] },
+});
+```
 
-   ```ts
-   // src/app.d.ts
-   import '@glw907/cairn-cms/ambient';
-   import type { CairnPlatformBindings } from '@glw907/cairn-cms/sveltekit';
+## Wire the guard
 
-   declare global {
-     namespace App {
-       interface Platform {
-         env: CairnPlatformBindings;
-       }
-     }
-   }
+The mount serves every view, but nothing gates access to it yet. Add the auth guard to
+`hooks.server.ts`:
 
-   export {};
-   ```
+```ts
+// src/hooks.server.ts
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 
-   Import `CairnPlatformBindings` from `/sveltekit`, not the package root. The auth and content helpers a site mounts are typed on that subpath, and `skipLibCheck` does not warn when the import is wrong, so a mistyped binding degrades to an error type in silence (the gap two site retrofits hit). `CairnPlatformBindings` names only what the Worker reads at runtime, so it carries `GITHUB_APP_PRIVATE_KEY_B64` but not the App id or the installation id; see step 4 for why those two stay out of `platform.env`.
+export const handle = createAuthGuard();
+```
 
-3. **Onboard your sending domain.** The `EMAIL` binding can only send from a domain the zone has onboarded as a sender, and the magic-link email rides on that send, so an un-onboarded domain locks every editor out. Onboard the domain of your adapter's `branding.from` address:
+If your site already has a `handle` hook of its own, sequence the guard last with
+SvelteKit's own `sequence(yourHook, createAuthGuard())`, so your hook sees every request and
+the guard still owns `/admin` gating.
 
-   ```bash
-   npx wrangler email sending enable your-domain.com
-   ```
+The guard sets `event.locals.editor`, and the bindings it and the mount read (the D1 store,
+the email sender, the GitHub App key) need typing on `App.Platform.env`. Intersect the
+engine's binding types instead of restating each one by hand:
 
-   The command enables the zone's sending subdomain and writes the DNS records delivery depends on: an SPF `TXT` record, a DKIM selector record, and a return-path record. Email Sending requires the Workers Paid plan, so upgrade first if the command refuses.
+```ts
+// src/app.d.ts
+import type { CairnPlatformBindings, CairnMediaBindings } from '@glw907/cairn-cms/sveltekit';
+import '@glw907/cairn-cms/ambient';
 
-   Skip this step and every send throws `E_SENDER_NOT_VERIFIED`. Its message reads "destination address is not a verified address", which misleads twice over. The unverified party is your sender, and Email Routing throws the same string for an unverified forwarding destination, which is a different product. Run `npx cairn-doctor` before launch to catch the gap ahead of the first sign-in; [the doctor reference](../reference/doctor.md) and [the readiness checklist](./cloudflare-readiness.md) cover the full pre-launch gate.
+declare global {
+  namespace App {
+    interface Platform {
+      env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ };
+    }
+  }
+}
 
-4. **Set the GitHub App private key as a Worker secret.** Push the base64 private key (never as plaintext in `wrangler.toml`):
+export {};
+```
 
-   ```bash
-   npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
-   ```
+Drop `CairnMediaBindings` if your adapter turns media off; its one member, `MEDIA_BUCKET`,
+only exists when the adapter's `assets` block declares a bucket.
 
-   The Worker decodes `GITHUB_APP_PRIVATE_KEY_B64` with `atob()` before it signs, so store the PEM as a single-line base64 string.
+## Disable checkOrigin
 
-   The App id and the installation id aren't secrets, and they never reach `platform.env`. The adapter's `githubApp({ appId, installationId, ... })` call builds the backend at module scope, before a request and its `platform.env` exist, so those two identity facts live in your adapter's source alongside the owner, repo, and branch.
+cairn's guard owns CSRF for the admin with its own double-submit token, tolerant of the
+missing `Origin` header a JS-free form POST sometimes sends. SvelteKit's own global
+`checkOrigin` check runs ahead of any handle and would reject that same POST first, so hand
+the authority over in `svelte.config.js`:
 
-5. **Mount the admin and `/healthz`.** The whole `/admin` surface mounts as one catch-all route pair, and `/healthz` lives at the site root (so the auth guard does not gate the deploy check). Copy the two files and the composer from [the canonical admin mount](../reference/admin-routes.md) rather than guessing the layout, and compose the runtime once in `$lib/cairn.server.ts`.
+```js
+// svelte.config.js
+import adapter from '@sveltejs/adapter-cloudflare';
 
-6. **Deploy the Worker.** With `CLOUDFLARE_API_TOKEN` in the environment, run:
+export default {
+  kit: {
+    adapter: adapter(),
+    csrf: { checkOrigin: false },
+  },
+};
+```
 
-   ```bash
-   npx wrangler deploy
-   ```
+This disables the check globally, not just for `/admin`. cairn's guard restores a strict
+`Origin` check for every non-admin form on your site, so nothing else on your site loses its
+CSRF protection.
 
-   Wrangler picks up the token automatically.
+## Force HTTPS
 
-7. **Confirm the push redeploys.** Connect the GitHub repository to the Worker's build so a push to `main` rebuilds and redeploys. From here an editor's saves hold on a pending branch, Publish commits the held content to `main` through the GitHub App, the push fires the build, and the new content goes live.
+The guard reads the request scheme to decide the login cookie's shape (`__Host-` prefixed
+and Secure on https, bare on local http), and a magic-link confirmation link that arrives
+over a plain-http origin can't set that cookie at all. Force the whole zone to https before
+your first real login attempt:
 
-8. <a id="disable-checkorigin"></a>**Hand cairn the admin CSRF authority.** Set `csrf: { checkOrigin: false }` in `kit` in `svelte.config.js`. cairn now owns CSRF for the admin through its guard, which validates a uniform double-submit token on every admin form POST. Why disable the framework check? The JS-free magic-link sign-in posts from a browser that may omit the `Origin` header, and SvelteKit's global check would reject that post, so it has to come off for the admin to work. You lose nothing on the rest of the site, because cairn restores the strict `Origin` check for your non-admin form POSTs inside the same guard.
+1. In the Cloudflare dashboard, go to your zone's **SSL/TLS > Edge Certificates** and turn on
+   **Always Use HTTPS**.
+2. On the same page, turn on **HTTP Strict Transport Security (HSTS)** with a max age of at
+   least 30 days.
 
-   ```js
-   // svelte.config.js
-   const config = {
-     kit: {
-       adapter: adapter(),
-       csrf: { checkOrigin: false }
-     }
-   };
-   ```
+`PUBLIC_ORIGIN`, the var you'll set in the next section, is the canonical origin cairn signs
+magic links against; it must itself be an https URL once the zone forces one (`localhost` and
+`127.0.0.1` are the only http exceptions, for local `wrangler dev`).
 
-   SvelteKit 2.61 deprecates `csrf.checkOrigin` in favour of `csrf.trustedOrigins` and prints a build
-   warning, but `checkOrigin: false` is still the correct and required setting. `trustedOrigins` cannot
-   replace it. SvelteKit's check forbids a form POST that carries no `Origin` header regardless of the
-   trusted list (the exact JS-free magic-link case cairn fixes), and the check runs before the `handle`
-   hook where cairn's guard lives, so the global switch is the only way to hand cairn the authority.
-   cairn tracks the eventual removal; the reasoning and the planned fallback are in
-   [the 2026-06-09 DX feedback note](../internal/feedback/2026-06-09-907-0.36-retrofit.md).
+## Add the Cloudflare bindings
 
-9. <a id="force-https"></a>**Force HTTPS on the zone.** This is a requirement, not a polish step. Turn on "Always Use HTTPS" so the edge redirects every plain-http request to https before it reaches the Worker, and confirm HSTS is set on https responses.
+| Binding | Kind | Declared as |
+| --- | --- | --- |
+| `AUTH_DB` | D1 database | `d1_databases` |
+| `EMAIL` | Email Sending | `send_email` |
+| `MEDIA_BUCKET` | R2 bucket | `r2_buckets`, only if your adapter turns media on |
 
-   Here is what the setting protects. The magic-link login submits a JS-free `<form method="POST">` from the login and confirm pages, and cairn's CSRF cookie carries the `__Host-` prefix on https (which binds it to the exact origin), as does the session cookie. If your zone serves `/admin` over both http and https, the http scheme stays reachable: a first visit with no cached HSTS lands on http, the auth guard builds its login redirect from the incoming request, and the http scheme sticks. Forcing HTTPS at the edge locks the scheme to https before the form ever posts, which is what keeps the `__Host-` cookies origin-bound.
+Create the D1 database and, if your adapter uses media, the R2 bucket:
 
-   Until you force HTTPS, the guard catches the case for you. An `/admin` request that reaches a deployed host over http gets a styled "this admin needs HTTPS" page with a one-click link to the https version and these same instructions, rather than a failed sign-in. Local `wrangler dev` over http is exempt. The page is a fallback, not a substitute, so turn the zone setting on.
+```sh
+npx wrangler d1 create your-site-auth
+npx wrangler r2 bucket create your-site-media
+```
 
-## Verify
+The `d1 create` output prints a `database_id`; copy it into `wrangler.jsonc` below. Email
+Sending has no create command: onboard the sending domain from the dashboard instead, under
+**Compute > Email Service > Email Sending > Onboard Domain**, which adds the `cf-bounce` MX,
+SPF, DKIM, and DMARC records for you. Skip this and every magic-link send fails with
+`E_SENDER_NOT_VERIFIED`, the same error Email Routing throws for an unverified destination;
+the two are easy to conflate, and Email Sending's arbitrary-recipient send is the one cairn
+needs.
 
-After the deploy:
+With both provisioned, declare the bindings alongside the observability setting from the
+next section:
 
-- The deployed Worker serves the public site at its domain.
-- `/admin` redirects an unauthenticated visitor to `/admin/login` and a magic-link sign-in lands an authenticated session.
-- A plain-http request to the site redirects to https at the edge, so the magic-link form always posts over https.
-- An editor's Publish commits the held content to `main` and the push-triggered build redeploys with it. Saves hold on a pending branch and deploy nothing.
-- `/healthz` returns `ok:true`, which confirms the GitHub App signing self-test passes with the live key.
-- `npx cairn-doctor` reports every check green, covering this list and the zone settings in one pass. A repo that wires the [`cairnManifest`](../reference/vite.md) Vite plugin lets the doctor read the from-address and the repository off your adapter, so the bare command works; without the plugin, pass `--from <address> --repo <owner/name>` so those inputs are not skipped.
+```jsonc
+// wrangler.jsonc
+{
+  "name": "your-site",
+  "compatibility_date": "2026-05-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" },
+  "observability": { "enabled": true },
+  "send_email": [{ "name": "EMAIL" }],
+  "d1_databases": [
+    {
+      "binding": "AUTH_DB",
+      "database_name": "your-site-auth",
+      "database_id": "<the id d1 create printed>",
+    },
+  ],
+  "r2_buckets": [{ "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }],
+  "vars": {
+    "PUBLIC_ORIGIN": "https://your-site.example",
+  },
+}
+```
 
-## See also
+This mirrors `examples/showcase/wrangler.jsonc` in the cairn repository; start from that file
+rather than typing the shape from scratch. Mounting the R2 bucket's own delivery route
+(`/media/[...path]`) is a separate step, covered in
+[Wire the delivery surface](./wire-the-delivery-surface.md).
 
-- [The SvelteKit reference](../reference/sveltekit.md) for `createCairnAdmin` and the `healthLoad` signature behind `/healthz`.
-- [The architecture](../explanation/architecture.md#the-commit-and-publish-flow) for the save-and-publish flow.
-- [The canonical admin mount](../reference/admin-routes.md) for the exact files to copy.
-- [The `cairn-doctor` CLI](../reference/doctor.md) and [the readiness checklist](./cloudflare-readiness.md) for the pre-launch gate over this whole setup.
+## Apply the auth schema
+
+`AUTH_DB` needs its schema before the guard can read or write a session. Copy
+`examples/showcase/migrations/0000_auth.sql` from the cairn repository into your own site's
+`migrations/` directory unchanged; it declares the three tables (`editor`, `magic_token`,
+`session`) every cairn site's auth store shares, and cairn owns their shape. Apply
+it against the database you just created:
+
+```sh
+npx wrangler d1 migrations apply your-site-auth --remote
+```
+
+See [Configure auth and D1](./configure-auth-and-d1.md) for seeding the first owner row and
+confirming a real sign-in, once the schema exists.
+
+## Turn on observability
+
+The preceding `wrangler.jsonc` already sets `"observability": { "enabled": true }`. That
+routes every event cairn logs (`auth.link.send_failed`, `commit.failed`, `guard.rejected`,
+and the rest of the vocabulary) into Workers Logs, queryable by event or by editor. Leave it
+off and a failed sign-in or a stuck publish leaves nothing to read. See
+[Read cairn logs](./read-cairn-logs.md) for how to query them once you're deployed.
+
+## Deploy
+
+The GitHub App's private key must reach the Worker before the mount can sign anything. If
+your adapter turns tidy on, the tidy action's model key does too.
+
+```sh
+npx wrangler secret put GITHUB_APP_PRIVATE_KEY_B64
+npx wrangler secret put ANTHROPIC_API_KEY   # only if tidy.enabled is true in site.config.yaml
+```
+
+Then deploy:
+
+```sh
+npx wrangler deploy
+```
+
+Run [`cairn-doctor`](../reference/doctor.md) against the deployed site next. It probes every
+binding, the GitHub App signing chain, and the checkOrigin and edge settings from earlier in
+this guide, and its `--probe` flag drives a real sign-in envelope against `/admin/login`
+without spending a real email.
+[Cloudflare readiness](./cloudflare-readiness.md) walks the same checks by hand, one section
+per condition. If the site passes the doctor but still won't let an editor in, see
+[Troubleshooting](./troubleshooting.md).

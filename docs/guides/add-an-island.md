@@ -1,118 +1,111 @@
 # Add an island
 
-An island is a directive component that renders a static fallback on the server and mounts a live Svelte
-component over it in the browser. The fallback is real content for a no-JS reader and the page's first
-paint; the live component adds interactivity on top. This guide walks you through declaring a hydrate
-component, writing its live component, registering it, and wiring the client runtime. The worked example
-is an expiring-announcement banner: it shows until a date passes, then renders nothing.
+cairn's render pipeline runs on the server, so a directive component renders to static HTML: a
+callout or an alert never needs client code. Some content wants to be interactive, though, and
+cairn's seam for that is the `hydrate` flag on
+[`defineComponent`](../reference/core.md#definecomponent) paired with a matching entry on your
+adapter's [`rendering.islands`](../reference/core.md#renderingislands-adapter-member). This guide
+wires one up end to end, using the showcase's own `converter` directive throughout, a live
+two-way unit converter you can run yourself:
+[`cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts) declares it and
+[`Converter.svelte`](../../examples/showcase/src/lib/islands/Converter.svelte) is the component
+that mounts over it. This guide assumes you already have a directive component rendering through
+your registry. [Configure rendering](./configure-rendering.md) builds one from nothing.
 
-Islands are opt-in and additive. A site that registers none is unchanged and never ships the runtime.
+## Declare the directive as an island
 
-## Prerequisites
-
-- A running cairn site with an adapter and a component registry (see [Configure
-  rendering](./configure-rendering.md)).
-- A `+layout.svelte` at the site root where you can run code after navigation.
-
-## Declare the hydrate component
-
-A hydrate component is an ordinary [`defineComponent`](../reference/core.md#definecomponent) with
-`hydrate: true`. Its `build()` output becomes the no-JS fallback, so make it class-driven (the render
-pipeline's sink guard strips inline `style`) and high-fidelity: state the same content the live component
-starts with, at the same size, so the swap on mount does not shift the layout.
-
-The banner is attribute-only, so its fallback states the announcement and the live component adds the
-interactivity: re-checking `expires` on its own once it hydrates, rather than trusting the server's
-snapshot.
+Start from an ordinary component definition and add `hydrate: true`. The attributes stay exactly
+as declared: they're what the live component receives as props, so keep them scalar and give the
+`build` a fallback that states the same content the live component starts with.
 
 ```ts
-// src/lib/cairn.config.ts
 import { defineComponent, fields } from '@glw907/cairn-cms';
-import { strAttr } from '@glw907/cairn-cms/render';
 import { h } from 'hastscript';
-import { isBannerExpired } from './islands/banner-expiry.js';
 
-const banner = defineComponent({
-  name: 'banner',
-  label: 'Announcement banner',
-  description: 'A time-boxed announcement that removes itself once its expiry date passes.',
+const converter = defineComponent({
+  name: 'converter',
+  label: 'Unit converter',
+  description: 'A live two-way unit converter.',
   hydrate: true,
-  insertTemplate: ':::banner{message="Announcement text" expires="2026-12-31"}\n:::',
+  insertTemplate: ':::converter{from="mi" to="km" rate="1.609"}\n:::',
   attributes: {
-    message: fields.text({ label: 'Announcement', required: true }),
-    expires: fields.date({ label: 'Expires', required: true }),
+    from: fields.text({ label: 'From unit', required: true }),
+    to: fields.text({ label: 'To unit', required: true }),
+    rate: fields.number({ label: 'Rate', required: true }),
   },
-  build: (ctx) => {
-    const message = strAttr(ctx, 'message') ?? '';
-    const expires = strAttr(ctx, 'expires');
-    if (isBannerExpired(expires)) return h('div', { hidden: true }, []);
-    return h('div', { className: ['banner'] }, [h('p', [message])]);
-  },
+  build: (ctx) =>
+    h('div', { className: ['island-converter-fallback'] }, [
+      h('p', [`1 ${ctx.attributes.from} = ${ctx.attributes.rate} ${ctx.attributes.to}`]),
+    ]),
 });
 ```
 
-The directive's declared scalar attributes become the live component's props. A `number` field arrives
-as a JSON number and a `boolean` field as a JSON boolean; every other field stays a string. Use
-`'visible'` instead of `true` to defer the mount until the boundary scrolls into view.
+With `hydrate` set, the render pipeline wraps this `build()` output in an island boundary rather
+than emitting it as-is: a `<div>` carrying the directive name and the attributes, serialized to
+JSON, as inert `data-*` attributes. `rate`'s declared type is `number`, so it round-trips as a
+real JSON number. Every other attribute stays the literal string the author wrote. The
+[islands reference](../reference/islands.md#the-island-boundary) documents the boundary's exact
+shape.
 
-## Write the live component
+## Build the live component
 
-The live component is a plain Svelte 5 component. Its props are the directive's scalar attributes. Two
-rules keep an island safe and stable:
-
-- Derive computed values with `$derived`, never `$effect`. An `$effect` reactivity loop hangs the mount.
-- Treat every prop as untrusted. The props are author-controlled, so bind them to text only, and never
-  route one into a sink: `{@html}`, an `href` or `src` that could carry a `javascript:` scheme, or an
-  inline `style`.
-
-The banner's `Banner.svelte` shares its expiry check (`isBannerExpired`) with `build()`, so the two agree
-on "expired" without any shared state: each evaluates it fresh, at its own render or hydration moment,
-which is what lets a banner that expires between the build and the visit hide itself at hydration rather
-than trusting a now-stale server render.
+The live component is a plain Svelte component. Its props are the directive's attributes, so name
+them the same way and give each a default, since an inserted directive might not set every
+attribute yet:
 
 ```svelte
-<!-- src/lib/islands/Banner.svelte -->
+<!-- src/lib/islands/Converter.svelte -->
 <script lang="ts">
-  import { isBannerExpired } from './banner-expiry.js';
+  interface Props {
+    from?: string;
+    to?: string;
+    rate?: number;
+  }
 
-  let { message = '', expires }: { message?: string; expires?: string } = $props();
-  const expired = $derived(isBannerExpired(expires));
+  let { from = '', to = '', rate = 1 }: Props = $props();
+  let amount = $state(1);
+  const converted = $derived(Number.isFinite(amount) ? Math.round(amount * rate * 1000) / 1000 : 0);
 </script>
 
-{#if !expired}
-  <div class="banner" data-testid="banner-live">
-    <p>{message}</p>
-  </div>
-{/if}
+<div class="island-converter">
+  <input type="number" aria-label={from ? `Amount in ${from}` : 'Amount'} bind:value={amount} />
+  <span aria-hidden="true">{from}</span>
+  <span aria-hidden="true">=</span>
+  <output aria-live="polite">{converted} {to}</output>
+</div>
 ```
 
-## Register the island
+`converted` is a `$derived` value rather than an `$effect`. An effect that wrote `amount` back from
+a prop could loop, whereas a derived value only ever computes from its inputs.
 
-Add the live component to the adapter's `rendering.islands`, keyed by the directive name. `defineAdapter`
-checks the registration at declaration: a `hydrate` component with no island entry, or an island entry
-with no `hydrate` component, fails the build and names the offending directive. So the registration and
-the `hydrate` flag stay in step.
+The props arriving here are author-controlled and untrusted. They're an editor's own directive
+attributes, escaped by the pipeline and parsed on the client, but never validated against your
+component's expectations beyond their declared type. Bind every one of them to text, the way
+`from` and `to` land as plain interpolated strings in the preceding component. Never route a prop into
+`{@html}`, an `href` or `src` that could carry a `javascript:` scheme, or an inline `style`. The
+engine only guarantees the prop arrives as escaped data. Where it goes next is up to your
+component, so keep it out of those sinks. The [props section of the islands
+reference](../reference/islands.md#props-are-untrusted) covers the full trust boundary.
+
+## Register it on `rendering.islands`
+
+Key the live component by the directive's name, the type-safe join between the two declarations:
 
 ```ts
-// src/lib/cairn.config.ts
-import Banner from '$lib/islands/Banner.svelte';
+import type { IslandRegistry } from '@glw907/cairn-cms/islands';
+import Converter from '$lib/islands/Converter.svelte';
 
-export const cairn = defineAdapter({
-  // ...content, backend, email...
-  rendering: {
-    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
-    components: registry, // the registry that includes `banner`
-    islands: { banner: Banner },
-  },
-});
+const islands: IslandRegistry = { converter: Converter };
 ```
 
-## Wire the client runtime
+`defineAdapter` checks this join in both directions at module load, the same moment
+`defineConcept` checks your concepts' permalinks: a `hydrate` component with no `islands` entry,
+or an `islands` entry with no `hydrate` component, fails to load. You catch the mistake in your
+editor or dev server instead of shipping a directive that never becomes interactive.
 
-Call [`hydrateIslands`](../reference/islands.md#hydrateislands) from the site's root layout on
-`afterNavigate`. It runs on first load and after every client-side navigation, and it tears down the
-previous pass first, so it never stacks a duplicate instance. Import the runtime dynamically and gate it
-on a non-empty registry, so a static site never ships the island client code.
+## Mount the runtime in your root layout
+
+One call, in your root layout, mounts every island on the page after every navigation:
 
 ```svelte
 <!-- src/routes/+layout.svelte -->
@@ -133,21 +126,43 @@ on a non-empty registry, so a static site never ships the island client code.
 {@render children()}
 ```
 
-## Use it
+The empty-registry check keeps the dynamic import out of a site's bundle entirely until it
+registers a first island, so a static site never ships the runtime. `hydrateIslands` tears down
+the previous mount before creating the new one. Call it from `afterNavigate`, not a one-time
+`onMount`, so each client-side navigation gets exactly one instance per boundary.
 
-An author inserts the directive from the editor's block palette, or types it in markdown:
+## Choose eager or deferred mounting
 
-```md
-:::banner{message="The trailhead lot closes for paving through Friday." expires="2026-08-01"}
-:::
-```
+`hydrate: true` mounts eagerly, on first load and after every navigation. `hydrate: 'visible'`
+defers the same mount to the moment the island's boundary first scrolls into view, then stops
+watching it. Reach for `'visible'` on an island that sits low on a long page, so a reader who
+never scrolls that far never pays for the mount at all. A converter near the top of a post, the
+one built here, is exactly the eager case: it's likely to be visible already, so there's nothing
+to gain by deferring it.
 
-The page renders the fallback (the announcement) on the server, and the live banner mounts over it in
-the browser, re-checking `expires` on its own. The edit page's preview shows the fallback, never the live
-island, because the preview frame is sandboxed: verify the live behavior on the deployed page.
+## Keep the fallback the real first paint
 
-## See also
+For a `'visible'` island, or any reader without JavaScript, the `build()` output is the only
+content that ever renders, so treat it as the page's first paint, not a placeholder. Make it state
+the same thing the live component starts with, at close to
+the same size. A fallback that's shorter or narrower than the mounted component shifts the layout
+the moment the runtime replaces it. Style it with classes rather than an inline `style` attribute.
+The render pipeline's sink guard strips inline styles and event handlers from directive output, so
+a fallback that depends on one silently loses it.
 
-- [Islands reference](../reference/islands.md): the runtime, the boundary DOM contract, and the props trust boundary.
-- [`hydrate` on the components reference](../reference/components.md#hydrate-and-the-island-boundary): the directive-side field.
-- [`rendering.islands` on the core reference](../reference/core.md#renderingislands-adapter-member): the adapter registration.
+## Verify the live island on the deployed page
+
+The admin's edit-page preview renders only the `build()` fallback: its frame runs with
+`sandbox=""`, so no script executes and the island runtime never mounts there. This is expected.
+Check a live island the way any reader actually encounters it,
+on the deployed page (or a local `vite dev` / `wrangler dev` run of it), never in the preview.
+
+## Related reference
+
+The [islands reference](../reference/islands.md) documents `hydrateIslands`, the `IslandRegistry`
+type, and the full island boundary contract. [`hydrate` on the components
+reference](../reference/components.md#hydrate-and-the-island-boundary) and [`rendering.islands` on
+the core reference](../reference/core.md#renderingislands-adapter-member) cover the two
+declarations this guide joined. [Configure rendering](./configure-rendering.md) and [Define an
+adapter and schema](./define-an-adapter-and-schema.md) cover the registry and the adapter this
+guide assumed were already in place.

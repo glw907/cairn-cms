@@ -1,53 +1,133 @@
 # Configure rendering
 
-This guide wires the path from an author's markdown to the HTML your site delivers.
+Your adapter's `rendering` group carries one member the rest of the engine builds on: `render`,
+the function that turns an entry's markdown into HTML. Every public page calls it to build its
+body, and the admin's live preview calls the same function on a debounce as you type, so a site
+has exactly one place where its markdown becomes HTML.
 
-## Prerequisites
+## Build a renderer from your components
 
-- An adapter with a `render` method. If you have not built one yet, start from [Define an adapter and schema](./define-an-adapter-and-schema.md), which sets up `cairn.config.ts` and leaves `render` pointing here.
-- The package installed (`@glw907/cairn-cms`).
+`createRenderer` composes the pipeline: it takes your directive component registry and returns
+`renderMarkdown`, an `async (content, opts) => string` function that runs markdown through remark
+and rehype, dispatching each registered directive to its `build`.
 
-This guide assumes a running cairn site whose adapter you want to wire for rendering.
+```ts
+import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
 
-## Steps
+const registry = defineRegistry({ components: [] });
+const { renderMarkdown } = createRenderer(registry);
+```
 
-1. **Build the renderer with `createRenderer`.** It returns `renderMarkdown` plus the remark and rehype plugin arrays (so the admin editor preview can reuse the same pipeline). If your site is a plain-prose blog, call `createRenderer()` with no argument; it defaults to the empty registry and still runs the full markdown-to-HTML pipeline. The showcase passes its registry because it ships directive components:
+An empty registry is a valid starting point. GitHub Flavored Markdown, `cairn:` link resolution,
+figures, and the sanitize floor all run regardless of whether you've declared any directives yet.
+Add your own with `defineComponent`, covered in the [core reference](../reference/core.md#definecomponent)
+and the [components reference](../reference/components.md).
 
-   ```ts
-   import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
+## Wire it into the adapter
 
-   const registry = defineRegistry({ components: [callout, alert] });
-   const { renderMarkdown } = createRenderer(registry);
-   ```
+`rendering.render` is the seam. Its signature is `SiteRender`: an object argument carrying `body`
+plus four optional members, returning `Promise<string>`. A renderer that just delegates to
+`renderMarkdown` needs only three of them:
 
-   For the signature and the `RendererOptions` it accepts, see [`createRenderer`](../reference/core.md#createrenderer).
+```ts
+import { createRenderer, defineRegistry, defineAdapter, defineConcept, fields, fieldset, githubApp } from '@glw907/cairn-cms';
 
-2. **Forward the adapter's `render` to `renderMarkdown`.** Your adapter exposes one `render` method, and it delegates to the renderer you just built:
+const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
 
-   ```ts
-   // examples/showcase/src/lib/cairn.config.ts
-   render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
-   ```
+export const cairn = defineAdapter({
+  content: {
+    pages: defineConcept({
+      dir: 'src/content/pages',
+      label: 'Pages',
+      routing: 'page',
+      fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+    }),
+  },
+  backend: githubApp({ owner: 'acme', repo: 'site', branch: 'main', appId: '1', installationId: '2' }),
+  email: { from: 'cms@example.com' },
+  rendering: {
+    render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
+  },
+});
+```
 
-3. **Register components only if the site uses directive components.** A component is a named block an author inserts in markdown that the registry turns into custom markup. The showcase registers two, `callout` and `alert`, through `defineRegistry`. Each component declares its attributes, slots, and a `build(ctx)` function that returns the hast for that block. Inside `build`, `ctx` exposes the parsed attributes and slot content, so `ctx.slot('title')` reads an inline slot and `ctx.items('points')` reads a repeatable one. If your site has no components, skip this step and call `createRenderer()` with no argument. For the full `build(ctx)` contract and the directive grammar an author writes, see [the core reference](../reference/core.md#defineregistry).
+`resolve` rewrites `cairn:` reference links to live permalinks, and `resolveMedia` resolves
+`media:` tokens to delivery paths. Both arrive from the caller already built. The public route
+passes a site-resolver-backed pair; the admin preview passes a manifest-backed pair. Your render
+function only has to forward them.
 
-4. **Know the sanitize floor is on by default.** You do not have to enable it. The pipeline runs author HTML through a `rehype-sanitize` floor before delivery (author markdown can carry raw HTML, and a `<script>` tag or a `javascript:` link would otherwise run in a visitor's browser). The floor is extend-only: the `sanitizeSchema` option receives the safe base allowlist and returns the schema to use, so you can add benign tags your site needs but cannot weaken the dangerous strip. For the keep, strip, and rewrite detail, see [the render sanitize floor](../explanation/render-safety.md).
+## Vary output by concept or frontmatter
 
-5. **Deliver the rendered HTML.** `render` resolves to an HTML string, which you render with Svelte's `{@html}`:
+`render` also receives `concept` (the entry's concept id) and `frontmatter` (its parsed frontmatter),
+so a render function can change its output per concept or per field without a second renderer:
 
-   ```svelte
-   {@html renderedBody}
-   ```
+```ts
+import { createRenderer, defineRegistry, type SiteRender } from '@glw907/cairn-cms';
 
-   The floor has already cleaned this HTML, so the `{@html}` is safe for author-supplied content.
+const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
 
-## Verify
+const render: SiteRender = async ({ body, concept, frontmatter, resolve, resolveMedia }) => {
+  const html = await renderMarkdown(body, { resolve, resolveMedia });
+  if (concept === 'posts' && frontmatter?.featured) {
+    return `<div class="featured">${html}</div>`;
+  }
+  return html;
+};
+```
 
-The adapter's `render` turns a post body into HTML, and a registered component renders through the registry. To prove the component path, render `examples/showcase/src/content/posts/2026-03-10-callout.md`. Its body opens a `::::callout[Heads up]{tone="warning" icon="snowflake"}` directive with a nested `:::points` slot, and `createRenderer(registry)` dispatches that directive to the `callout` component's `build(ctx)`. You should get the callout's `<aside>` markup, not the literal directive text. A post with no directive renders as ordinary prose through the same pipeline.
+Both arguments can be absent. The admin's standalone component-insert preview, proving a single
+directive before you commit to it in a document, calls the same renderer with neither set, so a
+render function that reads `concept` or `frontmatter` should treat both as possibly absent.
 
-## See also
+## Share render with the editor preview and public pages
 
-- [Core reference](../reference/core.md#createrenderer) for [`createRenderer`](../reference/core.md#createrenderer) and [`defineRegistry`](../reference/core.md#defineregistry), the exact signatures behind this guide.
-- [The security model](../explanation/security-model.md#render-safety) for why the floor exists and the documented attribute-sink residual in component `build()` output.
-- [The render sanitize floor](../explanation/render-safety.md) for the keep, strip, and rewrite detail.
-- [The content model](../explanation/content-model.md) for where rendering sits in the flow from files to delivered HTML.
+You write one `render` function, and you never call it directly from your own routes. Two callers
+already do:
+
+- The public route resolver ([`createPublicRoutes`](../reference/delivery.md)) calls
+  `render({ body: entry.body, concept: entry.concept, frontmatter: entry.frontmatter, resolve })`
+  for every entry it serves.
+- The admin's edit page calls the identical function on a debounce as you type, with the same
+  `concept` and `frontmatter` the public route uses for that entry, so a renderer that varies by
+  concept previews exactly what publishing produces.
+
+Both callers get `render` from the same place, your adapter's `rendering.render`. The admin route
+threads it straight through (`render={cairn.rendering.render}` in your catch-all `/admin` page),
+and the delivery factory takes it as a constructor argument. Nothing in your own code decides which
+caller is asking.
+
+## Extend the sanitize allowlist
+
+`createRenderer`'s second argument, `RendererOptions`, controls the sanitize floor that runs over
+every rendered document. `sanitizeSchema` receives cairn's default allowlist and returns the schema
+to use, so you extend rather than replace it:
+
+```ts
+import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
+import type { Schema } from 'hast-util-sanitize';
+
+const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+  sanitizeSchema: (defaults: Schema): Schema => ({
+    ...defaults,
+    tagNames: [...(defaults.tagNames ?? []), 'iframe'],
+  }),
+});
+```
+
+Spread the default schema rather than rebuilding one. The default keeps a `<script>` tag or an
+inline event handler in an editor's markdown from becoming a stored XSS payload, and building the
+schema from scratch drops that floor by accident. `unsafeDisableSanitize: true` removes the floor
+entirely. It exists for a site whose content is fully developer-controlled. Set it in code; it is
+never an editor-facing option.
+
+`anchorRel` controls the `rel` value cairn forces onto every `target="_blank"` anchor, default
+`'noopener noreferrer'`. Pass a different string to change it, or `false` if your site already
+hardens anchors itself.
+
+## Related reference
+
+[`createRenderer`](../reference/core.md#createrenderer) and
+[`SiteRender`](../reference/core.md#stable-api) document the full call shapes. The
+[media reference](../reference/media.md) covers `resolveMedia` and the manifest it resolves
+against. The [islands reference](../reference/islands.md) covers hydrating a directive into a live
+Svelte component, a separate concern from rendering its static markup.

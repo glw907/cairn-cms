@@ -1,241 +1,283 @@
 # Wire the delivery surface
 
-This guide takes your content public through the typed read model, the permalink route, the feeds, and the build-time manifest wiring.
+The adapter, schema, and renderer describe your content. A public cairn site adds three routes on
+top: a catch-all that serves one entry per request, the feed and sitemap routes a crawler reads,
+and an archive filter that narrows a long list by tag. Every snippet below is code from
+[`examples/showcase`](../../examples/showcase).
 
-## Prerequisites
+## Build the site's indexes
 
-- An adapter and a parsed site config. If you have not built them yet, start from [Define an adapter and schema](./define-an-adapter-and-schema.md), which sets up `cairn.config.ts` and exports `cairn` and `siteConfig`.
-- The package installed (`@glw907/cairn-cms`).
+`createSiteIndexes` turns your adapter's raw markdown into the typed query surfaces the rest of
+delivery reads: one `ContentIndex` per concept, plus a cross-concept `site` resolver.
 
-This guide assumes a running cairn site whose content you want to deliver. The worked example traces the real showcase wiring across `examples/showcase`, so you can open each named file alongside the steps.
+```ts
+import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+import { cairn, siteConfig } from './cairn.config.js';
 
-## Steps
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
-1. **Build the content layer with `createSiteIndexes`.** One module globs the markdown for every concept and hands the raw records to the adapter-driven builder. You supply one `import.meta.glob` per concept (Vite needs the literal glob string at the call site). In return the builder gives you a typed index per concept plus a cross-concept `site` resolver, and it runs the build gate that fails a malformed entry red.
+const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
 
-   ```ts
-   // examples/showcase/src/lib/content.ts
-   import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-   import { cairn, siteConfig } from './cairn.config.js';
+export const site = indexes.site;
+export const posts = indexes.posts;
+```
 
-   const postsRaw = import.meta.glob('/src/content/posts/*.md', {
-     query: '?raw',
-     import: 'default',
-     eager: true,
-   }) as Record<string, string>;
-   const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
-     query: '?raw',
-     import: 'default',
-     eager: true,
-   }) as Record<string, string>;
+`import.meta.glob` needs a literal pattern at its call site, so the engine can't glob on your
+behalf. You write one glob per concept and pass the raw records in, keyed by concept id. The
+showcase keeps this in one module, `src/lib/content.ts`, so every route imports the same `site`
+and per-concept indexes instead of rebuilding them.
 
-   const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
+Each `ContentIndex` gives you `all()`, `byId(id)`, `byTag(tag)`, `allTags()`, and `adjacent(id)`
+for prev/next links. The cross-concept `site` resolver adds `byPermalink(path)`, the one lookup
+the catch-all route below needs, and `all()` for a site-wide listing like the sitemap. A malformed
+entry fails the whole build by default. Pass `{ validate: false }` as `createSiteIndexes`'s fourth
+argument only if you want a bad entry to drop out of the index instead of failing the build.
 
-   export const site = indexes.site;
-   export const posts = indexes.posts;
-   export const pages = indexes.pages;
+## Serve one entry through the catch-all route
 
-   export const ORIGIN = 'https://showcase.test';
-   export const SITE_DESCRIPTION = 'The cairn showcase site.';
-   ```
+`createPublicRoutes` builds the loader a single `[...path]` route mounts. It resolves whatever
+path the request carries against the site resolver, renders the entry through your adapter's
+`render`, and folds in the SEO head and, when media is on, the hero image.
 
-   For the signature and the `SiteGlobs` shape it expects, see [`createPublicRoutes` and the index builders](../reference/delivery.md).
+```ts
+import type { PageServerLoad, EntryGenerator } from './$types';
+import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
-2. **Add the catch-all `[...path]` route.** One route resolves any public path against the site resolver and ships the entry with a full head. `createPublicRoutes` returns an `entries` generator for prerendering and an `entryLoad` for the page load, both keyed off the `site` resolver and the adapter's `render`. Your matching `+page.svelte` renders the resolved HTML and the SEO head.
+export const prerender = true;
 
-   ```ts
-   // examples/showcase/src/routes/(site)/[...path]/+page.server.ts
-   import type { PageServerLoad, EntryGenerator } from './$types';
-   import { createPublicRoutes } from '@glw907/cairn-cms/delivery';
-   import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-   import { cairn } from '$lib/cairn.config';
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin: ORIGIN,
+  siteName: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+  defaultImage: ORIGIN + '/og/default.png',
+  feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
+});
 
-   export const prerender = true;
+export const entries: EntryGenerator = () => routes.entries();
 
-   const routes = createPublicRoutes({
-     site,
-     render: cairn.rendering.render,
-     origin: ORIGIN,
-     siteName: siteConfig.siteName,
-     description: SITE_DESCRIPTION,
-     defaultImage: ORIGIN + '/og/default.png',
-     feeds: { rss: ORIGIN + '/feed.xml', json: ORIGIN + '/feed.json' },
-   });
+export const load: PageServerLoad = async ({ url }) => {
+  return routes.entryLoad({ url });
+};
+```
 
-   export const entries: EntryGenerator = () => routes.entries();
-   export const load: PageServerLoad = ({ url }) => routes.entryLoad({ url });
-   ```
+`entries()` enumerates every permalink across every concept, so SvelteKit can prerender the whole
+site from this one route. `entryLoad` resolves the current request's path to one entry and throws
+a 404 on a miss. The template reads `data.entry`, `data.html`, and `data.seo` and renders them; it
+never touches the resolver directly.
 
-   The page reads `data.html` and `data.seo` and renders the head through `CairnHead`:
+```svelte
+<script lang="ts">
+  import type { PageData } from './$types';
+  import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 
-   ```svelte
-   <!-- examples/showcase/src/routes/(site)/[...path]/+page.svelte -->
-   <script lang="ts">
-     import type { PageData } from './$types';
-     import { CairnHead } from '@glw907/cairn-cms/delivery/head';
-     let { data }: { data: PageData } = $props();
-   </script>
+  let { data }: { data: PageData } = $props();
+</script>
 
-   <CairnHead seo={data.seo} />
-   <article>
-     <h1>{data.entry.title}</h1>
-     {@html data.html}
-   </article>
-   ```
+<CairnHead seo={data.seo} />
 
-3. **Add the feeds and the sitemap from the response helpers.** Each output is a prerendered `+server.ts` that reads the indexes and returns a `Response` from a delivery responder. Feed routes build their items from the posts index and resolve internal `cairn:` links with `buildLinkResolver`, while the sitemap route maps every site entry to a `SitemapUrl`.
+<article>
+  <h1>{data.entry.title}</h1>
+  {@html data.html}
+</article>
+```
 
-   ```ts
-   // examples/showcase/src/routes/feed.xml/+server.ts
-   import { rssResponse, buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
-   import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
-   import { cairn } from '$lib/cairn.config';
+`CairnHead` renders the SEO head, title, meta tags, and one JSON-LD script, into
+`<svelte:head>` from the plain-data `seo` object `entryLoad` returned. It carries no CSS, so
+mounting it never pulls in an admin style. Pass `title={false}` if your template wants to own the
+`<title>` tag itself.
 
-   export const prerender = true;
+If a schema field points at another concept, resolve it the same way the showcase's post pages
+resolve `author`: the cross-concept `site` resolver, not the per-concept index, is what can reach
+a different concept's entries.
 
-   export const GET = async () => {
-     const posts = site.concept('posts');
-     const toPermalink = buildLinkResolver(site);
-     const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
-     const items: FeedItem[] = await Promise.all(
-       (posts?.all() ?? []).map(async (p) => ({
-         title: p.title,
-         url: ORIGIN + p.permalink,
-         date: p.date,
-         summary: p.excerpt,
-         contentHtml: await cairn.rendering.render(posts!.byId(p.id)!.body, { resolve }),
-         tags: p.tags,
-       })),
-     );
-     return rssResponse(
-       { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
-       items,
-     );
-   };
-   ```
+```ts
+import type { PageServerLoad, EntryGenerator } from './$types';
+import { createPublicRoutes, resolveReferences, siteDescriptors, type ResolvedReference } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { cairn, siteConfig } from '$lib/cairn.config';
 
-   The JSON feed at `feed.json/+server.ts` mirrors this route and calls `jsonFeedResponse` instead. The sitemap reads the cross-concept `site` resolver directly:
+export const prerender = true;
 
-   ```ts
-   // examples/showcase/src/routes/sitemap.xml/+server.ts
-   import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
-   import { site, ORIGIN } from '$lib/content';
+const routes = createPublicRoutes({
+  site,
+  render: cairn.rendering.render,
+  origin: ORIGIN,
+  siteName: siteConfig.siteName,
+  description: SITE_DESCRIPTION,
+});
 
-   export const prerender = true;
+// The concept descriptors, by id, so the load can hand resolveReferences the right field schema
+// for the entry it resolved.
+const descriptorById = new Map(siteDescriptors(cairn, siteConfig).map((d) => [d.id, d]));
 
-   export const GET = () => {
-     const urls: SitemapUrl[] = [
-       { loc: ORIGIN + '/' },
-       ...site.all().map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
-     ];
-     return sitemapResponse(urls);
-   };
-   ```
+export const entries: EntryGenerator = () => routes.entries();
 
-   Each of these routes sets `export const prerender = true`, so SvelteKit builds them as prerender entries even though no page links to them; you do not need to list them in `config.kit.prerender.entries`. Leave `config.kit.prerender.handleHttpError` at its strict default rather than setting `'warn'`: a dangling `cairn:` link or a route that errors during prerender then fails the build loudly, which is what you want, instead of shipping a broken link.
+export const load: PageServerLoad = async ({ url }) => {
+  const data = await routes.entryLoad({ url });
+  const descriptor = descriptorById.get(data.concept);
+  const references: Record<string, ResolvedReference | ResolvedReference[]> = descriptor
+    ? resolveReferences(site, descriptor, data.entry.frontmatter)
+    : {};
+  return { ...data, references };
+};
+```
 
-4. **Wire the manifest with the `cairnManifest()` Vite plugin.** A manifest is a build-verified projection of the content files, and the plugin owns its verify. Add the plugin to your `vite.config.ts` with the config module, the per-concept content globs, and the manifest path. The verify runs outside the prerender lifecycle, so a stale manifest fails the build red regardless of any `handleHttpError` policy.
+`resolveReferences` drops an id with no live target instead of throwing. The build's
+`verifyReferences` gate fails a genuinely dangling edge, so an id still unresolved at request time
+points at a target that is mid-flight or a draft.
 
-   ```ts
-   // examples/showcase/vite.config.ts
-   import { sveltekit } from '@sveltejs/kit/vite';
-   import { defineConfig } from 'vite';
-   import { cairnManifest } from '@glw907/cairn-cms/vite';
+## Read tags as data
 
-   export default defineConfig({
-     plugins: [
-       sveltekit(),
-       cairnManifest({
-         configModule: '/src/lib/cairn.config.ts',
-         content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
-         manifestPath: '/src/content/.cairn/index.json',
-       }),
-     ],
-     ssr: { noExternal: ['@glw907/cairn-cms'] },
-   });
-   ```
+Cairn ships no public tag pages. A taxonomy field's values are read-model data: your template
+filters over them, and no engine route maps a tag to a URL.
+The field that marks a concept's tags, `multiselect` with `taxonomy: true`, is already covered in
+[Define an adapter and schema](./define-an-adapter-and-schema.md#add-more-fields-to-the-schema).
+Its validated values surface on every `ContentSummary` as `tags: string[]`.
 
-   When you change content outside the admin commit pipeline, regenerate the manifest with the `cairn-manifest` bin. The showcase wires it as a script:
+The showcase home reads that data directly, filtering the archive to a selected tag once it grows
+past a size worth narrowing:
 
-   ```jsonc
-   // examples/showcase/package.json
-   "scripts": {
-     "cairn:manifest": "cairn-manifest"
-   }
-   ```
+```ts
+import type { ContentSummary } from '@glw907/cairn-cms/delivery';
 
-   For the plugin options and the bin, see [`cairnManifest`](../reference/vite.md#cairnmanifest).
+declare const entries: ContentSummary[];
+declare const selected: string;
 
-5. **Import a delivery data helper from the node-safe barrel when you leave SvelteKit.** A SvelteKit route imports through `@glw907/cairn-cms/delivery`, which pulls `@sveltejs/kit` into its module graph, so a plain-Node tool (a custom manifest script, say) cannot import that barrel. Point that import at `@glw907/cairn-cms/delivery/data` instead, the node-safe surface that re-exports the same builders without the SvelteKit dependency.
+const filtered = selected ? entries.filter((p) => p.tags.includes(selected)) : entries;
+```
 
-   ```ts
-   import { buildSiteManifest } from '@glw907/cairn-cms/delivery/data';
-   ```
+The filter's option labels come from the site's curated vocabulary rather than the raw tag values,
+so an editor's `topics` label reads the same in the filter and in the picker:
 
-6. **Wire media end to end (when your site uses images).** A media-enabled site serves its stored
-   images from a `/media` route that streams content-addressed bytes from an R2 bucket, and it resolves
-   each `media:` token to a URL through a resolver the public render path reads. Both halves are
-   required for public images; the route alone serves the editor but leaves a published
-   `![](media:...)` as a bare token on the live page. The whole feature is off until the adapter
-   declares an `assets` block, so a text-only site can skip this step.
+```ts
+import { extractVocabulary } from '@glw907/cairn-cms';
+import { posts } from '$lib/content';
+import { siteConfig } from '$lib/cairn.config';
 
-   First bind the bucket and mount the route. In `wrangler.jsonc`:
+export const load = () => ({ posts: posts.all(), vocabulary: extractVocabulary(siteConfig) });
+```
 
-   ```jsonc
-   // wrangler.jsonc
-   "r2_buckets": [
-     { "binding": "MEDIA_BUCKET", "bucket_name": "your-site-media" }
-   ]
-   ```
+`extractVocabulary` reads the `{value, label}` list a site curates in `site.config.yaml`. Pair
+each option's `value` against an entry's `tags` to filter, and its `label` to display. A site with
+no vocabulary configured still gets tags on every summary, an open, uncurated list, since the tag
+field itself never depends on a vocabulary existing.
 
-   A `wrangler.toml` site writes the same binding as `[[r2_buckets]]` with `binding` and `bucket_name`
-   keys.
+`ContentIndex` also exposes `byTag(tag)` and `allTags()` directly, for a dedicated archive-by-tag
+view if your site wants one instead of an inline filter. Both read the same validated `tags` this
+section already covers.
 
-   ```ts
-   // src/routes/media/[...path]/+server.ts
-   import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
-   import { runtime } from '$lib/cairn.server.js';
+## Publish feeds, a sitemap, and robots.txt
 
-   export const GET = createMediaRoute(runtime);
-   ```
+Each of these has a pure builder that returns a string and a responder that wraps it in a
+`Response` with the right media type. A `+server.ts` route calls the responder.
 
-   The route validates the hash and extension before any R2 read, derives the object key from the
-   validated values alone, and carries its own security headers, since it sits outside `/admin`.
+A feed needs one item per entry. The showcase builds its items once in a shared helper, so the RSS
+and JSON routes can never drift from each other:
 
-   Then build the public resolver and inject it into the render path and the catch-all route, so a
-   published token resolves to a `/media` URL. `makeMediaResolver` and `normalizeAssets` import from
-   `@glw907/cairn-cms/media`; the manifest is the committed `src/content/.cairn/media.json`:
+```ts
+import { buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN } from '$lib/content';
+import { cairn } from '$lib/cairn.config';
 
-   ```ts
-   // src/lib/cairn.config.ts
-   import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
-   import mediaManifest from './content/.cairn/media.json';
+export async function buildFeedItems(): Promise<FeedItem[]> {
+  const posts = site.concept('posts');
+  const toPermalink = buildLinkResolver(site);
+  const resolve = (ref: Parameters<typeof toPermalink>[0]) => ORIGIN + toPermalink(ref);
+  return Promise.all(
+    (posts?.all() ?? []).map(async (p) => ({
+      title: p.title,
+      url: ORIGIN + p.permalink,
+      date: p.date,
+      summary: p.excerpt,
+      contentHtml: await cairn.rendering.render({ body: posts!.byId(p.id)!.body, resolve }),
+      tags: p.tags,
+    })),
+  );
+}
+```
 
-   export const publicMediaResolver = makeMediaResolver(
-     mediaManifest,
-     normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }),
-   );
-   // In defineAdapter: default the render resolver so a body image resolves on the public build.
-   //   render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
-   ```
+`feedItem.tags` rides straight from the same `ContentSummary.tags` the previous section covers, so
+it becomes the RSS `<category>` and the JSON Feed `tags` with no extra mapping. Each format route
+then wraps those items in its own responder:
 
-   Pass the same `publicMediaResolver` to `createPublicRoutes` (step 2) as `resolveMedia`, so the
-   frontmatter hero resolves through the one source of truth. A fresh site that has never uploaded has
-   no `media.json`, and the JSON import fails the build, so create it as `{}` first:
-   `mkdir -p src/content/.cairn && echo '{}' > src/content/.cairn/media.json`.
+```ts
+import type { RequestHandler } from './$types';
+import { rssResponse } from '@glw907/cairn-cms/delivery';
+import { ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { siteConfig } from '$lib/cairn.config';
+import { buildFeedItems } from '$lib/feed';
 
-   For the adapter `assets` block that turns media on, see [the media reference](../reference/media.md);
-   for the route handler, see
-   [`createMediaRoute`](../reference/sveltekit.md#createmediaroute); for the resolver, see
-   [`makeMediaResolver`](../reference/media.md#makemediaresolver).
+export const prerender = true;
 
-## Verify
+export const GET: RequestHandler = async () => {
+  const items = await buildFeedItems();
+  return rssResponse(
+    { title: siteConfig.siteName, description: SITE_DESCRIPTION, siteUrl: ORIGIN, feedUrl: ORIGIN + '/feed.xml' },
+    items,
+  );
+};
+```
 
-Run `npm run build` in `examples/showcase`. The production build exits 0, the prerendered home lists the post summaries through `routes/(site)/+page.server.ts` and `routes/(site)/+page.svelte`, and a post permalink resolves through `routes/(site)/[...path]/+page.server.ts`. The `(site)` group folder is URL-transparent; it exists to keep the public chrome off `/admin`, and it changes no public path. When you compare against your own site, the working reference routes are `examples/showcase/src/routes/(site)/[...path]/` for the permalink page, `routes/feed.xml/+server.ts` and `routes/feed.json/+server.ts` for the feeds, and `routes/sitemap.xml/+server.ts` for the sitemap. A stale `src/content/.cairn/index.json` fails that build, which proves the manifest verify is wired.
+`feed.json` mirrors this exactly and calls `jsonFeedResponse` instead. Both responders take the
+same channel and item shapes, so the shared `buildFeedItems` helper feeds both.
 
-## See also
+The sitemap and robots routes read straight off the `site` resolver, with no intermediate helper:
 
-- [Delivery reference](../reference/delivery.md) for the `createPublicRoutes` loaders and the response helpers.
-- [Delivery data reference](../reference/delivery-data.md) for the node-safe `/delivery/data` barrel and every builder it exports.
-- [Vite reference](../reference/vite.md#cairnmanifest) for `cairnManifest` and the `cairn-manifest` bin.
-- [The content model](../explanation/content-model.md#the-content-graph) for the files-are-truth, manifest-is-projection model behind the build-time verify.
+```ts
+import type { RequestHandler } from './$types';
+import { sitemapResponse, type SitemapUrl } from '@glw907/cairn-cms/delivery';
+import { site, ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  const urls: SitemapUrl[] = [
+    { loc: ORIGIN + '/' },
+    ...site.all().map((s) => ({ loc: ORIGIN + s.permalink, ...(s.date ? { lastmod: s.date } : {}) })),
+  ];
+  return sitemapResponse(urls);
+};
+```
+
+```ts
+import type { RequestHandler } from './$types';
+import { robotsResponse } from '@glw907/cairn-cms/delivery';
+import { ORIGIN } from '$lib/content';
+
+export const prerender = true;
+
+export const GET: RequestHandler = () => {
+  return robotsResponse({ sitemapUrl: ORIGIN + '/sitemap.xml', disallow: ['/admin'] });
+};
+```
+
+The showcase's feed and sitemap both map every entry by hand, because a full-content feed needs
+its own render pass and the sitemap wants every entry regardless of concept. A site with several
+feed-eligible concepts and no need for full content can skip the hand-written map: `feedView` and
+`sitemapView` project a site's `routing.inFeeds` and `routing.routable` concepts into feed items
+and sitemap URLs directly, summary-only, no render pass included. The [delivery data
+reference](../reference/delivery-data.md#feeds-sitemap-and-robots) documents both.
+
+## Related reference
+
+[`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes),
+[`createPublicRoutes`](../reference/delivery.md#createpublicroutes), and
+[`CairnHead`](../reference/delivery.md#cairnhead) cover the full call shapes this guide builds
+from. [`resolveReferences`](../reference/delivery-data.md#resolvereferences) documents the
+reference-resolution helper on its own. [Configure rendering](./configure-rendering.md) covers the
+`render` function this guide's routes call. The [media reference](../reference/media.md) covers
+`makeMediaResolver` and the `resolveMedia` render option that resolves a `media:` reference to its
+delivery URL.

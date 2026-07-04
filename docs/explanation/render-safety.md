@@ -1,108 +1,86 @@
 # The render sanitize floor
 
-cairn's render path runs author markdown through a unified pipeline and emits HTML that your site
-delivers with `{@html}`. Author content can carry raw HTML, so the pipeline cleans it before
-delivery. This page states what the floor keeps, what it strips, and what it rewrites, so you know
-the guarantee your site inherits and what is safe to extend.
+Cairn runs every entry's author-written markdown through one cleaning step before it reaches a
+visitor's browser, whether it came from an editor's draft, a pasted raw `<div>`, or a directive's
+attribute value. [The security model](./security-model.md) states the guarantee it gives your site
+and the trade-off it leaves you. This page is the pipeline behind that: where the sanitize step
+sits, what it keeps and removes, and where your own component code stands relative to it.
 
-Three pieces make up the floor. `buildSanitizeSchema` in `src/lib/render/sanitize-schema.ts`
-builds the allowlist that `rehype-sanitize` enforces. `rehypeAnchorRel` in the same file forces a
-`rel` on `target="_blank"` anchors. `rehypeSinkGuard` is a post-dispatch guard that inspects the
-fully-built tree last. All three wire into the pipeline through `createRenderer` in
-`src/lib/render/pipeline.ts`.
+## Two passes over one tree
 
-## Where the floor runs
+`createRenderer` builds a single remark-then-rehype pipeline, and the sanitize step runs at a
+specific point in it: after `rehype-raw` has turned an author's raw HTML into real nodes, and
+before your registered components render. That ordering is deliberate. `rehype-raw` has to parse
+the raw HTML into nodes before the floor can clean it, so the floor waits for `rehype-raw` to run
+first. A component's `build()` function is your code, not the author's, so the floor runs before
+dispatch, and it never sanitizes a component's output against the same allowlist an author's
+markdown gets.
 
-`rehype-sanitize` runs after `rehype-raw` and before the registry dispatch. `rehype-raw` parses
-the author's raw HTML into real hast nodes first, then the floor cleans that parsed tree. Running
-before the dispatch deliberately leaves the dispatch's `build()` output unsanitized at that point,
-so the inline SVG icons a component emits stay intact rather than being stripped as unknown tags.
-Anchor-rel runs last in the rehype chain, after the dispatch and after `rehype-slug`, so it also
-covers anchors a component builds rather than only anchors from author markdown.
+That leaves your own component code without a safety net between the floor and delivery, so a
+second guard runs last, over the entire built tree, after every component has rendered. It strips
+any `on*` handler or inline `style` attribute it finds, and neutralizes an unsafe URL scheme in any
+URL-bearing attribute (`href`, `src`, `srcset`, and the rest). The guard strips it regardless of
+which plugin or component emitted the node.
 
-## The post-dispatch sink guard
+The pipeline also rewrites one thing outright: every anchor with `target="_blank"` gets `rel`
+forced to `noopener noreferrer`, closing the reverse-tabnabbing hole a plain `target="_blank"`
+opens. A site can change the value or turn the rewrite off entirely. It runs after component
+dispatch, so it also covers an anchor your own component built, not just one an author wrote.
 
-`rehypeSinkGuard` runs last in the pipeline and inspects the fully-built tree, so it covers the
-attribute values a component `build()` produces as well as the values that survive the floor. It
-neutralizes the unsafe URL schemes `javascript:`, `data:`, and `vbscript:` in the URL-bearing
-attributes, including `href`, `src`, `srcset`, `xlink:href`, `poster`, `formaction`, `action`,
-`object`'s `data`, and `background`. It removes inline `on*` event handlers. It strips inline
-`style` wholesale. Safe schemes, relative URLs, anchors, and the `cairn:` token are preserved.
+## What the floor keeps and strips
 
-The guard's boundary is the URL scheme check plus the `on*` and `style` strip. It does not remove
-a `build()`-emitted raw `<script>`, `<style>`, or `<iframe srcdoc>` element node. A `build()` that
-emits those is running site-developer code (your code), and the pre-dispatch floor has already
-cleaned the author markdown.
+The floor is `rehype-sanitize` running `hast-util-sanitize`'s `defaultSchema`, the same
+GitHub-lineage allowlist GitHub itself sanitizes user content against: no `<script>`, no inline
+event handler, no `javascript:` or `data:` URL. Cairn starts from a schema other projects have
+already hardened and extends it only where the engine's own output needs room.
 
-You no longer need to coerce an attribute value by hand inside a `build()` for safety, since the
-guard catches an unsafe value wherever it lands. Routing untrusted input into a sink is still
-discouraged. A `build()` that needs dynamic styling should use a class or an inert `data-*`
-attribute (the guard strips inline `style`).
+The extensions are narrow and named:
 
-When `unsafeDisableSanitize` is set, the floor plugin and the sink guard are both dropped from the
-chain and no sanitize runs at all. The anchor-rel transform still runs unless `anchorRel` is
-`false`.
+- The directive markers (`data-primitive`, `data-slot`, `data-role`, `data-rise`, and one
+  `data-attr-<key>` per declared component attribute) are inert `data-*` strings the dispatch step
+  reads back after the floor runs. They carry no behavior of their own, so stripping them would
+  break the dispatch without closing any hole.
+- A handful of benign tags an author's content legitimately uses: `nav`, `details`, `summary`,
+  plus `figure` and `figcaption` for the engine's built-in figure handling.
+- A free-form `className` on every element and `target`/`rel` on anchors, so author-applied classes
+  and link attributes survive.
+- The `cairn:` URL scheme. A `cairn:` reference link resolves to a live permalink before the floor
+  ever runs, so the normal case leaves nothing to admit. The scheme stays on the allowlist for the
+  case where a caller passes no resolver at all (the admin's standalone component-insert preview,
+  which renders one directive with neither `resolve` nor `resolveMedia` set): an unresolved token
+  then survives to the output as inert text in an `href`, a visible broken-link signal the browser
+  will not act on as a scheme.
 
-## What the floor keeps
+A site can extend this schema (`sanitizeSchema` on `RendererOptions`, covered in
+[Configure rendering](../guides/configure-rendering.md#extend-the-sanitize-allowlist)) to admit
+more of its own content's benign HTML. The function receives cairn's schema and returns the one to
+use, so an extension adds to the allowlist rather than replacing it outright. `unsafeDisableSanitize`
+removes the floor and the closing guard entirely. It exists for a site whose content is fully
+developer-controlled, and it reopens the exact XSS vector the floor closes, so disabling it is a
+code-level adapter decision; an editor's role can't reach it.
 
-The allowlist starts from `hast-util-sanitize`'s `defaultSchema`, the GitHub-lineage allowlist.
-On top of that base the engine admits exactly what its render needs.
+## Your components run trusted code from a closed vocabulary
 
-- The directive markers. `FIXED_MARKERS` (`dataPrimitive`, `dataSlot`, `dataRole`, `dataRise`)
-  plus the `dataAttr<Key>` markers derived from the component registry survive the floor as inert
-  data attributes, so the dispatch can read its stamps after the floor has run.
-- Benign author tags real content uses: `nav`, `details`, `summary`, and the figure pair `figure`
-  and `figcaption`. These join the base, not a renderer option a consumer can replace, so a captioned
-  figure survives the floor on every site, including one that supplies its own `sanitizeSchema`.
-- A free-form `className` on every element. The engine drops `defaultSchema`'s per-tag `className`
-  tuple on the `a` entry first (that tuple would otherwise restrict a link's class to a single
-  footnote value and strip an author's link class).
-- `target` and `rel` on anchors.
-- The inert `cairn:` href scheme on top of the default protocol allowlist. The resolver rewrites a
-  `cairn:` link to a live permalink before delivery. An unresolved one survives as its inert token
-  text, a visible signal of a broken link, never an executable vector.
+An author writing markdown never gets to hand-write hast. A directive can only name a component
+your registry actually declared, and the registry fixes its shape at declaration, not at parse
+time: each attribute is one of a closed set of scalar types (`text`, `textarea`, `number`,
+`select`, `url`, `email`, `date`, `datetime`, `boolean`, `icon`), validated the same way a
+concept's own fields are, and an attribute key the component didn't declare fails validation
+before `build()` ever runs. An empty required slot fails the same way. An author controls
+which declared attributes and slots to fill in. The registry fixes the tags around them.
 
-## The content presentation charter
+That closed vocabulary is why the floor doesn't need to sanitize `build()`'s output the way it
+sanitizes raw author HTML: there's no path from an author's markdown into your component's
+implementation except through typed, validated fields your own code declared the shape of.
 
-The free-form `className` the floor keeps raises a question the figure makes concrete: may content
-carry presentation? The charter is bounded. Content may carry a closed, theme-owned set of layout
-role classes, and nothing more. A figure's placement is the live example: `:::figure{.wide}` stamps
-`<figure class="cairn-place-wide">`, and the `remarkFigure` step validates the class against the
-closed set `center`, `wide`, `full` before the floor ever sees it, so the directive can never carry a
-freeform value. The theme owns every pixel of what `wide` means; the content owns only the choice of a
-named role from the set.
+## Islands widen the reach, so they carry one more rule
 
-This is a deliberate, owned exception to "no presentation in content," not a loophole. `wide` and
-`full` are layout, and calling them semantic intent would not change that. The boundedness is the
-invariant that holds. Content never carries a freeform presentation value: no pixel size, no color, no
-margin, no float, no literal `align=` or `width=`. A directive carries identity, decorative wrapping,
-and a bounded role from a closed set, and the editor controls only ever write one of those.
-
-## What the floor strips
-
-The strip is the `defaultSchema` behavior, which the engine extends but never weakens. It removes
-`<script>`, inline event-handler attributes (`onclick` and the rest), and dangerous link protocols
-such as `javascript:` and `data:` on an `href`. One default is worth knowing about: an image `src`
-still admits a `data:` URI under `defaultSchema`, so an inline data image renders. Any tag or
-attribute outside the allowlist is dropped. While the `cairn:` admission widens the href protocol
-list, the dangerous-protocol strip is preserved alongside it.
-
-## What the floor rewrites
-
-`rehypeAnchorRel` forces a `rel` on every `target="_blank"` anchor to prevent reverse-tabnabbing.
-The default value is `noopener noreferrer`. The transform is scoped to `target="_blank"` anchors,
-not to every external link, so an ordinary same-tab link keeps the `rel` the author wrote.
-
-The value comes from the renderer's `anchorRel` option. Pass a string to set a different `rel`, or
-pass `false` to disable the injection entirely, for a site that owns its own anchor hardening.
-
-## Extending the allowlist
-
-The `sanitizeSchema` option receives the engine's default schema and returns the schema to use.
-Add the benign tags or attributes your content needs by extending the argument you receive.
-Because the extension starts from the safe base, you can only add to the allowlist, never remove
-the dangerous strip. This is the supported way to widen what the floor keeps.
-
-`unsafeDisableSanitize` is the developer-only escape that turns the floor off. It reintroduces the
-XSS vector the floor closes, so it suits only a site whose content is fully developer-controlled.
-It is a code-level adapter decision and never an editor-facing setting.
+A `hydrate` component's static output ships as usual, but its declared attributes also travel to
+the browser as a JSON string in a `data-cairn-props` attribute, escaped on emit and `JSON.parse`-d
+on the client inside a try/catch. Turning that string into a script would need `JSON.parse` itself
+to fail its own escaping, which doesn't happen. The engine's guarantee covers one thing: the prop
+arrives as escaped data. What your island component does with it afterward is outside that line.
+The props are still author-controlled, so an island must never route one into `{@html}`, an `href` or `src` that
+could carry a scheme, or an inline `style`. [Islands](../reference/islands.md#props-are-untrusted)
+covers the exact contract. It's the one place safety is the component author's job rather than the
+engine's.

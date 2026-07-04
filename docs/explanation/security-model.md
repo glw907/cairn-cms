@@ -1,178 +1,126 @@
 # The security model
 
-cairn owns three trust boundaries: who may edit, what a save is allowed to write to the repo, and
-what an author's markdown is allowed to render in a visitor's browser. This page walks through each
-one and why it is built the way it is. Exact helper signatures live in the reference, and the
-keep/strip/rewrite detail lives in the render floor page, so this stays an explanation rather than
-a restatement.
+cairn draws three trust boundaries around a site: who may open the admin, what a save may write
+to the repo, and what an author's markdown may render in a visitor's browser. Each boundary below
+states the guarantee, the risk it leaves uncovered, and where the full mechanics live when a
+sibling page owns them.
 
-## Authentication
+## The boundary table
 
-An editor logs in by email. There is no GitHub account to hold and no password to manage. Your
-authors are non-technical, so the login asks for the one thing they already have, their inbox.
+| Boundary | cairn handles | Your site handles |
+| --- | --- | --- |
+| Who may edit | Magic-link delivery, single-use tokens, session rows, CSRF on every unsafe request | The allowlist itself (who's an owner, who's an editor), and swapping in a different identity provider if you want one |
+| What a save can write | Author/committer separation, branch confinement, path confinement to your declared concepts | Which repo the GitHub App installs on, branch protection on `main`, who reviews what lands there |
+| What an author's markdown can render | The sanitize floor (scripts, event handlers, dangerous URL schemes stripped before delivery) | Your own `render()` function and any component registry you add to it |
 
-The flow is a self-owned magic link. When someone requests a link, cairn looks the email up in an
-allowlist. On a match it mints a fresh 256-bit token, stores only the SHA-256 hash of that token,
-and emails a confirmation link carrying the raw token. The response is identical whether or not the
-email was on the allowlist (the endpoint never leaks who is an editor), and a per-email cooldown
-caps the send to once a minute, so nobody can use the endpoint to flood an inbox.
+## Who may edit
 
-Confirming the link is a POST, not the GET that opening the link performs. An email scanner that
-follows the link consumes nothing, because only the POST verifies. The confirm handler hashes the
-submitted token and consumes it in one atomic statement:
+An editor never has a GitHub account, a password, or anything cairn has to store and hash.
+Signing in means clicking a link in email, and everything the boundary needs to enforce sits
+behind that one action.
 
-```sql
-DELETE FROM magic_token WHERE token_hash = ? AND expires_at > ? RETURNING email
+Requesting a link looks an email up against the D1 allowlist. A match mints a random 256-bit
+token, hashes it before it ever touches storage, and stores only the hash with a 10-minute
+expiry. Confirming the link consumes the token in one atomic D1 statement: the row is deleted
+and the email returned in the same query, so a token that's already been used or has expired
+simply isn't there to consume, and two confirms racing the same link can't both succeed. A
+confirmed token creates a session row (30-day expiry) and sets a session cookie, `__Host-`
+prefixed on HTTPS, `HttpOnly`, and scoped so no script on the page can read it. Every admin
+request resolves that cookie against the live session row, joined to the editor's current
+role, so a role change or a removed editor takes effect on the very next request rather than
+waiting for a stale session to expire on its own.
+
+The request path never confirms or denies whether an email is on the allowlist: an unknown
+address gets the identical response as a known one, so the login form can't be used to probe
+who's an editor. The one exception is a deliberate trade the design accepts: a repeated request
+within a minute returns a distinct throttled response, which does reveal membership, in exchange
+for not flooding a real editor's inbox.
+
+CSRF sits at the same boundary, because a stolen session cookie is not the whole attack. An
+attacker still has to get the editor's browser to submit a request it never meant to send. cairn
+owns CSRF for every unsafe request under `/admin`, verified before any route handler runs: a form
+post carries a double-submit token that has to match a session-scoped, `HttpOnly`,
+`SameSite=Strict` cookie, and a raw-body request (the media upload, which can't spare a form
+field) proves the same token through a custom request header instead, which a cross-origin page
+can't set without triggering
+a CORS preflight it would fail. The admin guard also serves as the one place that decides an
+unauthenticated visitor doesn't get past `/admin/login`, refuses a deployed request served over
+plain HTTP (a magic link only works if the session cookie can be set), and refuses outright if
+the auth database binding is missing, rather than rendering a login form that can never resolve.
+Every response the guard lets through carries a baseline of hardening headers regardless: no
+framing, no sniffing, no referrer, HSTS.
+
+**Residual risk.** The email account is now the credential. Anyone who reads an editor's inbox
+in the ten minutes after a request can claim their session, which is the trade every magic-link
+system makes in exchange for never asking a non-technical editor to manage a password.
+
+## What a save can write
+
+A save is a Git commit, made through a GitHub App rather than a stored personal token. The
+commit's author is the signed-in editor (read from their verified session, never from request
+input), and the committer is left to the App, so `git log` shows exactly who wrote a line and
+that cairn is the tool that landed it. Cairn confines every write it makes to the concept
+directories your adapter declares, and every save lands on the entry's own holding branch
+(`cairn/<concept>/<id>`) rather than `main`, so nothing an editor writes reaches a reader until a
+deliberate publish copies it across. The engine's connection to GitHub only ever reads files,
+commits changes, and manages branches; there's no query surface for it to leak through.
+
+A related guarantee covers the content graph a save writes into: a `reference` field's target
+has to actually exist, and the build refuses outright rather than silently linking to nothing.
+[Reference integrity](./reference-integrity.md) owns how a rename rewrites every pointing field
+and why a delete is blocked while anything still references the entry.
+
+**Residual risk.** The GitHub App's installation token can write to any path in the repo it's
+installed on; the confinement to your concept directories is enforced by cairn's own code at the
+call site, not by GitHub's permission model. Installing the App on a repo that also holds things
+you don't want cairn touching widens that risk more than installing it on a dedicated content
+repo would.
+
+## What an author's markdown can render
+
+Every path from a markdown file to a byte a browser executes runs through the same rendering
+pipeline, whether it's the editor's live preview or a visitor's page. That pipeline applies a
+sanitize floor built from the same allowlist GitHub uses to render markdown safely: scripts,
+inline event handlers, and `javascript:`/`data:` URLs are stripped regardless of what a site
+adds on top, and a site's own extensions can only add to that allowlist, never weaken it.
+[The render sanitize floor](./render-safety.md) documents that guarantee block by block,
+including how a site's own renderer inherits it.
+
+**Residual risk.** The floor stops an author's markdown from executing script in a visitor's
+browser. It says nothing about what an author is allowed to write in the first place, since
+editors are a trusted role by cairn's design, per [who may edit](#who-may-edit); a site that
+needs to defend against a malicious editor, rather than an accidental one, needs its own review
+step before publish.
+
+## What the operational logs can reveal
+
+cairn emits a structured log record for most events worth diagnosing (a failed send, a rejected
+guard request, a commit that didn't land), and every one of them is written to be safe to paste
+into an incident channel. A record carries an editor's email for attribution, and never a
+magic-link token, a session id, or the contents of the link, even when the record is logging a
+failure and the temptation is to log everything about it. [The log events
+reference](../reference/log-events.md) is the exhaustive table of what each event fires on and
+carries.
+
+## Trust boundaries, end to end
+
+```mermaid
+%%{init: {"theme": "neutral"}}%%
+flowchart LR
+    editor["Editor's browser"] -- magic link, session cookie --> guard["Admin guard (session + CSRF + origin + HTTPS)"]
+    guard -- verified editor --> commit["Commit pipeline (author = editor, committer = the App)"]
+    commit -- installation token --> repo["Repo: main + cairn/&lt;concept&gt;/&lt;id&gt; branches"]
+    repo -- publish copies to main --> deploy["Your site's deploy"]
+    deploy --> render["Render pipeline (sanitize floor)"]
+    visitor["Visitor's browser"] -- requests a page --> render
+    render -- sanitized HTML --> visitor
 ```
 
-A returned row means the token was present, unexpired, and is now gone. The link is single-use by
-construction, and this is the one place the storage choice is load-bearing. Cloudflare D1 is
-strongly consistent, so the delete-and-return cannot race with itself. KV was the rejected
-alternative here: its reads are eventually consistent, so two confirmations of the same link could
-both read the token as live before either delete lands, and the single-use guarantee would not
-hold.
+Two browsers cross into cairn here, and neither is trusted by default. The editor's browser is
+gated by the admin guard and writes only to a holding branch; the visitor's browser never reaches
+the admin and receives only what the render pipeline already sanitized.
 
-POST-confirm is defense in depth, not a guarantee. The confirm page carries the raw token from the
-URL into its hidden field, so a security appliance that renders the page and submits the one form
-consumes the token the same way an editor would. Such a consumed link fails closed (the editor
-sees the expired-link message and requests a fresh one), and the session lands inside the
-appliance rather than with an attacker, so the residual is an availability nuisance, not an
-account compromise. OWASP's guidance for one-time links accepts this bound, and cairn does too.
+## Reporting a vulnerability
 
-A valid confirmation creates an opaque session row in D1 and sets a cookie holding the random
-session id. On https the cookie carries the `__Host-` prefix, which binds it to the exact origin:
-the browser enforces `Secure`, `Path=/`, and no `Domain`. On local http dev the prefix drops
-(`__Host-` requires `Secure`, and a dev cookie cannot set it). The session id is opaque, so the
-cookie reveals nothing and is worthless off its origin.
-
-Every request through the `/admin/**` guard resolves the session row back to its editor by joining
-the allowlist, so the role is read live. Remove an editor or change a role and it takes effect on
-the next request, with no token to revoke and no cache to clear. Two roles exist, `owner` and
-`editor`. Editors edit content; owners also manage the editor list. An owner cannot remove or
-demote the last remaining owner, and that rule lives in the SQL itself: the count of owners is part
-of the `DELETE`, so two concurrent removals cannot both pass a separate check and strand the site
-at zero owners.
-
-See [the core reference](../reference/core.md#auth-and-github-app) for the auth helper signatures.
-
-## What cairn logs
-
-cairn emits structured diagnostic events for the auth flow, the commit pipeline, and the request
-guard, written to `console` for Workers Logs (see the [log events reference](../reference/log-events.md)).
-The records carry an editor's email for attribution, so you can answer who did what. They withhold
-the secrets: no magic-link token, no session id in the clear, and no magic-link contents ever enter
-a record. A standing redaction test drives the token-confirm and logout handlers and asserts the
-raw secret never appears in any emitted record, so a later change cannot widen a field to leak one.
-
-One disclosure here is deliberate. When a deploy is missing its `AUTH_DB` binding, every `/admin`
-request gets a branded page that names the missing binding and its fix, and that page serves
-before any session exists, so an anonymous visitor sees it too. A scanner that finds it learns the
-site runs cairn on Workers and is momentarily misconfigured. Nothing secret is on the page (the
-copy is this package's published registry text), and the alternative, a generic 500 with the
-detail confined to logs, would cost the operator the named fix at the moment a broken deploy is
-most confusing. cairn chooses the diagnosable failure. The window is also short by construction:
-a deploy in this state has a completely unusable admin, which `cairn doctor` and the readiness
-checklist catch before traffic does.
-
-## Commit trust
-
-A save commits markdown to the entry's pending branch under `cairn/`, and a deliberate Publish
-copies it to the repo's default branch, which auto-deploys. The identity on each commit matters,
-so cairn splits it. The commit author is the editor who saved or published, derived from the
-verified server-side session and never from request input. The committer is the GitHub App, which
-GitHub attributes to `cairn-cms[bot]`. Read the git history and you see who wrote the words, and
-that the machinery, not a person's own credentials, performed the write.
-
-A GitHub App is the deliberate choice over a personal access token. The App's permissions are
-scoped to the contents of the installed repositories, and its installation token is short-lived. A
-personal access token would tie every site's commits to one human's account and carry that
-account's full reach; the App keeps the write scoped to the repo and removes the personal account
-from the path.
-
-The App authenticates with a private key, and that key needs careful handling on Cloudflare's
-runtime. GitHub issues the key in PKCS#1 form, and the Web Crypto `importKey` that Workers run
-takes only PKCS#8. cairn wraps the PKCS#1 key as PKCS#8 in process (no Node built-ins, no octokit
-in the bundle), then signs an RS256 App JWT and exchanges it for the short-lived installation
-token. A warm isolate memoizes that token for most of its hour, so a burst of saves does not
-re-sign on every request.
-
-The commit helper cannot enforce two preconditions on its own, so the save and lifecycle paths
-must. Every write path is confined to the site's configured content directories, because the App
-token can write anywhere in the repo. The commit author comes from the session, never from the
-request. A stale-base commit fails safe as a conflict the editor reapplies, never a silent merge.
-
-The publish workflow widens the App's write surface in one bounded way. Beyond the content
-directories and the manifest on the default branch, the engine now creates, lists, and deletes
-refs under the `cairn/` prefix, where each pending entry holds its edits. Those are Git Data API
-calls under the same contents permission; no new App permission is granted and no pull requests
-are created. The branch names derive from validated concept and entry ids, and the publish-all
-path re-validates every id parsed from a ref before building a file path from it, so a stray ref
-someone pushed by hand cannot steer a write outside the content directories.
-
-The JWT signing, the token mint, and the commit helper are internal to the engine, which wires them
-behind the content routes, so your site never calls them directly. See [the core
-reference](../reference/core.md#auth-and-github-app) for the public auth surface.
-
-## Render safety
-
-Author markdown can carry raw HTML, and your site delivers the rendered output with `{@html}`.
-Without a floor, an author could write a `<script>` tag or a `javascript:` link and have it run in
-a visitor's browser. The threat is stored cross-site scripting through content an editor controls.
-
-The guarantee is a `rehype-sanitize` floor that runs by default. The allowlist starts from
-`hast-util-sanitize`'s GitHub-lineage `defaultSchema` and admits only what cairn's render needs on
-top of it. Your site can extend the allowlist through the `sanitizeSchema` option, which receives
-the safe base and returns the schema to use; the extension can only add to the allowlist, never
-weaken the dangerous strip. A developer-only `unsafeDisableSanitize` escape turns the floor off
-entirely, for a site whose content is fully developer-controlled. It is a code-level adapter
-decision and never an editor-facing setting. See [the render sanitize floor](./render-safety.md)
-for exactly what the floor keeps, strips, and rewrites.
-
-A second guard covers the component dispatch. The floor runs before the dispatch, so a component's
-`build()` output does not pass through it (a component emits inline SVG icons and other markup the
-floor would strip as unknown). A post-dispatch guard runs last in `createRenderer`, over the fully
-built tree, under the same `unsafeDisableSanitize` switch as the floor. It scheme-checks every
-URL-bearing attribute a `build()` could route a raw author value into, including `href`, `src`,
-`srcset`, `xlink:href`, `poster`, `formaction`, `action`, an `<object>`'s `data`, and `background`,
-against the same safe-scheme set the floor uses. It also drops every inline `on*` handler and
-strips inline `style`. A `build()` can no longer emit an unsafe URL scheme, an event handler, or
-inline style, whether or not an author supplied the value.
-
-A narrow boundary remains. The guard checks attributes, so it does not strip a `build()`-emitted
-raw `<script>`, `<style>`, or `<iframe srcdoc>` element node, and it leaves the anchor `ping`
-beacon. You write the `build()` functions, so emitting one of those nodes is
-site-developer-controlled code, not a path an author reaches through markdown alone.
-
-## Origin and CSRF
-
-The magic-link confirmation origin comes from `PUBLIC_ORIGIN` in config, never from a request
-header, so a forged `Host` header cannot redirect a link somewhere an attacker controls. The origin
-guard also requires https in production, which keeps the link and the `__Host-` cookies
-origin-bound. http is allowed only for `localhost` and `127.0.0.1`, matched exactly, so a lookalike
-host cannot skip the https requirement.
-
-cairn owns CSRF for the admin. Your site sets `csrf: { checkOrigin: false }` to disable SvelteKit's
-global origin check, and the guard becomes the single authority. The framework's check relies on
-the `Origin` header, and the JS-free magic-link sign-in posts from a browser that may omit it, so
-the framework would reject the very form that signs an editor in. cairn replaces that check with a
-token it controls.
-
-The guard enforces two rules. The first covers the admin: every unsafe `/admin` form POST must
-carry a valid double-submit token, a random value the login, confirm, and admin shell loads issue
-lazily and stably (the load mints it on first need and sets it as a cookie, and a later load reuses
-the same value, so a second open admin tab still matches). On https the cookie carries `__Host-`,
-which binds it to the exact origin, alongside `HttpOnly` and `SameSite=Strict`, and it is
-session-scoped, so it clears when the browser closes. The cookie holds one half of the pair and the
-form's hidden `csrf` field holds the other; the guard compares them in constant time. A request
-that forges a write from another origin cannot read the cookie to copy its value into the field, so
-it fails the compare. A failed check serves a branded 403 page rather than raw framework text, and
-a form that ships no token fails closed. The session cookie is a second layer, since a forged
-cross-site write still needs a live session it cannot carry.
-
-The second rule covers the rest of the site. Disabling the framework's global check would otherwise
-leave your own non-admin form POSTs unprotected, so the guard reproduces the strict check for them:
-an unsafe non-admin form POST whose `Origin` does not exactly match the request origin is rejected.
-Handing cairn the admin authority costs your other forms nothing.
-
-Cookie, CSRF, and session hygiene are the project's responsibility under self-owned auth, and the
-contract and integration tests cover the known failure modes.
+Found something this page doesn't account for? See [`SECURITY.md`](../../SECURITY.md) for how to
+report it privately.

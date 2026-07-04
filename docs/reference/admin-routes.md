@@ -179,6 +179,10 @@ A site that already has a `handle` hook (for example, injecting a saved theme in
 
 ```ts
 // src/hooks.server.ts
+import { sequence } from '@sveltejs/kit/hooks';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { theme } from './theme-handle.js';
+
 export const handle = sequence(theme, createAuthGuard());
 ```
 
@@ -227,13 +231,17 @@ session, so it cannot live under `/admin`. Mount it at the site root and call th
 
 ```ts
 // src/routes/healthz/+server.ts
+import { json } from '@sveltejs/kit';
+import { healthLoad } from '@glw907/cairn-cms/sveltekit';
+import { runtime } from '$lib/cairn.server.js';
+
 export const prerender = false;  // see below
 export const GET = async (event) => json(await healthLoad(event, runtime));
 ```
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent
-`ok:false` that also 404s at runtime. The admin mount carries its own `prerender = false`; this
+`ok:false` that also 404 responses at runtime. The admin mount carries its own `prerender = false`; this
 root endpoint needs its own opt-out.
 
 ## Per-route mounting (advanced)

@@ -1,134 +1,108 @@
-# Enable tidy and the editor copy-edit
+# Enable tidy
 
-This guide wires the editor's two copy-edit features: the spellcheck, which is on by default and needs
-no setup, and tidy, the opt-in language-model copy-edit, which a developer turns on. Both are
-configured in the committed site config (the same `site.config.yaml` the nav menus live in), and tidy
-also needs one Worker secret.
+Tidy is cairn's optional AI copy-edit, built on [Claude](https://www.anthropic.com/claude). Turning
+tidy on is a developer task: add a `tidy` block to `site.config.yaml` and set an Anthropic API key
+as a Worker secret. Editors then work with tidy from the toolbar. See
+[Write in the editor](./write-in-the-editor.md#tidy) for that side.
 
-## Prerequisites
+If you haven't declared your adapter yet, start with
+[Define an adapter and schema](./define-an-adapter-and-schema.md). Tidy is off by default, and
+turning it on is a deliberate per-site choice: every call it makes is a real, billed request to
+Anthropic's API, so there's no "just try it" setting to leave on by accident.
 
-- A running cairn site with the admin mounted. If you have not stood one up, start from
-  [Define an adapter and schema](./define-an-adapter-and-schema.md).
-- For tidy, an Anthropic API key and a Worker on the Workers Paid plan (the model call is a Worker
-  subrequest).
+## Turn tidy on in the site config
 
-## Spellcheck: the dialect
-
-Spellcheck runs locally in the editor with no setup. The one thing a site declares is the dialect, so
-the checker loads the right word list. It lives under `spellcheck.dialect` in the site config:
-
-```yaml
-spellcheck:
-  dialect: en-us
-```
-
-The default is `en-us`, so a US-English site can omit the block. Today only US English ships its word
-list, so an unset or unknown dialect resolves to it; the field is in place for the British and other
-dialects a later release adds. The dialect is a per-site declaration, not a per-editor or per-word
-choice, and tidy never normalizes regional spelling regardless of it.
-
-An editor's personal additions (a name, a place, a term the dictionary does not know) commit to a
-git-tracked file at `src/content/.cairn/dictionary.txt`, one word per line, sorted, with `#` comment
-lines allowed. It rides the same GitHub App commit pipeline the content uses, so a word one editor
-adds is shared with every editor. You do not create or maintain this file by hand; the editor's
-add-to-dictionary action writes it.
-
-## Tidy: turn it on
-
-Tidy is off until you enable it. Three things turn it on: the master switch in the config, the API key
-as a Worker secret, and an optional model and convention choice.
-
-1. **Enable it in the site config.** Add a `tidy` block:
-
-   ```yaml
-   tidy:
-     enabled: true
-     model: claude-sonnet-4-6
-   ```
-
-   `enabled` defaults to `false`, so the whole block is opt-in. `model` defaults to
-   `claude-sonnet-4-6` (Claude Sonnet), the judgment floor for a light copy-edit; the lighter, cheaper
-   alternative is `claude-haiku-4-5` (Claude Haiku). The model is a developer-tier decision that
-   travels with the key (cost is an ops choice), so it is read-only in the editor-facing settings.
-
-2. **Set the API key as a Worker secret.** The key is `ANTHROPIC_API_KEY`. It is a secret, never a
-   committed config value, so set it on the Worker:
-
-   ```bash
-   npx wrangler secret put ANTHROPIC_API_KEY
-   ```
-
-   For local development, put it in `.dev.vars` instead (gitignored). The tidy action reads it from
-   `event.platform.env`, refuses with a clear message before any model call if it is missing, and never
-   returns or logs it.
-
-3. **Check the wiring.** `cairn doctor` carries a tidy check: once `tidy.enabled` is `true`, it warns
-   if `ANTHROPIC_API_KEY` is in neither the wrangler vars nor `.dev.vars`. A Worker secret is invisible
-   to the CLI, so the check asks you to verify the secret rather than claiming it is unset. See the
-   [doctor reference](../reference/doctor.md).
-
-That is the whole developer setup. An editor sees the Tidy control appear once the key is present, and
-the convention settings screen renders. When tidy is not enabled, the editor's tidy control and the
-convention section are absent (not shown disabled), and the settings screen tells the editor what their
-developer needs to do.
-
-## The conventions
-
-The convention config under `tidy.conventions` is what shapes the copy-edit. An editor edits it in the
-two-tier settings screen, and it saves to this same site-config file, so you can also set it by hand.
-The resting state is the safe default: the objective Fixes group on, every style and advanced toggle
-off, no decisions asked.
+Add a `tidy` block to `site.config.yaml`, the committed config `parseSiteConfig` reads at build:
 
 ```yaml
 tidy:
   enabled: true
-  conventions:
-    fixes: true
-    oxfordComma: complex-only
-    numberStyle: under-ten
-    smartQuotes: true
 ```
 
-The groups:
+That one line is a complete config. `enabled` defaults to `false`, so tidy stays off until you set
+it, and every other field falls back to a sensible default:
 
-- **`fixes`** (default `true`): the objective fixes (spelling, grammar, doubled words, whitespace,
-  capitals, terminal punctuation). Turning it off leaves only the configured style conventions.
-- **The style tier** (each off when absent): `oxfordComma` (`always`, `complex-only`, `never`),
-  `numberStyle` (`under-ten`, `under-hundred`, `always-numerals`), `measurements`
-  (`abbreviate`, `spell-out`), `percent` (`sign`, `word`), `emDash` (`spaced`, `closed`),
-  `enDashRanges` (a boolean), `ellipsis` (`single-char`, `three-dots`), and `timeFormat`
-  (`5 PM`, `5pm`, `5 p.m.`).
-- **The advanced tier** (each a boolean, default `false`): `smartQuotes` (straight quotes to curly,
-  with the full apostrophe rule set) and `brandCaps` (brand and proper-noun capitalization on a
-  curated list).
+| Field | Default | What it controls |
+| --- | --- | --- |
+| `enabled` | `false` | The master switch. Nothing else here matters while it's `false`. |
+| `model` | `claude-sonnet-4-6` | The model tidy calls. The only supported alternative is `claude-haiku-4-5`, faster and cheaper at the cost of judgment on subtler fixes. |
+| `conventions` | Fixes on, every style and advanced toggle off | The per-convention settings, Oxford comma, number style, em dash spacing, and the rest, that shape tidy's prompt. |
 
-A toggle that is off emits no rule, so tidy applies only what you enable. The prompt is built from
-this config alone and is told never to harmonize to the author's own habits and never to guess an
-undeclared style. An undeclared style is the author's choice. That is why "fifteen" and "15" keep
-coexisting when number style is off, and why regional spelling is never normalized. For the why, see
-[the editor copy-edit explanation](../explanation/editor-copyedit.md).
+`enabled` and `model` are developer-tier facts: set them once in the file, and the in-admin
+settings screen shows both back to you read-only. `conventions` is the field an editor actually
+touches day to day, set from that same screen rather than by hand-editing YAML. See
+[what changes for editors](#see-what-changes-for-editors), below.
 
-## How tidy behaves at runtime
+## Set the Anthropic API key as a Worker secret
 
-Tidy commits nothing. It reads the draft once, returns a corrected string, and the editor computes the
-diff locally and reviews it before any of it lands. The action bounds the call:
+Tidy calls the Anthropic API directly from the Worker, so it needs an API key. The key is a
+secret, so it doesn't go in `site.config.yaml` or in a plain `vars` entry in `wrangler.jsonc`. Set
+it with wrangler:
 
-- It refuses an over-long body before the call (tidy a selection instead).
-- It bounds the model call with its own deadline, shorter than the platform limit, and maps an overrun
-  or an abort to a retryable "try again".
-- It validates the result as a proofread, not a restructure: a result that changes the heading
-  structure, the frontmatter, a `media:` token, a code block, or more than a bounded fraction of the
-  wording is discarded with an honest message, and the document is untouched.
+```bash
+npx wrangler secret put ANTHROPIC_API_KEY
+```
 
-The runtime emits log events for each outcome (`tidy.done`, `tidy.error`, `tidy.refused`,
-`tidy.empty`, and `dictionary.added` for a dictionary commit). See
-[log events](../reference/log-events.md).
+`wrangler dev` reads a `.dev.vars` file instead of asking Cloudflare for the secret, so local
+development needs the same key there:
 
-## See also
+```
+ANTHROPIC_API_KEY=sk-ant-...
+```
 
-- [Write in the editor](./write-in-the-editor.md) for the editor-facing walkthrough of spellcheck,
-  the personal dictionary, and tidy.
-- [The editor copy-edit](../explanation/editor-copyedit.md) for the voice-preservation and
-  local-spellcheck design reasoning.
-- [The sveltekit reference](../reference/sveltekit.md) for the `tidyAction` and `addDictionaryWordAction`
-  request shapes.
+Keep `.dev.vars` out of version control the same way you would any other local secret file.
+
+`ANTHROPIC_API_KEY` is the one member of
+[`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings) that's optional. Every
+other binding is required, so a forgotten one fails at compile time instead of surfacing as a
+runtime error later. Leaving tidy off means you can skip the secret entirely. Turning tidy on
+without setting the secret fails closed: the action refuses every request with `fail(503)`, and the
+editor sees tidy report itself unavailable.
+
+## Verify the wiring
+
+`cairn-doctor` runs a `config.tidy-key` check whenever `tidy.enabled` is `true`:
+
+```bash
+npx cairn-doctor
+```
+
+The check confirms presence, not correctness: a wrangler secret is invisible to any CLI, so the
+doctor can only confirm `ANTHROPIC_API_KEY` appears somewhere it would if it were a plain var, the
+wrangler config or `.dev.vars`. A pass still asks you to verify it's the real key and not a
+placeholder. See [the doctor's check table](../reference/doctor.md#the-checks) for the exact
+condition and what makes it skip.
+
+The real test is running tidy once. Open an entry in the admin, invoke tidy on a paragraph, and
+confirm it comes back with proposals. With observability on, a successful call logs `tidy.done`
+with the model and the token usage. A broken key instead logs `tidy.error`, or refuses outright
+before the call ever goes out. [Log events](../reference/log-events.md) covers the whole `tidy.*`
+family, and [Read cairn's logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
+
+## Know what a tidy run costs
+
+Every tidy call spends tokens on the Anthropic API, and cairn caps both the input and the output, so
+a run has a known cost ceiling.
+
+- Tidy runs only when an editor triggers it, over the whole draft or a selected passage. Nothing
+  calls the model on a timer or in the background.
+- A request over roughly 24,000 characters (about 6,000 input tokens) is refused before the model
+  is reached; the editor tidies a selection instead of the whole draft.
+- The output cap exceeds what proofreading that input needs, so a run can return a full rewrite.
+- Model choice is the main lever. `claude-sonnet-4-6` favors judgment on subtler fixes, and
+  `claude-haiku-4-5` runs faster for less. Current per-token pricing lives on
+  [Anthropic's pricing page](https://platform.claude.com/docs/en/pricing).
+- Local development costs nothing: cairn's dev wiring, as the showcase template ships it, injects a
+  stubbed Anthropic client, so building and testing never reaches the real API.
+
+## See what changes for editors
+
+Once `tidy.enabled` is `true` and the key resolves, the in-admin settings screen
+(`/admin/settings`) drops its gate note and opens the conventions editor: the per-convention
+toggles an editor sets for their own site, saved straight back into `site.config.yaml`'s
+`tidy.conventions` block. The developer-tier facts you just set, whether tidy is on, whether the
+key is set, and which model, show there too, read-only.
+
+Past that screen, tidy is an editing feature the editor drives from the toolbar. That flow, and
+tidy's remit of small fixes that never touch voice or structure, is
+[Write in the editor's tidy section](./write-in-the-editor.md#tidy).

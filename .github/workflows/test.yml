@@ -21,12 +21,13 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - run: npm run check:package
-      - run: npm run check:reference
-      - run: npm run check:reference:signatures
+            - run: npm run check:reference
+            - run: npm run check:reference:signatures
       - run: npm run check:surface
       - run: npm run check:cm-internals
       - run: npm run check:readiness
-      - run: npm run check:docs
+            - run: npm run check:docs
+      - run: npm run check:snippets
       - run: npm run check:prose
       - run: npm run check:version
       - run: npm run check:dev-package

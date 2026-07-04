@@ -270,44 +270,46 @@ freshness routine created and recorded there by id.
 - The quickstart is intentionally absent (IA ruling 3); Task 3's "fastest path" seam is its
   future mount point.
 
-## Recalibration (Geoff, 2026-07-02, binding on every task)
+- **Length calibration (Geoff, 2026-07-03):** the editor front-door runs a bit longer than
+  the developer front-door. The editor reader gets markdown introduced with examples and
+  grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
+  prose; proposes, never drafts, never takes a voice) — orientation the developer README
+  delegates to the docs tree instead.
 
-The existing docs corpus is Opus-authored and its prose is not trusted at any grade. The
-Stage 1 "survives" grades remain valid for STRUCTURE and factual currency only; **no
-existing sentence survives on the grade's authority**. Every page the pass touches gets
-rewrite-grade prose regardless of its triage class, and the Task 4/6 "register sweep" of
-survivor pages is a prose rewrite, not a touch-up. Calibration sample: the old README's
-save-paragraph, previously judged the repo's best prose, is the passage Geoff quoted as
-unsalvageable — mechanism-first, jargon-dense, reader-less. The corrected bar: an
-introduction introduces (genre first — see any real CMS), prose leads with the reader's
-stakes, and mechanism follows meaning.
+- **Editor front-door length (Geoff, 2026-07-03):** three to five minutes of reading time
+  (roughly 700-1150 words) is reasonable; do not over-compress. Length is earned by more of
+  the system explained truthfully, never by padding.
 
-## Supersession (Geoff, 2026-07-02, final word on the corpus): toss the docs, start fresh
+## Two system faults found at write-in-the-editor (Geoff, 2026-07-03: "something must still be
+fundamentally wrong with the drafting system")
 
-The existing docs are not source material — not for prose, not for content. Every page in the
-IA inventory is written from zero: facts come from the code and are verified by the gates
-(snippets compile, names/signatures/tiers gate-checked), structure comes from the IA and the
-reviewed outlines, craft comes from the best-in-class exemplar studies (the SvelteKit-ecosystem
-developer-docs study and the CMS/writing-tool editor-docs study) plus the CMS-intro genre
-study. The survive/rewrite-source vocabulary is retired; the only classes are the IA inventory
-and the kills. The old corpus stays reachable as a standing example of what not to do on the
-never-merged branch `opus-docs-anti-exemplar` (pointed at the last pre-rewrite main), and page
-briefs may cite it only as contrast. The Task 1 snippet gate keeps its full value (the
-mechanism outlives the corpus it first ran on); its fixes to old-page snippets are accepted
-waste, discarded as each page is replaced.
+1. **Genre-matched exemplars, mandatory.** The ratified corpus is positioning prose and
+   cannot calibrate instructional documentation. Each genre drafts against its own exemplar:
+   positioning pages against the README/why-cairn snapshots; INSTRUCTIONAL editor docs
+   against Geoff's own club handbook (the Sveltia passages in the voice corpus, passage 10 —
+   plain declaratives, instructions that instruct, no clefts, no antitheses, no cappers,
+   no cleverness) plus Obsidian; developer how-tos against the SvelteKit-ecosystem craft
+   exemplars. Drafting with the wrong genre's exemplar in ear produces essay-avoidance prose,
+   which is how a triad, a balanced pair, and two cappers survived maximum-attention samples.
+2. **Nothing ungated reaches Geoff, including chat samples.** Every piece of fresh prose —
+   drafts, calibration samples, proposed rewrites shown in conversation — passes the register
+   editor before his eyes. The samples that failed went keyboard-to-Geoff with zero gates.
 
-## Register rules from the sentiment study (2026-07-02, binding)
+## Rules recovered from the main-side copy at merge (2026-07-04)
 
 - **"Just", "simply", "obviously" are banned in editor-class prose** (the Ghost curse-of-
   knowledge tell); prerequisites are stated, never assumed. The civilians' asymmetry: nobody
   complains a help page was too easy — err plain and short.
+
 - **Every page ends in an action** the reader copies or clicks ("polish without actionability"
   is the named AI-smell); every option documented is also *explained* (what it does, when
   you'd want it).
+
 - **Committed judgment is the register**: named defaults, honest limitations, "don't do this"
   — the positive inversion of the AI-smell checklist, and the voice cairn's charter already
   speaks. The full checklist (structural + content tells) lives in
   `2026-07-02-docs-craft-references.md` Study 4 and binds every dispatch and review.
+
 - **One end-to-end journey per audience**: the tutorial is the developer's; the editor's
   (sign in → edit → publish) lives in editor-welcome and must stay complete.
 
@@ -386,25 +388,6 @@ waste, discarded as each page is replaced.
   setup colons, parallel personas, punchline cappers). When an opening fails the register
   twice, do not generate a third: delete it. One flat orientation line, then the first real
   section. Explanation pages need no essay intro; the human polish adds voice where it wants.
-
-## The drafting protocol (Geoff, 2026-07-02: "how do we keep initial drafts from missing?")
-
-The root cause of missed drafts: generation-then-filtering. Rules filter words; the register
-lives in shape. The protocol, binding on every voice-bearing page:
-
-1. Fragments first: collect Geoff's raw material (chat quotes, his polished corpus, his
-   edits) before drafting; where a topic has none, ask for a two-minute rough dump BEFORE
-   drafting, never after failing.
-2. Exemplar in ear, mechanically: reread 200 words of a shelf post immediately before
-   writing.
-3. Body first; openings are one flat line unless Geoff's words provide one.
-4. One page, one verdict, then the next; each polished page joins the local exemplar shelf
-   (Geoff's polished README and why-cairn outrank the external posts as exemplars).
-5. The adversarial review pair (register + claims) runs before Geoff reads, not after.
-6. A surface that fails the register twice gets deleted, not regenerated.
-
-Structured genres (reference, guides, tutorial) carry lower register risk; their drafts miss
-on details the gates catch, and they proceed at normal dispatch cadence.
 
 - **Sections open with actual sentences (Geoff, 2026-07-02).** No verbless fragment openers
   ("A fixed set of content concepts you declare..."); the first line under any header is a
@@ -521,22 +504,6 @@ on details the gates catch, and they proceed at normal dispatch cadence.
   organization's work — with cairn instrumental and receding. A page that centers the tool
   instead of the work has the frame backwards.
 
-- **Length calibration (Geoff, 2026-07-03):** the editor front-door runs a bit longer than
-  the developer front-door. The editor reader gets markdown introduced with examples and
-  grounding, the insert-menu blocks explained, and tidy framed (a tool for humans writing
-  prose; proposes, never drafts, never takes a voice) — orientation the developer README
-  delegates to the docs tree instead.
-
-## The legacy corpus is destroyed as a source (Geoff, 2026-07-03: "destroy all the old docs
-and memory thereof; they're polluting the system")
-
-The tidy-button error came from quoting a legacy page as fact. In force immediately: the
-`opus-docs-anti-exemplar` branch is deleted; every not-yet-rewritten doc page carries a
-LEGACY TEXT banner and is never cited, quoted, or fact-checked against by anyone (main loop
-or agent); the Stage 1 corpus grades are void for all purposes; facts come from `src/` and
-the four ratified pages only. Every rewrite task DELETES its target page first and writes
-from zero — no editing legacy text. The banners die with the pages they mark.
-
 - **Two leannesses, only one of them a virtue (Geoff, 2026-07-03: "I may have pushed too hard
   on making the docs lean").** Lean INVENTORY stands: few pages, no cargo-cult files, scope
   discipline. Lean PROSE is retired as a goal: a page runs as deep as its subject deserves,
@@ -572,19 +539,6 @@ from zero — no editing legacy text. The banners die with the pages they mark.
   completeness against the code-derived feature inventory, organization against the
   researched conventions, and overlap against sibling pages. Findings fold, Geoff sees the
   outline, then prose begins.
-
-## Two system faults found at write-in-the-editor (Geoff, 2026-07-03)
-
-1. **Genre-matched exemplars, mandatory.** The ratified corpus is positioning prose and
-   cannot calibrate instructional documentation. Each genre drafts against its own exemplar:
-   positioning against the README/why-cairn snapshots; instructional editor docs against
-   Geoff's club handbook (the Sveltia passages in the voice corpus: plain declaratives,
-   instructions that instruct, no clefts, no antitheses, no cappers) plus Obsidian; developer
-   how-tos against the SvelteKit-ecosystem craft exemplars.
-2. **Nothing ungated reaches Geoff, including chat samples.** Every piece of fresh prose
-   passes the register editor before his eyes. Proven necessary twice: maximum-attention
-   samples still carried a triad, a balanced pair, and cappers both times; the gate caught
-   what drafting could not.
 
 - **Length is dictated by function (Geoff, 2026-07-03, the governing length principle).** Not
   reading-time targets, word counts, or peer comparisons — those are gauges. Per page: what

@@ -1,68 +1,88 @@
 # Manage your tag vocabulary
 
-Tags is its own screen in the admin, in the sidebar beside Posts, Pages, and Media. It holds your
-site's tag vocabulary: the set of tags an editor can pick from when they write. The screen does three
-jobs. You add a tag, rename the label readers and editors see, and remove a tag that nothing uses.
-A fourth, calmer affordance seeds the list from tags your posts already carry. This page walks
-through it from an editor's seat.
+Posts on your site carry tags, and every tag comes from one shared list rather than whatever
+a writer happens to type that day. The Tags screen, in the admin sidebar beside Posts, Pages,
+and Library, is where that list lives. This guide covers viewing it, adding a tag, renaming
+one, retiring one, and what happens to a post that already carries a tag you retire.
 
-## How a tag is stored
+- [Viewing your tags](#viewing-your-tags)
+- [Adding a tag](#adding-a-tag)
+- [Renaming a tag](#renaming-a-tag)
+- [Retiring a tag](#retiring-a-tag)
+- [What a retired tag leaves behind](#what-a-retired-tag-leaves-behind)
+- [Adding a tag already in use](#adding-a-tag-already-in-use)
+- [Saving your changes](#saving-your-changes)
 
-Every tag has two parts. The label is the name you and your readers see, like "Trip reports". The
-slug is the short, lowercase form the post stores, like `trip-reports`. You type the label, and cairn
-derives the slug for you. The slug stays the same once a tag exists, so renaming the label is safe and
-never rewrites a post.
+## Viewing your tags
 
-The vocabulary lives in your site's configuration, so every editor shares one list. When you save the
-screen, cairn commits the change, and your site picks it up on the next deploy.
+<!-- LIVE-UI: the Tags screen's list, name/stored-as/in-use columns, one row highlighted -->
 
-## Add a tag
+Open Tags and you see every entry in the shared list, one row each, with a count of how many
+tags you have in total. Each row shows the display name, the short slug it's stored as
+underneath, and how many posts currently carry it. A tag with no posts reads Unused.
 
-At the top of the screen, type the tag's name in the Add a tag box. As you type, a preview shows the
-slug cairn stores, reading "Stored as `trip-reports`." Select Add tag, and the tag joins the list.
+The display name lives only on this screen. [A post's own details
+panel](./write-in-the-editor.md#the-details-panel) shows and stores the slug directly, the same
+string that's checked against a post and written into its file.
 
-If the name can't make a valid slug, the preview turns into a short message and the tag isn't added.
-That happens when the name has no letters or numbers (something like "!!!" or just spaces), or when it
-would collide with a tag you already have. Adjust the name until the preview shows a clean slug, then
-add it.
+## Adding a tag
 
-## Rename a tag's label
+Type a name in the field at the top of the screen and press Add tag. As you type, the screen
+shows the slug your name is stored as, derived automatically by lowercasing the name and
+turning spaces and punctuation into hyphens: "Snow Report" becomes `snow-report`. You don't
+choose the slug yourself.
 
-In the list, each tag shows its name in an editable field, its stored slug beside it, and how many
-posts use it. To rename a tag, edit its name and select Save changes.
+A name built entirely from punctuation has nothing to derive a slug from, and the screen says
+so rather than adding an empty entry. A name that would derive the same slug as a tag you
+already have is also refused, since two rows storing the same slug would be indistinguishable
+to a post that carries it. Either way, the space under the field explains the problem before
+you press Add tag.
 
-Renaming changes only the label. The slug stays the same, so your posts keep working and nothing is
-rewritten. Use this when you want to reword how a tag reads without disturbing the posts that already
-carry it.
+## Renaming a tag
 
-## Delete an unused tag
+Click into a row's name and edit it directly, the same field the list already shows you. This
+changes only the display name on this screen. The stored slug underneath never changes once a
+tag exists. A post's own details panel and every post file keep showing and storing that same
+slug, untouched by the rename. Renaming "Snow Report" to "Snow Reports" updates the label here,
+on this screen, without touching a single post file or the tag picker editors use when tagging
+a post.
 
-You can delete a tag that no posts use. Its delete control is active, so select it to remove the tag
-from the list, then select Save changes.
+## Retiring a tag
 
-A tag that posts still use can't be deleted. Its delete control is turned off, and it tells you how
-many posts use the tag. To remove a tag that's in use, first take it off those posts in the editor.
-Once nothing uses it, its delete control turns on. This guard runs at save time too: cairn checks
-across your live site and every unpublished edit, so a tag someone is still using is never dropped out
-from under them.
+<!-- LIVE-UI: a row with an active delete control beside one with the guarded, inactive version -->
 
-## Seed from tags already on your posts
+Each row carries a delete control at its right edge, but it only works on a tag no post is
+using. The moment a tag's count reads anything but zero, that control turns inactive, and its
+label names the count. A post still points at that slug, and the screen will not delete a tag
+while a post is using it. Remove the tag from every post that carries it first, in each post's
+own details panel, and once its count reaches zero here, the delete control opens up.
 
-If your posts already carry tags that aren't in your list yet, the screen shows them in an Already on
-your posts section, each with the number of posts that use it. Select Add to list to bring one into
-your vocabulary, then select Save changes.
+## What a retired tag leaves behind
 
-Seeding is the quick way to build your list from what you already write, instead of typing each tag
-by hand. The section appears only when there are tags to seed, and a tag leaves it as soon as you add
-it.
+Retiring a tag changes the shared list. It never reaches into a post and removes a tag already
+checked there, and ordinarily you won't notice the difference, because the delete control
+already refuses a tag any post is using. The gap is a post mid-edit: if a writer has a post
+open with a tag checked but hasn't saved it even once, the Tags screen has no way to know that
+post is using the tag, so retiring it there is still allowed. When that post is finally saved,
+its tag doesn't vanish. The post's own details panel still shows the tag, checked, with a
+small note that it isn't in your tag list anymore, and it stays exactly as checked as it was
+until someone clears it.
 
-## Save your changes
+## Adding a tag already in use
 
-Adds, renames, deletes, and seeds are all held on the screen until you select Save changes. That one
-action commits the whole list at once. Until you save, nothing is committed, so you can adjust the
-list freely and save when it reads the way you want.
+<!-- LIVE-UI: the "already on your posts" section beneath the main list, with its Add to list rows -->
 
-## Where this fits
+A tag can end up on a post without going through this screen first, most often when your site
+adopts the shared list after posts already carry free-typed tags of their own. Any such tag
+shows up here, below your main list, under a heading naming it as already on your posts along
+with how many carry it. Add to list turns it into an ordinary entry. cairn proposes a name from
+the slug, turning its hyphens back into spaces and capitalizing the first letter, and you can
+rename it right away if you'd rather call it something else.
 
-You apply tags to a post in the editor, covered by [Write in the editor](./write-in-the-editor.md).
-The Tags screen manages the vocabulary those tags are drawn from.
+## Saving your changes
+
+Every add, rename, and retirement you make on this screen stays local to your screen until you
+press Save changes at the bottom. Nothing is written to your site's configuration before that,
+so the list you leave without saving reverts the next time you open Tags. Once you save, the
+new list applies to every editor. Anyone tagging a post after that sees your additions, and the
+tags you retired no longer appear in the picker.

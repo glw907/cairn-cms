@@ -40,7 +40,7 @@ fact-checks every claim on them against the current code, and reports only confi
 file:line evidence. A clean run self-reports "no drift" in one line; it doesn't pad a report to
 look busy.
 
-Routine id: TBD at pass end.
+Routine id: `trig_015UPQostYVisXuExTHTH2vu` (created 2026-07-04; monthly, first of the month).
 
 ## When Topo lands
 

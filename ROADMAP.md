@@ -150,17 +150,6 @@ the named human gates only):**
   new storage and no new actor. The strongest unbuilt in-charter feature from the 2026-07-01 mission
   review: every competitor CMS has "revisions," cairn has something better underneath, and the editor
   persona currently sees none of it.
-- **Docs rewrite to the frozen contract.** After the surface-pruning pass merges, rewrite the
-  published doc arms against the pruned surface. Carries: the two tutorial blockers the audit found
-  (the retired `mintToken` dep in Milestone 8, and the admin mount taught as "three files in all"
-  without the shell layout pair); a migration guide (bring existing Hugo/Jekyll-style markdown into
-  cairn concepts; the engine needs nothing, concepts are directories of markdown); an "add authors to
-  your site" guide teaching the declare-your-own-concept plus `fields.reference` pattern (the intended
-  answer to a whole class of "does cairn support X?" questions; authors stay content with reference
-  integrity, never a built-in identity, per the reverted identity-substrate lesson); and the
-  extending-developer-lens baseline refresh (its "baseline" section still describes the pre-redesign
-  state). The doc-snippet extract-and-typecheck gate lands with this rewrite so the docs cannot rot
-  against the frozen surface again.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced

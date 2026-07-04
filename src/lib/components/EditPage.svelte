@@ -1787,7 +1787,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                span too would announce the same information twice (WCAG 4.1.3 speaks to exactly
                this: one designed channel per piece of status information). -->
           <span aria-hidden="true" class="opacity-50">·</span>
-          <span aria-hidden="true" data-testid="cairn-issue-count" class="opacity-70">{issueLabel}</span>
+          <span aria-hidden="true" data-testid="cairn-issue-count">{issueLabel}</span>
         </span>
         <div class="flex items-center gap-3.5">
           <!-- The posture pair is one bordered segmented control: the shared border carries the

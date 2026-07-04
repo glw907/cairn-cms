@@ -544,3 +544,45 @@ fundamentally wrong with the drafting system")
   reading-time targets, word counts, or peer comparisons — those are gauges. Per page: what
   must the reader be able to do when they finish, and how many words does teaching that take?
   Over- and under-shooting are the same error.
+
+## Post-mortem (2026-07-04, pass complete)
+
+**What shipped.** The full tree per the IA: two front doors, why-cairn with the workflow
+before/after opener, the editor arm (welcome + the ratified comprehensive guide), 25 guides,
+a 10-page explanation arm, the reference restructures, the ten-milestone tutorial with
+typechecked snippets, examples/showcase/README.md, docs-maintenance.md, the stale-docs sweep
+(10 files archived, friction log pruned per its convention), and the gate lattice: check:snippets
+NEW and active, the three suspended gates re-enabled, Vale extended (README, showcase README,
+project vocabulary), and the monthly drift routine (trig_015UPQostYVisXuExTHTH2vu).
+
+**Budgets.** Subagent tokens this arc (post-compaction execution): ~18M, dominated by the
+30-page fan-out (13.8M/131 agents) and its residue pass (2.0M/40); the rest went to gates,
+the tutorial, Task 7, and repairs. Main-loop tokens additional (drafting, folds, orchestration).
+Human interaction points during execution: ~35 messages, of which the outcome-changing
+corrections were the register calibrations (the "terrible documentation" reset and its
+system repairs), the two prose catches on the opener seam, the billing/e2e email reports,
+and the scope rulings (workflow opt-ins, public repo, template queue). The docs corpus itself
+consumed none of Geoff's time after "stand on the full draft" except by his choice.
+
+**What the pass proved.** The four-gate method holds at fleet scale: 131 drafting/gating
+agents, zero errors, and the claims gates alone caught two would-mislead defects on the
+tutorial (the inverted date model; the phantom scaffolder command) plus a stack of invented
+UI details across the fan-out. The Superforms review then judged the gate-backed reference
+arm best-in-class and every effectiveness gap traced to a banked practice no check enforced.
+
+**System defects found and their fixes.**
+1. Reviewer findings without proposed text are dead letters → proposed text now mandatory.
+2. Genre-mismatched exemplars produce essay-avoidance prose → genre map bound; the editor
+   guide ratified as the instructional exemplar.
+3. Cross-checkout drift (the plan rules split across copies, 33 blocks recovered at merge;
+   add-an-island drafted against a stale showcase) → the ruleset needs ONE home, and a
+   long-lived docs branch owes a rebase after major main-side changes before claiming code
+   facts.
+4. Mechanical edits to load-bearing config shipped two invalid-YAML incidents → validate in
+   the same command, now standing practice.
+5. Banked practices that never became checks were exactly the ones that slipped → five
+   conversions bound in the craft references.
+
+**Carried forward.** The LIVE-UI reproduction program (six markers, gating for the docs
+launch at Topo); the shortcut-drift gate and guide-to-reference link gate (ROADMAP); the
+pre-beta engine pass docs riders; SECURITY.md's public form (go-public, now due).

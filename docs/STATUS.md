@@ -14,7 +14,17 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-03)
+## Immediate next action (2026-07-03, updated)
+
+QUEUED BEHIND THE DOCS CLOSE: the pre-beta engine pass
+(`docs/superpowers/plans/2026-07-03-pre-beta-engine-pass.md`), Geoff-approved to run AS A
+WORKFLOW as soon as the docs tree is polish-complete (tutorial gated, snippet gate green,
+Task 7 ritual done). Nine tasks: editor vocabulary (Address, Library), the visible issue
+count, cheat-sheet undo rows, fold-by-default, showcase csrf, the log code field, rich-text
+paste conversion, pass close. Every task carries its docs rider. Fresh worktree off main;
+serial through the gate; reviewer fan-out at close.
+
+## Prior next action (2026-07-03)
 
 The docs rewrite Stage 2 fan-out is executing on `docs-rewrite-1` (the proven four-gate
 per-page pipeline; the editor arm is done and ratified). Task 1 (snippet gate) is dispatched;

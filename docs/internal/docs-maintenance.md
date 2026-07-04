@@ -1,7 +1,8 @@
 # Docs maintenance
 
-Gates catch what they can, the pass rule covers what they can't, and the drift routine samples
-what neither sees. Three layers, in that order.
+Three layers keep the docs current, in decreasing order of automation: the machine
+gates, the pass rule, and a monthly drift routine. Each covers ground the one before
+it can't reach.
 
 ## The machine layer
 

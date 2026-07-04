@@ -1,0 +1,5 @@
+Wayfinder
+Topo
+cairn
+DaisyUI
+SvelteKit

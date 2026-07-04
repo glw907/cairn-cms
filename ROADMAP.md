@@ -86,6 +86,11 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Harden the fold-on-mount e2e against load flake (from the design-review bug pass,
+  2026-07-04).** The test fails under system load and passes quiet (verified pre-existing on
+  main); fix its waiting discipline (poll the fold state, not a timing assumption) before it
+  starts costing CI reruns.
+
 - **Docs-effectiveness infrastructure from the Superforms study (2026-07-03), Topo-era:**
   Pagefind-class Ctrl+K search on the docs site (the single biggest perceived-quality lever
   at zero infra), a FAQ/help top-nav page, a task-tagged examples gallery, an /llms

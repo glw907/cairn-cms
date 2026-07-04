@@ -2,13 +2,13 @@
 
 This tutorial builds a working cairn site from an empty directory: a public site rendering markdown content, an admin where editors write, and at the end, a deploy to Cloudflare. Everything is built by hand so you can see what every file does. If you want the running site faster and the understanding later, `create-cairn-site` (the scaffolder) scaffolds the same result in one command, and you can come back here to learn what it wrote.
 
-You'll need Node 22 or later and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so no GitHub App, no database, and no email setup stand between you and a working editor. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them.
+You'll need Node 22 or later and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so you need no GitHub App, no database, and no email setup to run the editor locally. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them.
 
 ## Milestone 0: What you will build
 
-A small site with two kinds of content: posts (dated, listed newest-first) and pages (standing, like About). Editors sign in at `/admin` and write markdown in cairn's editor; the public site renders that markdown through one function you write. By milestone 8 you'll save and publish an entry in a real admin running on your machine, and by milestone 10 the public site is live on a `workers.dev` URL.
+A small site with two kinds of content: posts (dated, listed newest-first) and pages (standing, like About). Editors sign in at `/admin` and write markdown in cairn's editor; the public site renders that markdown through one function you write. You'll save and publish an entry in milestone 8, in a real admin running on your machine. By milestone 10 the public site is live on a `workers.dev` URL.
 
-The shape of what you're building, in one pass: content lives as markdown files in a git repository. The admin edits them through cairn's commit pipeline. Your site renders them with your own design. cairn sits between the two, and everything you build in this tutorial survives into a production site unchanged.
+Content lives as markdown files in a git repository. The admin edits those files through cairn's commit pipeline, and your site renders them with your own design. Everything you build here survives into a production site unchanged.
 
 ## Milestone 1: Create the project
 
@@ -69,7 +69,7 @@ The bindings in `wrangler.jsonc` are declared now and used later: D1 backs the a
 
 ## Milestone 2: Define the adapter and schema
 
-The adapter is your site's declaration: what kinds of content exist, what fields each carries, where commits go, and how markdown becomes HTML. It's one TypeScript file, and it's the most load-bearing file in a cairn site.
+The adapter is your site's declaration: what kinds of content exist and what fields each carries, where commits go, and how markdown becomes HTML. It's one TypeScript file, and it's the most load-bearing file in a cairn site.
 
 ```ts
 // src/lib/cairn.config.ts
@@ -114,7 +114,7 @@ export const cairn = defineAdapter({
 });
 ```
 
-Two things to notice before moving on. The concepts are a fixed set you declare, and each one's schema is typed: a wrong field name or type fails at compile time, not in an editor's face. And the GitHub block names where production commits land; the development backend ignores it until then, so any owner and repo name work today.
+The concepts are a fixed set you declare, and each one's schema is typed, so a wrong field name or type fails at compile time rather than in an editor's face. The GitHub block names where production commits land; the development backend ignores it until then, so any owner and repo name work today.
 
 ## Milestone 3: Add content
 
@@ -404,7 +404,7 @@ Then read the menu once in the site layout:
 
 ## Milestone 8: Run the admin locally
 
-Everything so far was the site. Now the admin: six small files and one build-config line, all of them mounting machinery cairn provides.
+Everything so far was the site. The admin takes six small files and one build-config line, all of them mounting machinery cairn provides.
 
 The `(site)` group and the bare root layout from Milestone 6 already do the one thing the admin needs from your side: they keep your site's own chrome from wrapping `/admin`, so nothing here has to move.
 
@@ -506,7 +506,7 @@ npm install -D @glw907/cairn-cms-dev
 CAIRN_DEV_BACKEND=1 npm run dev
 ```
 
-Open `/admin`, and the development backend signs you in without any email loop. Create a post, write a paragraph, and **save**—your first payoff of the real kind. Then **publish** it and reload the public listing.
+Open `/admin`, and the development backend signs you in without any email loop. Create a post, write a paragraph, and **save** it through the real pipeline. Then **publish** it and reload the public listing.
 
 What just happened is the model the whole system runs on:
 
@@ -584,7 +584,7 @@ npm run cairn:manifest
 
 The command writes `src/content/.cairn/index.json` and exits zero. From here on, run it any time you edit content by hand; the admin keeps the manifest current on its own whenever an editor publishes.
 
-Internal links address entries, not URLs, so they survive renames. The manifest is how the editor's pickers and the delivery surface know what exists without scanning the repo on every request.
+Because the link resolves by id, it survives a rename of the file. The manifest is how the editor's pickers and the delivery surface know what exists without scanning the repo on every request.
 
 ## Milestone 10: Deploy
 
@@ -595,7 +595,7 @@ npm run build
 npx wrangler deploy
 ```
 
-Wrangler prints your `*.workers.dev` URL when the deploy finishes. The public pages are already live; `/admin` deploys too, but no one can sign in until the D1 database, the email sender, and the GitHub App key exist, which the guides below wire up.
+Wrangler prints your `*.workers.dev` URL when the deploy finishes. The public pages are already live; `/admin` deploys too, but no one can sign in until that trio exists, which the guides below wire up.
 
 **Final payoff:** your site, on its `workers.dev` URL, rendering the content you wrote in milestone 3 and the post you published in milestone 8.
 

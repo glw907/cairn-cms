@@ -497,23 +497,23 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
     };
-    if (!isValidId(slug)) return bounce('Enter a valid slug: lowercase letters, numbers, and hyphens.');
+    if (!isValidId(slug)) return bounce('Enter a valid address: lowercase letters, numbers, and hyphens.');
 
     let id = slug;
     if (concept.routing.dated) {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return bounce('Pick a date for this entry.');
       if (/^\d{4}-/.test(slug)) {
-        return bounce('Leave the date out of the slug; set it in the date field.');
+        return bounce('Leave the date out of the address; set it in the date field.');
       }
       id = composeDatedId(date, slug, concept.datePrefix);
     }
 
     const backend = ctx.resolveBackend(event);
     const existing = await backend.readFile(`${concept.dir}/${filenameFromId(id)}`, backend.defaultBranch);
-    if (existing !== null) return bounce('An entry with that slug already exists.');
+    if (existing !== null) return bounce('An entry with that address already exists.');
     // A pending branch is an entry too (saved but not yet published); refuse to clobber it.
     if ((await backend.branchHead(pendingBranch(concept.id, id))) !== null) {
-      return bounce('An unpublished entry with that slug already exists.');
+      return bounce('An unpublished entry with that address already exists.');
     }
 
     throw redirect(303, `/admin/${concept.id}/${id}?new=1`);
@@ -1195,14 +1195,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const form = await event.request.formData();
     const newSlug = String(form.get('slug') ?? '').trim();
     if (!isValidId(newSlug)) {
-      return fail(400, { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' } satisfies RenameFailure);
+      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies RenameFailure);
     }
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     if (concept.routing.dated && /^\d{4}-/.test(newSlug)) {
-      return fail(400, { error: 'Leave the date out of the slug.' } satisfies RenameFailure);
+      return fail(400, { error: 'Leave the date out of the address.' } satisfies RenameFailure);
     }
     if (newSlug === slugFromId(id, datePrefix)) {
-      return fail(400, { error: 'That is already the slug.' } satisfies RenameFailure);
+      return fail(400, { error: 'That is already the address.' } satisfies RenameFailure);
     }
     const newId = renameId(id, newSlug, datePrefix);
     const oldPath = `${concept.dir}/${filenameFromId(id)}`;
@@ -1213,7 +1213,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // concurrent-rename race where another editor renamed onto this path between load and submit.
     const clobber = await backend.readFile(newPath, backend.defaultBranch);
     if (clobber !== null) {
-      return fail(409, { error: 'An entry with that slug already exists.' } satisfies RenameFailure);
+      return fail(409, { error: 'An entry with that address already exists.' } satisfies RenameFailure);
     }
 
     const [entryRaw, manifest] = await Promise.all([

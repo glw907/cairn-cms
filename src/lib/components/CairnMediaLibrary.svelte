@@ -1799,7 +1799,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <input class="input input-sm" name="displayName" bind:value={nameInput} autocomplete="off" />
         </label>
         <label class="flex flex-col gap-1">
-          <span class="text-[0.8125rem] font-medium">URL slug</span>
+          <span class="text-[0.8125rem] font-medium">Address</span>
           <input class="input input-sm font-[family-name:var(--font-editor)]" name="slug" bind:value={slugInput} autocomplete="off" />
         </label>
 
@@ -2012,7 +2012,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
             <div class="flex flex-col gap-1.5">
               <label class="text-[0.875rem]" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to delete it anyway.</label>
-              <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={confirmSlugInput} />
+              <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
             </div>
           {/if}
           <div class="flex justify-end gap-2.5 border-t border-[var(--cairn-card-border)] pt-3.5">
@@ -2214,7 +2214,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
           <div class="flex flex-col gap-1.5">
             <label class="text-[0.875rem]" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
-            <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset slug" bind:value={replaceConfirmInput} />
+            <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
           </div>
         </div>
 

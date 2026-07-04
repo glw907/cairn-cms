@@ -31,6 +31,14 @@ All notable changes to this project are recorded here, most recent first.
   cloud drift routine samples published pages against the code
   (`docs/internal/docs-maintenance.md` records the system).
 
+### Editor experience
+
+- The create dialog, the Change URL control, and the media library's asset metadata form now
+  label an entry or asset's URL field "Address" rather than "Slug", matching the vocabulary the
+  docs already used. The matching validation errors (an invalid value, a collision, a no-op
+  rename) read "address" instead of "slug" too. The stored field name and every internal
+  identifier stay `slug`; only the editor-facing copy changed.
+
 ## 0.79.0
 
 <!-- release-size: minor -->

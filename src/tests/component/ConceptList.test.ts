@@ -134,12 +134,12 @@ describe('ConceptList', () => {
     expect(visible?.textContent ?? '').toContain('Could not load this content type from GitHub.');
   });
 
-  it('opens a create dialog from the header New button and auto-derives the slug', async () => {
+  it('opens a create dialog from the header New button and auto-derives the address', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
     const title = screen.getByLabelText(/title/i);
     await title.fill('My New Post');
-    await expect.element(screen.getByLabelText(/slug/i)).toHaveValue('my-new-post');
+    await expect.element(screen.getByLabelText(/address/i)).toHaveValue('my-new-post');
   });
 
   it('shows a date input defaulted to today for a dated concept in the create dialog', async () => {
@@ -156,10 +156,10 @@ describe('ConceptList', () => {
     expect(screen.container.querySelector('input[name="date"]')).toBeNull();
   });
 
-  it('uses a date-free slug placeholder for a dated concept in the create dialog', async () => {
+  it('uses a date-free address placeholder for a dated concept in the create dialog', async () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
-    await expect.element(screen.getByLabelText('Slug')).toHaveAttribute('placeholder', 'my-entry');
+    await expect.element(screen.getByLabelText('Address')).toHaveAttribute('placeholder', 'my-entry');
   });
 
   it('offers a delete action per row', async () => {

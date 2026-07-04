@@ -426,23 +426,23 @@ describe('CairnMediaLibrary detail slide-over', () => {
   });
 
   it('surfaces a ?/mediaUpdate failure error in the slide-over', async () => {
-    const failed = { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' };
+    const failed = { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' };
     const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     const panel = await openSlideOver(screen, /first-light/);
-    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid slug');
+    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid address');
   });
 
   it('auto-re-opens the slide-over and shows the error on a hash-bearing non-usage failure (full-page post)', async () => {
     // The form posts full-page, so a fail() remounts with no selection. A hash-bearing failure that
-    // is NOT an in-use block (a 404 "not committed", or an invalid-slug update carrying the hash)
+    // is NOT an in-use block (a 404 "not committed", or an invalid-address update carrying the hash)
     // must re-select the asset and open the slide-over so the error renders.
-    const failed = { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.', hash: DESCRIBED_USED.hash };
+    const failed = { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.', hash: DESCRIBED_USED.hash };
     const screen = render(CairnMediaLibrary, { data: fixture(), form: failed } as never);
     // No manual open: the effect re-selects from the hash and opens the region.
     await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
     const panel = screen.container.querySelector('[role="region"]') as HTMLElement;
     expect(panel.getAttribute('aria-label') ?? '').toContain('first-light');
-    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid slug');
+    expect(panel.querySelector('[role="alert"]')?.textContent ?? '').toContain('Enter a valid address');
     // It opened the slide-over, not the delete dialog.
     const dialog = screen.container.querySelector('dialog[role="alertdialog"]') as HTMLDialogElement;
     expect(dialog.open).toBe(false);

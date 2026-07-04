@@ -1000,7 +1000,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     const slug = String(form.get('slug') ?? '').trim();
     const alt = sanitizeField(String(form.get('alt') ?? ''), MAX_ALT);
     if (!MEDIA_SLUG_RE.test(slug)) {
-      return fail(400, { error: 'Enter a valid slug: lowercase letters, numbers, and hyphens.' } satisfies MediaUpdateFailure);
+      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies MediaUpdateFailure);
     }
 
     const edited: MediaEntry = { ...row, displayName: displayName || slug, slug, alt };

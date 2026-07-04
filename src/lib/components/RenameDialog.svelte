@@ -65,11 +65,11 @@ DeleteDialog a11y conventions.
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
       <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">URL slug</span>
+        <span class="text-sm font-medium">Address</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
       <p class="text-xs text-muted">
-        Links from other pages update automatically, so nothing breaks. The new URL slug will be
+        Links from other pages update automatically, so nothing breaks. The new address will be
         <code class="text-xs">{nextSlug}</code>.
       </p>
       <div class="flex justify-end gap-2">

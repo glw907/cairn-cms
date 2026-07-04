@@ -451,7 +451,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
         <input class="input w-full" name="title" bind:value={title} required />
       </label>
       <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">Slug</span>
+        <span class="text-sm font-medium">Address</span>
         <input
           class="input w-full"
           name="slug"

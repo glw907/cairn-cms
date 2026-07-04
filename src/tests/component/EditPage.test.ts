@@ -568,7 +568,7 @@ describe('EditPage', () => {
 
   it('surfaces a rename collision error', async () => {
     const props = postProps();
-    (props as Record<string, unknown>).form = { error: 'An entry with that slug already exists.' };
+    (props as Record<string, unknown>).form = { error: 'An entry with that address already exists.' };
     const screen = render(EditPage, props);
     const banner = Array.from(screen.container.querySelectorAll('[role="alert"], .alert')).find((el) =>
       (el.textContent ?? '').includes('already exists'),
@@ -598,7 +598,7 @@ describe('EditPage', () => {
 
   it('announces an error through a persistent assertive region', async () => {
     const props = postProps();
-    (props as Record<string, unknown>).form = { error: 'An entry with that slug already exists.' };
+    (props as Record<string, unknown>).form = { error: 'An entry with that address already exists.' };
     const screen = render(EditPage, props);
     const region = screen.container.querySelector('[aria-live="assertive"]');
     expect(region).not.toBeNull();

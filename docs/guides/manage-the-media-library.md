@@ -90,7 +90,7 @@ left alone and keeps the old file until it publishes again; the review names any
 so nothing is a surprise later.
 
 Because a replacement touches everything at once, the confirmation is deliberate: type the
-image's slug (shown in the dialog) to apply it. If cairn cannot read every place the image
+image's address (shown in the dialog) to apply it. If cairn cannot read every place the image
 might be used, for instance because one edit's branch will not load, the review refuses to
 guess and holds the replacement rather than risk missing a reference. The file you already
 uploaded stays ready, and a "Check usage again" button re-runs the check once the branch is
@@ -116,7 +116,7 @@ Every image's panel carries a Delete action, and what it asks of you depends on 
 image is still in use. For an image with no references found, the dialog asks for a plain
 confirmation. For an image still used somewhere, the dialog lists every entry that deleting it
 would break, published entries and open edits alike, and keeps the delete button disabled until
-you type the image's slug (shown in the dialog).
+you type the image's address (shown in the dialog).
 
 Deleting an image never destroys its history. The row is removed from the library, but every
 version stays in git, so a developer can bring it back later if it turns out you needed it.

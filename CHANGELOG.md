@@ -2,6 +2,19 @@
 
 All notable changes to this project are recorded here, most recent first.
 
+## Unreleased
+
+### Documentation
+
+- The documentation tree rewritten end to end against the approved information
+  architecture: new front doors, the editor arm, 25 guides, a consolidated explanation arm,
+  reference restructures, and a rewritten ten-milestone tutorial with typechecked snippets.
+  No consumer action required.
+- New doc gates: `check:snippets` typechecks every fenced code block against the built
+  package; the suspended reference, signature, and link gates are re-enabled; a monthly
+  cloud drift routine samples published pages against the code
+  (`docs/internal/docs-maintenance.md` records the system).
+
 ## 0.79.0
 
 <!-- release-size: minor -->

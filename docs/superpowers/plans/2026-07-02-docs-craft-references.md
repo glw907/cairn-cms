@@ -469,3 +469,17 @@ into cairn's drafting and folding:
 6. Deferred to Topo/later (filed on ROADMAP): Pagefind-class Ctrl+K search, the FAQ/help
    top-nav page, a task-tagged examples gallery, an /llms machine-consumption page, the
    Consumers-must lines compiled into a durable upgrade page.
+
+## Method fixes from the Superforms effectiveness review (2026-07-04): practices become checks
+
+The review's finding: the gate-backed reference arm beat the exemplar; the prose-rule-backed
+arms slipped on exactly the banked practices no check enforced. Five conversions, binding on
+future docs passes:
+1. Tutorials carry a first-success-by-early-milestone acceptance criterion (an early visible
+   win, or an explicit pointer to one).
+2. Every how-to guide OPENS with the reader's question and a runnable snippet in the first
+   screen, inline-linking its explanation page rather than offering two doors.
+3. Front doors carry the honest workflow before/after (who does the edit, before and after
+   cairn) as an acceptance check, not a suggestion.
+4. Debugging tools (doctor, logs, troubleshooting) get a front-door placement check.
+5. Gate candidate (filed to ROADMAP): a guide that names an export links its reference entry.

@@ -2,6 +2,8 @@
 
 This tutorial builds a working cairn site from an empty directory: a public site rendering markdown content, an admin where editors write, and at the end, a deploy to Cloudflare. Everything is built by hand so you can see what every file does. (A `create-cairn-site` scaffolder that produces the same result in one command is planned; today, this page is the path.)
 
+If you'd rather see a cairn site run before building one, the [showcase](../../examples/showcase/README.md) is this tutorial's finished result: clone the repo, `npm install` in `examples/showcase`, and `npm run dev`.
+
 You'll need Node 22 or later and a free [Cloudflare](https://www.cloudflare.com/) account for the final milestone. Nothing else: the admin runs locally against a development backend, so you need no GitHub App, no database, and no email setup to run the editor locally. Those arrive when you take a site to production, and the closing milestone points at the guides that wire them.
 
 ## Milestone 0: What you will build

@@ -33,3 +33,5 @@ Eight words the docs use precisely:
 ## Project files
 
 [README](../README.md), [ROADMAP](../ROADMAP.md), [SECURITY](../SECURITY.md), [CHANGELOG](../CHANGELOG.md). Maintainer-facing material (the design system, the smoke test, and superseded history) lives under [internal/](./internal/README.md).
+
+When something breaks: [cairn-doctor](./reference/doctor.md) diagnoses a misconfigured site, [the logs](./guides/read-cairn-logs.md) explain a misbehaving one, and [troubleshooting](./guides/troubleshooting.md) maps symptoms to fixes.

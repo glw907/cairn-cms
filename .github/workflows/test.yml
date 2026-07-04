@@ -21,15 +21,12 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - run: npm test
       - run: npm run check:package
-      # SUSPENDED during the docs rewrite (Geoff, 2026-07-03) — re-enable as the tree refills
-      # - run: npm run check:reference
-      # SUSPENDED during the docs rewrite (Geoff, 2026-07-03) — re-enable as the tree refills
-      # - run: npm run check:reference:signatures
+            - run: npm run check:reference
+            - run: npm run check:reference:signatures
       - run: npm run check:surface
       - run: npm run check:cm-internals
       - run: npm run check:readiness
-      # SUSPENDED during the docs rewrite (Geoff, 2026-07-03) — re-enable as the tree refills
-      # - run: npm run check:docs
+            - run: npm run check:docs
       - run: npm run check:snippets
       - run: npm run check:prose
       - run: npm run check:version

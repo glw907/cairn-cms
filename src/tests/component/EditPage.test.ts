@@ -1801,6 +1801,8 @@ describe('EditPage', () => {
     expect(text).toContain('Ctrl S');
     expect(text).toContain('Publish');
     expect(text).toContain('Ctrl Shift S');
+    expect(text).toContain('Undo / redo');
+    expect(text).toContain('Ctrl Z / Ctrl Y');
     expect(text).toContain('Fold / unfold');
     expect(text).toContain('Zen');
     expect(text).toContain('This sheet');

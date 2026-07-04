@@ -15,10 +15,12 @@ export type ShortcutRow = { label: string; keys: string };
  * This sheet ride EditPage's window keydown; Bold / Italic / Inline code / Web link / the heading
  * pair / Quote / the list pair ride EditPage's card keydown; Fold / unfold and Next / previous issue
  * ride MarkdownEditor's own CodeMirror keymap (the latter binds the stock `\@codemirror/lint`
- * `nextDiagnostic` / `previousDiagnostic` commands); the command palette rides CairnAdminShell's
+ * `nextDiagnostic` / `previousDiagnostic` commands); Undo / redo rides CodeMirror's own
+ * `historyKeymap`, wired alongside the lint keymap; the command palette rides CairnAdminShell's
  * Ctrl K; Continue list / quote is the built-in markdown keymap on Enter.
  */
 export const editorShortcuts: ShortcutRow[] = [
+  { label: 'Undo / redo', keys: 'Ctrl Z / Ctrl Y' },
   { label: 'Save', keys: 'Ctrl S' },
   { label: 'Bold', keys: 'Ctrl B' },
   { label: 'Publish', keys: 'Ctrl Shift S' },

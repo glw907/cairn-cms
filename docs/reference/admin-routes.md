@@ -233,7 +233,7 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 
 On a site that prerenders by default, the explicit `prerender = false` is required. Without it
 the endpoint prerenders at build time, when the GitHub App key is absent, freezing a permanent
-`ok:false` that also 404s at runtime. The admin mount carries its own `prerender = false`; this
+`ok:false` that also 404 responses at runtime. The admin mount carries its own `prerender = false`; this
 root endpoint needs its own opt-out.
 
 ## Per-route mounting (advanced)

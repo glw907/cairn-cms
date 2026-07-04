@@ -1,0 +1,51 @@
+# Upgrade cairn
+
+To upgrade cairn you bump the version range, read the `Consumers must:` steps for the versions
+you cross, and run your own gates. The [CHANGELOG](../../CHANGELOG.md) records those steps per
+version; a version with no `Consumers must:` list is a drop-in bump.
+
+## Upgrade
+
+1. **Bump the version range.**
+
+   ```sh
+   npm install @glw907/cairn-cms@^0.79.0
+   ```
+
+2. **Read every `Consumers must:` list between your old version and the new one** in the
+   [CHANGELOG](../../CHANGELOG.md). Each breaking release states its own list, so a run from
+   `0.76.0` to `0.78.2` means reading `0.78.0`'s and `0.78.2`'s lists in order. A version
+   with no `Consumers must:` list changed nothing you need to act on.
+3. **Apply each listed change** to your adapter, your routes, or your `wrangler.jsonc`, as that
+   version's list names.
+4. **Run `npx cairn-doctor`** against your site. It catches a binding, a config key, or a
+   dependency floor the new version now expects that your site hasn't caught up to yet. See the
+   [`cairn-doctor` reference](../reference/doctor.md) for what it checks.
+5. **Run your own site's build and test gate** before you deploy. cairn's gates only exercise
+   the package. They can't reach your adapter, your `render`, or your routes, so run your own
+   build and tests before you deploy.
+
+## How cairn versions
+
+cairn is `0.x`, and until it reaches `1.0`, the number tracks scale. A minor version means a new
+subsystem or public surface; everything else is a patch, whether or not it breaks you. Whether a
+version breaks your site is stated in its `Consumers must:` list, not signaled by the version
+number. Check the exact number that's free to publish next with `npm view
+@glw907/cairn-cms versions --json` rather than assuming the next one in sequence.
+
+That scheme lasts only through `0.x`. At `1.0`, cairn moves to compatibility SemVer: a major
+version signals a breaking change, and the number finally carries the compatibility promise the
+`Consumers must:` line carries now. The beta that precedes `1.0` publishes under an npm `beta`
+dist-tag as `1.0.0-beta.1`, iterating `-beta.N` and still carrying a `Consumers must:` line on
+any bump that breaks something, until the `1.0.0` cut. `npm install @glw907/cairn-cms` keeps
+resolving to the latest `0.x` release until then.
+
+## When something breaks anyway
+
+Only the latest published minor gets fixes. There's no backport branch, so check `npm view
+@glw907/cairn-cms version` before assuming a bug is still open. If it's open, file a GitHub
+issue against [`glw907/cairn-cms`](https://github.com/glw907/cairn-cms/issues) with the version,
+what you expected, and what happened. Attach the structured log record if the failure logged
+one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
+events](../reference/log-events.md) names each event and its fields, and [Read cairn's
+logs](./read-cairn-logs.md) covers querying them on a deployed Worker.

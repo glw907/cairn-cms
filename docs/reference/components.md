@@ -468,68 +468,33 @@ a plain-language hover hint.
 
 Stability tier: Unstable API.
 
-```ts
-{
-  registerInsertLink?: (insert: (href: string, title: string) => void) => void;
-  registerInsertImage?: (insert: (alt: string, ref: string) => void) => void;
-  onImageIngest?: (file: File) => void;
-  mediaLibrary?: Record<string, MediaLibraryEntry>;
-  registerCaretCoords?: (get: () => { left: number; right: number; top: number; bottom: number } | null) => void;
-  registerFocusEditor?: (focus: () => void) => void;
-  registerImagePlaceholders?: (api: ImagePlaceholderApi) => void;
-  registerGetSelection?: (get: () => string) => void;
-  registerGetSelectionRange?: (get: () => { from: number; to: number } | null) => void;
-  registerTidy?: (api: TidyApi) => void;
-  registerUndo?: (undo: () => void) => void;
-  onComponentAtCaret?: (info: { name: string | null; markdown: string; from: number; to: number } | null) => void;
-  onMediaImageAtCaret?: (info: FigureAtImage | null) => void;
-  registerReplaceRange?: (replace: (from: number, to: number, text: string) => void) => void;
-  registerSelectRange?: (select: (from: number, to: number) => void) => void;
-  pendingAdditions?: Set<string>;
-  spellcheckTest?: { createWorker?: () => SpellWorker; assumeReady?: boolean };
-  tidyMode?: boolean;
-}
-```
-
 `EditPage`'s own wiring, exposed on the component because `EditPage` composes `MarkdownEditor`
 rather than wrapping it, with no stability promise across minors: a site that reaches past
-`EditPage` for one of these should expect it to move or change shape. `registerInsertLink` inserts
-an inline link (the pickers call it), and `registerGetSelection` returns the selected text (the
-web-link dialog prefills from it). `onComponentAtCaret` and `registerReplaceRange` are the
-round-trip editing seams. `onComponentAtCaret` reports the directive container under the caret
-whenever it changes: the opening directive's `name`, the block's `markdown`, and the document
-character offsets (`from`, `to`) of its inclusive line range, or `null` when the caret sits outside
-any container. The host resolves that block against the registry to offer an Edit-block control.
-`registerReplaceRange` hands the parent a `(from, to, text)` callback that overwrites a document
-span and drops the caret after it, which the Edit-block dialog's Update calls to write an edited
-block back over its original range. `registerSelectRange` hands the parent a `(from, to)` callback
-that selects a document span, focuses the surface, and scrolls the range into view, which the
-publish-time needs-alt notice's jump control calls to land the author on an image that lacks alt
-text. `onMediaImageAtCaret` reports the media image under the caret whenever it changes: the inner
-`![alt](media:slug.hash)` token's exact source offsets, plus the enclosing `:::figure` block (its
-range, raw caption, and placement role) when the image is wrapped, or `figure: null` when it is
-bare, or `null` when the caret is not on a media image. The host opens the figure control over it
-to wrap, edit, or unwrap a figure, writing the source through `registerReplaceRange`. The media
-seams support the insert popover: `registerInsertImage` inserts an inline
-`![alt](media:slug.hash)` image at the caret (the picker and the capture card call it),
-`onImageIngest` fires with the first image file of a paste or drop onto the surface (the host opens
-the capture card with the bytes), and `mediaLibrary` is the per-asset projection the source
-decoration reads to render a `media:` token as a thumbnail chip. `registerCaretCoords` returns the
-caret's viewport coordinates so the popover anchors to the cursor, `registerFocusEditor` returns
-focus to the surface on close, and `registerImagePlaceholders` hands the host the
-optimistic-placeholder api (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload
-loop's in-flight thumbnail and determinate progress without ever writing doc text until the upload
-resolves. `registerGetSelectionRange` returns the selection's document offsets, or null for a bare
-caret, so the tidy host maps a selection tidy onto the exact selected span. `registerTidy` hands
-the tidy review surface the apply api that drives its in-buffer decorations and its accept/reject
-state machine. `registerUndo` hands the parent a `() => void` that undoes the tidy apply's whole
-history entry in one move, for the "Undo tidy" chip. `pendingAdditions` is the caller-owned pending
-personal-dictionary additions set; `EditPage` commits it through the save-time dictionary action
-and reconciles it against the merged response. `spellcheckTest` is a test-only seam for the
-spellcheck Worker (the real wasm and dictionary assets do not load under the component test
-runner); never set this outside a test. `tidyMode` makes the surface read-only while a tidy review
-is open, the way Preview disables the toolbar, so the author cannot edit underneath a pending
-review.
+`EditPage` for one of these should expect it to move or change shape. `onComponentAtCaret` and
+`registerReplaceRange` are the round-trip editing seams; the media seams (`registerInsertImage`,
+`onImageIngest`, `mediaLibrary`, `onMediaImageAtCaret`) support the insert popover and the figure
+control.
+
+| Prop | Type | What it does |
+| --- | --- | --- |
+| `registerInsertLink` | `(insert: (href: string, title: string) => void) => void` | Hands the parent a callback that inserts an inline link. The link pickers call it. |
+| `registerInsertImage` | `(insert: (alt: string, ref: string) => void) => void` | Hands the parent a callback that inserts an inline `![alt](media:slug.hash)` image at the caret. The media picker and the capture card call it. |
+| `onImageIngest` | `(file: File) => void` | Fires with the first image file of a paste or drop onto the surface. The host opens the capture card with the bytes. |
+| `mediaLibrary` | `Record<string, MediaLibraryEntry>` | The per-asset projection the source decoration reads to render a `media:` token as a thumbnail chip. |
+| `registerCaretCoords` | `(get: () => { left: number; right: number; top: number; bottom: number } \| null) => void` | Hands the parent a getter for the caret's viewport coordinates, so the insert popover anchors to the cursor. |
+| `registerFocusEditor` | `(focus: () => void) => void` | Hands the parent a callback that returns focus to the surface on close. |
+| `registerImagePlaceholders` | `(api: ImagePlaceholderApi) => void` | Hands the host the optimistic-placeholder API (`begin`, `progress`, `resolveTo`, `cancel`) that drives the upload loop's in-flight thumbnail and determinate progress, with no document text written until the upload resolves. |
+| `registerGetSelection` | `(get: () => string) => void` | Hands the parent a getter that returns the selected text. The web-link dialog prefills from it. |
+| `registerGetSelectionRange` | `(get: () => { from: number; to: number } \| null) => void` | Hands the parent a getter that returns the selection's document offsets, or `null` for a bare caret, so the tidy host maps a selection tidy onto the exact selected span. |
+| `registerTidy` | `(api: TidyApi) => void` | Hands the tidy review surface the apply API that drives its in-buffer decorations and its accept/reject state machine. |
+| `registerUndo` | `(undo: () => void) => void` | Hands the parent a callback that undoes the tidy apply's whole history entry in one move, for the "Undo tidy" chip. |
+| `onComponentAtCaret` | `(info: { name: string \| null; markdown: string; from: number; to: number } \| null) => void` | Reports the directive container under the caret whenever it changes: the opening directive's `name`, the block's `markdown`, and the document character offsets (`from`, `to`) of its inclusive line range, or `null` when the caret sits outside any container. The host resolves that block against the registry to offer an Edit-block control. |
+| `onMediaImageAtCaret` | `(info: FigureAtImage \| null) => void` | Reports the media image under the caret whenever it changes: the inner `![alt](media:slug.hash)` token's exact source offsets, plus the enclosing `:::figure` block (its range, raw caption, and placement role) when the image is wrapped, or `figure: null` when it is bare, or `null` when the caret is not on a media image. The host opens the figure control over it to wrap, edit, or unwrap a figure, writing the source through `registerReplaceRange`. |
+| `registerReplaceRange` | `(replace: (from: number, to: number, text: string) => void) => void` | Hands the parent a callback that overwrites a document span and drops the caret after it. The Edit-block dialog's Update calls it to write an edited block back over its original range. |
+| `registerSelectRange` | `(select: (from: number, to: number) => void) => void` | Hands the parent a callback that selects a document span, focuses the surface, and scrolls the range into view. The publish-time needs-alt notice's jump control calls it to land the author on an image that lacks alt text. |
+| `pendingAdditions` | `Set<string>` | The caller-owned pending personal-dictionary additions set. `EditPage` commits it through the save-time dictionary action and reconciles it against the merged response. |
+| `spellcheckTest` | `{ createWorker?: () => SpellWorker; assumeReady?: boolean }` | A test-only seam for the spellcheck Worker (the real wasm and dictionary assets do not load under the component test runner). Never set this outside a test. |
+| `tidyMode` | `boolean` | Makes the surface read-only while a tidy review is open, the way Preview disables the toolbar, so the author cannot edit underneath a pending review. |
 
 ### `DeleteDialog`
 

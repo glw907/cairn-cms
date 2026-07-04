@@ -18,7 +18,9 @@ name here against them.
 
 ---
 
-## Functions
+## Single-mount admin (recommended)
+
+The facade and its two guard helpers: the one path most sites wire.
 
 ### `createAuthGuard`
 
@@ -148,6 +150,8 @@ export const load = (event) => {
   return { canManage: true };
 };
 ```
+
+## Per-route factories (advanced)
 
 The four factories below are the advanced per-route seam. `createCairnAdmin` wraps them, so a
 site on the single mount never calls them directly; a site that mounts routes by hand wires each
@@ -415,6 +419,8 @@ the action is not an HTTP 413: the client reads the envelope and branches on `da
 response status. Build a new fetch-style admin action against this contract from the start. The upload
 client in `examples/showcase` is the working reference.
 
+## Media delivery
+
 ### `createMediaRoute`
 
 Stability tier: Scaffold API.
@@ -430,7 +436,7 @@ Every served response carries the load-bearing security headers (`X-Content-Type
 `Content-Disposition: inline`, a `default-src 'none'; sandbox` CSP, and a one-year immutable cache),
 which are the XSS control for the served bytes since the route sits outside `/admin`. It forwards
 `If-None-Match` and `Range` for 304 and 206 responses, short-circuits the Cloudflare Images
-self-loop, returns 503 on a missing bucket binding, and 404s a media-off site or a bad path. Pass
+self-loop, returns 503 on a missing bucket binding, and 404 responses a media-off site or a bad path. Pass
 it the composed runtime directly; the factory reads `runtime.resolvedAssets` itself, matching every
 other route factory's convention.
 
@@ -442,6 +448,8 @@ import { cairn, siteConfig } from '$lib/cairn.config.js';
 
 export const GET = createMediaRoute(composeRuntime({ adapter: cairn, siteConfig }));
 ```
+
+## Navigation routes
 
 ### `createNavRoutes`
 
@@ -476,6 +484,8 @@ export const actions = { save: nav.navSave };
 The public read-model loaders live at [`@glw907/cairn-cms/delivery`](./delivery.md), where the
 matching `CairnHead` component sits. See [the delivery reference](./delivery.md) for the worked
 catch-all route.
+
+## Health check
 
 ### `healthLoad`
 

@@ -20,6 +20,26 @@ All notable changes to this project are recorded here, most recent first.
 
 ## Unreleased
 
+### Editor
+
+- Pasting rich text from Word, Google Docs, or a web page now converts headings, emphasis,
+  links, and lists to markdown instead of dropping all formatting; plain-text and image
+  paste are unchanged.
+- Component blocks open folded when an entry loads; the touch-to-unfold safety invariant is
+  unchanged.
+- The editor footer shows a live count of open check issues beside the word count (visible
+  counterpart of the screen-reader announcer).
+- The in-editor cheat-sheet lists undo and redo.
+- Editor-facing vocabulary: the create dialog, rename dialog, and media forms say "Address"
+  (formerly "Slug"), and the admin sidebar's media item says "Library".
+
+### Fixed
+
+- `examples/showcase/svelte.config.js` now sets `csrf: { checkOrigin: false }`, matching the
+  deploy guide's instruction (cairn's guard owns admin CSRF).
+- The `media.upload_failed` log event's documented-but-never-populated `code` field is
+  reconciled with the emitters.
+
 ### Documentation
 
 - The documentation tree rewritten end to end against the approved information

@@ -54,6 +54,14 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**FAMILY-WIDE RESPONSIVE STANDARD (Geoff, 2026-07-05): the five-viewport bar
+(320/390/768/1440/2560; composed at the extremes; the CI width matrix as the gate) binds
+EVERY cairn-family artifact — Waymark, the cairn theme, all four ported themes, both site
+rebuilds, cairn.pub, Topo. Each theme port's acceptance includes the five-viewport check
+plus width-matrix baselines; the bar for a port is beating its ORIGINAL at 320 and 2560.
+The standard's doc home: public-design-system.md gains its family-wide section as a rider
+on the harvest pass.**
+
 **THEME SLATE ADOPTED (Geoff, 2026-07-05): AstroPaper (blogging/minimal, port FIRST —
 token-seam-only proof), Foxi (small business/card — the composed-page seam question),
 hugo-theme-gallery (portfolio — media stress + the album-vs-Pages question feeding the

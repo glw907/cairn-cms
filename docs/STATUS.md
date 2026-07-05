@@ -54,6 +54,12 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**PHASE 1 IS AUTHORIZED TO RUN (Geoff, 2026-07-05: "start the cairn.pub Phase 1 build").
+The chain executes unattended: table-semantics fix -> rename sweep -> Phase 1 tasks 1-6 per
+the plan, including the Task-1 release cut (the consumer-needs-it trigger; OIDC publish).
+Two human touchpoints remain, neither blocking launch: the live smoke's magic-link CLICK at
+Task 6 (Geoff's inbox), and the editor walkthrough video URL whenever it exists.**
+
 **cairn.pub ARCHITECTURE COMMITTED (spec 2026-07-04, adversarially reviewed, amendments
 folded) and the PHASE-1 PLAN AUTHORED (plans/2026-07-04-cairn-pub-phase-1.md): release cut
 -> repo reset -> routes -> engine item -> content (main-loop prose, all gated) -> deploy +

@@ -54,6 +54,13 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**QUEUED (Geoff, 2026-07-05): the REBUILD-HARVEST ENGINE PASS fires when the ecxc redo
+lands — 907's findings 1-3 plus whatever the flexibility verdict top-ranks. Shape: (a) the
+rehype seam on createRenderer (optional plugins param; two independent friction data
+points), (b) table-scroll as a built-in default riding that seam with an opt-out (kills the
+silent two-part contract), (c) the sitemap's extra-routes parameter + the unlisted-route
+build check. Public surface -> reference riders; one pass folds both sites' lessons.**
+
 **BOTH REBUILDS COMPLETE (2026-07-05, overnight). ecxc.ski: five tasks green on its
 rebuild-waymark branch — crawl diff exact plus the two sanctioned redirects, 18 legacy
 directives rationalized to 13 v2 components, the waiver's pre-existing 320px overflow found

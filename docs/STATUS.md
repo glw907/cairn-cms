@@ -29,8 +29,8 @@ throughout; CHANGELOG under ## Unreleased; holds unpublished. NEXT: the template
 
 **NAMING RULING (Geoff, 2026-07-04, supersedes older names below): the template is WAYMARK
 (the name Wayfinder is retired everywhere); the identity theme formerly called Waymark is
-renamed CAIRN (the theme that makes a site look like cairn's own). Inventory: cairn the
-engine, Waymark the template, Cairn the theme, Topo the docs shell. The rename sweep (docs,
+renamed THE CAIRN THEME (lowercase cairn, matching the project's casing). Inventory: cairn the
+engine, Waymark the template, the cairn theme, Topo the docs shell. The rename sweep (docs,
 the make-wayfinder-your-own.md filename, the theme dir, design docs, README, memory) runs as
 the FIRST fold after the in-flight responsive workflow lands, to avoid racing its edits.
 Published history stays as written.**

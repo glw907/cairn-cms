@@ -79,6 +79,15 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**907 TYPOGRAPHY RULING (Geoff, 2026-07-05): RESTORE the Spectral + Karla pairing
+(Spectral body, Karla display, Monaspace Neon mono; et-book retired). The polish pass
+executes on it: the wordmark split per the audit's exact spec, article meta chrome (date/
+tags/back-link) restored, link underline treatment, uppercase-letterspaced date stamps with
+the long format, nav idiom, tag pills + hash prefixes, italic descriptions, footer labels,
+the epoll flow-spacing bug diagnosed and fixed, blockquote dialed back to the old modest
+scale, inline code at the old smaller ratio in Monaspace. Verification: side-by-side CROPS
+per device (the polish standard), permalinks still exact, then ONE redeploy.**
+
 **AKSAILINGCLUB.ORG PORT QUEUED (Geoff, 2026-07-05): the FINAL site effort before
 go-live — the most complex, the highest bar (a real member base). Fidelity tier: GENTLE
 REDESIGN — preserve basic layout, color, and fonts; the Blowfish card language is too heavy

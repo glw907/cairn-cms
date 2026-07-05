@@ -15,7 +15,9 @@ The adapter and seam contract itself — defineConcept, fieldset, the component 
 render seam, the delivery exports — is open for breaking improvement in this window. The
 discipline: every contract break traces to REBUILD/PORT EVIDENCE (a schema that fought, a
 seam that forced a workaround), never speculation, and the charter's leanness bar still
-governs what gets added. Known contract questions awaiting evidence-driven answers:
+governs what gets added. Migration cost carries ZERO weight for the two owned sites
+(Geoff, 2026-07-05: not worried about reworking ecxc/907 to follow) — the only consumers
+are ours until beta, which is the whole point of the window. Known contract questions awaiting evidence-driven answers:
 
 - **The composed-page seam** — CANDIDATE. ecxc's panel/split/section directives and Foxi's
   pricing/testimonial blocks both ask whether a one-off composed page fits Posts/Pages or

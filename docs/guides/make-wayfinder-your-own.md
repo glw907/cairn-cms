@@ -11,8 +11,7 @@ paper:
 --color-base-100: oklch(98% 0.01 60); /* a warm paper instead of neutral white */
 ```
 
-Rebuild, and the whole surface follows: the chrome, the reading surface, the code highlighter,
-and every directive component. None of them hard-codes a color. They all read the same tokens.
+Rebuild, and the whole surface follows, because the chrome, the reading surface, the code highlighter, and the directive components read those tokens instead of hard-coding a color (the `check:public-tokens` gate below enforces that).
 
 ## The token seam
 
@@ -41,9 +40,7 @@ is now [`examples/waymark-theme/`](../../examples/waymark-theme/) in this reposi
 complete, working re-skin you can read end to end, not a hypothetical. `cairn.pub`, cairn's own
 site, runs exactly this layer on top of Wayfinder.
 
-Waymark changes three things. The display face swaps from a humanist sans to a display serif,
-Fraunces. The paper ladder warms from hue-free to a warm stone tint. And the three signature prose
-gestures, covered next, turn on. Every value it sets is the ordinary token seam described in the
+Waymark swaps the display face to the serif Fraunces and warms the paper ladder from hue-free to a stone tint. Both are ordinary token overrides. It also turns on the three signature prose gestures, which the next section covers. Every value it sets is the ordinary token seam described in the
 preceding section, nothing new. Read `examples/waymark-theme/waymark.css` for the exact
 `--color-base-*` and `--font-display` values it carries, and its own comments explaining each
 override: an import-order note for the base ladder, and why the type and face overrides need no
@@ -75,9 +72,7 @@ root, no CSS edit required:
 ```
 
 `waymark.css` takes a different path to the same effect: it re-declares the three gestures without
-the `data-flourish` guard, so copying the file in turns them on with no markup change at all. Pick
-whichever fits your site: the attribute if you want the choice visible in your markup, or a
-`waymark.css`-style override if you want a single CSS-only drop-in.
+the `data-flourish` guard, so copying the file in turns them on with no markup change at all. Add the attribute if you want the choice visible in your markup. The `waymark.css` override suits a site that would rather keep the change in one CSS-only drop-in.
 
 ## The font swap
 

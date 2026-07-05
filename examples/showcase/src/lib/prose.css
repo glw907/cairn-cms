@@ -56,11 +56,19 @@
        the rare token that cannot fit otherwise; ordinary prose never notices it. */
     overflow-wrap: anywhere;
   }
+  /* The browser-default paragraph margin, reset before the owl selector below supplies the real
+     flow rhythm. Wrapped in :where() so this reset carries zero specificity from the `p` type
+     selector: an unwrapped `.prose p` is (0,1,1), which always outranks `.prose > * + *`'s (0,1,0)
+     regardless of source order, so every paragraph's margin-top stayed 0 no matter what the owl
+     selector tried to set, collapsing the flow rhythm between two paragraphs, after a blockquote,
+     or after a code block or table (anywhere the following element is a bare `<p>` with no
+     heading-specific override to out-rank the reset the same way `.prose h2 + *` does). Tied at
+     (0,1,0) with the owl rule below, source order decides, so this reset must stay ABOVE it. */
+  .prose :where(p) {
+    margin-block: 0;
+  }
   .prose > * + * {
     margin-top: var(--flow-space);
-  }
-  .prose p {
-    margin-block: 0;
   }
 
   /* The article title on the display face: large space below it is unnecessary

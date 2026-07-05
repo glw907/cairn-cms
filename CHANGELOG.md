@@ -58,6 +58,16 @@ All notable changes to this project are recorded here, most recent first.
   scroll, while the table itself keeps `display: table`. The same review flagged the footer nav
   for WCAG 2.5.8: it now carries the same `flex-wrap` and 44px-class tap targets the header nav
   already had. The pixel baselines above are regenerated for both changes.
+- The header gains a manual light/dark toggle (`SiteHeader.svelte`), the template's answer to a
+  known extensible-lens gap: a returning visitor's choice persists to a `cairn-site-theme` cookie,
+  read by a no-flash inline script in `app.html` before first paint; with no stored choice,
+  `data-theme` stays unset and the existing `prefers-color-scheme` default still drives the page
+  live, with no JS at all. `theme.css`'s dark custom-token block (the on-surface inks, the
+  elevation pair, the CTA, the code ramp) gains a `:not([data-theme])` guard alongside a new
+  unconditional `[data-theme='cairn-dark']` block, so an explicit choice overrides the system
+  scheme for the custom tokens the same way it already does for DaisyUI's own compiled role
+  tokens. The added control widens the header row slightly, so the nav wraps onto its own line a
+  little earlier at the standard desktop width; the affected pixel baselines are regenerated.
 
 ### Editor
 

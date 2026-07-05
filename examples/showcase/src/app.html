@@ -3,6 +3,16 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script>
+      // The no-flash theme read. Runs synchronously before the first paint, so a returning
+      // visitor's explicit choice (SiteHeader.svelte's toggle) never flashes the system default
+      // first. No cookie leaves `data-theme` unset, and theme.css's own prefers-color-scheme
+      // block picks the system scheme with no JS involved at all.
+      (function () {
+        var match = document.cookie.match(/(?:^|; )cairn-site-theme=(cairn-dark|cairn)(?:;|$)/);
+        if (match) document.documentElement.setAttribute('data-theme', match[1]);
+      })();
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="hover">

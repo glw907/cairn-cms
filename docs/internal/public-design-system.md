@@ -80,8 +80,11 @@ The exhaustive oklch values are in `theme.css`; this is the structure.
   66ch, and `--container-measure-wide`); the fluid space scale (`--spacing-*`, `--flow-space`); and the
   code ramp (`--cairn-code-*`, each reading a role).
 - Light values sit on `:root`; the dark siblings sit under the same `prefers-color-scheme` query DaisyUI
-  uses for `cairn-dark`, so the roles and the customs switch together. A manual dark toggle (B4) will add
-  a `[data-theme]` scope for the customs.
+  uses for `cairn-dark`, guarded by `:not([data-theme])`, so an explicit choice wins over the system
+  scheme. The header's theme toggle (`SiteHeader.svelte`) sets `data-theme="cairn-dark"`/`"cairn"` on
+  `<html>`, persisted to a `cairn-site-theme` cookie a no-flash inline script in `app.html` reads before
+  first paint; the customs' `[data-theme='cairn-dark']` block duplicates the dark values unconditionally,
+  the same shape DaisyUI's own compiled theme blocks use.
 
 ## Type
 

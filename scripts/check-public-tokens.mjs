@@ -211,12 +211,16 @@ function themeBlock(css) {
 }
 
 /**
- * The `@media (prefers-color-scheme: dark) { :root { ... } }` body: the dark on-surface inks.
+ * The `@media (prefers-color-scheme: dark) { :root { ... } }` body: the dark on-surface inks. The
+ * `:root` selector may carry a `:not([data-theme])` guard (the manual-toggle seam, so an explicit
+ * `data-theme` choice wins over the system scheme); either form is accepted.
  * @param {string} css
  * @returns {string}
  */
 function darkMediaRoot(css) {
-  const m = css.match(/@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root\s*\{([\s\S]*?)\n\s*\}/);
+  const m = css.match(
+    /@media\s*\(prefers-color-scheme:\s*dark\)\s*\{\s*:root(?::not\(\[data-theme\]\))?\s*\{([\s\S]*?)\n\s*\}/,
+  );
   if (!m) throw new Error('dark prefers-color-scheme :root block not found in theme.css');
   return m[1];
 }

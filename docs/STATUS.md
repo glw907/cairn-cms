@@ -27,6 +27,14 @@ rows, fold-by-default, the showcase csrf fix, the log-field reconciliation, and 
 paste conversion (rehype-remark based, Google-Docs-span-aware). Docs riders applied
 throughout; CHANGELOG under ## Unreleased; holds unpublished. NEXT: the template effort.
 
+**NAMING RULING (Geoff, 2026-07-04, supersedes older names below): the template is WAYMARK
+(the name Wayfinder is retired everywhere); the identity theme formerly called Waymark is
+renamed CAIRN (the theme that makes a site look like cairn's own). Inventory: cairn the
+engine, Waymark the template, Cairn the theme, Topo the docs shell. The rename sweep (docs,
+the make-wayfinder-your-own.md filename, the theme dir, design docs, README, memory) runs as
+the FIRST fold after the in-flight responsive workflow lands, to avoid racing its edits.
+Published history stays as written.**
+
 **THE WAYFINDER RULING (Geoff, 2026-07-04, locked): Wayfinder becomes the NEUTRAL scaffold;
 the Waymark identity (Fraunces, warm stone, cairn-glyph rules, hanging pull-quotes, diamond
 bullets) extracts into a THEME LAYER applied at cairn.pub — the living demo of making

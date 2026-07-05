@@ -46,6 +46,11 @@ should-fix craft items (column alignment, eyebrow dosage, the extensible cluster
 composition — designed against the NEUTRAL default), (4) the cheap considers ride along.
 Full findings in the design-review workflow journal (wf_003a12ef-bf3).
 
+**cairn.pub NAV AMENDED (Geoff, 2026-07-04): Waymark · Docs · Help · Blog · About + GitHub
+— the template is the get-started door, its page = neutral viewports, the one-CSS-file
+reveal, guide + tutorial exits, scaffolder when it ships. "Templates" catalogue item =
+trigger-based, when a second template exists.**
+
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
 EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings

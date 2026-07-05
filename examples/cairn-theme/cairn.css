@@ -42,7 +42,14 @@
 /* The warm-tinted paper. DaisyUI compiles the `cairn` theme's base ladder to a plain, unlayered rule
    too, so specificity and source order both matter here, unlike the theme-layer tokens above.
    `!important` makes the override unconditional regardless of exactly how a future DaisyUI or
-   Tailwind version compiles that rule, an implementation detail this file should not have to track. */
+   Tailwind version compiles that rule, an implementation detail this file should not have to track.
+   The dark media block is guarded by `:not([data-theme])`, and a separate `[data-theme='cairn-dark']`
+   rule repeats it unconditionally, so a site that adopts theme.css's manual toggle (SiteHeader.svelte's
+   data-theme attribute on <html>) gets the warm dark paper on an explicit choice too, not only when the
+   OS scheme happens to agree. The attribute selector's higher specificity wins over the plain `:root`
+   light block above with no import-order care needed, even though both carry `!important`. A site that
+   never adopts the toggle sees no change: `data-theme` is then never set, so `:not([data-theme])`
+   always matches and the media query alone decides, exactly as before. */
 :root {
   --color-base-100: oklch(98.4% 0.0035 80) !important;
   --color-base-200: oklch(96.4% 0.005 80) !important;
@@ -51,12 +58,19 @@
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme]) {
     --color-base-100: oklch(24% 0.01 78) !important;
     --color-base-200: oklch(20% 0.01 78) !important;
     --color-base-300: oklch(32% 0.012 78) !important;
     --color-base-content: oklch(92% 0.007 80) !important;
   }
+}
+
+:root[data-theme='cairn-dark'] {
+  --color-base-100: oklch(24% 0.01 78) !important;
+  --color-base-200: oklch(20% 0.01 78) !important;
+  --color-base-300: oklch(32% 0.012 78) !important;
+  --color-base-content: oklch(92% 0.007 80) !important;
 }
 
 /* The three signature prose gestures, enabled unconditionally. cairn's own opt-in mechanism scopes

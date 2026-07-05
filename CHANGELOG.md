@@ -90,6 +90,14 @@ All notable changes to this project are recorded here, most recent first.
   deploy guide's instruction (cairn's guard owns admin CSRF).
 - The `media.upload_failed` log event's documented-but-never-populated `code` field is
   reconciled with the emitters.
+- `theme.css`'s fluid type scale was compounding with `site.css`'s root clamp: both are
+  viewport-driven, and a step expressed in `rem` multiplies whatever the root's own clamp
+  currently is, so body text overshot to about 21 to 22px at desktop-and-up widths instead of the
+  intended high-17s. Every `--text-step-*` value is rescaled by the same factor (holding every
+  step-to-step ratio) so body tops out at 17px on its own before the root clamp takes over, landing
+  at about 17px at 1440px and about 19px at 2560px. A site that copied `theme.css` during
+  scaffolding (as a re-skin's starting point) and did not touch the type scale should pull the
+  same rescale.
 
 ### Documentation
 

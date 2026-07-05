@@ -201,14 +201,25 @@
      vars are still emitted at :root, so prose.css's `var(--text-step-*)` keeps resolving. The
      display steps (2 through 5) hold one step back from the original ratio, a humanist sans reads
      large at a lower size than a display serif did; step--1, step-0, and step-1 (caption, body,
-     lead) are unchanged. */
-  --text-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
-  --text-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
-  --text-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
-  --text-step-2: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* h3, index title */
-  --text-step-3: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h2 */
-  --text-step-4: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* section display, stat */
-  --text-step-5: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* h1, masthead */
+     lead) are unchanged.
+
+     The whole scale is anchored so body (step-0) tops out at 1.0625rem, 17px at the 16px root
+     `site.css`'s own root clamp floors at below 1440px. Below that anchor, `html`'s root
+     `font-size` is a SEPARATE fluid clamp (16px to 18px, active 1440 to ~2200px); a step expressed
+     in rem multiplies whatever the root currently is, so the two clamps used to compound (a step's
+     own vw-driven ceiling riding a root that was also growing), overshooting to about 21-22px body
+     at desktop-and-up widths. Every step here scales by the same factor (0.871, the ratio from the
+     old 1.22rem step-0 ceiling to the new 1.0625rem one), which holds every step-to-step ratio and
+     leaves exactly one fluid mechanism active per width range: the steps still ease in below
+     ~1200px, then hold flat, and the root clamp alone supplies the 1440-to-2200px growth, landing
+     body at about 17px at 1440px and about 19px at 2560px. */
+  --text-step--1: clamp(0.73rem, 0.71rem + 0.12vw, 0.80rem);  /* caption, meta */
+  --text-step-0: clamp(0.92rem, 0.88rem + 0.24vw, 1.0625rem); /* body, about 15 to 17px */
+  --text-step-1: clamp(1.11rem, 1.04rem + 0.37vw, 1.33rem);   /* lead, h4 */
+  --text-step-2: clamp(1.11rem, 1.04rem + 0.37vw, 1.33rem);   /* h3, index title */
+  --text-step-3: clamp(1.32rem, 1.21rem + 0.57vw, 1.66rem);   /* h2 */
+  --text-step-4: clamp(1.59rem, 1.42rem + 0.87vw, 2.08rem);   /* section display, stat */
+  --text-step-5: clamp(1.91rem, 1.65rem + 1.26vw, 2.60rem);   /* h1, masthead */
 
   /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
      (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */

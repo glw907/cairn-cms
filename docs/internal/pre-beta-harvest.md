@@ -37,7 +37,7 @@ are ours until beta, which is the whole point of the window. Known contract ques
   table-scroll wiring, both directions). The right shape may be BREAKING: a plugins
   parameter on the pipeline factory's options, worth restructuring the factory signature
   now rather than bolting on.
-- **Table-scroll as a built-in default** — QUEUED, rides the seam. Default-on with opt-out
+- **Table-scroll as a built-in default** — QUEUED-CONFIRMED (second independent miss: the ecxc redo repeated 907's exact wiring gap). Default-on with opt-out
   kills the silent two-part contract. Behavior change to rendered output: breaking-adjacent;
   do it pre-beta.
 - **Sitemap extra-routes** — QUEUED. The helper's signature grows an extra-routes list +
@@ -65,6 +65,12 @@ are ours until beta, which is the whole point of the window. Known contract ques
   epoll section's missing paragraph gaps may be a template prose.css bug, not site-local).
 - **Blockquote scale** — CANDIDATE: the template's step-up italic treatment read as a
   pull-quote collision on a real technical post; consider a quieter default.
+
+- **CairnHead never appends the site-name title suffix** — CANDIDATE (ecxc redo): every
+  site hand-builds its title convention; an optional titleTemplate on the head component
+  may be the affordance.
+- **The theme-layer flexibility claim: PROVEN** — three themes (cairn, 907, ecxc), the
+  hardest a full club rebrand with ZERO chrome edits and no template findings.
 
 ## Component library
 

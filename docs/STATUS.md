@@ -54,6 +54,12 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**cairn.pub ARCHITECTURE COMMITTED (spec 2026-07-04, adversarially reviewed, amendments
+folded) and the PHASE-1 PLAN AUTHORED (plans/2026-07-04-cairn-pub-phase-1.md): release cut
+-> repo reset -> routes -> engine item -> content (main-loop prose, all gated) -> deploy +
+the owed live admin smoke. Executes after the responsive pass folds + the rename sweep.
+Note: Task 1 IS the pre-beta-window release cut (the consumer-needs-it trigger).**
+
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
 EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings

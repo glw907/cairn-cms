@@ -54,6 +54,12 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**OVERNIGHT RUN (2026-07-05, Geoff asleep ~8-9h, workflows authorized for all of it):
+recovery push + CI baseline regen -> rename sweep -> release cut -> 907.life rebuild
+(workflow: permalink inventory -> plan -> build, component-friction dimension standing) ->
+ecxc.ski as far as the night allows. HELD GATE: production deploys of the two live sites
+wait for Geoff's morning go; everything else runs. Ping on block or milestone.**
+
 **LADDER RESEQUENCED (Geoff, 2026-07-05): the ecxc.ski and 907.life REBUILDS from the
 Waymark template come BEFORE cairn.pub finalizes. Each rebuild iterates the template against
 real-site challenges; the end state = two good sites + a substantially improved template;

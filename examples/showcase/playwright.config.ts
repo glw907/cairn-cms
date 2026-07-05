@@ -1,6 +1,10 @@
 import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
+	// CI's renderer produces run-to-run anti-aliasing jitter of a few dozen pixels;
+	// baselines are CI-canonical (the regen dispatch), and this allowance sits two orders
+	// of magnitude below any real layout change.
+	expect: { toHaveScreenshot: { maxDiffPixels: 120 } },
   testDir: 'e2e',
   // The dev backend (the fake-github recorder, the fake R2 bucket) is module-level singleton state
   // on the one preview server, and several specs commit to the same seed post on the same branch. A

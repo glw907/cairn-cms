@@ -62,7 +62,9 @@ early — the sites consume from the registry too. Claude's interpretive read (c
 the rebuilds start HAND-COPIED from the template (the scaffolder doesn't ship yet), and the
 hand-copy friction becomes the scaffolder's requirements — rebuilds inform the scaffolder,
 not the reverse. Permalinks exact; live smokes per the ladder. Order (Claude's call): 907.life first,
-then ecxc.ski — easy to hard, each inheriting the prior's template fixes.**
+then ecxc.ski — easy to hard, each inheriting the prior's template fixes. The improvement
+loop explicitly includes the DEFAULT COMPONENT SET (Geoff): schemas, insert forms, and
+renders hardened by real content; fixes land in the defaults, not per-site forks.**
 
 **PHASE 1 IS AUTHORIZED TO RUN (Geoff, 2026-07-05: "start the cairn.pub Phase 1 build").
 The chain executes unattended: table-semantics fix -> rename sweep -> Phase 1 tasks 1-6 per

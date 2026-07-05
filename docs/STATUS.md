@@ -54,6 +54,14 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**THEME-PORT SLATE RESHAPED (Geoff, 2026-07-05): research round RUNNING for newly-popular
+2025/26 themes — maximal contemporaneity over canon. Four category slots (gallery/portfolio,
+small business, blogging, dedicated docs) x a design-language spread (card-heavy a la
+Blowfish through minimal/typography-forward). MIT-or-compatible is a hard gate. Each port
+tests a named capability (media, card composition, docs-shell/Topo overlap, minimal mode).
+ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
+(amends the committed architecture). Geoff picks from the researched slate.**
+
 **QUEUED BEHIND THE HARVEST PASS (Geoff, 2026-07-05): the THEME-PORT PROOF SET — two or
 three famous themes re-expressed as cairn theme layers over Waymark (candidates: Casper the
 image-led magazine, PaperMod the dense utility blog, a Bear-Blog-class radical minimum; MIT

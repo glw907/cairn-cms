@@ -4,6 +4,12 @@ on:
   push:
     branches: [main, rebuild]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: Regenerate the admin-visual baseline snapshots instead of asserting against them
+        type: boolean
+        default: false
 
 jobs:
   e2e:
@@ -34,4 +40,19 @@ jobs:
             echo "FAIL: dev-backend artifact in the deployable Worker"; exit 1
           fi
           echo "OK: no dev-backend artifact in the deployable Worker"
-      - run: npm --prefix examples/showcase run test:e2e
+      - name: Run the e2e suite
+        if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true') }}
+        run: npm --prefix examples/showcase run test:e2e
+      # Manual regen mode: a dispatcher ticks `update_snapshots` to rebaseline the admin-visual
+      # screenshots after a deliberate chrome change, instead of asserting the suite red. Only this
+      # one spec runs, with `--update-snapshots`, and the resulting PNGs upload as a build artifact
+      # for a maintainer to review and copy back into the repo; nothing here commits the baselines.
+      - name: Regenerate the admin-visual baseline snapshots
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
+        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts --update-snapshots
+      - name: Upload the regenerated admin-visual baselines
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: admin-visual-baselines
+          path: examples/showcase/e2e/admin-visual.spec.ts-snapshots/

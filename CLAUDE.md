@@ -185,6 +185,17 @@ weakest form and the fallback, never the default. Match the mechanism to the tri
 STATUS carry-forwards hold only the active initiative's watches and must churn, not accumulate (the
 append-only-backlog rot this file warns about elsewhere).
 
+## The responsive standard (family-wide, Geoff 2026-07-05)
+
+Every cairn-family artifact — the Waymark template, every theme (including ports of
+external themes), the showcase, consumer-site rebuilds, cairn.pub, and Topo — meets the
+five-viewport bar: 320, 390, 768, 1440, and 2560, composed at the extremes (a deliberate
+posture at ultrawide, a wrapped-and-reachable masthead at 320), never merely unbroken. The
+gate is the CI width matrix in the showcase's visual suite; work that changes rendering
+regenerates its baselines on CI (the canonical renderer) via the e2e regen dispatch. A
+ported theme's bar is beating its original at 320 and 2560. The design reasoning lives in
+docs/internal/public-design-system.md.
+
 ## Admin interface design
 
 Before any work on the `/admin` interface (the `src/lib/components/*.svelte` admin components or

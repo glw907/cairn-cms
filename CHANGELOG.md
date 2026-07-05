@@ -40,6 +40,13 @@ All notable changes to this project are recorded here, most recent first.
   container, an empty callout points list no longer leaves a phantom gap, markdown nested in a
   callout/alert/FAQ slot scales down instead of rendering at full display size, and the two
   demo code samples are reworded to fit the column instead of clipping mid-word.
+- A viewport-extremes audit at 320px and 2560px: a markdown table used to satisfy its own
+  `width: 100%` by wrapping words inside a cell, breaking an inline code token like
+  `[text](address)` across lines at a narrow width. The table is now its own horizontal-scroll
+  container instead, matching the code block's existing pattern, so a narrow reader scrolls the
+  table rather than losing its shape. Every other hunted surface (the video facade, the CTA
+  button, FAQ, the banner island, image figures, code blocks, and the tag-filter chips) held up
+  at both extremes with no change needed.
 
 ### Editor
 

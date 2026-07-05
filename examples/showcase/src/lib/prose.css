@@ -283,10 +283,21 @@
   }
 
   /* --------------------------------------------------------------------------
-     Table: a bordered head rule and zebra body rows, at the caption size.
+     Table: a bordered head rule and zebra body rows, at the caption size. The
+     table itself is the scroll container: `display: block` on the outer
+     element with `overflow-x: auto` turns it into a scrollable block box
+     while the row group and cell children keep their table display roles (an
+     anonymous table wrapper forms around them). Cells stay `nowrap` so a
+     narrow viewport cannot satisfy the table's own `width: 100%` by wrapping
+     words inside a cell; the auto table-layout algorithm then grows the table
+     past its specified width to fit the unbroken content, and the block box's
+     `overflow-x: auto` turns that into a horizontal scroll instead of a
+     squeezed, word-broken column.
      -------------------------------------------------------------------------- */
   .prose table {
+    display: block;
     width: 100%;
+    overflow-x: auto;
     border-collapse: collapse;
     font-size: var(--text-step--1);
     --flow-space: var(--spacing-m);
@@ -297,10 +308,12 @@
     font-weight: 600;
     border-bottom: 2px solid var(--color-base-300);
     padding: 0.55rem 0.7rem;
+    white-space: nowrap;
   }
   .prose tbody td {
     padding: 0.55rem 0.7rem;
     border-bottom: var(--border) solid var(--color-card-border);
+    white-space: nowrap;
   }
   .prose tbody tr:nth-child(even) {
     background: color-mix(in oklab, var(--color-base-200) 60%, transparent);

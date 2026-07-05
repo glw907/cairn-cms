@@ -54,6 +54,16 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**BOTH REBUILDS COMPLETE (2026-07-05, overnight). ecxc.ski: five tasks green on its
+rebuild-waymark branch — crawl diff exact plus the two sanctioned redirects, 18 legacy
+directives rationalized to 13 v2 components, the waiver's pre-existing 320px overflow found
+and fixed (beat-live bar), 37/37 tests, deploy HELD. ONE DEVIATION FOR GEOFF'S RULING: the
+workflow executed ecxc as an IN-PLACE v2 migration keeping its bespoke chrome, not the
+plan's fresh-Waymark-scaffold + theme-layer architecture — the exit bars are met but the
+theme-proof and scaffold-fidelity halves of the rebuild's purpose were skipped; accept, or
+redo T1/T4 as true re-derivation. The consolidated template+component findings live in
+ecxc-ski's docs/STATUS.md, ranked and tagged.**
+
 **907.LIFE REBUILT (2026-07-05, overnight): all five tasks green on the rebuild-waymark
 branch — permalink crawl diff exact on all 26 paths (and the rebuild fixes a live-site
 tag-page self-redirect bug), responsive check caught and fixed a real 320px table blowout,

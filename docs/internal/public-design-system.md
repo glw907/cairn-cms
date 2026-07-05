@@ -95,12 +95,14 @@ surface reads as one clean sans-serif voice with no serif accent.
   stat numbers. Weight ~600.
 - **Source Sans 3** (body and UI): body, lead, captions, nav, footer. `strong` at weight 650.
 - **Source Code Pro** (mono): inline and fenced code.
-- The scale is fluid `clamp()` on a ~1.24 ratio, body about 15 to 17px on its own vw range, the
+- The scale is fluid `clamp()` on a ~1.24 ratio, body a comfortable 17px across its own vw range
+  (its floor keeps the pre-existing mobile size; only its ceiling is anchored, see below), the
   heading-rhythm rule binding a heading to the text it introduces (large space above, tight below).
   The display steps (`--text-step-2` through `-5`, covering `h3` through `h1`/masthead) sit one step
   back from the ratio a display serif used: a sans face reads large at a lower size than a serif did
-  at the same step. Every step, including body, is anchored so it does not compound with the root
-  clamp below: the root carries body the rest of the way to about 19px at ultrawide.
+  at the same step. Every step's ceiling, including body, is anchored so it does not compound with
+  the root clamp below: the root carries body the rest of the way to about 19px at ultrawide, while
+  each step's floor stays at its original, pre-anchor size so the mobile end never shrinks.
 
 ## The ultrawide posture (locked)
 

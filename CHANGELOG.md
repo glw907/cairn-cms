@@ -93,11 +93,17 @@ All notable changes to this project are recorded here, most recent first.
 - `theme.css`'s fluid type scale was compounding with `site.css`'s root clamp: both are
   viewport-driven, and a step expressed in `rem` multiplies whatever the root's own clamp
   currently is, so body text overshot to about 21 to 22px at desktop-and-up widths instead of the
-  intended high-17s. Every `--text-step-*` value is rescaled by the same factor (holding every
+  intended high-17s. Every `--text-step-*` ceiling is rescaled by the same factor (holding every
   step-to-step ratio) so body tops out at 17px on its own before the root clamp takes over, landing
   at about 17px at 1440px and about 19px at 2560px. A site that copied `theme.css` during
   scaffolding (as a re-skin's starting point) and did not touch the type scale should pull the
   same rescale.
+- Follow-up to the type-scale fix above: rescaling the ceiling by the same factor as the floor also
+  shrank the mobile size (body would have read about 14.85px at 320px), and the mobile end never
+  had the overshoot problem the ceiling rescale fixes. Every `--text-step-*` floor now keeps its
+  original, pre-rescale value, with each step's middle term recomputed for a smooth interpolation
+  between that floor and the rescaled ceiling; body stays a comfortable ~17px from 320px up. A site
+  that already pulled the ceiling rescale should pull this floor correction too.
 
 ### Documentation
 

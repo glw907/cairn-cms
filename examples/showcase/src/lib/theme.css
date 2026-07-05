@@ -208,18 +208,32 @@
      `font-size` is a SEPARATE fluid clamp (16px to 18px, active 1440 to ~2200px); a step expressed
      in rem multiplies whatever the root currently is, so the two clamps used to compound (a step's
      own vw-driven ceiling riding a root that was also growing), overshooting to about 21-22px body
-     at desktop-and-up widths. Every step here scales by the same factor (0.871, the ratio from the
-     old 1.22rem step-0 ceiling to the new 1.0625rem one), which holds every step-to-step ratio and
-     leaves exactly one fluid mechanism active per width range: the steps still ease in below
-     ~1200px, then hold flat, and the root clamp alone supplies the 1440-to-2200px growth, landing
-     body at about 17px at 1440px and about 19px at 2560px. */
-  --text-step--1: clamp(0.73rem, 0.71rem + 0.12vw, 0.80rem);  /* caption, meta */
-  --text-step-0: clamp(0.92rem, 0.88rem + 0.24vw, 1.0625rem); /* body, about 15 to 17px */
-  --text-step-1: clamp(1.11rem, 1.04rem + 0.37vw, 1.33rem);   /* lead, h4 */
-  --text-step-2: clamp(1.11rem, 1.04rem + 0.37vw, 1.33rem);   /* h3, index title */
-  --text-step-3: clamp(1.32rem, 1.21rem + 0.57vw, 1.66rem);   /* h2 */
-  --text-step-4: clamp(1.59rem, 1.42rem + 0.87vw, 2.08rem);   /* section display, stat */
-  --text-step-5: clamp(1.91rem, 1.65rem + 1.26vw, 2.60rem);   /* h1, masthead */
+     at desktop-and-up widths. Every step's CEILING is rescaled by the same factor (0.871, the
+     ratio from the old 1.22rem step-0 ceiling to the new 1.0625rem one), which holds every
+     step-to-step ratio and leaves exactly one fluid mechanism active per width range: the root
+     clamp alone supplies the 1440-to-2200px growth, landing body at about 17px at 1440px and about
+     19px at 2560px.
+
+     The FLOOR of each step, though, is the pre-existing pre-rescale value, not the 0.871-scaled
+     one; a uniform rescale would also shrink the comfortable phone floor (body would read about
+     14.85px at 320px), and the mobile end never had the desktop-overshoot problem the ceiling
+     rescale fixes. Each middle term below is recomputed as a standard Utopia fluid interpolation
+     between that unscaled floor and the rescaled ceiling, over the same 320-to-1240px viewport
+     range this file's fluid space scale uses (confirmed by reversing its own clamps). For step-0
+     the floor (1.06rem) and ceiling (1.0625rem) are only 0.0025rem apart, so it lands effectively
+     constant at 1.06rem, which is correct: the visible growth from 17px to 19px above 1440px comes
+     from the root clamp, not from this step. Step--1 (caption, meta) is narrower still: its old
+     floor (0.84rem) is larger than its own rescaled ceiling (0.80rem), because captions were
+     already comfortably sized and never had an overshoot to fix; a CSS `clamp()` whose minimum
+     exceeds its maximum resolves to the minimum unconditionally, so this step is deliberately
+     pinned at 0.84rem below 1440px width and grows only with the root clamp above it. */
+  --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; pinned, see above */
+  --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem);          /* body, effectively 17px */
+  --text-step-1: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* lead, h4 */
+  --text-step-2: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* h3, index title */
+  --text-step-3: clamp(1.52rem, 1.47rem + 0.24vw, 1.66rem);   /* h2 */
+  --text-step-4: clamp(1.83rem, 1.74rem + 0.43vw, 2.08rem);   /* section display, stat */
+  --text-step-5: clamp(2.19rem, 2.05rem + 0.71vw, 2.60rem);   /* h1, masthead */
 
   /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
      (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */

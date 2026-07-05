@@ -1,5 +1,7 @@
 ## 0.80.0
 
+<!-- release-size: minor -->
+
 ### Waymark starter components (showcase/template only; no consumer action)
 
 - The starter template gains six content components, each a worked `defineComponent` with a

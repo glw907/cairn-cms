@@ -54,6 +54,15 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**THEME SLATE ADOPTED (Geoff, 2026-07-05): AstroPaper (blogging/minimal, port FIRST —
+token-seam-only proof), Foxi (small business/card — the composed-page seam question),
+hugo-theme-gallery (portfolio — media stress + the album-vs-Pages question feeding the
+deferred gallery enabler), Starlight (docs — the port IS the Topo prototype: sidebar,
+Pagefind, prev/next, TOC). All MIT, re-verified at port time as a hard acceptance item;
+attribution headers + a credits note are part of each port's definition of done. Blowfish
+verdict: plateauing; AstroWind carries the card language as blogging runner-up. Queued
+behind the harvest pass; the homepage themes section lands with them.**
+
 **THEME-PORT SLATE RESHAPED (Geoff, 2026-07-05): research round RUNNING for newly-popular
 2025/26 themes — maximal contemporaneity over canon. Four category slots (gallery/portfolio,
 small business, blogging, dedicated docs) x a design-language spread (card-heavy a la

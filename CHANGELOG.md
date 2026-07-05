@@ -47,6 +47,10 @@ All notable changes to this project are recorded here, most recent first.
   table rather than losing its shape. Every other hunted surface (the video facade, the CTA
   button, FAQ, the banner island, image figures, code blocks, and the tag-filter chips) held up
   at both extremes with no change needed.
+- That audit is now a permanent gate: `site-visual.spec.ts` adds light-theme pixel baselines for
+  the home page and the reading-surface article at 320px and 2560px, plus one mid-width (1920px)
+  baseline on the article that pins the fluid root-scale clamp's active interpolation slope, not
+  just its floor and cap.
 
 ### Editor
 

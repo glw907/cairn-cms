@@ -48,7 +48,8 @@ Full findings in the design-review workflow journal (wf_003a12ef-bf3).
 
 **cairn.pub NAV AMENDED (Geoff, 2026-07-04): Waymark · Docs · Help · Blog · About + GitHub
 — the template is the get-started door, its page = neutral viewports, the one-CSS-file
-reveal, guide + tutorial exits, scaffolder when it ships. "Templates" catalogue item =
+reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section in the home
+narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix

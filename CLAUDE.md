@@ -185,6 +185,21 @@ weakest form and the fallback, never the default. Match the mechanism to the tri
 STATUS carry-forwards hold only the active initiative's watches and must churn, not accumulate (the
 append-only-backlog rot this file warns about elsewhere).
 
+## The polish and fidelity standards (family-wide, Geoff 2026-07-05)
+
+A rebuild or port is licensed to diverge from its original, never to be less polished than
+it. For typography-forward work the details ARE the design: wordmark treatments, flow
+spacing, blockquote scale, inline-code weight, link and italic conventions all verify at
+the detail level, not the layout level — side-by-side crops of real sections, read, before
+a deploy is called done.
+
+Two fidelity tiers: the SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved —
+divergence is allowed where it improves. THEME PORTS of existing external themes are
+GLANCE-INDISTINGUISHABLE: a casual viewer should not be able to tell the port from the
+original at a glance; the licensed differences are behavioral (the family responsive
+standard at the extremes) and structural (cairn underneath), never the visible design
+language at normal viewing.
+
 ## The responsive standard (family-wide, Geoff 2026-07-05)
 
 Every cairn-family artifact — the Waymark template, every theme (including ports of

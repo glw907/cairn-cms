@@ -57,7 +57,11 @@ are ours until beta, which is the whole point of the window. Known contract ques
 - **The flourish-gate default question** — CANDIDATE: [data-flourish] ships dark; nothing
   in-template demonstrates enabling it (907's audit found it unset anywhere). Decide the
   demonstrated path.
-- **Prose flow-spacing defect class** — CANDIDATE pending the 907 polish diagnosis (the
+- **Prose flow-spacing: `.prose p { margin-block: 0 }` beat the owl selector** — LANDED
+  (aea6625): a specificity bug zeroing every paragraph's flow margin on every Waymark site;
+  found by a reader's eye on one dense section, root-caused by computed-style dump. Ledger
+  lesson: the template's flow system needs a computed-margin assertion in its tests.
+  (Formerly: CANDIDATE pending the 907 polish diagnosis (the
   epoll section's missing paragraph gaps may be a template prose.css bug, not site-local).
 - **Blockquote scale** — CANDIDATE: the template's step-up italic treatment read as a
   pull-quote collision on a real technical post; consider a quieter default.

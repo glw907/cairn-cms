@@ -1,4 +1,4 @@
-## Unreleased
+## 0.80.0
 
 ### Waymark starter components (showcase/template only; no consumer action)
 

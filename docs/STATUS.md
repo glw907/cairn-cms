@@ -54,6 +54,11 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**0.80.0 PUBLISHED (2026-07-05, OIDC verified on the registry): the docs tree, the engine
+pass, the neutral Waymark split + cairn theme, the responsive hardening, the rename sweep —
+one minor, no Consumers-must lines. CI all-green at the cut. NOW EXECUTING: the 907.life
+rebuild (inventory -> plan -> build; production deploy HELD for Geoff's morning go).**
+
 **OVERNIGHT RUN (2026-07-05, Geoff asleep ~8-9h, workflows authorized for all of it):
 recovery push + CI baseline regen -> rename sweep -> release cut -> 907.life rebuild
 (workflow: permalink inventory -> plan -> build, component-friction dimension standing) ->

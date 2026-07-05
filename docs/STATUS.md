@@ -54,6 +54,13 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**QUEUED BEHIND THE HARVEST PASS (Geoff, 2026-07-05): the THEME-PORT PROOF SET — two or
+three famous themes re-expressed as cairn theme layers over Waymark (candidates: Casper the
+image-led magazine, PaperMod the dense utility blog, a Bear-Blog-class radical minimum; MIT
+license verified before any port, attribution preserved). Purpose: continue the flexibility
+proof against foreign design philosophies on the upgraded seams; each port doubles as a
+cairn.pub blog post and seeds the theme gallery (the Templates nav trigger).**
+
 **QUEUED (Geoff, 2026-07-05): the REBUILD-HARVEST ENGINE PASS fires when the ecxc redo
 lands — 907's findings 1-3 plus whatever the flexibility verdict top-ranks. Shape: (a) the
 rehype seam on createRenderer (optional plugins param; two independent friction data

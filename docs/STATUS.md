@@ -79,6 +79,16 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**AKSAILINGCLUB.ORG PORT QUEUED (Geoff, 2026-07-05): the FINAL site effort before
+go-live — the most complex, the highest bar (a real member base). Fidelity tier: GENTLE
+REDESIGN — preserve basic layout, color, and fonts; the Blowfish card language is too heavy
+for Geoff's taste and gets dialed down. The current site is the Blowfish-based prototype at
+dev.aksailingclub.org (the reference to study). BEGINS WITH A BRAINSTORM (named human gate,
+superpowers:brainstorming) when its turn arrives — after the ecxc redo, the 907 polish
+pass, the harvest engine pass, and the theme ports. Note: this is Geoff's own club; the
+voice corpus and editor handbook came from it — the editor experience will be judged by
+the people the editor-first thesis was written for.**
+
 **907.LIFE DEPLOYED TO PRODUCTION (Geoff's go, 2026-07-05): the rebuild is live — 27/27
 URLs verified at exact paths, toggle + archive composition rendering. Remaining human step:
 the live admin smoke's magic-link click at 907.life/admin (Geoff, any time). ecxc deploy

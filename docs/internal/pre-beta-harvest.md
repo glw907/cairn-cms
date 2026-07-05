@@ -9,6 +9,26 @@ the harvest engine pass executes the queue.
 
 Status: LANDED / QUEUED (harvest pass) / CANDIDATE (needs triage) / PROCESS (method, not code).
 
+## The site contract (Geoff, 2026-07-05: explicitly open to improve/break/extend)
+
+The adapter and seam contract itself — defineConcept, fieldset, the component grammar, the
+render seam, the delivery exports — is open for breaking improvement in this window. The
+discipline: every contract break traces to REBUILD/PORT EVIDENCE (a schema that fought, a
+seam that forced a workaround), never speculation, and the charter's leanness bar still
+governs what gets added. Known contract questions awaiting evidence-driven answers:
+
+- **The composed-page seam** — CANDIDATE. ecxc's panel/split/section directives and Foxi's
+  pricing/testimonial blocks both ask whether a one-off composed page fits Posts/Pages or
+  wants a first-class answer. Two evidence sources converging; the ports will settle it.
+- **The album/collection question** — CANDIDATE. hugo-theme-gallery's port asks whether
+  "album" lives in Page frontmatter or demands the content model grow; pairs with the
+  deferred gallery enabler (image/array component attributes).
+- **The component grammar's limits** — CANDIDATE. The ecxc redo's verdict arrives with the
+  schemas the v2 grammar fought; each is a fieldset/defineComponent break candidate.
+- **The render seam's shape** — QUEUED-adjacent. The rehype-plugins parameter (below) is
+  the minimal form; the evidence may justify the fuller break (a composable pipeline
+  contract instead of one closed factory).
+
 ## Engine
 
 - **The rehype seam on createRenderer** — QUEUED. Two independent friction hits (the

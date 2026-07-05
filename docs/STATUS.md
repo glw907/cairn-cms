@@ -87,7 +87,9 @@ dev.aksailingclub.org (the reference to study). BEGINS WITH A BRAINSTORM (named 
 superpowers:brainstorming) when its turn arrives — after the ecxc redo, the 907 polish
 pass, the harvest engine pass, and the theme ports. Note: this is Geoff's own club; the
 voice corpus and editor handbook came from it — the editor experience will be judged by
-the people the editor-first thesis was written for.**
+the people the editor-first thesis was written for. PHASE 2 (separate effort, after the redesign):
+the club's admin functions move into cairn — the first real production test of the
+extending-developer seam at member scale.**
 
 **907.LIFE DEPLOYED TO PRODUCTION (Geoff's go, 2026-07-05): the rebuild is live — 27/27
 URLs verified at exact paths, toggle + archive composition rendering. Remaining human step:

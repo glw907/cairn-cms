@@ -42,4 +42,24 @@ for (const width of [320, 360, 390]) {
 			expect(box!.height).toBeGreaterThanOrEqual(44);
 		}
 	});
+
+	// The footer nav gets the same WCAG 2.5.8 treatment as the header: `flex-wrap` so it drops to
+	// its own line rather than clipping, and a 44px-class tap target on every link.
+	test(`at ${width}px every footer nav item is reachable and tappable`, async ({ page }) => {
+		await page.setViewportSize({ width, height: 800 });
+		await page.goto('/');
+
+		const footerLinks = page.locator('.site-footer nav.site-nav a');
+		const count = await footerLinks.count();
+		expect(count).toBeGreaterThan(0);
+		for (let i = 0; i < count; i += 1) {
+			const link = footerLinks.nth(i);
+			await expect(link).toBeVisible();
+			const box = await link.boundingBox();
+			expect(box).not.toBeNull();
+			expect(box!.x).toBeGreaterThanOrEqual(0);
+			expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+			expect(box!.height).toBeGreaterThanOrEqual(44);
+		}
+	});
 }

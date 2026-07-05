@@ -284,23 +284,33 @@
 
   /* --------------------------------------------------------------------------
      Table: a bordered head rule and zebra body rows, at the caption size. The
-     table itself is the scroll container: `display: block` on the outer
-     element with `overflow-x: auto` turns it into a scrollable block box
-     while the row group and cell children keep their table display roles (an
-     anonymous table wrapper forms around them). Cells stay `nowrap` so a
-     narrow viewport cannot satisfy the table's own `width: 100%` by wrapping
-     words inside a cell; the auto table-layout algorithm then grows the table
-     past its specified width to fit the unbroken content, and the block box's
-     `overflow-x: auto` turns that into a horizontal scroll instead of a
-     squeezed, word-broken column.
+     table itself stays `display: table`, a real table in the accessibility
+     tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
+     in every current engine). The scroll container is a wrapper the
+     showcase's own render step emits around every table (table-scroll.ts,
+     called from cairn.config.ts's rendering.render): `.table-scroll` carries
+     `display: block; overflow-x: auto`, `role="region"`, a `tabindex` and an
+     `aria-label` naming the table, so a keyboard user can tab to the region
+     and scroll it. Cells stay `nowrap` so a narrow viewport cannot satisfy
+     the table's own `width: 100%` by wrapping words inside a cell; the auto
+     table-layout algorithm then grows the table past its specified width to
+     fit the unbroken content, and the wrapper's `overflow-x: auto` turns
+     that into a horizontal scroll instead of a squeezed, word-broken column.
      -------------------------------------------------------------------------- */
-  .prose table {
+  .prose .table-scroll {
     display: block;
-    width: 100%;
     overflow-x: auto;
+    --flow-space: var(--spacing-m);
+  }
+  .prose .table-scroll:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .prose table {
+    display: table;
+    width: 100%;
     border-collapse: collapse;
     font-size: var(--text-step--1);
-    --flow-space: var(--spacing-m);
   }
   .prose thead th {
     text-align: left;

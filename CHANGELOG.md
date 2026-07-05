@@ -42,15 +42,22 @@ All notable changes to this project are recorded here, most recent first.
   demo code samples are reworded to fit the column instead of clipping mid-word.
 - A viewport-extremes audit at 320px and 2560px: a markdown table used to satisfy its own
   `width: 100%` by wrapping words inside a cell, breaking an inline code token like
-  `[text](address)` across lines at a narrow width. The table is now its own horizontal-scroll
-  container instead, matching the code block's existing pattern, so a narrow reader scrolls the
-  table rather than losing its shape. Every other hunted surface (the video facade, the CTA
-  button, FAQ, the banner island, image figures, code blocks, and the tag-filter chips) held up
-  at both extremes with no change needed.
+  `[text](address)` across lines at a narrow width. Every other hunted surface (the video
+  facade, the CTA button, FAQ, the banner island, image figures, code blocks, and the
+  tag-filter chips) held up at both extremes with no change needed.
 - That audit is now a permanent gate: `site-visual.spec.ts` adds light-theme pixel baselines for
   the home page and the reading-surface article at 320px and 2560px, plus one mid-width (1920px)
   baseline on the article that pins the fluid root-scale clamp's active interpolation slope, not
   just its floor and cap.
+- A follow-up a11y review of that audit's own fix found it fixed the 320px squeeze but broke
+  WCAG 1.3.1: putting `display: block; overflow-x: auto` directly on the `<table>` strips its
+  row/cell roles from the accessibility tree in every current engine. Every rendered table now
+  sits inside a `.table-scroll` wrapper instead, a small rehype step in the showcase's own render
+  pipeline (`table-scroll.ts`, composed onto `renderMarkdown`'s output in `cairn.config.ts`); the
+  wrapper carries `role="region"`, a `tabindex` and an `aria-label` naming the table, and the
+  scroll, while the table itself keeps `display: table`. The same review flagged the footer nav
+  for WCAG 2.5.8: it now carries the same `flex-wrap` and 44px-class tap targets the header nav
+  already had. The pixel baselines above are regenerated for both changes.
 
 ### Editor
 

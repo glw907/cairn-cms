@@ -47,13 +47,13 @@ left edge lines up with the body copy above it. A site owner edits this file; th
     </a>
 
     <nav
-      class="site-nav flex gap-s text-step--1"
+      class="site-nav flex flex-wrap items-center gap-s text-step--1"
       aria-label="Footer"
     >
       {#each nav as item (item.href)}
         <a
           href={item.href}
-          class="text-muted no-underline hover:text-base-content"
+          class="inline-flex min-h-11 items-center text-muted no-underline hover:text-base-content"
         >
           {item.label}
         </a>

@@ -8,6 +8,7 @@ import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import Banner from '$lib/islands/Banner.svelte';
 import { isBannerExpired } from '$lib/islands/banner-expiry.js';
+import { wrapScrollableTables } from './render/table-scroll.js';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
@@ -401,10 +402,15 @@ export const cairn = defineAdapter({
   // wrangler.jsonc and mounts the /media delivery route.
   media: { bucketBinding: 'MEDIA_BUCKET' },
   rendering: {
-    // Render through the engine so registered components (the callout) produce their markup. The
-    // default media resolver backs the public build; the preview path injects its own resolveMedia.
-    render: ({ body, resolve, resolveMedia }) =>
-      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
+    // Render through the engine so registered components (the callout) produce their markup, then
+    // run the showcase's own rehype step (wrapScrollableTables) over the result: the engine's
+    // createRenderer keeps its internal plugin ordering closed, so a site adds its own post-render
+    // behavior at the HTML-string boundary instead. The default media resolver backs the public
+    // build; the preview path injects its own resolveMedia.
+    render: async ({ body, resolve, resolveMedia }) => {
+      const html = await renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver });
+      return wrapScrollableTables(html);
+    },
     components: registry,
     icons,
     islands: { banner: Banner },

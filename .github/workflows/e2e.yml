@@ -55,4 +55,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: admin-visual-baselines
-          path: examples/showcase/e2e/admin-visual.spec.ts-snapshots/
+          path: |
+            examples/showcase/e2e/admin-visual.spec.ts-snapshots/
+            examples/showcase/e2e/site-visual.spec.ts-snapshots/

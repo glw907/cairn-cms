@@ -37,6 +37,8 @@ later, or the upkeep of a running site.
   Posts with the reference-field pattern
 - **[Enable tidy](./enable-tidy.md)**: turn on the optional AI copy-edit and see what a tidy call
   costs
+- **[Make Wayfinder your own](./make-wayfinder-your-own.md)**: re-skin the public theme from one
+  file, the token seam every re-skin uses, worked with Waymark, the theme's own opt-in identity
 - **[Read cairn's logs](./read-cairn-logs.md)**: read the structured events a running site emits,
   and find the one a symptom points at
 - **[Rotate the GitHub App private key](./rotate-the-github-app-key.md)**: generate a new key

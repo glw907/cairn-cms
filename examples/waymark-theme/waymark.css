@@ -1,0 +1,110 @@
+/* ============================================================================
+   Waymark: the opt-in Wayfinder identity layer.
+
+   Wayfinder ships neutral (examples/showcase/src/lib/theme.css): a humanist sans display face, a
+   hue-free paper ladder, and three signature prose gestures held behind `.prose[data-flourish]` in
+   prose.css. This file is the complete delta that turns that neutral default back into Waymark, the
+   theme's original branded identity. cairn.pub runs exactly this layer on top of Wayfinder.
+
+   USAGE. Install `@fontsource-variable/fraunces`, copy this file into your site, and add one import
+   line directly AFTER your theme.css import:
+
+     @import './theme.css';
+     @import './waymark.css';
+
+   No markup change is needed. Import order matters for the base-ladder tokens below (see their own
+   comment); every other rule here wins over Wayfinder's neutral default regardless of order. See
+   docs/guides/make-wayfinder-your-own.md for the full walkthrough.
+   ============================================================================ */
+
+/* The display face. Fraunces pulls the `opsz` axis so headings render at a display optical size;
+   importing it here, in the sheet linked by both the public layout and the editor preview, keeps
+   the parity rule theme.css documents: the author sees the same face as the reader. */
+@import '@fontsource-variable/fraunces/opsz.css';
+
+/* Wayfinder's own `@theme` block puts --font-display and --text-step-* in Tailwind's `theme`
+   cascade layer. A plain, unlayered custom-property declaration always beats a layered one
+   regardless of specificity or source order, since the cascade sorts layer position before
+   specificity, so this block needs no `!important` and no ordering care. */
+:root {
+  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+
+  /* The display steps (h3 through h1/masthead) return to the ratio a display serif reads well at;
+     Wayfinder's neutral sans pulls these back one grade (see theme.css). The body-and-below steps
+     (-1, 0, 1) are shared with the neutral default and are not repeated here. */
+  --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem); /* h3, index title */
+  --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem); /* h2 */
+  --text-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem); /* section display, stat */
+  --text-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem); /* h1, masthead */
+}
+
+/* The warm-tinted paper. DaisyUI compiles the `cairn` theme's base ladder to a plain, unlayered rule
+   too, so specificity and source order both matter here, unlike the theme-layer tokens above.
+   `!important` makes the override unconditional regardless of exactly how a future DaisyUI or
+   Tailwind version compiles that rule, an implementation detail this file should not have to track. */
+:root {
+  --color-base-100: oklch(98.4% 0.0035 80) !important;
+  --color-base-200: oklch(96.4% 0.005 80) !important;
+  --color-base-300: oklch(90.8% 0.006 78) !important;
+  --color-base-content: oklch(25% 0.014 70) !important;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-base-100: oklch(24% 0.01 78) !important;
+    --color-base-200: oklch(20% 0.01 78) !important;
+    --color-base-300: oklch(32% 0.012 78) !important;
+    --color-base-content: oklch(92% 0.007 80) !important;
+  }
+}
+
+/* The three signature prose gestures, enabled unconditionally. cairn's own opt-in mechanism scopes
+   these under `.prose[data-flourish]` in prose.css, inside prose.css's `@layer components`; because
+   the rules below are unlayered, they win over that layered default with no markup change and no
+   `data-flourish` attribute on the `.prose` root. Each rule is copied from cairn's own
+   `[data-flourish]` variant, with the attribute stripped. */
+
+/* The hanging pull-quote: the whole quote outdents into the left margin past 64rem. */
+@media (min-width: 64rem) {
+  .prose .pullquote {
+    width: calc(var(--container-measure) + 4.5rem);
+    margin-left: -4.5rem;
+    text-align: left;
+  }
+}
+
+/* The diamond ul bullet, replacing the standard marker. */
+.prose ul {
+  list-style: none;
+}
+.prose ul > li {
+  position: relative;
+}
+.prose ul > li::before {
+  content: '';
+  position: absolute;
+  left: -1.1em;
+  top: 0.62em;
+  width: 0.4em;
+  height: 0.4em;
+  border-radius: 1px;
+  background: var(--color-primary);
+  transform: rotate(45deg);
+}
+
+/* The cairn-glyph hr, a centered mark in base-300 in place of the line. An inline data-URI mask, so
+   no JS and no extra asset are needed. */
+.prose hr {
+  border-top: 0;
+  text-align: center;
+}
+.prose hr::after {
+  content: '';
+  display: inline-block;
+  width: 1.4rem;
+  height: 1.4rem;
+  background: var(--color-base-300);
+  --cairn-mark-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cellipse cx='12' cy='20.5' rx='8' ry='2.4'/%3E%3Cellipse cx='11.4' cy='14.8' rx='6' ry='2.3'/%3E%3Cellipse cx='12.4' cy='9.6' rx='4.3' ry='2.1'/%3E%3Cellipse cx='11.9' cy='4.8' rx='2.6' ry='1.9'/%3E%3C/svg%3E");
+  mask: var(--cairn-mark-url) center / contain no-repeat;
+  -webkit-mask: var(--cairn-mark-url) center / contain no-repeat;
+}

@@ -20,6 +20,16 @@ All notable changes to this project are recorded here, most recent first.
 
 ## Unreleased
 
+### Showcase (Wayfinder template; no consumer action)
+
+- The starter template's default theme is neutral. The display face is Figtree, a humanist
+  sans matching the body's Source Sans 3, in place of the display serif Fraunces; the paper
+  ladder drops its warm hue tint for a clean near-white/near-black progression; and the
+  display type steps (`h3` through `h1`) sit one step back on the scale. The three signature
+  prose gestures, the cairn-glyph `hr`, the diamond `ul` bullet, and the margin-hanging
+  pull-quote, move behind an opt-in `.prose[data-flourish]` hook in `prose.css`, kept in place
+  for the planned Waymark theme layer to re-enable with one attribute.
+
 ### Editor
 
 - Pasting rich text from Word, Google Docs, or a web page now converts headings, emphasis,

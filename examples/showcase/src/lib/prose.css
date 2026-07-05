@@ -29,6 +29,13 @@
    The whole file is @layer components, the same layer theme.css uses, so the
    `.prose` scope is what wins over DaisyUI, not a layer race.
 
+   Three rules (the hr, the ul marker, the pull-quote) carry a signature Waymark
+   gesture that is NOT part of the neutral default: the cairn-glyph hr, the
+   diamond ul bullet, and the margin-hanging pull-quote. Each is scoped under
+   `.prose[data-flourish]` rather than removed, so a theme that wants the
+   Waymark identity re-enables all three by adding one `data-flourish` attribute
+   to the `.prose` root, with no CSS edit.
+
    TIER: the whole sheet is Tier 2 (owned design, the documented floor; the starter-template
    custom-surface ledger, docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md). It is
    the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
@@ -142,9 +149,12 @@
     color: var(--color-muted);
   }
 
-  /* A hanging pull-quote on the display face. On wide screens the whole quote
-     outdents into the left margin past 64rem so the gesture reads. A sample post
-     (Part 2) applies the `.pullquote` class to a single emphatic line. */
+  /* A pull-quote on the display face, set apart from the flow by size alone; it
+     stays in-column at every width. A sample post applies the `.pullquote` class
+     to a single emphatic line. The signature Waymark gesture, hanging the whole
+     quote into the left margin past 64rem, is an opt-in layer scoped under
+     `[data-flourish]` on the `.prose` root: the hook a theme uses to bring the
+     identity back with no markup change. */
   .prose .pullquote {
     font-family: var(--font-display);
     font-weight: 500;
@@ -159,7 +169,7 @@
     color: var(--color-primary);
   }
   @media (min-width: 64rem) {
-    .prose .pullquote {
+    .prose[data-flourish] .pullquote {
       width: calc(var(--container-measure) + 4.5rem);
       margin-left: -4.5rem;
       text-align: left;
@@ -194,8 +204,12 @@
   }
 
   /* --------------------------------------------------------------------------
-     Lists. Unordered: a small accent diamond marker. Ordered: a display-face
-     number in the accent. Tighter spacing between list items than between blocks.
+     Lists. Unordered: the standard marker by default. Ordered: a display-face
+     number in the accent. Tighter spacing between list items than between
+     blocks. The signature Waymark gesture, a small accent diamond in place of
+     the standard marker, is an opt-in layer scoped under `[data-flourish]` on
+     the `.prose` root: the hook a theme uses to bring the identity back with
+     no markup change.
      -------------------------------------------------------------------------- */
   .prose ul,
   .prose ol {
@@ -205,13 +219,18 @@
     margin-top: 0.4rem;
   }
   .prose ul {
-    list-style: none;
+    /* Tailwind's preflight resets every `ul` to `list-style: none`; restore the
+       standard disc marker for the neutral default. */
+    list-style: disc;
     padding-left: 1.4em;
   }
-  .prose ul > li {
+  .prose[data-flourish] ul {
+    list-style: none;
+  }
+  .prose[data-flourish] ul > li {
     position: relative;
   }
-  .prose ul > li::before {
+  .prose[data-flourish] ul > li::before {
     content: '';
     position: absolute;
     left: -1.1em;
@@ -288,15 +307,23 @@
   }
 
   /* --------------------------------------------------------------------------
-     Horizontal rule as a centered cairn mark in base-300, not a line. The mark
-     is an inline data-URI mask, so no JS and no extra asset are needed.
+     Horizontal rule. The default is a plain hairline. The signature Waymark
+     gesture, a centered cairn mark in base-300 in place of the line, is an
+     opt-in layer scoped under `[data-flourish]` on the `.prose` root: the
+     hook a theme uses to bring the identity back with no markup change. The
+     mark itself is an inline data-URI mask, so no JS and no extra asset are
+     needed.
      -------------------------------------------------------------------------- */
   .prose hr {
     border: 0;
+    border-top: var(--border) solid var(--color-base-300);
     --flow-space: var(--spacing-xl);
+  }
+  .prose[data-flourish] hr {
+    border-top: 0;
     text-align: center;
   }
-  .prose hr::after {
+  .prose[data-flourish] hr::after {
     content: '';
     display: inline-block;
     width: 1.4rem;

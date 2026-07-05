@@ -32,7 +32,7 @@ An unordered list is for items with no particular order. Start each line with a 
 
 - Each item is one line that begins with a dash.
 - Keep items short and parallel in shape.
-- The theme draws a small accent diamond instead of a plain dot.
+- The theme keeps the plain marker your browser already draws.
 
 A numbered list is for steps that happen in sequence. Start each line with a number and a period, and let the editor count for you:
 
@@ -60,7 +60,7 @@ When you want a single line from your own writing to land hard, make it a pull q
 :::pull-quote[Write the post you wish someone had handed you on your first day.]
 :::
 
-The line outdents into the margin on a wide screen and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare. Give it `{attribution="..."}` when the line is not your own words.
+The line sets in the display face and picks up an opening quotation mark in the accent color. Use it once in a post, at most. Its power comes from being rare. Give it `{attribution="..."}` when the line is not your own words.
 
 ## Code, inline and in blocks
 
@@ -79,7 +79,7 @@ The highlighting colors come from a small set of variables in the theme, the sam
 /* These tokens drive the whole reading surface. Edit them to re-skin the site. */
 :root {
   --color-primary: oklch(55% 0.13 250); /* the accent */
-  --font-display: 'Fraunces Variable', serif; /* headings and pull-quotes */
+  --font-display: 'Figtree Variable', sans-serif; /* headings and pull-quotes */
 }
 ```
 

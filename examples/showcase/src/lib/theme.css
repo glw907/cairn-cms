@@ -1,5 +1,9 @@
 /* ============================================================================
-   Waymark, the cairn public reading theme. The one file a site owner edits to re-skin.
+   Wayfinder, the cairn public reading theme, neutral by default. The one file a site owner
+   edits to re-skin. The signature Waymark identity (the display serif, the warm-tinted paper,
+   the cairn-glyph rule, the diamond bullet, the hanging pull-quote) lives on as an opt-in layer
+   behind `[data-flourish]` in prose.css, not the default; see the "Waymark" section of
+   docs/internal/public-design-system.md for where it lives and how a theme re-enables it.
 
    RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike,
    reads the role tokens in the two theme blocks below, so editing them re-skins
@@ -76,9 +80,8 @@
    `@import` rules must precede every other rule, so they sit directly under the Tailwind import.
    Fontsource registers each family as "<Name> Variable"; the `--font-*` tokens below name them
    exactly. Loading them here, not in the layout, means the editor preview frame links this same sheet
-   and gets the same faces (the parity rule). Fraunces pulls the `opsz` axis so headings render at a
-   display optical size; the body and mono faces need only `wght`. */
-@import '@fontsource-variable/fraunces/opsz.css';
+   and gets the same faces (the parity rule). All three faces here need only the `wght` axis. */
+@import '@fontsource-variable/figtree/index.css';
 @import '@fontsource-variable/source-sans-3/index.css';
 @import '@fontsource-variable/source-code-pro/index.css';
 
@@ -104,11 +107,11 @@
   prefersdark: false;
   color-scheme: light;
 
-  /* warm-stone paper under warm slate ink (warm-balanced, never cream) */
-  --color-base-100: oklch(98.4% 0.0035 80);
-  --color-base-200: oklch(96.4% 0.005 80);
-  --color-base-300: oklch(90.8% 0.006 78);
-  --color-base-content: oklch(25% 0.014 70);
+  /* neutral paper under neutral ink: a clean near-white/near-black ladder, no hue tint */
+  --color-base-100: oklch(98.4% 0 0);
+  --color-base-200: oklch(96.4% 0 0);
+  --color-base-300: oklch(90.8% 0 0);
+  --color-base-content: oklch(25% 0 0);
   /* the one brand accent: a deep, confident ink-blue. Re-skin by rotating the hue. */
   --color-primary: oklch(45% 0.1 248);
   --color-primary-content: oklch(99% 0.01 248);
@@ -143,19 +146,19 @@
   --noise: 0;
 }
 
-/* The dark sibling, applied automatically under prefers-color-scheme: dark. Same hues, warm
-   throughout (a warm dark stone, not a cool one), so light and dark read as one theme. Status
-   fills lift to a lighter tone and take dark content, the admin's dark convention. */
+/* The dark sibling, applied automatically under prefers-color-scheme: dark. Same neutral,
+   hue-free base ladder as the light theme, so light and dark read as one theme. Status fills
+   lift to a lighter tone and take dark content, the admin's dark convention. */
 @plugin "daisyui/theme" {
   name: "cairn-dark";
   default: false;
   prefersdark: true;
   color-scheme: dark;
 
-  --color-base-100: oklch(24% 0.01 78);
-  --color-base-200: oklch(20% 0.01 78);
-  --color-base-300: oklch(32% 0.012 78);
-  --color-base-content: oklch(92% 0.007 80);
+  --color-base-100: oklch(24% 0 0);
+  --color-base-200: oklch(20% 0 0);
+  --color-base-300: oklch(32% 0 0);
+  --color-base-content: oklch(92% 0 0);
   --color-primary: oklch(74% 0.1 248);
   --color-primary-content: oklch(22% 0.03 248);
   --color-secondary: oklch(72% 0.02 75);
@@ -189,20 +192,23 @@
    `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
    own face). */
 @theme {
-  --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  --font-display: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'Source Code Pro Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* Fluid type scale, Utopia-style; about a 1.24 ratio, clamp() so display scales while body holds.
      In @theme so Tailwind generates the `text-step-*` utilities the chrome markup folds onto; the
-     vars are still emitted at :root, so prose.css's `var(--text-step-*)` keeps resolving. */
+     vars are still emitted at :root, so prose.css's `var(--text-step-*)` keeps resolving. The
+     display steps (2 through 5) hold one step back from the original ratio, a humanist sans reads
+     large at a lower size than a display serif did; step--1, step-0, and step-1 (caption, body,
+     lead) are unchanged. */
   --text-step--1: clamp(0.84rem, 0.81rem + 0.14vw, 0.92rem);  /* caption, meta */
   --text-step-0: clamp(1.06rem, 1.01rem + 0.27vw, 1.22rem);   /* body, 17 to 19.5px */
   --text-step-1: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* lead, h4 */
-  --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h3, index title */
-  --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* h2 */
-  --text-step-4: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* section display, stat */
-  --text-step-5: clamp(2.3rem, 1.82rem + 2.1vw, 3.6rem);      /* h1, masthead */
+  --text-step-2: clamp(1.27rem, 1.19rem + 0.43vw, 1.53rem);   /* h3, index title */
+  --text-step-3: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem);   /* h2 */
+  --text-step-4: clamp(1.83rem, 1.63rem + 1vw, 2.39rem);      /* section display, stat */
+  --text-step-5: clamp(2.19rem, 1.9rem + 1.45vw, 2.98rem);    /* h1, masthead */
 
   /* Fluid space scale (Utopia 3xs to 2xl). In @theme so Tailwind generates the spacing utilities
      (`gap-m`, `px-m`, `py-xs`, `mt-2xl`, …); the vars still emit at :root for the CSS consumers. */

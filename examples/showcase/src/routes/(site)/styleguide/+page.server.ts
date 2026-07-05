@@ -8,7 +8,7 @@ import { cairn } from '$lib/cairn.config';
 export const prerender = true;
 
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
-// a link, an unordered list, an ordered list, a task list, a blockquote, a hanging pull-quote, inline
+// a link, an unordered list, an ordered list, a task list, a blockquote, a pull-quote, inline
 // code, two fenced blocks in different languages (to show the highlighter across token kinds), a
 // table, a horizontal rule, a figure, and the two directive components (callout note/tip/warning and
 // the alert). It doubles as documentation, the bar's "the prose is the documentation" principle.
@@ -26,7 +26,7 @@ Inside a section. Reach for it when a section grows long enough to want its own 
 
 Inside a paragraph you can make a word **bold** or *italic*, and link to [the cairn project](https://example.com). Bold reads on a skim; italic is a lighter stress.
 
-- An unordered list with a small accent diamond marker.
+- An unordered list, plainly marked.
 - Each item one line, parallel in shape.
 - The marker reads the brand accent.
 
@@ -41,7 +41,7 @@ Inside a paragraph you can make a word **bold** or *italic*, and link to [the ca
 
 > A blockquote, set apart with a left accent rule and italic type, for a passage worth slowing down for.
 
-<p class="pullquote">A pull-quote hangs into the margin on a wide screen and reads in the display face.</p>
+<p class="pullquote">A pull-quote reads in the display face, set apart from the surrounding text.</p>
 
 For a short snippet inside a sentence, wrap it in backticks so a filename like \`cairn.config.ts\` reads as code. For anything longer, a fenced block turns on the highlighter:
 
@@ -58,7 +58,7 @@ The highlighting colors come from the same token set as the rest of the page, so
 \`\`\`css
 :root {
   --color-primary: oklch(45% 0.1 248); /* the brand accent */
-  --font-display: 'Fraunces Variable', serif; /* headings and pull-quotes */
+  --font-display: 'Figtree Variable', sans-serif; /* headings and pull-quotes */
 }
 \`\`\`
 
@@ -80,7 +80,7 @@ A centered figure holds the measure of the text.
 
 ---
 
-The horizontal rule above renders as a centered cairn mark. Below are the directive components, dropped into the text with a fenced block syntax.
+The horizontal rule above is a plain hairline. Below are the directive components, dropped into the text with a fenced block syntax.
 
 ::::callout[A quick definition]{tone="note"}
 A *concept* is a kind of content, like a post or a page. A note callout is the calm tone, for an aside.

@@ -73,7 +73,7 @@ or extend it; nothing here is a literal a re-skin would miss.
   /** One labeled face: the font token, the family role name, and what it sets. */
   type Face = { token: string; label: string; use: string; sample: string };
   const faces: Face[] = [
-    { token: '--font-display', label: 'display (Fraunces)', use: 'headings, pull-quotes', sample: 'Stacked one stone at a time' },
+    { token: '--font-display', label: 'display (Figtree)', use: 'headings, pull-quotes', sample: 'Stacked one stone at a time' },
     { token: '--font-body', label: 'body (Source Sans 3)', use: 'body, UI, captions', sample: 'The quick brown fox jumps over the lazy dog' },
     { token: '--font-mono', label: 'mono (Source Code Pro)', use: 'code', sample: 'const cairn = renderMarkdown(md);' },
   ];

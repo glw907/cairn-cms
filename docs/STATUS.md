@@ -54,6 +54,15 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**LADDER RESEQUENCED (Geoff, 2026-07-05): the ecxc.ski and 907.life REBUILDS from the
+Waymark template come BEFORE cairn.pub finalizes. Each rebuild iterates the template against
+real-site challenges; the end state = two good sites + a substantially improved template;
+cairn.pub Phase 1's build tasks (2-6) defer until after. Task 1 (the release cut) still runs
+early — the sites consume from the registry too. Claude's interpretive read (correctable):
+the rebuilds start HAND-COPIED from the template (the scaffolder doesn't ship yet), and the
+hand-copy friction becomes the scaffolder's requirements — rebuilds inform the scaffolder,
+not the reverse. Permalinks exact; live smokes per the ladder.**
+
 **PHASE 1 IS AUTHORIZED TO RUN (Geoff, 2026-07-05: "start the cairn.pub Phase 1 build").
 The chain executes unattended: table-semantics fix -> rename sweep -> Phase 1 tasks 1-6 per
 the plan, including the Task-1 release cut (the consumer-needs-it trigger; OIDC publish).

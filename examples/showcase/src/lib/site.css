@@ -22,13 +22,13 @@
 
 /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
    focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
-   the gap to the header from the same tokens the header uses (the step-1 wordmark plus its vertical
-   `--spacing-xs` padding, plus a 1rem cushion that covers the wordmark's line-height slack and the
-   brand mark, which runs a touch taller than the text), so the offset re-skins with the type scale.
-   At a 1280px desktop viewport the rendered header is about 65px (~4rem) and this resolves to about
-   67px (~4.2rem), so a jumped-to or focused heading clears the band with a little air. */
+   the gap to the header from the same tokens the header uses: the nav links' own `min-h-11` touch
+   target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
+   `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
+   1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
+   87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
 html {
-  scroll-padding-top: calc(var(--text-step-1) + 2 * var(--spacing-xs) + 1rem);
+  scroll-padding-top: calc(2.75rem + 2 * var(--spacing-xs) + 1rem);
 }
 
 /* The centered reading column at the measure. The chrome components (SiteHeader, SiteFooter) cap

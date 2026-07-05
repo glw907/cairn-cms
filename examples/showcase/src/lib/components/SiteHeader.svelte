@@ -7,6 +7,11 @@ link gets `aria-current="page"` and the accent colour. The inner content caps at
 the same width as the article and home reading column (`.site-main`), so the brand mark's left edge
 lines up with the body copy below it rather than centering independently at a wider measure. A site
 owner edits this file to re-shape the chrome; the look re-skins from `theme.css` with no edit here.
+The layout is no-JS-first responsive: the wordmark carries `white-space: nowrap` so it can only wrap
+the row, not its letters, and both the outer row and the nav itself carry `flex-wrap`, so a nav that
+outgrows the space beside the wordmark drops to its own full-width line below it, and a nav that
+outgrows even that line wraps again, rather than clipping past the viewport edge. Nav links also
+carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not just visible.
 -->
 <script lang="ts">
   import { page } from '$app/state';
@@ -36,7 +41,7 @@ owner edits this file to re-shape the chrome; the look re-skins from `theme.css`
 
 <header class="site-header sticky top-0 z-20 border-b border-card-border">
   <div
-    class="mx-auto flex max-w-measure items-center justify-between gap-m px-m py-xs"
+    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xs"
   >
     <a
       href="/"
@@ -55,14 +60,19 @@ owner edits this file to re-shape the chrome; the look re-skins from `theme.css`
         <ellipse cx="12.4" cy="9.6" rx="4.3" ry="2.1" />
         <ellipse cx="11.9" cy="4.8" rx="2.6" ry="1.9" />
       </svg>
+      <!-- Nowrap keeps the name on one line at any width; the header's own flex-wrap (above) is what
+           makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
       <span
-        class="font-display text-step-1 font-semibold tracking-tight"
+        class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
         >Cairn Showcase</span
       >
     </a>
 
+    <!-- flex-wrap here is the second no-JS-first fallback: once the nav has its own full-width row
+         below the wordmark, a nav that still outgrows that row (a site with more items than the
+         showcase's four) wraps onto further lines instead of clipping past the viewport edge. -->
     <nav
-      class="site-nav flex items-center gap-s text-step--1"
+      class="site-nav flex flex-wrap items-center gap-s text-step--1"
       aria-label="Primary"
     >
       {#each nav as item (item.href)}
@@ -70,7 +80,7 @@ owner edits this file to re-shape the chrome; the look re-skins from `theme.css`
         <a
           href={item.href}
           aria-current={current ? 'page' : undefined}
-          class="px-[0.1rem] py-[0.3rem] no-underline {current
+          class="inline-flex min-h-11 items-center px-xs no-underline {current
             ? 'font-semibold text-primary'
             : 'font-medium text-muted hover:text-base-content'}"
         >

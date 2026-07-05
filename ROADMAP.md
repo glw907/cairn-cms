@@ -114,12 +114,12 @@ the named human gates only):**
 1. ~~Polish pass close + merge~~ — DONE, merged 2026-07-02.
 2. ~~The pre-beta cut~~ — DONE: `v0.79.0` published 2026-07-02, the last `0.x`.
 3. **In parallel: the docs rewrite Stage 2** (its plan is written; human gate: Geoff reads the
-   front-door drafts) **and the Wayfinder starter component set** (human gate: one batched
+   front-door drafts) **and the Waymark starter component set** (human gate: one batched
    taste question settles the final component list at its plan's start; no file contention
    between the two).
-4. **The Wayfinder design review** (five lenses; the fixture harness and retheme-lab evidence
+4. **The Waymark design review** (five lenses; the fixture harness and retheme-lab evidence
    are already banked; findings to Geoff).
-5. **Deploy the finished Wayfinder example to cairn.pub** — the intro site IS the reviewed
+5. **Deploy the finished Waymark example to cairn.pub** — the intro site IS the reviewed
    example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
    front-door work; the template's permanent living demo. Audience-per-surface (Geoff,
    2026-07-02): the repo and npm page are dev-first surfaces and read that way; **cairn.pub is
@@ -129,7 +129,7 @@ the named human gates only):**
    what makes the editor-class pages publicly reachable rather than buried in a GitHub tree.
 6. **The scaffolder** (the pre-B3 DX slot, B3/B4, then the Part C generator), baking the
    reviewed template.
-7. **Rebuild ecxc.ski and 907.life from Wayfinder, via the scaffolder where possible** — one
+7. **Rebuild ecxc.ski and 907.life from Waymark, via the scaffolder where possible** — one
    effort dogfoods the template's redirection story AND `create-cairn-site`; permalinks exact,
    live admin smokes ride here, build-alongside-then-swap.
 8. **The go-public pass** (secrets-history scan, exposure rulings, fork-PR CI hardening,
@@ -140,10 +140,10 @@ the named human gates only):**
     cairn.pub.
 
 - **Cut the pre-beta release after the polish pass merges (Geoff, 2026-07-02), then REBUILD both
-  production sites from Wayfinder as the dogfood test (Geoff, 2026-07-02 — supersedes the
+  production sites from Waymark as the dogfood test (Geoff, 2026-07-02 — supersedes the
   upgrade-style cutovers).** One deliberate cut rolls the pruning + polish window (verify the next
   number free via `npm view`; the `cairn-release` skill owns the mechanics). Then, instead of
-  upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Wayfinder on that cut: the end
+  upgrading in place, ecxc.ski and 907-life are rebuilt fresh from Waymark on that cut: the end
   result need not be pixel-identical to each site's current look, but it should be close — and
   since the two sites look very different from each other, one template re-expressed into both is
   the strongest real-world test of the token-layer redirection story (the design review's
@@ -157,7 +157,7 @@ the named human gates only):**
   point feeds the docs friction log and the scaffolder's work-list — the rebuilds are the expert
   half of the dogfood, with the fresh-eyes dress rehearsal (below in Next) remaining the
   zero-context half. Beta-prerequisite framing unchanged: the rebuilt sites ARE the production
-  miles on the frozen contract. Sequenced after the Wayfinder starter component set (rebuilding
+  miles on the frozen contract. Sequenced after the Waymark starter component set (rebuilding
   from a template whose components are still landing would test the wrong artifact); the design
   review can interleave, with the two re-expressions as its field evidence.
 
@@ -171,7 +171,7 @@ the named human gates only):**
   module so the strip is a file deletion, not an edit.
 - **Scaffold content is self-documenting placeholder (Geoff, 2026-07-02).** The scaffold's
   placeholder content orients whoever looks at it: the About page says what the site is and
-  that the content is deliberate placeholder, the masthead names Wayfinder, and demo posts
+  that the content is deliberate placeholder, the masthead names Waymark, and demo posts
   say which component they demonstrate. First installment shipped with the vanilla cairn.pub
   deploy; the full treatment rides the step-5 finalization.
 
@@ -199,7 +199,7 @@ the named human gates only):**
   object leaves, the byte-preserving rename rewriter to address a nested YAML path (the corruption-prone part
   the references fan-out caught bugs in), and the cross-branch index plus rename and delete gates to cover the
   nested edges.
-- **Starter component set for the Wayfinder template (before beta).** The starter template ships a
+- **Starter component set for the Waymark template (before beta).** The starter template ships a
   curated set of content components common across the sites cairn is likely to manage (clubs and
   small orgs, personal and small-business sites) — reasonable, deliberately not exhaustive. Today the
   showcase defines `callout`, `alert`, and the `converter` island demo; the demo is showcase-ware,
@@ -242,7 +242,7 @@ the named human gates only):**
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
   directives (a design question, not a task). Figure needs no component at all: the engine owns
   `:::figure` natively, and the name is reserved — the docs pass records this.
-- **Wayfinder final design review (adversarial, Fable-conducted, before Wayfinder goes live).**
+- **Waymark final design review (adversarial, Fable-conducted, before Waymark goes live).**
   Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
   enough that a developer or designer could take it many different directions," and simultaneously
   "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
@@ -273,7 +273,7 @@ the named human gates only):**
   mean heavy-by-default. Conducted by
   the main loop as design critic over the live rendered output (both color modes, the stress
   fixtures, the component set) plus the template's token and utility architecture, with findings
-  ranked by which lens they fall under. Runs after the Wayfinder starter component set lands and
+  ranked by which lens they fall under. Runs after the Waymark starter component set lands and
   before the cairn.pub intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
@@ -289,27 +289,27 @@ the named human gates only):**
   by then; this tests the chain the way a beta user experiences it. A cloud agent runs the mechanical
   path and reports friction; the steps needing real accounts (Cloudflare, GitHub App) are a short
   attended session.
-- **Third site migration: aksailingclub.org onto cairn/Wayfinder (Geoff, 2026-07-02: "the next
+- **Third site migration: aksailingclub.org onto cairn/Waymark (Geoff, 2026-07-02: "the next
   major site I'll move").** Follows the ecxc/907 rebuilds and rides their playbook (scaffolder
   path, permalinks preserved, build-alongside swap). Its content patterns are surveyed as input to
-  the Wayfinder starter-component set, so the set serves the known-next migration, not just the
+  the Waymark starter-component set, so the set serves the known-next migration, not just the
   existing two.
-- **A second template: Topo, the documentation template.** Derived from Wayfinder and optimized for
+- **A second template: Topo, the documentation template.** Derived from Waymark and optimized for
   documentation sites: the sidebar concept tree, in-page table of contents, code-first typography,
-  prev/next flow — the docs-site table stakes, curated with Wayfinder's restraint rather than
+  prev/next flow — the docs-site table stakes, curated with Waymark's restraint rather than
   exhaustively. Once Topo exists, cairn's own documentation moves onto it, so the engine publishes
   its own manual (the strongest dogfood available, and the standing proof that the docs-site use
-  case is first-class). Inherits Wayfinder's component set and adds only what documentation demands.
-  Sequenced after the Wayfinder starter component set and the frozen-contract docs rewrite (which
+  case is first-class). Inherits Waymark's component set and adds only what documentation demands.
+  Sequenced after the Waymark starter component set and the frozen-contract docs rewrite (which
   produces the content Topo hosts); gives the scaffolder its first real template choice.
-- **The project sites: cairn.pub on Wayfinder, docs.cairn.pub on Topo (domain DECIDED 2026-07-02: cairn.pub, standard tier, registered via the dashboard since the Registrar API does not yet carry .pub; every single-word alternative was taken and the .pub TLD reads "publish", cairn's signature verb; the cairn.dev acquisition inquiry remains the optional endgame, yielding via redirect if it ever lands).** Two sites, not one, because
+- **The project sites: cairn.pub on Waymark, docs.cairn.pub on Topo (domain DECIDED 2026-07-02: cairn.pub, standard tier, registered via the dashboard since the Registrar API does not yet carry .pub; every single-word alternative was taken and the .pub TLD reads "publish", cairn's signature verb; the cairn.dev acquisition inquiry remains the optional endgame, yielding via redirect if it ever lands).** Two sites, not one, because
   a cairn site carries one design (one adapter, one `render`), so a combined site would compromise
   either the landing pages or the docs chrome. Each site is the living exemplar and standing dogfood
   of its template: the intro site is the Pages-plus-Posts shape cairn targets, and the click-through
   proof a prospective user sees before running the scaffolder; the docs site is the engine
-  publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Wayfinder
+  publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Waymark
   derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
-  Wayfinder as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
+  Waymark as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
   hosts them. Domain procurement: cairn.pub (see above).
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is

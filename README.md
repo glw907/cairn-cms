@@ -22,14 +22,14 @@ Cairn is deliberately small. It manages markdown content and the admin where edi
 
 The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them. [Why cairn](./docs/explanation/why-cairn.md) explains the rationale and the limits of my choices.
 
-## Wayfinder and Topo
+## Waymark and Topo
 
-Cairn ships with a starter template called Wayfinder: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced. The unmodified template runs live at [cairn.pub](https://cairn.pub), and a scaffolded site begins as exactly that site. For many basic sites, that's the finish line. A site that grows past a basic CMS keeps building on the same template instead of starting over. The live cairn.pub demo is neutral Wayfinder wearing Waymark, its opt-in identity layer, one worked example of the re-skin covered in [Make Wayfinder your own](./docs/guides/make-wayfinder-your-own.md).
+Cairn ships with a starter template called Waymark: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced. The unmodified template runs live at [cairn.pub](https://cairn.pub), and a scaffolded site begins as exactly that site. For many basic sites, that's the finish line. A site that grows past a basic CMS keeps building on the same template instead of starting over. The live cairn.pub demo is neutral Waymark wearing the cairn theme, its opt-in identity layer, one worked example of the re-skin covered in [Make Waymark your own](./docs/guides/make-waymark-your-own.md).
 
-A second template, Topo, is planned: a documentation-first derivative of Wayfinder that will carry cairn's own docs when it lands.
+A second template, Topo, is planned: a documentation-first derivative of Waymark that will carry cairn's own docs when it lands.
 
 <!-- SCREENSHOT (paired evidence): the editor mid-edit with live preview, beside the
-resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as author. Capture at the Wayfinder design review; never substitute a stock placeholder. -->
+resulting GitHub commit showing cairn-cms[bot] as committer and the editor's name as author. Capture at the Waymark design review; never substitute a stock placeholder. -->
 
 ## Quickstart
 

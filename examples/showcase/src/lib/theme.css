@@ -1,8 +1,8 @@
 /* ============================================================================
-   Wayfinder, the cairn public reading theme, neutral by default. The one file a site owner
-   edits to re-skin. The signature Waymark identity (the display serif, the warm-tinted paper,
+   Waymark, cairn's public reading template, neutral by default. The one file a site owner
+   edits to re-skin. The signature cairn theme identity (the display serif, the warm-tinted paper,
    the cairn-glyph rule, the diamond bullet, the hanging pull-quote) lives on as an opt-in layer
-   behind `[data-flourish]` in prose.css, not the default; see the "Waymark" section of
+   behind `[data-flourish]` in prose.css, not the default; see the "The cairn theme" section of
    docs/internal/public-design-system.md for where it lives and how a theme re-enables it.
 
    RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike,

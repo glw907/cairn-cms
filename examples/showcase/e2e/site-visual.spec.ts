@@ -44,7 +44,7 @@ test('styleguide — dark', async ({ page }) => {
 	await expect(page).toHaveScreenshot('styleguide-dark.png', { fullPage: true });
 });
 
-// The responsive-extremes matrix. Three Wayfinder-audit fixes (the masthead's flex-wrap at the phone
+// The responsive-extremes matrix. Three Waymark-audit fixes (the masthead's flex-wrap at the phone
 // floor, the fluid root-scale clamp at the ultrawide ceiling, and the table's own scroll container)
 // only show at a width the default 1280px project viewport never renders, so this block pins the two
 // ends of that range on light theme: 320px, the narrowest real phone class, and 2560px, the clamp's

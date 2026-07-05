@@ -1,4 +1,4 @@
-Wayfinder
+Waymark
 Topo
 cairn
 DaisyUI

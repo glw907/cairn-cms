@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// Five bugs the Wayfinder design review found on the reading-surface article and the styleguide's
+// Five bugs the Waymark design review found on the reading-surface article and the styleguide's
 // banner demo, each reproducible without any special setup:
 //   1. a standalone `:::icon` directive fell back to the browser's default SVG box (about 280px),
 //      because prose.css sized `.ec-glyph` only inside a nested component (alert, video-facade,
@@ -16,7 +16,7 @@ import { test, expect } from '@playwright/test';
 //   5. a hydrate component always serialized its full attributes into `data-cairn-props`, even once
 //      build() had already decided the banner is permanently expired, leaking the message and date
 //      into the static markup.
-test.describe('Wayfinder design-review fixes', () => {
+test.describe('Waymark design-review fixes', () => {
   test('a standalone icon directive renders at a modest, text-height scale', async ({ page }) => {
     await page.goto('/posts/the-reading-surface');
     // The direct-child selector matches only the standalone `:::icon{name="flag"}` in this article,

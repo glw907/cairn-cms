@@ -1,6 +1,6 @@
 # cairn showcase
 
-This is Wayfinder, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this directory in CI, and it's the companion to [`docs/tutorial/build-your-first-cairn-site.md`](../../docs/tutorial/build-your-first-cairn-site.md): every file the tutorial builds by hand already exists here and runs.
+This is Waymark, cairn's starter template: a complete, working cairn site built in the DaisyUI and Tailwind idiom. The engine's own e2e and design suites run against this directory in CI, and it's the companion to [`docs/tutorial/build-your-first-cairn-site.md`](../../docs/tutorial/build-your-first-cairn-site.md): every file the tutorial builds by hand already exists here and runs.
 
 The showcase depends on cairn through the relative `file:../..` path, so it always builds against the engine version in this checkout, not a published release.
 

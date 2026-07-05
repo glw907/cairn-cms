@@ -1,18 +1,19 @@
-# Cairn public design system: Wayfinder (agent reference)
+# Cairn public design system: Waymark (agent reference)
 
-Wayfinder is cairn's public reading theme, neutral by default: a humanist sans display face over a
+Waymark is cairn's public reading template, neutral by default: a humanist sans display face over a
 clean, hue-free paper. Read this before any work on the public theme:
 `examples/showcase/src/lib/theme.css` (the tokens and the re-skin recipe), `prose.css` (the reading
 surface), the `(site)` chrome components, and the `/styleguide` route. It is written for an
 implementing agent, so it leads with the rules that are easy to break and not visible in the markup,
-then the tokens, the type, the recipes, the component model, the Waymark opt-in identity layer, and
+then the tokens, the type, the recipes, the component model, the cairn theme opt-in identity layer, and
 the re-skin recipe.
 
 The live demo is `/styleguide`. The exhaustive oklch values live in `theme.css`, the single source. The
 design criteria and the settled-design appendix (the chosen faces, the values, the layouts, the
 carry-forwards) are in the design bar
 ([`docs/superpowers/specs/2026-06-25-cairn-b2-design-bar.md`](../superpowers/specs/2026-06-25-cairn-b2-design-bar.md)),
-which predates the neutral default and records the earlier Waymark-branded starting point.
+which predates the neutral default and records the earlier branded starting point that became the
+cairn theme.
 
 ## Load-bearing rules (break these and the theme renders wrong)
 
@@ -61,7 +62,7 @@ which predates the neutral default and records the earlier Waymark-branded start
 - **Three prose gestures are opt-in, not default.** The cairn-glyph `hr`, the diamond `ul` bullet, and the
   margin-hanging pull-quote are scoped under `.prose[data-flourish]` in `prose.css`, never deleted. The
   neutral default renders a plain hairline, the standard list marker, and an in-column pull-quote. See
-  [Waymark: the opt-in identity layer](#waymark-the-opt-in-identity-layer).
+  [The cairn theme: the opt-in identity layer](#the-cairn-theme-the-opt-in-identity-layer).
 
 ## Tokens
 
@@ -149,13 +150,13 @@ the ring reads against the tinted callout grounds. The directive components (cal
 alert) are styled under `.prose` so they beat DaisyUI's bundled `.alert`/`.card`, each tone reading its
 `--cairn-*-ink`.
 
-## Waymark: the opt-in identity layer
+## The cairn theme: the opt-in identity layer
 
-Waymark was the theme's original branded identity: a display serif (Fraunces), a warm-tinted paper, and
-three signature prose gestures. Geoff's 2026-07-04 ruling made Wayfinder neutral by default, so a
-consumer site starts from a clean, opinion-free surface, and Waymark becomes something a site opts into
-rather than something it has to opt out of. `cairn.pub`, the living demo of making Wayfinder your own,
-is the intended home for the full Waymark restyle.
+The cairn theme was the template's original branded identity: a display serif (Fraunces), a
+warm-tinted paper, and three signature prose gestures. Geoff's 2026-07-04 ruling made Waymark neutral
+by default, so a consumer site starts from a clean, opinion-free surface, and the cairn theme becomes
+something a site opts into rather than something it has to opt out of. `cairn.pub`, the living demo of
+making Waymark your own, is the intended home for the full cairn-theme restyle.
 
 Two separate levers carry it, because they are two separate kinds of change:
 
@@ -169,7 +170,7 @@ Two separate levers carry it, because they are two separate kinds of change:
   `data-flourish` hook, because a font or a paper hue is a standing choice for a theme, not a per-page
   toggle.
 
-A full Waymark restyle is therefore both: the token edit for the face and the paper, plus the
+A full cairn-theme restyle is therefore both: the token edit for the face and the paper, plus the
 `data-flourish` attribute for the three gestures.
 
 ## The component model (you own it)

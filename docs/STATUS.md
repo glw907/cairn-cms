@@ -86,8 +86,8 @@ Note: Task 1 IS the pre-beta-window release cut (the consumer-needs-it trigger).
 
 THE QUEUE (Geoff-approved 2026-07-04, both workflow opt-ins given): docs close (e2e fix
 green + post-mortem + merge decision) -> the pre-beta engine pass (workflow) -> THE TEMPLATE
-EFFORT (workflow): the five-lens Wayfinder design review with the banked evidence, findings
-gate to Geoff, fold, then the reviewed Wayfinder deploys to cairn.pub as the living demo.
+EFFORT (workflow): the five-lens Waymark design review with the banked evidence, findings
+gate to Geoff, fold, then the reviewed Waymark deploys to cairn.pub as the living demo.
 Topo out of scope until the docs need their hosted home.
 
 QUEUED BEHIND THE DOCS CLOSE: the pre-beta engine pass
@@ -113,7 +113,7 @@ cairn-docs-rewrite-initiative memory."
 `cairn-pub`, D1 `cairn-pub-auth`/`-app`, R2 `cairn-pub-media`, sender enabled, owner row
 seeded, first standalone registry consumer of 0.79.0). Geoff's two actions: add `cairn-pub`
 to the GitHub App installation (owner-only; save/publish blocked until then) and a live
-sign-in test. The reviewed Wayfinder replaces this at ladder step 5. Scaffolder findings
+sign-in test. The reviewed Waymark replaces this at ladder step 5. Scaffolder findings
 (dev-wiring strip; self-documenting placeholder) filed in ROADMAP.
 
 **The code polish pass is merged to `main`** (merge `0d72870`; plan + post-mortem at
@@ -129,13 +129,13 @@ Holds unpublished under `## Unreleased` with the pruning window.
 registry as `latest` (release `f6523ee`; the pruning + polish window, two `Consumers must:`
 sections; the rebuilds consume it at step 7). Step 3 runs in parallel: the docs rewrite Stage 2 (plan written; twelve outlines drafted,
 adversarially reviewed, thirteen findings folded — `2026-07-02-docs-rewrite-outlines.md`; gate:
-Geoff reads the front-door drafts) and the Wayfinder starter component set (list DECIDED by Geoff:
+Geoff reads the front-door drafts) and the Waymark starter component set (list DECIDED by Geoff:
 figure, gallery, video embed, pull quote, CTA, FAQ/details + existing callout/alert; converter
 island replaced by a useful exemplar; the aksailingclub/Blowfish survey informing the plan is
 in flight).
 
 **Front-loaded and settled (2026-07-02):** the beta gate is DECIDED (all four rulings in ROADMAP);
-cairn.pub REGISTERED (zone active); the rebuild-from-Wayfinder program supersedes the cutovers;
+cairn.pub REGISTERED (zone active); the rebuild-from-Waymark program supersedes the cutovers;
 the retheme-lab evidence and the stress-fixture harness (`wayfinder-review-fixtures` branch) are
 banked for the design review.
 

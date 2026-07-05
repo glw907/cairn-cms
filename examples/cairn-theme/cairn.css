@@ -1,20 +1,21 @@
 /* ============================================================================
-   Waymark: the opt-in Wayfinder identity layer.
+   The cairn theme: the opt-in Waymark identity layer.
 
-   Wayfinder ships neutral (examples/showcase/src/lib/theme.css): a humanist sans display face, a
+   Waymark ships neutral (examples/showcase/src/lib/theme.css): a humanist sans display face, a
    hue-free paper ladder, and three signature prose gestures held behind `.prose[data-flourish]` in
-   prose.css. This file is the complete delta that turns that neutral default back into Waymark, the
-   theme's original branded identity. cairn.pub runs exactly this layer on top of Wayfinder.
+   prose.css. This file is the complete delta that turns that neutral default back into the cairn
+   theme, the template's original branded identity. cairn.pub runs exactly this layer on top of
+   Waymark.
 
    USAGE. Install `@fontsource-variable/fraunces`, copy this file into your site, and add one import
    line directly AFTER your theme.css import:
 
      @import './theme.css';
-     @import './waymark.css';
+     @import './cairn.css';
 
    No markup change is needed. Import order matters for the base-ladder tokens below (see their own
-   comment); every other rule here wins over Wayfinder's neutral default regardless of order. See
-   docs/guides/make-wayfinder-your-own.md for the full walkthrough.
+   comment); every other rule here wins over Waymark's neutral default regardless of order. See
+   docs/guides/make-waymark-your-own.md for the full walkthrough.
    ============================================================================ */
 
 /* The display face. Fraunces pulls the `opsz` axis so headings render at a display optical size;
@@ -22,7 +23,7 @@
    the parity rule theme.css documents: the author sees the same face as the reader. */
 @import '@fontsource-variable/fraunces/opsz.css';
 
-/* Wayfinder's own `@theme` block puts --font-display and --text-step-* in Tailwind's `theme`
+/* Waymark's own `@theme` block puts --font-display and --text-step-* in Tailwind's `theme`
    cascade layer. A plain, unlayered custom-property declaration always beats a layered one
    regardless of specificity or source order, since the cascade sorts layer position before
    specificity, so this block needs no `!important` and no ordering care. */
@@ -30,7 +31,7 @@
   --font-display: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
 
   /* The display steps (h3 through h1/masthead) return to the ratio a display serif reads well at;
-     Wayfinder's neutral sans pulls these back one grade (see theme.css). The body-and-below steps
+     Waymark's neutral sans pulls these back one grade (see theme.css). The body-and-below steps
      (-1, 0, 1) are shared with the neutral default and are not repeated here. */
   --text-step-2: clamp(1.52rem, 1.39rem + 0.66vw, 1.91rem); /* h3, index title */
   --text-step-3: clamp(1.83rem, 1.63rem + 1vw, 2.39rem); /* h2 */

@@ -1,6 +1,6 @@
 ## Unreleased
 
-### Wayfinder starter components (showcase/template only; no consumer action)
+### Waymark starter components (showcase/template only; no consumer action)
 
 - The starter template gains six content components, each a worked `defineComponent` with a
   schema-driven picker form: `icon` (renders only names from the adapter's declared icon set,
@@ -20,7 +20,7 @@ All notable changes to this project are recorded here, most recent first.
 
 ## Unreleased
 
-### Showcase (Wayfinder template; no consumer action)
+### Showcase (Waymark template; no consumer action)
 
 - The starter template's default theme is neutral. The display face is Figtree, a humanist
   sans matching the body's Source Sans 3, in place of the display serif Fraunces; the paper
@@ -28,7 +28,7 @@ All notable changes to this project are recorded here, most recent first.
   display type steps (`h3` through `h1`) sit one step back on the scale. The three signature
   prose gestures, the cairn-glyph `hr`, the diamond `ul` bullet, and the margin-hanging
   pull-quote, move behind an opt-in `.prose[data-flourish]` hook in `prose.css`, kept in place
-  for the planned Waymark theme layer to re-enable with one attribute.
+  for the planned cairn theme layer to re-enable with one attribute.
 - A design-review craft pass on the neutral template: the header and footer inner content now
   caps at the same reading measure as the article and home body, so the chrome's left edge
   lines up with the body copy instead of centering independently at a wider band; the uppercase

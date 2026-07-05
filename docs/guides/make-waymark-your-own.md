@@ -1,6 +1,6 @@
-# Make Wayfinder your own
+# Make Waymark your own
 
-Wayfinder, the public theme your site ships with, is neutral by default: a humanist sans display
+Waymark, the starter template your site ships with, is neutral by default: a humanist sans display
 face over a clean, hue-free paper. You re-skin it from one file,
 `src/lib/theme.css`, with no engine change and no fork. Rotate the brand accent and retune the
 paper:
@@ -33,37 +33,37 @@ standard) in both sRGB and display-P3, so a re-skin can't ship an inaccessible p
 token-only sourcing still hold after the rotation. A `var()` that no block defines fails the
 build before it ever reaches a browser.
 
-## The worked example: Waymark
+## The worked example: the cairn theme
 
-Wayfinder shipped its original branded identity, Waymark, before the theme went neutral. Waymark
-is now [`examples/waymark-theme/`](../../examples/waymark-theme/) in this repository: a
+Waymark shipped its original branded identity, the cairn theme, before it went neutral. The cairn
+theme is now [`examples/cairn-theme/`](../../examples/cairn-theme/) in this repository: a
 complete, working re-skin you can read end to end, not a hypothetical. `cairn.pub`, cairn's own
-site, runs exactly this layer on top of Wayfinder.
+site, runs exactly this layer on top of Waymark.
 
-Waymark swaps the display face to the serif Fraunces and warms the paper ladder from hue-free to a stone tint. Both are ordinary token overrides. It also turns on the three signature prose gestures, which the next section covers. Every value it sets is the ordinary token seam described in the
-preceding section, nothing new. Read `examples/waymark-theme/waymark.css` for the exact
+The cairn theme swaps the display face to the serif Fraunces and warms the paper ladder from hue-free to a stone tint. Both are ordinary token overrides. It also turns on the three signature prose gestures, which the next section covers. Every value it sets is the ordinary token seam described in the
+preceding section, nothing new. Read `examples/cairn-theme/cairn.css` for the exact
 `--color-base-*` and `--font-display` values it carries, and its own comments explaining each
 override: an import-order note for the base ladder, and why the type and face overrides need no
 special handling.
 
-To use it: install `@fontsource-variable/fraunces`, copy `waymark.css` into your site, and add
+To use it: install `@fontsource-variable/fraunces`, copy `cairn.css` into your site, and add
 one import line directly after your `theme.css` import.
 
 ```css
 @import './theme.css';
-@import './waymark.css';
+@import './cairn.css';
 ```
 
 No markup change, no engine change.
 
 ## The flourish hook
 
-Three prose gestures carry Waymark's identity beyond the palette and the face: a cairn-glyph mark
-in place of the plain `hr`, a small accent diamond in place of the standard `ul` bullet, and a
-pull-quote that hangs into the left margin on a wide screen. Wayfinder writes these gestures into
-`prose.css` but never applies them by default; they sit scoped under `.prose[data-flourish]`
-rather than deleted, so a site turns all three on at once by adding one attribute to the `.prose`
-root, no CSS edit required:
+Three prose gestures carry the cairn theme's identity beyond the palette and the face: a
+cairn-glyph mark in place of the plain `hr`, a small accent diamond in place of the standard `ul`
+bullet, and a pull-quote that hangs into the left margin on a wide screen. Waymark writes these
+gestures into `prose.css` but never applies them by default; they sit scoped under
+`.prose[data-flourish]` rather than deleted, so a site turns all three on at once by adding one
+attribute to the `.prose` root, no CSS edit required:
 
 ```svelte
 <div class="prose" data-flourish>
@@ -71,8 +71,10 @@ root, no CSS edit required:
 </div>
 ```
 
-`waymark.css` takes a different path to the same effect: it re-declares the three gestures without
-the `data-flourish` guard, so copying the file in turns them on with no markup change at all. Add the attribute if you want the choice visible in your markup. The `waymark.css` override suits a site that would rather keep the change in one CSS-only drop-in.
+`cairn.css` takes a different path to the same effect: it re-declares the three gestures without
+the `data-flourish` guard, so copying the file in turns them on with no markup change at all. Add
+the attribute if you want the choice visible in your markup. The `cairn.css` override suits a site
+that would rather keep the change in one CSS-only drop-in.
 
 ## The font swap
 
@@ -81,16 +83,16 @@ same edit as any other token. Two things make a font swap different in practice 
 
 - Install the font package before you reference it. cairn self-hosts every face via Fontsource, so
   a swap is `npm install @fontsource-variable/<name>` plus one `@import` line in `theme.css`,
-  before every other rule in the file. `waymark.css`'s own font import shows the pattern.
-- A serif and a sans read legible at different sizes. Wayfinder's own neutral-to-Waymark swap
+  before every other rule in the file. `cairn.css`'s own font import shows the pattern.
+- A serif and a sans read legible at different sizes. Waymark's own swap to a neutral default
   pulled the display type steps (`--text-step-2` through `-5`, covering `h3` through the masthead)
   back one grade when it moved from Fraunces to a sans face, because a sans face reads large at a
   lower size than a serif does at the same step. Swapping the other way, back to a serif, is the
-  reverse adjustment; `waymark.css`'s `--text-step-*` block carries the exact values.
+  reverse adjustment; `cairn.css`'s `--text-step-*` block carries the exact values.
 
 ## Related reference
 
-[`examples/waymark-theme/README.md`](../../examples/waymark-theme/README.md) is the short pointer
+[`examples/cairn-theme/README.md`](../../examples/cairn-theme/README.md) is the short pointer
 to the working example. The [public design system reference](../internal/public-design-system.md)
 covers the full token inventory and the load-bearing rules an agent editing the theme needs to
 know. `scripts/check-public-tokens.mjs` and `scripts/reskin-fixture.mjs` are the two gates a

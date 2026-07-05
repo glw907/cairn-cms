@@ -3,8 +3,10 @@ The showcase's public site header: an owned, copy-in chrome component on the tok
 band over a translucent `base-100` with a hairline bottom, carrying the cairn brand mark plus
 wordmark on the left and the primary nav on the right. Every colour and size reads a DaisyUI role
 utility or a cairn token (`--font-display`, `--cairn-*`), never a literal. The current route's nav
-link gets `aria-current="page"` and the accent colour. A site owner edits this file to re-shape the
-chrome; the look re-skins from `theme.css` with no edit here.
+link gets `aria-current="page"` and the accent colour. The inner content caps at `--container-measure`,
+the same width as the article and home reading column (`.site-main`), so the brand mark's left edge
+lines up with the body copy below it rather than centering independently at a wider measure. A site
+owner edits this file to re-shape the chrome; the look re-skins from `theme.css` with no edit here.
 -->
 <script lang="ts">
   import { page } from '$app/state';
@@ -34,7 +36,7 @@ chrome; the look re-skins from `theme.css` with no edit here.
 
 <header class="site-header sticky top-0 z-20 border-b border-card-border">
   <div
-    class="mx-auto flex max-w-measure-wide items-center justify-between gap-m px-m py-xs"
+    class="mx-auto flex max-w-measure items-center justify-between gap-m px-m py-xs"
   >
     <a
       href="/"

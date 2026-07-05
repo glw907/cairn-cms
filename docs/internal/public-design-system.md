@@ -107,6 +107,22 @@ surface reads as one clean sans-serif voice with no serif accent.
 - The skip link is the first focusable element and targets `<main id="main" tabindex="-1">`. The
   `tabindex` is load-bearing: without it, Firefox and Safari move the position but not keyboard focus.
 - The footer is on `base-200`, with the brand, a footer nav, and a fine-print line over a hairline.
+- **The header and footer inner content caps at `--container-measure` (44rem), not
+  `--container-measure-wide`.** A design review found the chrome centering independently at the wider
+  measure while the article and home body center at the narrower one, so the two shared no edge. Both
+  chrome components now cap at the same measure as `.site-main`, so their content's left (and right)
+  edge lines up with the body copy at any viewport. The styleguide's own swatch-grid sections still
+  widen to `--container-measure-wide` (a documented, separate exception for that page); its lead
+  paragraph and notes, at the narrower measure, line up with the chrome above and below them.
+
+## The eyebrow (uppercase, letterspaced, `--tracking-eyebrow`)
+
+The micro-label device reads as a kicker over a heading. Dose it where it differentiates one section
+from a sibling on the same page, not on every masthead: a lone section-opening heading (the home
+masthead, the styleguide masthead) needs no kicker repeating what the heading already says, but the
+home's "Latest" lead card over its "Archive" index gives the label something to differentiate, so it
+earns its place there. The video-facade's platform name (`YouTube`/`Vimeo`) is the other live use: it
+names which platform a link goes to, which is information the reader cannot get elsewhere on the card.
 
 ## The reading surface (`prose.css`)
 
@@ -147,17 +163,22 @@ A full Waymark restyle is therefore both: the token edit for the face and the pa
 
 ## The component model (you own it)
 
-- **The directive registry** (`cairn.config.ts`): the callout (note/tip/warning) and the alert.
-  Markdown-authored, the render-component pattern. A site extends the registry or adds directives.
+- **The directive registry** (`cairn.config.ts`): the callout (note/tip/warning), the alert, the icon, the
+  video facade, the pull-quote, the CTA, the FAQ, and the banner island. Markdown-authored, the
+  render-component pattern. A site extends the registry or adds directives.
 - **The own-it components**: the chrome, the page compositions (Home, the article wrapper, the
   styleguide), and the token-styled DaisyUI primitives (button, card, badge, tabs, accordion, CTA, stat).
   Copy-in `.svelte` files the site owns and extends, with no version lock on the look.
+- **The home composition**: the newest entry gets a lead treatment (a larger title, an excerpt, an
+  explicit "Read the post" link) above a tightened archive index, rather than one flat chronological
+  list. A tag-filter narrowing flattens back to a plain list of exactly what matched; the lead is a
+  browsing-composition device, not part of the search result.
 - **The ownership seam**: the site owns `prose.css` and the page-composition components; the engine owns
   the prose HTML structure (the rehype pipeline output) and the build-time highlighter. A developer
   restyles the reading surface without forking the engine; changing the emitted HTML shape is an engine
   concern.
-- `/styleguide` is the single growing demo surface. B2 ships the system and the core set; B3 and B4 add
-  the feature and option components to the same demo.
+- `/styleguide` is the single growing demo surface, and its reading-surface sample now exercises every
+  registered directive, not a subset.
 
 ## The re-skin recipe (the committed N)
 

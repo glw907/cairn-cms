@@ -1,8 +1,9 @@
-<!-- @component The showcase home: a masthead over an archival index of the posts. This is the B2 mock
-     that stresses the design tokens on a real composed reading-adjacent page; B3 implements the
-     production home (pagination, search). It is token-backed throughout: DaisyUI role utilities and
-     cairn-token arbitrary-value utilities for the markup, a scoped `<style>` only for the index grid
-     and the hairlines that a utility cannot express. No hard-coded color or px font-size. -->
+<!-- @component The showcase home: a masthead over a composed front page, the newest entry given a lead
+     treatment above a tightened archive index. This is the B2 mock that stresses the design tokens on
+     a real composed reading-adjacent page; B3 implements the production home (pagination, search). It
+     is token-backed throughout: DaisyUI role utilities and cairn-token arbitrary-value utilities for
+     the markup, a scoped `<style>` only for the lead card, the index grid, and the hairlines a utility
+     cannot express. No hard-coded color or px font-size. -->
 <script lang="ts">
   import type { PageData } from './$types';
 
@@ -38,6 +39,12 @@
   const inUse = $derived(new Set(entries.flatMap((p) => p.tags ?? [])));
   const tagOptions = $derived(data.vocabulary.filter((entry) => inUse.has(entry.value)));
 
+  // The newest entry gets its own lead treatment above the archive, but only while browsing
+  // unfiltered: a tag search is a narrowing operation, not a composition, so a selected tag flattens
+  // back to a plain list of exactly what matched, with no separate pinned "featured" entry.
+  const featured = $derived(selected === '' ? filtered[0] : undefined);
+  const rest = $derived(selected === '' ? filtered.slice(1) : filtered);
+
   const dateFmt = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric',
     month: 'short',
@@ -52,11 +59,6 @@
 </script>
 
 <section class="mx-auto max-w-measure pb-xl pt-l">
-  <p
-    class="m-0 mb-s text-step--1 font-semibold uppercase tracking-eyebrow text-muted"
-  >
-    A cairn site
-  </p>
   <h1
     class="m-0 mb-s font-display text-step-5 font-semibold leading-tight tracking-tight"
   >
@@ -71,70 +73,146 @@
   </p>
 </section>
 
-<section class="index" aria-label="Writing">
-  <div class="index__head">
-    <p
-      class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted"
-    >
-      Writing
-    </p>
-    <span class="index__count">
-      {filtered.length}
-      {filtered.length === 1 ? 'entry' : 'entries'}
-    </span>
-  </div>
+<section class="listing" aria-label="Writing">
+  <!-- The lead: the newest entry, set apart with its own title size, an excerpt, and an explicit
+       "Read the post" link, so the front page opens with one clear invitation instead of the first
+       row of a table. The "Latest" label now differentiates it from "Archive" below, which is why
+       the eyebrow device earns its place here (it did not on the masthead above, where nothing else
+       on the page needed distinguishing from it). -->
+  {#if featured}
+    <article class="lead" data-cairn-post>
+      <p class="m-0 mb-2xs text-step--1 font-semibold uppercase tracking-eyebrow text-muted">
+        Latest
+      </p>
+      {#if featured.date}
+        <div class="lead__date">{formatDate(featured.date)}</div>
+      {/if}
+      <h2 class="lead__title">
+        <a href={featured.permalink}>{featured.title}</a>
+      </h2>
+      {#if featured.fields.description}
+        <p class="lead__excerpt">{featured.fields.description}</p>
+      {/if}
+      <a href={featured.permalink} class="lead__link">
+        Read the post<span aria-hidden="true"> &rarr;</span>
+      </a>
+    </article>
+  {/if}
 
-  <!-- The size-gated tag filter: rendered only once the archive grows past the threshold, where a
-       per-tag narrowing earns its chrome. The All reset clears the selection; each option is a
-       vocabulary label over an in-use slug value. -->
-  {#if entries.length > TAG_FILTER_MIN_ENTRIES && tagOptions.length > 0}
-    <div class="tag-filter" role="group" aria-label="Filter by tag">
-      <button
-        type="button"
-        class="tag-filter__option"
-        aria-pressed={selected === ''}
-        onclick={() => (selected = '')}
-      >
-        All
-      </button>
-      {#each tagOptions as option (option.value)}
+  <div class="index">
+    <div class="index__head">
+      <p class="m-0 text-step--1 font-semibold uppercase tracking-eyebrow text-muted">Archive</p>
+      <span class="index__count">
+        {rest.length}
+        {rest.length === 1 ? 'entry' : 'entries'}
+      </span>
+    </div>
+
+    <!-- The size-gated tag filter: rendered only once the archive grows past the threshold, where a
+         per-tag narrowing earns its chrome. The All reset clears the selection; each option is a
+         vocabulary label over an in-use slug value. -->
+    {#if entries.length > TAG_FILTER_MIN_ENTRIES && tagOptions.length > 0}
+      <div class="tag-filter" role="group" aria-label="Filter by tag">
         <button
           type="button"
           class="tag-filter__option"
-          aria-pressed={selected === option.value}
-          onclick={() => (selected = option.value)}
+          aria-pressed={selected === ''}
+          onclick={() => (selected = '')}
         >
-          {option.label}
+          All
         </button>
-      {/each}
-    </div>
-  {/if}
-
-  {#each filtered as post (post.id)}
-    <article class="entry" class:entry--undated={!post.date}>
-      {#if post.date}
-        <div class="entry__date">{formatDate(post.date)}</div>
-      {/if}
-      <div>
-        <h2 class="entry__title">
-          <a href={post.permalink}>{post.title}</a>
-        </h2>
-        {#if post.fields.description}
-          <p class="entry__excerpt">{post.fields.description}</p>
-        {/if}
+        {#each tagOptions as option (option.value)}
+          <button
+            type="button"
+            class="tag-filter__option"
+            aria-pressed={selected === option.value}
+            onclick={() => (selected = option.value)}
+          >
+            {option.label}
+          </button>
+        {/each}
       </div>
-    </article>
-  {/each}
+    {/if}
+
+    {#each rest as post (post.id)}
+      <article class="entry" class:entry--undated={!post.date} data-cairn-post>
+        {#if post.date}
+          <div class="entry__date">{formatDate(post.date)}</div>
+        {/if}
+        <div>
+          <h2 class="entry__title">
+            <a href={post.permalink}>{post.title}</a>
+          </h2>
+          {#if post.fields.description}
+            <p class="entry__excerpt">{post.fields.description}</p>
+          {/if}
+        </div>
+      </article>
+    {/each}
+  </div>
 </section>
 
 <style>
-  /* The archival index. A base-300 top rule opens it; each entry is a two-column grid (a fixed date
-     column and the title/excerpt body) over a hairline. All color and rhythm reads the tokens. */
-  .index {
+  /* The listing: a top hairline opens the whole section (the previous single-list treatment), with
+     the lead and the tightened index each carrying their own rhythm below it. */
+  .listing {
     border-top: var(--border) solid var(--color-base-300);
     padding-top: var(--spacing-s);
     margin-bottom: var(--spacing-2xl);
   }
+
+  /* The lead card: the newest entry, set larger than an index row and closed by its own hairline
+     before the archive starts. */
+  .lead {
+    padding-bottom: var(--spacing-l);
+    margin-bottom: var(--spacing-l);
+    border-bottom: var(--border) solid var(--color-card-border);
+  }
+  .lead__date {
+    margin-bottom: var(--spacing-3xs);
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+  .lead__title {
+    margin: 0 0 var(--spacing-2xs);
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-step-4);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+  }
+  .lead__title a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .lead__title a:hover {
+    color: var(--color-primary);
+  }
+  .lead__excerpt {
+    margin: 0 0 var(--spacing-s);
+    max-width: 38rem;
+    font-size: var(--text-step-1);
+    line-height: var(--leading-snug);
+    color: var(--color-muted);
+  }
+  .lead__link {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 600;
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+  .lead__link:hover {
+    text-decoration: underline;
+  }
+  .lead__link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
   .index__head {
     display: flex;
     align-items: baseline;

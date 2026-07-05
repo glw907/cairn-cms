@@ -14,10 +14,12 @@ test('the size-gated tag filter narrows the archive and the All reset restores i
   const filter = page.getByRole('group', { name: 'Filter by tag' });
   await expect(filter).toBeVisible();
 
-  // The index opens unfiltered: All is pressed and the full archive shows.
+  // The index opens unfiltered: All is pressed and the full archive shows. The newest entry sits in
+  // its own lead treatment above the index, so the count spans both: `data-cairn-post` marks a post
+  // row wherever it renders (the lead card or an index entry).
   const allOption = filter.getByRole('button', { name: 'All' });
   await expect(allOption).toHaveAttribute('aria-pressed', 'true');
-  const entries = page.locator('.index .entry');
+  const entries = page.locator('[data-cairn-post]');
   const total = await entries.count();
   expect(total).toBeGreaterThan(12);
 

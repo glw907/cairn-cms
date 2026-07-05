@@ -396,6 +396,12 @@
   .prose .callout-points {
     margin: 0.5rem 0 0;
   }
+  /* The points slot is optional (a callout with no points still renders the ul); an empty list keeps
+     its top margin and reads as a phantom gap below the body text. Zero it when there is nothing in
+     the list. */
+  .prose .callout-points:empty {
+    margin: 0;
+  }
 
   /* Alert: the second directive, built from the cairn render helpers (a section
      with a card-body, an ec-head holding an optional icon and the card-title,
@@ -577,10 +583,19 @@
 
   /* FAQ: a native <details>/<summary> disclosure. The default marker is hidden and replaced by the
      chevron glyph in the summary, which rotates open (a non-color state cue, matching the task-list
-     checkbox's real-control cue elsewhere in this sheet). */
+     checkbox's real-control cue elsewhere in this sheet). A run of several FAQs reads as a divided
+     list, each row closed by its own bottom hairline with no outer box; a single question has no
+     neighbor to divide it from, so a bare bottom rule under it reads as a stray line rather than a
+     component. `:only-of-type` (there is exactly one `<details>` in the surrounding flow) gives that
+     lone case a full bordered container instead. */
   .prose .faq {
     border-bottom: var(--border) solid var(--color-card-border);
     padding-block: var(--spacing-s);
+  }
+  .prose .faq:only-of-type {
+    border: var(--border) solid var(--color-card-border);
+    border-radius: var(--radius-box);
+    padding: var(--spacing-s) var(--spacing-m);
   }
   .prose .faq-question {
     display: flex;
@@ -617,5 +632,28 @@
   }
   .prose .faq-answer > * + * {
     margin-top: var(--spacing-2xs);
+  }
+
+  /* Markdown slots (a callout body, an alert body, an FAQ answer) accept full markdown, not just
+     inline text, so an author can drop in a heading or an image the same as anywhere else in a post.
+     With no cap a nested heading would render at the top-level `.prose h1`/`h2`/`h3` size, blowing out
+     a component sized for an aside; a nested image would run at its natural width with no ceiling.
+     Scale both down to something that reads as an in-flow label and a contained picture instead. */
+  .prose .callout-body :is(h1, h2, h3, h4, h5, h6),
+  .prose .alert-body :is(h1, h2, h3, h4, h5, h6),
+  .prose .faq-answer :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: var(--text-step-0);
+    line-height: var(--leading-snug);
+    letter-spacing: normal;
+    margin: 0;
+  }
+  .prose .callout-body img,
+  .prose .alert-body img,
+  .prose .faq-answer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-selector);
   }
 }

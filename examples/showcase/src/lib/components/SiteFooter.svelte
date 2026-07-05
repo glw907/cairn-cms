@@ -1,8 +1,10 @@
 <!-- @component
 The showcase's public site footer: an owned, copy-in chrome component on the token layer. It sits on
 `base-200` over a top hairline and carries the brand mark, a footer nav, and a fine-print line. Every
-colour and size reads a DaisyUI role utility or a cairn token, never a literal. A site owner edits
-this file; the look re-skins from `theme.css`.
+colour and size reads a DaisyUI role utility or a cairn token, never a literal. The inner content caps
+at `--container-measure`, matching the header and the article/home reading column, so the footer's
+left edge lines up with the body copy above it. A site owner edits this file; the look re-skins from
+`theme.css`.
 -->
 <script lang="ts">
   /** A footer-nav entry: the visible label and the path it links to. */
@@ -21,7 +23,7 @@ this file; the look re-skins from `theme.css`.
   class="site-footer mt-2xl border-t border-base-300 bg-base-200"
 >
   <div
-    class="mx-auto flex max-w-measure-wide flex-wrap items-center justify-between gap-m px-m py-xl"
+    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xl"
   >
     <a
       href="/"

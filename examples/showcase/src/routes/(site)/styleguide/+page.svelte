@@ -113,7 +113,6 @@ or extend it; nothing here is a literal a re-skin would miss.
 
 <div class="sg">
   <header class="sg-masthead">
-    <p class="sg-eyebrow">The design system</p>
     <h1 class="sg-title">Styleguide</h1>
     <p class="sg-lead">
       Everything the public theme ships so far, on the tokens a site owner re-skins. The page
@@ -335,14 +334,6 @@ or extend it; nothing here is a literal a re-skin would miss.
 
   .sg-masthead {
     margin-bottom: var(--spacing-xl);
-  }
-  .sg-eyebrow {
-    margin: 0 0 var(--spacing-2xs);
-    font-size: var(--text-step--1);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: var(--tracking-eyebrow);
-    color: var(--color-muted);
   }
   .sg-title {
     margin: 0;

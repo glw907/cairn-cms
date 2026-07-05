@@ -8,10 +8,11 @@ import { cairn } from '$lib/cairn.config';
 export const prerender = true;
 
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
-// a link, an unordered list, an ordered list, a task list, a blockquote, a pull-quote, inline
-// code, two fenced blocks in different languages (to show the highlighter across token kinds), a
-// table, a horizontal rule, a figure, and the two directive components (callout note/tip/warning and
-// the alert). It doubles as documentation, the bar's "the prose is the documentation" principle.
+// a link, an unordered list, an ordered list, a task list, a blockquote, inline code, two fenced
+// blocks in different languages (to show the highlighter across token kinds), a table, a horizontal
+// rule, a figure, and the full component kit (callout note/tip/warning, alert, icon, cta, video,
+// faq, and pull-quote, now the real directive rather than a hand-styled paragraph). It doubles as
+// documentation, the bar's "the prose is the documentation" principle.
 const SAMPLE = `<p class="lead">This is the reading surface. Every element below is rendered by the same theme a reader sees, so the styleguide shows the real prose output rather than an imitation of it.</p>
 
 You write in markdown, and the surface binds each element to the theme tokens. Change one token and the whole surface, this article included, re-skins in lockstep.
@@ -41,12 +42,13 @@ Inside a paragraph you can make a word **bold** or *italic*, and link to [the ca
 
 > A blockquote, set apart with a left accent rule and italic type, for a passage worth slowing down for.
 
-<p class="pullquote">A pull-quote reads in the display face, set apart from the surrounding text.</p>
+:::pull-quote[A pull-quote reads in the display face, set apart from the surrounding text.]
+:::
 
 For a short snippet inside a sentence, wrap it in backticks so a filename like \`cairn.config.ts\` reads as code. For anything longer, a fenced block turns on the highlighter:
 
 \`\`\`js
-// A render adapter is the one seam the engine asks each site to fill.
+// The one seam the engine asks each site to fill.
 export function render(markdown) {
   const trimmed = markdown.trim();
   return renderMarkdown(trimmed);
@@ -57,8 +59,8 @@ The highlighting colors come from the same token set as the rest of the page, so
 
 \`\`\`css
 :root {
-  --color-primary: oklch(45% 0.1 248); /* the brand accent */
-  --font-display: 'Figtree Variable', sans-serif; /* headings and pull-quotes */
+  --color-primary: oklch(45% 0.1 248); /* the accent */
+  --font-display: 'Figtree Variable', sans-serif;
 }
 \`\`\`
 
@@ -101,6 +103,27 @@ A warning callout flags something the reader needs to be careful about before th
 
 :::alert[Check the date before you publish]{role=caution}
 An alert is a heavier signal than a callout, set in a bordered card with an icon. Save it for the rare note a reader must not miss.
+:::
+
+A standalone icon is a single glyph with no card and no title, for a short line that wants a marker of its own:
+
+:::icon{name="flag"}
+:::
+
+A CTA is a single link styled like a button, for pointing the reader at the one next step that matters:
+
+:::cta{label="Read the getting-started guide" url="https://example.com/guide" variant="primary"}
+:::
+
+A video link never requests the platform until a reader clicks through; before that it is a static panel naming where the link goes:
+
+:::video{url="https://www.youtube.com/watch?v=dQw4w9WgXcQ" title="A short walkthrough"}
+:::
+
+An FAQ question is a native disclosure widget that works with no JavaScript, its answer taking full markdown:
+
+:::faq{question="Does the FAQ component support formatting in the answer?"}
+Yes, including a **bold** term or a [link](https://example.com).
 :::
 
 ## Islands

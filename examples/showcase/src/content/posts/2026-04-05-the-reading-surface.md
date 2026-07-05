@@ -67,7 +67,7 @@ The line sets in the display face and picks up an opening quotation mark in the 
 For a short snippet inside a sentence, wrap it in backticks, so a filename like `cairn.config.ts` reads as code. For anything longer, use a fenced block: three backticks, the language name, your code, then three more backticks. Naming the language turns on syntax highlighting, which the theme colors from the same palette as everything else.
 
 ```js
-// A render adapter is the one seam the engine asks each site to fill.
+// The one seam the engine asks each site to fill.
 export function render(markdown) {
   return renderMarkdown(markdown);
 }
@@ -76,10 +76,10 @@ export function render(markdown) {
 The highlighting colors come from a small set of variables in the theme, the same ones that color the rest of the page. Change the palette and every code block recolors with it.
 
 ```css
-/* These tokens drive the whole reading surface. Edit them to re-skin the site. */
+/* These tokens drive the reading surface. */
 :root {
   --color-primary: oklch(55% 0.13 250); /* the accent */
-  --font-display: 'Figtree Variable', sans-serif; /* headings and pull-quotes */
+  --font-display: 'Figtree Variable', sans-serif;
 }
 ```
 

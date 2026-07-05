@@ -29,6 +29,17 @@ All notable changes to this project are recorded here, most recent first.
   prose gestures, the cairn-glyph `hr`, the diamond `ul` bullet, and the margin-hanging
   pull-quote, move behind an opt-in `.prose[data-flourish]` hook in `prose.css`, kept in place
   for the planned Waymark theme layer to re-enable with one attribute.
+- A design-review craft pass on the neutral template: the header and footer inner content now
+  caps at the same reading measure as the article and home body, so the chrome's left edge
+  lines up with the body copy instead of centering independently at a wider band; the uppercase
+  eyebrow label is dosed down to where it differentiates two sections on the same page (the
+  home's new "Latest"/"Archive" split) rather than repeating on every masthead; the home gives
+  its newest entry a lead treatment above a tightened archive index; and the styleguide now
+  demonstrates the full component kit (`icon`, `cta`, `video`, `faq`, and the real `pull-quote`
+  directive in place of a hand-styled paragraph), a lone FAQ renders in its own bordered
+  container, an empty callout points list no longer leaves a phantom gap, markdown nested in a
+  callout/alert/FAQ slot scales down instead of rendering at full display size, and the two
+  demo code samples are reworded to fit the column instead of clipping mid-word.
 
 ### Editor
 

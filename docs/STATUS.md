@@ -54,6 +54,13 @@ reveal, guide + tutorial exits, scaffolder when it ships; AND a Waymark section 
 narrative with the link (both, per Geoff). "Templates" catalogue item =
 trigger-based, when a second template exists.**
 
+**907.LIFE REBUILT (2026-07-05, overnight): all five tasks green on the rebuild-waymark
+branch — permalink crawl diff exact on all 26 paths (and the rebuild fixes a live-site
+tag-page self-redirect bug), responsive check caught and fixed a real 320px table blowout,
+17/17 tests, the deploy HELD for Geoff. Template improvements landed at cairn-cms: the
+manual theme toggle (note: the masthead now stacks at desktop as a side effect — flagged
+for Geoff's eyes) and the table-scroll wiring lesson. ecxc.ski inventory running.**
+
 **0.80.0 PUBLISHED (2026-07-05, OIDC verified on the registry): the docs tree, the engine
 pass, the neutral Waymark split + cairn theme, the responsive hardening, the rename sweep —
 one minor, no Consumers-must lines. CI all-green at the cut. NOW EXECUTING: the 907.life

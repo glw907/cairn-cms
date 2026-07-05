@@ -124,6 +124,45 @@ never an editor-facing option.
 `'noopener noreferrer'`. Pass a different string to change it, or `false` if your site already
 hardens anchors itself.
 
+## Add your own remark or rehype plugins
+
+`RendererOptions` also carries `remarkPlugins` and `rehypePlugins`, so a site can extend the
+pipeline instead of post-processing `renderMarkdown`'s output string. A remark plugin runs after
+cairn's own markdown-stage steps (directive stamping, `cairn:` link resolution, figures, `media:`
+resolution). A rehype plugin runs after cairn's own hast-stage steps (dispatch, the sanitize floor,
+heading slugs, highlighting, anchor hardening, the sink guard). Both run over the already-built
+tree, so a site plugin composes with the engine instead of re-parsing HTML.
+
+A markdown table renders as a bare `<table>` with no wrapper. `.prose table { display: block;
+overflow-x: auto }` alone makes a narrow viewport scroll a wide table instead of squeezing its
+columns, but it also strips the table's row and cell roles from the accessibility tree. The fix
+keeps the table a real table and scrolls a wrapper around it instead, as a `rehypePlugins` entry:
+
+```ts
+import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
+import { visit, SKIP } from 'unist-util-visit';
+import type { Root, Element } from 'hast';
+
+function rehypeTableScroll() {
+  return (tree: Root) => {
+    visit(tree, 'element', (node: Element, index, parent) => {
+      if (node.tagName !== 'table' || !parent || index === undefined) return;
+      parent.children[index] = {
+        type: 'element',
+        tagName: 'div',
+        properties: { className: ['table-scroll'], role: 'region', tabIndex: 0 },
+        children: [node],
+      };
+      return SKIP;
+    });
+  };
+}
+
+const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+  rehypePlugins: [rehypeTableScroll],
+});
+```
+
 ## Related reference
 
 [`createRenderer`](../reference/core.md#createrenderer) and

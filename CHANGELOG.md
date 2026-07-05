@@ -84,6 +84,15 @@ All notable changes to this project are recorded here, most recent first.
 - Editor-facing vocabulary: the create dialog, rename dialog, and media forms say "Address"
   (formerly "Slug"), and the admin sidebar's media item says "Library".
 
+### Added
+
+- `createRenderer`'s `RendererOptions` gains a `remarkPlugins`/`rehypePlugins` seam: a site's own
+  unified plugins run after cairn's own markdown- and hast-stage steps, over the already-built
+  tree, in place of re-parsing `renderMarkdown`'s output string. Both owned sites' local
+  table-scroll post-processing (a hand-rolled `unified().use(rehypeParse, ...)` pipeline run over
+  the returned HTML) migrates onto `rehypePlugins`. No consumer action required; the addition is
+  additive.
+
 ### Fixed
 
 - `examples/showcase/svelte.config.js` now sets `csrf: { checkOrigin: false }`, matching the

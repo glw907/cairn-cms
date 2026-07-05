@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { h } from 'hastscript';
+import { visit, SKIP } from 'unist-util-visit';
+import type { Root as HastRoot, Element } from 'hast';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 
@@ -81,5 +83,74 @@ describe('createRenderer', () => {
     // JSON double-quotes as the &#x22; hex entity, not &quot;); the absence of a quote before 1.609
     // is what proves number coercion rather than a quoted string.
     expect(html).toMatch(/data-cairn-props="[^"]*&#x22;rate&#x22;:1\.609/);
+  });
+
+  describe('the rehype/remark plugin seam', () => {
+    /** A site's own rehype step, wrapping every table so the seam has a real use case to prove. */
+    function rehypeWrapTables() {
+      return (tree: HastRoot) => {
+        visit(tree, 'element', (node: Element, index, parent) => {
+          if (node.tagName !== 'table' || !parent || index === undefined) return;
+          const wrapper: Element = {
+            type: 'element',
+            tagName: 'div',
+            properties: { className: ['table-scroll'] },
+            children: [node],
+          };
+          parent.children[index] = wrapper;
+          return SKIP;
+        });
+      };
+    }
+
+    it('runs a site rehypePlugins entry over the rendered tree', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+        rehypePlugins: [rehypeWrapTables],
+      });
+      const html = await renderMarkdown('| a | b |\n| - | - |\n| 1 | 2 |');
+      expect(html).toContain('class="table-scroll"');
+      expect(html).toContain('<table>');
+    });
+
+    it('appends site rehypePlugins after the engine sanitize floor, so a raw script never reaches them', async () => {
+      let sawScript = false;
+      const probe = () => (tree: HastRoot) => {
+        visit(tree, 'element', (node: Element) => {
+          if (node.tagName === 'script') sawScript = true;
+        });
+      };
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+        rehypePlugins: [probe],
+      });
+      await renderMarkdown('<script>alert(1)</script>\n\nText');
+      expect(sawScript).toBe(false);
+    });
+
+    it('appends site remarkPlugins after cairn: link resolution', async () => {
+      let sawResolvedUrl: string | undefined;
+      const probe = () => (tree: unknown) => {
+        visit(tree as Parameters<typeof visit>[0], 'link', (node: { url: string }) => {
+          sawResolvedUrl = node.url;
+        });
+      };
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+        remarkPlugins: [probe],
+      });
+      await renderMarkdown('[a post](cairn:posts/hello)', {
+        resolve: () => '/posts/hello',
+      });
+      expect(sawResolvedUrl).toBe('/posts/hello');
+    });
+
+    it('exposes the site plugins on the returned remark/rehype arrays', () => {
+      const customRemark = () => () => {};
+      const customRehype = () => () => {};
+      const r = createRenderer(defineRegistry({ components: [] }), {
+        remarkPlugins: [customRemark],
+        rehypePlugins: [customRehype],
+      });
+      expect(r.remarkPlugins[r.remarkPlugins.length - 1]).toBe(customRemark);
+      expect(r.rehypePlugins[r.rehypePlugins.length - 1]).toBe(customRehype);
+    });
   });
 });

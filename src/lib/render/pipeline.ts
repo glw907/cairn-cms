@@ -39,12 +39,26 @@ export interface RendererOptions {
    *  it, or `false` to disable the injection (a site that owns its own anchor hardening).
    */
   anchorRel?: string | false;
+  /**
+   * Additional remark plugins, run after cairn's own remark steps (directive stamping, `cairn:`
+   *  link resolution, figures, `media:` resolution) and before the remark-to-rehype conversion. A
+   *  site's own markdown-stage transform composes here, seeing the engine's already-resolved tree.
+   */
+  remarkPlugins?: PluggableList;
+  /**
+   * Additional rehype plugins, run after cairn's own rehype steps (dispatch, the sanitize floor,
+   *  heading slugs, highlighting, anchor hardening, the sink guard) and before stringification. A
+   *  site's own post-render transform, such as wrapping every table in a scrollable region,
+   *  composes here over the hast tree instead of re-parsing the rendered HTML string.
+   */
+  rehypePlugins?: PluggableList;
 }
 
 /**
  * Compose a site's render pipeline from its component registry: directive syntax to
- *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the remark/
- *  rehype plugin arrays (so the admin editor preview can reuse the exact same set).
+ *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the fully composed
+ *  remark/rehype plugin arrays, including any `RendererOptions.remarkPlugins`/`rehypePlugins`
+ *  a site supplied, so the admin editor preview can reuse the exact same set.
  */
 export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
@@ -56,6 +70,7 @@ export function createRenderer(
     remarkResolveCairnLinks,
     remarkFigure,
     remarkResolveMedia,
+    ...(options.remarkPlugins ?? []),
   ];
   // The sanitize floor runs after rehype-raw (so author raw HTML is parsed, then cleaned) and
   // before the dispatch (so the site's trusted build() output and its inline SVG icons are never
@@ -84,6 +99,8 @@ export function createRenderer(
   // The sink guard runs last, over the fully-built tree, so it neutralizes a sink a component
   // build() emitted after the floor. Gated by the same switch as the floor.
   if (!options.unsafeDisableSanitize) rehypePlugins.push(rehypeSinkGuard);
+  // A site's own rehype plugins run last of all, over the fully sanitized, dispatched tree.
+  rehypePlugins.push(...(options.rehypePlugins ?? []));
   const processor = unified()
     .use(remarkParse)
     .use(remarkGfm)

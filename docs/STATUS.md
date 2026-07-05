@@ -79,6 +79,11 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**907.LIFE DEPLOYED TO PRODUCTION (Geoff's go, 2026-07-05): the rebuild is live — 27/27
+URLs verified at exact paths, toggle + archive composition rendering. Remaining human step:
+the live admin smoke's magic-link click at 907.life/admin (Geoff, any time). ecxc deploy
+still held pending the redo.**
+
 **QUEUED BEHIND THE HARVEST PASS (Geoff, 2026-07-05): the THEME-PORT PROOF SET — two or
 three famous themes re-expressed as cairn theme layers over Waymark (candidates: Casper the
 image-led magazine, PaperMod the dense utility blog, a Bear-Blog-class radical minimum; MIT

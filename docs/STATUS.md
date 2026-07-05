@@ -79,6 +79,12 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**HANDBOOK.AKSAILINGCLUB.ORG QUEUED (Geoff, 2026-07-05): the club's handbook site moves
+to cairn — filed adjacent to the aksailingclub effort. A handbook is docs-shaped, so it
+naturally consumes the Starlight-port/Topo learning; sequencing detail settles at the
+aksailingclub brainstorm. (Fitting: this handbook's prose IS the voice corpus's
+instructional exemplar.)**
+
 **907 TYPOGRAPHY RULING (Geoff, 2026-07-05): RESTORE the Spectral + Karla pairing
 (Spectral body, Karla display, Monaspace Neon mono; et-book retired). The polish pass
 executes on it: the wordmark split per the audit's exact spec, article meta chrome (date/

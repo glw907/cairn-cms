@@ -230,15 +230,64 @@ function bareHeadingNames(pageText) {
   return [...pageText.matchAll(re)].map((m) => m[1]);
 }
 
-// A top-level `declare function`/`declare const`/`declare class` statement in a signature block.
-// The bare (undeclared) `interface`/`type`/`class` form is excluded: a signature block
-// legitimately shows a dependent, non-exported type alongside the export it supports, and only
-// the `declare`-prefixed form is this codebase's convention for a top-level function, const, or
-// class export.
+const TS_FENCE_OPEN_RE = /^```(?:ts|typescript)\s*$/;
+const FENCE_CLOSE_RE = /^```\s*$/;
+
+// Every fenced ```ts/```typescript code block's raw body text, in document order.
+/** @param {string} pageText */
+function tsFencedBlocks(pageText) {
+  const lines = pageText.split('\n');
+  /** @type {string[]} */
+  const blocks = [];
+  for (let i = 0; i < lines.length; i++) {
+    if (!TS_FENCE_OPEN_RE.test(lines[i])) continue;
+    let j = i + 1;
+    while (j < lines.length && !FENCE_CLOSE_RE.test(lines[j])) j++;
+    blocks.push(lines.slice(i + 1, j).join('\n'));
+    i = j;
+  }
+  return blocks;
+}
+
+// Whether every top-level statement in a ts code block is an ambient declaration (`declare
+// function`, `declare const`, `declare class`), the reference arm's convention for showing an
+// export's signature with no runnable body, rather than a runnable usage example. A usage example
+// mixes a real import and real code with a `declare const` naming a fictional local the
+// snippet-typecheck gate needs standing up (`declare const fileText: string;` beside a real
+// `parseMarkdown(fileText)` call, or `declare const entry: ContentEntry;` beside a real call that
+// consumes it); that name is scaffolding for the snippet's own type-check, never an export claim,
+// so it must not enter the stale-name candidate pool. A signature-only block and a usage block
+// share the identical `declare const` syntax, so only the surrounding statements (an import, a
+// real call) tell them apart, which is why this reads the block's own AST rather than trusting
+// the name regex the caller applies next.
+/** @param {string} code */
+function isSignatureOnlyBlock(code) {
+  const source = ts.createSourceFile('block.ts', code, ts.ScriptTarget.ES2022, true);
+  if (source.statements.length === 0) return false;
+  return source.statements.every((stmt) => {
+    const hasDeclare =
+      ts.canHaveModifiers(stmt) &&
+      (ts.getCombinedModifierFlags(/** @type {ts.Declaration} */ (/** @type {unknown} */ (stmt))) &
+        ts.ModifierFlags.Ambient) !==
+        0;
+    return hasDeclare && (ts.isFunctionDeclaration(stmt) || ts.isVariableStatement(stmt) || ts.isClassDeclaration(stmt));
+  });
+}
+
+// A top-level `declare function`/`declare const`/`declare class` name from a signature-only fenced
+// block. Scoped to a whole, signature-only block (see `isSignatureOnlyBlock`) rather than the raw
+// page text, so a usage example's scaffolding `declare const` never contributes a candidate; the
+// documented-name inventory this feeds stays anchored to the page's structural signature blocks,
+// the same convention `bareHeadingNames` and `typesTableNames` read from headings and table rows.
 /** @param {string} pageText */
 function declaredNames(pageText) {
   const re = /declare\s+(?:function|const|class)\s+([A-Za-z_$][\w$]*)/g;
-  return [...pageText.matchAll(re)].map((m) => m[1]);
+  const names = [];
+  for (const block of tsFencedBlocks(pageText)) {
+    if (!isSignatureOnlyBlock(block)) continue;
+    names.push(...[...block.matchAll(re)].map((m) => m[1]));
+  }
+  return names;
 }
 
 // One reference page per importable subpath. `excludeDts` drops a re-exported surface that is

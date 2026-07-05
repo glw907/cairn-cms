@@ -169,4 +169,24 @@ describe('staleNames', () => {
     const text = 'This page mentions `SomeOtherExport` only in a sentence, never as a heading or row.';
     expect(staleNames(['SomeOtherExport'], text)).toEqual([]);
   });
+
+  it('does not flag a `declare const` scaffolding name inside a runnable usage example', () => {
+    // The snippet-typecheck gate needs a fictional local to stand in for a value the reader
+    // already has; `fileText` here is scaffolding for `parseMarkdown(fileText)`, not an export.
+    const text = [
+      '```ts',
+      "import { parseMarkdown } from '@glw907/cairn-cms';",
+      '',
+      'declare const fileText: string;',
+      '',
+      'const { frontmatter, body } = parseMarkdown(fileText);',
+      '```',
+    ].join('\n');
+    expect(staleNames(['parseMarkdown'], text)).toEqual([]);
+  });
+
+  it('still flags a `declare const` naming a removed export inside a signature-only block', () => {
+    const text = ['```ts', 'declare const kept: string;', 'declare const removed: string;', '```'].join('\n');
+    expect(staleNames(['kept'], text)).toEqual(['removed']);
+  });
 });

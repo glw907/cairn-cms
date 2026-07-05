@@ -97,6 +97,17 @@ surface reads as one clean sans-serif voice with no serif accent.
   used: a sans face reads large at a lower size than a serif did at the same step. The body-and-below
   steps (`-1`, `0`, `1`: caption, body, lead) are unchanged.
 
+## The ultrawide posture (locked)
+
+Above ~1440px the root font-size scales smoothly via a `clamp()` on `html` (`site.css`) to ~112.5%
+at ~2200px and holds flat past that cap; at or below 1440px it floors at exactly 1rem, so a laptop
+or a standard desktop renders unchanged. Because the whole theme is rem-based, the reading measure
+(`--container-measure: 44rem`) included, this one root value grows the entire surface
+proportionally rather than the layout reflowing into a wider grid or new columns at the ultrawide
+breakpoint. That keeps the measure discipline (the column widens by the same percentage as the type
+that fills it, never past a comfortable line length) while a 2560px render fills meaningfully more
+of the viewport than a layout pinned to its 1440px proportions.
+
 ## The chrome (`SiteHeader.svelte`, `SiteFooter.svelte`)
 
 - A sticky header on a translucent `base-100` (`color-mix … 88%` plus `backdrop-filter`) with a

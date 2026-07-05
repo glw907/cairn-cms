@@ -20,14 +20,25 @@
      - Tier 2 (owned): the `.banner*` demo block below. It reads the theme info tokens, so re-skinning
        the theme re-skins the demo along with the rest of the page. */
 
-/* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
-   focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
-   the gap to the header from the same tokens the header uses: the nav links' own `min-h-11` touch
-   target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
-   `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
-   1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
-   87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
+/* The ultrawide posture (locked; see docs/internal/public-design-system.md). Every layout dimension
+   in this theme is rem-based, the reading measure included, so growing the root font-size grows the
+   whole surface proportionally with no separate wide-layout reflow. Below ~1440px (phone through a
+   laptop screen) the clamp floors at exactly 1rem; nothing here changes at or under that breakpoint.
+   From ~1440px to ~2200px it scales smoothly to ~112.5% (18px), then holds flat past the cap, so a
+   2560px render fills meaningfully more of the viewport while the 44rem measure keeps its
+   proportions rather than stretching into an over-wide line. The two constants below are the fluid
+   formula's intercept and slope for that 1440-to-2200 range (16px to 18px), rounded down a touch so
+   the floor breakpoint (1440px) never computes a hair above 1rem. */
 html {
+  font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
+
+  /* The sticky-header scroll offset. SiteHeader is `sticky top-0`, so an in-page anchor jump or a
+     focused heading would otherwise land under the band (WCAG 2.4.11, focus not obscured). This sizes
+     the gap to the header from the same tokens the header uses: the nav links' own `min-h-11` touch
+     target (2.75rem, the tallest thing in the row, taller than the wordmark) plus its vertical
+     `--spacing-xs` padding, plus a 1rem cushion, so the offset re-skins with the space scale. At a
+     1280px desktop viewport the rendered header is about 72px (~4.5rem) and this resolves to about
+     87px (~5.4rem), so a jumped-to or focused heading clears the band with a comfortable margin. */
   scroll-padding-top: calc(2.75rem + 2 * var(--spacing-xs) + 1rem);
 }
 

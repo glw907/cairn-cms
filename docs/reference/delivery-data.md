@@ -134,6 +134,7 @@ function sitemapView(
   site: SiteResolver,
   descriptors: ConceptDescriptor[],
   origin: string,
+  extraRoutes?: string[],
 ): SitemapUrl[];
 ```
 
@@ -141,6 +142,47 @@ Project a site's routable concepts into sitemap URLs. It iterates the concepts w
 `routing.routable` flag is set and maps each entry to a `SitemapUrl`. The `loc` is the
 origin-anchored permalink. The `lastmod` is the entry's `updated` date when present, else its `date`.
 An embedded, non-routable concept never appears. Pass `origin` because each `loc` is absolute.
+
+`extraRoutes` carries the site's own bespoke, non-concept pages, such as an about page or a tag
+index, as root-relative paths like `['/about', '/tags']`. Each becomes an origin-anchored
+`SitemapUrl` with no `lastmod`, ahead of every concept URL, in the order given. Omit it and only
+the concept URLs appear.
+
+### `unlistedRoutes`
+
+Stability tier: Extension API.
+
+```ts
+function unlistedRoutes(routeIds: string[], listedPaths: string[]): string[];
+```
+
+Flag the site's own static route ids missing from `listedPaths`, typically the same `extraRoutes`
+array passed to `sitemapView`. Pass it the route ids under your public route tree, one per page
+directory, using SvelteKit's own route id form, such as `/(site)/about`. The check strips a
+route-group segment like `(site)` before comparing, since a group contributes no URL segment of
+its own. It also skips a dynamic route id, one carrying a `[param]` or `[...rest]` segment: a tag
+loop or a content index enumerates those per entry, never once by the route id itself. A site
+wires this helper into its own test suite, so a new page directory that never joined the
+sitemap's hand-list fails the build instead of shipping a silent gap:
+
+```ts
+import { unlistedRoutes } from '@glw907/cairn-cms/delivery';
+
+const EXTRA_ROUTES = ['/', '/about', '/archives', '/tags'];
+
+// Parentheses are a glob metacharacter, so a pattern naming a route group literally (for example
+// /src/routes/(site)/**) matches nothing; glob every +page.svelte in the project instead. A
+// dynamic route elsewhere (an admin catch-all) never trips the check, since unlistedRoutes skips
+// any route id carrying a `[param]` or `[...rest]` segment.
+const pageModules = import.meta.glob('/src/routes/**/+page.svelte');
+const routeIds = Object.keys(pageModules).map((path) =>
+  path.replace(/^\/src\/routes/, '').replace(/\/\+page\.svelte$/, ''),
+);
+
+if (unlistedRoutes(routeIds, EXTRA_ROUTES).length) {
+  throw new Error(`route missing from the sitemap: ${unlistedRoutes(routeIds, EXTRA_ROUTES).join(', ')}`);
+}
+```
 
 ### `buildRobots`
 

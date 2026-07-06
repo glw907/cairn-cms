@@ -98,6 +98,12 @@ All notable changes to this project are recorded here, most recent first.
   their local `table-scroll.ts` wiring in favor of the built-in default. No consumer action
   required for a site with no local table-scroll wiring of its own; a site that already wraps
   tables itself sets `tableScroll: false` to avoid a doubled wrapper.
+- `sitemapView` gains a fourth `extraRoutes` argument: a site's own bespoke, non-concept pages (an
+  about page, a tag index), as root-relative paths, become origin-anchored `SitemapUrl`s ahead of
+  the concept URLs, so a whole sitemap route can come from one call instead of a hand-built array.
+  A new `unlistedRoutes` helper flags a site's static page-route ids missing from that same list, so
+  a forgotten page directory fails the site's own test suite instead of shipping a silent sitemap
+  gap. No consumer action required; both additions are additive.
 
 ### Fixed
 

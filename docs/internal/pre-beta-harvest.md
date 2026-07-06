@@ -40,9 +40,10 @@ are ours until beta, which is the whole point of the window. Known contract ques
 - **Table-scroll as a built-in default** — QUEUED-CONFIRMED (second independent miss: the ecxc redo repeated 907's exact wiring gap). Default-on with opt-out
   kills the silent two-part contract. Behavior change to rendered output: breaking-adjacent;
   do it pre-beta.
-- **Sitemap extra-routes** — QUEUED. The helper's signature grows an extra-routes list +
-  the unlisted-route build check. Additive, but if the helper's shape is wrong, fix it
-  breakingly now.
+- **Sitemap extra-routes** — LANDED. `sitemapView` gained an `extraRoutes` argument and a new
+  `unlistedRoutes` helper flags a site's static page routes missing from that list. 907.life
+  migrated its hand-list onto both; ecxc-ski's migration is moot for now, its rebuild reverted to
+  a pinned pre-rebuild `^0.62.2` mid-pass (see the harvest pass 1 post-mortem).
 - **The fluid-clamp compounding class** — LANDED (the retune). Engine lesson: two fluid
   mechanisms must never share an axis range; the design doc carries the posture.
 - **check:readiness docsAnchor coupling** — CANDIDATE. Code anchors into doc headings drift

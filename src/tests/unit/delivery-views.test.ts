@@ -85,4 +85,23 @@ describe('sitemapView', () => {
     const post = urls.find((u) => u.loc.endsWith('/posts/hello'));
     expect(post?.lastmod).toBe('2026-05-09');
   });
+
+  it('prepends the origin-anchored extraRoutes, with no lastmod, ahead of the concept urls', () => {
+    const urls = sitemapView(site(), descriptors, ORIGIN, ['/', '/archives']);
+    expect(urls.slice(0, 2)).toEqual([
+      { loc: 'https://example.com/' },
+      { loc: 'https://example.com/archives' },
+    ]);
+    expect(urls.map((u) => u.loc).sort()).toEqual(
+      ['https://example.com/', 'https://example.com/about', 'https://example.com/archives', 'https://example.com/posts/hello'].sort(),
+    );
+  });
+
+  it('defaults extraRoutes to none', () => {
+    const urls = sitemapView(site(), descriptors, ORIGIN);
+    expect(urls.map((u) => u.loc).sort()).toEqual([
+      'https://example.com/about',
+      'https://example.com/posts/hello',
+    ]);
+  });
 });

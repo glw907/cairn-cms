@@ -43,9 +43,19 @@ export function feedView(site: SiteResolver, descriptors: ConceptDescriptor[], o
  * Project the `routable` concepts into sitemap URLs, in each concept's own order. `loc` is the
  *  origin-anchored permalink; `lastmod` is the entry's `updated` date when present, else its `date`.
  *  An embedded (non-routable) concept never appears.
+ *
+ *  `extraRoutes` carries the site's own bespoke, non-concept pages (an about page, a tag index) as
+ *  root-relative paths; each becomes an origin-anchored `SitemapUrl` with no `lastmod`, ahead of
+ *  every concept URL. Pair it with `unlistedRoutes` (from `./sitemap.js`) to catch a route the
+ *  site's own directory tree grew that this list forgot.
  */
-export function sitemapView(site: SiteResolver, descriptors: ConceptDescriptor[], origin: string): SitemapUrl[] {
-  const urls: SitemapUrl[] = [];
+export function sitemapView(
+  site: SiteResolver,
+  descriptors: ConceptDescriptor[],
+  origin: string,
+  extraRoutes: string[] = [],
+): SitemapUrl[] {
+  const urls: SitemapUrl[] = extraRoutes.map((path) => ({ loc: origin + path }));
   for (const descriptor of descriptors) {
     if (!descriptor.routing.routable) continue;
     const index = site.concept(descriptor.id);

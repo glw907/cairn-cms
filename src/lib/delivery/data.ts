@@ -10,7 +10,7 @@ export { siteDescriptors } from './site-descriptors.js';
 export { deriveExcerpt } from '../content/excerpt.js';
 export { buildRssFeed, buildJsonFeed } from './feeds.js';
 export type { FeedChannel, FeedItem } from './feeds.js';
-export { buildSitemap } from './sitemap.js';
+export { buildSitemap, unlistedRoutes } from './sitemap.js';
 export type { SitemapUrl } from './sitemap.js';
 export { feedView, sitemapView } from './views.js';
 export { buildRobots } from './robots.js';

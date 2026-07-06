@@ -271,6 +271,28 @@ feed-eligible concepts and no need for full content can skip the hand-written ma
 and sitemap URLs directly, summary-only, no render pass included. The [delivery data
 reference](../reference/delivery-data.md#feeds-sitemap-and-robots) documents both.
 
+A site also carries bespoke pages no concept describes, an about page, a tag index, and the like.
+`sitemapView`'s fourth argument lists those as root-relative paths, so the whole sitemap comes from
+one call instead of a hand-built array:
+
+```ts
+import { sitemapView, sitemapResponse, siteDescriptors } from '@glw907/cairn-cms/delivery';
+import { site, cairn, ORIGIN } from '$lib/content';
+import { siteConfig } from '$lib/cairn.config';
+
+const EXTRA_ROUTES = ['/', '/about', '/archives', '/tags'];
+
+export const GET = () => {
+  const urls = sitemapView(site, siteDescriptors(cairn, siteConfig), ORIGIN, EXTRA_ROUTES);
+  return sitemapResponse(urls);
+};
+```
+
+A page directory that grows under the site's own route group and never joins `EXTRA_ROUTES` ships
+a silent sitemap gap. `unlistedRoutes` catches it: hand it the route ids under that directory and
+the same `EXTRA_ROUTES` list, and assert the result is empty in the site's own test suite.
+The [delivery data reference](../reference/delivery-data.md#unlistedroutes) has the full example.
+
 ## Related reference
 
 [`createSiteIndexes`](../reference/delivery-data.md#createsiteindexes),

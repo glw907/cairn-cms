@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildSitemap } from '../../lib/delivery/sitemap.js';
+import { buildSitemap, unlistedRoutes } from '../../lib/delivery/sitemap.js';
 import { buildRobots } from '../../lib/delivery/robots.js';
 
 describe('buildSitemap', () => {
@@ -15,6 +15,32 @@ describe('buildSitemap', () => {
   it('omits lastmod when absent', () => {
     const about = xml.slice(xml.indexOf('/about'));
     expect(about).not.toContain('<lastmod>');
+  });
+});
+
+describe('unlistedRoutes', () => {
+  it('flags a static route id missing from the listed paths', () => {
+    const routeIds = ['/(site)/about', '/(site)/archives', '/(site)/tags'];
+    expect(unlistedRoutes(routeIds, ['/', '/about', '/tags'])).toEqual(['/archives']);
+  });
+
+  it('strips the route-group segment before comparing', () => {
+    expect(unlistedRoutes(['/(site)/about'], ['/about'])).toEqual([]);
+  });
+
+  it('never flags a dynamic route id, whose instances are enumerated per-entry', () => {
+    const routeIds = ['/(site)/tags/[tag]', '/(site)/[...path]'];
+    expect(unlistedRoutes(routeIds, [])).toEqual([]);
+  });
+
+  it('normalizes a route group root to the home path', () => {
+    expect(unlistedRoutes(['/(site)'], ['/'])).toEqual([]);
+    expect(unlistedRoutes(['/(site)'], [])).toEqual(['/']);
+  });
+
+  it('returns nothing when every static route id is listed', () => {
+    const routeIds = ['/(site)/about', '/(site)/tags'];
+    expect(unlistedRoutes(routeIds, ['/about', '/tags'])).toEqual([]);
   });
 });
 

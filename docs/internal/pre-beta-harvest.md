@@ -93,7 +93,11 @@ consumer, and the first site with several new shapes whose lessons land at named
 - **Engine candidates:** whatever the build's frictions surface.
 
 Triage lands the bounded items, ledgers the rest; the review's output also shapes the
-phase-2 (ops absorption) planning.
+phase-2 (ops absorption) planning — which now includes the EMAIL CONSOLIDATION (Geoff,
+2026-07-06): the club's three-vendor sending stack (SendGrid/Resend/SES-forms) retires
+onto Cloudflare Email Sending, routing evaluated, Workspace mailboxes assumed staying
+pending his call. Phase-1 rider: the aksailingclub.org sending-subdomain onboarding for
+the magic links.
 
 ## The site contract (Geoff, 2026-07-05: explicitly open to improve/break/extend)
 

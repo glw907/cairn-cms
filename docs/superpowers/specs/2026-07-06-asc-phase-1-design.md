@@ -46,10 +46,15 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   (education, guides, governance) get an explicit density strategy: section bands, asides
   and glosses, callouts, two-up groupings, and in-page TOCs on the longest pages — the
   component vocabulary the ecxc training page proves, tuned to ASC's voice.
-- **The mockup gate calibrates the dose:** before the build commits, candidates render a
-  long content page with the density toolkit at different intensities plus the home with
-  refined cards; Geoff picks from renders. The spec locks the direction; the mockups lock
-  the calibration.
+- **The UI/UX work session (a first-class phase-1 stage, between the device catalogue and
+  any build):** two sittings with Geoff. (1) THE SHOW-AND-TELL: curated exhibits from the
+  scroll-primed captures — the news cards at their best, the chrome-stacking at its
+  heaviest, the education page's full height, the responsive rough spots — so the
+  diagnosis is agreed over evidence. (2) THE CALIBRATION: candidates across three page
+  archetypes (home with refined cards; one long content page with the density toolkit at
+  two or three intensities; one post), rendered as scrollable artifacts; Geoff's picks
+  become the locked design recipes the build executes. The session's outputs ARE the
+  theme's specification; everything after is implementation.
 
 Responsiveness meets the family five-viewport standard (320/390/768/1440/2560, composed at
 the extremes). The CSS complexity collapses into the chassis token system and composition

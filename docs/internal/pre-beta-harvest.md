@@ -101,3 +101,7 @@ are ours until beta, which is the whole point of the window. Known contract ques
 - **Architecture statements go in locked-calls lists**; unattended workflows get
   conformance gates between tasks.
 - **Exit codes verified bare, never through pipes**; gates re-run after the edit they bless.
+- **A verification that echoes its input can never fail.** The regen dispatch ran one spec
+  but uploaded both snapshot dirs, so the artifact's site-visual images were the checkout's
+  own committed files and "byte-identical" was committed-vs-committed — twice. Before
+  trusting a pipeline's confirmation, trace where the confirmed bytes actually came from.

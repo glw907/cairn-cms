@@ -87,9 +87,18 @@ governs what gets added. Migration cost carries ZERO weight for the two owned si
 (Geoff, 2026-07-05: not worried about reworking ecxc/907 to follow) — the only consumers
 are ours until beta, which is the whole point of the window. Known contract questions awaiting evidence-driven answers:
 
-- **The composed-page seam** — CANDIDATE. ecxc's panel/split/section directives and Foxi's
-  pricing/testimonial blocks both ask whether a one-off composed page fits Posts/Pages or
-  wants a first-class answer. Two evidence sources converging; the ports will settle it.
+- **The composed-page seam** — CANDIDATE, one evidence source now in. The Foxi port's
+  every marketing route (home, features, pricing, FAQ, contact, changelog) is a hard-coded
+  Svelte page built from the theme's own composition components, expressed entirely through
+  the chassis's `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero` primitives and
+  DaisyUI's own `collapse`/`input`/`textarea`, with **zero engine changes**; the blog and the
+  Terms page stayed ordinary cairn-managed markdown. This is evidence against a first-class
+  composed-page content type, at least for this port's shape of marketing composition: a
+  pricing table or a testimonial wall reads as squarely the developer's own domain, not a
+  gap in Posts/Pages. Still CANDIDATE, not closed: ecxc's panel/split/section directives are
+  a different angle (directive-driven composition inside a markdown document, not a
+  hand-built route) and its own verdict has not landed; the two evidence sources have not
+  yet converged on one answer.
 - **The album/collection question** — CANDIDATE. hugo-theme-gallery's port asks whether
   "album" lives in Page frontmatter or demands the content model grow; pairs with the
   deferred gallery enabler (image/array component attributes).
@@ -152,6 +161,39 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   and ecxc-ski already hand-build; this is the tag-management initiative's own deliberate,
   ratified decision (public tag pages removed from cairn's scope, tags kept as data only), not
   an open contract question.
+- **The `--spacing-xs`/`--spacing-xl`/`--spacing-2xl` / `max-w-*` Tailwind v4 collision** —
+  LANDED, documentation only. `tokens.css` declares three design-scale keys that share a
+  suffix with three of Tailwind's own built-in `max-w-*` scale keys, and Tailwind resolves
+  `max-w-<key>` against a same-named `--spacing-<key>` variable when one exists, silently
+  shadowing the built-in container width (`max-w-2xl` compiled to `max-width:
+  var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default; a same-named `--container-<key>`
+  override does not win it back). The Foxi port hit this composing a marketing page and
+  worked around it with `max-w-measure`/`max-w-measure-wide` or an arbitrary value. Verified
+  directly against `@tailwindcss/node`'s own compiler (Tailwind 4.3.2, not the port's own
+  account) before landing; the guidance is now in `examples/showcase/src/chassis/README.md`'s
+  `tokens.css` entry, since every theme built on this chassis's spacing scale carries the
+  same three-key exposure. No rename: the existing key names are already load-bearing across
+  three themes and two owned sites' own copied chassis trees, and the fix is "avoid these
+  three `max-w-*` utilities," not a chassis code change.
+- **`.cairn-sidebar-layout`'s fixed column order** — QUEUED (not promoted). The primitive
+  always renders main-then-aside (wide-first, narrow-second) below its 48rem breakpoint; the
+  Foxi FAQ page wanted the reverse (a narrow lead-in column, then a wide accordion) and
+  substituted a plain Tailwind grid, noted in that route's own comment
+  (`examples/foxi-theme/src/routes/(site)/faq/+page.svelte`). One theme's ask so far, the
+  same bar the AstroPaper port's code-card device was held to; hold as a candidate reversed-
+  order modifier (for example a `.cairn-sidebar-layout--reverse` variant) until a second
+  theme also wants the narrow-first order, then promote with both proof points.
+- **The SPA-fallback themed-404 recipe** — QUEUED (not promoted). Every Foxi route
+  prerenders, so an unmatched path has no static file of its own; `svelte.config.js`'s
+  `fallback: 'spa'` paired with `wrangler.jsonc`'s `assets.not_found_handling: "404-page"` is
+  what makes Cloudflare serve the built `404.html` shell for that request, which then boots
+  the theme's own `+error.svelte` inside its chrome instead of a blank platform 404 (edge-only
+  behavior; neither `vite preview` nor local `wrangler dev` can demonstrate it). AstroPaper
+  already has its own themed `+error.svelte` but not this SPA-fallback pairing, so it only
+  catches an in-route error, not a wholly unmatched path. One theme's ask so far; hold as a
+  candidate chassis-documented recipe until a second fully-prerendered theme also wants a
+  themed 404 for unmatched paths, then promote (as a documented `svelte.config.js`/
+  `wrangler.jsonc` pairing, since neither file lives inside `src/chassis/` itself).
 
 ## Engine
 
@@ -209,8 +251,9 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
 ## Component library
 
 - **ecxc's 18-to-13 rationalization findings** — CANDIDATE, arriving with the redo's
-  verdict: every schema the v2 grammar fought, the composed-page seam question (Foxi will
-  re-ask it), the gallery/album concept question (the port slate re-asks it with evidence).
+  verdict: every schema the v2 grammar fought, the composed-page seam question (Foxi has
+  answered its half; see above), the gallery/album concept question (the port slate re-asks
+  it with evidence).
 
 ## Process (the method improvements, binding already)
 
@@ -225,3 +268,7 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   but uploaded both snapshot dirs, so the artifact's site-visual images were the checkout's
   own committed files and "byte-identical" was committed-vs-committed — twice. Before
   trusting a pipeline's confirmation, trace where the confirmed bytes actually came from.
+- **Reveal-on-scroll references need real wheel-scroll capture, not `scrollTo`.** A site with
+  scroll-triggered reveal animations (Foxi's home and highlight rows) leaves large blank gaps
+  in a `fullPage` screenshot captured via `scrollTo`, since the animation never fires; drive
+  `page.mouse.wheel` incrementally instead, the same trigger a real reader's scroll fires.

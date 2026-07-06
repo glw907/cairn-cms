@@ -62,6 +62,18 @@ its own `:root` and dark-mode blocks. The named DaisyUI themes themselves
 the `pre.shiki` binding are pure structure and never need a theme's edit at all; only the token
 values they read do.
 
+A Tailwind v4 trap this file's own key names sit inside: `--spacing-xs`, `--spacing-xl`, and
+`--spacing-2xl` share a suffix with three of Tailwind's built-in `max-w-*` scale keys, and Tailwind
+resolves `max-w-<key>` against a theme's `--spacing-<key>` variable when one exists, silently
+shadowing its own built-in container width with the spacing value instead (`max-w-2xl` compiles to
+`max-width: var(--spacing-2xl)`, 4rem, not Tailwind's 42rem default) with no warning; declaring a
+matching `--container-<key>` override does not win the utility back (verified directly against
+`@tailwindcss/node`'s compiler, Tailwind 4.3.2). The Foxi port hit this while composing a marketing
+page and worked around it by using `max-w-measure`/`max-w-measure-wide` (this file's own reading-
+measure tokens) or a plain arbitrary value; a theme built on this chassis should do the same and
+never reach for `max-w-xs`, `max-w-xl`, or `max-w-2xl` specifically, since those three key names
+are already spoken for.
+
 **The prose foundation (`prose.css`).** Every element reads a token, so a re-skin (a new
 `tokens.css` override, or an entirely different theme) carries the reading surface forward with no
 edit here. The one signature identity this file carries (the cairn-glyph horizontal rule, the

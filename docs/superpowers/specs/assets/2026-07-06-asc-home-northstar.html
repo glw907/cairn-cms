@@ -1,0 +1,91 @@
+<title>ASC home — the full example</title>
+<style>
+body { background: white; color: #16222E; font-family: ui-sans-serif, system-ui, sans-serif; line-height: 1.65; margin: 0; }
+.shell { max-width: 1120px; margin: 0 auto; padding: 0 2rem; }
+a { color: #1C4670; }
+.nav a { color: #16222E; text-decoration: none; font-size: 0.95rem; margin-left: 1.6rem; transition: color 0.15s ease; }
+.nav a:hover { color: #1C4670; }
+.nav a.active { color: #1C4670; font-weight: 650; box-shadow: 0 2px 0 #E3A008; }
+h2 { font-size: 1.35rem; font-weight: 800; margin: 0 0 1rem; }
+.btn { display: inline-block; background: #B23A77; color: white; font-weight: 650; font-size: 0.95rem; padding: 0.6rem 1.25rem; border-radius: 7px; text-decoration: none; transition: filter 0.15s ease, transform 0.15s ease; }
+.btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+@media (max-width: 900px) { .cols2 { columns: 1 !important; } .twocol { grid-template-columns: 1fr !important; } }
+</style>
+<header style="border-bottom: 1px solid #DDE3DC;">
+<div class="shell" style="display: flex; align-items: center; justify-content: space-between; padding-top: 1rem; padding-bottom: 1rem;">
+<div style="display: flex; align-items: center; gap: 0.7rem;"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="16" fill="#12294A"/><path d="M10 22 L17 7 L19 22 Z" fill="white"/><path d="M8 24 h18 l-2.5 3 h-13 Z" fill="#E3A008"/></svg><span style="font-weight: 800; font-size: 1.05rem;">Alaska Sailing Club</span></div>
+<nav class="nav"><a class="active">Home</a><a>Education</a><a>Racing</a><a>Events</a><a>Join</a><a>Members</a><a>Contact</a></nav>
+</div>
+</header>
+<main>
+<section class="shell twocol" style="display: grid; grid-template-columns: 1.25fr 1fr; gap: 2.5rem; align-items: center; padding-top: 3.5rem; padding-bottom: 1rem;">
+<div><h1 style="font-size: 2rem; font-weight: 800; font-style: italic; margin: 0 0 0.5rem;">Ahoy!</h1>
+<p style="max-width: 54ch;">&hellip;and welcome to the Alaska Sailing Club. Founded in 1967, we&rsquo;re an engaged, community-involved 501(c)(3) with an active yearly schedule of classes, regattas, and family-friendly events &mdash; fun, friends, and sailing under the midnight sun.</p>
+<a class="btn" style="margin-top: 0.6rem;">Take a sailing class &rarr;</a></div>
+<div style="background: linear-gradient(140deg, #7BA7D9 0%, #4A7FB5 55%, #E8956B 100%); border-radius: 10px; min-height: 230px; display: flex; align-items: end; padding: 0.7rem 1rem; color: white; font-size: 0.78rem;">Sailors on an orange dinghy, midnight sun</div>
+</section>
+<section class="shell" style="padding-bottom: 3rem;">
+<div style="border-left: 3px solid #E3A008; background: #F2F5F1; padding: 0.75rem 1.15rem; border-radius: 0 7px 7px 0; max-width: 640px;">
+<div style="font-size: 0.75rem; color: #5C6B72;">March 2, 2026</div>
+<strong>Membership Open for 2026</strong>
+<div style="font-size: 0.9rem; color: #5C6B72;">Class signup coming soon, members first &mdash; <a>join now</a></div>
+</div>
+</section>
+<section style="background: #F2F5F1; border-top: 1px solid #DDE3DC; border-bottom: 1px solid #DDE3DC; padding: 3rem 0;">
+<div class="shell">
+<h2>News &amp; updates</h2>
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem;" class="twocol">
+<a style="background:white;border:1px solid #DDE3DC;border-radius:8px;overflow:hidden;display:block;color:inherit;text-decoration:none;transition:transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(18,41,74,0.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div style="background:linear-gradient(140deg,#7BA7D9,#4A7FB5);min-height:110px;"></div><div style="padding:0.8rem 1rem;"><strong style="font-size:0.95rem;">Welcome to the New Website</strong><div style="font-size:0.78rem;color:#5C6B72;margin-top:0.2rem;">February 27, 2026</div></div></a>
+<a style="background:white;border:1px solid #DDE3DC;border-radius:8px;overflow:hidden;display:block;color:inherit;text-decoration:none;transition:transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(18,41,74,0.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div style="background:linear-gradient(140deg,#7BA7D9,#5B8F6E);min-height:110px;"></div><div style="padding:0.8rem 1rem;"><strong style="font-size:0.95rem;">Northern Lights Results &amp; Work Party Recap</strong><div style="font-size:0.78rem;color:#5C6B72;margin-top:0.2rem;">September 30, 2025</div></div></a>
+<a style="background:white;border:1px solid #DDE3DC;border-radius:8px;overflow:hidden;display:block;color:inherit;text-decoration:none;transition:transform 0.15s ease, box-shadow 0.15s ease;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(18,41,74,0.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''"><div style="background:linear-gradient(140deg,#7BA7D9,#B08BB8);min-height:110px;"></div><div style="padding:0.8rem 1rem;"><strong style="font-size:0.95rem;">Northern Lights SIs</strong><div style="font-size:0.78rem;color:#5C6B72;margin-top:0.2rem;">September 17, 2025</div></div></a>
+</div>
+<div style="margin-top: 1.4rem;"><a style="text-decoration: underline; text-underline-offset: 3px;">View all news &rarr;</a></div>
+</div>
+</section>
+<section style="padding: 3.5rem 0;">
+<div class="shell">
+<h2>The Season</h2>
+<p style="color: #5C6B72; margin: -0.6rem 0 1.6rem; font-size: 0.95rem;">Racing runs May through September. Social events bookend the year. <span style="white-space: nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:#E3A008;margin-right:0.4rem;"></span>classes and clinics.</span> <a style="text-decoration: underline; text-underline-offset: 3px;">See all events &rarr;</a></p>
+<div style="columns: 2; column-gap: 5rem;" class="cols2">
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">May</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">May 16</span><span style="font-size:0.98rem;color:#5C6B72;">Pre-spring work party</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">May 23</span><span style="font-size:0.98rem;color:#5C6B72;">Spring Work Party</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">May 24</span><span style="font-size:0.98rem;color:#16222E;">Icebreaker Regatta</span></div></div>
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">June</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Jun 12&ndash;14</span><span style="font-size:0.98rem;color:#16222E;"><span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:#E3A008;margin-right:0.5rem;vertical-align:1px;"></span>Fleet Tune-Up Weekend</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Jun 18&ndash;21</span><span style="font-size:0.98rem;color:#16222E;"><span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:#E3A008;margin-right:0.5rem;vertical-align:1px;"></span>Adult and Youth Intro Classes</span></div></div>
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">July</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Jul 4&ndash;5</span><span style="font-size:0.98rem;color:#16222E;">Firecracker Regatta</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Jul 9&ndash;12</span><span style="font-size:0.98rem;color:#16222E;"><span style="display:inline-block;width:8px;height:8px;border-radius:99px;background:#E3A008;margin-right:0.5rem;vertical-align:1px;"></span>Adult and Youth Intro Classes</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Jul 25&ndash;26</span><span style="font-size:0.98rem;color:#16222E;">Pirate Race &amp; Youth Cup</span></div></div>
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">August</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Aug 8</span><span style="font-size:0.98rem;color:#16222E;">Fireweed Ladies Race</span></div></div>
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">September</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Sep 5&ndash;7</span><span style="font-size:0.98rem;color:#16222E;">Governor&rsquo;s Cup</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Sep 12&ndash;13</span><span style="font-size:0.98rem;color:#16222E;">Northern Lights Regatta</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Sep 19</span><span style="font-size:0.98rem;color:#5C6B72;">Fall Work Party</span></div></div>
+<div style="break-inside:avoid;margin-bottom:1.8rem;"><div style="font-size:0.9rem;font-weight:800;letter-spacing:0.05em;text-transform:uppercase;margin:0 0 0.5rem;">Off-season</div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Oct 9&ndash;11</span><span style="font-size:0.98rem;color:#16222E;">BNAC</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Nov 7</span><span style="font-size:0.98rem;color:#5C6B72;">End-of-Season Celebration</span></div><div style="display:grid;grid-template-columns:5.8rem 1fr;align-items:baseline;padding:0.18rem 0;"><span style="color:#5C6B72;font-variant-numeric:tabular-nums;font-size:0.85rem;">Nov 14</span><span style="font-size:0.98rem;color:#5C6B72;">Annual Meeting</span></div></div>
+</div>
+</div>
+</section>
+<section style="background: #F2F5F1; border-top: 1px solid #DDE3DC; border-bottom: 1px solid #DDE3DC; padding: 3rem 0;">
+<div class="shell twocol" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center;">
+<div><h2>Our fleet</h2>
+<p style="font-size: 0.97rem;">The ASC has a well-maintained collection of club boats for sailors of all ages and abilities: six Lido 14s, three Lasers, a Laser II, five Optimists &mdash; plus a Buccaneer 18, a Catalina 16.5, a Skipjack 15, and an Ensign 22. All available to qualified club members.</p>
+<a style="font-weight: 650; text-decoration: underline; text-underline-offset: 3px;">Learn about club boat use &rarr;</a></div>
+<div style="background: linear-gradient(120deg, #4A7FB5, #7BA7D9 60%, #C9DCEE); border-radius: 10px; min-height: 210px; display: flex; align-items: end; padding: 0.7rem 1rem; color: white; font-size: 0.78rem;">The Lidos lined up on the beach (real photo here)</div>
+</div>
+</section>
+<section style="padding: 3rem 0;">
+<div class="shell twocol" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2.5rem; align-items: center;">
+<div style="background: linear-gradient(120deg, #5B8F6E, #8FB89A 60%, #D9E8DC); border-radius: 10px; min-height: 210px; display: flex; align-items: end; padding: 0.7rem 1rem; color: white; font-size: 0.78rem; order: 0;">The clubhouse and grounds (real photo here)</div>
+<div><h2>Our facilities</h2>
+<p style="font-size: 0.97rem;">The northernmost sailing club in the United States &mdash; with facilities that would be the envy of any: a clubhouse with a sauna, a nine-mooring harbor, an electric hoist, year-round dinghy parking, tenting and RV space, a campfire spot, and park-style grounds with beautiful lake views.</p>
+<a style="font-weight: 650; text-decoration: underline; text-underline-offset: 3px;">Learn about membership &rarr;</a></div>
+</div>
+</section>
+<section style="background: #12294A; color: white; padding: 3rem 0;">
+<div class="shell" style="display: grid; grid-template-columns: 1.2fr 1fr; gap: 2.5rem; align-items: center;" >
+<div><h2 style="color: white;">Interested in learning more?</h2>
+<p style="color: #C7D3E0; font-size: 0.97rem; max-width: 50ch;">Whether you&rsquo;re brand-new to sailing or looking for a community of fellow sailors, we&rsquo;d love to meet you.</p></div>
+<div style="display: flex; gap: 0.9rem; flex-wrap: wrap;">
+<a class="btn">Ready to join? &rarr;</a>
+<a style="color: white; border: 1px solid rgba(255,255,255,0.4); border-radius: 7px; padding: 0.6rem 1.25rem; font-size: 0.95rem; text-decoration: none;">Questions? Contact us</a>
+</div>
+</div>
+</section>
+</main>
+<footer style="background: #12294A; color: #9FB0C4; border-top: 1px solid rgba(255,255,255,0.12); padding: 1.6rem 0;">
+<div class="shell" style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; font-size: 0.85rem;">
+<span>&copy; 2026 Alaska Sailing Club &middot; a 501(c)(3) nonprofit</span>
+<span><a style="color: #C7D3E0; margin-right: 1.2rem;">Join</a><a style="color: #C7D3E0; margin-right: 1.2rem;">Events</a><a style="color: #C7D3E0; margin-right: 1.2rem;">News</a><a style="color: #C7D3E0; margin-right: 1.2rem;">Governance</a><a style="color: #C7D3E0;">&hearts; Donate</a></span>
+</div>
+</footer>

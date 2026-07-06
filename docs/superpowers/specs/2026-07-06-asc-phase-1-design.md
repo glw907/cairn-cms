@@ -102,6 +102,30 @@ Responsiveness meets the family five-viewport standard (320/390/768/1440/2560, c
 the extremes). The CSS complexity collapses into the chassis token system and composition
 primitives; the theme layer carries ASC's palette, faces, and iconography.
 
+## The color story — "the club grounds" (RATIFIED with the full example, Geoff: "Excellent. That works.")
+
+The current palette was Blowfish's defaults, never a choice; the ratified story builds
+from the club's own materials, replacing the original "preserve the palette" keep by
+Geoff's own correction. Roles are the contract; exact values tune during the build:
+
+- **Flag navy** (~#1C4670, deep #12294A): links, structure, identity — the only link color.
+- **Star gold** (~#E3A008): marks and waypoints only, never body text — the active-nav
+  underline, the notification edge, and THE GOLD STARS MARKING CLASSES AND CLINICS in
+  event lists (the flag marking the mission).
+- **Fireweed** (~#B23A77): the single pop — primary CTAs, at most twice per page.
+- **Building sage** (tints ~#F2F5F1/#E5EBE3): the band and surface neutrals — the grounds
+  carried into the page.
+- **Harbor ink** (~#16222E) and its muted step: text.
+- The purple trim stays on the doors (declined, deliberately). The semantic palette
+  (caution/success/error) remains a separate reserved vocabulary — the education category
+  can never collide with warnings again.
+
+**The north star:** the complete home example at
+`docs/superpowers/specs/assets/2026-07-06-asc-home-northstar.html` — every locked decision
+(A1's quieting, the C7-dot-evolved-to-gold-stars season, the fleet/facilities photo
+compositions, the mission-first CTA, gentle hover motion) in the story, blessed whole.
+The full calibration record (C0 through C9, the iteration's reasoning) sits beside it.
+
 ## Method, staging, cutover
 
 - The device catalogue from the 146 live-site captures precedes any build (the

@@ -79,6 +79,15 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**HARVEST PASS 1 COMPLETE (2026-07-05): all six tasks green, and everything landed
+ADDITIVE — the rehype/remark plugin seam on createRenderer, tableScroll default-on with
+opt-out, sitemap extraRoutes + the unlistedRoutes check, CairnHead titleTemplate, the
+prose-flow computed-margin regression test. The Consumers-must list is EMPTY. 907's
+migration verified (one real defect found+fixed: route-module export rule fails only at
+build). ecxc's migration folds into the chrome repair instead. Ledger entries flipped to
+LANDED with hashes. Pushed silent; CI baseline regen running; contract beat 2 waits on the
+ports' evidence, then the release Geoff ordered before aksailingclub.**
+
 **ECXC PRODUCTION FAILURE + ROLLBACK (2026-07-05): Geoff's verdict on the deployed rebuild
 — "so far off the mark I'm not even sure where to begin." The old site is RESTORED and
 verified live (8c77bbc; the first revert left 22 leftover rebuild files, purged; tree

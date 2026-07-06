@@ -1,7 +1,7 @@
 # aksailingclub.org phase 1: the gentle redesign onto cairn
 
-**DRAFT — the brainstorm is still open; nothing here is ratified.** A working synthesis of
-the conversation so far, revised as it continues.
+**The brainstorm and the UI/UX work session are complete; the design recipes are locked
+from Geoff's picks. Awaiting his ratification read of this document, then writing-plans.**
 
 Drafted during the 2026-07-06 brainstorm (Geoff + the main loop; the Fable-native format).
 The highest bar of the ladder: a real member base. The full visual-fidelity method binds.

@@ -1,5 +1,14 @@
 # cairn-cms status
 
+**THE ASC WORK SESSION COMPLETE (2026-07-06): the show-and-tell ratified the narrowed
+diagnosis (chrome stacking on home; per-SECTION prose walls; the MembershipWorks clash =
+a known constraint resolving via ops absorption); the calibration locked the recipes —
+A1 (bands mark sections, cards mark objects, nothing gets both; one spacing scale) and
+B1 (editorial pacing: at-a-glance table + subheads, "a significant improvement over the
+original"). The spec awaits Geoff's ratification read, then writing-plans. Artifacts:
+the show-and-tell and calibration pages (claude.ai, session record).**
+
+
 **0.81.0 SHIPPED AND DEPLOYED END-TO-END (2026-07-06): the chassis release — one chassis,
 N themes, Waymark the flagship theme, three verified example theme ports (AstroPaper r4,
 Foxi r2, gallery r3 — all fresh-context PASS), the renderer plugin seam, tableScroll

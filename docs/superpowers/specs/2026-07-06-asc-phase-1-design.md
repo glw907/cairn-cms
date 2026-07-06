@@ -56,6 +56,17 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   become the locked design recipes the build executes. The session's outputs ARE the
   theme's specification; everything after is implementation.
 
+**The ratified diagnosis (the show-and-tell, Geoff 2026-07-06: "that all looks correct"):**
+the site is mostly good — clean phone reflows, strong sections (the news grid is the card
+treatment done right), concise governance. The busy-ness lives in exactly three places:
+(1) the home page's chrome stack (three background/card layers in 900px); (2) per-SECTION
+prose walls (education's day-by-day schedule; the new-member guide's top half), with the
+fix already demonstrated by neighboring sections (tables, subheads, bullets); (3) the join
+page's hand-off to the MembershipWorks embed, which is NOT stylable — a known constraint
+that resolves when the ops absorption takes over membership functionality, not a design
+task. The calibration candidates therefore target: home chrome-quieting, and the
+section-density toolkit at two intensities on education's schedule.
+
 Responsiveness meets the family five-viewport standard (320/390/768/1440/2560, composed at
 the extremes). The CSS complexity collapses into the chassis token system and composition
 primitives; the theme layer carries ASC's palette, faces, and iconography.

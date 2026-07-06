@@ -1,8 +1,16 @@
-// The client-side justified-grid algorithm the upstream demo's own `main.js` implements (a
-// bespoke row packer, not a library dependency): lay out a row of photos to a shared height close
-// to a target, filling the container's width, the classic Flickr-style justified grid. Reverse-
-// engineered from the upstream's own compiled bundle (nicokaiser/hugo-theme-gallery, MIT); see
-// this theme's README for the capability-test verdict this powers.
+// The client-side justified-grid layout the upstream demo's own `main.js` drives (a Flickr-style
+// row packer): lay out a row of photos to a shared height close to a target, filling the
+// container's width. Inspecting the upstream's own compiled bundle (nicokaiser/hugo-theme-gallery,
+// MIT) shows its variable names, closing-row heuristic, and default tunables (a target row height
+// of 288px held CONSTANT across every viewport, an 8px spacing, a 0.25 height tolerance) are an
+// exact match for `justified-layout` (github.com/flickr/justified-layout, ISC, zero dependencies),
+// the small open-source library Flickr published for this exact problem; this wraps that package
+// directly rather than reimplementing its row-closing heuristic by hand, which a first pass at
+// this port got subtly wrong (a breakpoint-stepped target height, which packs a narrow viewport
+// into a multi-column contact sheet instead of the upstream's near-single-column mobile layout).
+// A wider container alone packs more photos per row as the constant target height is held fixed,
+// which is this port's own "beat the original at 2560" lever; see this theme's README.
+import createJustifiedLayout from 'justified-layout';
 
 /** One photo's resolved box in the grid, in container-relative pixels. */
 export interface LayoutBox {
@@ -14,7 +22,7 @@ export interface LayoutBox {
   height: number;
 }
 
-/** The layout's tunables. */
+/** The layout's tunables, matching the upstream's own compiled defaults. */
 export interface JustifiedLayoutOptions {
   /** The available width to fill, in pixels. */
   containerWidth: number;
@@ -22,66 +30,42 @@ export interface JustifiedLayoutOptions {
   targetRowHeight: number;
   /** The gap between adjacent photos, both across a row and between rows, in pixels. */
   spacing: number;
-  /** How far a row may exceed the target height, as a fraction, before this port's own choice
-   *  (matching the upstream's observed behavior) is to leave the last, incomplete row unstretched
-   *  rather than blow it up to an ungainly height just to fill the last row's width. */
+  /** How far a row may exceed the target height, as a fraction, before the algorithm leaves an
+   *  under-filled last row unstretched rather than blow it up to fill the container's width. */
   heightTolerance: number;
 }
 
-/**
- * Packs a list of aspect ratios (width divided by height) into justified rows. Each non-final row
- * closes as soon as adding one more photo would bring its height to or below the target: the row's
- * real height is then whatever value fills the container exactly, which is always at or below
- * `targetRowHeight`. The final row, if it can only reach `targetRowHeight` by overshooting
- * `heightTolerance`, is left unstretched: every photo in it renders at `targetRowHeight` and the
- * row does not reach the container's full width.
- */
-export function layoutJustified(aspectRatios: number[], options: JustifiedLayoutOptions): { boxes: LayoutBox[]; height: number } {
-  const { containerWidth, targetRowHeight, spacing, heightTolerance } = options;
-  const boxes: LayoutBox[] = [];
-  let top = 0;
-  let rowStart = 0;
-  let rowSum = 0;
-
-  const closeRow = (rowEndExclusive: number, height: number): void => {
-    let left = 0;
-    for (let i = rowStart; i < rowEndExclusive; i++) {
-      const width = aspectRatios[i] * height;
-      boxes.push({ index: i, left, top, width, height });
-      left += width + spacing;
-    }
-    top += height + spacing;
-    rowStart = rowEndExclusive;
-    rowSum = 0;
+/** Packs a list of aspect ratios (width divided by height) into justified rows via the real
+ *  `justified-layout` package. */
+export function layoutJustified(
+  aspectRatios: number[],
+  options: JustifiedLayoutOptions,
+): { boxes: LayoutBox[]; height: number } {
+  if (aspectRatios.length === 0) return { boxes: [], height: 0 };
+  const geometry = createJustifiedLayout(aspectRatios, {
+    containerWidth: options.containerWidth,
+    containerPadding: 0,
+    boxSpacing: options.spacing,
+    targetRowHeight: options.targetRowHeight,
+    targetRowHeightTolerance: options.heightTolerance,
+  });
+  return {
+    boxes: geometry.boxes.map((box, index) => ({
+      index,
+      left: box.left,
+      top: box.top,
+      width: box.width,
+      height: box.height,
+    })),
+    height: geometry.containerHeight,
   };
-
-  for (let i = 0; i < aspectRatios.length; i++) {
-    rowSum += aspectRatios[i];
-    const itemsInRow = i - rowStart + 1;
-    const candidateHeight = (containerWidth - spacing * (itemsInRow - 1)) / rowSum;
-    const isLast = i === aspectRatios.length - 1;
-
-    if (candidateHeight <= targetRowHeight) {
-      closeRow(i + 1, candidateHeight);
-    } else if (isLast) {
-      if (candidateHeight <= targetRowHeight * (1 + heightTolerance)) {
-        closeRow(i + 1, candidateHeight);
-      } else {
-        closeRow(i + 1, targetRowHeight);
-      }
-    }
-  }
-
-  return { boxes, height: top > 0 ? top - spacing : 0 };
 }
 
-/** The target row height grows with the viewport, matching the upstream's own denser mobile grid
- *  and looser desktop grid; the widest step (past 1536px) is this port's own addition, so the
- *  justified algorithm packs more photos per row as an ultrawide viewport grows, rather than
- *  capping out the way a fixed-column CSS grid would. */
-export function targetRowHeightFor(containerWidth: number): number {
-  if (containerWidth < 640) return 170;
-  if (containerWidth < 1024) return 240;
-  if (containerWidth < 1536) return 320;
-  return 380;
-}
+/** The upstream demo's own target row height (`Le=288` in its compiled bundle): a literal
+ *  constant, not scaled by breakpoint. Holding it constant is what lets a wider container pack
+ *  more photos per row on its own, with no explicit breakpoint logic. */
+export const TARGET_ROW_HEIGHT = 288;
+
+/** The upstream demo's own spacing (`It=8`) and height tolerance (`Tt=.25`). */
+export const SPACING = 8;
+export const HEIGHT_TOLERANCE = 0.25;

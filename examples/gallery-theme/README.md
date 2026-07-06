@@ -19,11 +19,18 @@ re-verified against the upstream repository at port time (2026-07-06):
 None of the upstream's own Hugo/Go template source is copied verbatim; every chrome component,
 route, and stylesheet here is a fresh Svelte/CSS implementation of its visible design (the layout,
 the type, the near-black no-accent color system, the justified grid), built against cairn's own
-seams. The justified-layout algorithm (`src/theme/justified-layout.ts`) is reverse-engineered from
-the upstream's own compiled `main.js` bundle (row-packing by a target height and a height
-tolerance), not copied from its source, since the upstream ships no separate layout library; the
-lightbox itself is [PhotoSwipe](https://photoswipe.com) v5 (MIT), a real npm dependency, not a
-port of the upstream's own PhotoSwipe wiring.
+seams. Inspecting the upstream's own compiled `main.js` bundle shows its row-packing heuristic and
+its default tunables (a 288px target row height held constant across every viewport, an 8px
+spacing, a 0.25 height tolerance) are an exact match for
+[`justified-layout`](https://github.com/flickr/justified-layout) (ISC, zero dependencies), the
+small library Flickr publishes for this exact problem; `src/theme/justified-layout.ts` wraps that
+package directly rather than reimplementing its heuristic by hand. The lightbox is
+[PhotoSwipe](https://photoswipe.com) v5 (MIT); its caption panel and download button use
+PhotoSwipe's own official
+[dynamic-caption plugin](https://github.com/dimsemenov/photoswipe-dynamic-caption-plugin) (MIT, by
+the PhotoSwipe author, confirmed against the upstream's own compiled bundle to be running at its
+default options) and PhotoSwipe's own documented download-button recipe, not a port of the
+upstream's own wiring.
 
 The demo photos are from [Unsplash](https://unsplash.com), free to use under the Unsplash
 License; `credit: Photo via Unsplash` on every photo in `src/content/pages/*.md` matches the

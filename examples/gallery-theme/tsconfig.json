@@ -8,6 +8,10 @@
     // local kit. skipLibCheck skips type-checking declaration files (where the conflict lives)
     // while still fully checking this theme's source, including cairn.config.ts against cairn's
     // types.
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    // `justified-layout`'s own types (@types/justified-layout) declare `export =`, a CJS default
+    // export; Vite/esbuild already synthesizes a default at runtime, esModuleInterop just lets
+    // `import x from '...'` type-check against that same shape.
+    "esModuleInterop": true
   }
 }

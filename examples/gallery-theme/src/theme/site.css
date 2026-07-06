@@ -2,11 +2,23 @@
    Three containers. `.site-narrow` is the upstream demo's own `.prose`/`body > menu` measure
    (768px = 48rem): About, Imprint, and the slide-down nav menu. `.site-wide` is the upstream
    demo's own `hgroup`/`.galleries`/`.featured` cap (1280px = 80rem): the page title block, the
-   home hero, and a gallery-listing page's card grid. `.gallery-wide` is this port's own widened
-   cap for a LEAF photo grid only, uncapped at the upstream's fixed 80rem: the justified-grid
-   algorithm computes more photos per row as the container grows, so widening its own container
-   at 2560px is a real "beat the original" move, not just centering (the upstream's own live demo
-   leaves a large unused void past 1280px at every template; see this theme's README).
+   home hero, and a gallery-listing page's card grid. `.gallery-wide` is a LEAF photo grid's own
+   container: the upstream's own compiled CSS zeroes a leaf album's side padding entirely
+   (`section.gallery{padding-right:0;padding-left:0}`, confirmed against the live site), making
+   the justified grid the one full-bleed, edge-to-edge template in the whole theme; this port
+   matches that exactly rather than capping or insetting it, which is also this port's own "beat
+   the original at 2560" lever, since the justified-grid algorithm packs more photos per row as
+   the container widens, and the upstream's own live demo caps `#gallery` at a fixed measure that
+   wastes space past 1280px (see this theme's README).
+
+   `margin-inline`, not the `margin: 0 auto` shorthand, on `.site-narrow`/`.site-wide`: a shorthand
+   `margin` zeroes the block (top/bottom) margins too, which silently wins over a child's own
+   Tailwind `mb-*`/`mt-*` utility class regardless of source order (an unlayered plain CSS rule
+   always beats a layered `@theme`/`@utility` rule in the cascade), collapsing the gap between,
+   for example, the home page's featured card and the album grid below it to zero. Confirmed by
+   measuring the built page: `margin: 0 auto` on `.site-wide` produced 0px of computed
+   margin-bottom on a sibling carrying `mb-l`.
+
    Referenced only through a Vite ?url import (see the (site) layout). */
 html {
   font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
@@ -14,7 +26,7 @@ html {
 
 .site-narrow {
   max-width: var(--container-measure);
-  margin: 0 auto;
+  margin-inline: auto;
   padding-inline: var(--spacing-m);
 }
 
@@ -24,14 +36,12 @@ html {
      the second (the page-section width); the hgroup's own narrower cap reads the token directly
      as the `max-w-measure-wide` utility (see PageHeading.svelte). */
   max-width: 80rem;
-  margin: 0 auto;
+  margin-inline: auto;
   padding-inline: var(--spacing-m);
 }
 
 .gallery-wide {
-  max-width: min(96rem, 94vw);
-  margin: 0 auto;
-  padding-inline: var(--spacing-m);
+  width: 100%;
 }
 
 body {

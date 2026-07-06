@@ -2,26 +2,27 @@
 A leaf album's photo grid: the media-stress capability test (theme-ports-1-3, port 3). Every
 photo's aspect ratio (from the sibling `width`/`height` frontmatter leaves; see cairn.config.ts's
 own note on why they sit beside the image field) packs into justified rows client-side
-(`$theme/justified-layout.js`, reverse-engineered from the upstream demo's own bundle), and every
-photo opens a PhotoSwipe v5 lightbox (MIT, a real npm dependency, not a hand-rolled viewer) on
-click: swipe/arrow-key navigation, pinch zoom, and a caption built from each photo's own alt text.
-PhotoSwipe is loaded only in the browser (dynamic import inside onMount), never during
-prerendering.
+(`$theme/justified-layout.js`, a thin wrapper over the real `justified-layout` package), full-bleed
+edge-to-edge with square corners, matching the upstream's own leaf-album template exactly (its
+compiled CSS zeroes this one section's side padding; see site.css). Every photo opens a PhotoSwipe
+v5 lightbox (MIT) on click: swipe/arrow-key navigation, pinch zoom, a download button, and a
+caption that PhotoSwipe's own dynamic-caption plugin (MIT, by the PhotoSwipe author) positions
+beside or below the fitted image depending on available space, exactly the recipe the upstream's
+own compiled bundle uses. PhotoSwipe and its plugin are loaded only in the browser (dynamic import
+inside onMount), never during prerendering.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import 'photoswipe/style.css';
+  import 'photoswipe-dynamic-caption-plugin/photoswipe-dynamic-caption-plugin.css';
   import type { Photo } from '$theme/albums.js';
-  import { layoutJustified, targetRowHeightFor } from '$theme/justified-layout.js';
+  import { layoutJustified, TARGET_ROW_HEIGHT, SPACING, HEIGHT_TOLERANCE } from '$theme/justified-layout.js';
 
   interface Props {
     photos: Photo[];
   }
 
   let { photos }: Props = $props();
-
-  const SPACING = 8;
-  const HEIGHT_TOLERANCE = 0.35;
 
   let containerEl: HTMLDivElement | undefined = $state();
   let containerWidth = $state(0);
@@ -32,7 +33,7 @@ prerendering.
           photos.map((photo) => photo.width / photo.height),
           {
             containerWidth,
-            targetRowHeight: targetRowHeightFor(containerWidth),
+            targetRowHeight: TARGET_ROW_HEIGHT,
             spacing: SPACING,
             heightTolerance: HEIGHT_TOLERANCE,
           },
@@ -54,38 +55,42 @@ prerendering.
     let disposed = false;
     let lightbox: import('photoswipe/lightbox').default | undefined;
     void (async () => {
-      const { default: PhotoSwipeLightbox } = await import('photoswipe/lightbox');
+      const [{ default: PhotoSwipeLightbox }, { default: PhotoSwipeDynamicCaption }] = await Promise.all([
+        import('photoswipe/lightbox'),
+        import('photoswipe-dynamic-caption-plugin'),
+      ]);
       if (disposed || !containerEl) return;
       lightbox = new PhotoSwipeLightbox({
         gallery: containerEl,
         children: 'a',
         pswpModule: () => import('photoswipe'),
       });
-      // The documented PhotoSwipe v5 caption recipe: a root-level UI element that reads the
-      // active slide's originating DOM anchor back off `data.element` and shows its
-      // `data-caption` attribute (this component's own photo alt text).
+      // The upstream's own dynamic-caption plugin, at its own default options (confirmed against
+      // its compiled bundle): positions the caption beside the image when there's more
+      // horizontal space, below it otherwise, and pins it to the bottom below the mobile
+      // breakpoint. It reads a `.pswp-caption-content` element inside the clicked anchor.
+      new PhotoSwipeDynamicCaption(lightbox, {});
+      // The upstream's own documented download-button recipe (photoswipe.com's own "adding UI
+      // elements" cookbook): a real toolbar button, not a caption add-on.
       lightbox.on('uiRegister', () => {
         lightbox?.pswp?.ui?.registerElement({
-          name: 'caption',
-          order: 9,
-          isButton: false,
-          appendTo: 'root',
+          name: 'download-button',
+          order: 8,
+          isButton: true,
+          tagName: 'a',
+          html: {
+            isCustomSVG: true,
+            inner:
+              '<path d="M20.5 14.3 17.1 18V10h-2.2v7.9l-3.4-3.6L10 16l6 6.1 6-6.1ZM23 23H9v2h14Z" id="pswp__icn-download"/>',
+            outlineID: 'pswp__icn-download',
+          },
           onInit: (el, pswp) => {
-            // Inline styles, not a scoped <style> block: PhotoSwipe mounts this element into its
-            // own portal outside this component's DOM tree, so Svelte's scope attribute never
-            // reaches it.
-            el.style.position = 'absolute';
-            el.style.left = '0';
-            el.style.right = '0';
-            el.style.bottom = '0';
-            el.style.padding = '0.75rem 1rem';
-            el.style.background = 'linear-gradient(to top, rgb(0 0 0 / 70%), transparent)';
-            el.style.color = '#fff';
-            el.style.fontSize = '0.9rem';
-            el.style.textAlign = 'center';
+            el.setAttribute('download', '');
+            el.setAttribute('target', '_blank');
+            el.setAttribute('rel', 'noopener');
+            el.setAttribute('title', 'Download');
             pswp.on('change', () => {
-              const active = pswp.currSlide?.data.element as HTMLElement | undefined;
-              el.textContent = active?.dataset.caption ?? '';
+              el.setAttribute('href', pswp.currSlide?.data.src ?? '');
             });
           },
         });
@@ -106,10 +111,9 @@ prerendering.
       href={photo.src}
       data-pswp-width={photo.width}
       data-pswp-height={photo.height}
-      data-caption={photo.caption ?? photo.alt}
       target="_blank"
       rel="noreferrer"
-      class="absolute cursor-zoom-in overflow-hidden rounded-box"
+      class="absolute cursor-zoom-in overflow-hidden"
       style:left="{box.left}px"
       style:top="{box.top}px"
       style:width="{box.width}px"
@@ -124,10 +128,7 @@ prerendering.
         loading="lazy"
         class="h-full w-full object-cover"
       />
+      <span class="pswp-caption-content sr-only">{photo.caption ?? photo.alt}</span>
     </a>
   {/each}
 </div>
-
-<p class="site-narrow mt-s text-step--1 text-muted">
-  {photos.length} photo{photos.length === 1 ? '' : 's'}
-</p>

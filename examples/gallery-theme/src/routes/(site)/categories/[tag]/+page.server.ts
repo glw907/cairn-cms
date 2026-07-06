@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { pages } from '$chassis/content.js';
-import { allPages, toAlbumCard } from '$theme/albums.js';
+import { allPages, toAlbumCard, capitalizeTag } from '$theme/albums.js';
 
 export const prerender = true;
 
@@ -19,5 +19,5 @@ export const load: PageServerLoad = ({ params }) => {
     .map((summary) => all.find((entry) => entry.id === summary.id))
     .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined)
     .map((entry) => toAlbumCard(entry, all));
-  return { tag: params.tag, cards };
+  return { tag: capitalizeTag(params.tag), cards };
 };

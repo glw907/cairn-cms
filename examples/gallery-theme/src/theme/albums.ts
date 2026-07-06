@@ -127,3 +127,13 @@ export function backLink(entry: PageEntry, all: PageEntry[] = allPages()): BackL
   const parent = all.find((candidate) => candidate.id === parentId);
   return parent ? { href: parent.permalink, label: parent.title } : { href: '/', label: 'Home' };
 }
+
+/** A `categories` tag's display form: the raw taxonomy value is a plain lowercase word (see
+ *  content/pages/*.md), matching the upstream's own demo, whose category page title is title-
+ *  cased ("Nature") even though its URL segment and underlying tag are lowercase. The home page's
+ *  own pill nav gets the same effect for free from a CSS `capitalize` class; the category page's
+ *  `<h1>` (via the shared PageHeading) has no such transform, so this capitalizes the value
+ *  itself rather than adding a one-off style rule for a single template. */
+export function capitalizeTag(tag: string): string {
+  return tag.length > 0 ? tag.charAt(0).toUpperCase() + tag.slice(1) : tag;
+}

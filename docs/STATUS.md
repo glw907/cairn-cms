@@ -14,32 +14,40 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-06, updated)
+## Immediate next action (2026-07-06, updated: ports closeout consolidated, release next)
 
-**THEME PORTS 1-3 COMPLETE (2026-07-06): AstroPaper, Foxi, hugo-theme-gallery all built,
-harvested, and gated on `main`, per `docs/superpowers/plans/2026-07-05-theme-ports-1-3.md`.**
-Each port's own capability-test verdict is written to `docs/internal/pre-beta-harvest.md`'s
-site-contract section with its evidence: AstroPaper's pure theme-seam proof holds (empty
-component registry, every raw-HTML device through existing seams, zero engine change); Foxi's
-composed-page/marketing-section stress needed zero engine changes (every marketing route is a
-hard-coded page over the chassis's own composition primitives, evidence against a first-class
-composed-page content type for this shape of composition, though the ecxc directive-driven
-angle keeps the overall question CANDIDATE); hugo-theme-gallery's media stress (justified grid +
-PhotoSwipe) and its album-vs-Pages question both resolve with zero engine changes, at a real
-visible cost (no field marks which of a page's three shapes it takes; a separate nested-URL gap
-and the `ImageValue` intrinsic-dimensions gap both stay CANDIDATE, one port's evidence not being
-grounds to promote). The chassis harvested three real, verified fixes across the three ports
+**THEME PORTS 1-3 COMPLETE AND VERIFIED (2026-07-06): AstroPaper (VERIFIED-PASS, 4
+verifier-fix rounds), Foxi (VERIFIED-PASS, 2 rounds), and hugo-theme-gallery (VERIFIED-PASS,
+3 rounds) all built, harvested, and gated on `main`, per
+`docs/superpowers/plans/2026-07-05-theme-ports-1-3.md`.** Each port's own capability-test
+verdict is written to `docs/internal/pre-beta-harvest.md`'s site-contract section with its
+evidence: AstroPaper's pure theme-seam proof holds (empty component registry, every raw-HTML
+device through existing seams, zero engine change); Foxi's composed-page/marketing-section
+stress needed zero engine changes (every marketing route is a hard-coded page over the
+chassis's own composition primitives, evidence against a first-class composed-page content
+type for this shape of composition, though the ecxc directive-driven angle keeps the overall
+question CANDIDATE); hugo-theme-gallery's media stress (justified grid + PhotoSwipe) and its
+album-vs-Pages question both resolve with zero engine changes, at a real visible cost (no
+field marks which of a page's three shapes it takes; a separate nested-URL gap and the
+`ImageValue` intrinsic-dimensions gap both stay CANDIDATE, one port's evidence not being
+grounds to promote). The chassis harvested four real, verified fixes across the three ports
 (the sticky-footer flex cross-axis recipe, the `max-w-*`/`--spacing-*` Tailwind v4 collision
-documented, and the unlayered-margin cascade-layers bug fixed in all four chassis roots), plus
-several QUEUED-not-promoted candidates (the code-card device, the sidebar-layout reverse order,
-the SPA-fallback themed-404 recipe) held for a second theme's proof point. Full harvest detail:
-`docs/internal/pre-beta-harvest.md`. Final gate, all bare exit codes: `npm run check` (0 errors,
-0 warnings, 1335 files), `npm test` (288 files, 3075 tests, exit 0), `check:chassis-boundary`
-(PASS, 9 documented seams, 4 chassis roots, no reach-ins), `check:docs` (OK, 105 files),
-`check:reference` (OK, all 11 subpaths), `check:snippets` (OK, 137 blocks typechecked). Holds
-unpublished under `## Unreleased`. NEXT: the ontology restructure's remaining vocabulary sweep
-(template->theme) and the theme-building tutorial, then Starlight as its own later effort (the
-Topo prototype).
+documented, the unlayered-margin cascade-layers bug fixed in all four chassis roots, and the
+**themed-404 pattern — LANDED, `d8aa0f3`**: a root-level `+error.svelte` plus
+`assets.not_found_handling: "none"`, now documented in the chassis README and adopted by the
+showcase itself, its second proof point after Foxi), plus the remaining QUEUED-not-promoted
+candidates (the code-card device, the sidebar-layout reverse order, the `.prose a` link-device
+default pending a shape decision) held for a second theme's proof point. Full harvest detail:
+`docs/internal/pre-beta-harvest.md`. Final gate, all bare exit codes: `npm run check` (0
+errors, 0 warnings, 1335 files), `npm test` (288 files, 3075 tests, exit 0),
+`check:chassis-boundary` (PASS, 9 documented seams, 4 chassis roots, no reach-ins),
+`check:reference` (OK, all 11 subpaths), `check:reference:signatures` (OK, all 11 subpaths),
+`check:docs` (OK, 105 files), `check:snippets` (OK, 137 blocks typechecked), `check:package`
+(all subpaths green under node10/node16/bundler). Holds unpublished under `## Unreleased`.
+**NEXT: the ports work is done; the release is next** (a deliberate, separate act per the
+release-process doctrine, cutting the held `## Unreleased` window). The ontology restructure's
+remaining vocabulary sweep (template->theme), the theme-building tutorial, and Starlight (the
+Topo prototype) remain queued behind it.
 
 **DOCS REWRITE: COMPLETE AND MERGED TO MAIN (2026-07-04).** The full tree per the IA, the
 four-gate method proven at fleet scale, the gate lattice live (check:snippets new; the three

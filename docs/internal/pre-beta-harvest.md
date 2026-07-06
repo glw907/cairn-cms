@@ -91,7 +91,8 @@ are ours until beta, which is the whole point of the window.
 capability test up front (plan `2026-07-05-theme-ports-1-3.md`) and reports its verdict here;
 the CANDIDATE items below carry the fuller cross-port evidence these verdicts draw on.
 
-- **AstroPaper, the pure theme-seam proof (zero components expected) — PROVEN.** The theme
+- **AstroPaper, the pure theme-seam proof (zero components expected) — VERIFIED-PASS (4
+  verifier-fix rounds).** The theme
   mounted with an empty `defineComponent` registry and reproduced every one of its raw-HTML
   devices (the code-card, the warning admonition, the table of contents) through seams the
   chassis already exposed: the `sanitizeSchema` extension point, `rehype-raw`, the existing
@@ -101,23 +102,27 @@ the CANDIDATE items below carry the fuller cross-port evidence these verdicts dr
   cross-axis fix, now `.cairn-site-shell`/`.cairn-site-main`) is structural, not
   component-grammar related, and already LANDED. Evidence: the Chassis section's "code-card
   device" and "sanitizeSchema extension point" entries above;
-  `.claude/agent-memory/cairn-implementer/theme-port-astropaper-task1.md`.
-- **Foxi, the composed-page/marketing-section stress — the primitives suffice; zero engine
-  changes.** Every marketing route (home, features, pricing, FAQ, contact, changelog) is a
-  hard-coded Svelte page built entirely from the chassis's `.cairn-card`/`.cairn-band`/
-  `.cairn-section`/`.cairn-hero` composition primitives plus DaisyUI's own `collapse`/`input`/
-  `textarea`, while the blog and the Terms page stayed ordinary cairn-managed markdown with no
-  special casing. This is Foxi's own answer to the composed-page seam question: for this
-  port's shape of marketing composition, a pricing table or an FAQ accordion reads as the
-  developer's own domain, not a gap in Posts/Pages, and no first-class composed-page content
-  type was needed to reach it. The friction this port did surface (the `max-w-*`/`--spacing-*`
-  Tailwind collision, the sidebar-layout's fixed column order, the unlayered-margin cascade
-  bug) all resolved as chassis documentation or a chassis fix, none forcing an engine change.
-  This verdict is Foxi's alone; the composed-page seam question stays CANDIDATE overall
-  because ecxc's directive-driven angle is a separate, not-yet-converged evidence source (see
-  below).
-- **hugo-theme-gallery, the media stress and the album-vs-Pages question — both proven with
-  zero engine changes, at a real visible cost.** The justified photo grid (the real
+  `.claude/agent-memory/cairn-implementer/theme-port-astropaper-task1.md`. Four rounds total
+  (structural fixes, a visual-fidelity pass, the prose-link device, and a `not-prose` scoping
+  fix) closed every verifier finding; the port is stable.
+- **Foxi, the composed-page/marketing-section stress — VERIFIED-PASS (2 verifier-fix rounds);
+  the primitives suffice, zero engine changes.** Every marketing route (home, features,
+  pricing, FAQ, contact, changelog) is a hard-coded Svelte page built entirely from the
+  chassis's `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero` composition primitives
+  plus DaisyUI's own `collapse`/`input`/`textarea`, while the blog and the Terms page stayed
+  ordinary cairn-managed markdown with no special casing. This is Foxi's own answer to the
+  composed-page seam question: for this port's shape of marketing composition, a pricing table
+  or an FAQ accordion reads as the developer's own domain, not a gap in Posts/Pages, and no
+  first-class composed-page content type was needed to reach it. The friction this port did
+  surface (the `max-w-*`/`--spacing-*` Tailwind collision, the sidebar-layout's fixed column
+  order, the unlayered-margin cascade bug, and the wholly-prerendered 404 topology) all
+  resolved as a chassis fix or, for the 404, the chassis pattern this consolidation lands; none
+  forced an engine change. This verdict is Foxi's alone; the composed-page seam question stays
+  CANDIDATE overall because ecxc's directive-driven angle is a separate, not-yet-converged
+  evidence source (see below).
+- **hugo-theme-gallery, the media stress and the album-vs-Pages question — VERIFIED-PASS (3
+  verifier-fix rounds); both proven with zero engine changes, at a real visible cost.** The
+  justified photo grid (the real
   `justified-layout` package) and the PhotoSwipe v5 lightbox (the official
   `photoswipe-dynamic-caption-plugin`) both work end to end through the same client-only
   dynamic-`import()` pattern the carta-md boundary already establishes; no rendering or
@@ -132,7 +137,9 @@ the CANDIDATE items below carry the fuller cross-port evidence these verdicts dr
   nested-URL equivalent for the upstream's directory-based routing, so every album here is a
   flat top-level route. Neither gap was closed by an engine change (one port's evidence is not
   grounds per the harvest discipline); both stay CANDIDATE below, alongside the narrower
-  `ImageValue` intrinsic-dimensions gap the same port surfaced.
+  `ImageValue` intrinsic-dimensions gap the same port surfaced. Three rounds total (the
+  full-bleed grid and cascade-layer margin bug, the lightbox opacity and fluid-grid pass, and
+  the overlapping-breakpoint column fix) closed every verifier finding; the port is stable.
 
 Known contract questions awaiting evidence-driven answers:
 
@@ -262,17 +269,24 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   same bar the AstroPaper port's code-card device was held to; hold as a candidate reversed-
   order modifier (for example a `.cairn-sidebar-layout--reverse` variant) until a second
   theme also wants the narrow-first order, then promote with both proof points.
-- **The SPA-fallback themed-404 recipe** — QUEUED (not promoted). Every Foxi route
-  prerenders, so an unmatched path has no static file of its own; `svelte.config.js`'s
-  `fallback: 'spa'` paired with `wrangler.jsonc`'s `assets.not_found_handling: "404-page"` is
-  what makes Cloudflare serve the built `404.html` shell for that request, which then boots
-  the theme's own `+error.svelte` inside its chrome instead of a blank platform 404 (edge-only
-  behavior; neither `vite preview` nor local `wrangler dev` can demonstrate it). AstroPaper
-  already has its own themed `+error.svelte` but not this SPA-fallback pairing, so it only
-  catches an in-route error, not a wholly unmatched path. One theme's ask so far; hold as a
-  candidate chassis-documented recipe until a second fully-prerendered theme also wants a
-  themed 404 for unmatched paths, then promote (as a documented `svelte.config.js`/
-  `wrangler.jsonc` pairing, since neither file lives inside `src/chassis/` itself).
+- **The themed-404 recipe** — LANDED (`d8aa0f3`). The Foxi port's first pass here queued the
+  wrong mechanism (`svelte.config.js`'s `fallback: 'spa'` paired with `wrangler.jsonc`'s
+  `assets.not_found_handling: "404-page"`, believed edge-only and undemonstrable locally);
+  Foxi's round-2 verifier found this actively counterproductive, since `"404-page"` makes
+  Cloudflare serve a static file straight from the edge and never invokes the Worker at all, so
+  no `+error.svelte` of any kind ever runs. The correct mechanism, read directly out of
+  `adapter-cloudflare`'s own `worker.js`: a root-level `src/routes/+error.svelte` (a sibling of
+  the prerendered route group, since the group's own layout never runs for a request matching
+  no route) plus `assets.not_found_handling: "none"` (the schema's own default), which passes
+  an unmatched request through to the Worker and lets SvelteKit's built-in default-404 handling
+  render the root error page through a real SSR response, verifiable under plain `wrangler dev`.
+  Two proof points now confirm it: Foxi (`71eab6e`) and the showcase itself (`d8aa0f3`, this
+  consolidation), which shares the same fully-prerendered-plus-catch-all topology. The chassis
+  README's "The themed-404 pattern" section documents the mechanism and the two-piece
+  requirement (a root `+error.svelte` plus the wrangler setting) for the next theme on this
+  shape; AstroPaper's own `(site)/+error.svelte` still only catches an in-route error, not a
+  wholly unmatched path, and is not itself evidence against the pattern (it was never given the
+  root-level file).
 - **Cascade layers: an unlayered site rule always beats a layered Tailwind utility** — LANDED
   (documentation, plus a real cross-theme fix). The gallery port's own verifier found this
   first: a theme's `site.css` typically declares plain, unlayered container classes
@@ -384,13 +398,15 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   chrome built on the scaffold; whether Waymark should offer composable structural variants
   (hero+card home, sidebar layouts) is now a REAL harvest question for the ports.
 
-- **Themed 404 belongs in the chassis — PROMOTED (second proof point, 2026-07-06).** The
-  ports' harvest queued "SPA-fallback themed-404" off one observation; Foxi's final
-  verification then proved the full failure shape empirically (prerendered routes exclude
-  everything from the worker manifest; a catch-all +page.server.ts blocks the SPA shell's
-  __data.json; result: the platform-default 404 in every production-shaped mode). The
-  chassis gains the root-level +error.svelte pattern + a README seam note; lands with the
-  next harvest.
+- **Themed 404 belongs in the chassis — LANDED (`d8aa0f3`).** The ports' harvest queued
+  "SPA-fallback themed-404" off one observation; Foxi's round-2 verification proved the full
+  failure shape empirically (prerendered routes exclude everything from the worker manifest; a
+  catch-all `+page.server.ts` blocks the SPA shell's `__data.json`; result: the platform-default
+  404 in every production-shaped mode). The showcase gained a root-level `+error.svelte`, its
+  `wrangler.jsonc` set `assets.not_found_handling: "none"` explicitly, and
+  `src/chassis/README.md` gained "The themed-404 pattern" documenting the mechanism, verified
+  the production-shaped way (`npm run build` + `wrangler dev`, curl an unmatched path, 404 +
+  themed body).
 
 ## Component library
 

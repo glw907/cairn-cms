@@ -74,11 +74,29 @@ primitives; the theme layer carries ASC's palette, faces, and iconography.
   gated on Geoff's explicit go per the member-facing rule, with the GCE origin retiring
   after a soak period.
 
+## The coexistence strategy (Geoff, 2026-07-06: the early-cutover win)
+
+Cutting the production site over to cairn EARLY, with the old ops stack still running
+beside it, is the strategic shape: users and editors get the improved experience sooner,
+and ops functionality then migrates BIT BY BIT rather than as one big phase-2 event.
+Consequences the design carries:
+
+- **Coexistence is a requirement, not a transition state.** The cairn site and the
+  existing ops stack (ops.aksailingclub.org, its D1) run side by side for as long as the
+  incremental migration takes; the events read integration must not disturb ops's
+  ownership of that data.
+- **Phase 2 becomes incremental ops absorption:** each ops capability (events admin, the
+  directory, my-account, membership flows) moves in its own small pass onto the
+  extending-developer seam, harvested and verified like every other pass in this program,
+  with the old ops surface retiring piece by piece.
+- The phase-1 cutover is therefore gated only on the PUBLIC site's quality, never on
+  ops-migration readiness.
+
 ## Out of scope (phase boundaries)
 
-- Phase 2: the members directory, my-account, auth beyond magic-link editors, the admin/
-  members migration onto the extending-developer seam, event administration, and the
-  reconciliation with the asc-ops dashboards and the prior migration's D1.
+- Phase 2+: the incremental ops absorption described above (the members directory,
+  my-account, auth beyond magic-link editors, event administration), each piece its own
+  pass; the reconciliation with the prior migration's D1 rides the first such pass.
 - Phase 3: handbook.aksailingclub.org on Topo (after Topo exists).
 - The Blowfish origin site's decommissioning rides the cutover's soak, not this spec.
 

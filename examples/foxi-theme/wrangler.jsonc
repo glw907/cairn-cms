@@ -1,0 +1,11 @@
+{
+  // This theme is a public-content-only port (no admin mount, no D1, no R2, no email binding):
+  // it demonstrates the composed-page/marketing-section seam, not the full site auth/commit
+  // pipeline, which the showcase already proves. A production theme built from this port adds
+  // those bindings back the way examples/showcase/wrangler.jsonc does.
+  "name": "foxi-theme",
+  "compatibility_date": "2026-05-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" }
+}

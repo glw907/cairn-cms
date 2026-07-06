@@ -1,0 +1,48 @@
+/* examples/foxi-theme/src/theme/site.css
+   Two containers: `.site-main` is the narrow reading column (Foxi's own blog posts and the Terms
+   page, both markdown content rendered through cairn's pipeline); `.site-wide` is the marketing
+   measure a composed page's own bands center their content in (Foxi's own `max-w-7xl` container,
+   tailwind.config.mjs has no explicit container key, but every marketing section in the upstream
+   source wraps in one). Referenced only through a Vite ?url import (see the (site) layout).
+
+   The ultrawide posture (the family responsive standard): Foxi's own live demo never scales past
+   its static Tailwind breakpoints; this clamp is this port's own deliberate 2560px posture, the
+   licensed divergence a port may add without touching the visible design language. */
+html {
+  font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
+}
+
+.site-main {
+  /* The chassis's .cairn-site-main (on the same element; see the (site) layout) carries the
+     flex-item width fix this column needs; this rule only adds the theme's own measure and
+     spacing on top of it. */
+  max-width: var(--container-measure);
+  margin: 0 auto;
+  padding: var(--spacing-l) var(--spacing-m);
+}
+
+.site-wide {
+  max-width: var(--container-measure-wide);
+  margin: 0 auto;
+  padding-inline: var(--spacing-m);
+}
+
+body {
+  overflow-x: clip;
+}
+
+/* cairn figure placement (media 3a): a blog post that adds a figure renders it full-measure. */
+.site-main figure {
+  margin: var(--spacing-l) 0;
+}
+.site-main figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--radius-box);
+}
+.site-main figure figcaption {
+  margin-top: 0.5rem;
+  font-size: var(--text-step--1);
+  color: var(--color-muted);
+}

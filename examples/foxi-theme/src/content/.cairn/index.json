@@ -1,0 +1,98 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "terms",
+      "concept": "pages",
+      "title": "Terms of Service",
+      "permalink": "/terms",
+      "summary": "Introduction Welcome to Foxi! By using our services, you agree to be bound by these terms and conditions. Please read them carefully. Acceptance of Terms By accessing or using Foxi, you agree to…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "2024-04-04-welcome",
+      "concept": "posts",
+      "title": "Welcome to Foxi!",
+      "date": "2024-04-04",
+      "permalink": "/blog/welcome",
+      "summary": "We're excited to introduce you to the ultimate productivity app designed to help you manage your tasks effortlessly to help you stay organized and efficient.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "announcement",
+        "productivity"
+      ]
+    },
+    {
+      "id": "2024-04-05-foxi-mobile-app-launch",
+      "concept": "posts",
+      "title": "Foxi Mobile App Launch",
+      "date": "2024-04-05",
+      "permalink": "/blog/foxi-mobile-app-launch",
+      "summary": "We have rolled out new security updates to keep your data safe and secure. Learn more about our latest security enhancements and how they protect you.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "announcement",
+        "app"
+      ]
+    },
+    {
+      "id": "2024-05-05-security-enhancements",
+      "concept": "posts",
+      "title": "Security Enhancements now here!",
+      "date": "2024-05-05",
+      "permalink": "/blog/security-enhancements",
+      "summary": "The Foxi mobile app is now available! Manage your tasks and projects on the go with our new mobile app. Stay connected and productive no matter where you are.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "app",
+        "productivity"
+      ]
+    },
+    {
+      "id": "2024-05-05-user-feedback-on-foxi",
+      "concept": "posts",
+      "title": "User feedback on foxi",
+      "date": "2024-05-05",
+      "permalink": "/blog/user-feedback-on-foxi",
+      "summary": "Your feedback is crucial to us. We are constantly striving to improve Foxi based on your suggestions. Here are some of the latest improvements.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "app",
+        "productivity"
+      ]
+    },
+    {
+      "id": "2024-06-04-celebrating-user-success-stories",
+      "concept": "posts",
+      "title": "Celebrating User Success Stories",
+      "date": "2024-06-04",
+      "permalink": "/blog/celebrating-user-success-stories",
+      "summary": "These stories inspire us to keep innovating and improving Foxi. We are proud of what our users have achieved and are committed to helping more people reach their full potential.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "announcement",
+        "reviews"
+      ]
+    },
+    {
+      "id": "2024-06-04-enhancing-team-collaboration",
+      "concept": "posts",
+      "title": "Enhancing Team Collaboration",
+      "date": "2024-06-04",
+      "permalink": "/blog/enhancing-team-collaboration",
+      "summary": "At Foxi, we believe that effective team collaboration is key to achieving great results. Our latest update introduces new features designed to enhance how your team works together.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "announcement",
+        "app"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "extends": "./.svelte-kit/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "moduleResolution": "bundler",
+    // This theme consumes cairn through file:../.., so cairn's dist .d.ts (at the repo root)
+    // resolve @sveltejs/kit to the root node_modules while this theme's own files resolve to its
+    // local kit. skipLibCheck skips type-checking declaration files (where the conflict lives)
+    // while still fully checking this theme's source, including cairn.config.ts against cairn's
+    // types.
+    "skipLibCheck": true
+  }
+}

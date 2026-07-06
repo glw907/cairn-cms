@@ -1,0 +1,185 @@
+/* ============================================================================
+   The Foxi theme (theme-ports-1-3, port 2): the composed-page/marketing-section capability
+   test. Every value below is read from Foxi's own public source
+   (oxygenna-themes/foxi-astro-theme, MIT, (c) 2024 Oxygenna; see this theme's README for the
+   full credit): tailwind.config.mjs for the primary/neutral palettes and the two font roles,
+   src/styles/global.css for the heading rhythm.
+
+   This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
+   chassis token SYSTEM and then redeclares every design-scale key with Foxi's own concrete
+   numbers and colors, plus the two named DaisyUI themes the chassis deliberately never declares.
+   ============================================================================ */
+@import '../chassis/tokens.css';
+
+/* Foxi's two faces, self-hosted so the real faces are the default first paint. Fontsource
+   registers each variable family as "<Display Name> Variable"; the --font-* tokens below name
+   them exactly. Foxi splits headings (Outfit) from body copy (Inter), unlike AstroPaper's
+   single-face choice. */
+@import '@fontsource-variable/outfit/index.css';
+@import '@fontsource-variable/inter/index.css';
+
+/* The light theme (Foxi's default, tailwind.config.mjs `primary`/`neutral` scales). */
+@plugin "daisyui/theme" {
+  name: "foxi";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #ffffff;
+  --color-base-200: #f8fafc;
+  --color-base-300: #e2e8f0;
+  --color-base-content: #334155;
+  /* Foxi's one accent, a magenta-pink held in both modes (tailwind.config.mjs primary-500). */
+  --color-primary: #e2187d;
+  --color-primary-content: #ffffff;
+  --color-secondary: #fdf2f8;
+  --color-secondary-content: #e2187d;
+  --color-accent: #e2187d;
+  --color-accent-content: #ffffff;
+  --color-neutral: #0f172a;
+  --color-neutral-content: #f8fafc;
+  --color-info: oklch(58% 0.1 235);
+  --color-info-content: oklch(99% 0.01 235);
+  --color-success: oklch(58% 0.12 150);
+  --color-success-content: oklch(99% 0.01 150);
+  --color-warning: oklch(80% 0.13 78);
+  --color-warning-content: oklch(28% 0.05 78);
+  --color-error: oklch(58% 0.19 27);
+  --color-error-content: oklch(99% 0.01 27);
+
+  /* Foxi's cards, buttons, and pricing panels are gently rounded, never flat or pill-shaped. */
+  --radius-selector: 0.5rem;
+  --radius-field: 0.375rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The dark sibling: Foxi's own dark mode lifts the neutral scale rather than swapping the
+   accent hue (the pink primary is identical in both modes), so this port carries that forward. */
+@plugin "daisyui/theme" {
+  name: "foxi-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #0f172a;
+  --color-base-200: #1e293b;
+  --color-base-300: #334155;
+  --color-base-content: #e2e8f0;
+  --color-primary: #f472b6;
+  --color-primary-content: #500724;
+  --color-secondary: #1e293b;
+  --color-secondary-content: #f9a8d4;
+  --color-accent: #f472b6;
+  --color-accent-content: #500724;
+  --color-neutral: #f8fafc;
+  --color-neutral-content: #0f172a;
+  --color-info: oklch(70% 0.1 235);
+  --color-info-content: oklch(24% 0.04 235);
+  --color-success: oklch(70% 0.12 150);
+  --color-success-content: oklch(24% 0.04 150);
+  --color-warning: oklch(82% 0.13 78);
+  --color-warning-content: oklch(25% 0.05 78);
+  --color-error: oklch(70% 0.17 27);
+  --color-error-content: oklch(24% 0.05 27);
+
+  --radius-selector: 0.5rem;
+  --radius-field: 0.375rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The design-scale VALUES. Foxi's own headings jump at Tailwind's static breakpoints
+   (global.css: text-4xl lg:text-6xl); this theme keeps the chassis's fluid clamp() mechanism but
+   tunes each clamp to land on Foxi's own two endpoints, growing smoothly across the family's five
+   viewports rather than jumping once, a licensed divergence the family responsive standard
+   invites. */
+@theme {
+  --font-display: 'Outfit Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.875rem);      /* meta, tag pills, small print */
+  --text-step-0: clamp(0.95rem, 0.93rem + 0.1vw, 1rem);          /* body */
+  --text-step-1: clamp(1.05rem, 1rem + 0.25vw, 1.125rem);        /* lead paragraphs */
+  --text-step-2: clamp(1.2rem, 1.1rem + 0.5vw, 1.5rem);          /* h3 */
+  --text-step-3: clamp(1.4rem, 1.25rem + 0.9vw, 1.875rem);       /* h2 (section headings) */
+  --text-step-4: clamp(1.7rem, 1.4rem + 1.6vw, 2.5rem);          /* h1 (page headers) */
+  --text-step-5: clamp(2rem, 1.4rem + 3vw, 3.75rem);             /* hero masthead */
+
+  --spacing-3xs: 0.25rem;
+  --spacing-2xs: 0.5rem;
+  --spacing-xs: 0.75rem;
+  --spacing-s: 1rem;
+  --spacing-m: 1.5rem;
+  --spacing-l: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-2xl: 5rem;
+
+  --leading-body: 1.6;
+  --leading-snug: 1.4;
+  --leading-tight: 1.15;
+  --tracking-tight: -0.01em;
+  --tracking-eyebrow: 0.08em;
+
+  /* Foxi's own reading measure, and a wider one for the composed marketing sections. */
+  --container-measure: 42rem;
+  --container-measure-wide: 72rem;
+
+  --color-muted: #64748b;
+  --color-card-border: #e2e8f0;
+}
+
+/* ----------------------------------------------------------------------------
+   The Foxi-owned Tier-2 values: on-surface inks and the elevation pair. Foxi's own cards carry a
+   soft, colored shadow (Button.astro's `--elevated` variant), unlike a bare hairline.
+   ---------------------------------------------------------------------------- */
+:root {
+  --cairn-success-ink: oklch(48% 0.12 150);
+  --cairn-warning-ink: oklch(52% 0.11 76);
+  --cairn-error-ink: oklch(52% 0.17 27);
+  --cairn-info-ink: oklch(50% 0.1 235);
+
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent), 0
+    12px 24px -8px color-mix(in oklab, var(--color-primary) 15%, transparent);
+
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-primary);
+  --cairn-cta-btn-content: var(--color-primary-content);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-muted: #94a3b8;
+    --color-card-border: #334155;
+    --cairn-success-ink: oklch(78% 0.11 150);
+    --cairn-warning-ink: oklch(82% 0.12 76);
+    --cairn-error-ink: oklch(78% 0.14 27);
+    --cairn-info-ink: oklch(80% 0.1 235);
+    --cairn-cta-bg: var(--color-base-200);
+    --cairn-cta-content: var(--color-base-content);
+    --cairn-cta-border: var(--color-base-300);
+  }
+}
+
+:root[data-theme='foxi-dark'] {
+  --color-muted: #94a3b8;
+  --color-card-border: #334155;
+  --cairn-success-ink: oklch(78% 0.11 150);
+  --cairn-warning-ink: oklch(82% 0.12 76);
+  --cairn-error-ink: oklch(78% 0.14 27);
+  --cairn-info-ink: oklch(80% 0.1 235);
+  --cairn-cta-bg: var(--color-base-200);
+  --cairn-cta-content: var(--color-base-content);
+  --cairn-cta-border: var(--color-base-300);
+}

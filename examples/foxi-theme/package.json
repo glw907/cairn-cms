@@ -1,0 +1,31 @@
+{
+  "name": "foxi-theme",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "cairn:manifest": "cairn-manifest",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
+  },
+  "dependencies": {
+    "@glw907/cairn-cms": "file:../.."
+  },
+  "devDependencies": {
+    "@fontsource-variable/inter": "^5.2.8",
+    "@fontsource-variable/outfit": "^5.2.8",
+    "@sveltejs/adapter-cloudflare": "^7",
+    "@sveltejs/kit": "^2",
+    "@sveltejs/vite-plugin-svelte": "^7",
+    "@tailwindcss/vite": "^4.3.2",
+    "@types/node": "^22.19.19",
+    "daisyui": "^5.6.6",
+    "svelte": "^5",
+    "svelte-check": "^4",
+    "tailwindcss": "^4.3.2",
+    "typescript": "^6",
+    "vite": "^8",
+    "wrangler": "^4"
+  }
+}

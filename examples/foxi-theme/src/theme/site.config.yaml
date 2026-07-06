@@ -1,0 +1,7 @@
+# The Foxi port's site config: the minimum a `SiteConfig` needs (siteName). This port mounts no
+# admin, so it carries no nav/vocabulary editor wiring; the theme's own marketing routes and the
+# blog index read the post index directly (see src/routes/(site)).
+siteName: Foxi
+description: A free, highly customizable, production-ready productivity-toolkit theme, ported from Oxygenna's Foxi.
+author: Oxygenna
+locale: en

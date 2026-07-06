@@ -77,6 +77,24 @@ The override seam pattern this proves three times over: a theme `@import`s
 `chassis/tokens.css` first, then redeclares the same custom-property keys in its own later
 `@theme` block; cascade order does the rest, with zero edits inside the chassis file itself.
 
+## The ASC harvest review (queued, Geoff 2026-07-06: runs when the phase-1 build lands)
+
+A deliberate three-layer review of what the capstone build teaches — the seventh chassis
+consumer, and the first site with several new shapes whose lessons land at named layers:
+
+- **Contract candidates the build creates:** the NOTIFICATIONS concept (expiring content —
+  does expiry belong in the contract's field grammar or stay site-derived?); the
+  D1-data-beside-cairn pattern (the events read: does the charter's build-outside mode
+  deserve a documented seam or stay purely site-owned?); whatever the Hugo shortcode
+  migration's component findings add to the grammar evidence.
+- **Chassis candidates:** the A1/B1/C7 recipes as generalized primitives (bands-mark-
+  sections enforcement? the editorial-pacing table device? category-mark patterns?); the
+  north-star-as-contract method's tooling needs.
+- **Engine candidates:** whatever the build's frictions surface.
+
+Triage lands the bounded items, ledgers the rest; the review's output also shapes the
+phase-2 (ops absorption) planning.
+
 ## The site contract (Geoff, 2026-07-05: explicitly open to improve/break/extend)
 
 The adapter and seam contract itself — defineConcept, fieldset, the component grammar, the

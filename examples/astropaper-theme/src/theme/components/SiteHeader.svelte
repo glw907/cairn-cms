@@ -50,8 +50,8 @@ The theme toggle uses the same chassis mechanism the cairn theme's own header de
   let menuOpen = $state(false);
 </script>
 
-<header class="site-header border-b border-card-border bg-base-100">
-  <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-s px-m py-s sm:py-m">
+<header class="site-header bg-base-100">
+  <div class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-s border-b border-card-border px-m py-s sm:py-m">
     <a href="/" class="text-step-1 font-bold text-base-content no-underline sm:text-step-2">
       AstroPaper
     </a>

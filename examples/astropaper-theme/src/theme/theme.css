@@ -159,6 +159,13 @@
   /* AstroPaper draws no shadow anywhere; the elevation token stays a bare hairline. */
   --cairn-shadow: 0 0 0 transparent;
 
+  /* AstroPaper's own Shiki output (`.astro-code`, typography.css) is a plain bordered block on
+     the surface's own background, never the chassis's generic tinted `--color-base-200` panel;
+     these two read `--color-base-100`/`--color-card-border` so a fenced block matches whichever
+     theme (light or dark) is active with no separate dark-mode override needed. */
+  --cairn-code-bg: var(--color-base-100);
+  --cairn-code-border: var(--color-card-border);
+
   --cairn-cta-bg: var(--color-neutral);
   --cairn-cta-content: var(--color-neutral-content);
   --cairn-cta-border: transparent;

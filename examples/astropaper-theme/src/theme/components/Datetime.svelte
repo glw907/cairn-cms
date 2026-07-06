@@ -15,10 +15,14 @@
   const isModified = $derived(!!(modDate && date && modDate > date));
   const shown = $derived(isModified ? modDate : date);
 
-  const fmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+  // "3 Jun, 2026", AstroPaper's own Datetime.astro format: day and month with no separating
+  // comma, then a comma before the year. No single Intl.DateTimeFormat option set produces this
+  // exact punctuation, so the year is appended by hand rather than folded into the formatter.
+  const fmt = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short', timeZone: 'UTC' });
 
   function format(iso: string): string {
-    return fmt.format(new Date(iso));
+    const parsed = new Date(iso);
+    return `${fmt.format(parsed)}, ${parsed.getUTCFullYear()}`;
   }
 </script>
 

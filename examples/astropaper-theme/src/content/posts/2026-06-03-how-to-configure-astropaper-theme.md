@@ -65,12 +65,12 @@ so a saved change is silent until the next `astro dev`.
 The social row in the header and footer reads the same list, so adding a platform there adds it
 in both places:
 
-<div class="code-card" data-filename="src/theme/components/SiteFooter.svelte">
+<div class="code-card" data-filename="SiteFooter.svelte">
 
 ```ts
 const socials: SocialLink[] = [
-  { label: 'GitHub', href: 'https://github.com/glw907/cairn-cms', path: '...' },
-  { label: 'Mastodon', href: 'https://mastodon.social/@astropaper', path: '...' },
+  { label: 'GitHub', href: 'https://github.com/glw907/cairn-cms', paths: ['...'] },
+  { label: 'Mastodon', href: 'https://mastodon.social/@astropaper', paths: ['...'] },
 ];
 ```
 

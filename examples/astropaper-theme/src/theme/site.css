@@ -45,46 +45,54 @@ body {
   color: var(--color-muted);
 }
 
-/* The code-card device, styled after AstroPaper's own expressive-code output (a filename tab
-   plus a Copy button above the fenced block): a raw-HTML wrapper an author drops around a
-   fenced code block (see the how-to-configure post), not a registered component, so it needs
-   only the sanitize floor's data-filename allowance (cairn.config.ts), never a defineComponent
-   entry. This is a theme-owned device, not chassis prose, so it lives here rather than in the
-   shared prose.css. The copy button's click behavior is a small progressive-enhancement script
-   ($theme/code-card.ts), mounted once from the (site) layout. */
+/* The code-card device, styled after AstroPaper's own Shiki `transformerFileName` output (a
+   small filename badge and a Copy button, each straddling the block's own top border, not a
+   full-width header bar): a raw-HTML wrapper an author drops around a fenced code block (see
+   the how-to-configure post), not a registered component, so it needs only the sanitize floor's
+   data-filename allowance (cairn.config.ts), never a defineComponent entry. This is a
+   theme-owned device, not chassis prose, so it lives here rather than in the shared prose.css.
+   The fenced block itself keeps prose.css's plain bordered `pre.shiki` untouched; the two
+   badges are absolutely positioned children, so neither ever grows a flex row that could wrap
+   at a narrow viewport. The copy button's click behavior is a small progressive-enhancement
+   script ($theme/code-card.ts), mounted once from the (site) layout. */
 .site-main .code-card {
   --flow-space: var(--spacing-m);
-  border: var(--border) solid var(--color-card-border);
-  border-radius: var(--radius-box);
-  overflow: hidden;
+  position: relative;
 }
-.site-main .code-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-s);
-  padding: 0.4rem var(--spacing-m);
-  background: var(--color-base-200);
-  border-bottom: var(--border) solid var(--color-card-border);
-  font-family: var(--font-mono);
-  font-size: var(--text-step--1);
-}
-.site-main .code-card-filename {
-  color: var(--color-muted);
-}
-.site-main .code-card-filename::before {
-  content: '\2022';
-  margin-right: 0.4em;
-  color: var(--color-primary);
-}
+.site-main .code-card-filename,
 .site-main .code-card-copy {
+  position: absolute;
+  top: -0.75rem;
   border: var(--border) solid var(--color-card-border);
   border-radius: var(--radius-field);
   background: var(--color-base-100);
-  color: var(--color-base-content);
   font-family: var(--font-mono);
   font-size: var(--text-step--1);
+  line-height: 1.4;
   padding: 0.15rem 0.6rem;
+  white-space: nowrap;
+}
+.site-main .code-card-filename {
+  left: 0.75rem;
+  /* Leaves room for the Copy badge at every family width (down to 320px) rather than
+     overlapping it: a long filename ellipsizes instead of colliding. */
+  max-width: calc(100% - 5rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-muted);
+}
+.site-main .code-card-filename::before {
+  content: '';
+  display: inline-block;
+  width: 0.4em;
+  height: 0.4em;
+  margin-right: 0.4em;
+  border-radius: 50%;
+  background: var(--color-success);
+}
+.site-main .code-card-copy {
+  right: 0.75rem;
+  color: var(--color-base-content);
   cursor: pointer;
 }
 .site-main .code-card-copy:hover {
@@ -96,7 +104,5 @@ body {
   outline-offset: 2px;
 }
 .site-main .code-card pre.shiki {
-  border: 0;
-  border-radius: 0;
   margin: 0;
 }

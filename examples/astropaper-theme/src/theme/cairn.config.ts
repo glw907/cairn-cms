@@ -29,7 +29,7 @@ export const cairn = defineAdapter({
     posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
-      summaryFields: ['description', 'featured'],
+      summaryFields: ['description', 'featured', 'modDate'],
       routing: 'feed',
       // A 'feed' concept is always dated (identity model); the day-level datePrefix (the
       // default) names the file `YYYY-MM-DD-slug.md` while the URL slug is date-stripped, which

@@ -14,6 +14,6 @@
   <a href="/" class="hover:text-primary">Home</a> &raquo; Posts (Page {data.page})
 </nav>
 <h1 class="text-step-4 font-bold">Posts</h1>
-<p class="text-muted">All the posts I've written.</p>
+<p class="italic text-muted">All the posts I've written.</p>
 
 <PostList posts={data.posts} page={data.page} totalPages={data.totalPages} />

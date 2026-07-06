@@ -14,18 +14,10 @@ html {
 }
 
 .site-main {
+  /* The chassis's .cairn-site-main (on the same element; see the (site) layout) carries the
+     flex-item width fix this reading column needs; this rule only adds the theme's own measure
+     and spacing on top of it. */
   max-width: var(--container-measure);
-  /* main is a flex child (the (site) layout's flex-col wrapper) whose own width is auto. A
-     flex item with a wide-enough descendant (a nowrap table cell, an unbroken code line, both
-     inside their own overflow-x: auto wrapper) never resolves its stretched cross size against
-     the flex line the way a plain block child would: the descendant's intrinsic content width
-     bubbles up through every auto-sized ancestor instead, growing main, article, and the whole
-     page past the viewport, each one hidden behind the NEXT wrapper's own overflow-x: auto,
-     which only scrolls content already trapped inside a box that is already too wide. An
-     explicit width, not auto, is what actually resolves main against the flex line; min-width
-     0 then lets it shrink there instead of floating back up to the same content-based floor. */
-  width: 100%;
-  min-width: 0;
   margin: 0 auto;
   padding: var(--spacing-l) var(--spacing-m);
 }

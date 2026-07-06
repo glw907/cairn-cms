@@ -31,7 +31,7 @@ the mechanism.
 | `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme, apply a choice, persist it to a cookie. |
 | `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the design-scale keys with generic defaults, and the semantic (code-highlight, ink, elevation, CTA) bindings. |
 | `prose.css` | The reading-surface foundation: every prose element bound to tokens, with the signature flourish gestures behind `[data-flourish]`. |
-| `composition.css` | The composition primitives: card, band, section, hero, sidebar-layout. |
+| `composition.css` | The composition primitives: card, band, section, hero, sidebar-layout, site-shell. |
 
 The SvelteKit route files that touch delivery plumbing (`feed.xml`, `feed.json`, `sitemap.xml`,
 `robots.txt`, `media/[...path]`, `healthz`, the `/admin` mount) stay in `src/routes/`, since
@@ -89,6 +89,17 @@ per-instance override, layered on top of the shared design-scale tokens they def
 query condition cannot read a custom property, so `.cairn-sidebar-layout`'s 48rem breakpoint is a
 fixed value, not a token seam; its own comment says so.
 
+`.cairn-site-shell`/`.cairn-site-main` is a sticky-footer flex column (header, growing main,
+footer), harvested from the AstroPaper port's own hand-rolled shape. It bakes in the fix for a
+flex-item cross-axis bug: a flex item's own width is auto, and auto does not resolve against the
+flex line the way a plain block's width does, so a wide descendant anywhere inside the growing
+item (a table with nowrap cells, any box with its own `overflow-x: auto`) shrinks the item to
+that descendant's content width instead of stretching it, and the growth silently bubbles up
+through every auto-sized ancestor, breaking the layout at narrow viewports (`min-width: 0` alone
+does not fix this; only an explicit `width` does). A theme puts `.cairn-site-shell` on its outer
+wrapper and `.cairn-site-main` on `<main>` to get the fix for free, rather than rediscovering the
+bug the way the AstroPaper port first did.
+
 ## Subtracting an element
 
 The chassis is site-owned code over the versioned engine API (Geoff, 2026-07-05): an ultra-light
@@ -109,7 +120,7 @@ a build it silently breaks) fails this file's own promise.
 | `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
-| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point). | Delete the file and that one `@import` line; nothing else references it today, since no theme markup currently uses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`. |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point). | Delete the file and that one `@import` line; nothing else references it today, since no theme markup in this showcase currently uses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`/`.cairn-site-shell`/`.cairn-site-main` (the AstroPaper port's own theme is the first adopter of the site-shell pair, in its own tree). |
 
 Two of these notes are verified verbatim, in a scratch copy of this showcase, as part of the
 chassis restructure's own acceptance pass: `composition.css` (the zero-current-dependents case)

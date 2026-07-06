@@ -99,6 +99,60 @@ are ours until beta, which is the whole point of the window. Known contract ques
   the minimal form; the evidence may justify the fuller break (a composable pipeline
   contract instead of one closed factory).
 
+## Chassis
+
+Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based against
+`examples/showcase/src/chassis` and mirrored into each theme's own verbatim copy.
+
+- **`.cairn-site-shell` / `.cairn-site-main` (composition.css)** — LANDED. AstroPaper's own
+  sticky-footer flex column hit a flex-item cross-axis auto-width bug (a wide descendant
+  anywhere inside the growing `<main>` shrinks the item to that descendant's content width
+  instead of stretching it, and the growth bubbles up through every auto-sized ancestor,
+  breaking the layout at narrow viewports; `min-width: 0` alone does not fix it, only an
+  explicit `width` does). The fix is now a chassis recipe (`examples/showcase/src/chassis/README.md`),
+  mirrored verbatim into `examples/astropaper-theme/src/chassis/composition.css`, and the
+  AstroPaper theme itself migrated onto it (its own `site.css` no longer hand-rolls the fix).
+  Verified: `npm run check` (0/0) and `npm test` (288 files, 3075 tests, exit 0) on cairn-cms;
+  `examples/astropaper-theme`'s own `check` and `build` green; Playwright confirmed
+  `body.scrollWidth` never exceeds the viewport at 320/390/2560 on the home and a post
+  template, and side-by-side screenshots at 320 and 390 match the pre-refactor renders.
+- **The code-card device (filename tab + Copy button)** — QUEUED (not promoted). AstroPaper's
+  own raw-HTML code-card (a `<div class="code-card" data-filename="...">` wrapper plus a small
+  progressive-enhancement script) works entirely through existing seams (the `sanitizeSchema`
+  extension point, `rehype-raw`, the sanitize-floor `data-*` allowance) with zero engine
+  change, and needed no chassis promotion for this one port. It is a one-theme device so far,
+  not a demonstrated-twice pattern the way `theme-toggle.ts` was before it moved to chassis;
+  hold as a candidate chassis recipe until a second port (Foxi or the gallery) also wants a
+  code-card, then promote with both proof points, not speculatively.
+- **The `sanitizeSchema` extension point and the raw-HTML-device pattern generally** — CONFIRMED
+  WORKING, no landing needed. AstroPaper rendered its code-card, its warning admonition (the
+  chassis's existing `.callout`/`.callout-warning` classes, already in `prose.css` from prior
+  work), and its table of contents (a plain regex over `rehype-slug`'s existing heading ids)
+  entirely through seams the chassis already exposed, with an **empty** component registry.
+  This is the strongest form of the "zero new content components" capability verdict the port
+  set out to prove; nothing here needed a chassis or engine change.
+- **`CairnAdapter.backend`'s field access, corrected** — the first AstroPaper implementer's
+  agent-memory note claimed `GithubAppProvider.owner`/`.repo`/`.branch` are not reachable off
+  `CairnAdapter.backend` in site code because it is typed as the generic `BackendProvider` and
+  `isGithubApp` is not barrel-exported, so the port re-exported a literal `REPO` constant next
+  to `githubApp({...})` as a workaround. Verified false for the actual friction site
+  (`svelte-check`, 0/0, both via a raw `tsc --noEmit` probe and the theme's own `npm run
+  check`): `defineAdapter<const A extends CairnAdapter>(adapter: A): A`'s const-generic capture
+  preserves `githubApp()`'s concrete `GithubAppProvider` return type, so `cairn.backend.owner`
+  reads with no cast from the same module that calls `defineAdapter`, or from any module that
+  imports that export. `isGithubApp` would only be needed to narrow a field genuinely widened
+  to `BackendProvider` (for example `CairnRuntime.backend`, which `composeRuntime` returns and
+  which stays server-internal, never reaching theme/page code today), so no engine export was
+  added; the `REPO` workaround is unnecessary but harmless and was left in place rather than
+  churning an already-shipped port for a documentation-only correction. The corrected claim is
+  recorded in `.claude/agent-memory/cairn-implementer/theme-port-astropaper-task1.md` so the
+  next port does not repeat the workaround.
+- **Public tag-page routing stays out of scope** — not a new finding. AstroPaper hand-built its
+  own `/tags` and `/tags/[tag]` routes over the `taxonomy: true` field, the same shape 907.life
+  and ecxc-ski already hand-build; this is the tag-management initiative's own deliberate,
+  ratified decision (public tag pages removed from cairn's scope, tags kept as data only), not
+  an open contract question.
+
 ## Engine
 
 - **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererOptions` gained

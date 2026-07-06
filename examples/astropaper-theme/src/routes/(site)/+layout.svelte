@@ -15,7 +15,7 @@
   <link rel="stylesheet" href={siteCss} />
 </svelte:head>
 
-<div class="flex min-h-screen flex-col bg-base-100 font-body text-base-content">
+<div class="cairn-site-shell bg-base-100 font-body text-base-content">
   <a
     href="#main"
     class="absolute left-s top-[-3rem] z-50 bg-base-100 px-3 py-2 text-primary focus:top-4"
@@ -25,7 +25,7 @@
 
   <SiteHeader />
 
-  <main id="main" tabindex="-1" class="site-main flex-1">
+  <main id="main" tabindex="-1" class="cairn-site-main site-main">
     {@render children()}
   </main>
 

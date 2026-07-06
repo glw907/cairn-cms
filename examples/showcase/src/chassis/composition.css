@@ -91,4 +91,27 @@
       grid-template-columns: 1fr var(--cairn-sidebar-width);
     }
   }
+
+  /* Site shell: a sticky-footer flex column (header, growing main, footer), for a theme whose
+     chrome wants the footer pinned to the viewport bottom on a short page (the AstroPaper port's
+     shape). `.cairn-site-shell` is the flex column; `.cairn-site-main` is the growing item. A
+     flex item's own width is auto, and auto does not resolve against the flex line on the CROSS
+     axis the way a plain block's width does (this is a different bug from the well-known
+     main-axis min-content gotcha): when a descendant intrinsically wider than the column (a
+     table with nowrap cells, any box with its own overflow-x: auto) sits anywhere inside
+     `.cairn-site-main`, the item shrinks-to-fit that descendant's content width instead of
+     stretching, and the growth silently bubbles up through every auto-sized ancestor, breaking
+     the layout at narrow viewports. `min-width: 0` alone does not fix this (confirmed by
+     bisection: only an explicit width does). `.cairn-site-main` bakes the fix in, so a theme
+     adopting this shell never rediscovers the bug the AstroPaper port hit. */
+  .cairn-site-shell {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  .cairn-site-main {
+    flex: 1 1 0%;
+    width: 100%;
+    min-width: 0;
+  }
 }

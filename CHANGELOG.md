@@ -159,6 +159,12 @@ All notable changes to this project are recorded here, most recent first.
   exact permalink crawl and no rendering change. No consumer action required: the package's
   public API is unaffected, and a site that has not adopted this showcase reorganization loses
   nothing.
+- `composition.css` gains a sticky-footer flex-column recipe, `.cairn-site-shell` /
+  `.cairn-site-main`, harvested from the first theme port (AstroPaper): a flex item's own width
+  is auto and does not resolve against the flex line the way a plain block's width does, so a
+  wide descendant anywhere inside a growing `<main>` silently breaks the layout at narrow
+  viewports unless the item carries an explicit width. `.cairn-site-main` bakes the fix in so
+  the next theme adopting this shape gets it for free. No consumer action required.
 
 ### Editor experience
 

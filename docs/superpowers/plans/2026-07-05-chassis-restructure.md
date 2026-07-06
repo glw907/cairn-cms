@@ -47,3 +47,19 @@ under Unreleased (this restructure rides the pre-aksailingclub release); the
 kept-vs-replaced boundary map recorded for the tutorial to follow. Deploys of the two live
 sites happen ONLY after the one-check rule and Geoff's go (no visual change is expected,
 which the verifier proves).
+
+## AMENDMENT (Geoff, mid-pass): the chassis is default, not contract
+
+An ultra-light theme builder may rebuild, ditch, or modify the chassis, or simply remove
+unused elements — the chassis is site-owned code over the versioned engine API, and
+SUBTRACTABILITY is therefore a design requirement, not a courtesy:
+
+- **Organization:** one concern per file; no hidden cross-dependencies (removing the
+  gallery recipe must not break the card recipe); anything load-bearing for multiple
+  elements lives in an obviously-named shared file, never inside a sibling.
+- **Documentation:** the chassis README maps EVERY element to its purpose, its dependents,
+  and a removal note ("delete this file + these two imports; nothing else references it").
+  A developer subtracting from the chassis should never need to grep for hidden couplings.
+- Task 5 verifies this: pick two chassis elements, follow their removal notes verbatim in
+  a scratch copy, and confirm the build stays green. A removal note that lies fails the
+  pass.

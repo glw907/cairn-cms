@@ -48,4 +48,11 @@ issue against [`glw907/cairn-cms`](https://github.com/glw907/cairn-cms/issues) w
 what you expected, and what happened. Attach the structured log record if the failure logged
 one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
-logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
+logs](./read-cairn-logs.md) covers querying them on a deployed Worker.## 0.81.0
+
+No consumer action required. The release adds the renderer's `remarkPlugins`/`rehypePlugins`
+seam, default-on table scrolling (`tableScroll: false` opts out), sitemap `extraRoutes`,
+`CairnHead`'s `titleTemplate`, and the chassis/theme example structure with three ported
+example themes. All additive; existing sites build unchanged.
+
+

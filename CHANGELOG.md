@@ -1,26 +1,19 @@
-## 0.80.0
+## 0.81.0
 
 <!-- release-size: minor -->
 
-### Waymark starter components (showcase/template only; no consumer action)
+### Themes (three verified ports; no consumer action)
 
-- The starter template gains six content components, each a worked `defineComponent` with a
-  schema-driven picker form: `icon` (renders only names from the adapter's declared icon set,
-  loud failure on an unknown name), `video` (a zero-request static facade that links out;
-  in-page embedding would need `iframe` through the sanitize floor and is deliberately not
-  done), `pull-quote`, `cta`, and `faq` (native `details`, markdown-capable answer slot).
-- The converter island demo is retired. Its replacement exemplar is an expiring-announcement
-  banner: frontmatter-date-driven, hides itself after expiry (checked at both build and
-  hydration), renders nothing on an invalid date.
-- Not shipped, recorded: `figure` needs no component (the engine owns `:::figure` natively;
-  the name is reserved), and `gallery` waits on the component-attribute image gap filed in
-  ROADMAP.
-
-# Changelog
-
-All notable changes to this project are recorded here, most recent first.
-
-## Unreleased
+- Three new example themes land alongside the showcase, each an MIT-attributed port of a
+  newly popular external theme, built on the chassis and verified glance-indistinguishable
+  from its original by fresh-context visual review: `examples/astropaper-theme` (AstroPaper,
+  the pure theme-seam proof: an empty component registry), `examples/foxi-theme` (Foxi, the
+  composition-primitives stress, including the production-verified themed 404), and
+  `examples/gallery-theme` (hugo-theme-gallery, the media stress: the upstream's own
+  justified-layout geometry and PhotoSwipe lightbox, with an album tree expressed inside
+  the fixed Posts/Pages model).
+- The chassis README documents the themed-404 pattern (a root-level error page plus
+  `not_found_handling: "none"`), which the showcase itself now follows.
 
 ### Showcase (Waymark template; no consumer action)
 
@@ -180,6 +173,28 @@ All notable changes to this project are recorded here, most recent first.
   plain text. Plain-text paste and image paste are unchanged. New dependencies: `rehype-parse`
   and `rehype-remark`, both official unified.js packages already alongside `rehype-sanitize`
   and `remark-rehype`.
+
+## 0.80.0
+
+<!-- release-size: minor -->
+
+### Waymark starter components (showcase/template only; no consumer action)
+
+- The starter template gains six content components, each a worked `defineComponent` with a
+  schema-driven picker form: `icon` (renders only names from the adapter's declared icon set,
+  loud failure on an unknown name), `video` (a zero-request static facade that links out;
+  in-page embedding would need `iframe` through the sanitize floor and is deliberately not
+  done), `pull-quote`, `cta`, and `faq` (native `details`, markdown-capable answer slot).
+- The converter island demo is retired. Its replacement exemplar is an expiring-announcement
+  banner: frontmatter-date-driven, hides itself after expiry (checked at both build and
+  hydration), renders nothing on an invalid date.
+- Not shipped, recorded: `figure` needs no component (the engine owns `:::figure` natively;
+  the name is reserved), and `gallery` waits on the component-attribute image gap filed in
+  ROADMAP.
+
+# Changelog
+
+All notable changes to this project are recorded here, most recent first.
 
 ## 0.79.0
 

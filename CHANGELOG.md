@@ -92,6 +92,12 @@ All notable changes to this project are recorded here, most recent first.
   table-scroll post-processing (a hand-rolled `unified().use(rehypeParse, ...)` pipeline run over
   the returned HTML) migrates onto `rehypePlugins`. No consumer action required; the addition is
   additive.
+- Every rendered table is now wrapped in a labeled, keyboard-reachable `role="region"` scroll
+  region by default (the same `table-scroll` fix both owned sites independently hand-wired), a new
+  `RendererOptions.tableScroll` (default `true`) opts out. The showcase and both owned sites delete
+  their local `table-scroll.ts` wiring in favor of the built-in default. No consumer action
+  required for a site with no local table-scroll wiring of its own; a site that already wraps
+  tables itself sets `tableScroll: false` to avoid a doubled wrapper.
 
 ### Fixed
 

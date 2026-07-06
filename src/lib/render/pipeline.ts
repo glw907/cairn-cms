@@ -11,6 +11,7 @@ import type { Schema } from 'hast-util-sanitize';
 import { VFile } from 'vfile';
 import { buildSanitizeSchema, rehypeAnchorRel, rehypeSinkGuard, rehypeTaskListA11y } from './sanitize-schema.js';
 import { rehypeCairnHighlight } from './highlight.js';
+import { rehypeTableScroll } from './table-scroll.js';
 import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkFigure } from './remark-figure.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
@@ -40,6 +41,14 @@ export interface RendererOptions {
    */
   anchorRel?: string | false;
   /**
+   * Wrap every rendered table in a scrollable, labeled region (WCAG 1.3.1): the table stays a real
+   *  `<table>` (so it keeps its role in the accessibility tree) inside a `role="region"`,
+   *  keyboard-reachable wrapper div, so a narrow viewport scrolls the wrapper instead of squeezing
+   *  the table's columns. Defaults to `true`. Set to `false` for a site that supplies its own table
+   *  wrapping, whether its own `rehypePlugins` entry or a different a11y strategy.
+   */
+  tableScroll?: boolean;
+  /**
    * Additional remark plugins, run after cairn's own remark steps (directive stamping, `cairn:`
    *  link resolution, figures, `media:` resolution) and before the remark-to-rehype conversion. A
    *  site's own markdown-stage transform composes here, seeing the engine's already-resolved tree.
@@ -47,9 +56,9 @@ export interface RendererOptions {
   remarkPlugins?: PluggableList;
   /**
    * Additional rehype plugins, run after cairn's own rehype steps (dispatch, the sanitize floor,
-   *  heading slugs, highlighting, anchor hardening, the sink guard) and before stringification. A
-   *  site's own post-render transform, such as wrapping every table in a scrollable region,
-   *  composes here over the hast tree instead of re-parsing the rendered HTML string.
+   *  heading slugs, highlighting, anchor hardening, the sink guard, the default table-scroll wrap)
+   *  and before stringification. A site's own post-render transform composes here over the hast
+   *  tree instead of re-parsing the rendered HTML string.
    */
   rehypePlugins?: PluggableList;
 }
@@ -99,7 +108,11 @@ export function createRenderer(
   // The sink guard runs last, over the fully-built tree, so it neutralizes a sink a component
   // build() emitted after the floor. Gated by the same switch as the floor.
   if (!options.unsafeDisableSanitize) rehypePlugins.push(rehypeSinkGuard);
-  // A site's own rehype plugins run last of all, over the fully sanitized, dispatched tree.
+  // The default table-scroll wrap runs over the fully sanitized, dispatched tree, so it wraps a
+  // component's own table output the same as an author's markdown table. Opts out with
+  // `tableScroll: false`.
+  if (options.tableScroll !== false) rehypePlugins.push(rehypeTableScroll);
+  // A site's own rehype plugins run last of all, over the already-wrapped tree.
   rehypePlugins.push(...(options.rehypePlugins ?? []));
   const processor = unified()
     .use(remarkParse)

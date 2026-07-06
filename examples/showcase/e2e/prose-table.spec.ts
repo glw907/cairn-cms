@@ -2,10 +2,10 @@ import { test, expect } from '@playwright/test';
 
 // The table-scroll a11y fix (WCAG 1.3.1). The prior CSS-only fix put `display: block; overflow-x:
 // auto` directly on the `<table>`, which fixed the 320px squeeze-wrap defect but stripped the
-// table's row/cell display roles from the accessibility tree. The fix is now a wrapper: the
-// showcase's own rehype step (table-scroll.ts, run from cairn.config.ts's rendering.render) wraps
-// every rendered `<table>` in a `.table-scroll` region, and the table itself stays `display: table`.
-// This spec proves the markup shape and the scroll behavior it exists to keep, not a screenshot.
+// table's row/cell display roles from the accessibility tree. The fix is now a wrapper: cairn's
+// render pipeline wraps every rendered `<table>` in a `.table-scroll` region by default, and the
+// table itself stays `display: table`. This spec proves the markup shape and the scroll behavior
+// it exists to keep, not a screenshot.
 test('a rendered table sits in a labeled, focusable scroll region and keeps its own display: table', async ({
   page,
 }) => {

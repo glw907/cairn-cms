@@ -199,12 +199,3 @@ showcase with its own guide.
 The admin nav labels the screen "Media" (CairnAdminShell.svelte:82) while the docs vocabulary
 and the initiative memory call it the Library. One word, two names; rename the nav item or
 settle the vocabulary.
-
-## 2026-07-05 — no custom rehype seam on createRenderer (developer perspective)
-
-The table-scroll a11y fix needed a rehype step; createRenderer keeps its plugin ordering
-closed (verified empirically), so the showcase post-processes the returned HTML string with
-a second unified pipeline — parse, transform, stringify, twice over. Works, composes at the
-documented render seam, but a site adding one rehype plugin should not need to re-parse its
-own output. Candidate: an optional rehype-plugins parameter on the pipeline factory, weighed
-against the charter's leanness bar.

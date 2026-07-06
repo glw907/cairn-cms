@@ -153,4 +153,43 @@ describe('createRenderer', () => {
       expect(r.rehypePlugins[r.rehypePlugins.length - 1]).toBe(customRehype);
     });
   });
+
+  describe('table-scroll default', () => {
+    it('wraps a rendered table in a scrollable, labeled region by default', async () => {
+      const { renderMarkdown } = createRenderer();
+      const html = await renderMarkdown('| Name | Age |\n| - | - |\n| Ada | 36 |');
+      expect(html).toContain('class="table-scroll"');
+      expect(html).toContain('role="region"');
+      expect(html).toContain('tabindex="0"');
+      expect(html).toContain('aria-label="Table: Name, Age"');
+      // the table itself is untouched: still a real <table>, just wrapped.
+      expect(html).toMatch(/<div class="table-scroll"[^>]*><table>/);
+    });
+
+    it('opts out of the default table wrap with tableScroll: false', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+        tableScroll: false,
+      });
+      const html = await renderMarkdown('| Name | Age |\n| - | - |\n| Ada | 36 |');
+      expect(html).not.toContain('table-scroll');
+      expect(html).toContain('<table>');
+    });
+
+    it('wraps before a site rehypePlugins entry runs, so a site sees the wrapped tree', async () => {
+      let sawWrapper = false;
+      const probe = () => (tree: HastRoot) => {
+        visit(tree, 'element', (node: Element) => {
+          const className = node.properties?.className;
+          if (node.tagName === 'div' && Array.isArray(className) && className.includes('table-scroll')) {
+            sawWrapper = true;
+          }
+        });
+      };
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
+        rehypePlugins: [probe],
+      });
+      await renderMarkdown('| a | b |\n| - | - |\n| 1 | 2 |');
+      expect(sawWrapper).toBe(true);
+    });
+  });
 });

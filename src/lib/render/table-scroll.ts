@@ -1,19 +1,14 @@
-// The showcase's own post-processing rehype step, run after the engine's renderMarkdown. cairn's
-// public createRenderer keeps its internal remark/rehype plugin ordering closed (rehypeDispatch and
-// the sanitize floor are engine-internal for safety), so a site adds its own render behavior at the
-// boundary: over the HTML string createRenderer already returned, not inside the engine's pipeline.
-//
+import { visit, SKIP } from 'unist-util-visit';
+import { toString } from 'hast-util-to-string';
+import type { Root, Element } from 'hast';
+
 // A markdown table renders as a bare `<table>` with no wrapper. `.prose table { display: block;
 // overflow-x: auto }` alone made a narrow viewport scroll a wide table instead of squeezing its
 // columns, but it also strips the table's row/cell display roles from the accessibility tree (a
 // `display: block` table is no longer exposed as a table to a screen reader, in every current
 // engine). The standard fix keeps the table a real table and scrolls a wrapper around it instead.
-import { unified } from 'unified';
-import rehypeParse from 'rehype-parse';
-import rehypeStringify from 'rehype-stringify';
-import { visit, SKIP } from 'unist-util-visit';
-import { toString } from 'hast-util-to-string';
-import type { Root, Element } from 'hast';
+// Two sites independently rediscovered this gap and wrote the identical rehype step at their own
+// boundary, so the engine now ships it as the pipeline's default.
 
 /** Find the first table row that carries a header cell, `<thead>` or not. */
 function findHeaderRow(table: Element): Element | undefined {
@@ -47,8 +42,8 @@ function tableLabel(table: Element): string {
  *  `display: table` (prose.css), so it stays a real table in the accessibility tree; only the
  *  wrapper scrolls (WCAG 1.3.1). `role="region"` plus an `aria-label` names the region, and
  *  `tabIndex: 0` puts it in the tab order so a keyboard user who cannot use a trackpad can still
- *  reach the horizontal scroll (the same pattern the reading surface's code blocks would need if
- *  they ever grew wider than their own line-wrap).
+ *  reach the horizontal scroll. Runs over the fully built tree, so it wraps a component's own
+ *  table output the same as an author's markdown table.
  */
 export function rehypeTableScroll() {
   return (tree: Root) => {
@@ -73,16 +68,4 @@ export function rehypeTableScroll() {
       return SKIP;
     });
   };
-}
-
-const processor = unified().use(rehypeParse, { fragment: true }).use(rehypeTableScroll).use(rehypeStringify);
-
-/**
- * Post-process rendered HTML so every table sits inside a scrollable, labeled region. Called from
- *  the site's `rendering.render` after `renderMarkdown`, so it applies to the public build, the
- *  feed, and the editor preview alike, the three callers of the one render function.
- */
-export async function wrapScrollableTables(html: string): Promise<string> {
-  const file = await processor.process(html);
-  return String(file);
 }

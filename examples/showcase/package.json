@@ -11,12 +11,7 @@
     "test:e2e": "playwright test"
   },
   "dependencies": {
-    "@glw907/cairn-cms": "file:../..",
-    "hast-util-to-string": "^3.0.1",
-    "rehype-parse": "^9.0.1",
-    "rehype-stringify": "^10.0.1",
-    "unified": "^11.0.5",
-    "unist-util-visit": "^5.1.0"
+    "@glw907/cairn-cms": "file:../.."
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",

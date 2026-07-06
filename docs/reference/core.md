@@ -466,8 +466,8 @@ declare function createRenderer(
 Compose a site's render pipeline from its component registry: directive syntax, then stamped
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
-carries the sanitize and anchor controls, plus a `remarkPlugins`/`rehypePlugins` seam for a site's
-own plugins.
+carries the sanitize and anchor controls, the table-scroll default, and a
+`remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
 
 ```ts
 // examples/showcase/src/lib/cairn.config.ts
@@ -479,37 +479,35 @@ const { renderMarkdown } = createRenderer(registry);
 // render: ({ body, resolve, resolveMedia }) => renderMarkdown(body, { resolve, resolveMedia }),
 ```
 
+`RendererOptions.tableScroll` (default `true`) wraps every rendered table in a labeled,
+keyboard-reachable `role="region"` div, so a narrow viewport scrolls the wrapper instead of
+squeezing the table's columns while the table itself keeps its role in the accessibility tree. Set
+it to `false` for a site that supplies its own table wrapping.
+
 `RendererOptions.remarkPlugins` and `RendererOptions.rehypePlugins` add a site's own [unified](https://unifiedjs.com)
 plugins to the pipeline. A remark plugin runs after cairn's own markdown-stage steps (directive
 stamping, `cairn:` link resolution, figures, `media:` resolution) and before the conversion to
 hast. A rehype plugin runs after cairn's own hast-stage steps (dispatch, the sanitize floor, heading
-slugs, highlighting, anchor hardening, the sink guard) and before stringification. A site's own
-post-render transform, such as wrapping every table in a scrollable region for keyboard reachability,
-composes here over the hast tree directly, instead of re-parsing `renderMarkdown`'s returned HTML
-string:
+slugs, highlighting, anchor hardening, the sink guard, the default table-scroll wrap) and before
+stringification. A site's own post-render transform composes here over the hast tree directly,
+instead of re-parsing `renderMarkdown`'s returned HTML string:
 
 ```ts
 import { createRenderer, defineRegistry } from '@glw907/cairn-cms';
-import { visit, SKIP } from 'unist-util-visit';
+import { visit } from 'unist-util-visit';
 import type { Root, Element } from 'hast';
 
-function rehypeTableScroll() {
+/** Defer every image's load until it nears the viewport. */
+function rehypeLazyImages() {
   return (tree: Root) => {
-    visit(tree, 'element', (node: Element, index, parent) => {
-      if (node.tagName !== 'table' || !parent || index === undefined) return;
-      parent.children[index] = {
-        type: 'element',
-        tagName: 'div',
-        properties: { className: ['table-scroll'], role: 'region', tabIndex: 0 },
-        children: [node],
-      };
-      return SKIP;
+    visit(tree, 'element', (node: Element) => {
+      if (node.tagName === 'img') (node.properties ??= {}).loading = 'lazy';
     });
   };
 }
 
 const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }), {
-  rehypePlugins: [rehypeTableScroll],
+  rehypePlugins: [rehypeLazyImages],
 });
 ```
 
@@ -786,7 +784,7 @@ function signatures above reference these.
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` the editor preview and every public page call. |
-| `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, and plugin-seam controls. |
+| `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |

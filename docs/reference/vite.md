@@ -37,7 +37,7 @@ export default defineConfig({
   plugins: [
     sveltekit(),
     cairnManifest({
-      configModule: '/src/lib/cairn.config.ts',
+      configModule: '/src/theme/cairn.config.ts',
       content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
       manifestPath: '/src/content/.cairn/index.json',
     }),

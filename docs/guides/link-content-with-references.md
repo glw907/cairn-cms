@@ -12,7 +12,7 @@ when its target is renamed or deleted.
 The running example is the showcase's `posts` concept, which carries both shapes of the field:
 `author`, a single edge to one `pages` entry, and `related`, a many edge to other `posts` entries.
 Both come from
-[`examples/showcase/src/lib/cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts),
+[`examples/showcase/src/theme/cairn.config.ts`](../../examples/showcase/src/theme/cairn.config.ts),
 and this guide's snippets restate them.
 
 ## Declare a reference between concepts

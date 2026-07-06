@@ -88,7 +88,7 @@ test('seedVocabulary writes a committed config, tags two main entries, and seeds
 
   // The committed site config reads back on main carrying the vocabulary block: the two in-use
   // listed tags and the unused listed tag, none of them the unlisted candidate.
-  const config = await backend.readFile('src/lib/site.config.yaml', 'main');
+  const config = await backend.readFile('src/theme/site.config.yaml', 'main');
   expect(config).not.toBeNull();
   expect(config).toContain(`value: ${v.inUse.value}`);
   expect(config).toContain(`label: ${v.inUse.label}`);

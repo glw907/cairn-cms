@@ -10,7 +10,7 @@
 // for the save to land.
 import { json, error } from '@sveltejs/kit';
 import { normalizeAssets, makeMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
-import { cairn } from '$lib/cairn.config.js';
+import { cairn } from '$theme/cairn.config.js';
 import { devBackendEnabled } from '$chassis/dev-gate.js';
 
 export async function POST({ request }) {

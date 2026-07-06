@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { extractVocabulary } from '@glw907/cairn-cms';
 import { posts } from '$chassis/content';
-import { siteConfig } from '$lib/cairn.config';
+import { siteConfig } from '$theme/cairn.config';
 
 export const prerender = true;
 

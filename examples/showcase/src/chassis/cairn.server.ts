@@ -4,7 +4,7 @@
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import type { ContentRoutesDeps } from '@glw907/cairn-cms/sveltekit';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 import { devBackendEnabled } from './dev-gate.js';
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });

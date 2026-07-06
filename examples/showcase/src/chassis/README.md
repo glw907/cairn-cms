@@ -1,12 +1,17 @@
 # The chassis
 
 The boundary rule: **a theme is everything that isn't chassis.** `src/chassis/` holds the
-genre-free layer this showcase's theme (Waymark, still living in `src/lib/` and `src/routes/`
-until it is reorganized as its own theme directory) mounts onto: the plumbing no site skips
-regardless of what it looks like, and the composition primitives a theme reaches for instead of
-hand-rolling its own. Everything outside `src/chassis/` (the concrete adapter config, the chrome
-components, the home and article composition, the theme's color and type values) is the theme's
-own content.
+genre-free layer this showcase's theme (Waymark, living in `src/theme/`, plus the route files
+under `src/routes/` that SvelteKit's filesystem routing pins in place) mounts onto: the plumbing
+no site skips regardless of what it looks like, and the composition primitives a theme reaches for
+instead of hand-rolling its own. Everything outside `src/chassis/` (the concrete adapter config,
+the chrome components, the home and article composition, the theme's color and type values) is
+the theme's own content. A theme file reaches chassis only through its exported seams: the
+`$chassis` alias in `.ts`/`.svelte` files, or a relative `@import` in `.css` (aliases do not
+resolve in CSS), always naming one of the files in the table below. `npm run
+check:chassis-boundary` (root) enforces this: it fails on any import that resolves into
+`src/chassis/` but names a file not in this table, the same way a reach past a package's public
+exports would.
 
 The chassis is deliberately generous, not minimal (Geoff, 2026-07-05): the point is a developer's
 ease building a theme on top, not the fewest lines here. Every default this layer ships is
@@ -31,7 +36,9 @@ the mechanism.
 The SvelteKit route files that touch delivery plumbing (`feed.xml`, `feed.json`, `sitemap.xml`,
 `robots.txt`, `media/[...path]`, `healthz`, the `/admin` mount) stay in `src/routes/`, since
 SvelteKit's routing is filesystem-based; they import chassis logic through the `$chassis` alias
-(`svelte.config.js`) instead of duplicating it.
+(`svelte.config.js`) instead of duplicating it. The same route files reach the theme's own content
+(the adapter config, the site config) through a second alias, `$theme` (`src/theme/`), the mirror
+image of `$chassis` for everything that is not genre-free.
 
 ## Every override seam
 

@@ -7,10 +7,10 @@
      preview frame can link the very same assets (the header comment in site.css explains why a static
      import would break that). -->
 <script lang="ts">
-  import themeCss from '$lib/theme.css?url';
-  import siteCss from '$lib/site.css?url';
-  import SiteHeader from '$lib/components/SiteHeader.svelte';
-  import SiteFooter from '$lib/components/SiteFooter.svelte';
+  import themeCss from '$theme/theme.css?url';
+  import siteCss from '$theme/site.css?url';
+  import SiteHeader from '$theme/components/SiteHeader.svelte';
+  import SiteFooter from '$theme/components/SiteFooter.svelte';
   let { children } = $props();
 </script>
 

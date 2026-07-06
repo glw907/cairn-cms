@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { cairn } from '$lib/cairn.config';
+import { cairn } from '$theme/cairn.config';
 
 // The styleguide renders a representative markdown sample through the SAME adapter `render` the
 // article route calls, so the page shows the real prose output (the bespoke reading surface, the

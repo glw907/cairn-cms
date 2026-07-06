@@ -1,6 +1,6 @@
 <script lang="ts">
   import { afterNavigate } from '$app/navigation';
-  import { cairn } from '$lib/cairn.config';
+  import { cairn } from '$theme/cairn.config';
 
   let { children } = $props();
 

@@ -33,8 +33,8 @@ export const posts = indexes.posts;
 
 `import.meta.glob` needs a literal pattern at its call site, so the engine can't glob on your
 behalf. You write one glob per concept and pass the raw records in, keyed by concept id. The
-showcase keeps this in one module, `src/lib/content.ts`, so every route imports the same `site`
-and per-concept indexes instead of rebuilding them.
+showcase keeps this in one module, `src/chassis/content.ts`, so every route imports the same
+`site` and per-concept indexes instead of rebuilding them.
 
 Each `ContentIndex` gives you `all()`, `byId(id)`, `byTag(tag)`, `allTags()`, and `adjacent(id)`
 for prev/next links. The cross-concept `site` resolver adds `byPermalink(path)`, the one lookup

@@ -6,8 +6,8 @@ import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw9
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
-import Banner from '$lib/islands/Banner.svelte';
-import { isBannerExpired } from '$lib/islands/banner-expiry.js';
+import Banner from '$theme/islands/Banner.svelte';
+import { isBannerExpired } from '$theme/islands/banner-expiry.js';
 import { makeIconRenderer } from '$chassis/render.js';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
@@ -415,7 +415,7 @@ export const cairn = defineAdapter({
     islands: { banner: Banner },
   },
   editor: {
-    nav: { configPath: 'src/lib/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
+    nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
     // The custom-screen sidebar entry: data-only, a typed Lucide icon name, an unclaimed /admin href.
     // The /admin/signups route gates server-side; this entry only renders the link in the shell.
     adminNav: [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }],

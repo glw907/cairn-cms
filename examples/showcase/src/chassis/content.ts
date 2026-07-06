@@ -3,7 +3,7 @@
 // The cairnManifest() Vite plugin owns the build-time manifest verify (it runs outside the prerender
 // lifecycle, so a stale manifest fails the build red regardless of the handleHttpError policy).
 import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
-import { cairn, siteConfig } from '$lib/cairn.config.js';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
 
 const postsRaw = import.meta.glob('/src/content/posts/*.md', {
   query: '?raw',

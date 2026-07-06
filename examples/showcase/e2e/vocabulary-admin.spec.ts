@@ -64,7 +64,7 @@ test('add, rename, delete-unused, the in-use guard, and seed, then the commit ca
   // The recorded commit is the site config YAML carrying the added slug. The route commits only the
   // YAML, so the recorder's content fallback (no .md in the change set) captures it.
   const c = await (await request.get('/test/last-commit')).json();
-  expect(c.path).toBe('src/lib/site.config.yaml');
+  expect(c.path).toBe('src/theme/site.config.yaml');
   expect(c.content).toContain(addedSlug);
   // The seeded value rode in too, and the deleted unused tag is gone from the committed list.
   expect(c.content).toContain('weather-notes');

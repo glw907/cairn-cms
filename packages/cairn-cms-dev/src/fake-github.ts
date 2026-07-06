@@ -388,7 +388,7 @@ export function seedMediaLibrary(): void {
  * The site-config path the vocabulary route reads and commits. It mirrors the showcase adapter's
  * `editor.nav.configPath`, the default the route resolves through `runtime.navMenu?.configPath`.
  */
-const SEED_SITE_CONFIG_PATH = 'src/lib/site.config.yaml';
+const SEED_SITE_CONFIG_PATH = 'src/theme/site.config.yaml';
 
 /**
  * The seeded vocabulary, exported so the spec asserts against the real slugs. `trail-reports` and

@@ -1,4 +1,4 @@
-/* examples/showcase/src/lib/site.css
+/* examples/showcase/src/theme/site.css
    The reading-column container and the cairn figure-placement contract for the public (site) pages.
    The chrome (header, nav, footer) moved to owned token-driven components (SiteHeader.svelte,
    SiteFooter.svelte); this sheet now carries only the centered `.site-main` measure and the figure

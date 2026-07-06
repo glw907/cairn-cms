@@ -27,7 +27,7 @@ import {
 } from './check-public-tokens.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
-const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
+const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 const CHASSIS_TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/chassis/tokens.css');
 

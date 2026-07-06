@@ -41,7 +41,7 @@ return value is the adapter itself, narrowed. The adapter has six groups: `conte
 `email`, `rendering`, `media`, and `editor`.
 
 ```ts
-// examples/showcase/src/lib/cairn.config.ts
+// examples/showcase/src/theme/cairn.config.ts
 import { defineAdapter, defineConcept, fieldset, fields, githubApp, createRenderer } from '@glw907/cairn-cms';
 import { registry, icons } from './components.js';
 
@@ -470,7 +470,7 @@ carries the sanitize and anchor controls, the table-scroll default, and a
 `remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
 
 ```ts
-// examples/showcase/src/lib/cairn.config.ts
+// examples/showcase/src/theme/cairn.config.ts
 import { createRenderer } from '@glw907/cairn-cms';
 import { registry } from './components.js';
 
@@ -596,7 +596,7 @@ title-plus-optional-icon head row.
 
 <!-- snippet-check-skip: illustrates the alert component's build function, a continuation of the unshown defineComponent call that wraps it -->
 ```ts
-// examples/showcase/src/lib/cairn.config.ts
+// examples/showcase/src/theme/cairn.config.ts
 const makeIcon = (name, role) => iconSpan(glyph(name, icons), role);
 build: (ctx) =>
   cardShell(['alert'], [
@@ -647,7 +647,7 @@ must be one the engine reads from the YAML (`siteName`, `description`, `author`,
 home; any other unrecognized key throws listing the known keys.
 
 ```ts
-// examples/showcase/src/lib/cairn.config.ts
+// examples/showcase/src/theme/cairn.config.ts
 import { parseSiteConfig } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);

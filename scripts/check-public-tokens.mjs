@@ -22,7 +22,7 @@ import { parse, converter, toGamut, wcagLuminance } from 'culori';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
-const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
+const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
 // The chassis token system: the code-ramp bindings (once in theme.css, now here) and the
 // composition primitives both live in this file's import graph. Its own generic defaults are

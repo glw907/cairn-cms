@@ -3,7 +3,7 @@
 Every cairn site has exactly one seam the engine consumes: a single module, conventionally
 `src/lib/cairn.config.ts`, that declares a site's content concepts, its GitHub backend, and its
 renderer. This guide builds one from nothing, in the same shape as the real, running adapter at
-[`examples/showcase/src/lib/cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts).
+[`examples/showcase/src/theme/cairn.config.ts`](../../examples/showcase/src/theme/cairn.config.ts).
 Keep that file open alongside this guide; each step below builds a smaller version of what that
 file already does.
 

@@ -8,8 +8,8 @@ adapter's [`rendering.islands`](../reference/core.md#renderingislands-adapter-me
 wires one up end to end, using the showcase's own `banner` directive throughout, a time-boxed
 announcement that renders until its `expires` date passes and checks that date again, independently,
 at hydration:
-[`cairn.config.ts`](../../examples/showcase/src/lib/cairn.config.ts) declares it and
-[`Banner.svelte`](../../examples/showcase/src/lib/islands/Banner.svelte) is the live component
+[`cairn.config.ts`](../../examples/showcase/src/theme/cairn.config.ts) declares it and
+[`Banner.svelte`](../../examples/showcase/src/theme/islands/Banner.svelte) is the live component
 that mounts over it. This guide assumes you already have a directive component rendering through
 your registry. [Configure rendering](./configure-rendering.md) builds one from nothing.
 
@@ -51,7 +51,7 @@ const banner = defineComponent({
 ```
 
 `isBannerExpired` is a small helper the showcase shares between `build()` and the live component
-(`examples/showcase/src/lib/islands/banner-expiry.ts`), so the server and the client agree on what
+(`examples/showcase/src/theme/islands/banner-expiry.ts`), so the server and the client agree on what
 "expired" means without sharing any state across that boundary: each evaluates the same rule fresh, at
 its own render or hydration moment.
 

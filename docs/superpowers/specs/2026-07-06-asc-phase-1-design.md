@@ -16,6 +16,15 @@ pages, uneven responsiveness, and heavy card use. Phase 2 (the functional member
 the admin/members migration on the extending-developer seam) and phase 3 (the handbook on
 Topo) are scoped here only as boundaries.
 
+## The governing goal: simplify IT
+
+Reduce vendors and technologies (Geoff, 2026-07-06). The migration's arc takes the club
+from roughly nine vendors and stacks (Hugo on a GCE origin, three email senders,
+MembershipWorks, the abandoned experiment) toward four (Cloudflare, GitHub, Google
+Workspace, Discord) on one tech stack. Phase 1's contributions: the GCE origin retires at
+cutover; cairn replaces Hugo and the prior experiment; the sending-subdomain onboarding
+begins the email consolidation. Every later decision gets the vendor-count test.
+
 ## Locked decisions
 
 - **Fresh start; mine the prior work.** A new repo scaffolds from the chassis. The prior

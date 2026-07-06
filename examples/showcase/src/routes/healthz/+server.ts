@@ -6,7 +6,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 import { healthLoad } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
+import { runtime } from '$chassis/cairn.server.js';
 
 // A site that defaults to prerender=true must force this dynamic, or it gets prerendered to a
 // build-time ok:false and can 404 at runtime.

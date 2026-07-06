@@ -5,6 +5,13 @@
    behind `[data-flourish]` in prose.css, not the default; see the "The cairn theme" section of
    docs/internal/public-design-system.md for where it lives and how a theme re-enables it.
 
+   This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s the
+   chassis token SYSTEM (Tailwind, the DaisyUI plugin activation, prose.css, composition.css, and
+   every design-scale key with a generic default) and then redeclares every one of those keys with
+   Waymark's own concrete numbers and colors, plus the two named DaisyUI themes the chassis
+   deliberately never declares. Cascade order does the override: a property declared again later
+   in the same build wins, so nothing below duplicates chassis machinery, only chassis VALUES.
+
    RE-SKIN RECIPE (the committed N). The whole surface, chrome and article alike,
    reads the role tokens in the two theme blocks below, so editing them re-skins
    everything. The prose reading surface is included at zero extra edits.
@@ -64,40 +71,25 @@
      - Tier 2 (owned, the documented floor): the on-surface inks (--color-muted and the
        --cairn-<status>-ink set), the elevation pair (--color-card-border, --cairn-shadow), the CTA
        pair (--cairn-cta-*), and the code-highlight binding (pre.shiki plus the engine-owned
-       .cairn-tok-* class contract). cairn names the class contract; the site colors it. --color-muted
-       and --color-card-border live in @theme (so the text-muted / border-card-border utilities
+       .cairn-tok-* class contract, both in chassis/tokens.css). --color-muted and
+       --color-card-border live in @theme (so the text-muted / border-card-border utilities
        generate) but keep their Tier-2 role; their dark siblings override in the dark block.
-     - Tier 3 (the Phase-2 fold target): the design-scale token home. The type scale
-       (--text-step-*), the space scale (--spacing-*), the faces (--font-*), and the
-       tracking/leading/measure values (--tracking-*, --leading-*, --container-measure*) move from
-       :root into Tailwind 4 `@theme`, where the named utilities generate, so the chrome markup stops
-       wrapping them in arbitrary-value brackets. The values stay; only the home moves.
+     - Tier 3: the design-scale token home (--text-step-*, --spacing-*, --font-*, the tracking/
+       leading/measure values). Tailwind 4 `@theme` generates the named utilities; the chassis
+       declares the same keys with generic defaults, and this block overrides every one with
+       Waymark's real numbers.
    ============================================================================ */
-@import 'tailwindcss';
+@import '../chassis/tokens.css';
 
 /* The editorial pairing, self-hosted via Fontsource variable packages so the real faces are the
    default first paint (CLS-safe, the performance dimension) with no third-party font origin. These
-   `@import` rules must precede every other rule, so they sit directly under the Tailwind import.
+   `@import` rules must precede every other rule, so they sit directly under the chassis import.
    Fontsource registers each family as "<Name> Variable"; the `--font-*` tokens below name them
    exactly. Loading them here, not in the layout, means the editor preview frame links this same sheet
    and gets the same faces (the parity rule). All three faces here need only the `wght` axis. */
 @import '@fontsource-variable/figtree/index.css';
 @import '@fontsource-variable/source-sans-3/index.css';
 @import '@fontsource-variable/source-code-pro/index.css';
-
-/* The bespoke reading surface (Task 5), kept in its own file but pulled in here so it ships in this
-   one sheet. theme.css is the single stylesheet the (site) layout and the editor preview config both
-   link, so importing prose.css here is what carries the article surface to BOTH the reader and the
-   author (the parity rule) at zero extra wiring. prose.css reads only the tokens defined below; it
-   adds no second color source. Its rules are @layer components, the same layer as the token bindings
-   at the foot of this file, so they resolve in the documented cascade order. */
-@import './prose.css';
-
-/* themes: false drops DaisyUI's built-in light/dark themes so they do not claim :root; the two
-   cairn themes below are the only ones, exactly as the admin sheet runs only its own. */
-@plugin "daisyui" {
-  themes: false;
-}
 
 /* The light theme (default). DaisyUI 5 reads these role tokens at point of use,
    so every `bg-base-100` / `text-primary` utility and every component tracks them. */
@@ -190,7 +182,7 @@
    `font-mono` utilities the chrome markup folds onto. @theme still emits each token at :root, so
    every `var(--font-display)` reference in prose.css and below keeps resolving unchanged. The
    `font-mono` token overrides Tailwind's default mono utility, which is intended (the template's
-   own face). */
+   own face). Every key here overrides the chassis default of the same name (chassis/tokens.css). */
 @theme {
   --font-display: 'Figtree Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'Source Sans 3 Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -272,58 +264,28 @@
 }
 
 /* ----------------------------------------------------------------------------
-   The cairn-authored token layer. DaisyUI's theme blocks above hold only the
-   role and geometry tokens; these custom properties add what DaisyUI does not
-   cover and the field leaves generic: the editorial type scale, the fluid space
-   scale, the reading measure, the prose rhythm, and the code ramp. They read the
-   DaisyUI roles where relevant, so a re-skin of the roles carries them too.
-
-   Constant tokens and the LIGHT on-surface inks sit on :root; the DARK siblings
-   sit under the same prefers-color-scheme query DaisyUI uses for `cairn-dark`,
-   guarded by `:not([data-theme])` so an explicit choice wins over the system
-   scheme, exactly the guard DaisyUI's own compiled `cairn-dark` block uses. The
-   header's theme toggle (`SiteHeader.svelte`) sets `data-theme="cairn-dark"` on
-   `<html>` for an explicit dark choice, which the `[data-theme='cairn-dark']`
-   block below matches unconditionally, so the roles and these customs switch in
-   lockstep whether the scheme comes from the OS or from the toggle.
+   The Waymark-owned token VALUES. chassis/tokens.css declares every key below as a generic,
+   role-derived default; this block overrides each with Waymark's hand-tuned color. Constant
+   values and the LIGHT on-surface inks sit on :root; the DARK siblings sit under the same
+   prefers-color-scheme query DaisyUI uses for `cairn-dark`, guarded by `:not([data-theme])` so an
+   explicit choice wins over the system scheme, exactly the guard DaisyUI's own compiled
+   `cairn-dark` block uses. The header's theme toggle (`SiteHeader.svelte`) sets
+   `data-theme="cairn-dark"` on `<html>` for an explicit dark choice, which the
+   `[data-theme='cairn-dark']` block below matches unconditionally, so the roles and these customs
+   switch in lockstep whether the scheme comes from the OS or from the toggle.
    ---------------------------------------------------------------------------- */
 :root {
-  /* The design-scale tokens (the faces, the type and space scales, the leading, tracking, and
-     measure values) live in the @theme block above, where Tailwind generates their named utilities.
-     @theme re-emits each at :root, so the var() references throughout this file resolve unchanged. */
-
-  /* The single owl-selector rhythm variable; headings, figures, and pre override it locally. */
-  --flow-space: 1.35em;
-
-  /* The code-block ramp. Each token reads a role, so a re-skin recolors code with no edit. The
-     engine's build-time highlighter emits the .cairn-tok-* token classes (a fixed contract it
-     owns); the @layer components rules below bind each class to one of these role variables. */
-  --cairn-code-bg: var(--color-base-200);
-  --cairn-code-border: var(--color-base-300);
-  --cairn-code-ink: var(--color-base-content);
-  --cairn-code-comment: var(--color-muted);
-  --cairn-code-keyword: var(--color-primary);
-  --cairn-code-string: var(--cairn-success-ink);
-  --cairn-code-function: var(--cairn-info-ink);
-  --cairn-code-number: var(--cairn-warning-ink);
-  --cairn-code-punct: var(--color-muted);
-
   /* On-surface inks (light). A fill tone fails as small text, the admin's lesson, so the muted
      text and each status word read a darker ink than the matching `-content` fill pair. Each status
      ink holds its fill's hue (the warning ink at 76, aligned to the warning fill and its dark
      sibling), so the directive titles and the code colours track the fills under a re-skin; the
      re-skin recipe at the top of this file (step 6) names this seam. */
-  /* --color-muted (the muted on-surface ink) lives in the @theme block above so Tailwind generates
-     the text-muted utility; @theme re-emits its light value at :root, and the dark sibling below
-     overrides it. The status inks have no utility and stay here. */
   --cairn-success-ink: oklch(45% 0.1 150);
   --cairn-warning-ink: oklch(52% 0.11 76);
   --cairn-error-ink: oklch(50% 0.17 27);
   --cairn-info-ink: oklch(48% 0.1 235);
 
-  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. The
-     hairline (--color-card-border) lives in the @theme block above so Tailwind generates the
-     border-card-border utility; the dark sibling below overrides it. */
+  /* Elevation (light): a near-invisible hairline plus a soft shadow carry a floating card. */
   --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
     0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
 
@@ -381,35 +343,4 @@
   --cairn-cta-border: var(--color-base-300);
   --cairn-cta-btn-bg: var(--color-primary);
   --cairn-cta-btn-content: var(--color-primary-content);
-}
-
-@layer components {
-  /* The engine's build-time highlighter owns the .cairn-tok-* class contract (the engine names the
-     classes; the site colors them). Each rule binds one token class to a --cairn-code-* role
-     variable, so the syntax palette re-skins with the rest of the theme and no value is hard-coded.
-     The pre.shiki surround reads the same ramp. Task 5 refines the prose code-block treatment;
-     these rules make the highlighted tokens resolve to colors today. */
-  pre.shiki {
-    background-color: var(--cairn-code-bg);
-    color: var(--cairn-code-ink);
-    border: 1px solid var(--cairn-code-border);
-  }
-  .cairn-tok-keyword {
-    color: var(--cairn-code-keyword);
-  }
-  .cairn-tok-string {
-    color: var(--cairn-code-string);
-  }
-  .cairn-tok-comment {
-    color: var(--cairn-code-comment);
-  }
-  .cairn-tok-function {
-    color: var(--cairn-code-function);
-  }
-  .cairn-tok-number {
-    color: var(--cairn-code-number);
-  }
-  .cairn-tok-punct {
-    color: var(--cairn-code-punct);
-  }
 }

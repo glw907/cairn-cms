@@ -29,6 +29,7 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
 <script lang="ts">
   import { page } from '$app/state';
   import { browser } from '$app/environment';
+  import { resolveTheme, toggleTheme as chassisToggleTheme, type ThemeToggleConfig } from '$chassis/theme-toggle.js';
 
   /** A primary-nav entry: the visible label and the path it links to. */
   type NavItem = { label: string; href: string };
@@ -55,26 +56,17 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
   /** The two explicit theme choices; `theme.css` defines both as named DaisyUI themes. */
   type Theme = 'cairn' | 'cairn-dark';
 
-  /**
-   * Resolves the theme the button should show: `<html>`'s live `data-theme` if the visitor (or the
-   * head script) already set one, otherwise the current system scheme, so the icon is correct on
-   * first paint even before any explicit choice exists. Never called during SSR (`browser` guards
-   * every call site), so `document`/`window` are always safe to read here.
-   */
-  function resolveTheme(): Theme {
-    const attr = document.documentElement.getAttribute('data-theme');
-    if (attr === 'cairn' || attr === 'cairn-dark') return attr;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'cairn-dark' : 'cairn';
-  }
+  /** This theme's own names and cookie, fed to the chassis toggle mechanism below. */
+  const themeConfig: ThemeToggleConfig<Theme> = { light: 'cairn', dark: 'cairn-dark', cookieName: 'cairn-site-theme' };
 
-  let theme = $state<Theme>(browser ? resolveTheme() : 'cairn');
+  // The icon is correct on first paint even before any explicit choice exists (resolveTheme reads
+  // `<html>`'s live data-theme, set by the head script, or falls back to the system scheme). Never
+  // called during SSR (`browser` guards every call site), so `document`/`window` are always safe.
+  let theme = $state<Theme>(browser ? resolveTheme(themeConfig) : 'cairn');
 
-  /** Flips the explicit theme, writes it to `<html>` and the persistence cookie. */
+  /** Flips the explicit theme via the chassis mechanism, which also persists the choice. */
   function toggleTheme() {
-    const next: Theme = theme === 'cairn-dark' ? 'cairn' : 'cairn-dark';
-    document.documentElement.setAttribute('data-theme', next);
-    document.cookie = `cairn-site-theme=${next}; path=/; max-age=31536000; samesite=lax`;
-    theme = next;
+    theme = chassisToggleTheme(themeConfig, theme);
   }
 </script>
 

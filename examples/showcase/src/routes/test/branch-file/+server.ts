@@ -1,11 +1,11 @@
 // Internal fixture endpoint: returns one file's content off a branch in the fake-github double's
 // in-memory repo, or 404 when the file is absent. The dev-package import sits behind
-// devBackendEnabled, a build-foldable gate ($lib/dev-gate.ts), and is dynamic, so a default
+// devBackendEnabled, a build-foldable gate ($chassis/dev-gate.ts), and is dynamic, so a default
 // production build folds the body out (DCE) and the route 404s; it has no surface in a real deploy.
 // The media-slice E2E reads the `media.json` committed alongside the body (the last-commit recorder
 // captures only the `.md` entry).
 import { json, error } from '@sveltejs/kit';
-import { devBackendEnabled } from '$lib/dev-gate.js';
+import { devBackendEnabled } from '$chassis/dev-gate.js';
 
 export async function GET({ url }) {
   if (devBackendEnabled) {

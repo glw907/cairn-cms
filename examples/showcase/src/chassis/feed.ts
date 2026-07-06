@@ -2,8 +2,8 @@
 // shape. feed.xml and feed.json both call this, so the two feed formats read the same permalinks,
 // excerpts, and rendered bodies and can never drift from each other.
 import { buildLinkResolver, type FeedItem } from '@glw907/cairn-cms/delivery';
-import { site, ORIGIN } from '$lib/content';
-import { cairn } from '$lib/cairn.config';
+import { site, ORIGIN } from './content.js';
+import { cairn } from '$lib/cairn.config.js';
 
 /** Build the showcase's post feed items, shared by the RSS and JSON Feed routes. */
 export async function buildFeedItems(): Promise<FeedItem[]> {

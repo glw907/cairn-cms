@@ -1,8 +1,8 @@
 import type { RequestHandler } from './$types';
 import { rssResponse } from '@glw907/cairn-cms/delivery';
-import { ORIGIN, SITE_DESCRIPTION } from '$lib/content';
+import { ORIGIN, SITE_DESCRIPTION } from '$chassis/content';
 import { siteConfig } from '$lib/cairn.config';
-import { buildFeedItems } from '$lib/feed';
+import { buildFeedItems } from '$chassis/feed';
 
 export const prerender = true;
 

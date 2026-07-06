@@ -2,7 +2,7 @@
 // media record overlaid into a fresh resolver, through the site's own adapter render. It proves the
 // vertical slice's render leg: a content `media:` handle rewrites to its delivery `/media/...` path,
 // the same path the delivery route serves. The body sits behind devBackendEnabled, a build-foldable
-// gate ($lib/dev-gate.ts), so a default production build folds it out (DCE) and the route 404s; it
+// gate ($chassis/dev-gate.ts), so a default production build folds it out (DCE) and the route 404s; it
 // has no surface in a real deploy.
 //
 // This overlays the record the way Phase 2b's preview path will: the committed manifest is empty at
@@ -11,7 +11,7 @@
 import { json, error } from '@sveltejs/kit';
 import { normalizeAssets, makeMediaResolver, type MediaEntry } from '@glw907/cairn-cms/media';
 import { cairn } from '$lib/cairn.config.js';
-import { devBackendEnabled } from '$lib/dev-gate.js';
+import { devBackendEnabled } from '$chassis/dev-gate.js';
 
 export async function POST({ request }) {
   if (devBackendEnabled) {

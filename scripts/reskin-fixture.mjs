@@ -28,7 +28,8 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
-const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/lib/prose.css');
+const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
+const CHASSIS_TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/chassis/tokens.css');
 
 // The hue rotation the fixture applies to the brand accent. A large turn (well past a hue step) makes
 // the re-skin unmistakable while the contrast-stable recipe holds lightness and chroma fixed.
@@ -132,7 +133,11 @@ function main() {
   //    check above only proves a colour reads SOME `--color-*`/`--cairn-*` token; a reference to a
   //    token that no block defines reads the right namespace yet resolves to nothing. This runs against
   //    the live on-disk theme and prose (the hue rotation changes only a value, never a token name).
-  const dangling = checkTokenResolution(original, readFileSync(PROSE_CSS, 'utf8'));
+  const dangling = checkTokenResolution(
+    original,
+    readFileSync(PROSE_CSS, 'utf8'),
+    readFileSync(CHASSIS_TOKENS_CSS, 'utf8'),
+  );
   console.log('');
   if (dangling.length) {
     console.error(`Token resolution: FAIL (${dangling.length} reference(s) resolve to no definition)`);

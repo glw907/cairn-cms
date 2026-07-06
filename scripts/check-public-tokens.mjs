@@ -23,7 +23,12 @@ import { parse, converter, toGamut, wcagLuminance } from 'culori';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/lib/theme.css');
-const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/lib/prose.css');
+const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
+// The chassis token system: the code-ramp bindings (once in theme.css, now here) and the
+// composition primitives both live in this file's import graph. Its own generic defaults are
+// unconditionally overridden by theme.css's later declarations, so it is a definitions layer the
+// same way theme.css is, and is excluded from the no-literals walk on that basis.
+const CHASSIS_TOKENS_CSS = resolve(ROOT, 'examples/showcase/src/chassis/tokens.css');
 
 // ============================================================================
 // (a) The no-literals grep.
@@ -51,8 +56,9 @@ const ARBITRARY_FONT_SIZE = /text-\[[0-9.]+(?:px|rem|pt|cm|in|pc|q)\]/;
 const FONT_SIZE_DECL = /font-size:\s*[^;]*\b[0-9.]+(?:px|rem|pt|cm|in|pc|q)\b/;
 
 /**
- * Every `.svelte` file and `prose.css` under a directory, recursively. theme.css is the token
- * definition layer and is excluded by name (it is the one file allowed to hold oklch literals).
+ * Every `.svelte` file, `prose.css`, and `composition.css` under a directory, recursively.
+ * theme.css and tokens.css are the token definition layers and are excluded by name (they are the
+ * only files allowed to hold oklch literals or generic role-derived defaults).
  * @param {string} dir
  * @returns {string[]}
  */
@@ -63,7 +69,11 @@ function scannedFiles(dir) {
     const full = join(dir, name);
     if (statSync(full).isDirectory()) {
       out.push(...scannedFiles(full));
-    } else if ((name.endsWith('.svelte') || name === 'prose.css') && name !== 'theme.css') {
+    } else if (
+      (name.endsWith('.svelte') || name === 'prose.css' || name === 'composition.css') &&
+      name !== 'theme.css' &&
+      name !== 'tokens.css'
+    ) {
       out.push(full);
     }
   }
@@ -459,11 +469,11 @@ export function collectReferencedTokens(css) {
 }
 
 /**
- * The `--cairn-code-*` ramp body of theme.css, the run of declarations that bind the code highlighter
- * to the role tokens. Its `var()` references are checked for resolution alongside the prose surface,
- * because a dangling code ramp token drops a syntax colour the same way a dangling prose token drops a
- * directive rule.
- * @param {string} css the contents of theme.css
+ * The `--cairn-code-*` ramp body of chassis/tokens.css, the run of declarations that bind the code
+ * highlighter to the role tokens. Its `var()` references are checked for resolution alongside the
+ * prose surface, because a dangling code ramp token drops a syntax colour the same way a dangling
+ * prose token drops a directive rule.
+ * @param {string} css the contents of chassis/tokens.css
  * @returns {string}
  */
 function codeRampBody(css) {
@@ -473,18 +483,24 @@ function codeRampBody(css) {
 
 /**
  * The token-resolution check. Collects every `var(--token)` referenced in the prose surface and in
- * theme.css's code ramp, collects every token DEFINED across theme.css and prose.css (the `:root`, the
- * dark media block, and the two `@plugin "daisyui/theme"` geometry blocks all declare with `--x:`, so
- * a whole-file declaration scan captures them) unioned with DaisyUI's generated role set, and returns
- * the references that resolve to nothing. An empty result means every reference is defined.
+ * the chassis code ramp, collects every token DEFINED across theme.css, chassis/tokens.css, and
+ * prose.css (the `:root`, the dark media block, and the two `@plugin "daisyui/theme"` geometry
+ * blocks all declare with `--x:`, so a whole-file declaration scan captures them) unioned with
+ * DaisyUI's generated role set, and returns the references that resolve to nothing. theme.css's
+ * later declarations override chassis/tokens.css's generic defaults for the SAME property name (the
+ * chassis boundary; src/chassis/README.md), but a resolution check only asks whether a name is
+ * defined SOMEWHERE in the composed stylesheet, so unioning both files' declarations is correct
+ * regardless of which one wins the cascade. An empty result means every reference is defined.
  * @param {string} themeCss the contents of theme.css
  * @param {string} proseCss the contents of prose.css
+ * @param {string} chassisTokensCss the contents of chassis/tokens.css
  * @returns {{ token: string, source: string }[]}
  */
-export function checkTokenResolution(themeCss, proseCss) {
+export function checkTokenResolution(themeCss, proseCss, chassisTokensCss) {
   const defined = new Set([
     ...collectDefinedTokens(themeCss),
     ...collectDefinedTokens(proseCss),
+    ...collectDefinedTokens(chassisTokensCss),
     ...DAISYUI_GENERATED_ROLES,
   ]);
   /** @type {{ token: string, source: string }[]} */
@@ -492,7 +508,7 @@ export function checkTokenResolution(themeCss, proseCss) {
   /** @type {[string, string][]} */
   const sources = [
     ['prose.css', proseCss],
-    ['theme.css code ramp', codeRampBody(themeCss)],
+    ['chassis/tokens.css code ramp', codeRampBody(chassisTokensCss)],
   ];
   for (const [source, css] of sources) {
     for (const token of collectReferencedTokens(css)) {
@@ -532,7 +548,11 @@ function main() {
   if (!contrastPassed) failed = true;
 
   // (c) Token resolution.
-  const dangling = checkTokenResolution(css, readFileSync(PROSE_CSS, 'utf8'));
+  const dangling = checkTokenResolution(
+    css,
+    readFileSync(PROSE_CSS, 'utf8'),
+    readFileSync(CHASSIS_TOKENS_CSS, 'utf8'),
+  );
   console.log('');
   if (dangling.length) {
     console.error(`Token-resolution check: FAIL (${dangling.length} reference(s) resolve to no definition)`);

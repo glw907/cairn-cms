@@ -1,13 +1,14 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp, glyph, parseSiteConfig } from '@glw907/cairn-cms';
-import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';
+import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp, parseSiteConfig } from '@glw907/cairn-cms';
+import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import Banner from '$lib/islands/Banner.svelte';
 import { isBannerExpired } from '$lib/islands/banner-expiry.js';
+import { makeIconRenderer } from '$chassis/render.js';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
@@ -67,7 +68,9 @@ const callout = defineComponent({
   ],
 });
 
-const makeIcon = (name: string, role?: string) => iconSpan(glyph(name, icons), role);
+// The chassis wires the icon set into the render helpers; this theme owns only the glyph data
+// (the `icons` set above) and where each build() function calls makeIcon.
+const makeIcon = makeIconRenderer(icons);
 
 // The video facade's URL parser. Names the platform from the host so a reader knows where the link
 // goes before they click; a host outside the declared set is a build-time error (loud, same posture
@@ -142,7 +145,7 @@ const icon = defineComponent({
     if (!name || !(name in icons)) {
       throw new Error(`cairn: icon component references "${name ?? ''}", which is not in the declared icon set`);
     }
-    return iconSpan(glyph(name, icons));
+    return makeIcon(name);
   },
 });
 

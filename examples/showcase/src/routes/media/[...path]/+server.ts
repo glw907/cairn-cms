@@ -3,6 +3,6 @@
 // dev the fake R2 double rides platform.env (hooks.server.ts); a real site binds the bucket in
 // wrangler.jsonc.
 import { createMediaRoute } from '@glw907/cairn-cms/sveltekit';
-import { runtime } from '$lib/cairn.server.js';
+import { runtime } from '$chassis/cairn.server.js';
 
 export const GET = createMediaRoute(runtime);

@@ -1,0 +1,150 @@
+/* ============================================================================
+   The chassis token SYSTEM: the mechanism a theme's own values plug into, not a look of its own.
+   A theme (Waymark, or any future theme) `@import`s this file first, then redeclares every custom
+   property below with its own concrete numbers and colors. Cascade order does the rest: a
+   property set again later in the same build wins over this file's default, so nothing here is
+   ever visible on its own; it exists so a theme starts from a working, generic surface (a real
+   type/space scale, a bound code-highlight ramp, a working DaisyUI activation) rather than an
+   empty sheet, and so the boundary between "system" and "values" is explicit and enforced by
+   which file a property is declared in. See src/chassis/README.md for the full override-seam list.
+
+   OWNERSHIP SPLIT (every override seam this file offers a theme):
+     - Tailwind and the DaisyUI plugin MECHANISM activate here (`@plugin "daisyui" { themes: false }`);
+       the actual named themes (`@plugin "daisyui/theme"`, the DaisyUI role colors and geometry) are
+       100% a theme's own choice and never declared here.
+     - The design-SCALE keys (`--font-*`, `--text-step-*`, `--spacing-*`, `--leading-*`,
+       `--tracking-*`, `--container-measure*`, `--color-muted`, `--color-card-border`) get generic
+       defaults here, inside `@theme`, so Tailwind still generates every named utility
+       (`text-step-*`, `gap-m`, `font-display`, `max-w-measure`, `text-muted`, ...) even before a
+       theme overrides the numbers. A theme redeclares the same keys, in its own later `@theme`
+       block, with its real scale.
+     - The semantic bindings (`--cairn-code-*`, `--cairn-*-ink`, `--cairn-shadow`, `--cairn-cta-*`)
+       get generic defaults here that read a DaisyUI ROLE directly (e.g. `--cairn-success-ink:
+       var(--color-success)`), so they resolve to something reasonable under any theme's roles with
+       zero theme-specific tuning. A theme that wants a hand-tuned on-surface ink (a fill is usually
+       too light for small text) redeclares these in its own `:root` and dark-mode blocks.
+     - The `.cairn-tok-*` syntax-highlight class contract and `pre.shiki` binding are pure
+       structure: they only ever read the `--cairn-code-*` names above, so a theme never touches
+       them at all; retuning the ramp is entirely a token edit.
+     - prose.css (the reading-surface foundation) and composition.css (the card/band/section/hero/
+       sidebar primitives) both import here, so a theme gets both by importing this one file.
+   ============================================================================ */
+@import 'tailwindcss';
+@import './prose.css';
+@import './composition.css';
+
+@plugin "daisyui" {
+  themes: false;
+}
+
+@theme {
+  /* Generic system-font defaults; a theme overrides these three with its own face choices. */
+  --font-display: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* A modest, non-fluid default scale (no clamp math of its own): legible, but a theme almost
+     always wants its own fluid formula here. The named utilities (`text-step-*`) generate from
+     these keys regardless of whose values are active. */
+  --text-step--1: 0.85rem;
+  --text-step-0: 1rem;
+  --text-step-1: 1.125rem;
+  --text-step-2: 1.25rem;
+  --text-step-3: 1.5rem;
+  --text-step-4: 1.875rem;
+  --text-step-5: 2.25rem;
+
+  /* A default space scale, roughly doubling step to step; a theme's own fluid clamp scale
+     overrides every key. */
+  --spacing-3xs: 0.25rem;
+  --spacing-2xs: 0.5rem;
+  --spacing-xs: 0.75rem;
+  --spacing-s: 1rem;
+  --spacing-m: 1.5rem;
+  --spacing-l: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-2xl: 4rem;
+
+  --leading-body: 1.6;
+  --leading-snug: 1.4;
+  --leading-tight: 1.15;
+  --tracking-tight: -0.01em;
+  --tracking-eyebrow: 0.08em;
+
+  /* The reading measure; structural (figures and pull-quotes break past it), so even the default
+     is a real, usable value. */
+  --container-measure: 42rem;
+  --container-measure-wide: 56rem;
+
+  /* Read directly as a role-derived default; a theme usually tunes both for its own paper/ink. */
+  --color-muted: color-mix(in oklab, var(--color-base-content) 60%, transparent);
+  --color-card-border: color-mix(in oklab, var(--color-base-content) 9%, transparent);
+}
+
+:root {
+  /* The single owl-selector rhythm variable; a theme's prose or chrome overrides it locally. */
+  --flow-space: 1.35em;
+
+  /* The code-block ramp. Each key names a role a theme colors; the .cairn-tok-* bindings below own
+     the class contract (the engine's build-time highlighter emits those classes; a theme never
+     needs to touch the binding, only the values here). */
+  --cairn-code-bg: var(--color-base-200);
+  --cairn-code-border: var(--color-base-300);
+  --cairn-code-ink: var(--color-base-content);
+  --cairn-code-comment: var(--color-muted);
+  --cairn-code-keyword: var(--color-primary);
+  --cairn-code-string: var(--cairn-success-ink);
+  --cairn-code-function: var(--cairn-info-ink);
+  --cairn-code-number: var(--cairn-warning-ink);
+  --cairn-code-punct: var(--color-muted);
+
+  /* On-surface inks: a fill tone reads too light as small text, so a theme's tuned ink is usually
+     a darker (or, in dark mode, lighter) tone of its status hue. The generic default here just
+     reads the fill role directly, which is legible but untuned. */
+  --cairn-success-ink: var(--color-success);
+  --cairn-warning-ink: var(--color-warning);
+  --cairn-error-ink: var(--color-error);
+  --cairn-info-ink: var(--color-info);
+
+  /* Elevation: a hairline plus a soft shadow carry a floating card. */
+  --cairn-shadow: 0 1px 2px color-mix(in oklab, var(--color-base-content) 6%, transparent),
+    0 6px 20px -8px color-mix(in oklab, var(--color-base-content) 12%, transparent);
+
+  /* The CTA panel pair, generically reading the neutral role; a theme tunes this to its own
+     light/dark CTA treatment (see theme.css's own comment for why the pair never reads
+     --color-neutral directly there instead). */
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-base-100);
+  --cairn-cta-btn-content: var(--color-base-content);
+}
+
+@layer components {
+  /* The engine's build-time highlighter owns the .cairn-tok-* class contract (the engine names
+     the classes; a theme colors them via the --cairn-code-* tokens above). Pure structure: no
+     theme ever needs to edit this block, only the token values it reads. */
+  pre.shiki {
+    background-color: var(--cairn-code-bg);
+    color: var(--cairn-code-ink);
+    border: 1px solid var(--cairn-code-border);
+  }
+  .cairn-tok-keyword {
+    color: var(--cairn-code-keyword);
+  }
+  .cairn-tok-string {
+    color: var(--cairn-code-string);
+  }
+  .cairn-tok-comment {
+    color: var(--cairn-code-comment);
+  }
+  .cairn-tok-function {
+    color: var(--cairn-code-function);
+  }
+  .cairn-tok-number {
+    color: var(--cairn-code-number);
+  }
+  .cairn-tok-punct {
+    color: var(--cairn-code-punct);
+  }
+}

@@ -89,6 +89,33 @@ per-instance override, layered on top of the shared design-scale tokens they def
 query condition cannot read a custom property, so `.cairn-sidebar-layout`'s 48rem breakpoint is a
 fixed value, not a token seam; its own comment says so.
 
+## Subtracting an element
+
+The chassis is site-owned code over the versioned engine API (Geoff, 2026-07-05): an ultra-light
+theme builder may rebuild, ditch, or modify any of it, or simply remove an element it never uses.
+Organization backs this up: one concern per file, and anything load-bearing for more than one
+element lives in its own file rather than hiding inside a sibling, so removing one element's file
+never breaks another's. Each row below names the file's real dependents (found by grepping the
+tree, not assumed) and exactly what a removal touches. A note that lies (a dependent it misses,
+a build it silently breaks) fails this file's own promise.
+
+| File | Real dependents | Removal note |
+| --- | --- | --- |
+| `content.ts` | Every delivery route: `+page.server.ts` (site and `[...path]`), `robots.txt`, `feed.json`, `feed.xml`, `sitemap.xml`. | Not a bare deletion: it is the one content-index builder every delivery route reads. A theme dropping it must replace all six route imports with its own index logic in the same change, never delete it alone. |
+| `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's own mapping); nothing else references it. |
+| `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
+| `dev-gate.ts` | `hooks.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), and the one branch in `hooks.server.ts` that reads the flag; the flag defaults closed everywhere else, so nothing else changes behavior. |
+| `render.ts` | `cairn.config.ts` (the one `makeIconRenderer` call). | Delete the file and that one import; a theme with no icon set in its component grammar, or one that calls the engine's `iconSpan`/`glyph` helpers directly, needs nothing else. |
+| `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
+| `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
+| `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
+| `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point). | Delete the file and that one `@import` line; nothing else references it today, since no theme markup currently uses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`. |
+
+Two of these notes are verified verbatim, in a scratch copy of this showcase, as part of the
+chassis restructure's own acceptance pass: `composition.css` (the zero-current-dependents case)
+and `theme-toggle.ts` (the used-but-optional case). Both removals left the showcase building green
+with no other edit. See the pass's post-mortem for the exact commands run.
+
 ## Adding a new primitive or seam
 
 Read this file's boundary rule first: genre-free plumbing and configurable structure belong here;

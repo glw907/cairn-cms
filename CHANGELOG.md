@@ -143,6 +143,23 @@ All notable changes to this project are recorded here, most recent first.
   cloud drift routine samples published pages against the code
   (`docs/internal/docs-maintenance.md` records the system).
 
+### Chassis boundary (showcase; internal reorganization, no consumer action)
+
+- The showcase's `src/lib` splits into `src/chassis/` (the genre-free layer: delivery content
+  and feed wiring, the one server-side runtime composition point, the dev-backend feature
+  flag, the component-grammar icon wiring, the light/dark toggle mechanism, the token system,
+  the prose foundation, and the card/band/section/hero/sidebar composition primitives) and
+  `src/theme/` (Waymark's own adapter config, chrome components, and real color/type values),
+  with `$chassis`/`$theme` SvelteKit aliases mirroring the split. `src/chassis/README.md`
+  states the boundary rule ("a theme is everything that isn't chassis"), every override seam,
+  and a removal note per element proving the chassis is subtractable, not a fixed contract; a
+  new `check:chassis-boundary` gate fails any theme import that reaches chassis internals
+  instead of one of the documented seams. Both owned sites (907.life, ecxc.ski) restructured
+  onto the identical split in their own repos, verified against their live sitemaps with an
+  exact permalink crawl and no rendering change. No consumer action required: the package's
+  public API is unaffected, and a site that has not adopted this showcase reorganization loses
+  nothing.
+
 ### Editor experience
 
 - The create dialog, the Change URL control, and the media library's asset metadata form now

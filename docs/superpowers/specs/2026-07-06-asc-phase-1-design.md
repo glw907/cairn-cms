@@ -56,6 +56,12 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   content: an at-a-glance table up front, real subheads, tightened prose — no new chrome
   (B2's day-cards were considered and not chosen). These recipes generalize site-wide as
   the theme's house style; Geoff: B1 "a significant improvement over the original."
+  **Home-page additions (Geoff, same session):** the Fleet and Facilities sections are
+  two-column compositions with EMPTY image columns — phase 1 completes them with real club
+  photography (a fleet shot; a grounds shot), curated into the media library with alt
+  text. SUGGESTED, awaiting his call: The Season's six month-boxes consolidate into a
+  single quiet band listing (the B1 energy applied to events), fitting its D1-driven
+  future.
 - **The original work-session definition (ran as designed):** two sittings with Geoff. (1) THE SHOW-AND-TELL: curated exhibits from the
   scroll-primed captures — the news cards at their best, the chrome-stacking at its
   heaviest, the education page's full height, the responsive rough spots — so the

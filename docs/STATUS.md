@@ -79,6 +79,18 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**ECXC.SKI DEPLOYED AND VERIFIED (2026-07-05, the second attempt, done right): the chrome
+repair rebuilt the club's design on the salvaged scaffold (audit-from-references -> build ->
+11 parallel page verifiers -> the passage/callout card-chrome fix -> typo + sticky-footer
+fixes), I read all eleven page renders MYSELF against the references before the deploy, the
+merge took the rebuild tree with proper ancestry (no force), the deploy was watched on its
+exact sha (a stale "green" nearly fooled the watcher minutes earlier), and production was
+crawl-verified + RENDER-READ after. Both sites now live on the rebuild architecture.
+CARRIED: Geoff's CrewLAB placeholder sentence; his own look at both sites; the live
+magic-link admin smokes; the wrangler-dev Rolldown crash (ledger). Research running on
+better UI/visual processes + Fable-specific levers (Geoff's ask after the two visual
+misses).**
+
 **HARVEST PASS 1 COMPLETE (2026-07-05): all six tasks green, and everything landed
 ADDITIVE — the rehype/remark plugin seam on createRenderer, tableScroll default-on with
 opt-out, sitemap extraRoutes + the unlistedRoutes check, CairnHead titleTemplate, the

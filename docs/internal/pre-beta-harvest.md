@@ -85,7 +85,56 @@ discipline: every contract break traces to REBUILD/PORT EVIDENCE (a schema that 
 seam that forced a workaround), never speculation, and the charter's leanness bar still
 governs what gets added. Migration cost carries ZERO weight for the two owned sites
 (Geoff, 2026-07-05: not worried about reworking ecxc/907 to follow) — the only consumers
-are ours until beta, which is the whole point of the window. Known contract questions awaiting evidence-driven answers:
+are ours until beta, which is the whole point of the window.
+
+**Per-port capability-test verdicts (theme-ports-1-3, contract beat 2).** Each port named one
+capability test up front (plan `2026-07-05-theme-ports-1-3.md`) and reports its verdict here;
+the CANDIDATE items below carry the fuller cross-port evidence these verdicts draw on.
+
+- **AstroPaper, the pure theme-seam proof (zero components expected) — PROVEN.** The theme
+  mounted with an empty `defineComponent` registry and reproduced every one of its raw-HTML
+  devices (the code-card, the warning admonition, the table of contents) through seams the
+  chassis already exposed: the `sanitizeSchema` extension point, `rehype-raw`, the existing
+  `.callout`/`.callout-warning` classes in `prose.css`, and a plain regex over
+  `rehype-slug`'s own heading ids. Zero engine or component-grammar change was needed for the
+  pure-theme case; the one chassis change this port surfaced (the sticky-footer flex
+  cross-axis fix, now `.cairn-site-shell`/`.cairn-site-main`) is structural, not
+  component-grammar related, and already LANDED. Evidence: the Chassis section's "code-card
+  device" and "sanitizeSchema extension point" entries above;
+  `.claude/agent-memory/cairn-implementer/theme-port-astropaper-task1.md`.
+- **Foxi, the composed-page/marketing-section stress — the primitives suffice; zero engine
+  changes.** Every marketing route (home, features, pricing, FAQ, contact, changelog) is a
+  hard-coded Svelte page built entirely from the chassis's `.cairn-card`/`.cairn-band`/
+  `.cairn-section`/`.cairn-hero` composition primitives plus DaisyUI's own `collapse`/`input`/
+  `textarea`, while the blog and the Terms page stayed ordinary cairn-managed markdown with no
+  special casing. This is Foxi's own answer to the composed-page seam question: for this
+  port's shape of marketing composition, a pricing table or an FAQ accordion reads as the
+  developer's own domain, not a gap in Posts/Pages, and no first-class composed-page content
+  type was needed to reach it. The friction this port did surface (the `max-w-*`/`--spacing-*`
+  Tailwind collision, the sidebar-layout's fixed column order, the unlayered-margin cascade
+  bug) all resolved as chassis documentation or a chassis fix, none forcing an engine change.
+  This verdict is Foxi's alone; the composed-page seam question stays CANDIDATE overall
+  because ecxc's directive-driven angle is a separate, not-yet-converged evidence source (see
+  below).
+- **hugo-theme-gallery, the media stress and the album-vs-Pages question — both proven with
+  zero engine changes, at a real visible cost.** The justified photo grid (the real
+  `justified-layout` package) and the PhotoSwipe v5 lightbox (the official
+  `photoswipe-dynamic-caption-plugin`) both work end to end through the same client-only
+  dynamic-`import()` pattern the carta-md boundary already establishes; no rendering or
+  component-grammar limitation surfaced. The album question's answer: cairn's one
+  `pages` concept and one shared fieldset CAN express hugo-theme-gallery's whole album tree
+  (a plain page, an interior node with children, and a leaf album with photos) through a
+  self-`reference` (`parent`), a taxonomy `multiselect` (`categories`), and an array of objects
+  (`photos`), with every field but `title` optional, the one-fieldset-polymorphism finding.
+  The cost is real, not hypothetical: nothing in the schema marks which of the three shapes a
+  given page takes, so every page's admin form shows the full field superset regardless. A
+  narrower, separate gap travels with it: cairn's flat `permalink: '/:slug'` has no
+  nested-URL equivalent for the upstream's directory-based routing, so every album here is a
+  flat top-level route. Neither gap was closed by an engine change (one port's evidence is not
+  grounds per the harvest discipline); both stay CANDIDATE below, alongside the narrower
+  `ImageValue` intrinsic-dimensions gap the same port surfaced.
+
+Known contract questions awaiting evidence-driven answers:
 
 - **The composed-page seam** — CANDIDATE, one evidence source now in. The Foxi port's
   every marketing route (home, features, pricing, FAQ, contact, changelog) is a hard-coded

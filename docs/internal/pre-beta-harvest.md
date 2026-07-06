@@ -355,6 +355,14 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   chrome built on the scaffold; whether Waymark should offer composable structural variants
   (hero+card home, sidebar layouts) is now a REAL harvest question for the ports.
 
+- **Themed 404 belongs in the chassis — PROMOTED (second proof point, 2026-07-06).** The
+  ports' harvest queued "SPA-fallback themed-404" off one observation; Foxi's final
+  verification then proved the full failure shape empirically (prerendered routes exclude
+  everything from the worker manifest; a catch-all +page.server.ts blocks the SPA shell's
+  __data.json; result: the platform-default 404 in every production-shaped mode). The
+  chassis gains the root-level +error.svelte pattern + a README seam note; lands with the
+  next harvest.
+
 ## Component library
 
 - **ecxc's 18-to-13 rationalization findings** — CANDIDATE, arriving with the redo's

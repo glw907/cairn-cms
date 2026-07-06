@@ -8,10 +8,10 @@
   import CTABanner from '$theme/components/CTABanner.svelte';
 
   const reasons = [
-    { title: 'Customer Support', text: "Need help with Foxi? Our support team is available 24/7 to assist you with any issues or questions you might have." },
-    { title: 'Sales Inquiries', text: 'Interested in our plans or want a custom solution? Get in touch with our sales team to find the perfect fit.' },
-    { title: 'Feature Requests', text: "Have an idea to make Foxi even better? We'd love to hear from you! Share your feature requests and help us improve." },
-    { title: 'General Feedback', text: 'Your feedback is invaluable to us. Let us know how we are doing and how we can improve.' },
+    { icon: 'rocket', title: 'Customer Support', text: "Need help with Foxi? Our support team is available 24/7 to assist you with any issues or questions you might have." },
+    { icon: 'document-text', title: 'Sales Inquiries', text: 'Interested in our plans or want a custom solution? Get in touch with our sales team to find the perfect fit.' },
+    { icon: 'bolt', title: 'Feature Requests', text: "Have an idea to make Foxi even better? We'd love to hear from you! Share your feature requests and help us improve." },
+    { icon: 'chat-bubble-left-ellipsis', title: 'General Feedback', text: 'Your feedback is invaluable to us. Let us know how we are doing and how we can improve.' },
   ];
 </script>
 
@@ -55,6 +55,7 @@
   <CTABanner
     title="Join Over 30,000 Satisfied Users!"
     text="Discover why thousands of professionals trust our platform to streamline their workflow and enhance productivity."
+    badge="#1 Product of the Year, Product Hunt"
     buttonLabel="Get started now!"
     buttonHref="/pricing"
   />

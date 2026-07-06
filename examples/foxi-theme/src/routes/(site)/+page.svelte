@@ -1,14 +1,14 @@
 <!-- @component The Foxi port's home template, styled after `src/pages/index.astro`
-     (oxygenna-themes/foxi-astro-theme, MIT): a hero, a compact feature grid, a dark testimonial
-     band, four alternating highlight rows, and a closing CTA. Every section is a plain composed
-     Svelte page built from this theme's own components; cairn's content model plays no part
-     here (the capability question this port answers). -->
+     (oxygenna-themes/foxi-astro-theme, MIT): a hero with a social-proof chip, an asymmetric bento
+     feature grid, a dark testimonial band, four alternating highlight rows, and a closing CTA.
+     Every section is a plain composed Svelte page built from this theme's own components; cairn's
+     content model plays no part here (the capability question this port answers). -->
 <script lang="ts">
-  import FeatureGrid from '$theme/components/FeatureGrid.svelte';
+  import AppMockup from '$theme/components/AppMockup.svelte';
   import Testimonial from '$theme/components/Testimonial.svelte';
   import TextImageRow from '$theme/components/TextImageRow.svelte';
   import CTABanner from '$theme/components/CTABanner.svelte';
-  import { homeFeatures } from '$theme/data/features.js';
+  import { homeBentoFeatures } from '$theme/data/features.js';
 </script>
 
 <svelte:head>
@@ -17,6 +17,14 @@
 
 <div class="cairn-band pb-0 pt-2xl">
   <div class="site-wide cairn-hero mx-auto max-w-3xl text-center">
+    <div class="mb-s inline-flex items-center gap-2 rounded-field border border-card-border bg-base-100 py-1 pl-1 pr-3 text-step--1">
+      <span class="flex -space-x-2">
+        {#each ['A', 'M', 'S'] as initial (initial)}
+          <span class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-base-100 bg-primary text-[0.6rem] font-bold text-primary-content">{initial}</span>
+        {/each}
+      </span>
+      <span class="text-muted"><strong class="text-base-content">30K+</strong> satisfied customers</span>
+    </div>
     <h1 class="cairn-hero-title">
       Enhance team <strong class="text-primary">performance</strong> with seamless integration
     </h1>
@@ -31,7 +39,7 @@
     </div>
   </div>
   <div class="site-wide mt-l">
-    <div class="cairn-card mx-auto aspect-video max-w-4xl bg-base-200"></div>
+    <AppMockup variant="chat" class="mx-auto aspect-video max-w-4xl rounded-box shadow-2xl" />
   </div>
 </div>
 
@@ -45,7 +53,20 @@
         Explore the suite of tools designed to streamline your workflow, enhance productivity, and drive growth.
       </p>
     </div>
-    <FeatureGrid features={homeFeatures} columns="sm:grid-cols-2 lg:grid-cols-3" />
+    <div class="mt-l grid grid-cols-1 gap-m md:grid-cols-3 md:[grid-template-rows:repeat(2,auto)]">
+      {#each homeBentoFeatures as feature (feature.title)}
+        <a
+          href="/features"
+          class="cairn-card flex flex-col justify-between gap-m no-underline hover:shadow-[var(--cairn-shadow)] {feature.tall ? 'md:row-span-2' : ''}"
+        >
+          <div>
+            <h3 class="mb-2xs text-step-0 font-semibold text-base-content">{feature.title}</h3>
+            <p class="m-0 text-step--1 text-muted">{feature.description}</p>
+          </div>
+          <AppMockup variant={feature.image} class="aspect-video rounded-box" />
+        </a>
+      {/each}
+    </div>
   </div>
 </div>
 
@@ -62,24 +83,28 @@
       highlight="Visibility"
       text="Gain complete visibility into your projects and tasks with our comprehensive dashboard. Easily track progress, deadlines, and team performance at a glance."
       imagePosition="right"
+      image="stats"
     />
     <TextImageRow
       title="Advanced Automation Tools"
       highlight="Automation"
       text="Automate repetitive tasks and streamline your workflow with our advanced automation tools. Save time and reduce errors."
       imagePosition="left"
+      image="kanban"
     />
     <TextImageRow
       title="Effective Team Collaboration"
       highlight="Effective"
       text="Enhance team communication and collaboration with our seamless tools. Keep everyone on the same page."
       imagePosition="right"
+      image="chat"
     />
     <TextImageRow
       title="Robust Data Security"
       highlight="Security"
       text="Protect your data with our robust security features. We prioritize your privacy and security."
       imagePosition="left"
+      image="chart"
     />
   </div>
 </div>

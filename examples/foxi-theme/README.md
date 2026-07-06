@@ -68,6 +68,22 @@ form is presentational only (submitting it is the developer's own domain, per ca
 boundary). A production site built from this port adds admin/auth back the way `examples/showcase`
 does, and wires the form to its own handler.
 
+Every "screenshot" panel on this port (the hero, the highlight rows, the blog covers, the
+changelog entries) is an original `AppMockup` illustration, a schematic stand-in for Foxi's own
+product photography, which this port has no clearance to redistribute; the testimonial band draws
+a plain silhouette rather than a named person's photo, and the trust-logo row draws a monogram
+badge per brand rather than tracing each company's own mark. The 404 illustration is the one
+exception: it is Foxi's own vector artwork (no photography, no third-party mark), so it ports
+verbatim (`NotFoundIllustration.svelte`).
+
+Every route in this port prerenders, so a request to a path with no matching page (a stale link,
+a typo) has no static file of its own; `svelte.config.js`'s `fallback: 'spa'` plus
+`wrangler.jsonc`'s `assets.not_found_handling: "404-page"` are what make Cloudflare serve the
+built `404.html` shell for that request, which then boots this port's own themed `(site)/+error.svelte`
+inside its chrome, instead of a blank platform 404. A plain `vite preview` (or a local `wrangler dev`
+run) cannot demonstrate this: both skip the edge-side asset routing the mechanism depends on, so it
+verifies only against a real Cloudflare deployment.
+
 ## Running it
 
 ```sh

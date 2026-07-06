@@ -10,8 +10,11 @@ export const entries: EntryGenerator = () => {
 };
 
 export const load: PageServerLoad = ({ params }) => {
-  const matched = [...posts.all()]
+  const all = [...posts.all()];
+  const matched = all
     .filter((p) => p.tags?.includes(params.tag))
     .sort((a, b) => (b.date ?? '').localeCompare(a.date ?? ''));
-  return { tag: params.tag, posts: matched };
+  const tags = new Set<string>();
+  for (const post of all) for (const tag of post.tags ?? []) tags.add(tag);
+  return { tag: params.tag, posts: matched, tags: [...tags].sort() };
 };

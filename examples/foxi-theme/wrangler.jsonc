@@ -7,5 +7,12 @@
   "compatibility_date": "2026-05-28",
   "compatibility_flags": ["nodejs_compat"],
   "main": ".svelte-kit/cloudflare/_worker.js",
-  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" }
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS",
+    // Serves the adapter's generated `404.html` SPA-fallback shell for any request that matches
+    // no static asset, which is how this fully-prerendered site gives an unmatched path (or a
+    // stale link) a themed, chrome-wrapped 404 instead of Cloudflare's own blank one.
+    "not_found_handling": "404-page"
+  }
 }

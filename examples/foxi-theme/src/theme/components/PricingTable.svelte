@@ -19,24 +19,18 @@ chassis "featured card" primitive.
 </script>
 
 <div class="flex flex-col items-center">
-  <div class="mb-l inline-flex items-center gap-s rounded-field border border-card-border bg-base-100 p-1">
-    <button
-      type="button"
-      class="rounded-field px-4 py-2 text-step--1 font-medium {billing === 'monthly' ? 'bg-primary text-primary-content' : 'text-muted'}"
-      onclick={() => (billing = 'monthly')}
-      aria-pressed={billing === 'monthly'}
-    >
-      Bill monthly
-    </button>
-    <button
-      type="button"
-      class="rounded-field px-4 py-2 text-step--1 font-medium {billing === 'annual' ? 'bg-primary text-primary-content' : 'text-muted'}"
-      onclick={() => (billing = 'annual')}
-      aria-pressed={billing === 'annual'}
-    >
-      Bill annually
-    </button>
+  <div class="mb-2xs inline-flex items-center gap-s">
+    <span class="text-step--1 font-semibold {billing === 'monthly' ? 'text-base-content' : 'text-muted'}">Bill monthly</span>
+    <input
+      type="checkbox"
+      class="toggle toggle-primary"
+      checked={billing === 'annual'}
+      onchange={(event) => (billing = event.currentTarget.checked ? 'annual' : 'monthly')}
+      aria-label="Toggle annual billing"
+    />
+    <span class="text-step--1 font-semibold {billing === 'annual' ? 'text-primary' : 'text-muted'}">Bill annually</span>
   </div>
+  <p class="mb-l text-step--2 text-muted">Annual plans are billed once a year and save you two months.</p>
 
   <div class="grid w-full grid-cols-1 items-start gap-m lg:grid-cols-3">
     {#each plans as plan (plan.title)}
@@ -72,6 +66,12 @@ chassis "featured card" primitive.
             </li>
           {/each}
         </ul>
+        <a
+          href="/features"
+          class="mt-2xs text-center text-step--1 font-semibold no-underline hover:underline {plan.featured ? 'text-primary-content' : 'text-primary'}"
+        >
+          {plan.footerLabel}
+        </a>
       </div>
     {/each}
   </div>

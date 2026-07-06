@@ -8,12 +8,14 @@ export const changelogEntries: ChangelogEntry[] = [
     title: 'v1.0.6: Enhanced Security Features',
     text: "We've implemented new security protocols to safeguard your data. Enjoy peace of mind with improved encryption and multi-factor authentication.",
     items: ['2FA enabled by default', 'HubSpot integration', 'Zoho CRM integration'],
+    image: 'chat',
   },
   {
     date: '2024-06-15',
     title: 'v1.0.5: User Interface Improvements',
     text: 'Our latest update brings a revamped user interface for a more intuitive and visually appealing experience. Navigation and usability have been greatly enhanced.',
     items: ['Updated dashboard layout', 'Improved accessibility features', 'Streamlined navigation menus'],
+    image: 'stats',
   },
   {
     date: '2024-05-20',
@@ -24,6 +26,7 @@ export const changelogEntries: ChangelogEntry[] = [
     date: '2024-04-10',
     title: 'v1.0.3: Performance Enhancements',
     text: "We've optimized the app to run faster and smoother. Experience improved load times and overall performance.",
+    image: 'calendar',
   },
   {
     date: '2024-03-25',
@@ -35,5 +38,6 @@ export const changelogEntries: ChangelogEntry[] = [
     date: '2024-02-15',
     title: 'v1.0.1: Third-Party API Support',
     text: 'Seamlessly integrate with third-party APIs to extend the functionality of your app. Enjoy smooth data exchange and enhanced performance.',
+    image: 'chart',
   },
 ];

@@ -28,6 +28,11 @@ export const pricingFaq: FaqItem[] = [
     reply:
       "We offer a 30-day money-back guarantee if you are not satisfied with our service. Simply contact our support team within 30 days of your purchase, and we'll process your refund.",
   },
+  {
+    question: 'How do I cancel my subscription?',
+    reply:
+      'You can cancel your subscription from your account settings at any time. After cancellation, you will still have access to your account until the end of the billing cycle.',
+  },
 ];
 
 export const integrationsFaq: FaqItem[] = [
@@ -56,22 +61,9 @@ export const integrationsFaq: FaqItem[] = [
     reply:
       'Yes, Foxi integrates with Zapier, allowing you to connect with over 2,000 apps and automate your workflows. This integration helps you streamline your processes and improve efficiency.',
   },
-];
-
-export const featuresFaq: FaqItem[] = [
   {
-    question: 'What are the main features of Foxi?',
+    question: 'Can I sync Foxi with my email?',
     reply:
-      'Foxi includes in-app messaging, project management, time tracking, customizable dashboards, and more. These features are designed to help you stay organized, communicate effectively, and manage your time efficiently.',
-  },
-  {
-    question: 'How do I use the in-app messaging feature?',
-    reply:
-      'In-app messaging allows you to communicate with your team directly within Foxi. Simply navigate to the messaging tab to start a conversation. You can send messages, share files, and create group chats.',
-  },
-  {
-    question: 'Can I customize my dashboard?',
-    reply:
-      'Yes, you can customize your dashboard by adding, removing, and rearranging widgets to fit your workflow. This customization helps you keep important information at your fingertips.',
+      "Currently, we do not support email integration, but this feature is on our roadmap for future releases. Stay tuned for updates as we continue to enhance Foxi's capabilities.",
   },
 ];

@@ -30,6 +30,8 @@
   <CTABanner
     title="Join the Foxi Revolution!"
     text="Discover why thousands of professionals trust our platform to streamline their workflow and enhance productivity."
+    variant="light"
+    ratingText="30K customer ratings"
     buttonLabel="Get started now!"
     buttonHref="/pricing"
   />

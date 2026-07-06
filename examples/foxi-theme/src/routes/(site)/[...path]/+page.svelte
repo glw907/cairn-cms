@@ -1,12 +1,14 @@
 <!-- @component The Foxi port's single-entry reader, styled after
-     `src/pages/blog/[...id].astro` (the post template) and a plain page's breadcrumb-and-title
-     idiom (the Terms page), oxygenna-themes/foxi-astro-theme, MIT. A post additionally carries
-     a breadcrumb trail, its tag list, and an edit-page link; both cases render the same
-     `prose` body. -->
+     `src/pages/blog/[...id].astro` (the post template) and `src/pages/terms.astro` (the sidebar-banded
+     page idiom), oxygenna-themes/foxi-astro-theme, MIT. A post additionally carries a breadcrumb
+     trail, its tag list, and an edit-page link; the Terms page (the one entry `+page.server.ts`
+     splits into `termsBands`) renders as alternating sidebar-and-content bands instead of one
+     flowing article; any other page falls back to the plain breadcrumb-and-prose template. -->
 <script lang="ts">
   import type { PageData } from './$types';
   import { CairnHead } from '@glw907/cairn-cms/delivery/head';
   import Breadcrumbs from '$theme/components/Breadcrumbs.svelte';
+  import AppMockup from '$theme/components/AppMockup.svelte';
   import { REPO } from '$theme/cairn.config.js';
 
   let { data }: { data: PageData } = $props();
@@ -55,7 +57,7 @@
   </div>
 
   <article class="site-main prose">
-    <div class="not-prose mb-l aspect-[21/9] rounded-box bg-gradient-to-br from-primary to-secondary"></div>
+    <AppMockup variant="chart" class="not-prose mb-l aspect-[21/9] w-full rounded-box border border-card-border" />
 
     {@html data.html}
 
@@ -65,6 +67,32 @@
       </p>
     {/if}
   </article>
+{:else if data.termsBands}
+  <div class="cairn-band">
+    <div class="site-wide mx-auto max-w-3xl text-center">
+      <Breadcrumbs crumbs={[{ label: 'Home', href: '/' }, { label: data.entry.title }]} />
+      <h1 class="my-m text-step-4 font-bold text-base-content">
+        Terms and Conditions: Read, Relax, <strong class="text-primary">Enjoy!</strong>
+      </h1>
+      <p class="m-0 text-step-0 text-muted">Please read them carefully to understand your rights and responsibilities.</p>
+    </div>
+  </div>
+
+  {#each data.termsBands as band, index (band.heading)}
+    <div class="{index % 2 === 1 ? 'bg-base-200' : ''} py-2xl">
+      <div class="site-wide">
+        <div class="grid grid-cols-1 gap-l md:grid-cols-3">
+          <div>
+            <h2 class="mb-2xs text-step-2 font-bold text-base-content">{band.heading}</h2>
+            <p class="m-0 text-step--1 text-muted">{band.lead}</p>
+          </div>
+          <div class="prose md:col-span-2">
+            {@html band.html}
+          </div>
+        </div>
+      </div>
+    </div>
+  {/each}
 {:else}
   <div class="cairn-band pb-0">
     <div class="site-wide mx-auto max-w-3xl text-center">

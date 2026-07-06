@@ -1,7 +1,9 @@
-<!-- @component The 404 page, styled after Foxi's own `src/pages/404.astro` (MIT): a large
-     numeral, a plain apology, and a link home. -->
+<!-- @component The 404 page, styled after Foxi's own `src/pages/404.astro`
+     (oxygenna-themes/foxi-astro-theme, MIT): the magnifying-glass illustration over a bold
+     "page not found" wordmark, a plain apology, and a link home. -->
 <script lang="ts">
   import { page } from '$app/state';
+  import NotFoundIllustration from '$theme/components/NotFoundIllustration.svelte';
 </script>
 
 <svelte:head>
@@ -9,7 +11,12 @@
 </svelte:head>
 
 <div class="site-wide py-2xl text-center">
-  <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
+  <NotFoundIllustration />
+  {#if page.status === 404}
+    <p class="mt-m text-step-3 font-extrabold uppercase tracking-wide text-base-content">Page not found</p>
+  {:else}
+    <h1 class="mt-m text-step-5 font-bold text-base-content">{page.status}</h1>
+  {/if}
   <p class="mt-s text-muted">
     {page.status === 404 ? "The page you're looking for doesn't exist." : (page.error?.message ?? 'Something went wrong.')}
   </p>

@@ -3,13 +3,16 @@
 // exported from each .svelte component) so a .ts data file never needs to import a type from a
 // .svelte file.
 
-/** One feature card: a title and a short description (`FeatureGrid.svelte`). */
+/** One feature list item: an icon name (`$theme/icons.js`), a title, and a short description
+ *  (`FeatureGrid.svelte`). */
 export interface Feature {
+  icon: string;
   title: string;
   description: string;
 }
 
-/** One pricing tier: its two price points and its feature list (`PricingTable.svelte`). */
+/** One pricing tier: its two price points, its feature list, and its footer link
+ *  (`PricingTable.svelte`). */
 export interface PricingPlan {
   title: string;
   subtitle: string;
@@ -17,6 +20,8 @@ export interface PricingPlan {
   priceMonthly: string;
   features: string[];
   featured?: boolean;
+  /** The footer link label, e.g. "See all features" (every upstream tier carries one). */
+  footerLabel: string;
 }
 
 /** One FAQ question/answer pair (`FaqAccordion.svelte`). */
@@ -27,6 +32,7 @@ export interface FaqItem {
 
 /** One "reason to contact us" card (`ContactCards.svelte`). */
 export interface ContactReason {
+  icon: string;
   title: string;
   text: string;
 }
@@ -37,6 +43,9 @@ export interface ChangelogEntry {
   title: string;
   text: string;
   items?: string[];
+  /** An `AppMockup` illustration variant, shown under the title for entries the upstream data
+   *  itself pairs with a screenshot (not every entry carries one). */
+  image?: 'calendar' | 'chat' | 'chart' | 'stats' | 'kanban';
 }
 
 /** One breadcrumb entry: a label, and a link unless it is the current page (`Breadcrumbs.svelte`). */

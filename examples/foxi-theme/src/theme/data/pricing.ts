@@ -14,6 +14,7 @@ export const pricingPlans: PricingPlan[] = [
       'Present your projects with flair and captivate your audience',
       'Immerse yourself in the dynamic realm of architecture',
     ],
+    footerLabel: 'See all features',
   },
   {
     title: 'Team',
@@ -27,6 +28,7 @@ export const pricingPlans: PricingPlan[] = [
       'Unlock endless inspiration',
     ],
     featured: true,
+    footerLabel: 'See all features',
   },
   {
     title: 'Enterprise',
@@ -38,5 +40,6 @@ export const pricingPlans: PricingPlan[] = [
       'Present your projects with flair and captivate your audience',
       'Immerse yourself in the dynamic realm of architecture',
     ],
+    footerLabel: 'See all features',
   },
 ];

@@ -12,7 +12,7 @@
   import CTABanner from '$theme/components/CTABanner.svelte';
   import { pricingPlans } from '$theme/data/pricing.js';
   import { pricingFaq } from '$theme/data/faq.js';
-  import { homeFeatures } from '$theme/data/features.js';
+  import { pricingIncludedFeatures } from '$theme/data/features.js';
 </script>
 
 <svelte:head>
@@ -43,7 +43,7 @@
           Explore the suite of tools designed to streamline your workflow, enhance productivity, and drive growth.
         </p>
       </div>
-      <FeatureGrid features={homeFeatures} columns="sm:grid-cols-2 lg:grid-cols-4" />
+      <FeatureGrid features={pricingIncludedFeatures} columns="sm:grid-cols-2 lg:grid-cols-4" />
     </div>
   </div>
 </div>
@@ -72,6 +72,7 @@
   <CTABanner
     title="Join Over 30,000 Satisfied Users!"
     text="Discover why thousands of professionals trust our platform to streamline their workflow and enhance productivity."
+    badge="#1 Product of the Year, Product Hunt"
     buttonLabel="Get started now!"
     buttonHref="/pricing"
   />

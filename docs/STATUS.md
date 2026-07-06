@@ -79,6 +79,11 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**THEME PORTS 1-3 AUTHORIZED (Geoff, 2026-07-05: "continue with a workflow"): AstroPaper
+-> Foxi -> hugo-theme-gallery, SERIAL (each port's chassis harvest lands before the next
+opens), per docs/superpowers/plans/2026-07-05-theme-ports-1-3.md. LAUNCHES when the
+chassis restructure lands. Starlight stays a separate later effort (the Topo prototype).**
+
 **ECXC DESIGN PASS QUEUED (Geoff, 2026-07-05): the four re-expression items get a
 better-than-original design pass (not a revert) — per-device candidates, Geoff picks from
 crops, verifier-gated, after the chassis restructure lands. The three plain losses ride

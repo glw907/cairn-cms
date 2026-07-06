@@ -10,7 +10,8 @@ The highest bar of the ladder: a real member base. The full visual-fidelity meth
 
 The club's public site rebuilt on cairn (`@glw907/cairn-cms` >= 0.81.0, the chassis
 structure), preserving what works — the palette, fonts, iconography, information
-architecture, and basic layout — while fixing the four named issues: complex CSS, busy
+architecture, basic layout, and the gentle animations and mouseover behaviors (Geoff:
+"decent — keep/improve those"; motion carries into the theme, refined not replaced) — while fixing the four named issues: complex CSS, busy
 pages, uneven responsiveness, and heavy card use. Phase 2 (the functional member pages and
 the admin/members migration on the extending-developer seam) and phase 3 (the handbook on
 Topo) are scoped here only as boundaries.
@@ -59,7 +60,19 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   **Home-page additions (Geoff, same session):** the Fleet and Facilities sections are
   two-column compositions with EMPTY image columns — phase 1 completes them with real club
   photography (a fleet shot; a grounds shot), curated into the media library with alt
-  text. **C2-TWO-COLUMN LOCKED (Geoff: "a definite improvement... with the two columns"):** The
+  text. **DECISION C ITERATED TO THE FINAL PAIR (C7 recommended):** the Season consolidates into
+  the quiet two-column band (C3's base: months on weight and air, no rules; groups never
+  split; one column under 900px), with the mission-first taxonomy Geoff set (education
+  most prominent — the club is an educational 501(c)(3); "emphasis encodes the mission"
+  is now a standing design principle) marked by an ACCENT DOT before classes/clinics (C7):
+  the dot spends no hue, event names stay ink and linkable, blue remains exclusively the
+  link affordance, and the family's amber stays caution-only (the C8 second-color
+  alternative is on file if ever needed). Content note: Fleet Tune-Up Weekend is a clinic
+  (education); the D1 events schema wants a category field that reflects this taxonomy.
+  Superseded along the way: C2's rules/racing-bold (too busy two-up; racing emphasis
+  inverted the mission).**
+  *(The earlier C2 lock is superseded by the above.)*
+  ORIGINAL-C2-NOTE:  The
   Season consolidates from six month-boxes into a single band listing — month names in
   full ink with hairline rules as scan anchors, events at body size with quiet tabular
   dates, racing in the accent blue (the color scan answers "when do we race?"), two

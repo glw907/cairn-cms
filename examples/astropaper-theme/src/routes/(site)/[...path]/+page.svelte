@@ -38,8 +38,12 @@
 
   const toc = $derived(isPost ? extractToc(data.html) : []);
 
+  // A post is always dated (the 'feed' routing model), so entry.date is present in practice;
+  // this still guards it rather than interpolating the literal string "undefined" into a URL.
   const editHref = $derived(
-    isPost ? `https://github.com/${REPO.owner}/${REPO.repo}/edit/${REPO.branch}/src/content/posts/${data.entry.date}-${data.entry.slug}.md` : undefined,
+    isPost && data.entry.date
+      ? `https://github.com/${REPO.owner}/${REPO.repo}/edit/${REPO.branch}/src/content/posts/${data.entry.date}-${data.entry.slug}.md`
+      : undefined,
   );
 
   const shareText = $derived(`${data.entry.title} ${data.canonicalUrl}`);

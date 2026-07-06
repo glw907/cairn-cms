@@ -43,13 +43,14 @@ jobs:
       - name: Run the e2e suite
         if: ${{ !(github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true') }}
         run: npm --prefix examples/showcase run test:e2e
-      # Manual regen mode: a dispatcher ticks `update_snapshots` to rebaseline the admin-visual
-      # screenshots after a deliberate chrome change, instead of asserting the suite red. Only this
-      # one spec runs, with `--update-snapshots`, and the resulting PNGs upload as a build artifact
+      # Manual regen mode: a dispatcher ticks `update_snapshots` to rebaseline the visual
+      # screenshots after a deliberate rendering change, instead of asserting the suite red. Both
+      # visual specs run BY FILE PATH (a title grep silently skips tests whose names lack the
+      # word), with `--update-snapshots`, and the resulting PNGs upload as a build artifact
       # for a maintainer to review and copy back into the repo; nothing here commits the baselines.
-      - name: Regenerate the admin-visual baseline snapshots
+      - name: Regenerate the visual baseline snapshots
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
-        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts --update-snapshots
+        run: npm --prefix examples/showcase run test:e2e -- e2e/admin-visual.spec.ts e2e/site-visual.spec.ts --update-snapshots
       - name: Upload the regenerated admin-visual baselines
         if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.update_snapshots == 'true' }}
         uses: actions/upload-artifact@v4

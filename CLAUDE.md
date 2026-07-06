@@ -207,6 +207,18 @@ original at a glance; the licensed differences are behavioral (the family respon
 standard at the extremes) and structural (cairn underneath), never the visible design
 language at normal viewing.
 
+## Visual work runs the visual-fidelity method (2026-07-05)
+
+Any rebuild, theme port, or design migration invokes the `visual-fidelity` skill at the
+START (reference capture before any plan; device catalogue; build with the
+screenshot-compare loop; the fresh-context verifier gate; the one-check deploy gate; the
+pixel-diff CI rider). The `visual-verifier` agent is the standing fresh-context grader:
+it did not build the work, receives reference and render as separate labeled images, and
+verdicts per visual device. The builder's own "matches" is never accepted — Anthropic's
+Fable guidance (fresh-context verifiers outperform self-critique) plus two production
+misses (2026-07-05) are the why. The official frontend-design skill is for ORIGINAL
+aesthetics and carries no reference comparison; never use it alone for a port.
+
 ## The responsive standard (family-wide, Geoff 2026-07-05)
 
 Every cairn-family artifact — the Waymark template, every theme (including ports of

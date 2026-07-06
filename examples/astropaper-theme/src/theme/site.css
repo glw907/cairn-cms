@@ -16,9 +16,12 @@ html {
 .site-main {
   /* The chassis's .cairn-site-main (on the same element; see the (site) layout) carries the
      flex-item width fix this reading column needs; this rule only adds the theme's own measure
-     and spacing on top of it. */
+     and spacing on top of it. `margin-inline`, not the `margin: 0 auto` shorthand: the shorthand
+     also zeroes the block (top/bottom) margins, which would silently beat a future sibling's own
+     Tailwind `mt-*`/`mb-*` utility (an unlayered plain CSS rule always wins over a layered one;
+     see the chassis README's cascade-layers note, hit for real on the Foxi and gallery ports). */
   max-width: var(--container-measure);
-  margin: 0 auto;
+  margin-inline: auto;
   padding: var(--spacing-l) var(--spacing-m);
 }
 

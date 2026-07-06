@@ -74,6 +74,22 @@ measure tokens) or a plain arbitrary value; a theme built on this chassis should
 never reach for `max-w-xs`, `max-w-xl`, or `max-w-2xl` specifically, since those three key names
 are already spoken for.
 
+**Cascade layers: an unlayered site rule always beats a layered Tailwind utility.** Tailwind v4's
+own utilities live inside `@layer utilities`, and CSS cascade layers make an unlayered rule win
+over any layered one unconditionally, regardless of source order or specificity. A theme's own
+`site.css` typically declares plain, unlayered container classes (`.site-main`, `.site-wide`), and
+if one of those classes sets `margin: 0 auto` (the shorthand, which also zeroes the block/top-bottom
+margins) on the same element as a Tailwind `mt-*`/`mb-*` utility, the shorthand's implicit
+`margin-top: 0`/`margin-bottom: 0` silently wins, collapsing the utility's intended gap to zero with
+no warning. Both the gallery and the Foxi ports hit this for real (a home-page hero-to-image gap and
+a featured-card-to-grid gap both measured 0px of computed margin despite a `mb-l`/`mt-l` class being
+present); the fix in both is `margin-inline: auto` instead of the `margin: 0 auto` shorthand, which
+centers the container without touching the block axis at all, leaving it free for a composing
+utility class to set. A theme writing its own unlayered container or layout class should reach for
+the single-axis longhand (`margin-inline`, `padding-inline`, and so on) whenever that class might
+combine with a Tailwind spacing utility on the same element, rather than a shorthand that quietly
+claims the other axis too.
+
 **The prose foundation (`prose.css`).** Every element reads a token, so a re-skin (a new
 `tokens.css` override, or an entirely different theme) carries the reading surface forward with no
 edit here. The one signature identity this file carries (the cairn-glyph horizontal rule, the

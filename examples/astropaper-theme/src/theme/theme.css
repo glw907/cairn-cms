@@ -1,0 +1,199 @@
+/* ============================================================================
+   The AstroPaper theme (theme-ports-1-3, port 1): the pure theme-seam proof. Every value
+   below is read from AstroPaper's own public source (satnaing/astro-paper, MIT, (c) 2023 Sat
+   Naing; see this theme's README for the full credit): src/styles/theme.css for the light/dark
+   role colors, src/styles/global.css for the reading measure and the monospace face.
+
+   This file is the THEME half of the chassis boundary (src/chassis/README.md): it `@import`s
+   the chassis token SYSTEM (Tailwind, the DaisyUI plugin activation, prose.css,
+   composition.css, and every design-scale key with a generic default) and then redeclares every
+   one of those keys with AstroPaper's own concrete numbers and colors, plus the two named
+   DaisyUI themes the chassis deliberately never declares. Cascade order does the override:
+   nothing below duplicates chassis machinery, only chassis VALUES.
+   ============================================================================ */
+@import '../chassis/tokens.css';
+
+/* AstroPaper's one face, self-hosted so the real face is the default first paint. Fontsource
+   registers the family as "Google Sans Code Variable"; the --font-* tokens below name it
+   exactly. AstroPaper uses one face for everything (headings included), unlike Waymark's
+   display/body split, so --font-display and --font-body both point at it. */
+@import '@fontsource-variable/google-sans-code/index.css';
+
+/* The light theme (AstroPaper's default, src/styles/theme.css `:root, [data-theme="light"]`). */
+@plugin "daisyui/theme" {
+  name: "astropaper";
+  default: true;
+  prefersdark: false;
+  color-scheme: light;
+
+  --color-base-100: #fdfdfd;
+  --color-base-200: #e6e6e6;
+  --color-base-300: #d8d8d8;
+  --color-base-content: #282728;
+  /* AstroPaper's one accent, an ink-blue in light mode. */
+  --color-primary: #006cac;
+  --color-primary-content: #ffffff;
+  --color-secondary: #282728;
+  --color-secondary-content: #fdfdfd;
+  --color-accent: #006cac;
+  --color-accent-content: #ffffff;
+  --color-neutral: #282728;
+  --color-neutral-content: #fdfdfd;
+  /* AstroPaper defines no status hues of its own (its content never uses a callout or alert);
+     these carry the chassis's own generic role defaults forward so the tokens resolve to
+     something reasonable if a future post ever registers one. */
+  --color-info: oklch(55% 0.1 235);
+  --color-info-content: oklch(99% 0.01 235);
+  --color-success: oklch(54% 0.12 150);
+  --color-success-content: oklch(99% 0.01 150);
+  --color-warning: oklch(80% 0.13 78);
+  --color-warning-content: oklch(28% 0.05 78);
+  --color-error: oklch(58% 0.19 27);
+  --color-error-content: oklch(99% 0.01 27);
+
+  /* AstroPaper is flat and rectangular: no rounded corners, no shadow, no noise anywhere in the
+     original (buttons and inputs are plain underlined text, never a filled control). */
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The dark sibling (src/styles/theme.css `[data-theme="dark"]`). AstroPaper's own dark mode
+   swaps the accent hue entirely, blue to orange, rather than just lifting the light theme's
+   lightness; this theme carries that swap forward exactly for glance fidelity. */
+@plugin "daisyui/theme" {
+  name: "astropaper-dark";
+  default: false;
+  prefersdark: true;
+  color-scheme: dark;
+
+  --color-base-100: #212737;
+  --color-base-200: #343f60;
+  --color-base-300: #3d4a70;
+  --color-base-content: #eaedf3;
+  --color-primary: #ff6b01;
+  --color-primary-content: #ffffff;
+  --color-secondary: #eaedf3;
+  --color-secondary-content: #212737;
+  --color-accent: #ff6b01;
+  --color-accent-content: #ffffff;
+  --color-neutral: #eaedf3;
+  --color-neutral-content: #212737;
+  --color-info: oklch(70% 0.1 235);
+  --color-info-content: oklch(24% 0.04 235);
+  --color-success: oklch(66% 0.12 150);
+  --color-success-content: oklch(24% 0.04 150);
+  --color-warning: oklch(82% 0.13 78);
+  --color-warning-content: oklch(25% 0.05 78);
+  --color-error: oklch(66% 0.17 27);
+  --color-error-content: oklch(24% 0.05 27);
+
+  --radius-selector: 0rem;
+  --radius-field: 0rem;
+  --radius-box: 0rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 0;
+  --noise: 0;
+}
+
+/* The design-scale VALUES. AstroPaper is not fluid (it jumps at Tailwind's static `sm` 640px
+   breakpoint); this theme keeps the chassis's clamp() mechanism but tunes each clamp to land on
+   AstroPaper's own two endpoints, so the scale grows smoothly across the family's five
+   viewports instead of jumping once, a licensed divergence the family responsive standard
+   invites (smoother, never less legible, than the original at the same two endpoints). */
+@theme {
+  --font-display: 'Google Sans Code Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-body: 'Google Sans Code Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+  --font-mono: 'Google Sans Code Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  --text-step--1: clamp(0.8rem, 0.78rem + 0.1vw, 0.875rem);      /* meta, dates, tag chips */
+  --text-step-0: clamp(0.95rem, 0.93rem + 0.1vw, 1rem);          /* body */
+  --text-step-1: clamp(1.05rem, 1rem + 0.25vw, 1.125rem);        /* index entry title, lead */
+  --text-step-2: clamp(1.2rem, 1.1rem + 0.5vw, 1.4rem);          /* h3 in prose */
+  --text-step-3: clamp(1.35rem, 1.2rem + 0.75vw, 1.5rem);        /* "Featured" / "Recent Posts" h2 */
+  --text-step-4: clamp(1.6rem, 1.3rem + 1.5vw, 1.95rem);         /* single-post h1 */
+  --text-step-5: clamp(1.9rem, 1.4rem + 2.5vw, 3rem);            /* home "Mingalaba" masthead */
+
+  --spacing-3xs: 0.25rem;
+  --spacing-2xs: 0.5rem;
+  --spacing-xs: 0.75rem;
+  --spacing-s: 1rem;
+  --spacing-m: 1.5rem;
+  --spacing-l: 2rem;
+  --spacing-xl: 3rem;
+  --spacing-2xl: 4rem;
+
+  --leading-body: 1.6;
+  --leading-snug: 1.4;
+  --leading-tight: 1.2;
+  --tracking-tight: 0em;
+  --tracking-eyebrow: 0.08em;
+
+  /* AstroPaper's `max-w-app` (`max-w-3xl`, 48rem), the one measure every template shares. */
+  --container-measure: 48rem;
+  --container-measure-wide: 56rem;
+
+  --color-muted: #6b7280;
+  --color-card-border: #ece9e9;
+}
+
+/* ----------------------------------------------------------------------------
+   The AstroPaper-owned Tier-2 values: the on-surface inks and the elevation pair. AstroPaper
+   never surfaces a status callout, so these inks are read only if a future post ever registers
+   one; the CTA pair is likewise unused by this port's zero-component content but declared so
+   the chassis contract stays fully satisfied.
+   ---------------------------------------------------------------------------- */
+:root {
+  --cairn-success-ink: oklch(45% 0.1 150);
+  --cairn-warning-ink: oklch(52% 0.11 76);
+  --cairn-error-ink: oklch(50% 0.17 27);
+  --cairn-info-ink: oklch(48% 0.1 235);
+
+  /* AstroPaper draws no shadow anywhere; the elevation token stays a bare hairline. */
+  --cairn-shadow: 0 0 0 transparent;
+
+  --cairn-cta-bg: var(--color-neutral);
+  --cairn-cta-content: var(--color-neutral-content);
+  --cairn-cta-border: transparent;
+  --cairn-cta-btn-bg: var(--color-base-100);
+  --cairn-cta-btn-content: var(--color-base-content);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    --color-muted: #afb9ca;
+    --color-card-border: #ab4b08;
+    --cairn-success-ink: oklch(78% 0.11 150);
+    --cairn-warning-ink: oklch(82% 0.12 76);
+    --cairn-error-ink: oklch(76% 0.14 27);
+    --cairn-info-ink: oklch(80% 0.1 235);
+    --cairn-shadow: 0 0 0 transparent;
+    --cairn-cta-bg: var(--color-base-200);
+    --cairn-cta-content: var(--color-base-content);
+    --cairn-cta-border: var(--color-base-300);
+    --cairn-cta-btn-bg: var(--color-primary);
+    --cairn-cta-btn-content: var(--color-primary-content);
+  }
+}
+
+:root[data-theme='astropaper-dark'] {
+  --color-muted: #afb9ca;
+  --color-card-border: #ab4b08;
+  --cairn-success-ink: oklch(78% 0.11 150);
+  --cairn-warning-ink: oklch(82% 0.12 76);
+  --cairn-error-ink: oklch(76% 0.14 27);
+  --cairn-info-ink: oklch(80% 0.1 235);
+  --cairn-shadow: 0 0 0 transparent;
+  --cairn-cta-bg: var(--color-base-200);
+  --cairn-cta-content: var(--color-base-content);
+  --cairn-cta-border: var(--color-base-300);
+  --cairn-cta-btn-bg: var(--color-primary);
+  --cairn-cta-btn-content: var(--color-primary-content);
+}

@@ -1,0 +1,7 @@
+# The AstroPaper port's site config: the minimum a `SiteConfig` needs (siteName). This port
+# mounts no admin, so it carries no nav/vocabulary editor wiring; the theme's own routes read
+# the post index directly (see src/routes/(site)).
+siteName: AstroPaper
+description: A minimal, responsive, and accessible cairn theme, ported from Sat Naing's AstroPaper.
+author: Sat Naing
+locale: en

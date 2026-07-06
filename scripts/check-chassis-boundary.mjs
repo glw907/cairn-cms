@@ -1,22 +1,42 @@
-// cairn-cms: the chassis no-reach-ins gate (chassis-restructure Task 2). A theme file (anything
-// under examples/showcase/src that is not itself inside src/chassis) may reach chassis machinery
-// only through one of the seams src/chassis/README.md documents in its "What lives here" table:
+// cairn-cms: the chassis no-reach-ins gate (chassis-restructure Task 2, generalized at the
+// theme-ports-1-3 harvest). A theme file (anything under an examples/*/src that is not itself
+// inside its own src/chassis) may reach chassis machinery only through one of the seams the
+// canonical src/chassis/README.md (examples/showcase) documents in its "What lives here" table:
 // the $chassis alias in a .ts/.svelte import, or a relative @import in a .css file (aliases do not
-// resolve in CSS). This script parses that table for the canonical seam list, then fails on any
-// import that resolves into src/chassis/ but names a file the table does not list, the same way a
-// reach past a package's public exports would fail. It says nothing about WHICH symbols a seam
-// exports; svelte-check already fails an import of a name a module does not export.
+// resolve in CSS). This script parses that table for the canonical seam list once, then walks
+// EVERY examples/*/src that carries its own chassis/ copy (each site's own verbatim copy, per the
+// "one chassis, N themes" ontology), failing on any import that resolves into that theme's own
+// chassis/ but names a file the canonical table does not list, the same way a reach past a
+// package's public exports would fail. A theme that drops a chassis file entirely (documented in
+// its own chassis/README.md) is unaffected: dropping a file only matters if something still
+// imports it, which this gate would already catch as a broken import, not a boundary violation.
+// It says nothing about WHICH symbols a seam exports; svelte-check already fails an import of a
+// name a module does not export.
 //
 // Wired as `npm run check:chassis-boundary`.
-import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs';
 import { resolve, relative, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
-const CHASSIS_DIR = resolve(SHOWCASE_SRC, 'chassis');
-const README = resolve(CHASSIS_DIR, 'README.md');
+const EXAMPLES_DIR = resolve(ROOT, 'examples');
+const CANONICAL_SRC = resolve(EXAMPLES_DIR, 'showcase/src');
+const CANONICAL_README = resolve(CANONICAL_SRC, 'chassis/README.md');
+
+/**
+ * Every `examples/<name>/src` directory that carries its own `chassis/` subdirectory: the
+ * canonical showcase copy plus every theme port's own verbatim copy.
+ * @returns {string[]}
+ */
+export function findChassisRoots() {
+  const roots = [];
+  for (const name of readdirSync(EXAMPLES_DIR)) {
+    const src = resolve(EXAMPLES_DIR, name, 'src');
+    if (existsSync(resolve(src, 'chassis'))) roots.push(src);
+  }
+  return roots;
+}
 
 // Matches a static import's source, a dynamic import(), or a CSS @import, whichever a given file uses.
 const IMPORT_SPEC =
@@ -109,18 +129,19 @@ export function findReachIns(srcDir, chassisDir, seams) {
 }
 
 function main() {
-  const seams = parseSeams(readFileSync(README, 'utf8'));
+  const seams = parseSeams(readFileSync(CANONICAL_README, 'utf8'));
   if (seams.size === 0) {
     console.error('check:chassis-boundary: parsed zero seams out of the chassis README table');
     process.exit(1);
   }
-  const violations = findReachIns(SHOWCASE_SRC, CHASSIS_DIR, seams);
+  const roots = findChassisRoots();
+  const violations = roots.flatMap((src) => findReachIns(src, resolve(src, 'chassis'), seams));
   if (violations.length === 0) {
-    console.log(`chassis-boundary: PASS (${seams.size} documented seams, no reach-ins)`);
+    console.log(`chassis-boundary: PASS (${seams.size} documented seams, ${roots.length} chassis roots, no reach-ins)`);
     process.exit(0);
   }
   console.error('chassis-boundary: FAIL');
-  for (const v of violations) console.error(`  ${v.file}: reaches into chassis via "${v.spec}", which src/chassis/README.md does not document as a seam`);
+  for (const v of violations) console.error(`  ${v.file}: reaches into chassis via "${v.spec}", which the canonical src/chassis/README.md does not document as a seam`);
   process.exit(1);
 }
 

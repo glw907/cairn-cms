@@ -1,0 +1,27 @@
+// This theme's one delivery content layer: it globs the markdown and hands the adapter to the
+// full-auto createSiteIndexes, which builds the typed per-concept indexes and the site resolver.
+// The cairnManifest() Vite plugin owns the build-time manifest verify (it runs outside the prerender
+// lifecycle, so a stale manifest fails the build red regardless of the handleHttpError policy).
+// Unmodified from the canonical chassis copy (examples/showcase/src/chassis/content.ts) except
+// for the two exported constants at the bottom, which are this theme's own.
+import { createSiteIndexes } from '@glw907/cairn-cms/delivery';
+import { cairn, siteConfig } from '$theme/cairn.config.js';
+
+const postsRaw = import.meta.glob('/src/content/posts/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
+
+const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
+
+export const site = indexes.site;
+export const posts = indexes.posts;
+
+export const ORIGIN = 'https://astropaper-theme.test';
+export const SITE_DESCRIPTION = 'A minimal, responsive, and accessible cairn theme, ported from AstroPaper.';

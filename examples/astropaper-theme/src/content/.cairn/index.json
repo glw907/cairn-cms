@@ -1,0 +1,171 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "about",
+      "concept": "pages",
+      "title": "About",
+      "permalink": "/about",
+      "summary": "Hi, I am the person behind this site, a small blog built with AstroPaper, ported here as a cairn theme. Tech Stack This site is built with cairn, a magic-link, GitHub-committing CMS for SvelteKit and…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "2022-07-05-tailwind-typography-plugin",
+      "concept": "posts",
+      "title": "Tailwind Typography Plugin",
+      "date": "2022-07-05",
+      "permalink": "/posts/tailwind-typography-plugin",
+      "summary": "EXAMPLE POST: About Tailwind Typography Plugin and how you can use it effectively.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "TailwindCSS",
+        "docs"
+      ]
+    },
+    {
+      "id": "2023-09-25-astropaper-3-0",
+      "concept": "posts",
+      "title": "AstroPaper 3.0",
+      "date": "2023-09-25",
+      "permalink": "/posts/astropaper-3-0",
+      "summary": "AstroPaper Version 3: Elevating Your Web Experience with Astro v3 and Seamless View Transitions",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "release"
+      ]
+    },
+    {
+      "id": "2024-01-04-astropaper-4-0",
+      "concept": "posts",
+      "title": "AstroPaper 4.0",
+      "date": "2024-01-04",
+      "permalink": "/posts/astropaper-4-0",
+      "summary": "AstroPaper v4: ensuring a smoother and more feature-rich blogging experience.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "release"
+      ]
+    },
+    {
+      "id": "2025-03-12-how-to-integrate-giscus-comments",
+      "concept": "posts",
+      "title": "How to integrate Giscus comments into AstroPaper",
+      "date": "2025-03-12",
+      "permalink": "/posts/how-to-integrate-giscus-comments",
+      "summary": "Comment function on a static blog hosted on GitHub Pages with Giscus.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "docs"
+      ]
+    },
+    {
+      "id": "2025-03-22-how-to-add-latex-equations-in-astro-blog-posts",
+      "concept": "posts",
+      "title": "How to add LaTeX Equations in Astro blog posts",
+      "date": "2025-03-22",
+      "permalink": "/posts/how-to-add-latex-equations-in-astro-blog-posts",
+      "summary": "Learn how to add LaTeX equations in Astro blog posts using Markdown, KaTeX, and remark/rehype plugins.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "docs"
+      ]
+    },
+    {
+      "id": "2026-05-16-predefined-color-schemes",
+      "concept": "posts",
+      "title": "Predefined color schemes",
+      "date": "2026-05-16",
+      "permalink": "/posts/predefined-color-schemes",
+      "summary": "Some of the well-crafted, updated predefined color schemes for AstroPaper.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "color-schemes"
+      ]
+    },
+    {
+      "id": "2026-05-17-astropaper-6-0",
+      "concept": "posts",
+      "title": "AstroPaper 6.0",
+      "date": "2026-05-17",
+      "permalink": "/posts/astropaper-6-0",
+      "summary": "AstroPaper v6: a from-scratch rewrite on Astro v6, Tailwind v4, and a new config system.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "release"
+      ]
+    },
+    {
+      "id": "2026-05-17-customizing-astropaper-theme-color-schemes",
+      "concept": "posts",
+      "title": "Customizing AstroPaper theme color schemes",
+      "date": "2026-05-17",
+      "permalink": "/posts/customizing-astropaper-theme-color-schemes",
+      "summary": "How you can enable/disable light and dark mode, and customize color schemes of AstroPaper theme.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "color-schemes",
+        "configuration"
+      ]
+    },
+    {
+      "id": "2026-06-03-adding-new-posts-in-astropaper-theme",
+      "concept": "posts",
+      "title": "Adding new posts in AstroPaper theme",
+      "date": "2026-06-03",
+      "permalink": "/posts/adding-new-posts-in-astropaper-theme",
+      "summary": "Some rules and recommendations for creating or adding new posts using AstroPaper theme.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "blog",
+        "docs"
+      ]
+    },
+    {
+      "id": "2026-06-03-dynamic-og-image-generation",
+      "concept": "posts",
+      "title": "Dynamic OG image generation in AstroPaper blog posts",
+      "date": "2026-06-03",
+      "permalink": "/posts/dynamic-og-image-generation",
+      "summary": "New feature in AstroPaper v1.4.0, introducing dynamic OG image generation for blog posts.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "blog"
+      ]
+    },
+    {
+      "id": "2026-06-03-how-to-configure-astropaper-theme",
+      "concept": "posts",
+      "title": "How to configure AstroPaper theme",
+      "date": "2026-06-03",
+      "permalink": "/posts/how-to-configure-astropaper-theme",
+      "summary": "How you can make AstroPaper theme absolutely yours.",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "astro",
+        "blog",
+        "configuration"
+      ]
+    }
+  ]
+}

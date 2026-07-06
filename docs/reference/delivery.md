@@ -140,14 +140,16 @@ import { CairnHead } from '@glw907/cairn-cms/delivery/head';
 ```
 
 ```svelte
-<CairnHead seo={SeoMeta} title={string | false} />
+<CairnHead seo={SeoMeta} title={string | false} titleTemplate={(title: string) => string} />
 ```
 
 Render a page's SEO head from a [`SeoMeta`](./delivery-data.md) object into `<svelte:head>`: a title,
 meta tags, link tags, and one escaped JSON-LD script. The title renders from `seo.title` by default;
-`title={false}` lets the site own the `<title>`, and a string overrides it. The component carries no
-CSS, so it pulls in no admin styles. The showcase mounts it from the `seo` field the catch-all loader
-returns.
+`title={false}` lets the site own the `<title>`, and a string overrides it. `titleTemplate` carries the
+site's own title-suffix convention (for example `(t) => `${t} · 907.life`\`) and applies to `seo.title`
+only when `title` is left undefined, so an explicit `title` or `title={false}` still wins. The
+component carries no CSS, so it pulls in no admin styles. The showcase mounts it from the `seo` field
+the catch-all loader returns.
 
 ```svelte
 <script lang="ts">

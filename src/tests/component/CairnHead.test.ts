@@ -31,4 +31,20 @@ describe('CairnHead', () => {
     render(CairnHead, { seo, title: false });
     expect(document.title).toBe('site-owned');
   });
+
+  it('applies titleTemplate to seo.title when title is left undefined', async () => {
+    render(CairnHead, { seo, titleTemplate: (t) => `${t} · 907.life` });
+    expect(document.title).toBe('Welcome · 907.life');
+  });
+
+  it('lets an explicit title win over titleTemplate', async () => {
+    render(CairnHead, { seo, title: 'Custom', titleTemplate: (t) => `${t} · 907.life` });
+    expect(document.title).toBe('Custom');
+  });
+
+  it('lets title={false} win over titleTemplate', async () => {
+    document.title = 'site-owned';
+    render(CairnHead, { seo, title: false, titleTemplate: (t) => `${t} · 907.life` });
+    expect(document.title).toBe('site-owned');
+  });
 });

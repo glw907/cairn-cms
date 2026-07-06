@@ -104,6 +104,12 @@ All notable changes to this project are recorded here, most recent first.
   A new `unlistedRoutes` helper flags a site's static page-route ids missing from that same list, so
   a forgotten page directory fails the site's own test suite instead of shipping a silent sitemap
   gap. No consumer action required; both additions are additive.
+- `CairnHead` gains an optional `titleTemplate`, a `(title: string) => string` callback carrying
+  a site's own title-suffix convention (for example the `· 907.life` or `— ECXC` pattern each
+  owned site was hand-building at every call site). It applies to `seo.title` only when `title`
+  is left undefined, so an explicit `title` or `title={false}` still wins. Both owned sites'
+  entry pages migrate their inline title-suffix string onto it. No consumer action required; the
+  addition is additive.
 
 ### Fixed
 

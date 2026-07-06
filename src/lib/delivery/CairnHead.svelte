@@ -2,8 +2,10 @@
 @component
 Renders a page's SEO head from a SeoMeta object into <svelte:head>: a title, meta tags, link
 tags, and one escaped JSON-LD script. The title renders from seo.title by default; title={false}
-lets the site own the <title>, and a string overrides it. It carries no CSS, so it pulls in no
-admin styles.
+lets the site own the <title>, and a string overrides it. titleTemplate wraps seo.title in the
+site's own suffix convention (for example `(t) => `${t} · 907.life`); it applies only when title
+is left undefined, so an explicit title or title={false} still wins. It carries no CSS, so it
+pulls in no admin styles.
 -->
 <script lang="ts">
   import type { SeoMeta } from './seo.js';
@@ -14,8 +16,12 @@ admin styles.
     seo,
     /** Title override: a string replaces seo.title, false lets the site own <title>. */
     title,
-  }: { seo: SeoMeta; title?: string | false } = $props();
-  const titleText = $derived(title === undefined ? seo.title : title);
+    /** The site's title-suffix convention, applied to seo.title when title is left undefined. */
+    titleTemplate,
+  }: { seo: SeoMeta; title?: string | false; titleTemplate?: (title: string) => string } = $props();
+  const titleText = $derived(
+    title !== undefined ? title : titleTemplate ? titleTemplate(seo.title) : seo.title,
+  );
 </script>
 
 <svelte:head>

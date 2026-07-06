@@ -219,6 +219,15 @@ Fable guidance (fresh-context verifiers outperform self-critique) plus two produ
 misses (2026-07-05) are the why. The official frontend-design skill is for ORIGINAL
 aesthetics and carries no reference comparison; never use it alone for a port.
 
+## Waymark iterates after every use (Geoff, 2026-07-05)
+
+Every theme or site built on the Waymark template ends with a mandatory harvest step:
+the frictions, missing seams, structural-variant needs, and component gaps that build
+surfaced fold back into the template (or the engine) as landed improvements or
+pre-beta-harvest ledger entries. A port or rebuild is not done until its harvest is
+banked. The template improves with every consumer, and the next port starts from the
+improved base; the `visual-fidelity` skill carries this as its step 7.
+
 ## The responsive standard (family-wide, Geoff 2026-07-05)
 
 Every cairn-family artifact — the Waymark template, every theme (including ports of

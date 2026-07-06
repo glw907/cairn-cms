@@ -223,8 +223,11 @@ aesthetics and carries no reference comparison; never use it alone for a port.
 
 Every theme or site built on the Waymark template ends with a mandatory harvest step:
 the frictions, missing seams, structural-variant needs, and component gaps that build
-surfaced fold back into the template (or the engine) as landed improvements or
-pre-beta-harvest ledger entries. A port or rebuild is not done until its harvest is
+surfaced fold back as landed improvements or pre-beta-harvest ledger entries — into the
+CHASSIS above all (the canonical showcase copy is the starting chassis every next theme
+receives: a seam a theme fought, a recipe it needed, a coupling its subtraction exposed,
+a removal note that lied — each lands in the chassis before the pass closes), and into
+the engine where the lesson runs deeper. A port or rebuild is not done until its harvest is
 banked. The template improves with every consumer, and the next port starts from the
 improved base; the `visual-fidelity` skill carries this as its step 7.
 

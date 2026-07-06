@@ -24,15 +24,23 @@
   <title>Search | AstroPaper</title>
 </svelte:head>
 
+<nav aria-label="Breadcrumb" class="text-step--1 text-muted">
+  <a href="/" class="hover:text-primary">Home</a> &raquo; Search
+</nav>
 <h1 class="text-step-4 font-bold">Search</h1>
+<p class="italic text-muted">Search any article ...</p>
 
-<label class="mt-m block">
+<label class="relative mt-m block">
   <span class="sr-only">Search for posts</span>
+  <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" />
+    <path d="M20 20l-4.35-4.35" stroke-linecap="round" />
+  </svg>
   <input
     type="text"
     bind:value={query}
-    placeholder="Search for anything..."
-    class="w-full border border-card-border bg-base-100 px-3 py-2 text-base-content"
+    placeholder="Search"
+    class="w-full border border-card-border bg-base-100 py-2 pl-10 pr-3 text-base-content"
   />
 </label>
 

@@ -32,18 +32,23 @@
 </ul>
 
 {#if totalPages > 1}
-  <nav class="mt-l flex items-center justify-between" aria-label="Pagination">
+  <nav class="mt-l flex items-center justify-center gap-m" aria-label="Pagination">
     {#if page > 1}
       <a href={hrefFor(page - 1)} class="inline-flex items-center gap-1 hover:text-primary">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
         </svg>
-        Previous
+        Prev
       </a>
     {:else}
-      <span></span>
+      <span class="inline-flex items-center gap-1 text-muted opacity-50">
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M19 12H5M11 6l-6 6 6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        Prev
+      </span>
     {/if}
-    <span class="text-step--1 text-muted">Page {page} of {totalPages}</span>
+    <span class="font-medium">{page} / {totalPages}</span>
     {#if page < totalPages}
       <a href={hrefFor(page + 1)} class="inline-flex items-center gap-1 hover:text-primary">
         Next
@@ -52,7 +57,12 @@
         </svg>
       </a>
     {:else}
-      <span></span>
+      <span class="inline-flex items-center gap-1 text-muted opacity-50">
+        Next
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </span>
     {/if}
   </nav>
 {/if}

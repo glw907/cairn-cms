@@ -4,6 +4,10 @@
   import Datetime from '$theme/components/Datetime.svelte';
 
   let { data }: { data: PageData } = $props();
+
+  /** The tag capitalized for display, matching AstroPaper's own "Tag: Blog" title device; the
+   *  slug itself (used in the breadcrumb and every link) stays lowercase. */
+  const tagLabel = $derived(data.tag.charAt(0).toUpperCase() + data.tag.slice(1));
 </script>
 
 <svelte:head>
@@ -11,9 +15,10 @@
 </svelte:head>
 
 <nav aria-label="Breadcrumb" class="text-step--1 text-muted">
-  <a href="/" class="hover:text-primary">Home</a> &raquo; <a href="/tags" class="hover:text-primary">Tags</a> &raquo; #{data.tag}
+  <a href="/" class="hover:text-primary">Home</a> &raquo; <a href="/tags" class="hover:text-primary">Tags</a> &raquo; {data.tag}
 </nav>
-<h1 class="text-step-4 font-bold">#{data.tag}</h1>
+<h1 class="text-step-4 font-bold">Tag: {tagLabel}</h1>
+<p class="italic text-muted">All the articles with the tag "{tagLabel}".</p>
 
 <ul class="m-0 mt-m list-none p-0">
   {#each data.posts as post (post.id)}

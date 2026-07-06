@@ -10,6 +10,9 @@
   <title>Posts, page {data.page} | AstroPaper</title>
 </svelte:head>
 
+<nav aria-label="Breadcrumb" class="text-step--1 text-muted">
+  <a href="/" class="hover:text-primary">Home</a> &raquo; Posts (Page {data.page})
+</nav>
 <h1 class="text-step-4 font-bold">Posts</h1>
 <p class="text-muted">All the posts I've written.</p>
 

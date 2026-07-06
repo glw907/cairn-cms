@@ -13,8 +13,16 @@ import siteYaml from './site.config.yaml?raw';
 // hash-tag styled inline code is plain markdown backticks). Nothing here needed a defineComponent.
 const registry = defineRegistry({ components: [] });
 
-// The real render path: parse markdown through the engine with no registered components.
-const { renderMarkdown } = createRenderer(registry);
+// The real render path: parse markdown through the engine with no registered components. The
+// sanitize extension admits `data-filename` on a `<div>`, the one attribute this port's raw-HTML
+// code-card device needs (see the how-to-configure post): the filename tab is authored content,
+// not a registered component, so it only needs a floor attribute, never a defineComponent entry.
+const { renderMarkdown } = createRenderer(registry, {
+  sanitizeSchema: (defaults) => ({
+    ...defaults,
+    attributes: { ...defaults.attributes, '*': [...(defaults.attributes?.['*'] ?? []), 'dataFilename'] },
+  }),
+});
 
 export const cairn = defineAdapter({
   content: {
@@ -61,3 +69,8 @@ export const cairn = defineAdapter({
 });
 
 export const siteConfig = parseSiteConfig(siteYaml);
+
+// The backend's own non-secret identity, restated here rather than read back off `cairn.backend`
+// (typed as the generic `BackendProvider`, which does not carry `owner`/`repo`): the single-post
+// template's "Edit page" link (never wired to a real GitHub App; see the module comment above).
+export const REPO = { owner: 'astropaper-theme', repo: 'demo', branch: 'main' };

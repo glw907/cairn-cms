@@ -99,9 +99,39 @@ are ours until beta, which is the whole point of the window. Known contract ques
   a different angle (directive-driven composition inside a markdown document, not a
   hand-built route) and its own verdict has not landed; the two evidence sources have not
   yet converged on one answer.
-- **The album/collection question** — CANDIDATE. hugo-theme-gallery's port asks whether
-  "album" lives in Page frontmatter or demands the content model grow; pairs with the
-  deferred gallery enabler (image/array component attributes).
+- **The album/collection question** — CANDIDATE, its evidence now in (the sharpest of the
+  three ports' capability findings). hugo-theme-gallery's entire album tree, a plain prose
+  page, an interior node with children, and a leaf album with photos, three genuinely
+  different shapes, was modeled through cairn's one `pages` concept and one shared fieldset:
+  `parent` (a self-`reference`) gives an interior node its children, `categories` (a taxonomy
+  `multiselect`) feeds a cross-index (the exact mechanism Foxi's post tags already proved,
+  zero new engine surface), `photos` (`fields.array(fields.object({...}))`) carries a leaf's
+  pictures, and every field but `title` stays optional so any one page can be any of the three
+  shapes. It works end to end with **zero engine changes**, the one-fieldset-polymorphism
+  finding: cairn's fixed one-fieldset-per-concept model CAN express this content tree. The
+  cost is real and visible in the schema itself, not hypothetical: every page's admin form
+  shows the full field list regardless of which kind of page it is (an editor opening About
+  sees an unused `parent` picker, an unused `categories` field, and an unused `photos` array;
+  opening a photo album shows no explicit "this is a gallery" toggle at all), since nothing in
+  the schema marks which shape a given page takes; the theme infers it purely from which
+  optional fields are populated. A related, narrower gap: cairn's flat single-segment
+  `permalink: '/:slug'` has no nested-URL equivalent for the upstream's own directory-based
+  routing (`/animals/cats/`); the port did not build custom nested routing to replicate it (one
+  port's evidence is not grounds for an engine change per the harvest discipline), so every
+  album here is a flat top-level route instead. Pairs with the deferred gallery enabler
+  (image/array component attributes, below) and the ecxc redo's own component-grammar
+  findings; still CANDIDATE, not a verdict this one port settles alone.
+- **`ImageValue` cannot carry a justified grid's own layout input** — CANDIDATE. The engine's
+  leaf image type (`ImageValue`) carries only `src`/`alt`/`caption`, no intrinsic width or
+  height, but a justified photo grid needs each photo's aspect ratio before any image has
+  loaded. Worked around with plain sibling `width`/`height`/`color` leaves next to the `image`
+  field inside the same array-item object (`fieldset()`'s `checkContainerNesting` already
+  permits this, an `image` field is a leaf like any other, so no engine change was needed to
+  express it), but the editing cost is real: a photographer authoring one photo row sets four
+  separate fields to describe one picture, where a native photo-gallery tool would infer three
+  of them from the file itself. One theme's ask so far; hold as a candidate `ImageValue`
+  extension (stored intrinsic dimensions, populated at upload time) until a second theme also
+  wants a layout-aware image, then promote with both proof points.
 - **The component grammar's limits** — CANDIDATE. The ecxc redo's verdict arrives with the
   schemas the v2 grammar fought; each is a fieldset/defineComponent break candidate.
 - **The render seam's shape** — QUEUED-adjacent. The rehype-plugins parameter (below) is
@@ -194,6 +224,34 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   candidate chassis-documented recipe until a second fully-prerendered theme also wants a
   themed 404 for unmatched paths, then promote (as a documented `svelte.config.js`/
   `wrangler.jsonc` pairing, since neither file lives inside `src/chassis/` itself).
+- **Cascade layers: an unlayered site rule always beats a layered Tailwind utility** — LANDED
+  (documentation, plus a real cross-theme fix). The gallery port's own verifier found this
+  first: a theme's `site.css` typically declares plain, unlayered container classes
+  (`.site-main`, `.site-wide`), and a `margin: 0 auto` shorthand on one of them zeroes the
+  block (top/bottom) margins too, which silently wins over a sibling's own Tailwind
+  `mt-*`/`mb-*` utility class regardless of source order, since an unlayered rule always beats
+  a layered one. Not a one-port curiosity: the Foxi port's own home page carries the identical
+  pattern (`<div class="site-wide mt-l">`), and measuring it directly with Playwright
+  `getComputedStyle` confirmed the same bug live on an already-shipped theme,
+  `margin-top: 0px` where `mt-l` should have produced 32px, collapsing the gap between the
+  hero and the app-mockup image to nothing. Fixed by switching every theme's
+  `.site-main`/`.site-wide` from the `margin: 0 auto` shorthand to `margin-inline: auto`
+  (`examples/foxi-theme`, `examples/astropaper-theme`, `examples/showcase`;
+  `examples/gallery-theme` had already made this exact fix during its own verifier pass),
+  re-verified with the same Playwright probe (32px after the fix). Documented as a general
+  authoring rule in `examples/showcase/src/chassis/README.md`, since it is a Tailwind v4
+  cascade-layers fact any theme's own CSS can hit, not a chassis code change: reach for the
+  single-axis longhand (`margin-inline`, `padding-inline`) on an unlayered container or layout
+  class whenever it might combine with a Tailwind spacing utility on the same element.
+- **The media-stress capability test (justified grid + lightbox)** — CONFIRMED WORKING, no
+  engine or chassis change needed. The gallery port's justified photo grid
+  (`src/theme/justified-layout.ts`, wrapping the real `justified-layout` npm package once the
+  verifier corrected the first pass's own reimplemented heuristic) and its PhotoSwipe v5
+  lightbox (using the official `photoswipe-dynamic-caption-plugin`) both work end to end
+  through the same client-only dynamic-`import()` pattern the engine's own carta-md boundary
+  already establishes (a browser-only library imported inside `onMount`, never a static
+  top-level import); the one friction point is the `ImageValue` content-model gap recorded
+  above, not a rendering or component-grammar limitation.
 
 ## Engine
 
@@ -272,3 +330,14 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   scroll-triggered reveal animations (Foxi's home and highlight rows) leaves large blank gaps
   in a `fullPage` screenshot captured via `scrollTo`, since the animation never fires; drive
   `page.mouse.wheel` incrementally instead, the same trigger a real reader's scroll fires.
+- **A theme rendering a taxonomy tag for display should read the engine's own vocabulary
+  seam, not hand-roll a capitalization helper.** `extractVocabulary(siteConfig)` (public,
+  documented in `docs/guides/wire-the-delivery-surface.md`) already reads a `{value, label}`
+  list for exactly this purpose, and needs no admin mount to use, a theme can commit a static
+  `vocabulary:` list in `site.config.yaml` purely for display labels. Both the AstroPaper port
+  (`tags/[tag]/+page.svelte`) and the gallery port (`albums.ts`'s `capitalizeTag`) independently
+  reimplemented a one-word capitalize transform instead, since neither mounts the tag-vocabulary
+  admin and neither noticed the read-only seam did not require it. Not an engine gap (nothing to
+  land), and not worth reworking two already-shipped, cosmetic, single-word cases for; the finding
+  is for the theme-building tutorial, which should show the documented seam as the first way to
+  read a tag's display label, so a new theme does not rediscover the same workaround.

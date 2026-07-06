@@ -48,10 +48,7 @@ upstream hardcodes one dark theme; the mechanism is the family's usual chassis s
 
 <header class="flex min-h-16 w-full items-center justify-between p-2xs sm:mb-l">
   {#if isHome}
-    <a
-      href="/"
-      class="inline-flex h-12 items-center rounded-selector border border-card-border px-s text-step-2 font-semibold text-base-content no-underline"
-    >
+    <a href="/" class="inline-flex h-12 items-center text-step-2 font-semibold text-base-content no-underline">
       Gallery
     </a>
   {:else}

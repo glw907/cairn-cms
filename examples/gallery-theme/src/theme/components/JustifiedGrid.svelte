@@ -64,6 +64,13 @@ inside onMount), never during prerendering.
         gallery: containerEl,
         children: 'a',
         pswpModule: () => import('photoswipe'),
+        // The upstream's own compiled bundle runs at these three non-default options: a fully
+        // opaque backdrop (the default 0.8 lets the page underneath show through), a zoom
+        // open/close transition (the default is a fade), and a click-anywhere-on-the-image close
+        // (the default only zooms). Confirmed against the live demo's own behavior.
+        bgOpacity: 1,
+        showHideAnimationType: 'zoom',
+        imageClickAction: 'close',
       });
       // The upstream's own dynamic-caption plugin, at its own default options (confirmed against
       // its compiled bundle): positions the caption beside the image when there's more

@@ -12,5 +12,5 @@
   <title>{data.tag} - Gallery</title>
 </svelte:head>
 
-<PageHeading title={data.tag} />
+<PageHeading title={data.tag} descriptionHtml={data.descriptionHtml} />
 <GalleryGrid albums={data.cards} />

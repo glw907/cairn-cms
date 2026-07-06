@@ -90,6 +90,28 @@ purpose-built "album" content type, with its own schema and its own nested routi
 visibly better editing experience for exactly this genre. Whether that is worth the engine surface
 it would cost is the open question this evidence feeds, not a verdict this port settles alone.
 
+## Licensed family divergences
+
+Two behaviors here diverge deliberately from the upstream demo. Neither is this port's own
+one-off choice: both are sanctioned by a cairn-family-wide standard that every port and rebuild
+carries, not only this one.
+
+- **The light/dark toggle** (the sun/moon button in the header): the upstream hardcodes one dark
+  theme with no way to switch it. This port wires the family's usual `$chassis/theme-toggle.js`
+  mechanism instead of reproducing that limitation, matching the family's own dark-mode standard.
+  A first-time visitor with no theme cookie set still sees the upstream's own dark theme by
+  default, so the design at normal viewing is unchanged; the toggle only adds a control the
+  upstream never offered.
+- **The "‹ parent" back-link**: the upstream's own header arrow always returns to home, regardless
+  of how deep the current page sits in the album tree. Its own live demo never nests past two
+  levels (Animals > Cats), so that loses no context there; this port's back-link instead walks one
+  level up (see "What this port demonstrates" above), a navigation-behavior fix rather than a
+  visual one.
+
+Both are the kind of divergence the family's port fidelity bar licenses: behavioral, not a change
+to the visible design language at normal viewing (see the root `CLAUDE.md`'s polish and fidelity
+standards).
+
 ## Scope: what this port omits
 
 This is a public-content-only port: it proves the theme seam and the media capability test, not

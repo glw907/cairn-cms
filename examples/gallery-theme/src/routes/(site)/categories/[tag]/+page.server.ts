@@ -1,7 +1,9 @@
 import { error } from '@sveltejs/kit';
 import type { PageServerLoad, EntryGenerator } from './$types';
 import { pages } from '$chassis/content.js';
+import { cairn } from '$theme/cairn.config.js';
 import { allPages, toAlbumCard, capitalizeTag } from '$theme/albums.js';
+import { categoryDescriptions } from '$theme/category-descriptions.js';
 
 export const prerender = true;
 
@@ -10,8 +12,11 @@ export const entries: EntryGenerator = () => pages.allTags().map(({ tag }) => ({
 /** A category cross-index: every leaf album carrying this tag, the same card grid the home page
  *  and a gallery-listing page's children use. Reads `pages.byTag`, the plain taxonomy mechanism
  *  (see $theme/albums.js's own note): this is the one piece of the tree that maps cleanly onto
- *  an existing engine mechanism, with zero theme-side tree-walking needed. */
-export const load: PageServerLoad = ({ params }) => {
+ *  an existing engine mechanism, with zero theme-side tree-walking needed. A category may also
+ *  carry a custom title and markdown description (`$theme/category-descriptions.js`), rendered
+ *  through the site's own `render` for inline-code support, matching the upstream's own
+ *  `_index.md` device. */
+export const load: PageServerLoad = async ({ params }) => {
   const summaries = pages.byTag(params.tag);
   if (summaries.length === 0) error(404, 'Not found');
   const all = allPages();
@@ -19,5 +24,7 @@ export const load: PageServerLoad = ({ params }) => {
     .map((summary) => all.find((entry) => entry.id === summary.id))
     .filter((entry): entry is NonNullable<typeof entry> => entry !== undefined)
     .map((entry) => toAlbumCard(entry, all));
-  return { tag: capitalizeTag(params.tag), cards };
+  const custom = categoryDescriptions[params.tag];
+  const descriptionHtml = custom ? await cairn.rendering.render({ body: custom.description }) : undefined;
+  return { tag: custom?.title ?? capitalizeTag(params.tag), cards, descriptionHtml };
 };

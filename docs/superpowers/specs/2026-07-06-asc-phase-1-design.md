@@ -46,8 +46,17 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   (education, guides, governance) get an explicit density strategy: section bands, asides
   and glosses, callouts, two-up groupings, and in-page TOCs on the longest pages — the
   component vocabulary the ecxc training page proves, tuned to ASC's voice.
-- **The UI/UX work session (a first-class phase-1 stage, between the device catalogue and
-  any build):** two sittings with Geoff. (1) THE SHOW-AND-TELL: curated exhibits from the
+- **THE WORK SESSION RAN AND ITS PICKS ARE LOCKED (2026-07-06):** the show-and-tell
+  ratified the narrowed diagnosis; the calibration settled the recipes. **A1 (quieted,
+  bands kept):** bands mark sections, cards mark objects, nothing gets both; the welcome
+  unboxed ("Ahoy!" as the heading, the welcome line opening the lede beneath it); the
+  notification as a slim accent strip; content directly on bands; one spacing scale
+  (large fixed inter-section rhythm, half within sections, band padding deeper than the
+  inter-section gap). **B1 (editorial pacing)** is the house density style for long
+  content: an at-a-glance table up front, real subheads, tightened prose — no new chrome
+  (B2's day-cards were considered and not chosen). These recipes generalize site-wide as
+  the theme's house style; Geoff: B1 "a significant improvement over the original."
+- **The original work-session definition (ran as designed):** two sittings with Geoff. (1) THE SHOW-AND-TELL: curated exhibits from the
   scroll-primed captures — the news cards at their best, the chrome-stacking at its
   heaviest, the education page's full height, the responsive rough spots — so the
   diagnosis is agreed over evidence. (2) THE CALIBRATION: candidates across three page

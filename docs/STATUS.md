@@ -1,5 +1,17 @@
 # cairn-cms status
 
+**0.81.0 SHIPPED AND DEPLOYED END-TO-END (2026-07-06): the chassis release — one chassis,
+N themes, Waymark the flagship theme, three verified example theme ports (AstroPaper r4,
+Foxi r2, gallery r3 — all fresh-context PASS), the renderer plugin seam, tableScroll
+default, sitemap extraRoutes, titleTemplate, the themed-404 chassis pattern. ZERO
+Consumers-must lines: the whole window additive. Both sites live on it: 907.life (27/27
+crawl, themed 404 serving) and ecxc.ski (15/15 crawl, the three trial fixes verified
+live: meter bar, inline FAQ, archives chips), both render-read post-deploy. In flight:
+the themed-404 propagation to both sites (their chassis copies predate the pattern).
+NEXT: the aksailingclub brainstorm (reference capture of dev.aksailingclub.org running);
+the ecxc design pass runs parallel; Topo after.**
+
+
 The rolling status for the cairn-cms engine: where the work is now, what is next, and the open
 decisions. The `cairn-pass` skill reads this at pass-start and updates it at pass-end. Durable
 orientation is this repo's `CLAUDE.md`. Locked architecture decisions and the test plan are in

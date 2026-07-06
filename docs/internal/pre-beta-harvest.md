@@ -33,17 +33,22 @@ are ours until beta, which is the whole point of the window. Known contract ques
 
 ## Engine
 
-- **The rehype seam on createRenderer** — QUEUED. Two independent friction hits (the
-  table-scroll wiring, both directions). The right shape may be BREAKING: a plugins
-  parameter on the pipeline factory's options, worth restructuring the factory signature
-  now rather than bolting on.
-- **Table-scroll as a built-in default** — QUEUED-CONFIRMED (second independent miss: the ecxc redo repeated 907's exact wiring gap). Default-on with opt-out
-  kills the silent two-part contract. Behavior change to rendered output: breaking-adjacent;
-  do it pre-beta.
-- **Sitemap extra-routes** — LANDED. `sitemapView` gained an `extraRoutes` argument and a new
+- **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererOptions` gained
+  `remarkPlugins`/`rehypePlugins`, additive lists appended after cairn's own markdown- and
+  hast-stage steps. Additive, not breaking; both owned sites' hand-rolled second unified
+  pipeline migrates onto it (907.life: `67b8f0d`; ecxc-ski's migration is moot for now, see
+  below).
+- **Table-scroll as a built-in default** — LANDED (`71c131d`). `RendererOptions.tableScroll`
+  (default `true`) wraps every rendered table by default, opt-out via `tableScroll: false`.
+  907.life deleted its local wiring (`b56a241`); ecxc-ski's migration is moot for now, see
+  below.
+- **Sitemap extra-routes** — LANDED (`278035e`). `sitemapView` gained an `extraRoutes` argument and a new
   `unlistedRoutes` helper flags a site's static page routes missing from that list. 907.life
-  migrated its hand-list onto both; ecxc-ski's migration is moot for now, its rebuild reverted to
-  a pinned pre-rebuild `^0.62.2` mid-pass (see the harvest pass 1 post-mortem).
+  migrated its hand-list onto both (`9b89745`, with a follow-up route-export fix in `56e46cb`);
+  ecxc-ski's migration is moot for now: its `main` sits reverted to the pre-rebuild
+  `@glw907/cairn-cms@^0.62.2` after the production rollback (`8c77bbc`), and its active redo
+  branch (`rebuild-waymark-2`) carries none of the four harvest migrations yet, with its own
+  uncommitted work in flight as of this pass.
 - **The fluid-clamp compounding class** — LANDED (the retune). Engine lesson: two fluid
   mechanisms must never share an axis range; the design doc carries the posture.
 - **check:readiness docsAnchor coupling** — CANDIDATE. Code anchors into doc headings drift
@@ -59,17 +64,20 @@ are ours until beta, which is the whole point of the window. Known contract ques
   in-template demonstrates enabling it (907's audit found it unset anywhere). Decide the
   demonstrated path.
 - **Prose flow-spacing: `.prose p { margin-block: 0 }` beat the owl selector** — LANDED
-  (aea6625): a specificity bug zeroing every paragraph's flow margin on every Waymark site;
-  found by a reader's eye on one dense section, root-caused by computed-style dump. Ledger
-  lesson: the template's flow system needs a computed-margin assertion in its tests.
-  (Formerly: CANDIDATE pending the 907 polish diagnosis (the
-  epoll section's missing paragraph gaps may be a template prose.css bug, not site-local).
+  (`aea6625`): a specificity bug zeroing every paragraph's flow margin on every Waymark site;
+  found by a reader's eye on one dense section, root-caused by computed-style dump. The
+  ledger lesson (the template's flow system needs a computed-margin assertion in its tests)
+  is also LANDED (`46be1ef`): `examples/showcase/e2e/prose-flow-rhythm.spec.ts` asserts the
+  owl selector's computed `margin-top` (not the stylesheet text) across the three DOM shapes
+  the specificity bug hit, so the class of bug is now un-shippable.
 - **Blockquote scale** — CANDIDATE: the template's step-up italic treatment read as a
   pull-quote collision on a real technical post; consider a quieter default.
 
-- **CairnHead never appends the site-name title suffix** — CANDIDATE (ecxc redo): every
-  site hand-builds its title convention; an optional titleTemplate on the head component
-  may be the affordance.
+- **CairnHead never appends the site-name title suffix** — LANDED (`86f4f83`, ecxc redo
+  finding): `CairnHead` gained an optional `titleTemplate`, a `(title: string) => string`
+  callback applied to `seo.title` only when `title` is left `undefined`. 907.life's entry
+  page migrated its inline title-suffix string onto it (`bb69cc9`); ecxc-ski's migration is
+  moot for now, see the engine section above.
 - **The theme-layer flexibility claim: CORRECTED after the ecxc production failure.** The
   seams transfer color, faces, and dark mode (proven: cairn theme, 907). They do NOT
   transfer STRUCTURE: ecxc's card-based, photo-forward club landing page cannot be reached

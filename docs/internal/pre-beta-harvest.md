@@ -11,7 +11,8 @@ Status: LANDED / QUEUED (harvest pass) / CANDIDATE (needs triage) / PROCESS (met
 
 ## The ontology restructure (Geoff, 2026-07-05, ratified — executes at the ports harvest)
 
-ONE CORE, N THEMES. Waymark restructures into the genre-free core (adapter/routes/tokens/
+ONE CORE, N THEMES — the core's name IS "core" (Geoff: the logical technical name;
+lowercase; directory core/, scaffolder --core-only; no marketing name). Waymark restructures into the genre-free core (adapter/routes/tokens/
 prose/grammar wiring) plus the flagship blog THEME; a theme = structure + skin (the ecxc
 lesson); the ports, the cairn theme, the ecxc chrome, and Topo become peer themes; the
 scaffolder asks "which theme?" with core-only as the escape hatch. The THEME-BUILDING

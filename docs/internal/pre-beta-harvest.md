@@ -69,8 +69,13 @@ are ours until beta, which is the whole point of the window. Known contract ques
 - **CairnHead never appends the site-name title suffix** — CANDIDATE (ecxc redo): every
   site hand-builds its title convention; an optional titleTemplate on the head component
   may be the affordance.
-- **The theme-layer flexibility claim: PROVEN** — three themes (cairn, 907, ecxc), the
-  hardest a full club rebrand with ZERO chrome edits and no template findings.
+- **The theme-layer flexibility claim: CORRECTED after the ecxc production failure.** The
+  seams transfer color, faces, and dark mode (proven: cairn theme, 907). They do NOT
+  transfer STRUCTURE: ecxc's card-based, photo-forward club landing page cannot be reached
+  from the blog-shaped scaffold by tokens, and the "zero chrome edits" result was the
+  failure signature misread as success. The honest finding: a non-blog site needs its own
+  chrome built on the scaffold; whether Waymark should offer composable structural variants
+  (hero+card home, sidebar layouts) is now a REAL harvest question for the ports.
 
 ## Component library
 

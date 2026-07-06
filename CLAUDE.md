@@ -193,6 +193,13 @@ spacing, blockquote scale, inline-code weight, link and italic conventions all v
 the detail level, not the layout level — side-by-side crops of real sections, read, before
 a deploy is called done.
 
+**The one-check rule (Geoff, 2026-07-05, after the ecxc failure): nothing deploys to
+production without at least one full-page render READ by the main loop's own eyes, and a
+member-facing site additionally gets Geoff's before/after approval. Mechanical gates
+(crawls, gates, token greps) measure correctness, never resemblance; only a read screenshot
+measures what a visitor sees. The same rule applies at plan time: no design plan is
+authored from a verbal inventory alone — look at the actual site first.**
+
 Two fidelity tiers: the SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved —
 divergence is allowed where it improves. THEME PORTS of existing external themes are
 GLANCE-INDISTINGUISHABLE: a casual viewer should not be able to tell the port from the

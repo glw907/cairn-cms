@@ -1,5 +1,12 @@
 # cairn-cms status
 
+**THE RUNWAY TO BETA IS SET (Geoff, 2026-07-06): the ASC effort is the final pre-beta
+proof — phase 1 building now (the ratified club-grounds design, the committed north star),
+then the three-layer harvest review, then phase-2's admin build-out (the extending-
+developer seam's first production test; rich harvest expected, breaking window open).
+The remaining pre-beta queue holds its order: Topo, cairn.pub, the consolidating release.**
+
+
 **THE ASC WORK SESSION COMPLETE (2026-07-06): the show-and-tell ratified the narrowed
 diagnosis (chrome stacking on home; per-SECTION prose walls; the MembershipWorks clash =
 a known constraint resolving via ops absorption); the calibration locked the recipes —

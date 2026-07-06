@@ -79,6 +79,11 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**ECXC DESIGN PASS QUEUED (Geoff, 2026-07-05): the four re-expression items get a
+better-than-original design pass (not a revert) — per-device candidates, Geoff picks from
+crops, verifier-gated, after the chassis restructure lands. The three plain losses ride
+the restructure itself.**
+
 **ONTOLOGY RATIFIED (Geoff, 2026-07-05): one core, N themes — Waymark becomes the
 flagship blog theme over the extractable core; a theme = structure + skin; the
 theme-building tutorial (building Waymark from the core) is the restructure's acceptance

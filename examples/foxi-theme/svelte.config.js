@@ -6,13 +6,9 @@ export default {
   kit: {
     // remoteBindings: false keeps the build-time platform proxy from connecting to Cloudflare
     // during prerender, which has no account credentials in CI.
-    // fallback: 'spa' generates a static client-hydrated shell for any request that matches no
-    // prerendered file (this port is fully prerendered, so an arbitrary bad path has no static
-    // page of its own); paired with `assets.not_found_handling: "404-page"` in wrangler.jsonc, Cloudflare
-    // serves that shell directly, which then boots the client router and renders this port's own
-    // themed `(site)/+error.svelte` inside its chrome, instead of the framework's bare built-in
-    // fallback.
-    adapter: adapter({ platformProxy: { remoteBindings: false }, fallback: 'spa' }),
+    // No `fallback` option: this port relies on the Worker's own default-404 SSR (see
+    // wrangler.jsonc's `assets.not_found_handling` comment), not a static client-hydrated shell.
+    adapter: adapter({ platformProxy: { remoteBindings: false } }),
     // $chassis resolves the genre-free layer (src/chassis/), copied verbatim from the showcase's
     // canonical copy at port time (see src/chassis/README.md). $theme resolves this theme's own
     // content: the Foxi chrome, the adapter config, the token values, the composed-page

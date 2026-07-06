@@ -1,11 +1,14 @@
 <!-- @component The /faq page, styled after `src/pages/faq.astro` (oxygenna-themes/foxi-astro-theme,
-     MIT): a page header, a sidebar-and-accordion band for pricing questions, a text-and-image
+     MIT): a page header, a sidebar-and-accordion band for pricing questions, a laptop-and-text
      band on pricing value, a second sidebar-and-accordion band for integration questions, closed
      by a CTA. Expressed with the chassis's `.cairn-sidebar-layout` recipe for the lead-in/accordion
-     pairing. -->
+     pairing. The pricing-value band's laptop mockup bleeds past the viewport's left edge above
+     `lg` (a plain negative-margin break-out, since `.cairn-sidebar-layout` and `TextImageRow` both
+     confine their image side to the reading column); it renders contained and stacked below `lg`,
+     matching the family responsive standard's mobile posture. -->
 <script lang="ts">
   import FaqAccordion from '$theme/components/FaqAccordion.svelte';
-  import TextImageRow from '$theme/components/TextImageRow.svelte';
+  import LaptopMockup from '$theme/components/LaptopMockup.svelte';
   import CTABanner from '$theme/components/CTABanner.svelte';
   import { pricingFaq, integrationsFaq } from '$theme/data/faq.js';
 
@@ -53,15 +56,19 @@
   </div>
 </div>
 
-<div class="bg-base-200 py-2xl">
-  <div class="site-wide">
-    <TextImageRow
-      title="Why Foxi's Pricing Plans Offer Great Value"
-      highlight="Great Value"
-      text="At Foxi, we believe in providing exceptional value at every price point. Our pricing plans are designed to cater to a variety of needs, from individuals and small teams to large enterprises. Each plan includes access to our powerful features, seamless integrations, and top-notch customer support."
-      imagePosition="right"
-      image="kanban"
-    />
+<div class="overflow-x-clip bg-base-200 py-2xl">
+  <div class="site-wide grid grid-cols-1 items-center gap-l lg:grid-cols-2">
+    <div class="faq-value-image mx-auto w-full max-w-md lg:mx-0 lg:max-w-none">
+      <LaptopMockup variant="calendar" />
+    </div>
+    <div>
+      <h2 class="mb-2xs text-step-3 font-bold text-base-content">Why Foxi's Pricing Plans Offer Great Value</h2>
+      <p class="m-0 text-step-1 text-muted">
+        At Foxi, we believe in providing exceptional value at every price point. Our pricing plans are designed to cater to a
+        variety of needs, from individuals and small teams to large enterprises. Each plan includes access to our powerful
+        features, seamless integrations, and top-notch customer support.
+      </p>
+    </div>
   </div>
 </div>
 
@@ -88,3 +95,17 @@
     buttonHref="/pricing"
   />
 </div>
+
+<style>
+  /* Bleeds the laptop mockup to the true viewport edge above `lg` (Tailwind's default 64rem
+     breakpoint, hardcoded here since a plain <style> block has no Tailwind config to read):
+     `site-wide`'s own left inner edge sits at half the leftover viewport space past its
+     max-width, plus its own inline padding, so shifting by the negative of that distance moves
+     this column's left edge flush with the window. Below `lg` the class list above re-centers it
+     as a normal contained image, matching the family responsive standard's mobile posture. */
+  @media (min-width: 64rem) {
+    .faq-value-image {
+      margin-left: calc(-1 * ((100vw - var(--container-measure-wide)) / 2 + var(--spacing-m)));
+    }
+  }
+</style>

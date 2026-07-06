@@ -10,9 +10,16 @@
   "assets": {
     "directory": ".svelte-kit/cloudflare",
     "binding": "ASSETS",
-    // Serves the adapter's generated `404.html` SPA-fallback shell for any request that matches
-    // no static asset, which is how this fully-prerendered site gives an unmatched path (or a
-    // stale link) a themed, chrome-wrapped 404 instead of Cloudflare's own blank one.
-    "not_found_handling": "404-page"
+    // "none" (the default) is set explicitly: for a request that matches no static asset,
+    // Cloudflare passes it through to this Worker instead of serving a pre-generated file
+    // directly. Every route here prerenders, so SvelteKit strips the [...path] catch-all from
+    // the runtime-routable manifest entirely; an unmatched path therefore matches NO route at
+    // request time, and the Worker's own bundled SvelteKit server falls through to its built-in
+    // default-404 handling, which renders the app's ROOT `+error.svelte` (src/routes/+error.svelte)
+    // through a real SSR response. A prior `"404-page"` setting served a static SPA shell
+    // directly from the edge instead, which never reached this Worker at all and left the
+    // shell's own client-side data fetch (`[...path]`'s `+page.server.ts` has no output for an
+    // unmatched path) permanently unresolved.
+    "not_found_handling": "none"
   }
 }

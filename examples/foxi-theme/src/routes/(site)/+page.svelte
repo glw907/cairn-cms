@@ -17,7 +17,7 @@
 
 <div class="cairn-band pb-0 pt-2xl">
   <div class="site-wide cairn-hero mx-auto max-w-3xl text-center">
-    <div class="mb-s inline-flex items-center gap-2 rounded-field border border-card-border bg-base-100 py-1 pl-1 pr-3 text-step--1">
+    <div class="mb-s inline-flex w-fit shrink-0 items-center gap-2 self-center rounded-field border border-card-border bg-base-100 py-1 pl-1 pr-3 text-step--1">
       <span class="flex -space-x-2">
         {#each ['A', 'M', 'S'] as initial (initial)}
           <span class="flex h-6 w-6 items-center justify-center rounded-full border-2 border-base-100 bg-primary text-[0.6rem] font-bold text-primary-content">{initial}</span>

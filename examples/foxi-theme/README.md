@@ -72,17 +72,25 @@ Every "screenshot" panel on this port (the hero, the highlight rows, the blog co
 changelog entries) is an original `AppMockup` illustration, a schematic stand-in for Foxi's own
 product photography, which this port has no clearance to redistribute; the testimonial band draws
 a plain silhouette rather than a named person's photo, and the trust-logo row draws a monogram
-badge per brand rather than tracing each company's own mark. The 404 illustration is the one
-exception: it is Foxi's own vector artwork (no photography, no third-party mark), so it ports
-verbatim (`NotFoundIllustration.svelte`).
+badge per brand rather than tracing each company's own mark. Foxi's own truly decorative, non-
+photographic vector art ports verbatim, since it carries no such licensing risk: the 404
+illustration (`NotFoundIllustration.svelte`, from `src/pages/404.astro`), the brand mark
+(`FoxiLogo.svelte`, from `public/logo.svg`) used in the header and footer, and the three footer
+social-link glyphs (`SiteFooter.svelte`, from `src/icons/fb-icon.svg`, `twitter-icon.svg`, and
+`discord-icon.svg`).
 
-Every route in this port prerenders, so a request to a path with no matching page (a stale link,
-a typo) has no static file of its own; `svelte.config.js`'s `fallback: 'spa'` plus
-`wrangler.jsonc`'s `assets.not_found_handling: "404-page"` are what make Cloudflare serve the
-built `404.html` shell for that request, which then boots this port's own themed `(site)/+error.svelte`
-inside its chrome, instead of a blank platform 404. A plain `vite preview` (or a local `wrangler dev`
-run) cannot demonstrate this: both skip the edge-side asset routing the mechanism depends on, so it
-verifies only against a real Cloudflare deployment.
+Every route in this port prerenders, so a request to a path with no matching page (a stale link, a
+typo) has no static file of its own. Because `[...path]` is fully prerendered, SvelteKit strips it
+from the runtime-routable manifest entirely: the built Worker has no route left to match against
+an arbitrary bad path, so the `(site)` group's own layout never runs and its `(site)/+error.svelte`
+never mounts for this case. `wrangler.jsonc`'s `assets.not_found_handling: "none"` (the explicit
+default) is what lets that request reach the Worker at all, instead of Cloudflare's edge serving a
+static file directly and bypassing the Worker; once the Worker runs, its bundled SvelteKit server
+falls through to its own built-in default-404 handling, which renders the ROOT-level
+`src/routes/+error.svelte` through a real SSR response. This works identically under `wrangler dev`
+(the real `_worker.js`, assets and all) and on a live Cloudflare deployment, since both invoke the
+same Worker the same way; a plain `vite preview` does not replicate the Worker/assets split at all,
+so it cannot demonstrate this.
 
 ## Running it
 

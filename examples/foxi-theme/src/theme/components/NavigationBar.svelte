@@ -14,6 +14,7 @@ port's own theme names and cookie.
   import { page } from '$app/state';
   import { browser } from '$app/environment';
   import { resolveTheme, toggleTheme as chassisToggleTheme, type ThemeToggleConfig } from '$chassis/theme-toggle.js';
+  import FoxiLogo from '$theme/components/FoxiLogo.svelte';
 
   /** The two explicit theme choices; `theme.css` defines both as named DaisyUI themes. */
   type Theme = 'foxi' | 'foxi-dark';
@@ -63,11 +64,7 @@ port's own theme names and cookie.
 <header class="sticky top-0 z-40 border-b border-card-border bg-base-100/95 backdrop-blur">
   <div class="site-wide flex items-center justify-between gap-s py-s">
     <a href="/" class="inline-flex items-center gap-2 font-display text-step-2 font-bold text-base-content no-underline">
-      <svg class="h-6 w-6 text-primary" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-        <path
-          d="M12 2c1.7 2 3 3.7 3 5.7 0 1-.4 1.8-1 2.5 1.8.7 3 2.5 3 4.6 0 3-2.6 5.2-5 6.7v.5h-2 v-.5c-2.4-1.5-5-3.7-5-6.7 0-2.1 1.2-3.9 3-4.6-.6-.7-1-1.5-1-2.5C6 5.7 7.3 4 9 2c.3 1 .8 2 1.5 2.7C11 4 11.5 3 12 2Z"
-        />
-      </svg>
+      <FoxiLogo />
       Foxi.
     </a>
 

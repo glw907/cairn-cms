@@ -79,6 +79,12 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**ONTOLOGY RATIFIED (Geoff, 2026-07-05): one core, N themes — Waymark becomes the
+flagship blog theme over the extractable core; a theme = structure + skin; the
+theme-building tutorial (building Waymark from the core) is the restructure's acceptance
+test. Executes as one pass at the ports harvest. Detail: pre-beta-harvest.md + the
+template-effort memory.**
+
 **ECXC.SKI DEPLOYED AND VERIFIED (2026-07-05, the second attempt, done right): the chrome
 repair rebuilt the club's design on the salvaged scaffold (audit-from-references -> build ->
 11 parallel page verifiers -> the passage/callout card-chrome fix -> typo + sticky-footer

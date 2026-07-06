@@ -9,6 +9,16 @@ the harvest engine pass executes the queue.
 
 Status: LANDED / QUEUED (harvest pass) / CANDIDATE (needs triage) / PROCESS (method, not code).
 
+## The ontology restructure (Geoff, 2026-07-05, ratified — executes at the ports harvest)
+
+ONE CORE, N THEMES. Waymark restructures into the genre-free core (adapter/routes/tokens/
+prose/grammar wiring) plus the flagship blog THEME; a theme = structure + skin (the ecxc
+lesson); the ports, the cairn theme, the ecxc chrome, and Topo become peer themes; the
+scaffolder asks "which theme?" with core-only as the escape hatch. The THEME-BUILDING
+TUTORIAL (build Waymark from the core) is the restructure's acceptance test and the
+tutorial arm's second entry. One pass: reorganization + the template->theme vocabulary
+sweep together, cut against the ports' evidence.
+
 ## The site contract (Geoff, 2026-07-05: explicitly open to improve/break/extend)
 
 The adapter and seam contract itself — defineConcept, fieldset, the component grammar, the

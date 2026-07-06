@@ -34,14 +34,22 @@ body {
    link (the same device the header's active-page indicator borrows, there wavy instead of
    dashed). The chassis's own `.prose a` default is weight-only, so this override supplies the
    whole device rather than just a color swap; it stays here, not in `chassis/prose.css`, since
-   the dashed offset and the hover-to-accent swap are this theme's own choice, not every theme's. */
-.prose a {
+   the dashed offset and the hover-to-accent swap are this theme's own choice, not every theme's.
+
+   Scoped with `:not(:where(.not-prose, .not-prose *))`, the same escape hatch Tailwind
+   Typography's own `not-prose` convention uses: the single post page (`[...path]/+page.svelte`)
+   wraps its whole reader in `.prose` and marks its own chrome (the "Go back" link, the tag
+   chips, the previous/next post nav) `not-prose`, but `not-prose` only opts a subtree out of
+   selectors that carry this guard. A bare `.prose a` still matches inside a `not-prose`
+   descendant by cascade (descendant combinators do not stop at a class boundary), so this rule
+   leaked the dashed-underline device onto that page-owned chrome until it was scoped here. */
+.prose a:not(:where(.not-prose, .not-prose *)) {
   color: var(--color-base-content);
   text-decoration-line: underline;
   text-decoration-style: dashed;
   text-underline-offset: 4px;
 }
-.prose a:hover {
+.prose a:not(:where(.not-prose, .not-prose *)):hover {
   color: var(--color-primary);
 }
 

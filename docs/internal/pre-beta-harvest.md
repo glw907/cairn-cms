@@ -320,6 +320,17 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   underline vs. the wavy/dashed family signature), then promote with both proof points cited
   above.
 
+  Also queued for the same promotion decision: `chassis/prose.css`'s `.prose a` rule (and every
+  theme's own override of it, including the AstroPaper device above) is unguarded against
+  `not-prose`. A page that wraps its whole reader in `.prose` and marks its own page-owned
+  chrome `not-prose` (the AstroPaper single-post reader's "Go back" link, tag chips, and
+  previous/next nav) still leaks the link device onto that chrome, since `not-prose` only opts a
+  subtree out of selectors that carry the `:not(:where(.not-prose, .not-prose *))` guard
+  themselves; a bare descendant selector does not stop at a class boundary. AstroPaper's own
+  `site.css` override picked this up in its round-4 fix. Whatever device the chassis default
+  ships, it should carry this guard from the start, and each theme's own override should follow
+  the same pattern rather than reintroducing the leak.
+
 ## Engine
 
 - **The rehype seam on createRenderer** — LANDED (`43f9967`). `RendererOptions` gained

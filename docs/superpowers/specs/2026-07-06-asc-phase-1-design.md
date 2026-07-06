@@ -59,9 +59,12 @@ Cards are refined, not removed (Geoff: "cards aren't inherently a problem"):
   **Home-page additions (Geoff, same session):** the Fleet and Facilities sections are
   two-column compositions with EMPTY image columns — phase 1 completes them with real club
   photography (a fleet shot; a grounds shot), curated into the media library with alt
-  text. SUGGESTED, awaiting his call: The Season's six month-boxes consolidate into a
-  single quiet band listing (the B1 energy applied to events), fitting its D1-driven
-  future.
+  text. **C2-TWO-COLUMN LOCKED (Geoff: "a definite improvement... with the two columns"):** The
+  Season consolidates from six month-boxes into a single band listing — month names in
+  full ink with hairline rules as scan anchors, events at body size with quiet tabular
+  dates, racing in the accent blue (the color scan answers "when do we race?"), two
+  columns at desktop with month groups never splitting, one column under 900px. The
+  direction is locked; the build's design stage refines the details in place.
 - **The original work-session definition (ran as designed):** two sittings with Geoff. (1) THE SHOW-AND-TELL: curated exhibits from the
   scroll-primed captures — the news cards at their best, the chrome-stacking at its
   heaviest, the education page's full height, the responsive rough spots — so the

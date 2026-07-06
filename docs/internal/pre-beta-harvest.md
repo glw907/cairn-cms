@@ -301,6 +301,24 @@ Per-port harvest at the chassis layer (theme-ports-1-3, step 5), evidence-based 
   already establishes (a browser-only library imported inside `onMount`, never a static
   top-level import); the one friction point is the `ImageValue` content-model gap recorded
   above, not a rendering or component-grammar limitation.
+- **`chassis/prose.css`'s `.prose a` default is weight-only (`font-weight: 500`, no color, no
+  underline) — bitten twice, still QUEUED (not promoted).** 907.life's own theme carries a
+  restored link underline (`.prose a { color; text-decoration-line: underline;
+  text-decoration-color: transparent; ...; } .prose a:hover { text-decoration-color: ...; }`)
+  because the chassis default reads as no affordance at all on a real site. The AstroPaper port
+  hit the same absence a second time: its markdown body links (the About page's `AstroPaper` and
+  `GitHub` links) rendered as plain weight-500 text, no underline, no color, until `site.css`
+  added AstroPaper's own device (`color: var(--color-base-content); text-decoration-line:
+  underline; text-decoration-style: dashed; text-underline-offset: 4px;` at rest, `color:
+  var(--color-primary)` on hover, matching the real upstream `typography.css`'s `.app-prose a`
+  rule read from the cloned `satnaing/astro-paper` source, not a guess). Two independent themes
+  discovering the identical absence, not two themes wanting different devices, is the
+  promotion-worthy signal: the CANDIDATE fix is for the chassis to ship a real link affordance
+  (an underline, in some default color) out of the box, so a theme overrides the SHAPE of an
+  existing device (a color, a dash style, an offset) rather than discovering it has to invent one
+  from nothing. Hold as queued until a decision on the chassis's own default device (plain
+  underline vs. the wavy/dashed family signature), then promote with both proof points cited
+  above.
 
 ## Engine
 

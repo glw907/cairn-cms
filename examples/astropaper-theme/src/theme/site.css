@@ -29,6 +29,22 @@ body {
   overflow-x: clip;
 }
 
+/* The prose link device, matching AstroPaper's own `typography.css` (`.app-prose a`): body text
+   color at rest with a dashed underline, the theme's one signature affordance on every markdown
+   link (the same device the header's active-page indicator borrows, there wavy instead of
+   dashed). The chassis's own `.prose a` default is weight-only, so this override supplies the
+   whole device rather than just a color swap; it stays here, not in `chassis/prose.css`, since
+   the dashed offset and the hover-to-accent swap are this theme's own choice, not every theme's. */
+.prose a {
+  color: var(--color-base-content);
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-underline-offset: 4px;
+}
+.prose a:hover {
+  color: var(--color-primary);
+}
+
 /* cairn figure placement (media 3a): this port's demo content carries no images, but the class
    contract is kept so a future post that adds one renders correctly with no further wiring. */
 .site-main figure {

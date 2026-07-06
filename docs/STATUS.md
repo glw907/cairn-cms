@@ -79,6 +79,24 @@ tests a named capability (media, card composition, docs-shell/Topo overlap, mini
 ARCHITECTURE CONSEQUENCE: the cairn.pub HOMEPAGE gains a THEMES SECTION when the ports land
 (amends the committed architecture). Geoff picks from the researched slate.**
 
+**ECXC PRODUCTION FAILURE + ROLLBACK (2026-07-05): Geoff's verdict on the deployed rebuild
+— "so far off the mark I'm not even sure where to begin." The old site is RESTORED and
+verified live (8c77bbc; the first revert left 22 leftover rebuild files, purged; tree
+byte-identical to pre-rebuild, built and screenshot-read before push). Root causes, in
+order: (1) the rebuild plan was authored from a VERBAL inventory without ever looking at
+the site — ecxc is a card-based photo-forward club landing page, not a blog, and no theme
+layer over the blog scaffold could reach it; (2) the "flexibility test" framing rewarded
+zero chrome edits, inverting the fidelity bar, and "no template findings" was the failure
+signature misread as success; (3) ZERO visual review before "deploy both" — crawls and
+greps, no rendered page read by anyone with judgment. THE ONE-CHECK RULE is now doctrine in
+CLAUDE.md: nothing deploys without a full-page render read by the main loop, member-facing
+sites get Geoff's before/after, and no design plan is authored without looking at the real
+site. The ledger's "flexibility PROVEN" claim is corrected (tokens transfer color/faces,
+NOT structure). 907.life re-verified by eye post-hoc: passes. The ecxc rebuild returns to
+the shop: structure-level design comparison first, the club's chrome rebuilt on the
+scaffold, before/after to Geoff before any redeploy. rebuild-waymark-2 holds the salvage
+(adapter, content, components, redirects all sound — the chrome is what's missing).**
+
 **HANDBOOK.AKSAILINGCLUB.ORG QUEUED (Geoff, 2026-07-05): the club's handbook site moves
 to cairn — filed adjacent to the aksailingclub effort. A handbook is docs-shaped, so it
 naturally consumes the Starlight-port/Topo learning; sequencing detail settles at the

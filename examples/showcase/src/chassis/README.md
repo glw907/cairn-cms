@@ -128,6 +128,37 @@ does not fix this; only an explicit `width` does). A theme puts `.cairn-site-she
 wrapper and `.cairn-site-main` on `<main>` to get the fix for free, rather than rediscovering the
 bug the way the AstroPaper port first did.
 
+## The themed-404 pattern
+
+A fully static theme (every page under `(site)` set to `export const prerender = true`, this
+showcase's own shape) needs two pieces working together to serve a themed 404, not one. The
+failure mode, found the hard way porting Foxi: a fully prerendered site strips its own
+`[...path]` catch-all out of the runtime-routable manifest entirely, so a request for an
+unmatched path matches no route at all. That means the `(site)` group's layout never runs, and
+an in-group `(site)/+error.svelte` never mounts for this case (it still correctly renders an
+in-route `error(404, ...)` thrown from a matched route's own `load`, an entirely different code
+path). Only a **root-level `src/routes/+error.svelte`**, a sibling of the route group rather than
+a file inside it, renders for an unmatched path, and only if the request reaches the Worker in the
+first place.
+
+Whether it reaches the Worker is the wrangler-config half. `assets.not_found_handling` gates it:
+`"none"` (the schema's own default, and what this showcase's `wrangler.jsonc` now sets explicitly)
+passes an unmatched request through to the Worker, which falls through to SvelteKit's own
+built-in default-404 handling and renders the root `+error.svelte` through a real SSR response.
+`"404-page"` does the opposite: it makes the adapter write a static file to the assets directory
+and serve it straight from Cloudflare's edge, which never invokes the Worker at all, so no
+`+error.svelte` of any kind ever runs. A `fallback: 'spa'` adapter option compounds the same
+mistake, generating a client shell whose own data fetch has nothing to resolve for an unmatched
+path.
+
+A theme adopting this chassis on the same fully-prerendered-plus-catch-all shape needs both
+pieces: a root `+error.svelte` that rebuilds its own chrome (it has no shared layout to inherit
+from, so both stylesheets and the theme's header/footer components import directly, the same way
+`src/routes/+error.svelte` does here) and `assets.not_found_handling` left at, or set explicitly
+to, `"none"`. A theme with any non-prerendered route (a `/admin` mount, a dynamic API route) needs
+no change here: an unmatched path already reaches the Worker in that shape without this setting,
+since the whole point of `"none"` is what already happens once nothing else overrides it.
+
 ## Subtracting an element
 
 The chassis is site-owned code over the versioned engine API (Geoff, 2026-07-05): an ultra-light

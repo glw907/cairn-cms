@@ -6,7 +6,20 @@
   "compatibility_flags": ["nodejs_compat"],
   "main": ".svelte-kit/cloudflare/_worker.js",
   "observability": { "enabled": true },
-  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" },
+  "assets": {
+    "directory": ".svelte-kit/cloudflare",
+    "binding": "ASSETS",
+    // "none" (the schema's own default) is set explicitly: for a request that matches no static
+    // asset, Cloudflare passes it through to this Worker instead of intercepting it at the edge.
+    // The `(site)` route group prerenders every page, so SvelteKit strips its `[...path]`
+    // catch-all from the runtime-routable manifest entirely; an unmatched path therefore matches
+    // no route at request time, and the Worker's own bundled SvelteKit server falls through to
+    // its built-in default-404 handling, which renders the root `+error.svelte`
+    // (src/routes/+error.svelte) through a real SSR response. Setting this to "404-page" would
+    // instead serve a static, unthemed file straight from the edge and never reach the Worker at
+    // all (see src/chassis/README.md's "The themed-404 pattern").
+    "not_found_handling": "none"
+  },
   // Email Sending binding for magic links (arbitrary recipients). A real site sets remote = true
   // so `wrangler dev` sends real mail; the dev backend fakes it locally.
   "send_email": [{ "name": "EMAIL" }],

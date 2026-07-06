@@ -1,0 +1,7 @@
+# The hugo-theme-gallery port's site config: the minimum a `SiteConfig` needs (siteName). This
+# port mounts no admin, so it carries no nav/vocabulary editor wiring; the theme's own routes read
+# the pages index directly (see src/routes/(site)).
+siteName: Gallery
+description: An example site for the gallery-theme port. Photos from Unsplash.
+author: Your Name
+locale: en

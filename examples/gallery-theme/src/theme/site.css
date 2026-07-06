@@ -1,0 +1,41 @@
+/* examples/gallery-theme/src/theme/site.css
+   Three containers. `.site-narrow` is the upstream demo's own `.prose`/`body > menu` measure
+   (768px = 48rem): About, Imprint, and the slide-down nav menu. `.site-wide` is the upstream
+   demo's own `hgroup`/`.galleries`/`.featured` cap (1280px = 80rem): the page title block, the
+   home hero, and a gallery-listing page's card grid. `.gallery-wide` is this port's own widened
+   cap for a LEAF photo grid only, uncapped at the upstream's fixed 80rem: the justified-grid
+   algorithm computes more photos per row as the container grows, so widening its own container
+   at 2560px is a real "beat the original" move, not just centering (the upstream's own live demo
+   leaves a large unused void past 1280px at every template; see this theme's README).
+   Referenced only through a Vite ?url import (see the (site) layout). */
+html {
+  font-size: clamp(1rem, 0.7631rem + 0.2631vw, 1.125rem);
+}
+
+.site-narrow {
+  max-width: var(--container-measure);
+  margin: 0 auto;
+  padding-inline: var(--spacing-m);
+}
+
+.site-wide {
+  /* A literal, not the --container-measure-wide token: the upstream's own `hgroup` (1024px) and
+     its `.galleries`/`.featured` (1280px) use two different wide caps, and this class is only
+     the second (the page-section width); the hgroup's own narrower cap reads the token directly
+     as the `max-w-measure-wide` utility (see PageHeading.svelte). */
+  max-width: 80rem;
+  margin: 0 auto;
+  padding-inline: var(--spacing-m);
+}
+
+.gallery-wide {
+  max-width: min(96rem, 94vw);
+  margin: 0 auto;
+  padding-inline: var(--spacing-m);
+}
+
+body {
+  overflow-x: clip;
+  background-color: var(--color-base-100);
+  color: var(--color-base-content);
+}

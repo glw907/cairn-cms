@@ -1,0 +1,12 @@
+{
+  // This theme is a public-content-only port (no admin mount, no D1, no R2, no email binding):
+  // it demonstrates the media/gallery capability test (the justified grid, the lightbox, the
+  // album-vs-Pages content model), not the full site auth/commit pipeline, which the showcase
+  // already proves. A production theme built from this port adds those bindings back the way
+  // examples/showcase/wrangler.jsonc does.
+  "name": "gallery-theme",
+  "compatibility_date": "2026-05-28",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": ".svelte-kit/cloudflare/_worker.js",
+  "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" }
+}

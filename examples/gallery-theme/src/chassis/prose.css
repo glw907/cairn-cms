@@ -1,0 +1,690 @@
+/* ============================================================================
+   cairn bespoke reading surface — the signature B2 deliverable.
+
+   The article's prose, every element bound to the DaisyUI roles and the cairn
+   tokens in theme.css, so one token edit re-skins the chrome AND the article in
+   lockstep. This is NOT @tailwindcss/typography: it is a hand-authored surface
+   scoped to a `.prose` container, where each element (heading, lead, blockquote,
+   pull-quote, code, list, table, figure, hr) is a crafted, tokenized treatment.
+
+   What lives where:
+     - theme.css owns the tokens, and already colors the code block: it styles
+       `pre.shiki` (bg/border/ink) and binds the engine's `.cairn-tok-*` syntax
+       classes to the `--cairn-code-*` ramp under @layer components. This sheet
+       only adds the code block's spacing, measure, and overflow, never a color.
+     - site.css owns the figure-placement geometry (`.cairn-place-center/wide/full`
+       breakout) scoped to `.site-main`; the article sits inside `.site-main`, so
+       those rules still apply. This sheet adds only the figure flow rhythm.
+     - This sheet is reached by BOTH the public page and the editor preview frame,
+       because it is @import-ed into theme.css, the one sheet the (site) layout and
+       the preview config both link (the parity rule; see site.css's header).
+
+   The directive components (the engine's render output) are styled here too. They
+   carry the real engine class names, NOT the mockup's BEM names: a callout is
+   `.callout > .callout-title + .callout-body + .callout-points`, an alert is
+   `.alert > .card-body > (.ec-head > .card-title) + .alert-body`. Every rule is
+   scoped under `.prose` so it beats DaisyUI's own `.alert`/`.card` component
+   classes (theme.css bundles DaisyUI for the public layer) on specificity.
+
+   The whole file is @layer components, the same layer theme.css uses, so the
+   `.prose` scope is what wins over DaisyUI, not a layer race.
+
+   Three rules (the hr, the ul marker, the pull-quote) carry a signature Waymark
+   gesture that is NOT part of the neutral default: the cairn-glyph hr, the
+   diamond ul bullet, and the margin-hanging pull-quote. Each is scoped under
+   `.prose[data-flourish]` rather than removed, so a theme that wants the
+   Waymark identity re-enables all three by adding one `data-flourish` attribute
+   to the `.prose` root, with no CSS edit.
+
+   TIER: the whole sheet is Tier 2 (owned design, the documented floor; the starter-template
+   custom-surface ledger, docs/internal/design/2026-06-30-showcase-custom-surface-ledger.md). It is
+   the hand-authored reading surface, not @tailwindcss/typography, so it is not a fold target. It
+   reads the theme roles and the cairn tokens; a re-skin recolors it with no edit here. */
+@layer components {
+  /* --------------------------------------------------------------------------
+     The column and the rhythm. The measure is capped structurally on the
+     container (the layout caps it too; this makes the prose surface honest on
+     its own). All vertical rhythm flows from one --flow-space owl selector;
+     headings, the lead, figures, code, tables, and the hr override it locally.
+     -------------------------------------------------------------------------- */
+  .prose {
+    max-width: var(--container-measure);
+    /* A long unbroken token (a bare URL with no spaces) is wider than the column and has nowhere to
+       break; the ancestor body's `overflow-x: clip` (site.css, the full-bleed-figure guard) then hides
+       the overflow instead of showing it, so the token silently vanishes past the edge. Breaking
+       anywhere it must keeps every token inside the column, at the cost of a mid-word break only on
+       the rare token that cannot fit otherwise; ordinary prose never notices it. */
+    overflow-wrap: anywhere;
+  }
+  /* The browser-default paragraph margin, reset before the owl selector below supplies the real
+     flow rhythm. Wrapped in :where() so this reset carries zero specificity from the `p` type
+     selector: an unwrapped `.prose p` is (0,1,1), which always outranks `.prose > * + *`'s (0,1,0)
+     regardless of source order, so every paragraph's margin-top stayed 0 no matter what the owl
+     selector tried to set, collapsing the flow rhythm between two paragraphs, after a blockquote,
+     or after a code block or table (anywhere the following element is a bare `<p>` with no
+     heading-specific override to out-rank the reset the same way `.prose h2 + *` does). Tied at
+     (0,1,0) with the owl rule below, source order decides, so this reset must stay ABOVE it. */
+  .prose :where(p) {
+    margin-block: 0;
+  }
+  .prose > * + * {
+    margin-top: var(--flow-space);
+  }
+
+  /* The article title on the display face: large space below it is unnecessary
+     because the lead binds to it; tight leading reads as a masthead. */
+  .prose > h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-step-5);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    margin: 0;
+  }
+  .prose > h1 + * {
+    margin-top: var(--spacing-m);
+  }
+
+  /* The lead paragraph: step-1, slightly recessed ink, a touch more air above. */
+  .prose .lead {
+    font-size: var(--text-step-1);
+    line-height: var(--leading-snug);
+    color: color-mix(in oklab, var(--color-base-content) 86%, transparent);
+    --flow-space: var(--spacing-m);
+  }
+
+  /* The heading-binding rhythm: large space ABOVE a heading, tight BELOW it, so a
+     heading belongs to the text it introduces (the typography criterion). */
+  .prose h2 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-step-3);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    --flow-space: var(--spacing-xl);
+    margin-bottom: 0;
+  }
+  .prose h2 + * {
+    margin-top: var(--spacing-xs);
+  }
+  .prose h3 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: var(--text-step-2);
+    line-height: var(--leading-snug);
+    --flow-space: var(--spacing-l);
+  }
+  .prose h3 + * {
+    margin-top: var(--spacing-xs);
+  }
+  .prose strong {
+    font-weight: 650;
+  }
+  .prose a {
+    font-weight: 500;
+  }
+  /* The reading-surface focus ring, matching the chrome and the styleguide (2px primary, 2px offset).
+     A tinted callout ground shares the primary hue, so the same-hue ring can wash out against it; a
+     4px page-coloured halo under the ring keeps it readable on every ground (the focus-visible
+     criterion). */
+  .prose a:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    border-radius: 2px;
+    box-shadow: 0 0 0 4px var(--color-base-100);
+  }
+
+  /* --------------------------------------------------------------------------
+     Blockquote: a 3px accent left rule, italic, slightly recessed ink. The
+     optional <cite> reads as muted meta on its own line.
+     -------------------------------------------------------------------------- */
+  .prose blockquote {
+    margin-inline: 0;
+    padding-left: var(--spacing-m);
+    border-left: 3px solid var(--color-primary);
+    color: color-mix(in oklab, var(--color-base-content) 88%, transparent);
+    font-style: italic;
+  }
+  .prose blockquote p {
+    font-size: var(--text-step-1);
+    line-height: var(--leading-snug);
+  }
+  .prose blockquote cite {
+    display: block;
+    margin-top: 0.6rem;
+    font-style: normal;
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
+  }
+
+  /* A pull-quote on the display face, set apart from the flow by size alone; it
+     stays in-column at every width. A sample post applies the `.pullquote` class
+     to a single emphatic line. The signature Waymark gesture, hanging the whole
+     quote into the left margin past 64rem, is an opt-in layer scoped under
+     `[data-flourish]` on the `.prose` root: the hook a theme uses to bring the
+     identity back with no markup change. */
+  .prose .pullquote {
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: var(--text-step-3);
+    line-height: var(--leading-tight);
+    letter-spacing: var(--tracking-tight);
+    color: var(--color-base-content);
+    --flow-space: var(--spacing-xl);
+  }
+  .prose .pullquote::before {
+    content: '\201C';
+    color: var(--color-primary);
+  }
+  @media (min-width: 64rem) {
+    .prose[data-flourish] .pullquote {
+      width: calc(var(--container-measure) + 4.5rem);
+      margin-left: -4.5rem;
+      text-align: left;
+    }
+  }
+
+  /* --------------------------------------------------------------------------
+     Code. Inline code is a tinted bordered chip (base-200 ground, base-300
+     border). The fenced block reads its colors from theme.css's pre.shiki +
+     .cairn-tok-* bindings; this only sets the block's measure, spacing, leading,
+     and horizontal overflow. The :not(pre) guard keeps the chip off block code.
+     -------------------------------------------------------------------------- */
+  .prose :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    background: var(--color-base-200);
+    border: var(--border) solid var(--color-base-300);
+    border-radius: var(--radius-selector);
+    padding: 0.1em 0.36em;
+  }
+  .prose pre {
+    font-family: var(--font-mono);
+    border-radius: var(--radius-box);
+    padding: var(--spacing-s) var(--spacing-m);
+    overflow-x: auto;
+    font-size: var(--text-step--1);
+    line-height: 1.6;
+    --flow-space: var(--spacing-m);
+  }
+  .prose pre code {
+    font-family: inherit;
+  }
+
+  /* --------------------------------------------------------------------------
+     Lists. Unordered: the standard marker by default. Ordered: a display-face
+     number in the accent. Tighter spacing between list items than between
+     blocks. The signature Waymark gesture, a small accent diamond in place of
+     the standard marker, is an opt-in layer scoped under `[data-flourish]` on
+     the `.prose` root: the hook a theme uses to bring the identity back with
+     no markup change.
+     -------------------------------------------------------------------------- */
+  .prose ul,
+  .prose ol {
+    padding-left: 1.3em;
+  }
+  .prose li + li {
+    margin-top: 0.4rem;
+  }
+  .prose ul {
+    /* Tailwind's preflight resets every `ul` to `list-style: none`; restore the
+       standard disc marker for the neutral default. */
+    list-style: disc;
+    padding-left: 1.4em;
+  }
+  .prose[data-flourish] ul {
+    list-style: none;
+  }
+  .prose[data-flourish] ul > li {
+    position: relative;
+  }
+  .prose[data-flourish] ul > li::before {
+    content: '';
+    position: absolute;
+    left: -1.1em;
+    top: 0.62em;
+    width: 0.4em;
+    height: 0.4em;
+    border-radius: 1px;
+    background: var(--color-primary);
+    transform: rotate(45deg);
+  }
+  .prose ol {
+    list-style: none;
+    counter-reset: ol;
+    padding-left: 1.8em;
+  }
+  .prose ol > li {
+    counter-increment: ol;
+    position: relative;
+  }
+  .prose ol > li::before {
+    content: counter(ol);
+    position: absolute;
+    left: -1.8em;
+    top: 0;
+    font-family: var(--font-display);
+    font-weight: 600;
+    color: var(--color-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* GFM task lists render real <input type=checkbox disabled>. Drop the markers
+     (the checkbox is the bullet), tint the control with the accent, and keep the
+     native check glyph as the non-color cue (an accessibility requirement). */
+  .prose .contains-task-list {
+    list-style: none;
+    padding-left: 0;
+  }
+  .prose .task-list-item {
+    position: relative;
+  }
+  .prose .task-list-item::before {
+    content: none;
+  }
+  .prose .task-list-item input[type='checkbox'] {
+    margin-right: 0.55rem;
+    width: 1.05em;
+    height: 1.05em;
+    accent-color: var(--color-primary);
+    vertical-align: -0.16em;
+  }
+
+  /* --------------------------------------------------------------------------
+     Table: a bordered head rule and zebra body rows, at the caption size. The
+     table itself stays `display: table`, a real table in the accessibility
+     tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
+     in every current engine). The scroll container is a wrapper the
+     showcase's own render step emits around every table (table-scroll.ts,
+     called from cairn.config.ts's rendering.render): `.table-scroll` carries
+     `display: block; overflow-x: auto`, `role="region"`, a `tabindex` and an
+     `aria-label` naming the table, so a keyboard user can tab to the region
+     and scroll it. Cells stay `nowrap` so a narrow viewport cannot satisfy
+     the table's own `width: 100%` by wrapping words inside a cell; the auto
+     table-layout algorithm then grows the table past its specified width to
+     fit the unbroken content, and the wrapper's `overflow-x: auto` turns
+     that into a horizontal scroll instead of a squeezed, word-broken column.
+     -------------------------------------------------------------------------- */
+  .prose .table-scroll {
+    display: block;
+    overflow-x: auto;
+    --flow-space: var(--spacing-m);
+  }
+  .prose .table-scroll:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .prose table {
+    display: table;
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--text-step--1);
+  }
+  .prose thead th {
+    text-align: left;
+    font-family: var(--font-body);
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-base-300);
+    padding: 0.55rem 0.7rem;
+    white-space: nowrap;
+  }
+  .prose tbody td {
+    padding: 0.55rem 0.7rem;
+    border-bottom: var(--border) solid var(--color-card-border);
+    white-space: nowrap;
+  }
+  .prose tbody tr:nth-child(even) {
+    background: color-mix(in oklab, var(--color-base-200) 60%, transparent);
+  }
+
+  /* --------------------------------------------------------------------------
+     Horizontal rule. The default is a plain hairline. The signature Waymark
+     gesture, a centered cairn mark in base-300 in place of the line, is an
+     opt-in layer scoped under `[data-flourish]` on the `.prose` root: the
+     hook a theme uses to bring the identity back with no markup change. The
+     mark itself is an inline data-URI mask, so no JS and no extra asset are
+     needed.
+     -------------------------------------------------------------------------- */
+  .prose hr {
+    border: 0;
+    border-top: var(--border) solid var(--color-base-300);
+    --flow-space: var(--spacing-xl);
+  }
+  .prose[data-flourish] hr {
+    border-top: 0;
+    text-align: center;
+  }
+  .prose[data-flourish] hr::after {
+    content: '';
+    display: inline-block;
+    width: 1.4rem;
+    height: 1.4rem;
+    background: var(--color-base-300);
+    --cairn-mark-url: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cellipse cx='12' cy='20.5' rx='8' ry='2.4'/%3E%3Cellipse cx='11.4' cy='14.8' rx='6' ry='2.3'/%3E%3Cellipse cx='12.4' cy='9.6' rx='4.3' ry='2.1'/%3E%3Cellipse cx='11.9' cy='4.8' rx='2.6' ry='1.9'/%3E%3C/svg%3E");
+    mask: var(--cairn-mark-url) center / contain no-repeat;
+    -webkit-mask: var(--cairn-mark-url) center / contain no-repeat;
+  }
+
+  /* --------------------------------------------------------------------------
+     Figures. The placement geometry (center/wide/full breakout) and the caption
+     styling live in site.css scoped to .site-main, and the article sits inside
+     it, so those apply. This only gives a figure its own flow rhythm. The hero
+     figure (frontmatter image) is a leading figure with no placement class.
+     -------------------------------------------------------------------------- */
+  .prose figure {
+    --flow-space: var(--spacing-l);
+  }
+
+  /* --------------------------------------------------------------------------
+     Directive components (engine render output). Real engine class names, scoped
+     under .prose to beat DaisyUI's own .alert / .card on specificity.
+     -------------------------------------------------------------------------- */
+
+  /* Callout: a bordered card with an accent left rule and a faint tinted ground.
+     Tones note / tip / warning are pre-styled though the registry emits only
+     note and warning today (Part 2 may add the rest). The title is the inline
+     `.callout-title`; the body is `.callout-body`; the optional points list is a
+     sibling `.callout-points` ul, not nested. */
+  .prose .callout {
+    --flow-space: var(--spacing-m);
+    border: var(--border) solid var(--color-card-border);
+    border-left: 3px solid var(--color-primary);
+    border-radius: var(--radius-box);
+    padding: var(--spacing-s) var(--spacing-m);
+    background: color-mix(in oklab, var(--color-primary) 5%, var(--color-base-100));
+  }
+  .prose .callout-note {
+    border-left-color: var(--cairn-info-ink);
+    background: color-mix(in oklab, var(--color-info) 10%, var(--color-base-100));
+  }
+  .prose .callout-tip {
+    border-left-color: var(--cairn-success-ink);
+    background: color-mix(in oklab, var(--color-success) 7%, var(--color-base-100));
+  }
+  .prose .callout-warning {
+    border-left-color: var(--cairn-warning-ink);
+    background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
+  }
+  .prose .callout-title {
+    font-weight: 650;
+    margin: 0 0 0.3rem;
+  }
+  .prose .callout-note .callout-title {
+    color: var(--cairn-info-ink);
+  }
+  .prose .callout-tip .callout-title {
+    color: var(--cairn-success-ink);
+  }
+  .prose .callout-warning .callout-title {
+    color: var(--cairn-warning-ink);
+  }
+  .prose .callout-body > * {
+    margin: 0;
+  }
+  .prose .callout-body > * + * {
+    margin-top: var(--spacing-2xs);
+  }
+  .prose .callout-points {
+    margin: 0.5rem 0 0;
+  }
+  /* The points slot is optional (a callout with no points still renders the ul); an empty list keeps
+     its top margin and reads as a phantom gap below the body text. Zero it when there is nothing in
+     the list. */
+  .prose .callout-points:empty {
+    margin: 0;
+  }
+
+  /* Alert: the second directive, built from the cairn render helpers (a section
+     with a card-body, an ec-head holding an optional icon and the card-title,
+     and an alert-body). DaisyUI's .alert grid is overridden here. Roles note /
+     caution; caution leans on the warning ink so it reads as a caution. */
+  .prose .alert {
+    display: block;
+    grid-template-columns: none;
+    --flow-space: var(--spacing-m);
+    border: var(--border) solid var(--color-card-border);
+    border-left: 3px solid var(--cairn-info-ink);
+    border-radius: var(--radius-box);
+    padding: 0;
+    background: color-mix(in oklab, var(--color-info) 8%, var(--color-base-100));
+    color: var(--color-base-content);
+  }
+  .prose .alert-caution {
+    border-left-color: var(--cairn-warning-ink);
+    background: color-mix(in oklab, var(--color-warning) 9%, var(--color-base-100));
+  }
+  .prose .alert .card-body {
+    padding: var(--spacing-s) var(--spacing-m);
+  }
+  .prose .alert .ec-head {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+  .prose .alert .card-title {
+    font-family: var(--font-body);
+    font-weight: 650;
+    font-size: var(--text-step-0);
+    margin: 0;
+    color: var(--cairn-info-ink);
+  }
+  .prose .alert-caution .card-title {
+    color: var(--cairn-warning-ink);
+  }
+  .prose .alert .ec-icon {
+    display: inline-flex;
+    color: var(--cairn-info-ink);
+  }
+  .prose .alert-caution .ec-icon {
+    color: var(--cairn-warning-ink);
+  }
+  .prose .alert .ec-glyph {
+    width: 1.1em;
+    height: 1.1em;
+  }
+  .prose .alert-body > * {
+    margin: 0;
+  }
+  .prose .alert-body > * + * {
+    margin-top: var(--spacing-2xs);
+  }
+
+  /* Icon: a single glyph with no card and no title, sitting directly in the prose flow rather than
+     nested inside another component (the alert head, the video-facade thumb, the cta link, the faq
+     marker all size their own `.ec-glyph` above and below). The direct-child combinator scopes this
+     rule to exactly that standalone case, so it never fights the more specific nested rules. With no
+     sizing rule at all the bare SVG falls back to the browser's default replaced-element box, reading
+     as an oversized glyph instead of a modest inline marker; text-height scale keeps it reading like a
+     large character, the same restraint as the rest of the directive set. */
+  .prose > .ec-icon {
+    display: inline-flex;
+  }
+  .prose > .ec-icon > .ec-glyph {
+    width: 1.75em;
+    height: 1.75em;
+  }
+
+  /* Video facade: a bordered 16:9 panel with a centered play glyph and the platform name, the whole
+     thing one link. No thumbnail image (see the component's own comment for why); the panel ground
+     and border are the same card tokens the callout and alert borrow. */
+  .prose .video-facade {
+    --flow-space: var(--spacing-m);
+  }
+  .prose .video-facade-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--spacing-2xs);
+    aspect-ratio: 16 / 9;
+    border: var(--border) solid var(--color-card-border);
+    border-radius: var(--radius-box);
+    background: var(--color-base-200);
+    color: inherit;
+    text-decoration: none;
+  }
+  .prose .video-facade-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .prose .video-facade-thumb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 999px;
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+  .prose .video-facade-thumb .ec-glyph {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+  .prose .video-facade-platform {
+    font-size: var(--text-step--1);
+    font-weight: 650;
+    letter-spacing: var(--tracking-eyebrow);
+    text-transform: uppercase;
+    color: var(--color-muted);
+  }
+  .prose .video-facade-caption {
+    margin-top: 0.4rem;
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
+    text-align: center;
+  }
+
+  /* Pull quote: the quote text reuses the manual `.pullquote` treatment (the display face, the
+     outdent, the opening quote mark) so the component and the raw-HTML tip render identically; only
+     the attribution line is new here. */
+  .prose .pull-quote {
+    --flow-space: var(--spacing-xl);
+  }
+  .prose .pull-quote-attribution {
+    margin-top: 0.5rem;
+    font-family: var(--font-body);
+    font-size: var(--text-step--1);
+    font-style: normal;
+    color: var(--color-muted);
+  }
+  .prose .pull-quote-attribution::before {
+    content: '\2014\0020';
+  }
+
+  /* CTA: a restrained button-link, not the fuller marketing panel the styleguide's `.sg-cta` shows.
+     Primary reuses the site's own accent-button pair, the same `--color-primary` treatment the
+     styleguide's `.btn-primary` and every other on-page call-to-action use; secondary is a bordered
+     ghost variant. Primary does NOT reuse `--cairn-cta-btn-bg`/`-btn-content`: that pair is tuned to
+     sit on top of the `--cairn-cta-bg` panel (see `.sg-cta`), a backdrop this inline link never gets.
+     In light mode `--cairn-cta-btn-bg` resolves to `--color-base-100`, the page's own paper, so a
+     link sitting directly on the page (not on the panel) would render with an invisible background;
+     it happened to read fine in dark mode only because `--cairn-cta-btn-bg` there resolves to
+     `--color-primary`, the same accent used below in both themes. */
+  .prose .cta {
+    --flow-space: var(--spacing-m);
+  }
+  .prose .cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-2xs);
+    padding: var(--spacing-2xs) var(--spacing-m);
+    border-radius: var(--radius-field);
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .prose .cta-primary {
+    background: var(--color-primary);
+    color: var(--color-primary-content);
+  }
+  .prose .cta-secondary {
+    background: transparent;
+    color: var(--color-base-content);
+    border: var(--border) solid var(--color-card-border);
+  }
+  .prose .cta-link .ec-glyph {
+    width: 0.9em;
+    height: 0.9em;
+  }
+  .prose .cta-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* FAQ: a native <details>/<summary> disclosure. The default marker is hidden and replaced by the
+     chevron glyph in the summary, which rotates open (a non-color state cue, matching the task-list
+     checkbox's real-control cue elsewhere in this sheet). A run of several FAQs reads as a divided
+     list, each row closed by its own bottom hairline with no outer box; a single question has no
+     neighbor to divide it from, so a bare bottom rule under it reads as a stray line rather than a
+     component. `:only-of-type` (there is exactly one `<details>` in the surrounding flow) gives that
+     lone case a full bordered container instead. */
+  .prose .faq {
+    border-bottom: var(--border) solid var(--color-card-border);
+    padding-block: var(--spacing-s);
+  }
+  .prose .faq:only-of-type {
+    border: var(--border) solid var(--color-card-border);
+    border-radius: var(--radius-box);
+    padding: var(--spacing-s) var(--spacing-m);
+  }
+  .prose .faq-question {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-s);
+    cursor: pointer;
+    font-weight: 650;
+    list-style: none;
+  }
+  .prose .faq-question::-webkit-details-marker {
+    display: none;
+  }
+  .prose .faq-question:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .prose .faq-marker {
+    display: inline-flex;
+    flex-shrink: 0;
+    color: var(--color-muted);
+    transition: transform 0.15s ease;
+  }
+  .prose .faq-marker .ec-glyph {
+    width: 0.85em;
+    height: 0.85em;
+  }
+  .prose .faq[open] .faq-marker {
+    transform: rotate(180deg);
+  }
+  .prose .faq-answer {
+    margin-top: var(--spacing-2xs);
+    color: color-mix(in oklab, var(--color-base-content) 88%, transparent);
+  }
+  .prose .faq-answer > * + * {
+    margin-top: var(--spacing-2xs);
+  }
+
+  /* Markdown slots (a callout body, an alert body, an FAQ answer) accept full markdown, not just
+     inline text, so an author can drop in a heading or an image the same as anywhere else in a post.
+     With no cap a nested heading would render at the top-level `.prose h1`/`h2`/`h3` size, blowing out
+     a component sized for an aside; a nested image would run at its natural width with no ceiling.
+     Scale both down to something that reads as an in-flow label and a contained picture instead. */
+  .prose .callout-body :is(h1, h2, h3, h4, h5, h6),
+  .prose .alert-body :is(h1, h2, h3, h4, h5, h6),
+  .prose .faq-answer :is(h1, h2, h3, h4, h5, h6) {
+    font-family: var(--font-display);
+    font-weight: 650;
+    font-size: var(--text-step-0);
+    line-height: var(--leading-snug);
+    letter-spacing: normal;
+    margin: 0;
+  }
+  .prose .callout-body img,
+  .prose .alert-body img,
+  .prose .faq-answer img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-selector);
+  }
+}

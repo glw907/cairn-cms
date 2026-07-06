@@ -1,0 +1,99 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "id": "about",
+      "concept": "pages",
+      "title": "About",
+      "permalink": "/about",
+      "summary": "This is a demonstration site for the gallery-theme port. It shows an image-forward site built entirely on cairn's fixed Posts/Pages content model: a photo tree, a category cross-index, and a…",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "animals",
+      "concept": "pages",
+      "title": "Animals",
+      "permalink": "/animals",
+      "summary": "This is the \"Animals\" album. It has two sub-albums.",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "cats",
+      "concept": "pages",
+      "title": "Cats",
+      "permalink": "/cats",
+      "draft": false,
+      "links": [],
+      "references": [
+        {
+          "field": "parent",
+          "concept": "pages",
+          "id": "animals"
+        }
+      ],
+      "tags": [
+        "animals"
+      ]
+    },
+    {
+      "id": "dogs",
+      "concept": "pages",
+      "title": "Dogs",
+      "permalink": "/dogs",
+      "draft": false,
+      "links": [],
+      "references": [
+        {
+          "field": "parent",
+          "concept": "pages",
+          "id": "animals"
+        }
+      ],
+      "tags": [
+        "animals"
+      ]
+    },
+    {
+      "id": "fashion-beauty",
+      "concept": "pages",
+      "title": "Fashion & Beauty",
+      "permalink": "/fashion-beauty",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "beauty",
+        "fashion"
+      ]
+    },
+    {
+      "id": "featured-album",
+      "concept": "pages",
+      "title": "Featured Album",
+      "permalink": "/featured-album",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "imprint",
+      "concept": "pages",
+      "title": "Imprint",
+      "permalink": "/imprint",
+      "summary": "(Put your imprint here.)",
+      "draft": false,
+      "links": []
+    },
+    {
+      "id": "nature",
+      "concept": "pages",
+      "title": "Nature",
+      "permalink": "/nature",
+      "draft": false,
+      "links": [],
+      "tags": [
+        "nature"
+      ]
+    }
+  ]
+}

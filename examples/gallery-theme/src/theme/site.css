@@ -44,6 +44,32 @@ html {
   width: 100%;
 }
 
+/* `GalleryGrid`'s own column count: the upstream's exact fixed `repeat(3, minmax(0,1fr))` from
+   `lg` (1024px) through standard desktop, `auto-fit` only past the family's own ultrawide extreme
+   (1920px), so a page with fewer than three albums leaves a track empty at desktop widths (the
+   upstream's own behavior) but the cards grow to fill the extra width at 2560 (this port's own
+   "beat the original at 2560" move; see this theme's README).
+
+   Plain, unlayered CSS rather than two competing Tailwind breakpoint utility classes
+   (`lg:grid-cols-3` and a wider one): both breakpoints are true at once past 1920px, and which
+   layered utility wins then depends on Tailwind's own generation order rather than the two
+   classes' numeric widths, which put the narrower `lg:grid-cols-3` rule AFTER the wider one in
+   the built stylesheet and silently overrode the fluid rule at every width up to 2560. An
+   unlayered rule always wins over any `@layer utilities` declaration regardless of order, so
+   these two plain `@media` blocks (kept in this exact, ascending order) decide the outcome
+   deterministically instead. */
+@media (min-width: 1024px) {
+  .gallery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1920px) {
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+}
+
 body {
   overflow-x: clip;
   background-color: var(--color-base-100);

@@ -189,62 +189,34 @@ weakest form and the fallback, never the default. Match the mechanism to the tri
 STATUS carry-forwards hold only the active initiative's watches and must churn, not accumulate (the
 append-only-backlog rot this file warns about elsewhere).
 
-## The polish and fidelity standards (family-wide, Geoff 2026-07-05)
+## Visual work (family-wide; the method lives in the `visual-fidelity` skill)
 
-A rebuild or port is licensed to diverge from its original, never to be less polished than
-it. For typography-forward work the details ARE the design: wordmark treatments, flow
-spacing, blockquote scale, inline-code weight, link and italic conventions all verify at
-the detail level, not the layout level — side-by-side crops of real sections, read, before
-a deploy is called done.
+Any rebuild, theme port, or design migration invokes the **`visual-fidelity` skill at the
+START** — it owns the method: the original manifest (enumerate the original exhaustively,
+verify against the manifest never the plan, image identity = asset + crop, the standing
+defect sanction), reference capture before any plan, the build loop, the fresh-context
+`visual-verifier` gate (the builder's own "matches" is never accepted), the one-check
+deploy rule, the pixel-diff CI rider, and the per-use chassis harvest. The official
+frontend-design skill is for ORIGINAL aesthetics and carries no reference comparison;
+never use it alone for a port. What is cairn-specific, not in the skill:
 
-**The one-check rule (Geoff, 2026-07-05, after the ecxc failure): nothing deploys to
-production without at least one full-page render READ by the main loop's own eyes, and a
-member-facing site additionally gets Geoff's before/after approval. Mechanical gates
-(crawls, gates, token greps) measure correctness, never resemblance; only a read screenshot
-measures what a visitor sees. The same rule applies at plan time: no design plan is
-authored from a verbal inventory alone — look at the actual site first.**
-
-Two fidelity tiers: the SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved —
-divergence is allowed where it improves. THEME PORTS of existing external themes are
-GLANCE-INDISTINGUISHABLE: a casual viewer should not be able to tell the port from the
-original at a glance; the licensed differences are behavioral (the family responsive
-standard at the extremes) and structural (cairn underneath), never the visible design
-language at normal viewing.
-
-## Visual work runs the visual-fidelity method (2026-07-05)
-
-Any rebuild, theme port, or design migration invokes the `visual-fidelity` skill at the
-START (reference capture before any plan; device catalogue; build with the
-screenshot-compare loop; the fresh-context verifier gate; the one-check deploy gate; the
-pixel-diff CI rider). The `visual-verifier` agent is the standing fresh-context grader:
-it did not build the work, receives reference and render as separate labeled images, and
-verdicts per visual device. The builder's own "matches" is never accepted — Anthropic's
-Fable guidance (fresh-context verifiers outperform self-critique) plus two production
-misses (2026-07-05) are the why. The official frontend-design skill is for ORIGINAL
-aesthetics and carries no reference comparison; never use it alone for a port.
-
-## Waymark iterates after every use (Geoff, 2026-07-05)
-
-Every theme or site built on cairn's chassis ends with a mandatory harvest step:
-the frictions, missing seams, structural-variant needs, and component gaps that build
-surfaced fold back as landed improvements or pre-beta-harvest ledger entries — into the
-CHASSIS above all (the canonical showcase copy is the starting chassis every next theme
-receives: a seam a theme fought, a recipe it needed, a coupling its subtraction exposed,
-a removal note that lied — each lands in the chassis before the pass closes), and into
-the engine where the lesson runs deeper. A port or rebuild is not done until its harvest is
-banked. The chassis improves with every consumer, and the next port starts from the
-improved base; the `visual-fidelity` skill carries this as its step 7.
-
-## The responsive standard (family-wide, Geoff 2026-07-05)
-
-Every cairn-family artifact — every theme (Waymark the flagship, plus ports of
-external themes), the showcase, consumer-site rebuilds, cairn.pub, and Topo — meets the
-five-viewport bar: 320, 390, 768, 1440, and 2560, composed at the extremes (a deliberate
-posture at ultrawide, a wrapped-and-reachable masthead at 320), never merely unbroken. The
-gate is the CI width matrix in the showcase's visual suite; work that changes rendering
-regenerates its baselines on CI (the canonical renderer) via the e2e regen dispatch. A
-ported theme's bar is beating its original at 320 and 2560. The design reasoning lives in
-docs/internal/public-design-system.md.
+- **Fidelity tiers:** SITE REBUILDS (ecxc.ski, 907.life) are quite-close-and-improved;
+  THEME PORTS are GLANCE-INDISTINGUISHABLE — the licensed differences are behavioral (the
+  responsive standard at the extremes) and structural (cairn underneath), never the
+  visible design language. For typography-forward work the details ARE the design: verify
+  at the detail level (wordmark, flow spacing, blockquote scale, link conventions) with
+  read side-by-side crops.
+- **The one-check rule:** nothing deploys without a full-page render READ by the main
+  loop's own eyes; a member-facing site additionally gets Geoff's before/after.
+- **The responsive standard:** every family artifact (themes, showcase, consumer sites,
+  cairn.pub, Topo) meets the five-viewport bar — 320, 390, 768, 1440, 2560, composed at
+  the extremes, never merely unbroken. The gate is the CI width matrix in the showcase's
+  visual suite (baselines regenerate on CI, the canonical renderer). A ported theme beats
+  its original at 320 and 2560. Reasoning: docs/internal/public-design-system.md.
+- **The harvest:** every theme or site built on the chassis banks its harvest before the
+  pass closes — frictions and gaps land in the CHASSIS first (the showcase copy is the
+  starting chassis every next theme receives), the engine where deeper. A port or rebuild
+  is not done until its harvest is banked.
 
 ## Admin interface design
 

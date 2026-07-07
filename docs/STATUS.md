@@ -1,5 +1,15 @@
 # cairn-cms status
 
+**THE FINALE ADDENDUM (2026-07-06, post-handoff-brief): the ASC repos RENAMED
+(aksailingclub-org = the new cairn site, ex-asc-site, with its own Claude project +
+seeded memory; aksailingclub-legacy = the live Hugo site + ops; a compat symlink bridges
+the overnight machines). The security reference implementations, the migration pattern,
+and the theme-tutorial skeleton landed under specs/assets + docs/tutorial. The family
+lessons propagated to every project CLAUDE.md (907 + aksailingclub-org done; ecxc via
+its in-flight sweep). The gap-closing sweeps (ecxc infra, legacy succession, the
+cairn CLAUDE.md audit) run overnight with the rest.**
+
+
 **SESSION HANDOFF (2026-07-06 ~11pm): the five-day Fable arc lands. The successor's
 brief: docs/superpowers/2026-07-07-fresh-session-brief.md (READ FIRST). Five machines
 left running overnight (the ASC completion pass vs its ORIGINAL-MANIFEST; the ecxc

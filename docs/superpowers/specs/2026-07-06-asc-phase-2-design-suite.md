@@ -29,7 +29,7 @@ document the next (Opus-conducted) sessions execute.
 ### The passes, sequenced (each small, each shippable, ops running throughout)
 
 **Pass 2.1 — the substrate + events/classes admin (the seam's first real test).**
-The asc-site repo gains its admin extension surface (Part C's contract work lands here):
+The aksailingclub-org repo (renamed from asc-site; the worker stays asc-site) gains its admin extension surface (Part C's contract work lands here):
 the events and classes CRUD moves from ops into cairn's admin as custom screens — chosen
 first because the domain is simple, the site already reads the data, the ops screens are
 the most self-contained, and success/failure teaches the seam cheaply. The events schema

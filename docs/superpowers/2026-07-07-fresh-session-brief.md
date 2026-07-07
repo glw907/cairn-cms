@@ -1,7 +1,7 @@
 # The fresh-session brief (for the Opus-conducted successor, 2026-07-07)
 
 Launch in ~/Projects/cairn-cms for engine/beta-runway work; launch in
-~/Projects/asc-site for ASC work (it has its own project memory now, seeded 2026-07-06 —
+~/Projects/aksailingclub-org for ASC work (it has its own project memory now, seeded 2026-07-06 —
 the effort's rulings + the Access recipe travel with it). Read this file, then docs/STATUS.md, then the memory
 index loads itself. The Fable window closed 2026-07-07; you conduct on Opus 4.8 under
 the post-cutoff system (~/.claude/docs/fable-post-cutoff-system.md — batch-first Fable,
@@ -10,10 +10,10 @@ the suggestion rules; never silently spend, never silently absorb).
 ## What ran overnight (results in the repos, not in any session's memory)
 
 Five machines were left running at handoff; each pushes durable results:
-1. **The ASC completion pass** (asc-site repo): works docs/ORIGINAL-MANIFEST.md top to
+1. **The ASC completion pass** (the aksailingclub-org repo — RENAMED from asc-site 2026-07-06; a compat symlink ~/Projects/asc-site bridges the overnight machines and gets REMOVED once they finish; the WORKER keeps the name asc-site): works docs/ORIGINAL-MANIFEST.md top to
    bottom — 7 blockers, 5 must-fixes, the resolved restores (photos-placeholders on the
    What-do-we-do band; Geoff supplies the shots) — with an opus verify-fix loop against
-   the manifest. Check: asc-site's git log + the manifest's checkboxes + dev.aksailingclub.org.
+   the manifest. Check: aksailingclub-org's git log + the manifest's checkboxes + dev.aksailingclub.org.
 2. **The ecxc design pass** (ecxc-ski): the six locked picks + site-wide de-carding,
    verify-loop, ships itself on PASS. Check: ecxc-ski's log + https://ecxc.ski.
 3-5. **Three port ORIGINAL-MANIFEST enumerations** (committed under each
@@ -32,11 +32,17 @@ Five machines were left running at handoff; each pushes durable results:
   then the register machinery before merge.
 - **The Club admin mockups** (adversarially reviewed): scratchpad club-admin-mockups.html
   — publish as an artifact for Geoff's screen-by-screen review, then they spec pass 2.1's
-  screens. **The scaffold**: asc-site branch `club-admin-scaffold` — the Club section
+  screens. **The scaffold**: aksailingclub-org branch `club-admin-scaffold` — the Club section
   skeleton + the working events screen + Part-C stand-ins with swap comments.
 - Geoff's operating rules for you, all in the Fable system doc: "Fable draws the lines,
   Opus colors inside them"; the suggestion rules; critical code is Fable-written or
   Fable-batch-audited, never Opus-self-reviewed.
+
+**The repo family (renamed tonight):** glw907/aksailingclub-org = the NEW cairn site
+(local ~/Projects/aksailingclub-org, its own Claude project + memory); glw907/
+aksailingclub-legacy = the live Hugo site + the ops/ dashboard (authoritative until
+cutover); aksailingclub-sveltekit = retired. First housekeeping task: remove the
+~/Projects/asc-site symlink once the overnight machines are done.
 
 ## Your queue, in order
 

@@ -157,7 +157,13 @@ Dark (`[data-theme="dark"]`):
 - [ ] A tiny bit of session-state plumbing: visiting the home page records the home path into `sessionStorage.backUrl`, which is what post detail's "Go back" link actually navigates to (see §6).
 
 ### Posts index — `/posts/` (+ `/posts/2`, `/posts/3`, … pagination)
-- [ ] Breadcrumb: "Home » Posts" on page 1; "Home » Posts (page N)" on later pages (note: lowercase "page").
+- [ ] Breadcrumb: "Home » Posts" on page 1; "Home » Posts (page N)" on later pages. The
+      underlying string is lowercase "page" (`t.pagination.page.toLowerCase()` in
+      `Breadcrumb.astro`), but the breadcrumb `<li>` carries a Tailwind `capitalize`
+      class, so the **rendered/visual** text capitalizes every word — confirmed live via
+      `innerText` extraction: "Home » Posts (Page 1)" with a capital P. A verifier
+      diffing rendered screenshots should expect "Page"; one diffing raw HTML/DOM text
+      should expect "page". Not a contradiction, just two different observation points.
 - [ ] Page heading "Posts", italic subtitle "All the articles I've posted.".
 - [ ] Cards, `posts.perPage` (4) per page, `h2` titles (not `h3` — the smaller heading level is a home-page-only distinction).
 - [ ] Pagination control (see §6) below the list.
@@ -189,7 +195,7 @@ Top to bottom:
 ### Tags index — `/tags/`
 - [ ] Breadcrumb "Home » Tags". Heading "Tags", subtitle "All the tags used in posts.".
 - [ ] Flat wrapped list of every tag in use (deduplicated by slug, alphabetically sorted by slug), each rendered as a hash-icon pill linking to its tag page.
-- [ ] Confirmed live tag set (16): Astro, Blog, color-schemes, configuration, ContextAPI, docs, FAQ, HeadlessCMS, JavaScript, NextJS, ReactJS, release, Styled-Components, TailwindCSS, TypeScript, and one more from the "others" default bucket if any post omits tags (none currently do on the demo).
+- [ ] Confirmed live tag set (15, none falling into the schema's "others" default bucket — every post specifies at least one real tag): Astro, Blog, color-schemes, configuration, ContextAPI, docs, FAQ, HeadlessCMS, JavaScript, NextJS, ReactJS, release, Styled-Components, TailwindCSS, TypeScript.
 
 ### Individual tag — `/tags/<tag>/` (+ `/tags/<tag>/2`, … pagination)
 - [ ] Breadcrumb "Home » Tags » `<tag>`" (page 1) or "Home » `<tag>` (page N)" on later pages (the "Tags" crumb is elided and folded into the tag segment once paginated — this is a real, slightly odd breadcrumb-collapsing rule in the source, worth matching exactly rather than "simplifying").
@@ -263,7 +269,7 @@ Top to bottom:
 
 Per-page, in `<head>` (base set from `Layout.astro`, article-specific additions from `PostLayout.astro`):
 - [ ] `<title>`, `meta[name=title]`, `meta[name=description]`, `meta[name=author]` (site author).
-- [ ] `link[rel=icon]` ×2 (svg + ico), `link[rel=canonical]`, `link[rel=sitemap]` → `/sitemap-index.xml`.
+- [ ] `link[rel=icon]` ×2 (svg + ico) in markup — **but the `.ico` link 404s live** (confirmed via direct fetch, see §9); only the `.svg` icon actually resolves. `link[rel=canonical]`, `link[rel=sitemap]` → `/sitemap-index.xml`.
 - [ ] Open Graph: `og:type` (`website` on non-post pages, **overridden to `article`** on post pages), `og:site_name`, `og:title`, `og:description`, `og:url`, `og:image` (absolute URL).
 - [ ] Twitter/X card: `twitter:card=summary_large_image`, plus url/title/description/image mirrors.
 - [ ] `link[rel=alternate][type=application/rss+xml]` pointing at `/rss.xml`.
@@ -298,7 +304,7 @@ Per-page, in `<head>` (base set from `Layout.astro`, article-specific additions 
   ```
 - [ ] `/og.png` — see §8.
 - [ ] `/posts/<slug>/index.png` — see §8, only for qualifying posts.
-- [ ] `/favicon.svg` (+ `/favicon.ico` fallback) — the Astro "A"/rocket wordmark glyph, single black path, with a `prefers-color-scheme: dark` CSS override baked into the SVG itself so the favicon adapts to OS dark mode independent of the page's own theme toggle.
+- [ ] `/favicon.svg` — an angular mountain/wordmark glyph, single black path, with a `prefers-color-scheme: dark` CSS override baked into the SVG itself (`path { fill: #000 }`, overridden to `#FFF` under `@media (prefers-color-scheme: dark)`) so the favicon adapts to OS dark mode independent of the page's own theme toggle. **Correction: markup also links `<link rel="icon" href="/favicon.ico">`, but no `.ico` file exists in `public/` and the live URL 404s** — confirmed via direct fetch (`curl -o /dev/null -w '%{http_code}' https://astro-paper.pages.dev/favicon.ico` → `404`). Browsers silently fall back to the working `.svg` link; a port should not chase a nonexistent `.ico`.
 
 ---
 
@@ -329,7 +335,7 @@ Per-page, in `<head>` (base set from `Layout.astro`, article-specific additions 
 | `dynamic-og-image-generation-in-astropaper-blog-posts` | no | docs, release | hero is its **own generated OG image** (`/posts/…/index.png`) embedded inline as regular content — a deliberate self-referential demo of the OG feature |
 | `customizing-astropaper-theme-color-schemes` | no | color-schemes, docs | (config-focused; no distinct hero image beyond inline code) |
 | `predefined-color-schemes` | no | color-schemes | one screenshot per named scheme: `paper-light.png`, `kha-yan.png`, `nila.png`, `jadeite.png`, `pyit-tine-htaung.png` (light schemes), `ember.png`, `espresso.png` (dark schemes) — 7 distinct branded scheme-name images, all under `_color-schemes/assets/` |
-| `how-to-add-latex-equations-in-blog-posts` | no | docs | figure w/ external Pexels equations-photo + caption+credit; live KaTeX-rendered equations |
+| `how-to-add-latex-equations-in-blog-posts` | no | docs | figure w/ external Pexels equations-photo + caption+credit; walks through adding `remark-math`/`rehype-katex`, but **that recipe is not wired into this repo's own `astro.config.ts`** (no math remark/rehype plugins configured) **nor is `katex`/`remark-math`/`rehype-katex` a dependency in `package.json`** — the `$...$`/`$$...$$` markup in this post renders as plain literal text on the live demo, not typeset equations. Same class of post as the Giscus one below: a documented opt-in recipe, not a live feature. |
 | `how-to-integrate-giscus-comments` | no | astro, blog, docs | Giscus comments are **documented as an opt-in guide only** — not enabled on the demo itself (no giscus dependency in `package.json`); do not treat this post's subject matter as a live feature to port |
 | `how-to-update-dependencies` | no | FAQ | `forrest-gump-quote.png` — a deliberate joke image ("Forrest Gump Fake Quote"), used as both the inline hero and the frontmatter `ogImage` |
 | `setting-dates-via-git-hooks` | no | docs, FAQ | (no distinct image) |

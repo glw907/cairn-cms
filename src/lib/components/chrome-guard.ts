@@ -3,8 +3,10 @@
 // width-constraining container (a `<main class="container">`) or renders its nav and footer around it
 // breaks the full-bleed admin shell. The engine cannot prevent that layout mistake, so it names it.
 // The check walks the ancestor chain once on mount and emits one console.error that points at the
-// route-structure doc. The public entry runs only under import.meta.env.DEV, never throws, and changes
+// route-structure doc. The public entry runs only in dev (esm-env's DEV), never throws, and changes
 // no rendering.
+
+import { DEV } from 'esm-env';
 
 const DOC = 'docs/admin-route-structure.md';
 
@@ -56,7 +58,7 @@ export function detectChromeWrap(root: HTMLElement): string | null {
 
 /** Run the check in dev and log one error when host chrome is detected. A no-op in production. */
 export function warnIfChromeWrapped(root: HTMLElement): void {
-	if (!import.meta.env.DEV) return;
+	if (!DEV) return;
 	const problem = detectChromeWrap(root);
 	if (problem) console.error(problem);
 }

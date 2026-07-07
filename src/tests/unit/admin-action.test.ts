@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
+import { fail } from '@sveltejs/kit';
 import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
@@ -141,5 +142,27 @@ describe('adminAction: the required audit emit', () => {
     const result = await action(event);
     expect(result).toEqual({ ok: true });
     expect(spy).toHaveBeenCalledWith(expect.objectContaining({ event: 'admin.action.unaudited', editor: editor.email }));
+  });
+
+  it('exempts a fail() return from the unaudited check in dev: no throw, the fail() result passes through', async () => {
+    const action = adminAction(async () => fail(400, { error: 'missing' }), { isDev: true });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
+    const result = await action(event);
+    expect(result).toEqual(fail(400, { error: 'missing' }));
+  });
+
+  it('exempts a fail() return from the unaudited check in production: no admin.action.unaudited log', async () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const action = adminAction(async () => fail(404, { error: 'not found' }), { isDev: false });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
+    const result = await action(event);
+    expect(result).toEqual(fail(404, { error: 'not found' }));
+    expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('still requires an audit on a normal (non-fail) success return', async () => {
+    const action = adminAction(async () => ({ ok: true }), { isDev: true });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' });
+    expect(await statusOf(action(event))).toBe(500);
   });
 });

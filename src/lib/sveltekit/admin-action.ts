@@ -9,6 +9,8 @@
 // check below is therefore defense-in-depth, not the sole gate; this wrapper's real value is
 // resolving the signed-in editor as a typed `ctx.editor` and requiring an audit emit for a
 // mutating action, which the engine has no other hook for.
+import { isActionFailure } from '@sveltejs/kit';
+import { DEV } from 'esm-env';
 import { csrfCookieName } from '../auth/crypto.js';
 import { tokensMatch } from './csrf.js';
 import { log } from '../log/index.js';
@@ -60,7 +62,7 @@ export class AdminActionError extends Error {
 
 /** Injectable dependencies for `adminAction`, so a test can drive both branches of the unaudited path. */
 export interface AdminActionDeps {
-  /** Overrides the build-time dev flag; every real caller takes the default (`import.meta.env.DEV`). */
+  /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
 }
 
@@ -71,10 +73,15 @@ export interface AdminActionDeps {
  *    absence throws a 403, never a redirect, since an action is not a page navigation.
  * 2. The double-submit CSRF token (the cookie the engine's admin loads issue, versus the `csrf`
  *    form field) must verify, constant-time. Defense-in-depth: the guard already checked this.
- * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. The
- *    emit is required: a mutating action that returns having emitted zero records throws a 500 in
- *    dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
- *    production (an unaudited state change is a defect here, but should not 500 a live site).
+ * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
+ *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
+ *    in dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
+ *    production (an unaudited state change is a defect here, but should not 500 a live site). A
+ *    handler that returns an `ActionFailure` (SvelteKit's `fail()`) is exempt from this check: a
+ *    rejected request mutated nothing, so it owes no audit, and requiring one only trains authors
+ *    to emit a spurious record on every validation reject. The exemption assumes the handler
+ *    rejects BEFORE mutating; a handler that mutates and then returns `fail()` must still emit,
+ *    since nothing rolls its writes back and the wrapper cannot see them.
  * 4. `event.request.formData()` is read exactly once, here, and handed to the handler, so the
  *    handler never re-reads an already-consumed body.
  *
@@ -94,7 +101,7 @@ export function adminAction<T>(
   handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
   deps: AdminActionDeps = {},
 ): (event: AdminActionEvent) => Promise<T> {
-  const dev = deps.isDev ?? import.meta.env.DEV;
+  const dev = deps.isDev ?? DEV;
   return async (event: AdminActionEvent): Promise<T> => {
     const editor = event.locals.editor;
     if (!editor) throw new AdminActionError(403, 'admin action without an editor session');
@@ -120,7 +127,11 @@ export function adminAction<T>(
     };
 
     const result = await handler({ event, form, ctx });
-    if (emitted === 0) {
+    // `isActionFailure` is SvelteKit's own runtime-safe check for a `fail()` result (an
+    // `instanceof` test against its internal `ActionFailure` class, re-exported as a type guard
+    // precisely so callers never need to know that class's shape); a rejected request mutated
+    // nothing, so it is exempt from the unaudited check below.
+    if (emitted === 0 && !isActionFailure(result)) {
       if (dev) throw new AdminActionError(500, `unaudited admin action (${event.url.pathname})`);
       log.error('admin.action.unaudited', { path: event.url.pathname, editor: editor.email });
     }

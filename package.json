@@ -146,6 +146,7 @@
     "@rodrigodagostino/svelte-sortable-list": "^2.1.17",
     "@types/hast": "^3.0.4",
     "@types/mdast": "^4.0.4",
+    "esm-env": "^1.2.2",
     "gray-matter": "^4",
     "hast-util-sanitize": "^5.0.2",
     "hast-util-to-string": "^3.0.1",

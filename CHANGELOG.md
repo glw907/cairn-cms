@@ -1,3 +1,36 @@
+## Unreleased
+
+### Engine (pass 2.1 harvest; no consumer action)
+
+- `adminAction` exempts a handler's `ActionFailure` return (SvelteKit's `fail()`) from the
+  required-audit check: a rejected request mutated nothing, so it owes no audit record, and a
+  validation reject no longer has to emit a spurious `ctx.audit` call just to satisfy the wrapper.
+  A handler that returns normally (its request succeeded) with zero emits still throws in dev and
+  logs `admin.action.unaudited` in production, unchanged. The exemption assumes the handler rejects
+  before mutating: a handler that writes and then returns `fail()` must still emit its own audit,
+  since nothing rolls its writes back. Additive; every existing audited handler keeps working
+  exactly as before.
+- The build-time dev flag swaps `import.meta.env.DEV` for `esm-env`'s `DEV`, the bundler-agnostic
+  form `svelte-package` itself recommends, in both places the engine read it: `adminAction`'s
+  default (the injectable `deps.isDev` override is unchanged) and the chrome-wrap dev guard. This
+  also clears the warning `svelte-package` emitted at every build.
+- `deriveExcerpt`'s existing word-boundary truncation gained explicit test coverage for the
+  exact-fit (no ellipsis) and no-space (hard-cut) edge cases; no behavior changed.
+- The `/ambient` augmentation now types `App.Locals.auditSink` (as `AdminActionAuditSink`)
+  alongside `editor` and `backend`, so a site wiring `adminAction`'s audit-persistence seam in its
+  hooks handle typechecks without a hand-written `declare global` block. Additive.
+
+### Docs
+
+- [Add a custom admin screen](docs/guides/add-a-custom-admin-screen.md) is rewritten around a
+  production club-admin section as its worked example: a site-local wrapper composing `adminAction`
+  with a site-owned role precondition, the reason a section's own layout guard alone cannot gate a
+  POST action, the `auditSink` persistence recipe (including the Workers `waitUntil` requirement),
+  and the `navFilter` seam for hiding a whole section from the sidebar by a site-owned role. It also
+  carries a note on sequencing a site's own D1 migrations so a `REFERENCES` target always lands
+  before the edge that points at it, since remote D1 enforces that where a local test double often
+  does not.
+
 ## 0.82.0
 
 <!-- release-size: minor -->

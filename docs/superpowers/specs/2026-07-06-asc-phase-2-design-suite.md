@@ -69,7 +69,10 @@ own memberships**, and families have multiple members — so 2.2 builds two face
 one: the admin screens AND the member-facing my-account surface (view standing, renew
 and pay, edit profile and directory visibility, manage the household's members). The
 data model is household-centric: one membership covers a household; its members each
-exist as people with their own directory presence. Member auth = the same lean
+exist as people with their own directory presence, and **people carry BIRTHDATES
+(Geoff, 2026-07-06)** — the field that makes junior/adult distinctions computable
+(class eligibility, the youth programs of an educational 501(c)(3)) instead of a
+hand-maintained age note; directory visibility never exposes it. Member auth = the same lean
 magic-link pattern cairn's admin proved, against the member store instead of the editor
 allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the reason
 the my-account "coming soon" page exists in phase 1. **Each family has ONE PRIMARY member (Geoff, 2026-07-06)**: the primary manages the

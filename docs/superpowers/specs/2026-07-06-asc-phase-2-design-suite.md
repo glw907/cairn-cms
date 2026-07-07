@@ -221,6 +221,24 @@ two. The architecture, per capability:
 - **Assets/Waitlist (2.4):** the by-asset and by-person views ops proved, re-expressed as
   two lenses over one screen family; the waitlist as a single polymorphic queue with
   type chips (the redesign kills the two-page split).
+- **The Club dashboard (reporting; Geoff, 2026-07-06):** a high-level landing screen
+  for membership status + payments — designed as a LOGICAL STARTING POINT that club
+  leadership extends, not a chart farm. At 35-member scale the right form is a few
+  honest numbers with one comparison each (the `stats` idiom), one list, and one
+  liability figure most tools forget:
+  (1) **Membership now**: current households/members vs this point last season, with
+  the tier split. (2) **Renewal season progress**: renewed / not-yet-renewed / newly
+  joined, as counts AND as the one trend line worth drawing during the renewal window.
+  (3) **Money**: dues collected this season; asset fees outstanding (the
+  payment-requested-but-unpaid list, since chasing those is a real committee chore).
+  (4) **Credit liability**: outstanding class credits (count x $100) — a real
+  obligation the manual tracking obscured. (5) **This week**: the newest signups and
+  payments as a short activity list (the review-inbox's calm sibling).
+  Every number CLICKS THROUGH to the filtered list that explains it (a stat you can't
+  drill into breeds mistrust). Extensible by design: the tiles are data-declared so
+  leadership's future asks (class fill rates, work-party participation) add tiles, not
+  redesigns. MW's reports and the better membership tools (researched) validate the
+  starting set; the club's own questions grow it.
 - **Email (2.3):** template editing IN the cairn editor (templates are markdown-with-
   variables — the editor the volunteers already know, with a variables palette); the send
   log as a filterable list.

@@ -78,6 +78,15 @@ allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the 
 the my-account "coming soon" page exists in phase 1. **Each family has ONE PRIMARY member (Geoff, 2026-07-06)**: the primary manages the
 household's membership (renewal, payment, household edits); the model carries the
 designation explicitly and the admin can reassign it. The audit trail records who acted.
+**ASSETS ATTACH TO MEMBERSHIPS, NOT MEMBERS (Geoff, 2026-07-06):** a mooring or
+parking assignment belongs to the household's membership — the purchased entity — never
+to an individual person. This CORRECTS the ops model (whose assignments reference
+people directly): the redesign re-homes the assignment edge onto the membership, asset
+fees ride the membership's payment context, and the by-person view of assets remains a
+VIEW (through the household) rather than an ownership edge. (Open, flagged: what
+happens to an assigned asset when its membership lapses — grace period, waitlist
+release, or committee discretion? Decide with Geoff in-pass.)
+
 **MEMBERS and MEMBERSHIPS are TWO DIFFERENT ENTITIES (Geoff, 2026-07-06, canon):**
 members are people; memberships are the purchased per-season thing a household holds.
 The model keeps them as separate entities everywhere — screens, schema, language.

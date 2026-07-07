@@ -61,9 +61,12 @@ refinement, parked); the offer's time window is a Club setting.
 assignments (instructors are members — volunteers), and an assigned instructor sees
 their own classes' rosters through their ordinary member login (my-account gains a "My
 classes" view when the member instructs): the enrollee list with contact info, the
-waitlist, and the track-relevant notes teaching requires. Per-class assignment, not a
-global role — the fourth access shape (content roles, club roles, member standing, and
-now per-class instructor visibility), each on its own axis. Exact roster fields =
+waitlist, and the track-relevant notes teaching requires. **INSTRUCTOR IS A ROLE (Geoff's correction, 2026-07-06)** — a member-level role in the
+club's role vocabulary, not merely a per-class note: the role marks who can be assigned
+to teach and grants the instructor surfaces (the "My classes" view); per-class
+assignment then determines WHICH rosters a given instructor sees. The access model's
+four shapes, each on its own axis: content roles (cairn's), club admin roles
+(site-owned), member standing, and the instructor role with its class assignments. Exact roster fields =
 parked (privacy: only what teaching needs; the youth track's parent-on-premises
 requirement suggests a guardian-contact line for 8-12 enrollees).
 The aksailingclub-org repo (renamed from asc-site; the worker stays asc-site) gains its admin extension surface (Part C's contract work lands here):

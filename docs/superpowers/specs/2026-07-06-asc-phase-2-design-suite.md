@@ -29,6 +29,12 @@ document the next (Opus-conducted) sessions execute.
 ### The passes, sequenced (each small, each shippable, ops running throughout)
 
 **Pass 2.1 — the substrate + events/classes admin (the seam's first real test).**
+**CLASS WAITLISTS ARE IN SCOPE WITH THEIR SITE INTEGRATION (Geoff, 2026-07-06):** the
+club runs class waitlists today (ops's waitlist_type='class' + class_applicants fed by
+PUBLIC site forms), and the new system carries both halves — the admin's waitlist
+management AND the public signup/waitlist forms that feed it, Turnstile-gated like the
+donate form, writing through the audited path. The class-vs-asset waitlist distinction
+is STRUCTURAL, never generalized away (see the rollover section).
 The aksailingclub-org repo (renamed from asc-site; the worker stays asc-site) gains its admin extension surface (Part C's contract work lands here):
 the events and classes CRUD moves from ops into cairn's admin as custom screens — chosen
 first because the domain is simple, the site already reads the data, the ops screens are
@@ -64,6 +70,13 @@ MW runs in parallel until the season boundary; the cutover imports MW's member r
 MW's export; renewals for the next season flow in-house.
 
 **Pass 2.3 — the directory + member email.**
+**SEGMENT SENDS (Geoff, 2026-07-06): batch email to member SEGMENTS is a requirement** —
+"all current members" and "all lapsed members" are the named examples, and segments
+EXTEND to class rosters ("people signed up for class X" is a first-class segment). The
+send flow starts from a segment picker (the same vocabulary the member list filters by,
+plus one segment per active class), shows the resolved recipient count before sending,
+and logs per-recipient. Segments derive from the member model and class enrollment; no
+hand-built address lists.
 The directory renders from the new model with per-member visibility (MW's
 Visible/Hidden/Partial semantics preserved as the floor); member bulk email consolidates
 onto Cloudflare Email Sending (the ops transactional layer migrates off Resend in the
@@ -89,6 +102,37 @@ across the cutover; MW's final export archived.
 - The read surfaces version: phase-1's events read keeps working across 2.1's migration
   (additive columns first, the constraint after the backfill).
 - The audit_log convention is sacred and extends to the new domains from day one.
+
+### THE SEASON ROLLOVER (Geoff: "unusual but important"; deep-read 2026-07-06)
+
+The current function (ops settings.js startNewSeason): five independent D1 statements
+via Promise.all — season upsert; active assignments' payment fields reset;
+class_applicants DELETED wholesale; class waitlist rows DELETED (asset waitlist
+untouched); every classes row force-reset with NO WHERE clause. NOT transactional (the
+repo's own webhook uses db.batch; this doesn't), NOT audited on partial failure,
+guarded only by window.confirm with a freely-editable year (no forward-only check). The
+payments table (UNIQUE(assignment_id, season)) is DEAD SCHEMA — nothing writes it — so
+paid-history is destroyed at every rollover, and an accidental mid-season run wipes paid
+flags while orphaned Stripe links re-process as fresh payments (the webhook's
+idempotency keys off the just-reset status).
+
+The redesign's rollover, built on the per-season data model:
+1. **Rollover is a CREATION, not a wipe**: new-season membership rows come into
+   existence; prior seasons' rows are immutable history. The dead payments-ledger
+   INTENT gets fulfilled for the asset-fee domain the same way. Nothing about a past
+   season is ever destroyed.
+2. **Atomic**: one db.batch for every statement, including the audit row. A rollover
+   either fully happened or didn't; both outcomes are audited.
+3. **Guarded like the destructive act it is**: the type-to-confirm gate (type the new
+   year), a forward-only validation (new = current + 1, no arbitrary years), a preview
+   of exactly what will change (counts per effect), and owner-role required.
+4. **The structural asymmetry is preserved and documented**: class waitlists/applicants
+   are seasonal (year-stamped offerings — they reset); asset waitlists are continuous
+   multi-year queues (they NEVER reset). The redesign names these two types explicitly
+   so no future generalization merges them.
+5. **The class-registration reset scopes deliberately** (no bare no-WHERE UPDATE), and
+   with MW gone (the no-port ruling) the year-stamped-URL reconfiguration chore dies
+   with it — statuses simply move to not_scheduled/upcoming per class.
 
 ## Part B — the admin UI/UX architecture
 

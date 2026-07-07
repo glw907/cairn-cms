@@ -32,7 +32,14 @@ Five machines were left running at handoff; each pushes durable results:
   then the register machinery before merge.
 - **The Club admin mockups** (adversarially reviewed): scratchpad club-admin-mockups.html
   — publish as an artifact for Geoff's screen-by-screen review, then they spec pass 2.1's
-  screens. **The scaffold**: aksailingclub-org branch `club-admin-scaffold` (Fable-reviewed and
+  screens. **The Club admin branch is now FIVE working screens + the write pattern**
+  (`club-admin-scaffold`, through 8d7154c): events + classes wired to LIVE D1, the
+  members list/detail with the 9-choice schema proposal (demo-members.ts IS the 2.2
+  schema review artifact), and the signup-review queue — adminAction's first live
+  consumer, the mutation exemplar (list/join inbox, forced-choice deny dialog, audited,
+  64 tests). The mockups are RATIFIED (artifact 76c80c34, archived in specs/assets).
+  Merge review of the branch = an early successor task; the code-simplifier pass over
+  it is owed (flagged by the last implementer). **The scaffold origin**: branch `club-admin-scaffold` (Fable-reviewed and
   refined on-branch: the a11y layer, precise types — THE FIRST REAL SHOWCASE of extending
   the cairn dashboard, and Geoff's directive: the add-a-custom-admin-screen guide gets
   rewritten around it as the worked example once it merges; the pending-example note is

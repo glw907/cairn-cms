@@ -157,6 +157,28 @@ tidy pass (already chartered) sweeps the carcasses.
 *Acceptance:* every ops function has a cairn-admin home; audit/email logs continuous
 across the cutover; MW's final export archived.
 
+### The data tier — THE TWO-DATABASE STRATEGY (Geoff, 2026-07-06, supersedes in-place)
+
+**The new system gets its own fresh D1** (working name `asc-club`): the complete,
+well-structured schema — households, members, memberships, the credit ledger, assets
+attached to memberships, events/classes with the category model built in from day one —
+designed whole instead of evolved out of ops's workaround shapes. `asc-ops` is NEVER
+altered. The consequences, all favorable:
+- **Per-domain cutover = repointing, not migrating in place.** A pass builds its domain
+  in `asc-club`, imports the old data (ops's rows, MW's export) through a verified
+  import script, and swaps the read/write path (e.g. the site's EVENTS_DB binding
+  repoints at 2.1's cutover). Rollback is repointing back — the old DB sits untouched.
+- **The old data is import EVIDENCE, not schema to inherit.** Ops's 12 events, 5
+  classes, 36 asset-holders and MW's 210/93 export all land through import scripts with
+  migrate-and-verify counts; the dead payments table, the FK-dangling waitlist, the
+  person-attached assignments simply never come along.
+- **asc-ops (the DB) dies whole with ops (the app)** at 2.4's end — one deletion, not a
+  hundred ALTERs.
+- The migration-pattern reference (events-migration-pattern.md) still governs, refit:
+  its four-file discipline (forward, verify-with-expected-counts, rollback, reader-note)
+  applies to `asc-club`'s own migrations and to every import script; what disappears is
+  the in-place-ALTER framing.
+
 ### The data tier (cross-pass principles)
 
 - New domains (members, households, memberships, dues) get NEW tables designed clean;

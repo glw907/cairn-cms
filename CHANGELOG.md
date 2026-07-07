@@ -1,4 +1,6 @@
-## Unreleased
+## 0.82.0
+
+<!-- release-size: minor -->
 
 ### Engine (admin extension seams; no consumer action)
 

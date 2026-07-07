@@ -18,4 +18,4 @@ dist/
 .cairn-vite-test-*/
 
 # machine-local Claude Code agent scratch memory (never a project deliverable)
-.claude/agent-memory/
+**/.claude/agent-memory/

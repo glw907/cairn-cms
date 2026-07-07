@@ -4,6 +4,11 @@
 
 # Developer Extensibility Phase 1: Identity Foundation Implementation Plan
 
+> **REVERTED (2026-06-28).** This plan was built and then rejected outright — an
+> over-built identity/membership substrate cairn should not carry. The redesign that
+> replaced it (three thin seams) shipped in 0.77.0; see the `cairn-extending-developer-lens`
+> memory and docs/internal/extending-developer-lens.md. Kept as the record of the wrong turn.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Generalize cairn's editor-only, `/admin`-only magic-link auth into a unified principal model (email + session + scopes + trust tier) usable on any route, with a developer authorize callback, the `signIn` seam, and the enforced `./extend` surface, so phases 2 and 3 build on a settled, secured identity foundation.

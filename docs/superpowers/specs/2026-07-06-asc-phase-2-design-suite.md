@@ -78,6 +78,17 @@ allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the 
 the my-account "coming soon" page exists in phase 1. **Each family has ONE PRIMARY member (Geoff, 2026-07-06)**: the primary manages the
 household's membership (renewal, payment, household edits); the model carries the
 designation explicitly and the admin can reassign it. The audit trail records who acted.
+**CLASS CREDITS (Geoff, 2026-07-06: "tricky"): the joining benefit is a durable
+LEDGER.** Family memberships grant TWO free class credits; single and young-adult
+memberships grant ONE. Credits are usually spent in the first year but legitimately
+carry to a second or third — so they are modeled as a credit ledger (grant rows at
+joining, sized by tier; redemption rows referencing the class enrollment they paid for;
+balance = the sum), attached to the household. A ledger survives season rollovers by
+construction — nothing about the yearly increment touches it — which is precisely what
+the delayed-use behavior requires and what a per-season flag could never express. The
+admin sees the balance on the member/household detail; a class signup offers redemption
+when the balance covers it; every grant and redemption is audited. (Open, parked: does
+a tier change adjust an unspent grant? Decide in-pass with Geoff.)
 **Membership comes in THREE TIERS with ADJUSTABLE PRICES (Geoff, 2026-07-06)**: tier
 prices are admin-editable settings (the Club settings screen, beside the asset-type
 fees), never code constants — a price change is an audited admin action, effective for

@@ -141,9 +141,11 @@ MW's export; renewals for the next season flow in-house.
 
 **Pass 2.3 — the directory + member email.**
 **THE DIRECTORY IS THE PASS'S LEAD DELIVERABLE (Geoff, 2026-07-06: "a HIGHLY requested
-feature")** — the members' most-demanded feature, integrated into the site (behind
-member auth, per-member visibility honored: visible/partial/hidden, birthdates never
-shown). **Opt-out is the member's own control (Geoff, 2026-07-06): every member sets
+feature")** — the members' most-demanded feature, integrated into the site — and **VISIBLE ONLY TO
+CURRENT MEMBERS (Geoff, 2026-07-06): the directory sits behind member auth AND a
+current-standing check.** A lapsed or archived member's login does not reach it; the
+public never sees it; per-member visibility (visible/partial/hidden) governs what
+CURRENT members see of each other; birthdates never shown. **Opt-out is the member's own control (Geoff, 2026-07-06): every member sets
 their directory visibility from my-account — hidden is always one click away, no
 committee involved — and the admin can set it on a member's behalf when asked. The
 per-member setting, not an admin list, is the source of truth.** Sequence 2.3 accordingly: the directory ships FIRST, as soon as 2.2's member

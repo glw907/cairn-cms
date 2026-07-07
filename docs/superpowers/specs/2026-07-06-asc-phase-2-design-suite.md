@@ -80,6 +80,19 @@ across the cutover; MW's final export archived.
 
 ## Part B — the admin UI/UX architecture
 
+**The battle-tested-patterns principle (Geoff, 2026-07-06).** No invented interaction
+patterns: every screen names the proven convention it borrows and deviates only with a
+written reason. The mappings: the member detail = the CRM record-page convention
+(identity pane + activity timeline); the signup queue = the review-inbox pattern
+(approve/deny per row, the decision never far from the evidence); the payments history =
+the activity-feed convention (DaisyUI v5's native timeline); destructive club actions
+(season rollover) = the type-to-confirm gate every serious admin uses; lists = the
+office-list triage table already proven in cairn's own admin. Component skeletons come
+from DaisyUI v5's natives first (timeline, list, stats, the dialog-element modal), the
+design system's recipes where a native fights the idiom — the choice documented in the
+component comment either way. A volunteer should find every screen familiar on first
+contact because they HAVE met its pattern before, elsewhere.
+
 The absorbed capabilities present INSIDE cairn's admin, in its established idiom (Warm
 Stone tokens, the eyebrow groups, the card recipes, the command palette) — one admin, not
 two. The architecture, per capability:

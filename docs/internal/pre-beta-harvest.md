@@ -77,20 +77,35 @@ The override seam pattern this proves three times over: a theme `@import`s
 `chassis/tokens.css` first, then redeclares the same custom-property keys in its own later
 `@theme` block; cascade order does the rest, with zero edits inside the chassis file itself.
 
-## The ASC harvest review (queued, Geoff 2026-07-06: runs when the phase-1 build lands)
+## The ASC harvest review (evidence complete, Geoff 2026-07-06: the phase-1 build landed and
+## deployed to dev; the triage itself is still queued)
 
 A deliberate three-layer review of what the capstone build teaches — the seventh chassis
-consumer, and the first site with several new shapes whose lessons land at named layers:
+consumer, and the first site with several new shapes whose lessons land at named layers. All five
+build tasks are done (`~/Projects/asc-site`, `STATUS.md` there); dev.aksailingclub.org now serves
+the build behind Access, production untouched. The candidate list below is the full evidence base;
+the triage that sorts it into chassis/engine/ledgered is the next pass, not this one:
 
 - **Contract candidates the build creates:** the NOTIFICATIONS concept (expiring content —
   does expiry belong in the contract's field grammar or stay site-derived?); the
   D1-data-beside-cairn pattern (the events read: does the charter's build-outside mode
   deserve a documented seam or stay purely site-owned?); whatever the Hugo shortcode
-  migration's component findings add to the grammar evidence.
+  migration's component findings add to the grammar evidence (`docs/content-migration-findings.md`
+  in asc-site: the card/cta directive family, an icon-set seam, the hero-image field).
 - **Chassis candidates:** the A1/B1/C7 recipes as generalized primitives (bands-mark-
   sections enforcement? the editorial-pacing table device? category-mark patterns?); the
   north-star-as-contract method's tooling needs.
-- **Engine candidates:** whatever the build's frictions surface.
+- **Engine candidates:** whatever the build's frictions surface. Task 5's verification pass
+  (`docs/verification-findings.md` in asc-site) adds three concrete ones: (1) a production-shaped
+  site with no dev-backend fixture has no seam for seeding e2e/CI media, so a pixel-diff rider's
+  local R2 replica starts empty and every real photo renders as a broken-image glyph in CI, a gap
+  the showcase's own rider never hits (it has a fake-R2 dev backend); (2) `wrangler dev --local`
+  silently returns empty results for a read-only external D1 binding with no local schema, which
+  looks exactly like a real "no data" bug until you know to check `--remote` or seed a fixture,
+  worth a doctor/readiness check or at least a documented gotcha; (3) a site-owned redirect map
+  that appends a trailing slash on a project defaulting to `trailingSlash: 'never'` chains an extra
+  hop (307 → 301 → 307 → 200 instead of 307 → 301 → 200), an easy one-line mistake a lint or a
+  documented recipe in the redirect-authoring guidance could catch up front.
 
 Triage lands the bounded items, ledgers the rest; the review's output also shapes the
 phase-2 (ops absorption) planning — which now includes the EMAIL CONSOLIDATION (Geoff,

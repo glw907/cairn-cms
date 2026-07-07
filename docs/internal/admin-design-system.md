@@ -740,3 +740,9 @@ The runbook:
 
 The bump is safe once all six steps run green. Hold it on any red gate or an unexplained diff, and
 investigate.
+
+## Dates never wrap (Geoff, 2026-07-06)
+
+A date is one visual token: every rendered date gets `whitespace-nowrap` (with
+`tabular-nums` where dates align in columns). A wrapped date ("Jun 20," / "2026") is a
+defect, not a reflow. Size date columns to the longest realistic value instead.

@@ -1,6 +1,8 @@
 # The fresh-session brief (for the Opus-conducted successor, 2026-07-07)
 
-Launch in ~/Projects/cairn-cms. Read this file, then docs/STATUS.md, then the memory
+Launch in ~/Projects/cairn-cms for engine/beta-runway work; launch in
+~/Projects/asc-site for ASC work (it has its own project memory now, seeded 2026-07-06 —
+the effort's rulings + the Access recipe travel with it). Read this file, then docs/STATUS.md, then the memory
 index loads itself. The Fable window closed 2026-07-07; you conduct on Opus 4.8 under
 the post-cutoff system (~/.claude/docs/fable-post-cutoff-system.md — batch-first Fable,
 the suggestion rules; never silently spend, never silently absorb).

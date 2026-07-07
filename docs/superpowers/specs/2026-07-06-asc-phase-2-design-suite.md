@@ -288,6 +288,17 @@ two. The architecture, per capability:
 - **Assets/Waitlist (2.4):** the by-asset and by-person views ops proved, re-expressed as
   two lenses over one screen family; the waitlist as a single polymorphic queue with
   type chips (the redesign kills the two-page split).
+- **ACCESS TIERS (Geoff, 2026-07-06): content managers must not automatically manage
+  member accounts.** Two authorization axes, deliberately separate: cairn's own
+  owner/editor governs CONTENT (posts, pages, media — unchanged), and a SITE-OWNED club
+  role governs the Club section (member accounts, payments, credits, rollover). The
+  club roles live in asc-club (keyed by email, managed from a Club settings screen,
+  audited), and every /admin/club route checks the club role — a content editor without
+  one sees no Club nav and gets a clean 403 on direct navigation. Per the charter this
+  is the SITE's role layer built on the seam (locals.editor supplies identity; the site
+  supplies authorization) — no engine change, though the pass should verify adminNav
+  can vary per-request so unauthorized sections hide rather than tease (flag for Part
+  C if it can't). Owner holds everything; the rollover additionally requires owner.
 - **The Club dashboard (reporting; Geoff, 2026-07-06):** a high-level landing screen
   for membership status + payments — designed as a LOGICAL STARTING POINT that club
   leadership extends, not a chart farm. At ~210-member scale the right form is still a few

@@ -47,6 +47,16 @@ PUBLIC site forms), and the new system carries both halves — the admin's waitl
 management AND the public signup/waitlist forms that feed it, Turnstile-gated like the
 donate form, writing through the audited path. The class-vs-asset waitlist distinction
 is STRUCTURAL, never generalized away (see the rollover section).
+**CLASS CAPS + THE TIME-LIMITED OFFER (Geoff, 2026-07-06):** classes carry a CAPACITY,
+and fullness derives from enrollment count vs cap (the open/full status stops being a
+hand-flipped flag). When a spot opens, the committee sends the next waitlisted person a
+**time-limited signup link**: a single-use, expiring, person-and-class-bound token —
+the same D1 token discipline cairn's own magic-link auth proved, reused as in-house
+prior art. The offer is a small state machine (offered → claimed | expired | declined),
+every transition audited; claiming lands in the normal signup flow (credit redemption
+included); expiry or decline frees the spot for the next offer. Default: offers are
+admin-triggered with one click from the waitlist screen (auto-offer is a later
+refinement, parked); the offer's time window is a Club setting.
 The aksailingclub-org repo (renamed from asc-site; the worker stays asc-site) gains its admin extension surface (Part C's contract work lands here):
 the events and classes CRUD moves from ops into cairn's admin as custom screens — chosen
 first because the domain is simple, the site already reads the data, the ops screens are

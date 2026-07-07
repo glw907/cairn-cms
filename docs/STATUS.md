@@ -68,7 +68,24 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-07: 0.82.0 SHIPPED; the ASC phase-2 build consumes it)
+## Immediate next action (2026-07-07, evening: the pass-2.1 harvest window LANDED on main)
+
+**THE PASS-2.1 HARVEST PASS MERGED (c7b472f), holds unpublished under `## Unreleased`.** The
+window: `adminAction` exempts `ActionFailure` returns from the required-audit check (security
+review confirmed sound; the reject-before-mutate caveat is stated in the TSDoc, changelog,
+reference, and guide), the esm-env `DEV` swap in both engine reads (the ROADMAP item consumed;
+svelte-package's warning gone), `/ambient` gains `App.Locals.auditSink`, `deriveExcerpt` edge
+tests, and the add-a-custom-admin-screen guide rewritten around the ASC club-admin section (the
+harvest doc's items 1-4 all consumed). Gate at close: check 0/0 (1345 files), 3107 tests exit 0,
+all four doc gates plus snippets and comments green, web-auth-security-reviewer clean, simplifier
+no-changes. Recovery note: this pass began as a crashed-session agent; the recovery session
+finished the snippet-gate failures the crash preempted and added the ambient/auditSink gap the
+gate surfaced. No plan file existed (dispatched mid-ASC-session); this entry is the post-mortem.
+NEXT: hold unpublished per the release doctrine; the ASC design-polish round consumes nothing new.
+Watch: an ~80-minute suite hang under heavy parallel-agent load (browser project, chrome child at
+16s CPU) cleared on a quiet rerun (106s green) — if it recurs, file a vitest browser-pool watch.
+
+## Prior next action (2026-07-07: 0.82.0 SHIPPED; the ASC phase-2 build consumes it)
 
 **0.82.0 PUBLISHED (2026-07-07, OIDC verified on the registry): the admin extension seams
 window** — the `admin-fields` subpath, `OfficeList`, `adminAction` (+ the

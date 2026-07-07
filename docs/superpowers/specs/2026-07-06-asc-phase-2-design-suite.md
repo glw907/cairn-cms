@@ -207,9 +207,14 @@ does it" is not a credential. Borrow each convention from a named BEST-IN-CLASS 
 of it — the Stripe-dashboard class of record page (essentials prominent, the long tail
 behind disclosure), the Linear/GitHub class of review queue (fast, keyboardable, the
 decision beside the evidence), the calm end of activity feeds — and hold the copy to the
-cairn admin's own quiet voice. If a pattern's best exemplar still feels heavy for a
-35-member club, subtract until it doesn't; the club's scale is a design input, not an
-afterthought.
+cairn admin's own quiet voice. If a pattern's best exemplar still feels heavy for the club's
+scale, subtract until it doesn't; the scale is a design input, not an afterthought.
+**THE REAL SCALE (Geoff, 2026-07-06): ~180 CURRENT MEMBERS** — the ops people table's
+36 rows are asset-holders only; the membership proper lives in MW. Design targets:
+the members list, directory, and segment sends must be excellent at ~180 members /
+roughly a hundred households (search + the office-list pagination are load-bearing,
+not nice-to-haves), while the 2.2 import is MW's full ~180-member export with
+migrate-and-verify counts at that size.
 
 The absorbed capabilities present INSIDE cairn's admin, in its established idiom (Warm
 Stone tokens, the eyebrow groups, the card recipes, the command palette) — one admin, not
@@ -232,7 +237,7 @@ two. The architecture, per capability:
   type chips (the redesign kills the two-page split).
 - **The Club dashboard (reporting; Geoff, 2026-07-06):** a high-level landing screen
   for membership status + payments — designed as a LOGICAL STARTING POINT that club
-  leadership extends, not a chart farm. At 35-member scale the right form is a few
+  leadership extends, not a chart farm. At ~180-member scale the right form is still a few
   honest numbers with one comparison each (the `stats` idiom), one list, and one
   liability figure most tools forget:
   (1) **Membership now**: current households/members vs this point last season, with

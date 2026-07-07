@@ -10,6 +10,18 @@ document the next (Opus-conducted) sessions execute.
 
 ## Part A — the absorption plan
 
+### Why ops exists at all (Geoff, 2026-07-06 — the origin that governs the redesign)
+
+**Ops exists because MembershipWorks can't manage assets.** The whole dashboard is a
+gap-filler: the club needed mooring/parking/rack management, MW couldn't do it, so ops
+grew beside it — which is why ops's `people` table is deliberately thin (36 asset-holders
+shadowing a ~180-member roster it can't see), why assignments hang off people directly
+(there was no membership entity to attach to), and why the club runs two systems that
+don't talk. READ OPS'S SHAPE ACCORDINGLY: its structure is a workaround artifact, not
+design wisdom to preserve. The redesign's entire purpose is the unification the
+workaround made impossible — one system where memberships own assets (the edge Geoff
+ruled), the roster is whole, and the two-system seam disappears.
+
 ### The evidence's three governing facts
 
 1. **MW still owns the crown jewels.** Signup/renewal, the member directory, and dues

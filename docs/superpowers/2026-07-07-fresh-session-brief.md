@@ -21,11 +21,17 @@ your job is faithful verification and execution, not re-derivation. In order:
    `resumeFromRunId: wf_4b03af3f-92e` (its script path is in this doc's history);
    the engine pass by re-dispatching its brief (it commits incrementally — check the
    branch first).
-2. **Review the engine branch** (`admin-extension-seams`) at the exemplar bar: the spec
-   is Part C of the suite + the reference implementation + the scaffold's stand-ins
-   (the proven shapes). Run the full gate YOURSELF before merging: check 0/0, test,
-   check:reference, check:reference:signatures, check:package, check:comments,
-   check:surface. Merge only on green; the CHANGELOG entry stays under ## Unreleased.
+2. **Review the engine branch** (`admin-extension-seams`, commit 4cc74bd — the pass
+   FINISHED before the close, full gate reported green: 3096 tests exit 0, all doc
+   gates, surface regenerated): review the diff at the exemplar bar (the spec: Part C +
+   the reference implementation + the scaffold stand-ins), RE-RUN the full gate yourself
+   (never trust a reported green you didn't watch), then merge to main. Two documented
+   implementer deviations to verify approvingly: it reused the engine's real
+   csrfCookieName/tokensMatch (not the reference's stubs) and kept the nav helper
+   functions internal (only the TYPES are public). New log events
+   admin.action.audited/unaudited joined the vocabulary + reference. After the merge,
+   the club-admin scaffold's stand-ins can swap to engine imports (a small follow-up,
+   not urgent).
 3. **Review the club-admin branch** (`club-admin-scaffold` in aksailingclub-org): five
    screens + the write pattern, already Fable-reviewed through the members screens; the
    signups queue landed after — read its diff. The code-simplifier pass over the branch

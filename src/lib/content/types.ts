@@ -18,7 +18,7 @@ import type { LinkResolve } from './links.js';
 import type { VariantSpec } from '../media/transform-url.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
-import type { AdminNavEntry } from '../sveltekit/admin-nav.js';
+import type { AdminNavConfig } from '../sveltekit/admin-nav.js';
 
 /**
  * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
@@ -249,11 +249,12 @@ export interface CairnAdapter {
      */
     supportContact?: string;
     /**
-     * Sidebar entries for the developer's own custom `/admin/` screens, declared as data. Each names a
-     *  label, a bundled icon, and an href the engine validates against the built-in views. Absent
-     *  leaves the sidebar to the built-in entries only.
+     * Sidebar entries for the developer's own custom `/admin/` screens, declared as data: a mix of
+     *  flat entries and one-level sections, in declaration order. Each flat entry names a label, a
+     *  bundled icon, and an href the engine validates against the built-in views. Absent leaves the
+     *  sidebar to the built-in entries only.
      */
-    adminNav?: AdminNavEntry[];
+    adminNav?: AdminNavConfig;
   };
 }
 
@@ -351,7 +352,7 @@ export interface CairnRuntime {
    * The raw custom admin-nav config, passed through from the adapter unvalidated (validation needs
    *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here). Optional.
    */
-  adminNav?: AdminNavEntry[];
+  adminNav?: AdminNavConfig;
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   assets?: AssetConfig;

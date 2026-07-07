@@ -30,6 +30,7 @@ discriminant, not the fields, gates the chrome).
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
   import { ADMIN_NAV_ICONS, ADMIN_NAV_FALLBACK_ICON } from './admin-nav-icons.js';
+  import { isResolvedNavSection, isResolvedNavEntry, flattenNavEntries, type ResolvedNavEntry } from '../sveltekit/admin-nav.js';
   import './cairn-admin.css';
 
   interface Props {
@@ -64,6 +65,21 @@ discriminant, not the fields, gates the chrome).
     href: string;
   }
 
+  // Resolve one custom-nav entry's bundled icon name through the allowlist map, falling back to a
+  // list glyph for any unmapped name.
+  function navItemOf(e: ResolvedNavEntry): NavItem {
+    return { label: e.label, icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON, href: e.href };
+  }
+
+  // The developer's custom nav, split by shape: a flat entry folds into Core (below, unchanged
+  // placement), a section renders as its own named group. Empty on a public payload.
+  const customFlatEntries = $derived(shell ? shell.customNav.filter(isResolvedNavEntry) : []);
+  const customSections = $derived(
+    shell
+      ? shell.customNav.filter(isResolvedNavSection).map((s) => ({ label: s.label, items: s.children.map(navItemOf) }))
+      : [],
+  );
+
   // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
   // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
   // the owner-only Editors. Empty on a public payload (the nav never renders there).
@@ -71,13 +87,9 @@ discriminant, not the fields, gates the chrome).
     shell
       ? [
           ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-          // The developer's custom screens, right after the concepts: each resolves its bundled icon
-          // name through the allowlist map, falling back to a list glyph for any unmapped name.
-          ...shell.customNav.map((e) => ({
-            label: e.label,
-            icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON,
-            href: e.href,
-          })),
+          // The developer's custom flat screens, right after the concepts. A custom section (grouped
+          // separately below) never folds in here.
+          ...customFlatEntries.map(navItemOf),
           // Library is a content peer, immediately after the concepts (the media screen; the route
           // stays /admin/media, but the settled editor-facing label is Library, not Media).
           { label: 'Library', icon: ImageIcon, href: '/admin/media' },
@@ -242,7 +254,7 @@ discriminant, not the fields, gates the chrome).
     const concept = shell?.concepts.find((c) => c.id === conceptId);
     // A custom screen carries no concept, so resolve its href to the developer's nav label too; the
     // raw segment is the fallback when neither a concept nor a custom entry claims it.
-    const custom = shell?.customNav.find((e) => e.href === `/admin/${conceptId}`);
+    const custom = shell && flattenNavEntries(shell.customNav).find((e) => e.href === `/admin/${conceptId}`);
     const out: Crumb[] = [
       { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
     ];
@@ -492,6 +504,11 @@ discriminant, not the fields, gates the chrome).
           <!-- Core is the built-in Cairn functions, a collapsible section of the content concepts,
                the nav and settings editors, and the owner-only Editors entry. -->
           {@render navSection('Core', coreItems)}
+          <!-- A developer's custom adminNav sections render as their own collapsible groups, after
+               Core, in declaration order (a section joins the nav beside Content/Media/Settings). -->
+          {#each customSections as section (section.label)}
+            {@render navSection(section.label, section.items)}
+          {/each}
         </div>
 
         <!-- Help is a standing utility destination, pinned at the foot of the nav and set apart from

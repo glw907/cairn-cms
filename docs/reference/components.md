@@ -130,6 +130,44 @@ per-route mounting it lives at `src/routes/admin/(app)/[concept]/+page.svelte`.
 <ConceptList {data} />
 ```
 
+### `OfficeList`
+
+Stability tier: Extension API.
+
+```ts
+let { eyebrow, title, subtitle, action, children }: {
+  eyebrow?: string;
+  title: string;
+  subtitle?: string;
+  action?: Snippet;
+  children: Snippet;
+};
+```
+
+The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
+out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
+screen, a Club-style events or members list say, wraps its own `<table>` in this instead of
+hand-rolling the administrative office rhythm. `eyebrow` names a grouping, such as a custom nav
+section's label, and is omitted entirely when there is none to name. `title` is the display-face
+heading. `subtitle` is the muted one-line note under it, a live count or a scope note. `action` is an
+optional header-right control such as a filter or a primary button. `children` is the screen's own
+content, rendered inside the shared bordered, theme-adaptive card shell.
+
+```svelte
+<script lang="ts">
+  import { OfficeList } from '@glw907/cairn-cms/components';
+</script>
+
+<OfficeList eyebrow="Club" title="Events" subtitle="12 upcoming">
+  {#snippet action()}
+    <button type="button" class="btn btn-primary btn-sm">New event</button>
+  {/snippet}
+  <table class="table">
+    <!-- rows -->
+  </table>
+</OfficeList>
+```
+
 ### `CairnMediaLibrary`
 
 Stability tier: Unstable API.

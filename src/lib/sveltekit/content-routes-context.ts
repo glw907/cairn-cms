@@ -9,7 +9,7 @@ import type { Backend } from '../github/backend.js';
 import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, type ResolvedNavEntry } from './admin-nav.js';
+import { normalizeAdminNav, type ResolvedNavItem } from './admin-nav.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
@@ -99,7 +99,7 @@ export interface ContentRoutesContext {
   runtime: CairnRuntime;
   deps: ContentRoutesDeps;
   /** The developer's custom sidebar entries, validated once at construction (server start). */
-  adminNav: ResolvedNavEntry[];
+  adminNav: ResolvedNavItem[];
   /**
    * Build the Anthropic client for the tidy action from the resolved API key. The real SDK client,
    *  or a test's injected fake (`deps.tidy.client`).

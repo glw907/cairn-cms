@@ -8,9 +8,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; createBranch: (name: string, fromBranch: string) => Promise<void>; deleteBranch: (name: string) => Promise<void> }
 - `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `BackendProvider`: { kind: string; branch: string; connect: (env: BackendEnv) => Backend }
-- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; adminNav?: AdminNavEntry[] } }
+- `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; adminNav?: AdminNavConfig } }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; adminNav?: AdminNavEntry[]; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
+- `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; adminNav?: AdminNavConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `CommitAuthor`: { name: string; email: string }
 - `CommitConflictError`: typeof CommitConflictError
 - `ComponentDef`: { name: string; label: string; description: string; insertTemplate?: string; build: (ctx: ComponentContext) => Element; hydrate?: boolean | "visible"; defaultIconByRole?: Record<string, string>; use?: string; attributes?: Record<string, FieldDescriptor>; behavior?: BehaviorTable; attributeSchema?: Fieldset<Record<string, FieldDescriptor>>; slots?: SlotDef[]; icon?: string; group?: string; hidden?: boolean; preview?: { attributes?: Record<string, string | boolean>; slots?: Record<string, string | string[]> } }
@@ -66,6 +66,13 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `verifyReferences`: (manifest: Manifest) => void
 - `VocabularyEntry`: { value: string; label: string }
 
+## `/admin-fields`
+
+- `FieldLabel`: Component<Props, {}, "">
+- `SelectField`: Component<Props, {}, "value">
+- `SelectFieldOption`: { value: string; label: string }
+- `TextField`: Component<Props, {}, "value">
+
 ## `/ambient`
 
 - `App.Locals`: { editor?: Editor | null; backend?: Backend }
@@ -86,6 +93,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ManageEditors`: Component<Props, {}, "">
 - `MarkdownEditor`: Component<Props, {}, "value">
 - `NavTree`: Component<Props, {}, "">
+- `OfficeList`: Component<Props, {}, "">
 - `RenameDialog`: Component<Props, { open: () => void }, "">
 
 ## `/delivery`
@@ -202,10 +210,20 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/sveltekit`
 
+- `adminAction`: <T>(handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent) => Promise<T>
+- `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
+- `AdminActionAuditRecord`: AdminActionAudit & { editor: string }
+- `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
+- `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
+- `AdminActionDeps`: { isDev?: boolean }
+- `AdminActionError`: typeof AdminActionError
+- `AdminActionEvent`: { cookies: CookieJar; locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink }; url: URL; request: Request; platform?: PlatformContext<AuthEnv> }
 - `AdminData`: { view: "login"; page: { siteName: string; error: string | null; csrf: string } } | { view: "confirm"; page: { token: string; siteName: string; error: string | null; csrf: string } } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "editors"; page: { editors: Editor[]; self: string } } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData }
+- `AdminNavConfig`: (AdminNavEntry | AdminNavSection)[]
 - `AdminNavEntry`: { label: string; icon: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly?: boolean }
 - `AdminNavIcon`: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"
-- `AdminShellData`: { public: true; siteName: string } | { public: false; siteName: string; user: { displayName: string; email: string; role: Role }; concepts: NavConcept[]; customNav: ResolvedNavEntry[]; pathname: string; canManageEditors: boolean; navLabel: string | null; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[]; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null> }
+- `AdminNavSection`: { label: string; children: AdminNavEntry[] }
+- `AdminShellData`: { public: true; siteName: string } | { public: false; siteName: string; user: { displayName: string; email: string; role: Role }; concepts: NavConcept[]; customNav: ResolvedNavItem[]; pathname: string; canManageEditors: boolean; navLabel: string | null; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[]; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null> }
 - `AdvisoryAction`: { label: string; href?: string }
 - `AdvisoryNotice`: { kind: string; severity: "warn"; message: string; actions?: AdvisoryAction[] }
 - `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> } }
@@ -249,6 +267,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `requireOwner`: (event: { locals: { editor?: Editor | null } }) => Editor
 - `requireSession`: (event: { locals: { editor?: Editor | null } }) => Editor
 - `ResolvedNavEntry`: { label: string; iconName: "anchor" | "calendar" | "clipboard-list" | "list" | "users" | "package" | "inbox" | "table" | "wrench"; href: string; ownerOnly: boolean }
+- `ResolvedNavItem`: ResolvedNavEntry | ResolvedNavSection
+- `ResolvedNavSection`: { label: string; children: ResolvedNavEntry[] }
 - `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 

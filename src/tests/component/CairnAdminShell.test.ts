@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
-import type { ResolvedNavEntry } from '../../lib/sveltekit/admin-nav.js';
+import type { ResolvedNavEntry, ResolvedNavItem } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
 
@@ -344,6 +344,18 @@ describe('CairnAdminShell', () => {
     const screen = render(CairnAdminShell, { data: { ...data(true), customNav }, children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     await expect.element(sidebar.getByRole('link', { name: 'Signups' })).toBeInTheDocument();
+  });
+
+  it('renders a custom adminNav section as its own collapsible group beside Core', async () => {
+    const customNav: ResolvedNavItem[] = [
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ];
+    const screen = render(CairnAdminShell, { data: { ...data(true), customNav }, children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    await expect.element(sidebar.getByText('Club')).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Events' })).toBeInTheDocument();
+    // The section is its own group, not folded into Core: Core's own summary is still present too.
+    await expect.element(sidebar.getByText('Core')).toBeInTheDocument();
   });
 
   it('omits an owner-only custom entry the payload has already role-filtered out', async () => {

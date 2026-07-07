@@ -31,7 +31,25 @@ export type {
 } from './content-routes.js';
 export { createNavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption } from './nav-routes.js';
-export type { AdminNavEntry, AdminNavIcon, ResolvedNavEntry } from './admin-nav.js';
+export type {
+  AdminNavEntry,
+  AdminNavIcon,
+  AdminNavSection,
+  AdminNavConfig,
+  ResolvedNavEntry,
+  ResolvedNavSection,
+  ResolvedNavItem,
+} from './admin-nav.js';
+export {
+  adminAction,
+  AdminActionError,
+  type AdminActionAudit,
+  type AdminActionAuditRecord,
+  type AdminActionAuditSink,
+  type AdminActionContext,
+  type AdminActionDeps,
+  type AdminActionEvent,
+} from './admin-action.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';

@@ -46,6 +46,11 @@ members/memberships-by-season, MW's behavior as the requirements evidence. The p
 join flow replaces the MW embed (the join page finally loses the unstylable widget);
 dues payments follow the established ops-Stripe pattern (payment links or checkout — one
 pattern chosen in the pass's design step, the three existing surfaces consolidated to it).
+**NO MW INTEGRATION PORT (Geoff, 2026-07-06): the MembershipWorks embeds and glue do
+not carry into the new system at all** — the member-facing system goes live only when it
+has SUBSUMED all of MW's used functions, so there is never a hybrid state where the new
+site hosts MW widgets. (The public site's phase-1 cutover is independent: its
+my-account/directory surfaces stay "coming soon" until this criterion is met.)
 MW runs in parallel until the season boundary; the cutover imports MW's member records
 (migrate-and-verify: counts, spot checks, a parallel-run month).
 *Acceptance:* a new member joins and pays entirely in-house; the records reconcile with

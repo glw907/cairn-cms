@@ -98,10 +98,6 @@ The original decision framing, for the record:
   upgrade page. Timed to Topo carrying the docs; the drafting-level practices are already in
   the craft references.
 
-- **SECURITY.md go-public trim: NOW DUE (the repo went public 2026-07-03).** The timed
-  go-public toggle fired early; the policy needs its public-repo form (reporting path,
-  supported versions) in the go-public pass or sooner.
-
 - **Shortcut-table drift gate (from the 2026-07-03 docs benchmark).** The editor guide's
   keyboard tables and the in-product sheet (`editor-shortcuts.ts`) share content that nothing
   machine-checks; a small `check:*`-idiom script diffing the doc tables against the keymap

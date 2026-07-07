@@ -1,0 +1,143 @@
+# The ASC phase-2 design suite: ops absorption, the admin architecture, the contract changes
+
+Authored on Fable, 2026-07-06, against the live evidence sweep (the asc-ops D1 schema and
+row counts, the ops dashboard's code shape, the three Stripe surfaces, MembershipWorks's
+actual footprint, the handbook workers). Geoff's rulings all bind: incremental absorption
+beside a running ops stack; re-architecture over lift-and-shift; the data tier open with
+migrate-and-verify discipline; the five MW capabilities in scope including payments (the
+existing ops-Stripe pattern); the vendor endgame; email to Cloudflare. This suite is the
+document the next (Opus-conducted) sessions execute.
+
+## Part A — the absorption plan
+
+### The evidence's three governing facts
+
+1. **MW still owns the crown jewels.** Signup/renewal, the member directory, and dues
+   billing are 100% MembershipWorks today; ops absorbed only asset/waitlist management,
+   its own transactional email (Resend, 11 templates), and a bolt-on Stripe flow for
+   non-dues fees. The absorption is therefore mostly NEW BUILD against MW's behavior, not
+   a port of existing ops code.
+2. **The ops dashboard is 7,644 lines whose bulk is presentation.** 3,926 lines hand-build
+   HTML strings; the D1 service layer beneath (1,582 lines) is comparatively clean. The
+   re-architecture's real work is replacing the template layer with the cairn admin idiom;
+   the service logic ports with refinement, not rewrite.
+3. **`people` is not a member model.** 36 rows, deliberately thin (name/email/phone),
+   anchoring asset assignments only — with an explicit prior-pass rule against widening it
+   ("never add a person_type column"). The absorbed membership model is a NEW schema
+   domain, not an extension of `people`.
+
+### The passes, sequenced (each small, each shippable, ops running throughout)
+
+**Pass 2.1 — the substrate + events/classes admin (the seam's first real test).**
+The asc-site repo gains its admin extension surface (Part C's contract work lands here):
+the events and classes CRUD moves from ops into cairn's admin as custom screens — chosen
+first because the domain is simple, the site already reads the data, the ops screens are
+the most self-contained, and success/failure teaches the seam cheaply. The events schema
+gets its first improvement: a CHECK constraint on event_type + the shared category enum
+the C7 taxonomy wants (a migration, verified against the 12 live rows). Ops's events
+screens retire; everything else in ops keeps running.
+*Acceptance:* volunteers manage events/classes in cairn's admin; the season/events pages
+read the same D1; ops's event routes return 410 pointing at the new home; the audit-log
+convention carries over (every write attributed).
+
+**Pass 2.2 — membership signup + the member model (the new domain).**
+The real members schema, designed fresh (Part A's data-tier section below): households/
+members/memberships-by-season, MW's behavior as the requirements evidence. The public
+join flow replaces the MW embed (the join page finally loses the unstylable widget);
+dues payments follow the established ops-Stripe pattern (payment links or checkout — one
+pattern chosen in the pass's design step, the three existing surfaces consolidated to it).
+MW runs in parallel until the season boundary; the cutover imports MW's member records
+(migrate-and-verify: counts, spot checks, a parallel-run month).
+*Acceptance:* a new member joins and pays entirely in-house; the records reconcile with
+MW's export; renewals for the next season flow in-house.
+
+**Pass 2.3 — the directory + member email.**
+The directory renders from the new model with per-member visibility (MW's
+Visible/Hidden/Partial semantics preserved as the floor); member bulk email consolidates
+onto Cloudflare Email Sending (the ops transactional layer migrates off Resend in the
+same motion — the email consolidation's main event; templates port from email_templates).
+*Acceptance:* the phase-1 "coming soon" member pages go live; a bulk send reaches the
+membership through CF with the log trail ops already keeps.
+
+**Pass 2.4 — asset management's re-architecture + MW retirement.**
+The last ops domain (assignments/waitlist/asset payments) rebuilds on the new stack —
+the polymorphic waitlist redesigned with real FKs (the app-level integrity checks the
+schema comments apologize for become schema), the 844+856-line waitlist pair becomes
+cairn-admin screens over the service layer. Ops retires; MW's subscription cancels; the
+tidy pass (already chartered) sweeps the carcasses.
+*Acceptance:* every ops function has a cairn-admin home; audit/email logs continuous
+across the cutover; MW's final export archived.
+
+### The data tier (cross-pass principles)
+
+- New domains (members, households, memberships, dues) get NEW tables designed clean;
+  existing tables improve by migration only where a pass touches them (events first).
+- Every migration ships with a verification script (row counts, invariant checks, a
+  before/after diff on real data) and its rollback.
+- The read surfaces version: phase-1's events read keeps working across 2.1's migration
+  (additive columns first, the constraint after the backfill).
+- The audit_log convention is sacred and extends to the new domains from day one.
+
+## Part B — the admin UI/UX architecture
+
+The absorbed capabilities present INSIDE cairn's admin, in its established idiom (Warm
+Stone tokens, the eyebrow groups, the card recipes, the command palette) — one admin, not
+two. The architecture, per capability:
+
+- **A "Club" section joins the admin nav** beside Content/Media/Settings: Events, Classes,
+  Members, Assets, Email — each a screen family on the extension surface. The section is
+  the seam's showcase: everything under "Club" is site-declared, none of it engine.
+- **Events/Classes (2.1):** list screens in the admin's office-list pattern (the triage
+  table: date, title, type-chip, visibility, edited-by), a detail form in the admin's
+  field idiom (the same field components content editing uses — the seam should let a
+  site REUSE the engine's field renderers; Part C makes that a contract point), R2 image
+  fields via the existing media-library picker (another reuse seam).
+- **Members (2.2):** the list with the directory-visibility chip and season-standing
+  column; the detail as a two-pane (identity + household left, memberships/payments
+  timeline right — the timeline reuses the audit-trail presentation). Signup review as a
+  queue screen (the office-list pattern again; approve/deny with the email templates).
+- **Assets/Waitlist (2.4):** the by-asset and by-person views ops proved, re-expressed as
+  two lenses over one screen family; the waitlist as a single polymorphic queue with
+  type chips (the redesign kills the two-page split).
+- **Email (2.3):** template editing IN the cairn editor (templates are markdown-with-
+  variables — the editor the volunteers already know, with a variables palette); the send
+  log as a filterable list.
+- **The volunteers' mental model is the design's north star:** one sign-in (magic link),
+  one nav, the same editing gestures for a news post and an email template, the publish
+  gate's caution carried to destructive club actions (season rollover gets the
+  publish-style confirm).
+
+## Part C — the engine and site-contract changes
+
+The seam today: CairnAdminShell + a data-only adminNav + admin-scoped locals.editor +
+CsrfField. Designing Part B against it exposes exactly four gaps — these are the
+pre-beta contract changes, specified now so the successor implements a designed contract:
+
+1. **Admin field-renderer reuse (the big one).** Sites building admin screens need the
+   engine's field components (text/date/select/image-picker/markdown) as a supported
+   export — today they're internal to the content forms. Contract: an `/admin-fields`
+   subpath exporting the field primitives with their form-context contract documented.
+   Breaking risk: none (new surface); the leanness case: without it every extending
+   developer rebuilds worse copies, which is the seam failing its own purpose.
+2. **The office-list primitive.** The admin's triage-table pattern (list + chips +
+   filters + row actions) exports as a composable, or every Club screen hand-rolls it.
+   Same additive shape.
+3. **Admin-scoped server helpers.** The extension surface needs blessed access to the
+   admin's CSRF + session + audit conventions for custom POST actions (today: CsrfField
+   exists; the action-side verify helper and an audit hook do not). Contract: an
+   `adminAction` wrapper (verifies CSRF + editor, exposes a typed audit emit).
+4. **Nav sections.** adminNav today is flat; the Club section wants one level of
+   grouping. Trivial, additive.
+All four are additive to the published surface — the pre-beta breaking license likely
+goes UNUSED again, which at this point is the contract's strongest credential. Each lands
+with reference docs + the showcase demonstrating a minimal Club-style screen (the
+extending-developer tutorial's future material).
+
+## Sequencing note for the successor
+
+Part C items 1-4 land as a cairn engine pass BEFORE pass 2.1 builds on them (the same
+evidence-first rhythm as the harvest passes; the ASC build review's findings fold in).
+The suite's open questions are deliberately few: the dues-payment pattern choice in 2.2
+(links vs checkout — decide in-pass with the volume data), the season-boundary date for
+the MW parallel run (Geoff's call, a calendar fact), and nothing else — everything other
+than those is specified.

@@ -90,6 +90,13 @@ export default defineConfig({
             '$app/forms': path.resolve('./src/tests/component/_app-forms.ts'),
           },
         },
+        // Pre-declare the spellchecker's wasm loader so Vite optimizes it during warm-up. On a
+        // cold cache (CI), discovering it mid-run triggers "optimized dependencies changed.
+        // reloading", which orphans every in-flight browser test; a warm local cache never hits
+        // this, so the failure looked CI-only.
+        optimizeDeps: {
+          include: ['spellchecker-wasm/lib/browser/SpellcheckerWasm.js'],
+        },
         test: {
           name: 'component',
           include: ['src/tests/component/**/*.test.ts'],

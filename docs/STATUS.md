@@ -1,5 +1,12 @@
 # cairn-cms status
 
+**SESSION CLOSED (2026-07-06, ~11pm AK — the Fable window's end).** The five-day arc is
+fully landed; docs/superpowers/2026-07-07-fresh-session-brief.md carries the OPUS
+OPENING PROTOCOL (read it first, follow it in order). Two machines ran past the close
+in the old terminal: the ASC completion pass (manifest-driven, guarded) and the Part C
+engine pass (branch admin-extension-seams). Their outcomes are in git regardless.
+
+
 **THE FINALE ADDENDUM (2026-07-06, post-handoff-brief): the ASC repos RENAMED
 (aksailingclub-org = the new cairn site, ex-asc-site, with its own Claude project +
 seeded memory; aksailingclub-legacy = the live Hugo site + ops; a compat symlink bridges

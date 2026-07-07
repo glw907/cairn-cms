@@ -7,6 +7,46 @@ index loads itself. The Fable window closed 2026-07-07; you conduct on Opus 4.8 
 the post-cutoff system (~/.claude/docs/fable-post-cutoff-system.md — batch-first Fable,
 the suggestion rules; never silently spend, never silently absorb).
 
+## THE OPUS OPENING PROTOCOL (do these in order, before anything else)
+
+You are Opus conducting under the post-Fable system. The judgment is already on paper —
+your job is faithful verification and execution, not re-derivation. In order:
+
+1. **Check the overnight machines' outcomes** (they ran in the old session):
+   `git -C ~/Projects/aksailingclub-org log --oneline -15` (the completion pass commits
+   to main) and `git -C ~/Projects/cairn-cms log --oneline origin/admin-extension-seams -5`
+   (the engine pass's branch). Read the guard file if present:
+   the scratchpad's night-guard output named an intervention if anything stalled.
+   A machine that died mid-run resumes cheap: the completion workflow via
+   `resumeFromRunId: wf_4b03af3f-92e` (its script path is in this doc's history);
+   the engine pass by re-dispatching its brief (it commits incrementally — check the
+   branch first).
+2. **Review the engine branch** (`admin-extension-seams`) at the exemplar bar: the spec
+   is Part C of the suite + the reference implementation + the scaffold's stand-ins
+   (the proven shapes). Run the full gate YOURSELF before merging: check 0/0, test,
+   check:reference, check:reference:signatures, check:package, check:comments,
+   check:surface. Merge only on green; the CHANGELOG entry stays under ## Unreleased.
+3. **Review the club-admin branch** (`club-admin-scaffold` in aksailingclub-org): five
+   screens + the write pattern, already Fable-reviewed through the members screens; the
+   signups queue landed after — read its diff. The code-simplifier pass over the branch
+   is OWED (an implementer flagged the gap). Do NOT merge to main until the completion
+   pass has finished with main.
+4. **Verify the ASC completion pass against the manifest** (aksailingclub-org
+   docs/ORIGINAL-MANIFEST.md): if its verify loop PASSED, do your own full-page reads
+   (the one-check rule binds you too) before ANY mention to Geoff; if it halted, the
+   remaining items are your work queue.
+5. Then the standing queue below (the ASC walkthrough gate, the port audits, the beta
+   runway).
+
+**Rules that bind you specifically:** never relitigate a RATIFIED decision (the suite's
+Geoff-dated rulings, the mockups, the names — asc-club, Waymark, Topo); when work is
+Fable-tier (plan authorship for NEW initiatives, design sittings, verdicts you'd hedge
+on, critical/complex code), PROPOSE a Fable batch job per the suggestion rules in
+~/.claude/docs/fable-post-cutoff-system.md — never silently absorb it, never silently
+spend; dispatch volume to Sonnet with pre-extracted briefs; your reviewer fan-outs keep
+their Opus pins (you ARE the review tier now — lean on fresh-context verifiers for
+anything you built yourself).
+
 ## What ran overnight (results in the repos, not in any session's memory)
 
 Five machines were left running at handoff; each pushes durable results:

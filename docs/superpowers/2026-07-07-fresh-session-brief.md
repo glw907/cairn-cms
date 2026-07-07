@@ -67,8 +67,13 @@ cutover); aksailingclub-sveltekit = retired. First housekeeping task: remove the
    ASC cutover (Geoff's go) → the theme-building tutorial + docs chassis sweep → the
    consolidating release → cairn.pub Phase 1 → beta. THE scope question (beta waits for
    phase 2 or not) is flagged there for Geoff.
-5. Phase 2 executes docs/superpowers/specs/2026-07-06-asc-phase-2-design-suite.md
-   (Part C's engine pass FIRST). Topo per its brief when its turn comes.
+5. Phase 2 executes docs/superpowers/specs/2026-07-06-asc-phase-2-design-suite.md.
+   **Part C's engine pass LAUNCHED overnight** (cairn-cms branch `admin-extension-seams`,
+   a Sonnet implementer building all four additive seams from the drawn lines + the
+   proven scaffold stand-ins, full gate required, clean-stop on blockers): REVIEW that
+   branch's diff at the exemplar bar, run the gates yourself, then merge — it precedes
+   2.1. The asc-club schema DDL (specs/assets/phase-2-reference/asc-club-schema.sql) is
+   the model as CREATE TABLEs — every ruling structural; 2.2's migrations start there. Topo per its brief when its turn comes.
 
 ## The doctrine that binds you (all in CLAUDE.md/skills/memory; the load-bearing five)
 

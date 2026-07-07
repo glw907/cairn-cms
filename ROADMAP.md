@@ -318,6 +318,10 @@ the named human gates only):**
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
 ## Later
 
+- **Swap `adminAction`'s `import.meta.env.DEV` for `esm-env`.** `svelte-package` warns that
+  `import.meta.env` only works under Vite bundling. Every supported consumer is a Vite-bundled
+  SvelteKit app, so this is a portability nit, not a defect; `esm-env`'s `DEV` is the clean,
+  bundler-agnostic form. Fold into the next engine pass that touches the sveltekit layer.
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
   flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether
   Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag

@@ -72,9 +72,14 @@ data model is household-centric: one membership covers a household; its members 
 exist as people with their own directory presence. Member auth = the same lean
 magic-link pattern cairn's admin proved, against the member store instead of the editor
 allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the reason
-the my-account "coming soon" page exists in phase 1. Default rule (Geoff can override):
-any adult household member manages the household's membership; the audit trail records
-who. MW runs in parallel until the season boundary; the cutover imports MW's member records
+the my-account "coming soon" page exists in phase 1. **Each family has ONE PRIMARY member (Geoff, 2026-07-06)**: the primary manages the
+household's membership (renewal, payment, household edits); the model carries the
+designation explicitly and the admin can reassign it. The audit trail records who acted.
+**Membership comes in THREE TIERS with ADJUSTABLE PRICES (Geoff, 2026-07-06)**: tier
+prices are admin-editable settings (the Club settings screen, beside the asset-type
+fees), never code constants — a price change is an audited admin action, effective for
+subsequent renewals, and the per-season membership rows snapshot the price paid (the
+same snapshot discipline the dead payments ledger intended). MW runs in parallel until the season boundary; the cutover imports MW's member records
 (migrate-and-verify: counts, spot checks, a parallel-run month).
 *Acceptance:* a new member joins and pays entirely in-house; the records reconcile with
 MW's export; renewals for the next season flow in-house.

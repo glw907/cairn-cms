@@ -10,7 +10,10 @@
  *   2. The session is a live editor session (locals.editor populated by the engine's
  *      admin guard; absence = 403, never a redirect from an action).
  *   3. The CSRF double-submit token verifies (the __Host- cookie vs the form field,
- *      constant-time comparison; missing either = 403).
+ *      constant-time comparison; missing either = 403). SCAFFOLD FINDING (2026-07-06,
+ *      verified in guard.ts): the engine guard ALREADY enforces CSRF on every /admin/**
+ *      POST, so in-engine this layer is defense-in-depth; the wrapper's real gap is the
+ *      editor context + the required audit emit.
  *   4. The action body runs with a typed audit emitter; the emit is REQUIRED — an
  *      action that returns without emitting is a 500 in dev and a logged defect in
  *      prod, because an unaudited club-state mutation is a bug by definition here.

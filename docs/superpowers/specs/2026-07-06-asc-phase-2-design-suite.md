@@ -42,7 +42,14 @@ convention carries over (every write attributed).
 
 **Pass 2.2 — membership signup + the member model (the new domain).**
 The real members schema, designed fresh (Part A's data-tier section below): households/
-members/memberships-by-season, MW's behavior as the requirements evidence. The public
+members/memberships-by-season, MW's behavior as the requirements evidence. **The
+lifecycle carries an ARCHIVED state (Geoff, 2026-07-06): members who aren't coming back
+archive rather than delete** — out of the active list, the directory, and every batch
+segment by default; history (memberships, payments, audit) intact; reachable via an
+explicit "include archived" lens; archival is a member-detail action behind the confirm
+gate, reversible (unarchive), and audited. Archived is distinct from lapsed: lapsed
+members are prospects for renewal outreach, archived members are deliberately excluded
+from it. The public
 join flow replaces the MW embed (the join page finally loses the unstylable widget);
 dues payments follow the established ops-Stripe pattern (payment links or checkout — one
 pattern chosen in the pass's design step, the three existing surfaces consolidated to it).

@@ -17,6 +17,25 @@ Five machines were left running at handoff; each pushes durable results:
 3-5. **Three port ORIGINAL-MANIFEST enumerations** (committed under each
    examples/<name>-theme/docs/). The audits against them are YOUR queue.
 
+## The lines Fable drew (late additions — extend these patterns, don't re-derive)
+
+- **Security reference implementations** at docs/superpowers/specs/assets/phase-2-reference/:
+  admin-action.ts (the Part-C seam's contract + acceptance tests) and
+  stripe-webhook-verify.ts (pass 2.2's core + tests). The Part-C engine pass LIFTS these;
+  critical-code changes to them go back through Fable batch-audit per the system doc.
+- **The migration pattern** (same dir, events-migration-pattern.md): every phase-2 schema
+  change follows its four-file shape; the events.category instance is worked.
+- **The theme tutorial skeleton** at docs/tutorial/build-a-theme.md: section 1 is the
+  worked pattern; write 2-6 to its shape (goal, real commands, checkpoints, one why),
+  then the register machinery before merge.
+- **The Club admin mockups** (adversarially reviewed): scratchpad club-admin-mockups.html
+  — publish as an artifact for Geoff's screen-by-screen review, then they spec pass 2.1's
+  screens. **The scaffold**: asc-site branch `club-admin-scaffold` — the Club section
+  skeleton + the working events screen + Part-C stand-ins with swap comments.
+- Geoff's operating rules for you, all in the Fable system doc: "Fable draws the lines,
+  Opus colors inside them"; the suggestion rules; critical code is Fable-written or
+  Fable-batch-audited, never Opus-self-reviewed.
+
 ## Your queue, in order
 
 1. Verify the overnight machines' outcomes (their logs + live/dev renders — the one-check

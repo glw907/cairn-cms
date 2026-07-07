@@ -32,7 +32,11 @@ Five machines were left running at handoff; each pushes durable results:
   then the register machinery before merge.
 - **The Club admin mockups** (adversarially reviewed): scratchpad club-admin-mockups.html
   — publish as an artifact for Geoff's screen-by-screen review, then they spec pass 2.1's
-  screens. **The scaffold**: aksailingclub-org branch `club-admin-scaffold` — the Club section
+  screens. **The scaffold**: aksailingclub-org branch `club-admin-scaffold` (Fable-reviewed and
+  refined on-branch: the a11y layer, precise types — THE FIRST REAL SHOWCASE of extending
+  the cairn dashboard, and Geoff's directive: the add-a-custom-admin-screen guide gets
+  rewritten around it as the worked example once it merges; the pending-example note is
+  in the guide) — the Club section
   skeleton + the working events screen + Part-C stand-ins with swap comments.
 - Geoff's operating rules for you, all in the Fable system doc: "Fable draws the lines,
   Opus colors inside them"; the suggestion rules; critical code is Fable-written or

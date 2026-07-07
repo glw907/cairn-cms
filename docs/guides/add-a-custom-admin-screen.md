@@ -1,5 +1,15 @@
 # Add a custom admin screen
 
+<!-- PENDING WORKED EXAMPLE (Geoff, 2026-07-06): rewrite this guide around the ASC Club
+admin as its worked example — the first real production extension of the cairn dashboard.
+The code: the aksailingclub-org repo, branch club-admin-scaffold (five /admin/club/*
+screens; OfficeList + SelectField + adminAction stand-ins in src/admin-club/lib/, each
+marked for its Part C engine replacement; the events screen wired read-only to a real D1).
+The pattern it demonstrates: a multi-screen admin section on the seam, office-list idiom,
+honest degradation, the a11y layer (sr-only caption + role=status filter feedback). After
+Part C ships the engine primitives, the example swaps its stand-ins to engine imports and
+the guide teaches the final form. Do this rewrite when the scaffold merges. -->
+
 A custom admin screen is an ordinary SvelteKit route dropped under `/admin/`. There's no plugin
 API to register against and no components folder cairn scans for you: the route is a plain
 `+page.server.ts` and `+page.svelte`, and because it names a concrete path, SvelteKit's own router

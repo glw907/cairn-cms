@@ -37,7 +37,10 @@ your job is faithful verification and execution, not re-derivation. In order:
    signups queue landed after — read its diff. The code-simplifier pass over the branch
    is OWED (an implementer flagged the gap). Do NOT merge to main until the completion
    pass has finished with main.
-4. **Verify the ASC completion pass against the manifest** (aksailingclub-org
+4. **Verify the ASC completion pass against the manifest** (its round-1 verifier
+   graded the LOCAL build MATCHED on the blockers; the deployed dev was stale because
+   the repo's CLOUDFLARE_API_TOKEN Actions secret was never set — FIXED at close, the
+   redeploy verified green, dev is fresh as of 2026-07-07 ~0530 UTC) (aksailingclub-org
    docs/ORIGINAL-MANIFEST.md): if its verify loop PASSED, do your own full-page reads
    (the one-check rule binds you too) before ANY mention to Geoff; if it halted, the
    remaining items are your work queue.

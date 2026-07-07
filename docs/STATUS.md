@@ -68,6 +68,20 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
+## Immediate next action (2026-07-07: 0.82.0 SHIPPED; the ASC phase-2 build consumes it)
+
+**0.82.0 PUBLISHED (2026-07-07, OIDC verified on the registry): the admin extension seams
+window** — the `admin-fields` subpath, `OfficeList`, `adminAction` (+ the
+`admin.action.audited`/`unaudited` log events), `adminNav` sections, and the per-request
+`navFilter` dep (reachable through `CairnAdminDeps`). One minor, zero Consumers-must lines
+(the whole window additive, the ports/chassis window having shipped in 0.81.0). The cut
+surfaced and fixed two real CI defects (the cold-cache spellchecker-wasm mid-run reload;
+the async-shellPayload teardown race in the navFilter tests) plus the drifted api-surface
+snapshot. The consumer-needs-it trigger: the aksailingclub-org club-admin scaffold swaps
+its stand-ins onto this surface (pass 2.1 Task 3, executing). Filed: the esm-env swap for
+adminAction's dev flag (ROADMAP Later). The extended Fable day conducts; the ASC pass 2.1
+plan and state live in aksailingclub-org (docs/plans/2026-07-07-pass-2-1-events-classes.md).
+
 ## Immediate next action (2026-07-06, updated: ports closeout consolidated, release next)
 
 **THEME PORTS 1-3 COMPLETE AND VERIFIED (2026-07-06): AstroPaper (VERIFIED-PASS, 4

@@ -77,6 +77,17 @@ The override seam pattern this proves three times over: a theme `@import`s
 `chassis/tokens.css` first, then redeclares the same custom-property keys in its own later
 `@theme` block; cascade order does the rest, with zero edits inside the chassis file itself.
 
+## The manifest-grade port audits (queued 2026-07-06, prerequisite for the gallery)
+
+The three theme ports predate the original-manifest doctrine: their nine verification
+rounds graded against captured references, not against exhaustive originals-enumeration.
+Before any port appears in the theme gallery or on cairn.pub: each original's FULL
+feature/content surface enumerated (every template, section, image identity + crop,
+interactive behavior, feed/error page) into a committed manifest; each port checked line
+by line (MATCHED / IMPROVED / DEFERRED-WITH-SANCTION); gaps fixed through the verify
+loop. Same for the ASC build (its manifest work is already in motion). Nothing ships to
+Geoff's eyes pre-manifest again.
+
 ## The ASC harvest review (evidence complete, Geoff 2026-07-06: the phase-1 build landed and
 ## deployed to dev; the triage itself is still queued)
 

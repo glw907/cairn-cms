@@ -93,6 +93,16 @@ design system's recipes where a native fights the idiom — the choice documente
 component comment either way. A volunteer should find every screen familiar on first
 contact because they HAVE met its pattern before, elsewhere.
 
+**The cherry-pick clause (Geoff, 2026-07-06): battle-tested is not the same as common.**
+The median CRM is the ANTI-pattern (dense chrome, forty fields, modal mazes); "everyone
+does it" is not a credential. Borrow each convention from a named BEST-IN-CLASS exemplar
+of it — the Stripe-dashboard class of record page (essentials prominent, the long tail
+behind disclosure), the Linear/GitHub class of review queue (fast, keyboardable, the
+decision beside the evidence), the calm end of activity feeds — and hold the copy to the
+cairn admin's own quiet voice. If a pattern's best exemplar still feels heavy for a
+35-member club, subtract until it doesn't; the club's scale is a design input, not an
+afterthought.
+
 The absorbed capabilities present INSIDE cairn's admin, in its established idiom (Warm
 Stone tokens, the eyebrow groups, the card recipes, the command palette) — one admin, not
 two. The architecture, per capability:

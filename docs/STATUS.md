@@ -1,5 +1,14 @@
 # cairn-cms status
 
+**SESSION HANDOFF (2026-07-06 ~11pm): the five-day Fable arc lands. The successor's
+brief: docs/superpowers/2026-07-07-fresh-session-brief.md (READ FIRST). Five machines
+left running overnight (the ASC completion pass vs its ORIGINAL-MANIFEST; the ecxc
+design pass; three port-manifest enumerations) — results land in the repos. The Fable
+deliverables all committed: the phase-2 design suite, the beta-readiness review, the
+Topo brief, the arc post-mortem, the post-cutoff Fable system. The manifest doctrine is
+the arc's principal legacy.**
+
+
 **THE RUNWAY TO BETA IS SET (Geoff, 2026-07-06): the ASC effort is the final pre-beta
 proof — phase 1 building now (the ratified club-grounds design, the committed north star),
 then the three-layer harvest review, then phase-2's admin build-out (the extending-

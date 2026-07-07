@@ -42,16 +42,16 @@ function makeEvent(opts: {
 }
 
 /** Narrow the shell payload to its authed member, failing the test loudly otherwise. */
-function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
-  const { shell } = routes.shellPayload(event as never);
+async function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
+  const { shell } = await routes.shellPayload(event as never);
   if (shell.public) throw new Error('expected authed shell');
   return shell;
 }
 
 describe('shellPayload', () => {
-  it('carries the editor email and resolves the theme from the cookie', () => {
+  it('carries the editor email and resolves the theme from the cookie', async () => {
     const routes = createContentRoutes(runtime());
-    const shell = authedShell(routes, makeEvent({
+    const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
       cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
@@ -60,9 +60,9 @@ describe('shellPayload', () => {
     expect(shell.theme).toBe('cairn-admin-dark');
   });
 
-  it('defaults the theme to light when no cookie is set', () => {
+  it('defaults the theme to light when no cookie is set', async () => {
     const routes = createContentRoutes(runtime());
-    const shell = authedShell(routes, makeEvent({
+    const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},
@@ -70,9 +70,9 @@ describe('shellPayload', () => {
     expect(shell.theme).toBe('cairn-admin');
   });
 
-  it('ignores an unknown cookie value and falls back to light', () => {
+  it('ignores an unknown cookie value and falls back to light', async () => {
     const routes = createContentRoutes(runtime());
-    const shell = authedShell(routes, makeEvent({
+    const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-theme': 'bogus' },
@@ -80,9 +80,9 @@ describe('shellPayload', () => {
     expect(shell.theme).toBe('cairn-admin');
   });
 
-  it('reads the collapsed nav groups from the cookie, url-decoded', () => {
+  it('reads the collapsed nav groups from the cookie, url-decoded', async () => {
     const routes = createContentRoutes(runtime());
-    const shell = authedShell(routes, makeEvent({
+    const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
@@ -90,9 +90,9 @@ describe('shellPayload', () => {
     expect(shell.collapsedNav).toEqual(['Core', 'Black & White']);
   });
 
-  it('defaults collapsedNav to empty when no cookie is set', () => {
+  it('defaults collapsedNav to empty when no cookie is set', async () => {
     const routes = createContentRoutes(runtime());
-    const shell = authedShell(routes, makeEvent({
+    const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
       cookies: {},

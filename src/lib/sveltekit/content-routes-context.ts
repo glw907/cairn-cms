@@ -12,6 +12,7 @@ import type { CairnRuntime } from '../content/types.js';
 import { normalizeAdminNav, type ResolvedNavItem } from './admin-nav.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
+import type { Editor } from '../auth/types.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
 // guards that boundary. The default export is the Anthropic client class; the structural TidyClient
@@ -75,6 +76,22 @@ export interface ContentRoutesDeps {
      */
     timeoutMs?: number;
   };
+  /**
+   * A per-request filter over the site's own custom adminNav entries, run in the shell payload
+   *  build after the engine's own role filter (`filterNavByRole`) has already dropped any
+   *  `ownerOnly` entry the signed-in editor cannot see. It receives only the custom nav items
+   *  (the built-in Core section, Library, Tags, and Settings entries never pass through this
+   *  seam) and the signed-in editor, and returns the items to render, section-shaped the same
+   *  way. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses
+   *  this to hide a section from an editor who fails that check, rather than teasing a link the
+   *  route then refuses. Awaited fresh on every request; the engine never caches its result.
+   *  Absent, the shell renders exactly the role-filtered set, unchanged from before this seam
+   *  existed.
+   */
+  navFilter?: (
+    items: ResolvedNavItem[],
+    ctx: { editor: Editor; event: ContentEvent },
+  ) => ResolvedNavItem[] | Promise<ResolvedNavItem[]>;
 }
 
 /**

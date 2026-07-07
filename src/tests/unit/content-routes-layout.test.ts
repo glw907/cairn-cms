@@ -5,6 +5,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
+import type { AdminNavConfig } from '../../lib/sveltekit/admin-nav.js';
 
 function runtime(): CairnRuntime {
   return baseRuntime({
@@ -34,9 +35,9 @@ function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: 
 afterEach(() => vi.restoreAllMocks());
 
 describe('shellPayload', () => {
-  it('returns nav concepts, the user, the active path, and owner capability for an authed path', () => {
+  it('returns nav concepts, the user, the active path, and owner capability for an authed path', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
@@ -51,24 +52,24 @@ describe('shellPayload', () => {
     expect(shell.customNav).toEqual([]);
   });
 
-  it('issues a CSRF token in the shell data', () => {
+  it('issues a CSRF token in the shell data', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
   });
 
-  it('denies the manage-editors capability to an editor', () => {
+  it('denies the manage-editors capability to an editor', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/pages', 'editor') as never);
+    const { shell } = await routes.shellPayload(event('/admin/pages', 'editor') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.canManageEditors).toBe(false);
   });
 
-  it('exposes the nav label when a navMenu is configured', () => {
+  it('exposes the nav label when a navMenu is configured', async () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-    const { shell } = createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor') as never);
+    const { shell } = await createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.navLabel).toBe('Primary nav');
   });
@@ -76,7 +77,7 @@ describe('shellPayload', () => {
   it('returns a bare public payload for a login path and never resolves the backend', async () => {
     const spy = vi.spyOn(backend, 'listBranches');
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/login', null) as never);
+    const { shell } = await routes.shellPayload(event('/admin/login', null) as never);
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
     expect(shell.siteName).toBe('Test Site');
@@ -92,7 +93,7 @@ describe('shellPayload', () => {
     gh.createBranch('cairn/oops', 'main'); // malformed: no entry id, dropped by the parser
     gh.install();
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     // pendingEntries is a streamed promise, resolved here for the assertion.
     expect(typeof shell.pendingEntries.then).toBe('function');
@@ -109,7 +110,7 @@ describe('shellPayload', () => {
     gh.createBranch('cairn/posts/a%2fb', 'main'); // percent-escaped id fails the slug rule
     gh.install();
     const routes = createContentRoutes(runtime());
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(await shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
   });
@@ -122,7 +123,7 @@ describe('shellPayload', () => {
       // and never carries PEM material, which the redaction assertion below pins.
       throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     });
-    const { shell } = routes.shellPayload(event('/admin/posts', 'owner', failingBackend) as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', failingBackend) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user.email).toBe('e@test');
@@ -138,6 +139,97 @@ describe('shellPayload', () => {
     expect(records[0].error).toContain('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
     expect(records[0].error).not.toContain('BEGIN');
     expect(records[0].error).not.toContain('PRIVATE KEY');
+  });
+});
+
+/** A custom nav config with one flat entry and one section, for the navFilter tests below. */
+const NAV_WITH_SECTION: AdminNavConfig = [
+  { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
+  {
+    label: 'Club',
+    children: [
+      { label: 'Members', icon: 'users', href: '/admin/club/members' },
+      { label: 'Events', icon: 'calendar', href: '/admin/club/events' },
+    ],
+  },
+];
+
+/** NAV_WITH_SECTION resolved, the shape filterNavByRole and navFilter both see. */
+const RESOLVED_NAV_WITH_SECTION = [
+  { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
+  {
+    label: 'Club',
+    children: [
+      { label: 'Members', iconName: 'users', href: '/admin/club/members', ownerOnly: false },
+      { label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false },
+    ],
+  },
+];
+
+describe('shellPayload: navFilter', () => {
+  it('leaves customNav at exactly the role-filtered set when no navFilter is configured', async () => {
+    const rt = runtime();
+    rt.adminNav = NAV_WITH_SECTION;
+    const routes = createContentRoutes(rt);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.customNav).toEqual(RESOLVED_NAV_WITH_SECTION);
+  });
+
+  it('hides a whole section from the payload when navFilter drops it', async () => {
+    const rt = runtime();
+    rt.adminNav = NAV_WITH_SECTION;
+    const routes = createContentRoutes(rt, {
+      navFilter: (items) => items.filter((item) => item.label !== 'Club'),
+    });
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+  });
+
+  it('awaits an async navFilter and uses its resolved result', async () => {
+    const rt = runtime();
+    rt.adminNav = NAV_WITH_SECTION;
+    const routes = createContentRoutes(rt, {
+      navFilter: async (items) => {
+        await Promise.resolve();
+        return items.filter((item) => item.label === 'Standalone');
+      },
+    });
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+  });
+
+  it('hands navFilter only the role-filtered custom items and the signed-in editor, never a built-in entry', async () => {
+    const rt = runtime();
+    rt.adminNav = NAV_WITH_SECTION;
+    let received: unknown;
+    let receivedEditor: unknown;
+    const routes = createContentRoutes(rt, {
+      navFilter: (items, ctx) => {
+        received = items;
+        receivedEditor = ctx.editor;
+        return items;
+      },
+    });
+    await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    // Exact equality proves navFilter saw only the two custom items above, resolved and
+    // role-filtered, and nothing from the built-in concepts/Library/Tags/Settings entries.
+    expect(received).toEqual(RESOLVED_NAV_WITH_SECTION);
+    expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+  });
+
+  it('yields an empty customNav, with the rest of the payload intact, when navFilter returns []', async () => {
+    const rt = runtime();
+    rt.adminNav = NAV_WITH_SECTION;
+    const routes = createContentRoutes(rt, { navFilter: () => [] });
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.customNav).toEqual([]);
+    expect(shell.siteName).toBe('Test Site');
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.canManageEditors).toBe(true);
   });
 });
 

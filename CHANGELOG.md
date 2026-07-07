@@ -20,6 +20,11 @@
   `children`) renders as its own collapsible sidebar group beside the built-in Core section, the
   way a site's Club section joins Content/Media/Settings. A flat `AdminNavEntry` keeps folding into
   Core exactly as before, so an existing `adminNav` config needs no changes.
+- `ContentRoutesDeps` gains `navFilter`: a per-request filter over the site's custom `adminNav`
+  entries, run after the engine's own role filter and seeing only the custom items, never a
+  built-in entry. A site whose own gating lives outside cairn (a role stored in its own D1, say)
+  uses this to hide a section from an editor who fails that check, instead of teasing a link the
+  route then refuses. Additive, no consumer action needed.
 
 ## 0.81.0
 

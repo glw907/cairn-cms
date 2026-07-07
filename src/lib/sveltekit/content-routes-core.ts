@@ -63,8 +63,9 @@ export type AdminShellData =
       user: { displayName: string; email: string; role: Role };
       concepts: NavConcept[];
       /**
-       * The developer's custom sidebar entries and sections, validated at construction and
-       *  role-filtered here.
+       * The developer's custom sidebar entries and sections, validated at construction,
+       *  role-filtered here, then narrowed further by the site's own `deps.navFilter` when
+       *  configured.
        */
       customNav: ResolvedNavItem[];
       pathname: string;
@@ -303,9 +304,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  an unawaited promise, so the shell renders before the GitHub listing returns and a custom route
    *  never blocks on it. A synchronous token-mint throw, a network failure, or a non-ok response all
    *  degrade the promise to null, so the topbar hides the publish-all action rather than showing a
-   *  wrong count.
+   *  wrong count. `customNav` is awaited up front (never streamed): the engine's own role filter runs
+   *  first, then the site's `deps.navFilter`, if configured, over that already-filtered result, fresh
+   *  every request.
    */
-  function shellPayload(event: ContentEvent): { shell: AdminShellData } {
+  async function shellPayload(event: ContentEvent): Promise<{ shell: AdminShellData }> {
     if (isPublicAdminPath(event.url.pathname)) {
       return { shell: { public: true, siteName: runtime.siteName } };
     }
@@ -332,16 +335,22 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         log.warn('github.unreachable', { scope: 'shell', error: String(err) });
         return null;
       });
+    // The developer's custom sidebar entries: the engine's own role filter runs first (an
+    // owner-only entry is hidden from a non-owner, and a section keeps only the children an
+    // editor may see, disappearing once every child is hidden), then the site's own navFilter, if
+    // configured, sees only that already-filtered set and the signed-in editor. Absent navFilter,
+    // this is exactly today's pure role filter.
+    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.role);
+    const customNav = ctx.deps.navFilter
+      ? await ctx.deps.navFilter(roleFilteredNav, { editor, event })
+      : roleFilteredNav;
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role },
         concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
-        // The developer's custom sidebar entries, role-filtered: an owner-only entry is hidden from a
-        // non-owner, and a section keeps only the children an editor may see, disappearing once every
-        // child is hidden. The validation already ran at construction, so this is a pure filter.
-        customNav: filterNavByRole(ctx.adminNav, editor.role),
+        customNav,
         pathname: event.url.pathname,
         canManageEditors: editor.role === 'owner',
         navLabel: runtime.navMenu?.label ?? null,

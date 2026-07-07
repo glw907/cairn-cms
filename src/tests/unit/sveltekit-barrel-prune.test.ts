@@ -94,6 +94,7 @@ describe('sveltekit barrel prune', () => {
     // Surface-pruning Task 6: anthropic/tidyTimeoutMs regrouped into one `tidy` bag.
     expect(memberNames).not.toContain('anthropic');
     expect(memberNames).not.toContain('tidyTimeoutMs');
-    expect(memberNames).toEqual(['tidy']);
+    // navFilter is the per-request custom-adminNav filter seam, added alongside `tidy`.
+    expect(memberNames).toEqual(['tidy', 'navFilter']);
   });
 });

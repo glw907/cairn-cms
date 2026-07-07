@@ -282,7 +282,7 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
-  shellPayload: (event: ContentEvent) => { shell: AdminShellData };
+  shellPayload: (event: ContentEvent) => Promise<{ shell: AdminShellData }>;
   helpLoad: (event: ContentEvent) => Promise<HelpData>;
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
@@ -320,7 +320,9 @@ The core of the admin surface. It takes the composed runtime and returns the loa
 the authed admin shell, the concept list, and the entry editor. `shellPayload` backs the shared admin
 shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
 lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
-otherwise. `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
+otherwise. Its caller awaits it: `shellPayload` resolves `customNav` up front, applying the
+engine's own role filter first, then the site's `deps.navFilter`, if configured, over that
+already-filtered result (see `ContentRoutesDeps` below). `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
@@ -708,7 +710,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaLibraryData` | Extension API | `interface MediaLibraryData { assets: MediaLibraryEntry[]; usage: Record<string, MediaUsageInfo>; error: string \| null }` | The Media Library view's data: the assets unioned across the default branch and open `cairn/*` branches, the per-hash usage overlay (an asset with no key renders as "no references found"), and the degraded-load error. |
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's optional support contact. |
 | `ContentEvent` | Unstable API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| `ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number } }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads: `tidy.client` so a test's tidy action calls a stubbed model, and `tidy.timeoutMs` to assert the deadline path. |
+| `ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedNavItem[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedNavItem[] \| Promise<ResolvedNavItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's custom `adminNav` entries. `shellPayload` calls it, when configured, on every request, after its own role filter has already dropped any `ownerOnly` entry the signed-in editor cannot see: `navFilter` receives only the custom items (never the built-in concepts, Library, Tags, or Settings entries, which never pass through this seam) and the signed-in editor, and returns the items to render. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the role-filtered set. |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; id: string }` | A refused delete: the one-line summary, the entries that still link to the refused one, and its id so a list marks the right row. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |

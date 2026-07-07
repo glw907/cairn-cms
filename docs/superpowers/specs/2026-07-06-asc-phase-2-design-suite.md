@@ -64,7 +64,17 @@ not carry into the new system at all** — the member-facing system goes live on
 has SUBSUMED all of MW's used functions, so there is never a hybrid state where the new
 site hosts MW widgets. (The public site's phase-1 cutover is independent: its
 my-account/directory surfaces stay "coming soon" until this criterion is met.)
-MW runs in parallel until the season boundary; the cutover imports MW's member records
+**MEMBER SELF-SERVICE IS A KEY REQUIREMENT (Geoff, 2026-07-06): members manage their
+own memberships**, and families have multiple members — so 2.2 builds two faces, not
+one: the admin screens AND the member-facing my-account surface (view standing, renew
+and pay, edit profile and directory visibility, manage the household's members). The
+data model is household-centric: one membership covers a household; its members each
+exist as people with their own directory presence. Member auth = the same lean
+magic-link pattern cairn's admin proved, against the member store instead of the editor
+allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the reason
+the my-account "coming soon" page exists in phase 1. Default rule (Geoff can override):
+any adult household member manages the household's membership; the audit trail records
+who. MW runs in parallel until the season boundary; the cutover imports MW's member records
 (migrate-and-verify: counts, spot checks, a parallel-run month).
 *Acceptance:* a new member joins and pays entirely in-house; the records reconcile with
 MW's export; renewals for the next season flow in-house.

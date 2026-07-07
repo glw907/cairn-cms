@@ -75,7 +75,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/ambient`
 
-- `App.Locals`: { editor?: Editor | null; backend?: Backend }
+- `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }
 
 ## `/components`
 

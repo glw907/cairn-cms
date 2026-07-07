@@ -134,6 +134,13 @@ same snapshot discipline the dead payments ledger intended). MW runs in parallel
 MW's export; renewals for the next season flow in-house.
 
 **Pass 2.3 — the directory + member email.**
+**THE DIRECTORY IS THE PASS'S LEAD DELIVERABLE (Geoff, 2026-07-06: "a HIGHLY requested
+feature")** — the members' most-demanded feature, integrated into the site (behind
+member auth, per-member visibility honored: visible/partial/hidden, birthdates never
+shown). Sequence 2.3 accordingly: the directory ships FIRST, as soon as 2.2's member
+store and auth exist — it is the fastest member-visible payoff of the whole absorption
+and the natural first proof of member login. Email consolidation follows within the
+pass.
 **SEGMENT SENDS (Geoff, 2026-07-06): batch email to member SEGMENTS is a requirement** —
 "all current members" and "all lapsed members" are the named examples, and segments
 EXTEND to class rosters ("people signed up for class X" is a first-class segment). The

@@ -1,5 +1,14 @@
 # The Topo design brief (Fable, 2026-07-06)
 
+> **Ruling addendum (Geoff, 2026-07-07): Topo starts visually NEUTRAL and easy to brand,
+> the same split Wayfinder/Waymark ratified — the neutral scaffold is the product, identity
+> is a layer a consumer applies.** This narrows "Waymark's voice on top" below: Topo's
+> default ships the family craft (type scale, rhythm, quiet chrome, the dark system) in a
+> neutral register; the Waymark persona (Fraunces-class display, warm stone, glyph rules)
+> stays OUT of the default and arrives only as a consumer's brand layer. The mockup
+> candidates present the neutral default, with one branded variant (the handbook wearing
+> club identity) demonstrating the brandability.
+
 Topo: the family's documentation theme — Starlight's anatomy, gently brought into the
 cairn fold with a Waymark identity, aiming to be a best-of-breed example of the type
 (Geoff's rulings, 2026-07-06, all binding). First consumer: handbook.aksailingclub.org

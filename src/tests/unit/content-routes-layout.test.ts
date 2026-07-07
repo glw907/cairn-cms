@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
@@ -167,13 +167,31 @@ const RESOLVED_NAV_WITH_SECTION = [
 ];
 
 describe('shellPayload: navFilter', () => {
+  // These tests never install a GitHub double, so the shell's fire-and-forget pendingEntries
+  // probe would hit the network and settle (logging github.unreachable) after the test ends.
+  // On a slow CI worker that log lands during worker teardown and fails the run with a pending
+  // onUserConsoleLog rpc. A sync-throwing backend settles the probe immediately; each test
+  // silences the expected warn and awaits the settled probe before returning.
+  const quickFailBackend = () =>
+    makeGithubBackend(REPO, async () => {
+      throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
+    });
+
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it('leaves customNav at exactly the role-filtered set when no navFilter is configured', async () => {
     const rt = runtime();
     rt.adminNav = NAV_WITH_SECTION;
     const routes = createContentRoutes(rt);
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual(RESOLVED_NAV_WITH_SECTION);
+    await shell.pendingEntries;
   });
 
   it('hides a whole section from the payload when navFilter drops it', async () => {
@@ -182,9 +200,10 @@ describe('shellPayload: navFilter', () => {
     const routes = createContentRoutes(rt, {
       navFilter: (items) => items.filter((item) => item.label !== 'Club'),
     });
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+    await shell.pendingEntries;
   });
 
   it('awaits an async navFilter and uses its resolved result', async () => {
@@ -196,9 +215,10 @@ describe('shellPayload: navFilter', () => {
         return items.filter((item) => item.label === 'Standalone');
       },
     });
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+    await shell.pendingEntries;
   });
 
   it('hands navFilter only the role-filtered custom items and the signed-in editor, never a built-in entry', async () => {
@@ -213,23 +233,25 @@ describe('shellPayload: navFilter', () => {
         return items;
       },
     });
-    await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     // Exact equality proves navFilter saw only the two custom items above, resolved and
     // role-filtered, and nothing from the built-in concepts/Library/Tags/Settings entries.
     expect(received).toEqual(RESOLVED_NAV_WITH_SECTION);
     expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    if (!shell.public) await shell.pendingEntries;
   });
 
   it('yields an empty customNav, with the rest of the payload intact, when navFilter returns []', async () => {
     const rt = runtime();
     rt.adminNav = NAV_WITH_SECTION;
     const routes = createContentRoutes(rt, { navFilter: () => [] });
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual([]);
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
     expect(shell.canManageEditors).toBe(true);
+    await shell.pendingEntries;
   });
 });
 

@@ -49,6 +49,8 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `tidy.error` | warn | A tidy call fails: a deadline overrun, a client abort, or a model error. Maps to a retryable fail(502). Carries no content and no key. | `editor`, `model`, `aborted` |
 | `tidy.refused` | warn | The model refuses to edit the text. Maps to fail(422); the author's text is untouched. | `editor`, `model` |
 | `tidy.empty` | warn | The model returns no text. Maps to fail(502). | `editor`, `model` |
+| `admin.action.audited` | info | A custom admin action wrapped in `adminAction` calls `ctx.audit`. | `editor`, `action`, `entity`, `entityId`, `detail` |
+| `admin.action.unaudited` | error | A custom admin action wrapped in `adminAction` returns having called `ctx.audit` zero times, in production (dev throws instead). | `editor`, `path` |
 
 A few fields recur across families and are worth knowing up front. `branch` (`cairn/<concept>/<id>`)
 appears on `commit.succeeded`, `commit.failed`, and `publish.failed` only on the save path. Deletes,

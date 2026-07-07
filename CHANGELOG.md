@@ -1,3 +1,26 @@
+## Unreleased
+
+### Engine (admin extension seams; no consumer action)
+
+- A new `@glw907/cairn-cms/admin-fields` subpath exports the admin field-renderer primitives a
+  site's own custom `/admin/` screen composes instead of hand-rolling worse copies: `SelectField`,
+  `TextField`, and the shared `FieldLabel` wrapper both compose. The set is deliberately small
+  today (proven by the aksailingclub-org club-admin scaffold's one real consumer) and grows the
+  same way the engine's own field vocabulary does.
+- `OfficeList` joins `@glw907/cairn-cms/components`: the header-plus-card shell every triage-table
+  screen composes, lifted out of `ConceptList` and kept to exactly its header and card frame, so a
+  custom Club-style list screen gets the same office rhythm with no copy-paste.
+- `adminAction` joins `@glw907/cairn-cms/sveltekit`: wraps a custom admin action's handler with the
+  engine's editor, CSRF, and audit contract. `createAuthGuard` already verifies CSRF on every
+  `/admin/**` POST, so the wrapper's check is defense-in-depth; its real job is resolving the
+  signed-in editor as a typed `ctx.editor` and requiring an audit emit for a mutating action (a
+  zero-emit action throws in dev and logs the new `admin.action.unaudited` event in production).
+  Every emit logs `admin.action.audited`.
+- `adminNav` gains one level of grouping: an `AdminNavSection` (a label plus its own flat
+  `children`) renders as its own collapsible sidebar group beside the built-in Core section, the
+  way a site's Club section joins Content/Media/Settings. A flat `AdminNavEntry` keeps folding into
+  Core exactly as before, so an existing `adminNav` config needs no changes.
+
 ## 0.81.0
 
 <!-- release-size: minor -->

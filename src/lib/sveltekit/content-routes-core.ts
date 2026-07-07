@@ -31,7 +31,7 @@ import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, isPublicAdminPath } from './guard.js';
-import type { ResolvedNavEntry } from './admin-nav.js';
+import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -62,8 +62,11 @@ export type AdminShellData =
       siteName: string;
       user: { displayName: string; email: string; role: Role };
       concepts: NavConcept[];
-      /** The developer's custom sidebar entries, validated at construction and role-filtered here. */
-      customNav: ResolvedNavEntry[];
+      /**
+       * The developer's custom sidebar entries and sections, validated at construction and
+       *  role-filtered here.
+       */
+      customNav: ResolvedNavItem[];
       pathname: string;
       canManageEditors: boolean;
       /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
@@ -336,8 +339,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         user: { displayName: editor.displayName, email: editor.email, role: editor.role },
         concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
         // The developer's custom sidebar entries, role-filtered: an owner-only entry is hidden from a
-        // non-owner. The validation already ran at construction, so this is a pure filter.
-        customNav: ctx.adminNav.filter((e) => !e.ownerOnly || editor.role === 'owner'),
+        // non-owner, and a section keeps only the children an editor may see, disappearing once every
+        // child is hidden. The validation already ran at construction, so this is a pure filter.
+        customNav: filterNavByRole(ctx.adminNav, editor.role),
         pathname: event.url.pathname,
         canManageEditors: editor.role === 'owner',
         navLabel: runtime.navMenu?.label ?? null,

@@ -152,6 +152,50 @@ export const load = (event) => {
 };
 ```
 
+### `adminAction`
+
+Stability tier: Extension API.
+
+```ts
+declare function adminAction<T>(
+  handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
+  deps?: AdminActionDeps,
+): (event: AdminActionEvent) => Promise<T>;
+```
+
+Wrap a custom admin action's handler (Part C item 3 of the phase-2 design suite): the admin-scoped
+server helper a site's own `/admin/` form action calls for the engine's editor and audit contract.
+`createAuthGuard` already verifies the double-submit CSRF token on every unsafe POST under
+`/admin/**`, custom routes included, before any route's own action runs, so `adminAction`'s own CSRF
+check is defense-in-depth, not the sole gate; its real job is resolving the signed-in editor as a
+typed `ctx.editor` and requiring an audit emit for a mutating action, a hook the engine has no other
+seam for.
+
+In order, fail-closed at every step: (1) `event.locals.editor` must be populated, else a 403 (the
+handler never runs); (2) the CSRF cookie and the posted `csrf` field must match, constant-time, else
+a 403; (3) the handler runs once, reading `event.request.formData()` exactly once so the handler
+never re-reads an already-consumed body; (4) the handler must call `ctx.audit` at least once. A
+mutating action that emits zero audit records throws `AdminActionError(500, ...)` in dev (`import.meta.env.DEV`,
+overridable through `deps.isDev` for a test) and logs `admin.action.unaudited` in production, since an
+unaudited state change is a defect here but should never 500 a live site. Every emit logs
+`admin.action.audited` (see [log events](./log-events.md)) and, when the site sets one, forwards the
+record to `event.locals.auditSink`.
+
+```ts
+// src/routes/admin/club/events/[id]/+page.server.ts
+import { adminAction } from '@glw907/cairn-cms/sveltekit';
+import { db } from '$lib/club/db.js';
+
+export const actions = {
+  approve: adminAction(async ({ form, ctx }) => {
+    const id = String(form.get('id'));
+    await db.signups.approve(id);
+    ctx.audit({ action: 'approve', entity: 'signup', entityId: id });
+    return { ok: true };
+  }),
+};
+```
+
 ## Per-route factories (advanced)
 
 The four factories below are the advanced per-route seam. `createCairnAdmin` wraps them, so a
@@ -521,7 +565,10 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 
 A site adds a sidebar link to one of its own `/admin/` routes by declaring an `adminNav` entry in its
 adapter. The entries are plain data, validated when the runtime composes, so a bad icon or a colliding
-href fails the build rather than rendering a broken or shadowing link. These three types are the seam.
+href fails the build rather than rendering a broken or shadowing link. `adminNav` is a mix of flat
+entries and one level of grouping: a plain `AdminNavEntry` folds into the built-in Core section
+beside the content concepts, and an `AdminNavSection` (a label plus its own flat `children`) renders
+as its own collapsible sidebar group, the way Part B's Club section joins Content/Media/Settings.
 Stability tier: Extension API.
 
 ### `AdminNavEntry`
@@ -579,6 +626,58 @@ interface ResolvedNavEntry {
 The validated shape the shell renders, produced from an `AdminNavEntry`: the icon name resolved and
 `ownerOnly` defaulted to false. The authed shell payload carries the role-filtered set of these.
 
+### `AdminNavSection`
+
+Stability tier: Extension API.
+
+```ts
+interface AdminNavSection {
+  label: string;
+  children: AdminNavEntry[];
+}
+```
+
+One level of grouping: a named group of the developer's own flat entries, rendered as its own
+collapsible sidebar group beside the built-in Core section. A section holds only flat entries, so
+grouping stays exactly one level deep.
+
+### `AdminNavConfig`
+
+Stability tier: Extension API.
+
+```ts
+type AdminNavConfig = (AdminNavEntry | AdminNavSection)[];
+```
+
+A site's raw `adminNav` config: a mix of flat entries and sections, in declaration order. The
+adapter's `editor.adminNav` field takes this shape.
+
+### `ResolvedNavSection`
+
+Stability tier: Extension API.
+
+```ts
+interface ResolvedNavSection {
+  label: string;
+  children: ResolvedNavEntry[];
+}
+```
+
+The validated shape of an `AdminNavSection`, its children each resolved the same way a flat entry
+is.
+
+### `ResolvedNavItem`
+
+Stability tier: Extension API.
+
+```ts
+type ResolvedNavItem = ResolvedNavEntry | ResolvedNavSection;
+```
+
+One resolved `adminNav` item: a flat entry, or a one-level section of them. `AdminShellData.customNav`
+carries an array of these, and the shell renders a section as its own named sidebar group and folds a
+flat entry into Core. Discriminate with `'children' in item`.
+
 ---
 
 ## Types
@@ -590,8 +689,15 @@ imports the matching `*Data` type to type its `data` prop.
 | --- | --- | --- | --- |
 | `AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink }` | The config `createAuthRoutes` takes: the email branding and an optional custom sender. |
 | `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
+| `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
+| `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
+| `AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. Optional; every emit logs `admin.action.audited` regardless. |
+| `AdminActionEvent` | Extension API | `interface AdminActionEvent { url: URL; request: Request; cookies: CookieJar; locals: { editor?: Editor \| null; auditSink?: AdminActionAuditSink } }` | The minimal event shape `adminAction` reads: enough to verify CSRF, resolve the editor, and reach the site's optional audit sink. A real SvelteKit `RequestEvent` satisfies it. |
+| `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
+| `AdminActionDeps` | Extension API | `interface AdminActionDeps { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`import.meta.env.DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
+| `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` on a failed guard (403) or a required-audit violation in dev (500). A site's error boundary reads `status` to render the right response. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
-| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role }; concepts: NavConcept[]; customNav: ResolvedNavEntry[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: Promise<{ concept; id }[] \| null> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor, the nav, the active path, the CSRF token, and the pending entries, adds the developer's role-filtered `customNav`, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. |
+| `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role }; concepts: NavConcept[]; customNav: ResolvedNavItem[]; pathname; canManageEditors; navLabel: string \| null; theme; collapsedNav; csrf; pendingEntries: Promise<{ concept; id }[] \| null> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor, the nav, the active path, the CSRF token, and the pending entries, adds the developer's role-filtered `customNav`, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). |

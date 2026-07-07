@@ -72,10 +72,11 @@ requirement suggests a guardian-contact line for 8-12 enrollees).
 The aksailingclub-org repo (renamed from asc-site; the worker stays asc-site) gains its admin extension surface (Part C's contract work lands here):
 the events and classes CRUD moves from ops into cairn's admin as custom screens — chosen
 first because the domain is simple, the site already reads the data, the ops screens are
-the most self-contained, and success/failure teaches the seam cheaply. The events schema
-gets its first improvement: a CHECK constraint on event_type + the shared category enum
-the C7 taxonomy wants (a migration, verified against the 12 live rows). Ops's events
-screens retire; everything else in ops keeps running.
+the most self-contained, and success/failure teaches the seam cheaply. Events and classes land
+in asc-club with the category model built in from day one (the two-database strategy —
+no in-place change to asc-ops ever); the 12 live events and 5 classes arrive through a
+verified import script, and the site's events read repoints to asc-club at cutover.
+Ops's events screens retire; everything else in ops keeps running.
 *Acceptance:* volunteers manage events/classes in cairn's admin; the season/events pages
 read the same D1; ops's event routes return 410 pointing at the new home; the audit-log
 convention carries over (every write attributed).
@@ -221,13 +222,15 @@ altered. The consequences, all favorable:
 
 ### The data tier (cross-pass principles)
 
-- New domains (members, households, memberships, dues) get NEW tables designed clean;
-  existing tables improve by migration only where a pass touches them (events first).
-- Every migration ships with a verification script (row counts, invariant checks, a
-  before/after diff on real data) and its rollback.
-- The read surfaces version: phase-1's events read keeps working across 2.1's migration
-  (additive columns first, the constraint after the backfill).
-- The audit_log convention is sacred and extends to the new domains from day one.
+- Every domain's tables are designed clean in asc-club (the DDL proposal:
+  assets/phase-2-reference/asc-club-schema.sql — every 2026-07-06 ruling structural);
+  asc-ops is never altered.
+- Every asc-club migration AND every import script ships with a verification script
+  (row counts against known totals — 210 members / 93 memberships for the MW import —
+  invariant checks, a before/after diff) and its rollback.
+- Read surfaces version by REPOINTING: phase-1's events read keeps working until 2.1's
+  cutover swaps its binding to asc-club; rollback is repointing back.
+- The audit_log convention is sacred and extends to every new domain from day one.
 
 ### THE SEASON ROLLOVER (Geoff: "unusual but important"; deep-read 2026-07-06)
 
@@ -305,8 +308,10 @@ two. The architecture, per capability:
   fields via the existing media-library picker (another reuse seam).
 - **Members (2.2):** the list with the directory-visibility chip and season-standing
   column; the detail as a two-pane (identity + household left, memberships/payments
-  timeline right — the timeline reuses the audit-trail presentation). Signup review as a
-  queue screen (the office-list pattern again; approve/deny with the email templates).
+  timeline right — the timeline reuses the audit-trail presentation). Signup review as the
+  review-inbox (BUILT on the scaffold branch: list-row evidence + approve/deny through
+  adminAction, the forced-choice deny dialog; "under background review" copy per the
+  real activate-immediately semantics).
 - **Assets/Waitlist (2.4):** the by-asset and by-person views ops proved, re-expressed as
   two lenses over one screen family; the waitlist as a single polymorphic queue with
   type chips (the redesign kills the two-page split).
@@ -374,7 +379,11 @@ pre-beta contract changes, specified now so the successor implements a designed 
 3. **Admin-scoped server helpers.** The extension surface needs blessed access to the
    admin's CSRF + session + audit conventions for custom POST actions (today: CsrfField
    exists; the action-side verify helper and an audit hook do not). Contract: an
-   `adminAction` wrapper (verifies CSRF + editor, exposes a typed audit emit).
+   `adminAction` wrapper (editor context + a REQUIRED typed audit emit; the CSRF check
+   is defense-in-depth — the scaffold verified against guard.ts that the engine guard
+   already enforces CSRF on every /admin/** POST, narrowing this item's real gap). The
+   reference implementation + acceptance tests: assets/phase-2-reference/admin-action.ts;
+   the scaffold's stand-ins are the proven consumer shapes.
 4. **Nav sections.** adminNav today is flat; the Club section wants one level of
    grouping. Trivial, additive.
 All four are additive to the published surface — the pre-beta breaking license likely
@@ -386,7 +395,12 @@ extending-developer tutorial's future material).
 
 Part C items 1-4 land as a cairn engine pass BEFORE pass 2.1 builds on them (the same
 evidence-first rhythm as the harvest passes; the ASC build review's findings fold in).
-The suite's open questions are deliberately few: the dues-payment pattern choice in 2.2
-(links vs checkout — decide in-pass with the volume data), the season-boundary date for
-the MW parallel run (Geoff's call, a calendar fact), and nothing else — everything other
-than those is specified.
+The suite's open questions, all deliberately parked and none blocking a pass start:
+(1) the dues-payment pattern in 2.2 (links vs checkout — decide in-pass); (2) the
+season-boundary date for the MW parallel run (Geoff's calendar); (3) does a tier change
+adjust an unspent credit grant; (4) what happens to an assigned asset when its
+membership lapses; (5) the instructor roster's exact fields (privacy floor); (6) whether
+adminNav varies per-request for role-hidden sections (verify in the Part C pass).
+Everything else is specified — and the asc-club schema DDL, the ratified mockups, the
+five built screens, and the reference implementations are the drawn lines to color
+inside.

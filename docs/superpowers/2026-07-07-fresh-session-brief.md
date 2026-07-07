@@ -9,8 +9,12 @@ the suggestion rules; never silently spend, never silently absorb).
 
 ## THE OPUS OPENING PROTOCOL (do these in order, before anything else)
 
-You are Opus conducting under the post-Fable system. The judgment is already on paper —
-your job is faithful verification and execution, not re-derivation. In order:
+You are conducting under this brief regardless of model. **If the window extended and
+you are FABLE (2026-07-07 got one more day): conduct directly — the judgment seat is
+yours, skip the propose-Fable rules, and spend the day on the queue below plus whatever
+judgment-dense work Geoff streams.** If you are OPUS: the judgment is already on paper —
+your job is faithful verification and execution, not re-derivation, and the
+suggestion rules bind you. In order:
 
 1. **Check the overnight machines' outcomes** (they ran in the old session):
    `git -C ~/Projects/aksailingclub-org log --oneline -15` (the completion pass commits

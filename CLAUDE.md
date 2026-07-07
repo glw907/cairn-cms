@@ -149,19 +149,23 @@ memory.
 
 The charter is the governing lens: the premise check, "is this cairn's job, and is it the leanest form?",
 runs before the correctness checks on every spec. The extending-developer persona sits under it as a
-forward diagnostic for the lean extensibility redesign (the next pass), not a co-equal standing dimension
-and not a license to build a platform. The persona: a developer who launches a content-managed site fast on
-cairn, then builds their own functionality on top, and keeps pulling cairn updates without rework. Per the
-charter, cairn serves that developer with thin seams, owner/editor identity they read through a defined
-hand-off, an admin skeleton they extend in the DaisyUI + Tailwind idiom, while they bring their own auth,
-data, and domain logic. The redesign answers four diagnostic questions against that boundary: can a developer
-(1) extend the admin skeleton through a thin supported seam, (2) read the owner/editor identity on their own
-routes without reaching into engine internals, (3) depend on a narrow enforced (not merely documented)
-public boundary, and (4) upgrade across versions without hand-applied steps or silent failures? The persona,
-the questions, and the redesign inputs are in
-[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md); read the charter
-first. The earlier register-components scaffolding (`CairnExtension`/`AdminPanel`/`FieldTypeDef`) was removed
-in the principle-adherence pass, so the redesign starts from a clean engine.
+forward diagnostic for the lean extensibility redesign (shipped `0.77.0`: the `CairnAdminShell` custom-route
+seam plus data-only `adminNav`, admin-scoped `locals.editor`, and the `check:surface`-enforced boundary),
+not a co-equal standing dimension and not a license to build a platform. The persona: a developer who
+launches a content-managed site fast on cairn, then builds their own functionality on top, and keeps
+pulling cairn updates without rework. Per the charter, cairn serves that developer with thin seams,
+owner/editor identity they read through a defined hand-off, an admin skeleton they extend in the DaisyUI +
+Tailwind idiom, while they bring their own auth, data, and domain logic. The redesign answered four
+diagnostic questions against that boundary: can a developer (1) extend the admin skeleton through a thin
+supported seam, (2) read the owner/editor identity on their own routes without reaching into engine
+internals, (3) depend on a narrow enforced (not merely documented) public boundary, and (4) upgrade across
+versions without hand-applied steps or silent failures? The persona, the questions, and the pre-redesign
+inputs are in
+[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md) (a point-in-time
+brief predating the shipped seams; verify its baseline against the code before acting on it); read the
+charter first. The earlier register-components scaffolding (`CairnExtension`/`AdminPanel`/`FieldTypeDef`)
+was removed in the principle-adherence pass, so the redesign built its seams onto a clean engine. The
+seams' cross-initiative stability is now tracked as `1.0` readiness in [`ROADMAP.md`](ROADMAP.md).
 
 ## Watch items (conditional follow-ups)
 
@@ -221,19 +225,19 @@ aesthetics and carries no reference comparison; never use it alone for a port.
 
 ## Waymark iterates after every use (Geoff, 2026-07-05)
 
-Every theme or site built on the Waymark template ends with a mandatory harvest step:
+Every theme or site built on cairn's chassis ends with a mandatory harvest step:
 the frictions, missing seams, structural-variant needs, and component gaps that build
 surfaced fold back as landed improvements or pre-beta-harvest ledger entries — into the
 CHASSIS above all (the canonical showcase copy is the starting chassis every next theme
 receives: a seam a theme fought, a recipe it needed, a coupling its subtraction exposed,
 a removal note that lied — each lands in the chassis before the pass closes), and into
 the engine where the lesson runs deeper. A port or rebuild is not done until its harvest is
-banked. The template improves with every consumer, and the next port starts from the
+banked. The chassis improves with every consumer, and the next port starts from the
 improved base; the `visual-fidelity` skill carries this as its step 7.
 
 ## The responsive standard (family-wide, Geoff 2026-07-05)
 
-Every cairn-family artifact — the Waymark template, every theme (including ports of
+Every cairn-family artifact — every theme (Waymark the flagship, plus ports of
 external themes), the showcase, consumer-site rebuilds, cairn.pub, and Topo — meets the
 five-viewport bar: 320, 390, 768, 1440, and 2560, composed at the extremes (a deliberate
 posture at ultrawide, a wrapped-and-reachable masthead at 320), never merely unbroken. The

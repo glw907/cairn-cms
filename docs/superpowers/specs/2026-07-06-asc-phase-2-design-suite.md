@@ -130,6 +130,15 @@ two. The architecture, per capability:
   gate's caution carried to destructive club actions (season rollover gets the
   publish-style confirm).
 
+**MOCKUPS RATIFIED (Geoff, 2026-07-06: "The mockup looks GREAT").** The eight-screen
+set (artifact 76c80c34; the source HTML archived beside this spec as
+assets/2026-07-06-club-admin-mockups.html) is the DESIGN CONTRACT for the phase-2 admin
+build — adversarially reviewed, empirically re-audited, Fable-read, and Geoff-blessed.
+Three build-tier refinements ride with it (not relitigated at build time, just done):
+destructive actions move behind the detail's confirm (no per-row trash at arm's reach),
+the identity pane decides read-view-then-edit explicitly, and the type-chip emphasis
+hierarchy gets one deliberate rule.
+
 ## Part C — the engine and site-contract changes
 
 The seam today: CairnAdminShell + a data-only adminNav + admin-scoped locals.editor +

@@ -200,7 +200,7 @@ across the cutover; MW's final export archived.
 
 ### The data tier — THE TWO-DATABASE STRATEGY (Geoff, 2026-07-06, supersedes in-place)
 
-**The new system gets its own fresh D1** (working name `asc-club`): the complete,
+**The new system gets its own fresh D1, `asc-club`** (the name RATIFIED by Geoff, 2026-07-06): the complete,
 well-structured schema — households, members, memberships, the credit ledger, assets
 attached to memberships, events/classes with the category model built in from day one —
 designed whole instead of evolved out of ops's workaround shapes. `asc-ops` is NEVER

@@ -78,8 +78,14 @@ site hosts MW widgets. (The public site's phase-1 cutover is independent: its
 my-account/directory surfaces stay "coming soon" until this criterion is met.)
 **MEMBER SELF-SERVICE IS A KEY REQUIREMENT (Geoff, 2026-07-06): members manage their
 own memberships**, and families have multiple members — so 2.2 builds two faces, not
-one: the admin screens AND the member-facing my-account surface (view standing, renew
-and pay, edit profile and directory visibility, manage the household's members). The
+one: the admin screens AND the member-facing my-account surface, enumerated (Geoff,
+2026-07-06): view standing; renew and pay; edit profile and directory visibility;
+manage the household's members (the primary's power); **SIGN UP FOR CLASSES online with
+AUTOMATIC credit redemption** — the flow that kills the published manual chore
+("mention it when registering: our membership committee tracks credits manually"): a
+logged-in member registering for a class sees their credit balance offered at checkout,
+redeems it or pays the $100, and joins the class waitlist when it's full — their
+class/waitlist status visible in my-account thereafter. The
 data model is household-centric: one membership covers a household; its members each
 exist as people with their own directory presence, and **people carry BIRTHDATES
 (Geoff, 2026-07-06)** — the field that makes junior/adult distinctions computable

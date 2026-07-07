@@ -78,17 +78,31 @@ allowlist — the site-brings-its-own-auth seam eating its own dogfood, and the 
 the my-account "coming soon" page exists in phase 1. **Each family has ONE PRIMARY member (Geoff, 2026-07-06)**: the primary manages the
 household's membership (renewal, payment, household edits); the model carries the
 designation explicitly and the admin can reassign it. The audit trail records who acted.
-**CLASS CREDITS (Geoff, 2026-07-06: "tricky"): the joining benefit is a durable
-LEDGER.** Family memberships grant TWO free class credits; single and young-adult
-memberships grant ONE. Credits are usually spent in the first year but legitimately
-carry to a second or third — so they are modeled as a credit ledger (grant rows at
-joining, sized by tier; redemption rows referencing the class enrollment they paid for;
-balance = the sum), attached to the household. A ledger survives season rollovers by
-construction — nothing about the yearly increment touches it — which is precisely what
-the delayed-use behavior requires and what a per-season flag could never express. The
-admin sees the balance on the member/household detail; a class signup offers redemption
-when the balance covers it; every grant and redemption is audited. (Open, parked: does
-a tier change adjust an unspent grant? Decide in-pass with Geoff.)
+**MEMBERS and MEMBERSHIPS are TWO DIFFERENT ENTITIES (Geoff, 2026-07-06, canon):**
+members are people; memberships are the purchased per-season thing a household holds.
+The model keeps them as separate entities everywhere — screens, schema, language.
+
+**THE REAL TIER TABLE (from the club's published pages, 2026-07-06):**
+Individual $250 (1 class credit) · Family $500 (2 credits) · Young Adult $100/year,
+ages 18-25 (1 credit). Additional classes $100 each. Class tracks are age-gated (youth
+8-12 with parents on-premises; adult/teen 13+; young-adult tier 18-25) — the birthdate
+field's concrete consumers.
+
+**CLASS CREDITS (Geoff: "tricky"): a durable LEDGER, and the club's own pages make the
+requirements exact.** Each credit is dollar-valued ($100, waives one class fee), granted
+at joining sized by tier, and **"credits never expire, even if your membership lapses"**
+(the published promise) — so the ledger outlives seasons AND lapses by construction.
+Today "our membership committee tracks credits manually" (the education page's own
+words): the ledger is the automation of an existing manual chore, the strongest kind of
+feature. Grant rows at joining; redemption rows referencing the class enrollment;
+balance derived; everything audited. (Open, parked: does a tier change adjust an
+unspent grant? Decide in-pass with Geoff.)
+
+**THE SIGNUP FLOW'S REAL SEMANTICS (from the join page): membership activates
+IMMEDIATELY on payment; the board reviews in the background** (2-3 days, silence unless
+there's an issue) — so the admin's signup-review queue is a POST-HOC review inbox, not
+a pre-approval gate, and the member experience (join, get the welcome email, register
+for class the same day) must never block on it. Renewals need no review at all.
 **Membership comes in THREE TIERS with ADJUSTABLE PRICES (Geoff, 2026-07-06)**: tier
 prices are admin-editable settings (the Club settings screen, beside the asset-type
 fees), never code constants — a price change is an audited admin action, effective for

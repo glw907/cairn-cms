@@ -55,7 +55,9 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
 
   it('CairnAdminDeps regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
     const { names } = memberNames(SVELTEKIT_DTS, 'CairnAdminDeps');
-    expect(names).toEqual(['auth', 'tidy']);
+    // navFilter forwards to ContentRoutesDeps['navFilter'] alongside tidy, added for the
+    // per-request custom-adminNav filter seam.
+    expect(names).toEqual(['auth', 'tidy', 'navFilter']);
   });
 
   it('CairnPlatformBindings names every always-on engine binding as required, ANTHROPIC_API_KEY optional', () => {

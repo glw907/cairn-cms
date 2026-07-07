@@ -54,6 +54,12 @@ export interface CairnAdminDeps {
    *  to avoid a real network call.
    */
   tidy?: ContentRoutesDeps['tidy'];
+  /**
+   * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
+   *  stored in its own D1, say) injects this to hide a custom adminNav section from an editor who
+   *  fails that check. See `ContentRoutesDeps['navFilter']`.
+   */
+  navFilter?: ContentRoutesDeps['navFilter'];
 }
 
 /**
@@ -85,7 +91,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: deps.auth?.send });
-  const content = createContentRoutes(runtime, { tidy: deps.tidy });
+  const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter });
   const editors = createEditorRoutes();
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;

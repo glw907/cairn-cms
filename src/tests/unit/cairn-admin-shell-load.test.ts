@@ -69,4 +69,19 @@ describe('createCairnAdmin shellLoad', () => {
     expect(shell.siteName).toBe('Test Site');
     expect(spy).not.toHaveBeenCalled();
   });
+
+  it('forwards CairnAdminDeps.navFilter to the content routes, so a dropped section is absent from the shell', async () => {
+    new GithubDouble({ main: {} }).install();
+    const rt = runtime();
+    rt.adminNav = [
+      { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
+      { label: 'Club', children: [{ label: 'Members', icon: 'users', href: '/admin/club/members' }] },
+    ];
+    const { shellLoad } = createCairnAdmin(rt, {
+      navFilter: (items) => items.filter((item) => item.label !== 'Club'),
+    });
+    const { shell } = await shellLoad(eventFor('/admin/posts') as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.customNav.map((item) => item.label)).toEqual(['Standalone']);
+  });
 });

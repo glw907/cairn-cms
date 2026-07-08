@@ -85,6 +85,14 @@ describe('admin css build', () => {
     expect(css).toContain('.lg\\:drawer-open > .drawer-toggle ~ .drawer-side');
   });
 
+  it('fixes the desktop sidebar to the viewport, overriding daisyUI\'s own sticky position', () => {
+    // The unlayered override (PINNED unlayered rule 3 of 3) that stops the desktop sidebar drifting
+    // with a document scroll on a host whose body margin is unreset (the embed-anywhere default).
+    expect(css).toMatch(
+      /\.lg\\:drawer-open > \.drawer-toggle ~ \.drawer-side\s*\{\s*position:\s*fixed/,
+    );
+  });
+
   // The admin build must scan ONLY the admin components, never the whole repo. These tokens exist only in
   // examples/showcase and in docs that discuss the showcase rename; if the sheet carries them, Tailwind's
   // automatic source detection is scanning outside src/lib/components and compiling foreign candidates into

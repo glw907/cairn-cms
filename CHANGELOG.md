@@ -1,5 +1,21 @@
 ## Unreleased
 
+### Engine (admin shell sidebar fixes; no consumer action)
+
+- Fixed a scroll-bleed defect in the admin shell: the persistent desktop sidebar rode DaisyUI's own
+  `position: sticky`, which computes its "before it sticks" travel from the sidebar's static offset
+  in the document. A host that omits Preflight (cairn's own embed-anywhere default) leaves the UA's
+  default body margin in place, so the sidebar visibly moved a few pixels at the top and bottom of a
+  page scroll. `cairn-admin.css` now overrides it to `position: fixed`, the same mechanism the
+  mobile overlay variant already used, which is anchored to the viewport outright and carries no
+  such drift.
+- Fixed the persistent desktop sidebar wrongly receding on an ordinary navigation: `isDeskRoute`
+  classified any three-segment `/admin` path as an open document, but a developer's own custom nav
+  can route just as deep (a section entry like `/admin/club/events`) without opening a document.
+  Navigating to such a route fell back to the mobile toggle-controlled overlay, which read as the
+  sidebar sliding away at desktop width. `isDeskRoute` now also requires the second path segment to
+  name a real content concept.
+
 ### Engine (pass 2.1 harvest; no consumer action)
 
 - `adminAction` exempts a handler's `ActionFailure` return (SvelteKit's `fail()`) from the

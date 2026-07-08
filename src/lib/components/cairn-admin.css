@@ -11,7 +11,7 @@
    native DaisyUI 5.6 equivalent and so must stay. It carries the accessible ink families, the editor
    color system, the named secondary-text tones, and the soft-elevation pair, each pinned to a measured
    contrast floor in its co-located comment. The load-bearing rules below (the embed-anywhere reset, the
-   cascade-layered overrides, and the two unlayered rules) are part of the same floor. This section may
+   cascade-layered overrides, and the three unlayered rules) are part of the same floor. This section may
    only SHRINK, and only with a matching update to docs/internal/design/2026-06-29-custom-surface-ledger.md;
    it is never extended ad hoc. check:custom-surface guards the same floor structurally. Each token's
    declaration stays inside the theme-root block it themes (light here, dark below); the two theme blocks
@@ -422,7 +422,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 2 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 3 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -435,10 +435,27 @@
    handler already guards inertness; pointer-events:none would kill that tooltip. Restore it for a
    marked guarded button. Deliberately UNLAYERED, the same mechanism as the .menu focus override above:
    no layered rule can outrank daisyUI's utilities-layer rule.
-   PINNED unlayered rule 2 of 2 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 3 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
   pointer-events: auto;
+}
+
+/* DaisyUI's `.lg:drawer-open` desktop sidebar is `position: sticky`, in the utilities layer. Sticky
+   computes its "before it sticks" travel from the sidebar's static offset in the document, and a host
+   that omits Preflight (the embed-anywhere default this admin targets) leaves the UA's default body
+   margin in place, so the sidebar visibly traveled a few px at the top and bottom of a page scroll: a
+   production report of the sidebar "scrolling slightly" alongside a long entry list. Fixed positioning
+   is anchored to the viewport outright and carries no such drift, the same mechanism the mobile overlay
+   variant of this same element already uses (the un-prefixed `.drawer-side` base rule, above). An
+   out-of-flow sidebar no longer reserves its own column width in the drawer's grid, so
+   `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
+   UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
+   utilities-layer rule.
+   PINNED unlayered rule 3 of 3 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   prevents: the persistent desktop sidebar drifting with the page scroll. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
+  position: fixed;
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

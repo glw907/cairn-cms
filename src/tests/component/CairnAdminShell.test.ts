@@ -288,6 +288,53 @@ describe('CairnAdminShell', () => {
     expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
   });
 
+  it('reserves room for the fixed persistent sidebar on a list route, not on a desk route', async () => {
+    // Regression guard for the production scroll-bleed report: the desktop sidebar is `position:
+    // fixed` (cairn-admin.css), which needs `drawer-content` to reserve its own width instead of
+    // relying on grid track sizing (an out-of-flow item contributes no track width). A desk route
+    // drops the persistent sidebar entirely, so it must drop the reserved margin too.
+    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const listContent = listScreen.container.querySelector('.drawer-content')!;
+    expect(listContent.classList.contains('lg:ml-56')).toBe(true);
+
+    const deskScreen = render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    const deskContent = deskScreen.container.querySelector('.drawer-content')!;
+    expect(deskContent.classList.contains('lg:ml-56')).toBe(false);
+  });
+
+  it('keeps the persistent nav drawer on a deep custom-nav route (path depth alone is not a desk route)', async () => {
+    // /admin/club/events is a developer's own custom nav section entry, three path segments deep,
+    // but it is not a document editor: the second segment names no content concept. Path depth
+    // alone once misclassified this as a desk route and receded the persistent sidebar to the
+    // toggle-controlled mobile overlay, which read as the sidebar sliding away on an ordinary
+    // desktop nav click.
+    const customNav: ResolvedNavItem[] = [
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ];
+    const screen = render(CairnAdminShell, {
+      data: { ...data(true, null, '/admin/club/events'), customNav },
+      children: child,
+    });
+    const drawer = screen.container.querySelector('.drawer')!;
+    expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
+  });
+
+  it('does not collapse or persist a nav-section collapse on a desktop navigation', async () => {
+    // A pathname change alone must never touch the collapsed-section state or its cookie: that
+    // state is owned solely by the section's own toggle. Regression guard for the drawer's
+    // pathname effect, which resets other navigation-scoped UI (the palette, drawerOpen) but must
+    // leave the persisted `collapsed` set alone.
+    document.cookie = 'cairn-admin-nav-collapsed=; path=/admin; max-age=0';
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
+    await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
+    const details = screen.container.querySelector('details')!;
+    expect(details.open).toBe(true);
+    expect(document.cookie).not.toContain('cairn-admin-nav-collapsed=');
+  });
+
   it('shows the drawer toggle at desktop width on a desk route', async () => {
     // On a desk route the toggle loses lg:hidden so it stays visible at desktop and reopens the nav
     // as an overlay. On a list route the persistent sidebar is shown, so the toggle is lg:hidden.

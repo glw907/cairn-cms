@@ -1,4 +1,4 @@
-## Unreleased
+## 0.82.1
 
 ### Engine (admin shell sidebar fixes; no consumer action)
 

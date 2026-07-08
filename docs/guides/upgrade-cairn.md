@@ -50,6 +50,14 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.82.1
+
+No consumer action. Behavior notes for upgraders: the admin shell's desktop sidebar is now
+`position: fixed` (no more scroll drift, and it stays open when navigating to deep custom-nav
+routes like `/admin/club/events`); `adminAction` no longer requires an audit emit from a handler
+that returns SvelteKit's `fail()` before mutating (a handler that writes and then rejects must
+still emit); the `/ambient` augmentation now types `App.Locals.auditSink`.
+
 ## 0.82.0
 
 No consumer action required. The release adds the admin extension surface for sites that

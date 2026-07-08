@@ -80,6 +80,13 @@ renders the children bare with no chrome; an authed payload renders the full chr
 data-driven nav, user, theme, and streamed publish-all count. The discriminant gates the chrome, so a
 public payload always renders bare.
 
+At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
+drifts with the page scroll), and it stays open across navigation—including to a site's own
+deep custom-nav routes like `/admin/club/events`. It recedes to the toggle-controlled overlay
+only on the engine's document-editor routes, where an entry is open under a real content concept
+and the editing surface takes the full width. On small viewports it's always the overlay drawer,
+opened on demand and closed after a navigation.
+
 ```svelte
 <!-- src/routes/admin/+layout.svelte -->
 <script lang="ts">

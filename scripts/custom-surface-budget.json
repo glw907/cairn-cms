@@ -11,7 +11,8 @@
           "[data-theme='cairn-admin'] *, [data-theme='cairn-admin'] *::before, [data-theme='cairn-admin'] *::after, [data-theme='cairn-admin-dark'] *, [data-theme='cairn-admin-dark'] *::before, [data-theme='cairn-admin-dark'] *::after",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true']",
-          "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *"
+          "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side"
         ],
         "componentsLayerCap": 14,
         "retiredTokenBudget": 0

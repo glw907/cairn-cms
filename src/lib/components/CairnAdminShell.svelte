@@ -267,8 +267,16 @@ discriminant, not the fields, gates the chrome).
 
   // A desk route is an open document (/admin/<concept>/<id>): the third path segment is the entry.
   // The band has one job there, so the topbar drops the palette trigger and the site-wide Publish
-  // button and renders the document's own desk controls instead.
-  const isDeskRoute = $derived((shell?.pathname ?? '').split('/').filter(Boolean).length > 2);
+  // button and renders the document's own desk controls instead. The second segment must name a
+  // real content concept, not merely sit three-deep: a developer's own custom nav can route just as
+  // deep (a section entry like /admin/club/events) without opening a document, and treating path
+  // depth alone as the signal wrongly receded the persistent desktop sidebar on that navigation (it
+  // fell back to the mobile-drawer's toggle-controlled visibility, which read as the sidebar
+  // sliding away, since only a genuine desk route needs that recede).
+  const isDeskRoute = $derived.by(() => {
+    const segs = (shell?.pathname ?? '').split('/').filter(Boolean);
+    return segs.length > 2 && segs[0] === 'admin' && (shell?.concepts.some((c) => c.id === segs[1]) ?? false);
+  });
 
   // The topbar context portal: a reactive holder a descendant document fills with its desk snippet.
   // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
@@ -295,11 +303,19 @@ discriminant, not the fields, gates the chrome).
        renders the drawer shell without it, so the nav starts closed at desktop width and the
        manuscript takes the shell. This resolves at SSR from data.pathname (isDeskRoute), never in an
        effect, so the chrome-free state does not flash. The checkbox still governs the overlay, so the
-       toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand. -->
+       toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand.
+       At desktop width the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's own
+       `position: sticky` for `.lg:drawer-open`'s persistent sidebar; see the load-bearing rules
+       there), not sticky: a host that omits Preflight (the embed-anywhere default this admin
+       targets) leaves the UA's default body margin in place, and sticky computes its "before it
+       sticks" travel from the sidebar's static offset in the document, so an unreset body margin
+       gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll. Fixed
+       positioning is anchored to the viewport outright, the same mechanism the mobile overlay
+       already uses, so it carries no such drift and needs no document-level change. -->
   <div class="drawer min-h-screen bg-base-200 text-base-content" class:lg:drawer-open={!isDeskRoute}>
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
-    <div class="drawer-content flex flex-col">
+    <div class="drawer-content flex flex-col" class:lg:ml-56={!isDeskRoute}>
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
            three clusters include shell-owned chrome (the drawer toggle, the breadcrumb), so

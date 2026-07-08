@@ -109,24 +109,31 @@ must exempt them, which is why the gate caps the count rather than forbidding th
   rule, and the `prefers-reduced-motion` block.
 - The post-compile `@font-face` rebasing (added by `scripts/build-admin-css.mjs`).
 
-### The two unlayered forced workarounds (pinned by exact selector)
+### The three unlayered forced workarounds (pinned by exact selector)
 
 A layered rule cannot outrank DaisyUI's own utilities-layer rules, so these must stay unlayered.
-Both fix real shipped bugs. The gate pins the exact set: neither may be deleted nor a third added
+All three fix real shipped bugs. The gate pins the exact set: none may be deleted nor a fourth added
 without a reviewed allowlist change.
 
 - `.menu li > :is(button, a):focus-visible` — restores the keyboard focus ring DaisyUI's `.menu`
   quiets (lost menu focus).
 - `.btn.cairn-btn-guarded[aria-disabled='true']` — restores `pointer-events: auto` so a guarded
   toolbar button keeps its explanatory tooltip (a killed tooltip).
+- `.lg\:drawer-open > .drawer-toggle ~ .drawer-side` — sets `position: fixed`, overriding DaisyUI's
+  own `position: sticky` for the persistent desktop sidebar (the shell-sidebar pass, 2026-07-08). A
+  host that omits Preflight leaves the UA's default body margin in place, and sticky's "before it
+  sticks" travel is computed from the sidebar's static offset in the document, so the unreset margin
+  gave the sidebar a few px of visible travel at the top and bottom of a page scroll (a production
+  report of the sidebar "scrolling slightly" alongside a long entry list). Fixed positioning is
+  anchored to the viewport outright and carries no such drift.
 
 The gate now pins the unlayered set by **whole-selector set equality**, not by substring (the Phase 0
 review fix). The allowlist in `scripts/custom-surface-budget.json` therefore holds the full,
-whitespace-normalized text of every sanctioned unlayered scoped rule, which is more than these two
+whitespace-normalized text of every sanctioned unlayered scoped rule, which is more than these three
 forced workarounds: the two `[data-theme]` theme-root blocks (Tier 1), the embed-anywhere box-sizing
 reset, and the `prefers-reduced-motion` block also live outside `@layer components` and are legitimate
-floor (six rules total). A swapped rule that merely *contains* `.menu li` or `.cairn-btn-guarded` no
-longer passes; a seventh unlayered rule fails the length check and the set-equality check.
+floor (seven rules total). A swapped rule that merely *contains* `.menu li` or `.cairn-btn-guarded` no
+longer passes; an eighth unlayered rule fails the length check and the set-equality check.
 
 ### The `.btn-primary` lift (resolved: stays Tier 2)
 
@@ -185,7 +192,7 @@ accessibility cue or a design intent.
 
 **Explicitly not Tier 3** (the review rejected these): the segmented / check-and-tint control and
 card-selectable states (no native 5.6 primitive; `.filter` breaks the WCAG 1.4.1 non-color cue),
-the `.btn-primary` lift, the two unlayered rules, and `--color-muted` / `--color-subtle` (pending
+the `.btn-primary` lift, the unlayered rules, and `--color-muted` / `--color-subtle` (pending
 the ratio table). All are Tier 2 above.
 
 ## Call-site census (high-volume tokens, the admin tree)

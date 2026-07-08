@@ -33,6 +33,7 @@ function postProps(over = {}) {
       pending: false,
       published: true,
       publishedFlash: false,
+      publishActions: [],
       discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',

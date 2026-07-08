@@ -10,6 +10,7 @@ import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
 import { normalizeAdminNav, type ResolvedNavItem } from './admin-nav.js';
+import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { Editor } from '../auth/types.js';
@@ -117,6 +118,8 @@ export interface ContentRoutesContext {
   deps: ContentRoutesDeps;
   /** The developer's custom sidebar entries, validated once at construction (server start). */
   adminNav: ResolvedNavItem[];
+  /** The developer's publish-actions config, validated once at construction (server start). */
+  publishActions: ResolvedPublishAction[];
   /**
    * Build the Anthropic client for the tidy action from the resolved API key. The real SDK client,
    *  or a test's injected fake (`deps.tidy.client`).
@@ -173,6 +176,11 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.
   const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
+  // Validate the developer's publishActions once at construction, the same fail-loud posture: a
+  // blank field or an unknown concept throws here rather than silently rendering no link (or the
+  // wrong one) after a publish. editLoad resolves this per request into the templated links for the
+  // one entry that just went live.
+  const publishActions = normalizePublishActions(runtime.publishActions, runtime.concepts);
 
   /**
    * Resolve the live content backend for one request. The dev double's `event.locals.backend`
@@ -227,6 +235,7 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
     runtime,
     deps,
     adminNav,
+    publishActions,
     anthropicClient,
     tidyTimeoutMs,
     resolveBackend,

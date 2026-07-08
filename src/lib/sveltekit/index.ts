@@ -40,6 +40,7 @@ export type {
   ResolvedNavSection,
   ResolvedNavItem,
 } from './admin-nav.js';
+export type { PublishActionEntry, PublishActionsConfig, PublishActionLink } from './publish-actions.js';
 export {
   adminAction,
   AdminActionError,

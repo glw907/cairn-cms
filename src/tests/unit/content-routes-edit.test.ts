@@ -203,6 +203,36 @@ describe('editLoad', () => {
     expect(data.preview).not.toHaveProperty('byConcept');
   });
 
+  it('resolves no publish-actions when the site declares none (absent-config no-op)', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.publishActions).toEqual([]);
+  });
+
+  it('resolves a configured publish-action, templated with the concept and id', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const publishActions = [{ label: 'Share', href: '/admin/{concept}/{id}/share' }];
+    const routes = createContentRoutes({ ...runtime(), publishActions });
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.publishActions).toEqual([{ label: 'Share', href: '/admin/posts/2026-05-hello/share' }]);
+  });
+
+  it('drops a publish-action whose concepts filter excludes this entry\'s concept', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const withPages = runtime();
+    withPages.concepts.push(postsConcept({ id: 'pages', label: 'Pages' }));
+    const publishActions = [{ label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['pages'] }];
+    const routes = createContentRoutes({ ...withPages, publishActions });
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.publishActions).toEqual([]);
+  });
+
+  it('throws at construction on a publish-action with a blank href, rather than at render', () => {
+    const publishActions = [{ label: 'Broken', href: '' }];
+    expect(() => createContentRoutes({ ...runtime(), publishActions })).toThrow(/href/);
+  });
+
   it('leaves a concept without a byConcept entry on the top-level preview values', async () => {
     editFetch('---\ntitle: Hello\n---\nThe body.');
     const preview = {

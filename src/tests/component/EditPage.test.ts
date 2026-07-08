@@ -79,6 +79,7 @@ function postProps(over = {}) {
       pending: false,
       published: true,
       publishedFlash: false,
+      publishActions: [],
       discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',
@@ -795,6 +796,34 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ publishedFlash: true }));
     const banner = screen.container.querySelector('.alert-success');
     expect(banner?.textContent ?? '').toMatch(/published/i);
+  });
+
+  it('renders the site\'s publish-action links alongside a published confirmation', async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        publishedFlash: true,
+        publishActions: [{ label: 'Announce', href: '/admin/club/announce?post=2026-05-hello' }],
+      }),
+    );
+    const link = screen.container.querySelector('a[href="/admin/club/announce?post=2026-05-hello"]');
+    expect(link?.textContent ?? '').toBe('Announce');
+  });
+
+  it('renders no publish-action links when the site declares none (absent-config no-op)', async () => {
+    const screen = render(EditPage, postProps({ publishedFlash: true, publishActions: [] }));
+    expect(screen.container.querySelector('a.link-primary')).toBeNull();
+  });
+
+  it('holds the publish-action links back until the publish-success moment (the render gate)', async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        publishedFlash: false,
+        publishActions: [{ label: 'Announce', href: '/admin/club/announce?post=2026-05-hello' }],
+      }),
+    );
+    expect(screen.container.querySelector('a.link-primary')).toBeNull();
   });
 
   it('shows a discarded confirmation strip', async () => {

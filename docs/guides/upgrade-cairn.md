@@ -50,6 +50,18 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: a `publishActions` config renders next-step links on the publish-success moment (non-breaking)
+
+A site declares next-step links for the publish-success moment through a new `publishActions`
+entry on the adapter's `editor` group, the `adminNav` grammar applied after a publish: a plain
+`{label, href}` list, `href` a template string substituted with the published entry's concept and
+id, optionally filtered to specific concepts. The engine validates each entry when the runtime
+composes, so a blank field or an unknown concept fails the build rather than rendering a broken
+link. See [the publish-actions seam](../reference/sveltekit.md#the-publish-actions-seam).
+
+Consumers must: nothing. `publishActions` is opt-in; a site that declares none renders the
+publish-success moment exactly as it renders today.
+
 ## 0.82.1
 
 No consumer action. Behavior notes for upgraders: the admin shell's desktop sidebar is now

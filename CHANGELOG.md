@@ -1,3 +1,28 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Engine (publish-actions seam)
+
+- A site can now declare `publishActions` on the adapter's `editor` group: the `adminNav` grammar
+  applied to the publish-success moment. Each entry is plain data, `{ label, href, concepts? }`,
+  with `href` a template string (`{concept}` and `{id}` substituted with the just-published
+  entry's identity) and an optional `concepts` filter restricting the link to specific concept
+  ids. The engine validates the config when the runtime composes, the same fail-loud-at-startup
+  posture `adminNav` takes, so a blank field or an unknown concept id fails the build rather than
+  silently rendering no link (or the wrong one) after a publish. `EditData.publishActions` carries
+  the resolved links for the entry that just went live, and the edit page renders them as quiet
+  links beside the publish-success confirmation strip. No callback crosses the publish redirect.
+  New public types: `PublishActionEntry`, `PublishActionsConfig`, `PublishActionLink` (all
+  `@glw907/cairn-cms/sveltekit`). See [the publish-actions
+  seam](docs/reference/sveltekit.md#the-publish-actions-seam).
+
+### Docs
+
+- [Upgrade cairn](docs/guides/upgrade-cairn.md) and [the SvelteKit
+  reference](docs/reference/sveltekit.md) gain the publish-actions seam's worked example and type
+  reference, a sibling to the custom admin-nav seam's.
+
 ## 0.82.1
 
 ### Engine (admin shell sidebar fixes; no consumer action)

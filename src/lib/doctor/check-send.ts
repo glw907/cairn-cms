@@ -3,9 +3,12 @@
 // a check constant, so the check exists only when the bin receives an address; no default
 // registry carries it.
 //
-// Endpoint and payload verified against the Cloudflare API reference, 2026-06-11:
-//   POST /accounts/{account_id}/email/sending/send with { from, to, subject, text },
-//   where from and to take a plain address string.
+// Endpoint and payload re-verified against the Cloudflare API reference, 2026-07-07: POST
+// /accounts/{account_id}/email/sending/send with { from, to, subject, text }, where from and
+// to still accept a plain address string (each also now accepts an { address, name } object,
+// and to also an array of either; this check keeps the minimal string form since it names one
+// recipient). The public beta has since widened the payload with cc, bcc, reply_to, and
+// attachments, none of which this minimal test send needs.
 //   https://developers.cloudflare.com/api/resources/email_sending/
 import { fail, pass } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';

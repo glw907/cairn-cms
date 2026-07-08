@@ -1,19 +1,29 @@
 // The email boundary. The send is injected so tests capture links in a sink with no
 // send_email binding; production passes `cloudflareSend`, which calls env.EMAIL.send
 // (Cloudflare Email Sending, arbitrary recipients).
-import type { AuthEnv } from './auth/types.js';
+import type { AuthEnv, EmailAttachment, EmailRecipient } from './auth/types.js';
 import { CairnError } from './diagnostics/index.js';
 import { escapeHtml } from './escape.js';
 
-export type { AuthEnv };
+export type { AuthEnv, EmailAttachment, EmailRecipient };
 
-/** The message a built magic-link email carries. */
+/**
+ * The message a built magic-link email carries. `to`/`from`/`subject`/`html`/`text` are the
+ * shape `buildMagicLinkMessage` fills; `cc`/`bcc`/`replyTo`/`attachments` are optional widenings
+ * of the Email Sending API surface (live-verified 2026-07-07) that a custom `SendMagicLink` or a
+ * site composing its own message may set. `replyTo` takes a single address only, since the
+ * platform rejects an array there (live-probed 2026-07-07, ASC migration), unlike `cc`/`bcc`.
+ */
 export interface MagicLinkMessage {
   to: string;
   from: string;
   subject: string;
   html: string;
   text: string;
+  cc?: EmailRecipient | EmailRecipient[];
+  bcc?: EmailRecipient | EmailRecipient[];
+  replyTo?: string;
+  attachments?: EmailAttachment[];
 }
 
 /** Per-site identity for the magic-link email, sourced from the adapter. */

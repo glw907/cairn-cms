@@ -4,7 +4,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
-- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> } }
+- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> } }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; createBranch: (name: string, fromBranch: string) => Promise<void>; deleteBranch: (name: string) => Promise<void> }
 - `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `BackendProvider`: { kind: string; branch: string; connect: (env: BackendEnv) => Backend }
@@ -26,6 +26,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `Editor`: { email: string; displayName: string; role: "owner" | "editor" }
+- `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "attachment" | "inline" }
+- `EmailRecipient`: string | { email: string; name?: string }
 - `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `extractVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
@@ -41,7 +43,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ImageValue`: { src: string; alt: string; caption?: string; decorative?: boolean }
 - `InferFieldset`: S extends Fieldset<infer R extends Record<string, FieldDescriptor>> ? { [K in keyof ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })]: ({ -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? K : never]: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> } & { -readonly [K in keyof RemoveIndex<R> as RemoveIndex<R>[K] extends { required: true } ? never : K]?: ValueOf<RemoveIndex<R>[K] extends FieldDescriptor ? RemoveIndex<R>[K] : never> })[K] } : never
 - `LinkResolve`: (ref: CairnRef) => string
-- `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string }
+- `MagicLinkMessage`: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }
 - `Manifest`: { version: 1; entries: ManifestEntry[] }
 - `NamedField`: FieldDescriptor & { name: string }
 - `NavMenuConfig`: { configPath: string; menuName: string; label: string; maxDepth?: number }
@@ -226,12 +228,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminShellData`: { public: true; siteName: string } | { public: false; siteName: string; user: { displayName: string; email: string; role: Role }; concepts: NavConcept[]; customNav: ResolvedNavItem[]; pathname: string; canManageEditors: boolean; navLabel: string | null; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[]; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null> }
 - `AdvisoryAction`: { label: string; href?: string }
 - `AdvisoryNotice`: { kind: string; severity: "warn"; message: string; actions?: AdvisoryAction[] }
-- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> } }
+- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> } }
 - `AuthRoutesConfig`: { branding: AuthBranding; send?: SendMagicLink }
 - `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnAdminDeps`: { auth?: { branding?: AuthBranding; send?: SendMagicLink }; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedNavItem[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedNavItem[] | Promise<ResolvedNavItem[]>) }
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
-- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: { send(message: { to: string; from: string; subject: string; html: string; text: string }): Promise<void> }; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
+- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> }; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
 - `ContentEvent`: { params: { [x: string]: string }; cookies?: CookieJar; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend }; platform?: PlatformContext<BackendEnv> }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }
 - `ContentRoutesDeps`: { tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedNavItem[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedNavItem[] | Promise<ResolvedNavItem[]>) }

@@ -791,8 +791,10 @@ function signatures above reference these.
 | <a id="role"></a>`Role` | Extension API | `type Role` | An editor's role: owner or editor. |
 | <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. |
 | `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
+| `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
+| `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
-| `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries. |
+| `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries: the five required fields, plus optional `cc`, `bcc`, `replyTo`, and `attachments` widening the Email Sending API surface, live-verified 2026-07-07. `replyTo` takes a single address only; the platform rejects an array there. |
 | `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |

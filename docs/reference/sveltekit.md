@@ -688,6 +688,83 @@ flat entry into Core. Discriminate with `'children' in item`.
 
 ---
 
+## The publish-actions seam
+
+A site declares next-step links for the publish-success moment, the `adminNav` grammar applied
+after a publish. A `publishActions` entry on the adapter's `editor` group is plain data, validated
+when the runtime composes: a blank field or an unknown concept fails the build instead of silently
+rendering a broken link after a publish. `editLoad` resolves the validated config for the one
+entry that just went live. It drops any entry a `concepts` list excludes, then substitutes
+`{concept}` and `{id}` into every surviving `href` with that entry's identity. The edit page
+renders the result as quiet links beside the publish-success strip, never inside a callback: no
+function crosses the publish redirect, only a template string resolved server-side.
+
+Stability tier: Extension API.
+
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the editor.publishActions member -->
+```ts
+// src/lib/cairn.config.ts
+import { defineAdapter } from '@glw907/cairn-cms';
+
+export const cairn = defineAdapter({
+  // ...content, backend, email, rendering...
+  editor: {
+    publishActions: [
+      { label: 'Announce', href: '/admin/club/announce?post={id}', concepts: ['posts'] },
+    ],
+  },
+});
+```
+
+A member who publishes a post now finds an *Announce* link waiting beside the confirmation strip,
+already carrying that post's id. Omitting `concepts` follows every concept's publish. Naming one
+or more concept ids restricts it, the same shape `adminNav`'s `ownerOnly` narrows a sidebar entry.
+
+### `PublishActionEntry`
+
+Stability tier: Extension API.
+
+```ts
+interface PublishActionEntry {
+  label: string;
+  href: string;
+  concepts?: string[];
+}
+```
+
+One developer-declared publish-success link. `href` is a template string. Resolving it substitutes
+`{concept}` and `{id}` with the published entry's identity. `concepts`, when set, restricts the
+link to those concept ids. A name outside the site's real concepts throws when the runtime
+composes.
+
+### `PublishActionsConfig`
+
+Stability tier: Extension API.
+
+```ts
+type PublishActionsConfig = PublishActionEntry[];
+```
+
+A site's raw `publishActions` config, in declaration order. The adapter's `editor.publishActions`
+field takes this shape.
+
+### `PublishActionLink`
+
+Stability tier: Extension API.
+
+```ts
+interface PublishActionLink {
+  label: string;
+  href: string;
+}
+```
+
+One resolved publish-success link, its href already templated for the published entry.
+`EditData.publishActions` carries an array of these, filtered to the entry's concept. The edit
+page renders them only alongside `EditData.publishedFlash`.
+
+---
+
 ## Types
 
 These are the route-data and config shapes the factories produce and consume. A `+page.svelte`
@@ -709,7 +786,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
 | `EntrySummary` | Extension API | `interface EntrySummary { id: string; title: string; date: string \| null; draft: boolean; status: 'published' \| 'edited' \| 'new'; summary: string \| null }` | One row in a concept's list view. `status` derives from the ref set: live as-is, live with held edits, or pending-branch only. `summary` is the row's one-line excerpt (the manifest's indexed summary for a published row, the branch frontmatter or body excerpt for a pending one, null when neither yields text). |
 | `ListData` | Extension API | `interface ListData { conceptId; label; singular; dated; entries: EntrySummary[]; error: string \| null; formError: string \| null; publishedAll: number \| null }` | The concept list view's data, including a degraded-listing error, a create-form bounce error, and the publish-all flash count from `?publishedAll=`. `singular` is the create-affordance noun ("New post"), from the descriptor (defaulted to `label`). |
-| `EditData` | Extension API | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). |
+| `EditData` | Extension API | `interface EditData { conceptId; id; label; fields; frontmatter; body; title; isNew; saved; renamed; error; slug; linkTargets; mediaTargets: Record<string, { slug; ext; contentType }>; mediaLibrary: Record<string, { hash; slug; ext; contentType; displayName; alt; width; height; bytes }>; inboundLinks; pending; published; publishedFlash; publishActions: PublishActionLink[]; discardedFlash; preview: ResolvedPreview \| null; advisories: AdvisoryNotice[] }` | The entry editor's data: form-ready frontmatter, the body, the link targets, the media targets (the minimal resolver input keyed by content hash, empty when media is off or the read fails), the media library (the picker's full human layer keyed by the same content hash, projected from the same committed-manifest read, with the `hash` duplicated into each value for `Object.values` iteration, and degrading to empty on the same path as `mediaTargets`), the inbound links for the delete guard, the publish state (`pending` means the body came from the entry's branch; `published` means the file exists on the default branch), the site's [publish-actions](#the-publish-actions-seam) resolved for this entry (`publishActions`, rendered only alongside `publishedFlash`), the adapter's `preview` knob resolved for this entry's concept (its `byConcept` override applied; null when the site sets none, which leaves the frame unstyled behind a hint), and the non-blocking server-built `advisories` (today the cross-branch address collision, empty when there is none). |
 | `AdvisoryNotice` | Extension API | `interface AdvisoryNotice { kind: string; severity: 'warn'; message: string; count?: number; actions?: AdvisoryAction[] }` | A non-blocking editor advisory carried on `EditData.advisories`, serializable so it rides the SSR boundary (data only, no callback). `kind` names the notice (`'address-collision'` today), `severity` is always `'warn'` (warn-and-allow, never a gate), `count` is an aggregating notice's running total, and `actions` are the offered links. |
 | `AdvisoryAction` | Extension API | `interface AdvisoryAction { label: string; href?: string }` | One action an advisory offers: a button or link label and an optional `href` link target. |
 | `MediaUsageInfo` | Extension API | `interface MediaUsageInfo { count: number; entries: UsageEntry[] }` | One asset's where-used overlay: the distinct-entry count (by concept and id) and every row (published and edit-branch origins), kept separate from `MediaLibraryEntry` so the picker projection stays decoupled. |

@@ -41,6 +41,7 @@ function props(frontmatter: Record<string, unknown>) {
       pending: false,
       published: true,
       publishedFlash: false,
+      publishActions: [],
       discardedFlash: false,
       preview: null,
       spellcheckDictionary: 'dictionary-en-us.txt',

@@ -32,6 +32,7 @@ import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionar
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
+import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -159,6 +160,13 @@ export interface EditData {
   published: boolean;
   /** True after a publish redirect (`?published=1`), for the confirmation strip. */
   publishedFlash: boolean;
+  /**
+   * The site's publish-actions config, resolved for this entry: filtered to this concept and
+   *  templated with this entry's id. Rendered as quiet next-step links only alongside
+   *  `publishedFlash`; empty when the site declares no `publishActions` (today's rendering,
+   *  unchanged).
+   */
+  publishActions: PublishActionLink[];
   /** True after a discard redirect (`?discarded=1`), for the confirmation strip. */
   discardedFlash: boolean;
   /**
@@ -667,6 +675,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       pending,
       published,
       publishedFlash: event.url.searchParams.get('published') === '1',
+      publishActions: resolvePublishActions(ctx.publishActions, { concept: concept.id, id }),
       discardedFlash: event.url.searchParams.get('discarded') === '1',
       preview: resolvePreview(runtime.preview, concept.id),
       // composeRuntime always resolves this from the site config's dialect; default a hand-built

@@ -1423,6 +1423,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     {flash}
   </div>
 {/if}
+<!-- The site's publish-actions next-step links (docs/reference/sveltekit.md#the-publish-actions-seam):
+     quiet links beside the publish-success strip, never their own alert. They render only alongside
+     publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
+{#if data.publishedFlash && data.publishActions.length}
+  <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+    {#each data.publishActions as action (action.label)}
+      <a class="link link-primary" href={action.href}>{action.label}</a>
+    {/each}
+  </div>
+{/if}
 {#if data.error}
   <div class="alert alert-error mb-4 text-sm">{data.error}</div>
 {/if}

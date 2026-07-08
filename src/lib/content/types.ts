@@ -19,6 +19,9 @@ import type { VariantSpec } from '../media/transform-url.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
 import type { AdminNavConfig } from '../sveltekit/admin-nav.js';
+// Also type-only, for the same layering reason: publishActions validates against the site's
+// concepts in the sveltekit layer, not here.
+import type { PublishActionsConfig } from '../sveltekit/publish-actions.js';
 
 /**
  * The stored value of an `image` field: a `media:` reference, a screen-reader description, and an
@@ -255,6 +258,14 @@ export interface CairnAdapter {
      *  sidebar to the built-in entries only.
      */
     adminNav?: AdminNavConfig;
+    /**
+     * Next-step links rendered on the publish-success moment (the `adminNav` grammar applied to
+     *  after a publish): a plain-data `{label, href}` list, `href` a template string substituted
+     *  with the published entry's concept and id, filterable to specific concepts. The engine
+     *  validates each entry when it composes, so a blank field or an unknown concept fails at
+     *  server start. Absent renders the publish-success moment exactly as it renders today.
+     */
+    publishActions?: PublishActionsConfig;
   };
 }
 
@@ -353,6 +364,12 @@ export interface CairnRuntime {
    *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here). Optional.
    */
   adminNav?: AdminNavConfig;
+  /**
+   * The raw publish-actions config, passed through from the adapter unvalidated (validation runs
+   *  at admin construction, the same as `adminNav`, since it checks each entry's `concepts` filter
+   *  against the site's real concepts). Optional.
+   */
+  publishActions?: PublishActionsConfig;
   /** The live site's content styling for the preview frame; passed through from the adapter. */
   preview?: PreviewConfig;
   assets?: AssetConfig;

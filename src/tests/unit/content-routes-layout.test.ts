@@ -34,10 +34,27 @@ function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: 
 
 afterEach(() => vi.restoreAllMocks());
 
+// A sync-throwing backend for a shellPayload test that never installs a GitHub double. The
+// shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
+// test that resolves it against the real `backend` (a real fetch, a fake token) leaves that
+// fetch running past the test's own return; on a loaded CI worker the eventual 401 and its
+// `console.warn` land after the test file's teardown and can crash the run with a pending
+// onUserConsoleLog RPC despite every assertion having passed. Settling the probe on the same
+// microtask (a sync token-mint throw, never a real round-trip) and awaiting it removes the
+// straggling promise.
+const quickFailBackend = () =>
+  makeGithubBackend(REPO, async () => {
+    throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
+  });
+
 describe('shellPayload', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
   it('returns nav concepts, the user, the active path, and owner capability for an authed path', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
@@ -50,28 +67,32 @@ describe('shellPayload', () => {
     expect(shell.navLabel).toBeNull();
     // Task 3 fills customNav; until then it is always empty.
     expect(shell.customNav).toEqual([]);
+    await shell.pendingEntries;
   });
 
   it('issues a CSRF token in the shell data', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner') as never);
+    const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.csrf).toMatch(/^[A-Za-z0-9_-]+$/);
+    await shell.pendingEntries;
   });
 
   it('denies the manage-editors capability to an editor', async () => {
     const routes = createContentRoutes(runtime());
-    const { shell } = await routes.shellPayload(event('/admin/pages', 'editor') as never);
+    const { shell } = await routes.shellPayload(event('/admin/pages', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.canManageEditors).toBe(false);
+    await shell.pendingEntries;
   });
 
   it('exposes the nav label when a navMenu is configured', async () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
-    const { shell } = await createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor') as never);
+    const { shell } = await createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.navLabel).toBe('Primary nav');
+    await shell.pendingEntries;
   });
 
   it('returns a bare public payload for a login path and never resolves the backend', async () => {
@@ -168,15 +189,9 @@ const RESOLVED_NAV_WITH_SECTION = [
 
 describe('shellPayload: navFilter', () => {
   // These tests never install a GitHub double, so the shell's fire-and-forget pendingEntries
-  // probe would hit the network and settle (logging github.unreachable) after the test ends.
-  // On a slow CI worker that log lands during worker teardown and fails the run with a pending
-  // onUserConsoleLog rpc. A sync-throwing backend settles the probe immediately; each test
-  // silences the expected warn and awaits the settled probe before returning.
-  const quickFailBackend = () =>
-    makeGithubBackend(REPO, async () => {
-      throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
-    });
-
+  // probe would hit the network and settle (logging github.unreachable) after the test ends; see
+  // the module-scoped quickFailBackend above. Each test silences the expected warn and awaits
+  // the settled probe before returning.
   beforeEach(() => {
     vi.spyOn(console, 'warn').mockImplementation(() => {});
   });

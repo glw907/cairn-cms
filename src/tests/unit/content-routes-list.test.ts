@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
@@ -28,7 +28,20 @@ function listEvent(params: Record<string, string>, search = '', eventBackend?: B
 
 afterEach(() => vi.restoreAllMocks());
 
-/** A shell-payload event with a settable editor, path, and cookie jar. */
+// A sync-throwing backend for a shellPayload test that never installs a GitHub double. The
+// shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
+// test that resolves it against a real backend (a real fetch, a fake token) leaves that fetch
+// running past the test's own return; the eventual 401 and its `console.warn` can land after the
+// test file's own teardown, and on a loaded CI worker that has crashed the run with a pending
+// onUserConsoleLog RPC despite every assertion having passed. Settling the probe on the same
+// microtask (a sync token-mint throw, never a real round-trip) removes the straggling promise.
+const quickFailBackend = () =>
+  makeGithubBackend(REPO, async () => {
+    throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
+  });
+
+/** A shell-payload event with a settable editor, path, and cookie jar. Rides quickFailBackend
+ *  since none of this block's tests care about the backend's identity, only its shell fields. */
 function makeEvent(opts: {
   pathname: string;
   editor: { email: string; displayName: string; role: 'owner' | 'editor' };
@@ -38,17 +51,24 @@ function makeEvent(opts: {
     url: `https://t.example${opts.pathname}`,
     editor: opts.editor,
     cookies: { get: (name: string) => opts.cookies?.[name], set: () => {}, delete: () => {} },
+    eventBackend: quickFailBackend(),
   });
 }
 
-/** Narrow the shell payload to its authed member, failing the test loudly otherwise. */
+/** Narrow the shell payload to its authed member, failing the test loudly otherwise, and await
+ *  the streamed pendingEntries probe so it settles before the test returns. */
 async function authedShell(routes: ReturnType<typeof createContentRoutes>, event: unknown) {
   const { shell } = await routes.shellPayload(event as never);
   if (shell.public) throw new Error('expected authed shell');
+  await shell.pendingEntries;
   return shell;
 }
 
 describe('shellPayload', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
   it('carries the editor email and resolves the theme from the cookie', async () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({

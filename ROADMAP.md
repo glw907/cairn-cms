@@ -314,6 +314,11 @@ the named human gates only):**
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
 ## Later
 
+- **Wire `AuthBranding.replyTo` into `buildMagicLinkMessage`.** The branding config carries it
+  (threaded from `SenderConfig`) but the built-in magic-link send never sets the message field —
+  surfaced by the 2026-07-08 EMAIL type widening, which added `MagicLinkMessage.replyTo` as a
+  real-but-unset field for the built-in flow. One-line wire plus a test.
+
 - **Publish follow-up actions (data-only seam).** Geoff-ruled (2026-07-07, from the ASC announce
   feature): a site registers `{label, href(entry)}` entries (optionally per concept) and the
   publish-success moment renders them as next-step links — the `adminNav` grammar applied to

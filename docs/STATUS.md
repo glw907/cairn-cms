@@ -68,7 +68,22 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-07, evening: the pass-2.1 harvest window LANDED on main)
+## Immediate next action (2026-07-08: 0.82.1 AND 0.83.0 SHIPPED; the ASC consumes both)
+
+**TWO CUTS IN ONE NIGHT, both OIDC-verified on the registry.** 0.82.1 (patch): the admin-shell
+sidebar fixes (scroll bleed via position:fixed; deep custom-nav routes keep the persistent
+sidebar) plus the pass-2.1 harvest window. 0.83.0 (minor): the PUBLISH-ACTIONS SEAM (data-only
+`publishActions` on the editor group, the adminNav grammar at the publish-success moment; ASC's
+announce deep-link is the worked example and first consumer) plus the EMAIL binding type widening
+(cc/bcc/attachments/single-replyTo, live-probed). Also landed: the self-committing e2e baseline
+regen, the green-suite-exit-1 flake fix (nine shellPayload tests fired REAL GitHub calls), the
+sidebar persist-vs-recede contract documented in the components reference. ROADMAP holds one new
+item (wire AuthBranding.replyTo into buildMagicLinkMessage). Release hygiene lesson banked: the
+0.83.0 cut initially targeted a mid-merge main because a piped `git merge | tail -1` swallowed a
+CONFLICT — the npm immutability guard caught it; see the shell-gate-hygiene memory. NEXT: no held
+window; the ASC effort continues in its own repo (docs/STATUS.md there).
+
+## Prior next action (2026-07-07, evening: the pass-2.1 harvest window LANDED on main)
 
 **THE PASS-2.1 HARVEST PASS MERGED (c7b472f), holds unpublished under `## Unreleased`.** The
 window: `adminAction` exempts `ActionFailure` returns from the required-audit check (security

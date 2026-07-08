@@ -314,6 +314,13 @@ the named human gates only):**
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
 ## Later
 
+- **Widen the `EMAIL` binding types to the current Email Sending API.** The hand-rolled
+  `AuthEnv['EMAIL']`/`MagicLinkMessage` shape (`{to, from, subject, html, text}`) predates the
+  platform's public beta: `cc`/`bcc` (arrays), single `reply_to`, and typed attachments are all
+  live-verified now (ASC migration probe, 2026-07-07; reply-to ARRAYS are rejected — the one hard
+  limit). Additive widening plus a reference-page update; sites composing richer mail currently
+  hand-cast around the type.
+
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
   flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether
   Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag

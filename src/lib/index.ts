@@ -1,6 +1,6 @@
 // Engine entry. Auth landed in Plan 01, the content model and adapter in Plan 02, and the
 // GitHub read-and-commit backend in Plan 03; render and nav follow.
-export type { Role, Editor, AuthEnv } from './auth/types.js';
+export type { Role, Editor, AuthEnv, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { AuthBranding, MagicLinkMessage, SendMagicLink } from './email.js';
 
 // Content model and adapter contract (Plan 02).

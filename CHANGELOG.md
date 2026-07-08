@@ -1,3 +1,16 @@
+## Unreleased
+
+### Engine (widen the EMAIL binding types; no consumer action)
+
+- `AuthEnv['EMAIL']`'s `send` signature and `MagicLinkMessage` widen to the current Cloudflare
+  Email Sending API surface: optional `cc`/`bcc` (a bare address, a named `{ email, name }`
+  address, or an array of either, via the new `EmailRecipient` type), a single-address `replyTo`,
+  and typed `attachments` (`EmailAttachment[]`, base64 or binary `content`). All four are
+  additive; the original five-field shape stays valid, so every existing caller compiles
+  unchanged. `replyTo` stays a plain string rather than the `EmailRecipient` union: the platform
+  rejects a reply-to array (live-probed 2026-07-07, the ASC migration), so the type carries only
+  the accepted single-address form.
+
 ## 0.82.1
 
 ### Engine (admin shell sidebar fixes; no consumer action)

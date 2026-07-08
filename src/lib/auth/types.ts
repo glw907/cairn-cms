@@ -12,6 +12,24 @@ export interface Editor {
   role: Role;
 }
 
+/**
+ * A recipient address for the Email Sending API: a bare address string, or an object naming an
+ * optional display name alongside it. `cc`/`bcc` accept one of these or an array of them.
+ */
+export type EmailRecipient = string | { email: string; name?: string };
+
+/**
+ * A file or inline attachment for the Email Sending API. `content` is base64-encoded text or raw
+ * binary; `disposition` distinguishes a standard file attachment from an image embedded in the
+ * HTML body.
+ */
+export interface EmailAttachment {
+  content: string | ArrayBuffer | ArrayBufferView;
+  filename: string;
+  type: string;
+  disposition: 'attachment' | 'inline';
+}
+
 /** Worker bindings and vars the auth layer reads; a structural subset of `Platform.env`. */
 export interface AuthEnv {
   AUTH_DB?: D1Database;
@@ -32,6 +50,17 @@ export interface AuthEnv {
       subject: string;
       html: string;
       text: string;
+      /** CC recipient(s), optional (live-verified against the Email Sending API, 2026-07-07). */
+      cc?: EmailRecipient | EmailRecipient[];
+      /** BCC recipient(s), the same shape as `cc`. */
+      bcc?: EmailRecipient | EmailRecipient[];
+      /**
+       * Reply-to address. Unlike `cc`/`bcc`, the platform accepts only a single address here: an
+       * array is rejected (live-probed 2026-07-07, ASC migration).
+       */
+      replyTo?: string;
+      /** File and inline attachments. */
+      attachments?: EmailAttachment[];
     }): Promise<void>;
   };
 }

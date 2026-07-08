@@ -320,15 +320,7 @@ the named human gates only):**
   post-publish. No callbacks in the publish path. First consumer: ASC's announce screen deep-link
   (`/admin/club/announce?post=<id>`). Small pass: config field, publish-success render, reference
   page, surface gates.
-- **Upgrade the e2e baseline-regen dispatch to self-commit.** The regen mode uploads PNGs as an
-  artifact for manual copy-back; the ASC repo's equivalent now checks out, commits, and pushes the
-  baselines itself (aksailingclub-org ci.yml, 2026-07-07). Port that shape; the manual copy-back
-  cost a flag-typo'd download and a second cycle tonight.
-- **Hunt the green-suite exit-1 flake.** CI signature (2026-07-08, run 28918457264): all 291 test
-  files pass, the process exits 1, stderr carries repeated "GitHub matching-refs cairn/ failed:
-  401" lines — an unhandled rejection escaping a failure-path test after its assertions pass.
-  Find the emitting test and await/absorb the rejection; convert to a failing test if reproducible
-  (the gold-standard watch-item form).
+
 
 - **Widen the `EMAIL` binding types to the current Email Sending API.** The hand-rolled
   `AuthEnv['EMAIL']`/`MagicLinkMessage` shape (`{to, from, subject, html, text}`) predates the

@@ -18,10 +18,11 @@ export interface DeliveryObject {
   size: number;
   /**
    * Present only on a ranged read: the served window, used to build the `Content-Range`. R2 fills
-   *  both fields for a `bytes=start-end` request; each is typed optional so the route derives the
-   *  range bounds defensively against `size`.
+   *  offset/length for a `bytes=start-end` request but may echo a suffix request as `{ suffix }`;
+   *  every field is typed optional so the route derives the range bounds defensively against
+   *  `size`.
    */
-  range?: { offset?: number; length?: number };
+  range?: { offset?: number; length?: number; suffix?: number };
 }
 
 /** A stored object with its readable body, the shape a full or ranged read returns. */

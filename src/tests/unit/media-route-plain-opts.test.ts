@@ -82,6 +82,34 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
     expect(opts.range).toEqual({ offset: 2, length: 4 });
   });
 
+  it('shapes Content-Range correctly when R2 echoes a suffix range, clamping past the object size', async () => {
+    const handler = createMediaRoute(runtime(resolvedOn));
+    const cases = [
+      { suffix: 10, header: 'bytes=-10', contentRange: 'bytes 90-99/100' },
+      { suffix: 200, header: 'bytes=-200', contentRange: 'bytes 0-99/100' },
+    ];
+    for (const { suffix, header, contentRange } of cases) {
+      const bucket = {
+        async get() {
+          return {
+            writeHttpMetadata() {},
+            httpEtag: '"abc"',
+            size: 100,
+            range: { suffix },
+            body: new ReadableStream(),
+          };
+        },
+      };
+      const request = new Request(`https://site.example/media/${SLUG_PATH}`, {
+        headers: { Range: header },
+      });
+      const event = { params: { path: SLUG_PATH }, platform: { env: { MEDIA_BUCKET: bucket } }, request };
+      const res = (await handler(event as unknown as Parameters<RequestHandler>[0])) as Response;
+      expect(res.status).toBe(206);
+      expect(res.headers.get('Content-Range')).toBe(contentRange);
+    }
+  });
+
   it('omits onlyIf and range from the options when no conditional or range header is present', async () => {
     let capturedOpts: unknown;
     const bucket = {

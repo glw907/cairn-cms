@@ -155,10 +155,13 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     applySecurityHeaders(headers, obj.httpEtag);
 
     // A ranged read carries `obj.range`: respond 206 with a Content-Range. R2 fills the served
-    // window; derive the bounds defensively against the full size.
+    // window; derive the bounds defensively against the full size. A suffix read may come back
+    // either resolved to offset/length or echoed as `{ suffix }`; handle both, clamping a suffix
+    // larger than the object to a full-object window the way R2 clamps the read itself.
     if (hasRangeRequest && obj.range) {
-      const start = obj.range.offset ?? 0;
-      const length = obj.range.length ?? obj.size - start;
+      const suffix = 'suffix' in obj.range ? obj.range.suffix : undefined;
+      const start = suffix !== undefined ? Math.max(0, obj.size - suffix) : (obj.range.offset ?? 0);
+      const length = suffix !== undefined ? obj.size - start : (obj.range.length ?? obj.size - start);
       const end = start + length - 1;
       headers.set('Content-Range', `bytes ${start}-${end}/${obj.size}`);
       const body = hasBody(obj) ? obj.body : null;

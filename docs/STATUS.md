@@ -68,7 +68,30 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-08: 0.82.1 AND 0.83.0 SHIPPED; the ASC consumes both)
+## Immediate next action (2026-07-08, late: 0.84.0 + 0.84.1 SHIPPED — the design-iteration window)
+
+**THE MACHINE-LOCAL DESIGN-ITERATION LOOP IS BUILT AND SHIPPED.** The spec
+(docs/superpowers/specs/2026-07-08-design-iteration-loop-design.md, Geoff-approved) encoded his
+ASC round-3 rulings: main-loop edits against `vite dev`, notes are probes, ceremony once at
+settle, deploy only at finalize. Landed across two cuts: **0.84.0** (minor) the
+`cairn-media-seed` bin (seeds local R2 from a deployed site; `--from`/`--header`/`--bucket`),
+the media-route plain `onlyIf`/`range` derivation (+ my suffix Content-Range review catch), the
+showcase design-probe harvest, the reference page + the iterate-your-design-locally guide (the
+Waymark make-it-your-own worked example, per Geoff's audience ruling). **0.84.1** (patch) the
+SECOND serialization site 0.84.0 missed: `writeHttpMetadata` on the returned R2 stub also
+cannot marshal a `Headers` under `getPlatformProxy`; the route now reads plain `httpMetadata`
+fields (the seam drops the method so the class cannot recur), and the bin stores content types.
+**Lesson banked:** 0.84.0 released on a green gate without driving the real `vite dev` flow;
+the ASC dispatch's end-to-end verification caught it in minutes. ROADMAP "Now" gains the
+`getPlatformProxy` media smoke that would catch the whole class in CI. Also: publish.yml is
+PINNED to npm 11 (npm 12.0.0, released 2026-07-08, ships without its sigstore module and
+breaks every publish; WATCH comment in the workflow). The design-refinement skill gained its
+EXPLORATORY-ARC mode (dotfiles 4ae276e, two fresh-context scenario tests green). ASC retired
+`devMediaFallback` + its site-local sync script for `npm run media:seed` (final verification
+landing). NEXT: Geoff tests the new system in a fresh session (prompt pre-baked in this entry's
+closing report).
+
+## Prior next action (2026-07-08: 0.82.1 AND 0.83.0 SHIPPED; the ASC consumes both)
 
 **TWO CUTS IN ONE NIGHT, both OIDC-verified on the registry.** 0.82.1 (patch): the admin-shell
 sidebar fixes (scroll bleed via position:fixed; deep custom-nav routes keep the persistent

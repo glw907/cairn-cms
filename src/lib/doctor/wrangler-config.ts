@@ -24,6 +24,17 @@ export interface WranglerFacts {
 }
 
 /**
+ * One declared `r2_buckets` entry: the Worker binding name and, when declared, the bucket's
+ *  real name. `WranglerFacts.r2Buckets` carries only binding names (the doctor's
+ *  config.media-bucket check never needed more), so a caller that must resolve an actual bucket
+ *  name, like `cairn-media-seed`'s `wrangler r2 object put`, reads this instead.
+ */
+export interface R2BucketEntry {
+  binding: string;
+  bucketName?: string;
+}
+
+/**
  *
  */
 export async function readWranglerConfig(
@@ -34,6 +45,70 @@ export async function readWranglerConfig(
   const toml = await readFile('wrangler.toml');
   if (toml !== null) return factsFromToml(toml);
   return null;
+}
+
+/**
+ * Read the site's declared `r2_buckets` entries, binding plus `bucket_name`, from
+ *  wrangler.jsonc or wrangler.toml. Tolerant like readWranglerConfig: null when neither file
+ *  exists, and a jsonc parse failure throws the same clean message.
+ */
+export async function readR2Buckets(
+  readFile: DoctorContext['readFile']
+): Promise<R2BucketEntry[] | null> {
+  const jsonc = await readFile('wrangler.jsonc');
+  if (jsonc !== null) return r2EntriesFromJsonc(jsonc);
+  const toml = await readFile('wrangler.toml');
+  if (toml !== null) return r2EntriesFromToml(toml);
+  return null;
+}
+
+function r2EntriesFromJsonc(text: string): R2BucketEntry[] {
+  let config: Record<string, unknown>;
+  try {
+    config = JSON.parse(stripJsonc(text)) as Record<string, unknown>;
+  } catch {
+    throw new Error('wrangler.jsonc did not parse');
+  }
+  const r2 = Array.isArray(config.r2_buckets) ? config.r2_buckets : [];
+  return r2
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .filter((entry): entry is Record<string, unknown> & { binding: string } => typeof entry.binding === 'string')
+    .map((entry) => ({
+      binding: entry.binding,
+      bucketName: typeof entry.bucket_name === 'string' ? entry.bucket_name : undefined,
+    }));
+}
+
+function r2EntriesFromToml(text: string): R2BucketEntry[] {
+  const entries: R2BucketEntry[] = [];
+  let section = '';
+  let binding: string | undefined;
+  let bucketName: string | undefined;
+
+  const flush = () => {
+    if (binding !== undefined) entries.push({ binding, bucketName });
+    binding = undefined;
+    bucketName = undefined;
+  };
+
+  for (const line of text.split('\n')) {
+    const header = line.match(/^\s*(\[\[?[\w.]+\]?\])\s*(?:#.*)?$/);
+    if (header) {
+      flush();
+      section = header[1];
+      continue;
+    }
+    const kv = line.match(/^\s*(\w+)\s*=\s*(.+?)\s*$/);
+    if (!kv) continue;
+    const [, key, value] = kv;
+    const str = value.match(/^["'](.*)["']/)?.[1];
+    if (section === '[[r2_buckets]]') {
+      if (key === 'binding' && str !== undefined) binding = str;
+      if (key === 'bucket_name' && str !== undefined) bucketName = str;
+    }
+  }
+  flush();
+  return entries;
 }
 
 // Strip // and /* */ comments outside string literals, character by character, so a URL

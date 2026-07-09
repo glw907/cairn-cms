@@ -29,7 +29,7 @@
     "markdown"
   ],
   "scripts": {
-    "package": "svelte-package && node scripts/build-admin-css.mjs && node scripts/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js",
+    "package": "svelte-package && node scripts/build-admin-css.mjs && node scripts/transpile-dist-svelte.mjs && chmod +x dist/vite/bin.js dist/doctor/bin.js dist/media-seed/bin.js",
     "check:package": "npm run package && publint --strict && attw --pack . --ignore-rules no-resolution cjs-resolves-to-esm internal-resolution-error",
     "check:reference": "npm run package && node scripts/reference-coverage.mjs",
     "check:reference:signatures": "npm run package && node scripts/check-reference-signatures.mjs",
@@ -121,7 +121,8 @@
   },
   "bin": {
     "cairn-manifest": "./dist/vite/bin.js",
-    "cairn-doctor": "./dist/doctor/bin.js"
+    "cairn-doctor": "./dist/doctor/bin.js",
+    "cairn-media-seed": "./dist/media-seed/bin.js"
   },
   "files": [
     "dist",

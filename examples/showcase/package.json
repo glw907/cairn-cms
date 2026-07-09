@@ -8,7 +8,8 @@
     "preview": "vite preview",
     "cairn:manifest": "cairn-manifest",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "design:probe": "node scripts/design-probe.mjs"
   },
   "dependencies": {
     "@glw907/cairn-cms": "file:../.."

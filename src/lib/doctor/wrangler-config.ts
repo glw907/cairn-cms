@@ -62,13 +62,19 @@ export async function readR2Buckets(
   return null;
 }
 
-function r2EntriesFromJsonc(text: string): R2BucketEntry[] {
-  let config: Record<string, unknown>;
+// Parse a wrangler.jsonc body, stripping comments first. V8's SyntaxError embeds a source
+// snippet, which would land verbatim in the report; a file that exists but does not parse
+// fails with this clean message instead.
+function parseJsonc(text: string): Record<string, unknown> {
   try {
-    config = JSON.parse(stripJsonc(text)) as Record<string, unknown>;
+    return JSON.parse(stripJsonc(text)) as Record<string, unknown>;
   } catch {
     throw new Error('wrangler.jsonc did not parse');
   }
+}
+
+function r2EntriesFromJsonc(text: string): R2BucketEntry[] {
+  const config = parseJsonc(text);
   const r2 = Array.isArray(config.r2_buckets) ? config.r2_buckets : [];
   return r2
     .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
@@ -154,14 +160,7 @@ function stripJsonc(text: string): string {
 }
 
 function factsFromJsonc(text: string): WranglerFacts {
-  let config: Record<string, unknown>;
-  try {
-    config = JSON.parse(stripJsonc(text)) as Record<string, unknown>;
-  } catch {
-    // V8's SyntaxError embeds a source snippet, which would land verbatim in the report;
-    // a file that exists but does not parse is a fail with a clean message instead.
-    throw new Error('wrangler.jsonc did not parse');
-  }
+  const config = parseJsonc(text);
   const sendEmail = Array.isArray(config.send_email) ? config.send_email : [];
   const hasEmailBinding = sendEmail.some(
     (entry) => typeof entry === 'object' && entry !== null && (entry as { name?: unknown }).name === 'EMAIL'

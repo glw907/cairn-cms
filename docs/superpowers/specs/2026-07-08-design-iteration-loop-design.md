@@ -138,7 +138,10 @@ opinion. The engine's own admin design work already fits the loop (the showcase 
 2. Engine (branch `design-iteration-tooling`): the media-route `onlyIf`/`range` fix with a
    serializability regression test; the `cairn-media-seed` bin with unit tests over its pure
    parts; reference page, local-iteration guide, CHANGELOG entries under Unreleased, ROADMAP
-   prune of the shipped item.
+   prune of the shipped item. The guide's audience ruling (Geoff, 2026-07-08): it serves
+   anybody using Claude to do design work on a cairn site, and its worked example is taking
+   a cairn theme and making it your own — scaffold with Waymark, seed media once, iterate
+   the design locally against `vite dev` with an agent, ship once at the end.
 3. Chassis: genericized `design-probe.mjs` into `examples/showcase/scripts/`.
 4. Memory: update `design-iteration-economics` when the skill mode lands.
 

@@ -1,3 +1,29 @@
+## Unreleased
+
+### Added
+
+- New bin, `cairn-media-seed`: seeds wrangler's local R2 simulator with every media-library
+  object from a deployed cairn site (`npx cairn-media-seed --from https://your-site.com`), so
+  `vite dev` serves real media on every page with no deploy. It reads the committed media
+  manifest, downloads each object with optional repeatable `--header` flags for an
+  Access-protected site, and writes it under the same content-addressed key the media route
+  reads; `--bucket` overrides the wrangler-config bucket resolution when a site declares more
+  than one. See [the reference page](docs/reference/cli-cairn-media-seed.md) and [the local
+  design-iteration guide](docs/guides/iterate-your-design-locally.md) it unblocks.
+
+### Fixed
+
+- `createMediaRoute` passed the request's `Headers` instance straight through as R2 `get`'s
+  `onlyIf` and `range` options. Production Workers accept a `Headers` instance there, but
+  miniflare's `getPlatformProxy` can't serialize one across its RPC boundary, so every `/media`
+  read 500'd under a consumer's `vite dev`. The route now derives plain, structured-clone-safe
+  `onlyIf` and `range` objects from the request's conditional and `Range` headers instead. The
+  206 shaping also now handles a suffix range (`bytes=-n`) echoed back as `{ suffix }` rather
+  than a resolved offset and length, clamping a suffix past the object size to the full window.
+  A site carrying a dev-only `/media` fallback middleware for this bug (the aksailingclub-org
+  `devMediaFallback`) can delete it on upgrade; the route itself now works under `vite dev`
+  with no workaround.
+
 ## 0.83.0
 
 <!-- release-size: minor -->

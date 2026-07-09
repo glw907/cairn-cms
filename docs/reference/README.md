@@ -47,6 +47,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.editor` augmentation for a site's `app.d.ts`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
+- [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
 
 One page here is not export-keyed, since it documents author-facing markdown syntax rather than a

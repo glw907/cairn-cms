@@ -86,15 +86,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Media route: local-dev-safe `onlyIf` (found by ASC's local-iteration machinery,
-  2026-07-09).** `createMediaRoute` passes the request's `Headers` object as R2 `get`'s
-  `onlyIf` (and `range`), which production Workers accept but miniflare's `getPlatformProxy`
-  magic proxy cannot serialize, so EVERY `/media` read 500s under a consumer's `vite dev`.
-  Fix: derive a plain `R2Conditional` (and a parsed range) from the headers instead of
-  passing the `Headers` instance through. The ASC repo carries a dev-only vite middleware
-  workaround (`devMediaFallback` in its vite.config.ts) that retires when this ships; note
-  the fix in that release's changelog so the site knows to drop it.
-
 - **Harden the fold-on-mount e2e against load flake (from the design-review bug pass,
   2026-07-04).** The test fails under system load and passes quiet (verified pre-existing on
   main); fix its waiting discipline (poll the fold state, not a timing assumption) before it

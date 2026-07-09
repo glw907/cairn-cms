@@ -40,6 +40,8 @@ later, or the upkeep of a running site.
 - **[Make Waymark your own](./make-waymark-your-own.md)**: re-skin the public template from one
   file, the token seam every re-skin uses, worked with the cairn theme, the template's own opt-in
   identity
+- **[Iterate your design locally](./iterate-your-design-locally.md)**: seed real media into local
+  R2 state and iterate a design against `vite dev`, with no deploy per tweak
 - **[Read cairn's logs](./read-cairn-logs.md)**: read the structured events a running site emits,
   and find the one a symptom points at
 - **[Rotate the GitHub App private key](./rotate-the-github-app-key.md)**: generate a new key

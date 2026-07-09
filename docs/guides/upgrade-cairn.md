@@ -50,6 +50,18 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.84.0: `cairn-media-seed` and a media route that works under `vite dev` (non-breaking)
+
+A new bin, `cairn-media-seed`, seeds wrangler's local R2 simulator with every media-library
+object from a deployed site, so local design iteration sees real images. The media delivery
+route now derives plain `onlyIf` and `range` options instead of passing a `Headers` instance,
+which fixes the 500 every `/media` read hit under a consumer's `vite dev`. See [the reference
+page](../reference/cli-cairn-media-seed.md) and [the local design-iteration
+guide](./iterate-your-design-locally.md).
+
+Consumers must: nothing. A site that carried a dev-only `/media` fallback middleware for the
+`vite dev` bug can delete it after the bump; the route works locally without it.
+
 ## 0.83.0: a `publishActions` config renders next-step links on the publish-success moment (non-breaking)
 
 A site declares next-step links for the publish-success moment through a new `publishActions`

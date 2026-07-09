@@ -14,11 +14,15 @@ design change on any cairn site, a token swap, a new component, a layout rework.
 
 ## What you need first
 
-A cairn site that's already deployed, with real content and at least a few media objects in its
-library. This guide assumes you're iterating an existing site's design, not building one from
-scratch; if you don't have a site yet, work through [the
+A cairn site with real content and at least a few media objects in its library. Usually that's a
+site that's already deployed. If you don't have one yet, work through [the
 tutorial](../tutorial/build-your-first-cairn-site.md) or copy
-[`examples/showcase`](../../examples/showcase/README.md) first, deploy it, and add some content.
+[`examples/showcase`](../../examples/showcase/README.md) first.
+
+Starting fresh from Waymark, before you deploy anything? The loop below works from day one, and
+you have nothing to seed yet, so skip the seeding step. Media you upload through the local
+`/admin` screen lands directly in the local bucket. The seeding step becomes useful later, when a
+deployed library exists and a fresh clone needs its images.
 
 Clone the site's repository and install its dependencies:
 

@@ -5,7 +5,7 @@
 // bin wires the real ones. A per-item failure is caught and counted, never abandoning the rest
 // of the run.
 import { r2Key } from '../media/naming.js';
-import { downloadUrl } from './assemble.js';
+import { contentTypeForExt, downloadUrl } from './assemble.js';
 import type { SeedItem } from './assemble.js';
 
 /**
@@ -19,8 +19,8 @@ export interface SeedDeps {
   writeTempFile: (name: string, bytes: Uint8Array) => string;
   /** Remove whatever `writeTempFile` created for this run. Called once, after the loop. */
   cleanup: () => void;
-  /** Write `filePath`'s bytes into `bucket` at `key` in the local R2 simulator. */
-  putObject: (bucket: string, key: string, filePath: string) => void;
+  /** Write `filePath`'s bytes into `bucket` at `key` in the local R2 simulator, storing `contentType`. */
+  putObject: (bucket: string, key: string, filePath: string, contentType: string) => void;
 }
 
 /** One item's sync failure: its slug and the error message. */
@@ -59,7 +59,7 @@ export async function seedMedia(
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const bytes = new Uint8Array(await res.arrayBuffer());
       const file = deps.writeTempFile(`${item.hash}.${item.ext}`, bytes);
-      deps.putObject(bucket, r2Key(item.hash, item.ext), file);
+      deps.putObject(bucket, r2Key(item.hash, item.ext), file, contentTypeForExt(item.ext));
       ok++;
     } catch (err) {
       failures.push({ slug: item.slug, message: err instanceof Error ? err.message : String(err) });

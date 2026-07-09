@@ -82,6 +82,24 @@ export function downloadUrl(from: string, item: SeedItem): string {
   return `${from.replace(/\/+$/, '')}/media/${item.slug}.${item.hash}.${item.ext}`;
 }
 
+/** The delivery content types by extension, matching what the upload pipeline stores. */
+const CONTENT_TYPES: Record<string, string> = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+  avif: 'image/avif',
+};
+
+/**
+ * The content type to store with a seeded object, so local dev serves the same `Content-Type`
+ *  production does (an object put with none falls back to the route's octet-stream default).
+ */
+export function contentTypeForExt(ext: string): string {
+  return CONTENT_TYPES[ext.toLowerCase()] ?? 'application/octet-stream';
+}
+
 /** The resolved R2 bucket name, or the reason it could not be resolved. */
 export type BucketResolution = { value: string } | { error: string };
 

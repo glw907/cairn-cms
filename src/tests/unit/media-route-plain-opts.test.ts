@@ -92,7 +92,7 @@ describe('media delivery route: plain option objects (media-route local-dev-safe
       const bucket = {
         async get() {
           return {
-            writeHttpMetadata() {},
+            httpMetadata: { contentType: 'image/png' },
             httpEtag: '"abc"',
             size: 100,
             range: { suffix },

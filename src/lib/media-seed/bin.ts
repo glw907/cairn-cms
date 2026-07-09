@@ -27,10 +27,21 @@ function realDeps(cwd: string): SeedDeps {
     cleanup() {
       rmSync(dir, { recursive: true, force: true });
     },
-    putObject(bucket, key, filePath) {
+    putObject(bucket, key, filePath, contentType) {
       execFileSync(
         'npx',
-        ['wrangler', 'r2', 'object', 'put', `${bucket}/${key}`, '--file', filePath, '--local'],
+        [
+          'wrangler',
+          'r2',
+          'object',
+          'put',
+          `${bucket}/${key}`,
+          '--file',
+          filePath,
+          '--local',
+          '--content-type',
+          contentType,
+        ],
         { cwd, stdio: 'pipe' }
       );
     },

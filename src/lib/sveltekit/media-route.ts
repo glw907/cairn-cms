@@ -27,7 +27,7 @@ const DELIVERY_EXTS: ReadonlySet<string> = new Set(['jpg', 'jpeg', 'png', 'gif',
 /**
  * The load-bearing XSS control: set on every non-404 response, so a served object can never run as
  *  active content. `Content-Type` comes from the stored, server-validated metadata via
- *  `writeHttpMetadata`; these override or add to it.
+ *  `applyHttpMetadata`; these override or add to it.
  */
 function applySecurityHeaders(headers: Headers, etag: string): void {
   headers.set('X-Content-Type-Options', 'nosniff');
@@ -36,9 +36,25 @@ function applySecurityHeaders(headers: Headers, etag: string): void {
   headers.set('Cache-Control', 'public, max-age=31536000, immutable');
   headers.set('ETag', etag);
   // An object stored outside the upload pipeline (a manual put, a future import) may carry no
-  // content type, so writeHttpMetadata would set none. Pair `nosniff` with an explicit safe
+  // content type, so the stored metadata would set none. Pair `nosniff` with an explicit safe
   // default rather than serving a typeless response.
   if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/octet-stream');
+}
+
+/**
+ * Write the stored HTTP metadata onto `headers` from the object's plain fields, what R2's own
+ *  `writeHttpMetadata` writes. The route never calls that method: under miniflare's
+ *  `getPlatformProxy` the returned object is an RPC stub, and passing a live `Headers` into one
+ *  of its methods fails to serialize, 500ing every `/media` read under a consumer's `vite dev`.
+ */
+function applyHttpMetadata(headers: Headers, meta: DeliveryObject['httpMetadata']): void {
+  if (!meta) return;
+  if (meta.contentType) headers.set('Content-Type', meta.contentType);
+  if (meta.contentLanguage) headers.set('Content-Language', meta.contentLanguage);
+  if (meta.contentDisposition) headers.set('Content-Disposition', meta.contentDisposition);
+  if (meta.contentEncoding) headers.set('Content-Encoding', meta.contentEncoding);
+  if (meta.cacheControl) headers.set('Cache-Control', meta.cacheControl);
+  if (meta.cacheExpiry) headers.set('Expires', meta.cacheExpiry.toUTCString());
 }
 
 /**
@@ -145,13 +161,13 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     // which always requested the full body.
     if (!isImageResizing && !hasBody(obj)) {
       const headers = new Headers();
-      obj.writeHttpMetadata(headers);
+      applyHttpMetadata(headers, obj.httpMetadata);
       applySecurityHeaders(headers, obj.httpEtag);
       return new Response(null, { status: 304, headers });
     }
 
     const headers = new Headers();
-    obj.writeHttpMetadata(headers);
+    applyHttpMetadata(headers, obj.httpMetadata);
     applySecurityHeaders(headers, obj.httpEtag);
 
     // A ranged read carries `obj.range`: respond 206 with a Content-Range. R2 fills the served

@@ -57,7 +57,8 @@ as the fix.
 For each manifest row with a `slug`, `hash`, and `ext`, the command downloads
 `<from>/media/<slug>.<hash>.<ext>` and writes the response body into the resolved bucket at
 `media/<hash[0:2]>/<hash>.<ext>`, the content-addressed key the [media
-route](./sveltekit.md) reads on every request. Re-running the command overwrites each key with
+route](./sveltekit.md) reads on every request. The command stores each object with the
+`Content-Type` its extension implies, so local reads serve the same header production does. Re-running the command overwrites each key with
 the same bytes, so it's safe to run again after the deployed library gains new objects. A row
 missing any of those three fields is dropped rather than failing the run, the same tolerance the
 manifest reader applies elsewhere.

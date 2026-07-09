@@ -1,3 +1,20 @@
+## Unreleased
+
+### Fixed
+
+- The media route's second local-dev serialization site, which 0.84.0 missed: the route called
+  `writeHttpMetadata(headers)` on the object R2 returned, and under miniflare's
+  `getPlatformProxy` that object is an RPC stub whose method call cannot marshal a live
+  `Headers` argument, so every `/media` read still 500'd under a consumer's `vite dev`. The
+  route now builds response headers from the object's plain `httpMetadata` fields and never
+  calls a method on the returned object. Verified end-to-end on a consumer checkout: seed,
+  `vite dev`, and a media GET returns 200 with the stored content type. This completes the
+  local-dev promise 0.84.0's changelog made; the `devMediaFallback` deletion note there applies
+  as of this release.
+- `cairn-media-seed` now stores each object's content type (derived from the manifest
+  extension, passed as `wrangler r2 object put --content-type`), so local dev serves the same
+  `Content-Type` production does instead of the route's octet-stream fallback.
+
 ## 0.84.0
 
 <!-- release-size: minor -->

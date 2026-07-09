@@ -86,6 +86,14 @@ The original decision framing, for the record:
 
 ## Now
 
+- **A `getPlatformProxy` media-delivery smoke (born from the 0.84.x local-dev bounce,
+  2026-07-08).** Two miniflare serialization bugs shipped past a green suite because no gate
+  drives the media route through the dev platform proxy: the vitest workers pool binds native
+  R2 (no RPC boundary) and `vite preview` carries no bindings at all. Add a small test that
+  runs the composed route against a `getPlatformProxy` env (seeded local R2, one GET asserting
+  200 + Content-Type), so the serialization class fails in CI rather than on a consumer's
+  first `vite dev`.
+
 - **Harden the fold-on-mount e2e against load flake (from the design-review bug pass,
   2026-07-04).** The test fails under system load and passes quiet (verified pre-existing on
   main); fix its waiting discipline (poll the fold state, not a timing assumption) before it

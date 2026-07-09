@@ -10,8 +10,21 @@
 
 /** A stored object without its body: the shape an `If-None-Match` hit or a metadata read returns. */
 export interface DeliveryObject {
-  /** Writes the stored HTTP metadata (Content-Type, Cache-Control, and so on) onto `headers`. */
-  writeHttpMetadata(headers: Headers): void;
+  /**
+   * The stored HTTP metadata as plain fields, the structural subset of what R2 keeps. The route
+   *  reads these rather than calling the real object's `writeHttpMetadata(headers)`: under
+   *  miniflare's `getPlatformProxy` the returned object is an RPC stub, and a live `Headers`
+   *  argument cannot marshal across that boundary (the same limitation the `get` options hit),
+   *  while plain data properties cross it fine.
+   */
+  httpMetadata?: {
+    contentType?: string;
+    contentLanguage?: string;
+    contentDisposition?: string;
+    contentEncoding?: string;
+    cacheControl?: string;
+    cacheExpiry?: Date;
+  };
   /** The strong validator R2 stored for the bytes, set as the response `ETag`. */
   httpEtag: string;
   /** The full object size in bytes, the denominator of a `Content-Range`. */

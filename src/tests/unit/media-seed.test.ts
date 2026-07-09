@@ -6,6 +6,7 @@ import { join, resolve } from 'node:path';
 import {
   parseArgs,
   normalizeManifest,
+  contentTypeForExt,
   downloadUrl,
   resolveBucket,
   seedMedia,
@@ -98,6 +99,20 @@ describe('downloadUrl', () => {
     expect(downloadUrl('https://example.com/', item)).toBe(
       'https://example.com/media/sunset.abcdef0123456789.webp'
     );
+  });
+});
+
+describe('contentTypeForExt', () => {
+  it('maps the delivery extensions to their image types', () => {
+    expect(contentTypeForExt('jpg')).toBe('image/jpeg');
+    expect(contentTypeForExt('JPEG')).toBe('image/jpeg');
+    expect(contentTypeForExt('png')).toBe('image/png');
+    expect(contentTypeForExt('webp')).toBe('image/webp');
+    expect(contentTypeForExt('avif')).toBe('image/avif');
+  });
+
+  it('falls back to octet-stream for an unknown extension', () => {
+    expect(contentTypeForExt('bin')).toBe('application/octet-stream');
   });
 });
 
@@ -236,7 +251,7 @@ describe('seedMedia', () => {
     cleaned: boolean;
   } {
     const written: { name: string; bytes: Uint8Array }[] = [];
-    const put: { bucket: string; key: string; filePath: string }[] = [];
+    const put: { bucket: string; key: string; filePath: string; contentType: string }[] = [];
     const deps = {
       fetch: vi.fn(async () => new Response(new Uint8Array([1, 2, 3]), { status: 200 })),
       writeTempFile: vi.fn((name: string, bytes: Uint8Array) => {
@@ -246,8 +261,8 @@ describe('seedMedia', () => {
       cleanup: vi.fn(() => {
         deps.cleaned = true;
       }),
-      putObject: vi.fn((bucket: string, key: string, filePath: string) => {
-        put.push({ bucket, key, filePath });
+      putObject: vi.fn((bucket: string, key: string, filePath: string, contentType: string) => {
+        put.push({ bucket, key, filePath, contentType });
       }),
       written,
       put,
@@ -262,8 +277,18 @@ describe('seedMedia', () => {
     const result = await seedMedia(items, 'https://example.com', {}, 'site-media', deps);
     expect(result).toEqual({ total: 2, ok: 2, failed: 0, failures: [] });
     expect(deps.put).toEqual([
-      { bucket: 'site-media', key: 'media/aa/aa11223344556677.webp', filePath: '/tmp/aa11223344556677.webp' },
-      { bucket: 'site-media', key: 'media/bb/bb11223344556677.webp', filePath: '/tmp/bb11223344556677.webp' },
+      {
+        bucket: 'site-media',
+        key: 'media/aa/aa11223344556677.webp',
+        filePath: '/tmp/aa11223344556677.webp',
+        contentType: 'image/webp',
+      },
+      {
+        bucket: 'site-media',
+        key: 'media/bb/bb11223344556677.webp',
+        filePath: '/tmp/bb11223344556677.webp',
+        contentType: 'image/webp',
+      },
     ]);
     expect(deps.cleaned).toBe(true);
   });

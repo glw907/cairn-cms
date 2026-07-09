@@ -50,6 +50,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.84.1: the local-dev media fix completed (non-breaking)
+
+0.84.0's local-dev claim shipped incomplete: a second serialization site
+(`writeHttpMetadata` on the returned object) still failed every `/media` read under
+`vite dev`. 0.84.1 completes it, verified end-to-end on a consumer checkout, and
+`cairn-media-seed` now stores each object's `Content-Type`. Upgrade straight to 0.84.1.
+The `devMediaFallback` deletion note below applies as of this version.
+
+Consumers must: nothing. Re-run `npx cairn-media-seed` after upgrading if you seeded with
+0.84.0, so the stored objects gain their content types.
+
 ## 0.84.0: `cairn-media-seed` and a media route that works under `vite dev` (non-breaking)
 
 A new bin, `cairn-media-seed`, seeds wrangler's local R2 simulator with every media-library

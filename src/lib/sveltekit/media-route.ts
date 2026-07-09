@@ -13,6 +13,7 @@ import { r2Key } from '../media/naming.js';
 import { log } from '../log/index.js';
 import type { DeliveryObject, DeliveryObjectBody } from '../media/delivery-bucket.js';
 import type { CairnRuntime } from '../content/types.js';
+import { deriveOnlyIf, deriveRange } from './media-conditional.js';
 
 /** A 16-character lowercase hex content-hash prefix, validated before any R2 lookup. */
 const HASH_RE = /^[0-9a-f]{16}$/;
@@ -126,12 +127,16 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     // returned object's `.range` whenever a `range` option is passed (even a header-less one), so
     // passing it unconditionally would turn every full GET into a 206.
     const hasRangeRequest = !isImageResizing && event.request.headers.has('Range');
+    // Derive plain option objects rather than passing `event.request.headers` itself: miniflare's
+    // `getPlatformProxy` magic proxy cannot serialize a `Headers` instance, so a consumer's `vite
+    // dev` would 500 on every read.
+    const onlyIf = isImageResizing ? undefined : deriveOnlyIf(event.request.headers);
+    const range = hasRangeRequest
+      ? deriveRange(event.request.headers.get('Range') as string)
+      : undefined;
     const getOpts = isImageResizing
       ? undefined
-      : {
-          onlyIf: event.request.headers,
-          ...(hasRangeRequest ? { range: event.request.headers } : {}),
-        };
+      : { ...(onlyIf ? { onlyIf } : {}), ...(range ? { range } : {}) };
     const obj = await bucket.get(key, getOpts);
 
     if (obj === null) return new Response(null, { status: 404 });

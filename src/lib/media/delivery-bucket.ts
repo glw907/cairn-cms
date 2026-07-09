@@ -18,10 +18,11 @@ export interface DeliveryObject {
   size: number;
   /**
    * Present only on a ranged read: the served window, used to build the `Content-Range`. R2 fills
-   *  both fields for a `bytes=start-end` request; each is typed optional so the route derives the
-   *  range bounds defensively against `size`.
+   *  offset/length for a `bytes=start-end` request but may echo a suffix request as `{ suffix }`;
+   *  every field is typed optional so the route derives the range bounds defensively against
+   *  `size`.
    */
-  range?: { offset?: number; length?: number };
+  range?: { offset?: number; length?: number; suffix?: number };
 }
 
 /** A stored object with its readable body, the shape a full or ranged read returns. */
@@ -34,10 +35,19 @@ export interface DeliveryBucket {
   get(
     key: string,
     opts?: {
-      /** R2 reads `If-None-Match`/`If-Match` from a passed `Headers`; the route forwards the request's. */
-      onlyIf?: { etagDoesNotMatch?: string } | Headers;
-      /** The byte window to serve; the route parses it from the request `Range` header. */
-      range?: { offset?: number; length?: number } | Headers;
+      /**
+       * A plain conditional-get option, derived from the request's conditional headers. Never a
+       *  `Headers` instance: miniflare's `getPlatformProxy` proxy cannot serialize one.
+       */
+      onlyIf?: {
+        etagMatches?: string;
+        etagDoesNotMatch?: string;
+        uploadedAfter?: Date;
+        uploadedBefore?: Date;
+        secondsGranularity?: boolean;
+      };
+      /** The byte window to serve, derived from the request `Range` header. */
+      range?: { offset?: number; length?: number; suffix?: number };
     },
   ): Promise<DeliveryObjectBody | DeliveryObject | null>;
 }

@@ -13,6 +13,7 @@ import { r2Key } from '../media/naming.js';
 import { log } from '../log/index.js';
 import type { DeliveryObject, DeliveryObjectBody } from '../media/delivery-bucket.js';
 import type { CairnRuntime } from '../content/types.js';
+import { deriveOnlyIf, deriveRange } from './media-conditional.js';
 
 /** A 16-character lowercase hex content-hash prefix, validated before any R2 lookup. */
 const HASH_RE = /^[0-9a-f]{16}$/;
@@ -126,12 +127,16 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     // returned object's `.range` whenever a `range` option is passed (even a header-less one), so
     // passing it unconditionally would turn every full GET into a 206.
     const hasRangeRequest = !isImageResizing && event.request.headers.has('Range');
+    // Derive plain option objects rather than passing `event.request.headers` itself: miniflare's
+    // `getPlatformProxy` magic proxy cannot serialize a `Headers` instance, so a consumer's `vite
+    // dev` would 500 on every read.
+    const onlyIf = isImageResizing ? undefined : deriveOnlyIf(event.request.headers);
+    const range = hasRangeRequest
+      ? deriveRange(event.request.headers.get('Range') as string)
+      : undefined;
     const getOpts = isImageResizing
       ? undefined
-      : {
-          onlyIf: event.request.headers,
-          ...(hasRangeRequest ? { range: event.request.headers } : {}),
-        };
+      : { ...(onlyIf ? { onlyIf } : {}), ...(range ? { range } : {}) };
     const obj = await bucket.get(key, getOpts);
 
     if (obj === null) return new Response(null, { status: 404 });
@@ -150,10 +155,13 @@ export function createMediaRoute(runtime: CairnRuntime): RequestHandler {
     applySecurityHeaders(headers, obj.httpEtag);
 
     // A ranged read carries `obj.range`: respond 206 with a Content-Range. R2 fills the served
-    // window; derive the bounds defensively against the full size.
+    // window; derive the bounds defensively against the full size. A suffix read may come back
+    // either resolved to offset/length or echoed as `{ suffix }`; handle both, clamping a suffix
+    // larger than the object to a full-object window the way R2 clamps the read itself.
     if (hasRangeRequest && obj.range) {
-      const start = obj.range.offset ?? 0;
-      const length = obj.range.length ?? obj.size - start;
+      const suffix = 'suffix' in obj.range ? obj.range.suffix : undefined;
+      const start = suffix !== undefined ? Math.max(0, obj.size - suffix) : (obj.range.offset ?? 0);
+      const length = suffix !== undefined ? obj.size - start : (obj.range.length ?? obj.size - start);
       const end = start + length - 1;
       headers.set('Content-Range', `bytes ${start}-${end}/${obj.size}`);
       const body = hasBody(obj) ? obj.body : null;

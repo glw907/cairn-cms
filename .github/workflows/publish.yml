@@ -29,7 +29,10 @@ jobs:
           node-version: 24
           registry-url: https://registry.npmjs.org
       # Trusted publishing requires npm >= 11.5.1 (newer than the bundled version).
-      - run: npm install -g npm@latest
+      # WATCH: pinned to the 11.x line because npm 12.0.0 (2026-07-08) ships without its
+      # sigstore module and every publish fails on MODULE_NOT_FOUND in libnpmpublish;
+      # move back to npm@latest once a fixed 12.x publishes cleanly.
+      - run: npm install -g npm@11
       - run: npm install --no-audit --no-fund
       # Validate the published package shape before releasing.
       - run: npm run check:package

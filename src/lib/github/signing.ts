@@ -79,7 +79,7 @@ export async function installationToken(creds: AppCredentials): Promise<string> 
 }
 
 interface CachedToken {
-  token: Promise<string>;
+  token: string;
   expiresAt: number;
 }
 
@@ -89,10 +89,18 @@ interface CachedToken {
  * instead of re-signing and re-calling GitHub on every list and commit. A cold isolate re-mints,
  * which is always safe. This mirrors the default of `@octokit/auth-app`, which caches installation
  * tokens in memory and returns them until expiry. The TTL stays under GitHub's documented one-hour
- * lifetime, so a fixed margin avoids parsing the API expiry. The cache holds the in-flight
- * promise, not the resolved token, so a cold isolate's parallel loads coalesce into one mint;
- * a rejected mint evicts itself so the next call retries. `mint` and `now` are injected so the
+ * lifetime, so a fixed margin avoids parsing the API expiry. `mint` and `now` are injected so the
  * cache is testable with no network call and no real clock.
+ *
+ * The cache stores only a resolved token, never the in-flight mint promise, and this is load
+ * bearing. Under Cloudflare Workers, a request's outstanding subrequests are canceled once its
+ * response completes; a mint fetch caught mid-flight by a fast-returning handler (for example a
+ * redirecting admin view) can be canceled this way, and the promise it left behind never settles.
+ * A cache keyed on that promise would then serve the dead promise to every later caller in the
+ * isolate, and each would await it for the full TTL with no way out. See
+ * `docs/internal/2026-07-13-admin-token-cache-poisoning.md` for the production incident this
+ * traces to. Two concurrent misses on a cold isolate therefore each mint their own token rather
+ * than sharing one pending promise; a duplicate mint is the cheap and safe side of that trade.
  */
 export function createInstallationTokenCache(
   mint: (creds: AppCredentials) => Promise<string> = installationToken,
@@ -100,17 +108,12 @@ export function createInstallationTokenCache(
   ttlMs = 55 * 60 * 1000,
 ): (creds: AppCredentials) => Promise<string> {
   const cache = new Map<string, CachedToken>();
-  return function get(creds: AppCredentials): Promise<string> {
+  return async function get(creds: AppCredentials): Promise<string> {
     const hit = cache.get(creds.installationId);
     if (hit && hit.expiresAt > now()) return hit.token;
-    const entry: CachedToken = { token: mint(creds), expiresAt: now() + ttlMs };
-    cache.set(creds.installationId, entry);
-    // Evict only this entry on rejection: a newer entry that replaced it must survive. The
-    // caller's await surfaces the rejection itself, so this side handler swallows nothing.
-    entry.token.catch(() => {
-      if (cache.get(creds.installationId) === entry) cache.delete(creds.installationId);
-    });
-    return entry.token;
+    const token = await mint(creds);
+    cache.set(creds.installationId, { token, expiresAt: now() + ttlMs });
+    return token;
   };
 }
 

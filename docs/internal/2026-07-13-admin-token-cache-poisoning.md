@@ -1,5 +1,10 @@
 # Admin hang after login: the installation-token cache holds a dead promise
 
+**Resolved 2026-07-13.** The cache now stores only a resolved token value (the second fix
+direction below), never the in-flight mint promise, so a canceled mint has nothing left in the
+cache to be served. The regression test pinning this is "never serves an unsettled in-flight
+mint to a later caller" in `src/tests/unit/github-token-cache.test.ts`.
+
 Reported from ecxc.ski, 2026-07-13, with live production evidence. This is the bug behind two
 symptoms previously recorded as separate facts: the magic-link confirm flow hanging the browser
 on the deployed ecxc Worker, and the "content-list GitHub round trip hangs in this sandbox"

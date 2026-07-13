@@ -33,27 +33,44 @@ describe('installation token cache (Unit 3)', () => {
     expect(mint).toHaveBeenCalledTimes(2);
   });
 
-  it('coalesces concurrent misses into one mint', async () => {
-    // A cold isolate's parallel loads call before the first mint resolves; both must ride the
-    // same in-flight mint rather than each minting their own token.
-    let resolveMint!: (token: string) => void;
-    const mint = vi.fn(() => new Promise<string>((resolve) => { resolveMint = resolve; }));
+  it('mints separately for two concurrent misses rather than sharing one in-flight promise', async () => {
+    // Coalescing on a shared pending promise is exactly the workerd hazard this cache must
+    // not reintroduce: a canceled subrequest's promise never settles, and every caller that
+    // rode it would hang forever. Two concurrent cold misses each mint their own token, which
+    // is the cheap and safe side of that trade.
+    let n = 0;
+    const mint = vi.fn(async () => `ghs_${n++}`);
     const get = createInstallationTokenCache(mint, () => 1000);
-    const first = get(creds);
-    const second = get(creds);
-    resolveMint('ghs_shared');
-    expect(await first).toBe('ghs_shared');
-    expect(await second).toBe('ghs_shared');
-    expect(mint).toHaveBeenCalledTimes(1);
+    const [first, second] = await Promise.all([get(creds), get(creds)]);
+    expect(first).toMatch(/^ghs_\d$/);
+    expect(second).toMatch(/^ghs_\d$/);
+    expect(mint).toHaveBeenCalledTimes(2);
   });
 
   it('clears a rejected mint so the next call re-mints', async () => {
+    // Nothing is cached until a mint resolves, so a rejection leaves no entry to evict.
     const mint = vi.fn<(c: typeof creds) => Promise<string>>()
       .mockRejectedValueOnce(new Error('mint failed'))
       .mockResolvedValue('ghs_retry');
     const get = createInstallationTokenCache(mint, () => 1000);
     await expect(get(creds)).rejects.toThrow('mint failed');
     expect(await get(creds)).toBe('ghs_retry');
+    expect(mint).toHaveBeenCalledTimes(2);
+  });
+
+  it('never serves an unsettled in-flight mint to a later caller', async () => {
+    // Pins the 2026-07-13 production cache-poisoning bug: a workerd request that answers
+    // before its mint fetch settles gets that fetch canceled, and the canceled promise never
+    // settles. The old promise-caching design then served that dead promise to every later
+    // caller in the isolate for the full TTL. This simulates the first call's mint never
+    // settling and asserts a later call still resolves, by minting its own token instead of
+    // reusing the abandoned one.
+    const mint = vi.fn<(c: typeof creds) => Promise<string>>()
+      .mockReturnValueOnce(new Promise<string>(() => {})) // never settles
+      .mockResolvedValue('ghs_fresh');
+    const get = createInstallationTokenCache(mint, () => 1000);
+    void get(creds); // the abandoned request; never awaited
+    expect(await get(creds)).toBe('ghs_fresh');
     expect(mint).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,3 +1,13 @@
+## Unreleased
+
+### Fixed
+
+- Admin requests could hang indefinitely after login on a cold isolate. The installation-token
+  cache stored the in-flight mint promise, and a fast-returning admin view (the bare `/admin`
+  redirect) let the runtime cancel that mint, leaving a dead promise that every later admin
+  request in the isolate awaited for the 55-minute TTL. The cache now stores only a successfully
+  minted token. Affects consumers on roughly 0.77 and later (the shared admin shell load).
+
 ## 0.84.1
 
 ### Fixed

@@ -50,6 +50,16 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.84.2: the admin hang after login fixed (non-breaking)
+
+On roughly 0.77 and later, a cold Worker isolate could wedge the whole admin for 55 minutes:
+the first admin request after login canceled an in-flight GitHub token mint, and the token
+cache kept serving that dead promise to every later request. 0.84.2 caches only a successfully
+minted token. If editors report the browser waiting forever right after a magic-link login,
+this is that bug; upgrade and redeploy.
+
+Consumers must: nothing.
+
 ## 0.84.1: the local-dev media fix completed (non-breaking)
 
 0.84.0's local-dev claim shipped incomplete: a second serialization site

@@ -68,7 +68,27 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-08, late: 0.84.0 + 0.84.1 SHIPPED — the design-iteration window)
+## Immediate next action (2026-07-13: 0.84.2 SHIPPED — the admin login hang fixed and verified live)
+
+**THE ADMIN HANG AFTER LOGIN IS FIXED, PUBLISHED, AND VERIFIED ON BOTH PRODUCTION SITES.** The
+ecxc live diagnosis (docs/internal/2026-07-13-admin-token-cache-poisoning.md) traced the hang to
+the installation-token cache serving a workerd-canceled, never-settling mint promise to every
+request in the isolate for the 55-minute TTL; the trigger shipped with the shared shell load
+(~0.77+), and the "content-list hangs in this sandbox" note was this bug, not the sandbox.
+**0.84.2** (patch, `3ce8c08` + `f7e4cad`) stores only a resolved token; the regression test pins
+the never-settling-mint case. Full gate + CI e2e green at the cut, OIDC publish verified.
+Rollout (Geoff-authorized workflow): ecxc.ski and 907.life bumped to `^0.84.2`, site gates green,
+deployed, lockfile commits pushed, then each probed live in the exact poisoning order with a
+smoke D1 session (authed `/admin` 307, then the formerly-hanging list request 200 in ~1s, repeat
+200, homepage 200, smoke rows deleted). ecxc BACKLOG #36 closed with the evidence; Geoff's own
+magic-link click remains that checklist's human step. **HELD: aksailingclub-org** — its tree
+carries live class-schedule WIP (7 modified tracked files, the design-iteration arc), so the
+bump + dev.aksailingclub.org deploy waits for that arc's settle; it is a two-file drop-in
+(`npm install @glw907/cairn-cms@^0.84.2`, deploy) when the WIP lands. NEXT: unchanged from the
+0.84.1 entry (Geoff tests the design-iteration loop in a fresh session); the ASC bump rides the
+arc's settle.
+
+## Prior next action (2026-07-08, late: 0.84.0 + 0.84.1 SHIPPED — the design-iteration window)
 
 **THE MACHINE-LOCAL DESIGN-ITERATION LOOP IS BUILT AND SHIPPED.** The spec
 (docs/superpowers/specs/2026-07-08-design-iteration-loop-design.md, Geoff-approved) encoded his

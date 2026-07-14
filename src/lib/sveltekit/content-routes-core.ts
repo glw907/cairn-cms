@@ -513,7 +513,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     requireSession(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
-    const slug = String(form.get('slug') ?? '').trim() || slugify(String(form.get('title') ?? ''));
+    const rawTitle = String(form.get('title') ?? '').trim();
+    const slug = String(form.get('slug') ?? '').trim() || slugify(rawTitle);
     const date = String(form.get('date') ?? '').trim();
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
@@ -537,7 +538,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       return bounce('An unpublished entry with that address already exists.');
     }
 
-    throw redirect(303, `/admin/${concept.id}/${id}?new=1`);
+    // The raw typed title (before slugification) rides the redirect so editLoad can seed the
+    // title field and the breadcrumb; an explicit address can diverge from the title, so the
+    // slug alone is not enough to recover it. Omit the param for a blank title rather than
+    // carrying an empty string through the URL.
+    const titleParam = rawTitle ? `&title=${encodeURIComponent(rawTitle)}` : '';
+    throw redirect(303, `/admin/${concept.id}/${id}?new=1${titleParam}`);
   }
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
@@ -580,10 +586,17 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const parsed = raw === null ? { frontmatter: {}, body: '' } : parseMarkdown(raw);
     // A fresh entry opens prefilled from each field's `default`, resolving a `'today'` date against a
     // request-time clock. The defaults sit under the empty parsed frontmatter, never over a real read.
+    // The create dialog's typed title (carried on `?new=1&title=`) sits over the schema defaults and
+    // under any parsed frontmatter, since a blank new doc has none and the seeded title should win.
+    const seededTitle = isNew ? event.url.searchParams.get('title')?.trim() : null;
     const loadFrontmatter = isNew
-      ? { ...initialValues(concept.schema, new Date()), ...parsed.frontmatter }
+      ? {
+          ...initialValues(concept.schema, new Date()),
+          ...(seededTitle ? { title: seededTitle } : {}),
+          ...parsed.frontmatter,
+        }
       : parsed.frontmatter;
-    const title = asString(parsed.frontmatter.title) ?? id;
+    const title = asString(loadFrontmatter.title) ?? id;
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];

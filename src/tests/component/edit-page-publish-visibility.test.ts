@@ -136,4 +136,62 @@ describe('EditPage Publish visibility', () => {
     expect(fallback.hasAttribute('formaction')).toBe(false);
     expect(fallback.classList.contains('sr-only')).toBe(true);
   });
+
+  it('reads the status badge as New for a brand-new never-published entry', async () => {
+    const screen = render(EditPage, postProps({ isNew: true, pending: false, published: false }));
+    const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
+    expect(badge?.textContent?.trim()).toBe('New');
+    expect(badge?.classList.contains('badge-info')).toBe(true);
+  });
+
+  it('reads the status badge as Published when main matches and nothing is pending', async () => {
+    const screen = render(EditPage, postProps({ pending: false, published: true }));
+    const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
+    expect(badge?.textContent?.trim()).toBe('Published');
+    expect(badge?.classList.contains('badge-ghost')).toBe(true);
+  });
+
+  it('reads the status badge as Edited for a pending branch over a published copy', async () => {
+    const screen = render(EditPage, postProps({ pending: true, published: true }));
+    const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
+    expect(badge?.textContent?.trim()).toBe('Edited');
+    expect(badge?.classList.contains('badge-warning')).toBe(true);
+  });
+
+  it('no-ops the Ctrl+Shift+S chord on a clean, guarded entry', async () => {
+    const screen = render(EditPage, postProps());
+    await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+    let submitted = false;
+    const stop = (e: Event) => {
+      e.preventDefault();
+      submitted = true;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(submitted).toBe(false);
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
+
+  it('fires the Publish submit on Ctrl+Shift+S once a clean entry becomes dirty', async () => {
+    const screen = render(EditPage, postProps());
+    await makeDirty(screen);
+    let formaction: string | null = 'unset';
+    const stop = (e: SubmitEvent) => {
+      e.preventDefault();
+      formaction = (e.submitter as HTMLButtonElement | null)?.getAttribute('formaction') ?? null;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      const event = new KeyboardEvent('keydown', { key: 'S', code: 'KeyS', ctrlKey: true, shiftKey: true, cancelable: true });
+      window.dispatchEvent(event);
+      expect(event.defaultPrevented).toBe(true);
+      await expect.poll(() => formaction).toBe('?/publish');
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+  });
 });

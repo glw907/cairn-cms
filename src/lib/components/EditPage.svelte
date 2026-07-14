@@ -926,11 +926,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     figureDialog?.close();
   }
 
-  // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
-  // when it has never been published); otherwise the live site matches and it reads Published.
+  // The header's status badge, in ConceptList's vocabulary, four states: New (never landed on
+  // main, whether or not it has a pending branch yet), Edited (a pending branch over a published
+  // copy), and Published (main matches, nothing pending). `data.pending` alone cannot carry this:
+  // a brand-new entry is `pending: false, published: false` and must still read New, not Published.
   const status = $derived.by(() => {
-    if (!data.pending) return 'Published';
-    return data.published ? 'Edited' : 'New';
+    if (data.pending) return data.published ? 'Edited' : 'New';
+    return data.published ? 'Published' : 'New';
   });
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';

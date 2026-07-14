@@ -12,6 +12,21 @@ function dateParts(date?: string): { year: string; month: string; day: string } 
   return match ? { year: match[1], month: match[2], day: match[3] } : null;
 }
 
+/** The date-bearing permalink tokens. */
+const DATE_TOKENS = new Set(['year', 'month', 'day']);
+
+/**
+ * Whether a permalink pattern uses any date token (`:year`/`:month`/`:day`). Shared by
+ * `normalizeConcepts`' declaration-time enforcement and `saveToBranch`'s belt-and-braces guard,
+ * so both read the same token vocabulary as `resolvePermalink`.
+ */
+export function permalinkUsesDateToken(pattern: string): boolean {
+  for (const match of pattern.matchAll(/:(\w+)/g)) {
+    if (DATE_TOKENS.has(match[1])) return true;
+  }
+  return false;
+}
+
 /**
  * Resolve an entry's canonical path from its concept's permalink pattern. Throws when the
  * pattern uses a date token and the entry has no valid date, or when a token is unknown, so

@@ -393,7 +393,7 @@ describe('createAction', () => {
       routes.createAction(createEvent({ title: 'Hello World', slug: 'hello-world', date: '2026-05-01' }) as never),
     );
     expect(status).toBe(303);
-    expect(location).toBe('/admin/posts/2026-05-01-hello-world?new=1&title=Hello%20World');
+    expect(location).toBe('/admin/posts/2026-05-01-hello-world?new=1&date=2026-05-01&title=Hello%20World');
   });
 
   it('bounces back with an error for an invalid slug', async () => {
@@ -449,14 +449,14 @@ describe('createAction', () => {
       routes.createAction(createEvent({ title: 'Snowball', slug: 'snowball', date: '2026-06-15' }) as never),
     );
     expect(status).toBe(303);
-    expect(location).toBe('/admin/posts/2026-06-15-snowball?new=1&title=Snowball');
+    expect(location).toBe('/admin/posts/2026-06-15-snowball?new=1&date=2026-06-15&title=Snowball');
   });
 
   it('truncates the dated id to the concept granularity (month)', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => new Response('Not Found', { status: 404 })));
     const routes = createContentRoutes(monthRuntime());
     const { location } = await expectRedirect(() => routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never));
-    expect(location).toBe('/admin/posts/2026-05-welcome?new=1');
+    expect(location).toBe('/admin/posts/2026-05-welcome?new=1&date=2026-05-20');
   });
 
   it('bounces when a dated concept gets no date', async () => {
@@ -484,7 +484,7 @@ describe('createAction', () => {
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ slug: 'welcome', date: '2026-05-20' }) as never),
     );
-    expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1');
+    expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1&date=2026-05-20');
   });
 
   it('omits the title param for a whitespace-only title', async () => {
@@ -493,7 +493,7 @@ describe('createAction', () => {
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: '   ', slug: 'welcome', date: '2026-05-20' }) as never),
     );
-    expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1');
+    expect(location).toBe('/admin/posts/2026-05-20-welcome?new=1&date=2026-05-20');
   });
 
   it('percent-encodes an explicit-address title that diverges from the slug, curly apostrophe included', async () => {
@@ -502,7 +502,7 @@ describe('createAction', () => {
     const { location } = await expectRedirect(() =>
       routes.createAction(createEvent({ title: 'Geoff’s Trip', slug: 'trip-report', date: '2026-05-20' }) as never),
     );
-    expect(location).toBe(`/admin/posts/2026-05-20-trip-report?new=1&title=${encodeURIComponent('Geoff’s Trip')}`);
+    expect(location).toBe(`/admin/posts/2026-05-20-trip-report?new=1&date=2026-05-20&title=${encodeURIComponent('Geoff’s Trip')}`);
   });
 });
 

@@ -3,7 +3,10 @@ import { defineConcept } from '../../lib/content/concepts.js';
 import { fieldset, fields } from '../../lib/index.js';
 
 describe('defineConcept', () => {
-  const base = { dir: 'src/content/posts', fields: fieldset({ title: fields.text({ label: 'Title' }) }) };
+  const base = {
+    dir: 'src/content/posts',
+    fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+  };
 
   it('returns the concept unchanged and preserves the fieldset type', () => {
     const c = defineConcept({ ...base, routing: 'feed', permalink: '/blog/:year/:slug', datePrefix: 'day' });
@@ -28,5 +31,17 @@ describe('defineConcept', () => {
     expect(() =>
       defineConcept({ ...base, routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'month' }),
     ).not.toThrow();
+  });
+
+  it('throws at declaration when a date-token permalink declares no date field', () => {
+    const noDate = { dir: 'src/content/posts', fields: fieldset({ title: fields.text({ label: 'Title' }) }) };
+    expect(() =>
+      defineConcept({ ...noDate, routing: 'feed', permalink: '/blog/:year/:slug', datePrefix: 'day' }),
+    ).toThrow(/uses a date token, so it must declare a field named "date" of type "date"/);
+  });
+
+  it('forces required: true on the declared date field for a date-token permalink', () => {
+    const c = defineConcept({ ...base, routing: 'feed', permalink: '/blog/:year/:slug', datePrefix: 'day' });
+    expect(c.fields.fields.date?.required).toBe(true);
   });
 });

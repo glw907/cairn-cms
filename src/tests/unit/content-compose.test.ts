@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { fields } from '../../lib/content/fields.js';
 import { testAdapter, testSiteConfig } from './_content-fixture.js';
 import { siteDescriptors } from '../../lib/delivery/site-descriptors.js';
 
@@ -57,7 +58,13 @@ describe('composeRuntime URL policy', () => {
       ...testAdapter,
       content: {
         ...testAdapter.content,
-        posts: { dir: 'src/content/posts', routing: 'feed', permalink: '/:year/:slug', datePrefix: 'year', fields: fieldset({}) },
+        posts: {
+          dir: 'src/content/posts',
+          routing: 'feed',
+          permalink: '/:year/:slug',
+          datePrefix: 'year',
+          fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+        },
       },
     };
     const runtime = composeRuntime({ adapter, siteConfig: testSiteConfig });

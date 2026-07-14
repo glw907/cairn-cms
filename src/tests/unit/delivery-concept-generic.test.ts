@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { fields } from '../../lib/content/fields.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { buildRssFeed, type FeedItem } from '../../lib/delivery/feeds.js';
 import { buildSitemap } from '../../lib/delivery/sitemap.js';
@@ -12,7 +13,7 @@ const [news] = normalizeConcepts({
     dir: 'src/content/news',
     routing: 'feed',
     permalink: '/news/:year/:month/:slug',
-    fields: fieldset({}),
+    fields: fieldset({ date: fields.date({ label: 'Date' }) }),
   },
 });
 

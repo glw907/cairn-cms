@@ -187,6 +187,28 @@ describe('editLoad', () => {
     expect(data.title).toBe('2026-05-fresh');
   });
 
+  it('seeds the date from a create-dialog date param on a blank new doc', async () => {
+    editFetch(null);
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&date=2026-05-20') as never);
+    expect(data.isNew).toBe(true);
+    expect(data.frontmatter.date).toBe('2026-05-20');
+  });
+
+  it('ignores a malformed date param on a new doc', async () => {
+    editFetch(null);
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&date=not-a-date') as never);
+    expect(data.frontmatter.date).toBe('');
+  });
+
+  it('lets a real parsed frontmatter date win over the seeded date param', async () => {
+    editFetch('---\ntitle: Real\ndate: 2026-01-01\n---\nThe body.');
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-hello', '?date=2026-09-09') as never);
+    expect(data.frontmatter.date).toBe('2026-01-01');
+  });
+
   it('404s an unknown existing file that is not new', async () => {
     editFetch(null);
     const routes = createContentRoutes(runtime());

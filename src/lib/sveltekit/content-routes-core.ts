@@ -12,7 +12,8 @@ import { initialValues } from '../content/fieldset.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, enforceTaxonomy, unlistedTags } from '../content/taxonomy-enforce.js';
 import { deriveExcerpt } from '../content/excerpt.js';
-import { asString, entryIdentity } from '../content/identity.js';
+import { asString, asDate, entryIdentity } from '../content/identity.js';
+import { permalinkUsesDateToken } from '../content/url-policy.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import type { Backend } from '../github/backend.js';
@@ -543,7 +544,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // slug alone is not enough to recover it. Omit the param for a blank title rather than
     // carrying an empty string through the URL.
     const titleParam = rawTitle ? `&title=${encodeURIComponent(rawTitle)}` : '';
-    throw redirect(303, `/admin/${concept.id}/${id}?new=1${titleParam}`);
+    // The validated create-dialog date rides the redirect too, the same way the title does, so
+    // editLoad seeds it into the fresh form instead of opening blank. A dated concept always has
+    // a date here (the bounce above refuses an unparseable one); a non-dated concept carries none.
+    const dateParam = concept.routing.dated ? `&date=${encodeURIComponent(date)}` : '';
+    throw redirect(303, `/admin/${concept.id}/${id}?new=1${dateParam}${titleParam}`);
   }
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
@@ -589,10 +594,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // The create dialog's typed title (carried on `?new=1&title=`) sits over the schema defaults and
     // under any parsed frontmatter, since a blank new doc has none and the seeded title should win.
     const seededTitle = isNew ? event.url.searchParams.get('title')?.trim() : null;
+    // The create dialog's validated date rides the same seeding contract as the title: over the
+    // schema defaults, under any parsed frontmatter. A malformed or absent param is ignored (a
+    // dateless new entry still opens; the save-time guards below catch it before it can throw).
+    const seededDateRaw = isNew ? event.url.searchParams.get('date') : null;
+    const seededDate = seededDateRaw && /^\d{4}-\d{2}-\d{2}$/.test(seededDateRaw) ? seededDateRaw : null;
     const loadFrontmatter = isNew
       ? {
           ...initialValues(concept.schema, new Date()),
           ...(seededTitle ? { title: seededTitle } : {}),
+          ...(seededDate ? { date: seededDate } : {}),
           ...parsed.frontmatter,
         }
       : parsed.frontmatter;
@@ -797,6 +808,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
       throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+    }
+
+    // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
+    // required, so an ordinary validate() failure should have caught a missing date before this
+    // point. A hand-rolled validate (or a descriptor built outside normalizeConcepts) could still
+    // pass with no usable date, and manifestEntryFromFile's resolvePermalink below throws on
+    // exactly that case. Catch it here with the same editor-voiced redirect bounce every other
+    // save failure uses, rather than letting that throw escape as a raw 500.
+    if (permalinkUsesDateToken(concept.permalink) && !asDate(result.data.date)) {
+      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent('Pick a date for this entry.')}${suffix}`);
     }
 
     if (allowed !== null && taxField !== null) {

@@ -196,7 +196,7 @@ describe('content actions', () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/posts', { form: { title: 'Hello', slug: 'hello', date: '2026-06-11' } });
-    await expectRedirect(admin.actions.create(event as never), '/admin/posts/2026-06-11-hello?new=1&title=Hello');
+    await expectRedirect(admin.actions.create(event as never), '/admin/posts/2026-06-11-hello?new=1&date=2026-06-11&title=Hello');
   });
 
   it('save delegates on the edit view: commits to the pending branch and redirects saved', async () => {

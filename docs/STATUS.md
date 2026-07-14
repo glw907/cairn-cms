@@ -68,24 +68,36 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-13, late: the editor-lifecycle pass MERGED; releasing 0.84.3 to all three sites)
+## Immediate next action (2026-07-13, late: 0.84.3 SHIPPED to all three sites; three editor follow-ups queued)
 
-**THE PUBLISH-VISIBILITY PASS IS MERGED TO MAIN** (plan + post-mortem:
-docs/superpowers/plans/2026-07-13-editor-publish-visibility.md). Four editor fixes from
-Geoff's live ecxc use: the Publish button is always visible (guarded via aria-disabled +
-cairn-btn-guarded when nothing can go live; grounded in a nine-agent CMS survey), the
-spellcheck dictionary covers the standard contraction set plus curly-apostrophe
-normalization at lookup, the create dialog's title threads through to the fresh editor,
-and a brand-new entry's badge reads New (was Published). Full gate + CI e2e green (the
-two edit-page visual baselines regenerated on CI and render-read). Tidy was separately
-ENABLED ON ECXC earlier today (site config + ANTHROPIC_API_KEY routed via sync.sh,
-deployed, registry updated). IN FLIGHT: cut **0.84.3** (verified free) and bump ALL
-THREE sites per Geoff's explicit instruction, which supersedes the ASC design-arc hold
-for this bump (commit only the two dependency files; the WIP stays local). The ecxc bump
-also carries the posts `description` field fix: optional, relabeled Summary with help
-text (it blocked saves and misread as the post content; the engine excerpt falls back to
-the body). QUEUED DESIGN CALL (Geoff, not yet ruled): fluid address until first save for
-new entries (survey-grounded recommendation delivered; a follow-up pass if approved).
+**0.84.3 IS PUBLISHED AND LIVE EVERYWHERE** (plan + post-mortem:
+docs/superpowers/plans/2026-07-13-editor-publish-visibility.md). The window: the
+always-visible guarded Publish (nine-agent CMS survey grounding), the contraction
+dictionary + curly-apostrophe normalization, the create-title seed, and the New status
+badge. Full gate + CI e2e green at the cut; the two edit-page visual baselines
+regenerated on CI and render-read; OIDC publish verified (`npm view` serves 0.84.3).
+Rollout: ecxc.ski (also: tidy ENABLED, ANTHROPIC_API_KEY routed via sync.sh; the posts
+`description` field made optional, relabeled Summary with help), 907.life, and
+aksailingclub-org MAIN (main was on ^0.84.1; the design/education-round-4 arc branch was
+left untouched, restored via npm ci after a wrong-branch commit was reset). All three
+deploys green. Geoff's own magic-link click on each admin remains the human smoke step.
+
+**NEXT (a fresh session; the queue, in order):**
+1. **Preview shows no formatting on ecxc (Geoff, live report, UNDIAGNOSED).** Reproduce
+   first on the showcase preview tab, then ecxc (its `preview` knob looks correct:
+   `stylesheets: [themeCss?url, siteCss?url]`, `containerClass: 'site-main'`). Decide
+   engine vs site; suspects: the srcdoc iframe's stylesheet resolution, the
+   containerClass wrap, or a longstanding ecxc-only gap.
+2. **Required textarea skips native validation (engine bug, DIAGNOSED).**
+   `FieldInput.svelte:117` omits `required` on the textarea; every other field type
+   carries it. So a required textarea never trips the capture-phase invalid handler that
+   opens the Details panel, and the save fails server-side with a bare error (exactly
+   Geoff's "Description is required" with no visible field). One-attribute fix + test.
+3. **Fluid address until first save (design ruled by the slug survey; awaiting Geoff's
+   approval).** Pre-first-save the Details Address is editable and auto-follows the
+   title (detach on manual edit); first Save commits it with the create-time collision
+   guards; after save/publish today's rename flow stands. Survey grounding is in the
+   2026-07-13 plan's post-mortem.
 
 ## Prior next action (2026-07-13: 0.84.2 SHIPPED — the admin login hang fixed and verified live)
 

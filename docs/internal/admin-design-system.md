@@ -231,7 +231,12 @@ Recipes:
   form by `form="cairn-edit-form"`. The `sr-only` default submit must stay first in the actions cluster:
   the band precedes the form, so it is the first form-owned submit in tree order, which keeps Enter in a
   single-line field saving rather than firing the Publish formaction. On a desk route `AdminLayout`
-  drops its own palette trigger and the site-wide Publish, so the band has one job.
+  drops its own palette trigger and the site-wide Publish, so the band has one job. Publish renders in
+  every entry state (the 2026-07 CMS survey norm: WordPress, Ghost, Sanity, and Contentful all keep it
+  persistent) and is actionable whenever anything could go live (dirty, pending, or a new entry).
+  Otherwise it takes the guarded-button pattern (`aria-disabled`, `cairn-btn-guarded`, opacity/cursor
+  dimming, the stateful "Nothing new to publish" reason), never native `disabled` and never hidden; the
+  label stays "Publish", and native `disabled` is reserved for the mid-submit busy state.
 - **The details slide-over panel:** the frontmatter fields live in a right slide-over (`role="region"`,
   `aria-label="Entry details"`), opened by the band's Details trigger and `Ctrl+.`. It stays physically
   inside the edit form and toggles with the `hidden` attribute, so a closed panel is out of the a11y

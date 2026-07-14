@@ -161,6 +161,32 @@ describe('editLoad', () => {
     expect(data.published).toBe(false);
   });
 
+  it('seeds the title from a create-dialog title param on a blank new doc', async () => {
+    editFetch(null);
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&title=Hello%20World') as never);
+    expect(data.isNew).toBe(true);
+    expect(data.title).toBe('Hello World');
+    expect(data.frontmatter.title).toBe('Hello World');
+  });
+
+  it('lets a real (non-blank) parsed frontmatter title win over the seeded param', async () => {
+    // Not new-blank: the file already exists, so the seeded param (were one present) must never
+    // override a real read; editLoad only seeds when the doc is genuinely new.
+    editFetch('---\ntitle: Real Title\n---\nThe body.');
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-hello', '?title=Ignored') as never);
+    expect(data.title).toBe('Real Title');
+    expect(data.frontmatter.title).toBe('Real Title');
+  });
+
+  it('ignores a whitespace-only title param on a new doc, falling back to the id', async () => {
+    editFetch(null);
+    const routes = createContentRoutes(runtime());
+    const data = await routes.editLoad(editEvent('2026-05-fresh', '?new=1&title=%20%20') as never);
+    expect(data.title).toBe('2026-05-fresh');
+  });
+
   it('404s an unknown existing file that is not new', async () => {
     editFetch(null);
     const routes = createContentRoutes(runtime());

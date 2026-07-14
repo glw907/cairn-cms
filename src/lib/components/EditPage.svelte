@@ -11,8 +11,9 @@ Write. Preview renders inside a sandboxed iframe that links the site's own style
 adapter's `preview` knob), takes the full content width (the sidebar hides until Write), and
 sizes to a persisted device width picked from the toolbar's capsule. A sticky glass header
 carries the breadcrumb, the status badges, the save-state indicator,
-and the lifecycle actions: Save, Publish (riding the same form via formaction while edits are
-pending), and an overflow menu for Discard and Delete. One feedback strip under the header carries the
+and the lifecycle actions: Save, Publish (always present, riding the same form via formaction;
+guarded rather than hidden when there is nothing new to publish), and an overflow menu for
+Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
 count, the Prose/Markup posture pair, the focus and typewriter toggles, and the Markdown help.
 -->
@@ -139,6 +140,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     // that does not land stays pending for the next save (declared before the navigation reads it).
     void commitPendingDictionary();
   }
+  // Guards the Publish button's own click: aria-disabled blocks nothing by itself (it is not the
+  // native disabled attribute), so a guarded click must cancel the button's default action here,
+  // before it submits the form via its ?/publish formaction. An actionable click passes through
+  // untouched and reaches onEditSubmit as an ordinary submit.
+  function onPublishClick(e: MouseEvent) {
+    if (!publishActionable) e.preventDefault();
+  }
   // Either in-flight submit disables both buttons, so a second click cannot fire a second POST
   // while the first navigation is still pending.
   const busy = $derived(saving || publishing);
@@ -154,6 +162,18 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   let fieldsDirty = $state(false);
   const dirty = $derived(bodyDirty || fieldsDirty);
   const saveState = $derived(dirty ? 'Unsaved changes' : data.saved ? 'Saved' : '');
+  // Whether Publish has anything to take live: a body/field edit, a held draft branch, or a
+  // brand-new entry that has never been saved. Otherwise the button is guarded rather than hidden
+  // (the grounding survey: six of eight comparable editors keep Publish permanently visible), so
+  // the control stays discoverable and its reason reaches assistive technology.
+  const publishActionable = $derived(dirty || data.pending || data.isNew);
+  // The guarded reason, undefined while actionable so the button carries no extra title or
+  // aria-label beyond its own "Publish"/"Publishing…" text. The accessible name keeps the visible
+  // "Publish" label in front of the reason (WCAG 2.5.3, label in name), so a focused guarded
+  // button still announces what it is before why it is inactive; the title carries the bare
+  // reason, since the tooltip renders beside the visible label.
+  const publishGuardReason = $derived(publishActionable ? undefined : 'Nothing new to publish');
+  const publishGuardName = $derived(publishActionable ? undefined : 'Publish: nothing new to publish');
   function onFormInput(e: Event) {
     const target = e.target as Element | null;
     // Two kinds of input event bubble through the form without being frontmatter edits: the link
@@ -173,8 +193,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The edit form element, for the Ctrl/Cmd+S shortcut's requestSubmit.
   let editForm = $state<HTMLFormElement | null>(null);
   // The header's Publish submitter, for the Ctrl/Cmd+Shift+S shortcut: requesting submit through it
-  // carries the ?/publish formaction and trips the busy flags down the existing submit path. It
-  // exists only while data.pending, so the shortcut no-ops when there is nothing to publish.
+  // carries the ?/publish formaction and trips the busy flags down the existing submit path. Publish
+  // always renders now, so this ref always exists; the chord guards on publishActionable itself,
+  // the same condition the button's own aria-disabled reads.
   let publishButton = $state<HTMLButtonElement | null>(null);
 
   // A required field hidden from the browser's validation report cannot take it: an invisible
@@ -249,10 +270,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       }
       if (e.shiftKey && key === 's') {
         // Publish rides the header's Publish submitter so the ?/publish formaction and the busy
-        // flags follow the existing submit path; it exists only while pending, so this no-ops
-        // otherwise.
+        // flags follow the existing submit path; the chord mirrors the button's own guard
+        // (publishActionable), so it no-ops when there is nothing new to publish.
         e.preventDefault();
-        if (busy || inDialog || !data.pending) return;
+        if (busy || inDialog || !publishActionable) return;
         editForm?.requestSubmit(publishButton);
         return;
       }
@@ -905,11 +926,13 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     figureDialog?.close();
   }
 
-  // The header's status badge, in ConceptList's vocabulary: a pending entry reads Edited (or New
-  // when it has never been published); otherwise the live site matches and it reads Published.
+  // The header's status badge, in ConceptList's vocabulary, four states: New (never landed on
+  // main, whether or not it has a pending branch yet), Edited (a pending branch over a published
+  // copy), and Published (main matches, nothing pending). `data.pending` alone cannot carry this:
+  // a brand-new entry is `pending: false, published: false` and must still read New, not Published.
   const status = $derived.by(() => {
-    if (!data.pending) return 'Published';
-    return data.published ? 'Edited' : 'New';
+    if (data.pending) return data.published ? 'Edited' : 'New';
+    return data.published ? 'Published' : 'New';
   });
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
@@ -1393,12 +1416,33 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
 
       <!-- The lifecycle pair, fenced off by their own hairline. -->
       <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
-        {#if data.pending}
-          <!-- Outline keeps Save the single solid primary action; Publish reads as its peer. -->
-          <button bind:this={publishButton} type="submit" form="cairn-edit-form" formaction="?/publish" class="btn btn-outline btn-primary btn-sm" disabled={busy}>
-            {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
-          </button>
-        {/if}
+        <!-- Publish always renders (the grounding survey favors permanent visibility over hiding
+             the control until a draft exists). Outline keeps Save the single solid primary action;
+             Publish reads as its peer. With nothing new to publish it guards rather than hides,
+             on the figure-control pattern this repo already owns: aria-disabled (never the native
+             attribute, so the control stays focusable and its reason reaches assistive technology),
+             the cairn-btn-guarded marker so the title tooltip survives DaisyUI's pointer-events
+             kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's own [aria-disabled]
+             rule supplies the dimming, so no opacity utility rides on top (a second dimming would
+             halve the focus ring on this still-focusable control). Native disabled is reserved for
+             busy (mid-submit), the one case the guidance sanctions, and aria-disabled is emitted
+             only while guarded so the two never contradict. onPublishClick cancels a guarded click's
+             own submit, since aria-disabled alone blocks nothing. -->
+        <button
+          bind:this={publishButton}
+          type="submit"
+          form="cairn-edit-form"
+          formaction="?/publish"
+          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded"
+          class:cursor-not-allowed={!publishActionable}
+          aria-disabled={publishActionable ? undefined : true}
+          aria-label={publishGuardName}
+          title={publishGuardReason}
+          disabled={busy}
+          onclick={onPublishClick}
+        >
+          {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+        </button>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
         <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>

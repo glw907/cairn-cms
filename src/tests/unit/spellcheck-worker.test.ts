@@ -1,8 +1,11 @@
 // Unit tests for the spellcheck worker's merged-set logic, driving the handler factory with a fake
 // engine and a capturing post. The real wasm engine and the dictionary streaming are not loaded here:
 // that path is proven by the Task 1 spike E2E and re-proven in Task 16. These tests exercise the pure
-// merged-set layering (dialect engine, then personal/site, then session ignore) and the protocol shapes.
+// merged-set layering (dialect engine, then personal/site, then session ignore), the protocol shapes,
+// and the curly-apostrophe normalization applied at the handler boundary.
 
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { describe, it, expect } from 'vitest';
 import {
   createSpellcheckHandler,
@@ -147,5 +150,91 @@ describe('createSpellcheckHandler', () => {
         { id: 2, correct: true },
       ],
     });
+  });
+
+  it('answers correct for a curly-quote word when the engine only knows the straight form', () => {
+    // Paste-from-web prose produces U+2019 ("smart quote") apostrophes, but the dictionary asset
+    // holds straight-quote contractions only.
+    const { posted, send } = drive(fakeEngine(["we'll"]));
+    send({ type: 'check', seq: 1, words: [{ id: 1, word: 'we’ll' }] });
+    expect(posted[0]).toEqual({ type: 'checked', seq: 1, results: [{ id: 1, correct: true }] });
+  });
+
+  it('addWord with a curly form answers a later straight-form check, and the reverse', () => {
+    const { posted, send } = drive(fakeEngine([]));
+    send({ type: 'addWord', word: 'don’t' });
+    send({ type: 'check', seq: 1, words: [{ id: 1, word: "don't" }] });
+    expect(posted[0]).toEqual({ type: 'checked', seq: 1, results: [{ id: 1, correct: true }] });
+
+    send({ type: 'addWord', word: "can't" });
+    send({ type: 'check', seq: 2, words: [{ id: 1, word: 'can’t' }] });
+    expect(posted[1]).toEqual({ type: 'checked', seq: 2, results: [{ id: 1, correct: true }] });
+  });
+
+  it('suggest normalizes a curly-quote word to the straight form before the engine lookup', () => {
+    const { posted, send } = drive(fakeEngine([], ['do not']));
+    send({ type: 'suggest', seq: 1, word: 'don’t' });
+    expect(posted[0]).toEqual({
+      type: 'suggested',
+      seq: 1,
+      word: 'don’t',
+      suggestions: ['do not'],
+    });
+  });
+});
+
+describe('dictionary-en-us.txt contraction coverage', () => {
+  const dictionaryPath = fileURLToPath(
+    new URL('../../lib/components/spellcheck-assets/dictionary-en-us.txt', import.meta.url),
+  );
+  const lines = readFileSync(dictionaryPath, 'utf-8').split('\n').filter((line) => line.length > 0);
+
+  // A dictionary entry is "word count"; keep only the word for whole-word, case-insensitive lookups.
+  const words = lines.map((line) => line.split(' ')[0]!.toLowerCase());
+
+  const appended = [
+    "you've",
+    "you'll",
+    "you're",
+    "you'd",
+    "i've",
+    "i'd",
+    "we've",
+    "we're",
+    "we'd",
+    "they're",
+    "they've",
+    "they'd",
+    "he'd",
+    "she'd",
+    "isn't",
+    "aren't",
+    "weren't",
+    "doesn't",
+    "didn't",
+    "hasn't",
+    "haven't",
+    "hadn't",
+    "that'll",
+    "there'll",
+    "what'll",
+    "who'll",
+    "y'all",
+    "ma'am",
+    "o'clock",
+  ];
+
+  it.each(["you've", "doesn't", "they're", "isn't", "we're"])(
+    '%s is present as a whole-word entry',
+    (word) => {
+      expect(words).toContain(word);
+    },
+  );
+
+  it('no entry in the appended contraction set is duplicated case-insensitively', () => {
+    for (const word of appended) {
+      const occurrences = words.filter((candidate) => candidate === word).length;
+      expect(occurrences).toBe(1);
+    }
   });
 });

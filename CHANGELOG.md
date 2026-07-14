@@ -1,3 +1,29 @@
+## Unreleased
+
+### Changed
+
+- The editor's Publish button is now always visible in the desk band beside Save, matching the
+  convention across comparable CMS editors (WordPress, Ghost, Sanity, Contentful). When an entry
+  has nothing new to take live it stays present but guarded (`aria-disabled`, dimmed, "Nothing
+  new to publish"), and it wakes on a typed edit, a pending draft, or a new entry. Previously it
+  rendered only after a save had cut the draft branch, which hid the publish step from a first
+  draft and forced a save-then-publish two-step the publish action never required. No consumer
+  action needed.
+
+### Fixed
+
+- A brand-new entry now opens with the title typed in the create dialog. The create step
+  collected the title but dropped it, so the editor's title field opened blank and the top bar
+  showed the address instead. The typed title now rides the create redirect into the fresh
+  editor. No consumer action needed.
+- A brand-new, never-saved entry's status badge read Published. It now reads New until the entry
+  first lands on the live site, matching the list's vocabulary. No consumer action needed.
+- Common English contractions (you've, they're, doesn't, and the rest of the standard set) no
+  longer show as spelling errors. The bundled en-US frequency list carried only a handful of
+  contractions; the standard set is now included. Words written with a curly apostrophe (as
+  rich-text paste produces) are also normalized to their straight-quote dictionary form at
+  lookup, so both forms answer correct. No consumer action needed.
+
 ## 0.84.2
 
 ### Fixed

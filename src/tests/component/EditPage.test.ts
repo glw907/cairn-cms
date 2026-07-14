@@ -765,9 +765,10 @@ describe('EditPage', () => {
     expect(publish!.classList.contains('btn-primary')).toBe(true);
   });
 
-  it('hides the Publish and Discard controls when nothing is pending', async () => {
+  it('hides the Discard control when nothing is pending', async () => {
+    // Publish itself stays visible in this state now (guarded, not hidden); its guarded posture
+    // and click inertness are covered in edit-page-publish-visibility.test.ts.
     const screen = render(EditPage, postProps());
-    expect(screen.container.querySelector('button[formaction="?/publish"]')).toBeNull();
     await expect.element(screen.getByRole('button', { name: 'Discard changes' })).not.toBeInTheDocument();
   });
 

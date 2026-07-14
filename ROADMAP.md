@@ -168,6 +168,14 @@ the named human gates only):**
 ## Next
 
 
+- **Editor-first admin nav organization (Geoff, 2026-07-14): research + brainstorm before any
+  change.** The sidebar today groups by provenance — the engine's items, then the site's custom
+  section — which is a developer's mental model. Geoff's question: would an editor rather see a
+  task-shaped organization (write, organize, site)? Raised while the extensible-roles pass was
+  closing; the per-role nav gating that pass added makes the question sharper, since different
+  capabilities already see different sidebars. Run a survey of how comparable CMS admin navs
+  group their items, then a brainstorm with Geoff; any change lands through the shell payload
+  contract, which is now versioned surface.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

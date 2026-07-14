@@ -106,6 +106,26 @@ deploys green. Geoff's own magic-link click on each admin remains the human smok
    `sync.sh --worker ecxc`, update the registry rotation note. No redeploy needed.
    Everything else in tidy's path is verified good (config gate, key plumbing, the
    default model id `claude-sonnet-4-6` is valid and active).
+   **Engine rider (Geoff): tidy's error handling must speak to the editor.** Today every
+   model-call failure maps to one retryable "Tidy could not finish. Try again."
+   (`content-routes-tidy.ts:134`), which is wrong for an auth/config failure: a 401/403
+   from the API is not retryable and needs the developer, not the editor. Branch on the
+   Anthropic error class: auth/permission errors get a calm editor-voiced non-retry
+   message ("Tidy isn't available right now. Your site's AI access needs attention;
+   let your site developer know.") as a distinct fail (503) plus a `tidy.error` log with
+   a reason field; rate limits/overloads/timeouts keep the try-again framing. Same
+   honest-error philosophy as queue item 2's raw-500 rider; consider one small pass
+   covering both.
+   **Second rider (Geoff): verify the key WORKS before showing the Tidy button.** Today
+   the button gates on `tidy.enabled` alone; the settings screen and doctor check key
+   PRESENCE, but a present-and-revoked key (exactly today's case) still shows a button
+   that can only fail. Design call for the pass: a cheap cached health probe (a minimal
+   API call, cached per isolate or in KV with a TTL) consulted at edit load, so a dead
+   key makes the button absent (the tidy-settings truthful-visibility principle:
+   absent, not disabled) and the settings screen and doctor report the key as invalid
+   rather than merely present. Weigh probe cost and latency against a lazy
+   degrade-after-first-failure; either way, presence checks alone are no longer the
+   bar.
 4. **Preview shows no formatting on ecxc (Geoff, live report, UNDIAGNOSED).** Reproduce
    first on the showcase preview tab, then ecxc (its `preview` knob looks correct:
    `stylesheets: [themeCss?url, siteCss?url]`, `containerClass: 'site-main'`). Decide

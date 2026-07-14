@@ -50,11 +50,15 @@ export function createEditorRoutes() {
     return { db, form, email, owner: owner.email };
   }
 
-  /** GET /admin/editors. Owner-only. Returns the allowlist and the acting owner's email. */
-  async function editorsLoad(event: RequestContext): Promise<{ editors: Editor[]; self: string }> {
+  /**
+   * GET /admin/editors. Owner-only. Returns the allowlist, the acting owner's email, and any
+   *  `?error=` an unexpected action failure bounced back with (the same redirect convention
+   *  `list`, `edit`, `nav`, and `settings` already carry their own errors through).
+   */
+  async function editorsLoad(event: RequestContext): Promise<{ editors: Editor[]; self: string; error: string | null }> {
     const owner = requireOwner(event);
     const editors = await listEditors(requireDb(event.platform?.env ?? {}));
-    return { editors, self: owner.email };
+    return { editors, self: owner.email, error: event.url.searchParams.get('error') };
   }
 
   /** POST add an editor. Owner-only. */

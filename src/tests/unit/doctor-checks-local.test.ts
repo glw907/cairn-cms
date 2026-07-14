@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { readWranglerConfig } from '../../lib/doctor/wrangler-config.js';
 import { runDoctor } from '../../lib/doctor/run.js';
 import {
@@ -482,6 +482,23 @@ describe('config.tidy-key', () => {
   const TIDY_OFF = `siteName: Test Site\ntidy:\n  enabled: false\n`;
   const KEY_IN_VARS = `{ "vars": { "ANTHROPIC_API_KEY": "sk-test" } }`;
   const KEY_IN_DEV_VARS = `ANTHROPIC_API_KEY = "sk-test"\n`;
+  // A referenced-but-unextractable name: keyAppearsIn is true, extractKeyValue finds no literal
+  // value (the real deployed-Worker-secret shape: only the NAME shows up locally, never a value).
+  const KEY_NAME_ONLY = `{ "vars": { "ANTHROPIC_API_KEY": "" } }`;
+
+  /** A fetch stub answering the Anthropic models probe with the given status, so the active-probe
+   *  tests never touch the network. */
+  function fetchStub(status: number): typeof fetch {
+    return (async () => new Response('{}', { status })) as unknown as typeof fetch;
+  }
+
+  /** A fetch stub that rejects, standing in for a network failure (the doctor runs offline, DNS
+   *  fails, and so on): the probe must fail soft to 'unknown', never a false 'invalid'. */
+  function fetchNetworkFailure(): typeof fetch {
+    return (async () => {
+      throw new Error('network unreachable');
+    }) as unknown as typeof fetch;
+  }
 
   it('skips when no site config is found', async () => {
     const result = await configTidyKey.run(ctx({}));
@@ -499,7 +516,7 @@ describe('config.tidy-key', () => {
     expect(result.status).toBe('skip');
   });
 
-  it('warns when tidy is enabled and the key is in neither wrangler vars nor .dev.vars', async () => {
+  it('fails when tidy is enabled and the key is in neither wrangler vars nor .dev.vars', async () => {
     const result = await configTidyKey.run(
       ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': GOOD_JSONC })
     );
@@ -508,23 +525,62 @@ describe('config.tidy-key', () => {
     expect(result.detail).toContain('verify');
   });
 
-  it('stays silent when the key is present as a wrangler var', async () => {
+  it('passes without probing when only the key NAME is referenced (a real Worker secret, no literal value)', async () => {
+    const fetchMock = vi.fn(fetchStub(200));
     const result = await configTidyKey.run(
-      ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': KEY_IN_VARS })
+      ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': KEY_NAME_ONLY }, { fetch: fetchMock })
     );
     expect(result.status).toBe('pass');
-    expect(result.detail).toContain('wrangler vars');
+    expect(result.detail).toContain('could not read a literal value');
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('stays silent when the key is present in .dev.vars', async () => {
+  it('actively probes a literal key from a wrangler var and passes when Anthropic accepts it', async () => {
+    const fetchMock = vi.fn(fetchStub(200));
     const result = await configTidyKey.run(
-      ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS })
+      ctx({ 'site.config.yaml': TIDY_ON, 'wrangler.jsonc': KEY_IN_VARS }, { fetch: fetchMock })
     );
     expect(result.status).toBe('pass');
-    expect(result.detail).toContain('.dev.vars');
+    expect(result.detail).toContain('accepts it');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0]!;
+    expect(String(url)).toContain('api.anthropic.com/v1/models');
+    expect((init as { headers: Record<string, string> }).headers['x-api-key']).toBe('sk-test');
   });
 
-  it('warns even when no wrangler config and no .dev.vars exist', async () => {
+  it('actively probes a literal key from .dev.vars and passes when Anthropic accepts it', async () => {
+    const fetchMock = vi.fn(fetchStub(200));
+    const result = await configTidyKey.run(
+      ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS }, { fetch: fetchMock })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('accepts it');
+  });
+
+  it('fails when Anthropic rejects the literal key (401)', async () => {
+    const result = await configTidyKey.run(
+      ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS }, { fetch: vi.fn(fetchStub(401)) })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('rejected');
+  });
+
+  it('fails when Anthropic rejects the literal key (403)', async () => {
+    const result = await configTidyKey.run(
+      ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS }, { fetch: vi.fn(fetchStub(403)) })
+    );
+    expect(result.status).toBe('fail');
+  });
+
+  it('fails soft to an unverified pass on a network error, never claiming invalid', async () => {
+    const result = await configTidyKey.run(
+      ctx({ 'site.config.yaml': TIDY_ON, '.dev.vars': KEY_IN_DEV_VARS }, { fetch: fetchNetworkFailure() })
+    );
+    expect(result.status).toBe('pass');
+    expect(result.detail).toContain('could not reach Anthropic');
+  });
+
+  it('fails even when no wrangler config and no .dev.vars exist', async () => {
     const result = await configTidyKey.run(ctx({ 'site.config.yaml': TIDY_ON }));
     expect(result.status).toBe('fail');
     expect(result.detail).toContain('ANTHROPIC_API_KEY');

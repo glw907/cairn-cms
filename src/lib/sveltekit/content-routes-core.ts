@@ -12,7 +12,8 @@ import { initialValues } from '../content/fieldset.js';
 import { resolveTaxonomyField, coerceTags } from '../content/taxonomy.js';
 import { resolveAllowed, closeTaxonomyField, enforceTaxonomy, unlistedTags } from '../content/taxonomy-enforce.js';
 import { deriveExcerpt } from '../content/excerpt.js';
-import { asString, entryIdentity } from '../content/identity.js';
+import { asString, asDate, entryIdentity } from '../content/identity.js';
+import { permalinkUsesDateToken } from '../content/url-policy.js';
 import { buildAddressIndex, mainAddressIndex, addressCollision, type AdvisoryNotice, type AddressEntry } from '../content/advisories.js';
 import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameId } from '../content/ids.js';
 import type { Backend } from '../github/backend.js';
@@ -25,6 +26,7 @@ import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
+import { keyKnownUnhealthy } from './tidy-key-health.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -194,7 +196,10 @@ export interface EditData {
    * The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
    *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
    *  normalization's because-line and the local category inference). The API key never appears here, it
-   *  is a Worker secret. `enabled` false hides the Tidy control.
+   *  is a Worker secret. `enabled` false hides the Tidy control, whether because the developer never
+   *  turned tidy on or because a prior call already proved the key unhealthy (save-500-honest-errors,
+   *  Task 5): this is a cache read only, never an inline probe, so an edit load pays no added latency,
+   *  and a dead key is absent, not disabled, until the cache's TTL clears or a fresh call succeeds.
    */
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
   /** Non-blocking editor advisories built server-side; today the cross-branch address collision. */
@@ -397,11 +402,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     };
   }
 
-  /** Redirect /admin to the first concept's list (spec §7.6: land on the first concept). */
-  function indexRedirect(): never {
+  /**
+   * Redirect /admin to the first concept's list (spec §7.6: land on the first concept). The
+   *  shell posts publishAll and logout to this exact path from every admin page, so an
+   *  unexpected-failure `?error=` those actions bounce back with rides along to the first
+   *  concept's list rather than being dropped by this redirect, keeping the editor-visible
+   *  guarantee for the two actions that always land here.
+   */
+  function indexRedirect(event: ContentEvent): never {
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
-    throw redirect(307, `/admin/${first.id}`);
+    const bounced = event.url.searchParams.get('error');
+    const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
+    throw redirect(307, `/admin/${first.id}${suffix}`);
   }
 
   /**
@@ -543,7 +556,11 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // slug alone is not enough to recover it. Omit the param for a blank title rather than
     // carrying an empty string through the URL.
     const titleParam = rawTitle ? `&title=${encodeURIComponent(rawTitle)}` : '';
-    throw redirect(303, `/admin/${concept.id}/${id}?new=1${titleParam}`);
+    // The validated create-dialog date rides the redirect too, the same way the title does, so
+    // editLoad seeds it into the fresh form instead of opening blank. A dated concept always has
+    // a date here (the bounce above refuses an unparseable one); a non-dated concept carries none.
+    const dateParam = concept.routing.dated ? `&date=${encodeURIComponent(date)}` : '';
+    throw redirect(303, `/admin/${concept.id}/${id}?new=1${dateParam}${titleParam}`);
   }
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
@@ -589,10 +606,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // The create dialog's typed title (carried on `?new=1&title=`) sits over the schema defaults and
     // under any parsed frontmatter, since a blank new doc has none and the seeded title should win.
     const seededTitle = isNew ? event.url.searchParams.get('title')?.trim() : null;
+    // The create dialog's validated date rides the same seeding contract as the title: over the
+    // schema defaults, under any parsed frontmatter. A malformed or absent param is ignored (a
+    // dateless new entry still opens; the save-time guards below catch it before it can throw).
+    const seededDateRaw = isNew ? event.url.searchParams.get('date') : null;
+    const seededDate = seededDateRaw && /^\d{4}-\d{2}-\d{2}$/.test(seededDateRaw) ? seededDateRaw : null;
     const loadFrontmatter = isNew
       ? {
           ...initialValues(concept.schema, new Date()),
           ...(seededTitle ? { title: seededTitle } : {}),
+          ...(seededDate ? { date: seededDate } : {}),
           ...parsed.frontmatter,
         }
       : parsed.frontmatter;
@@ -702,7 +725,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       // conventions (the because-line and category inference read only these). The API key is never
       // exposed here. A site with no tidy block reads disabled with the default conventions.
       tidy: {
-        enabled: runtime.tidy?.enabled ?? false,
+        enabled: (runtime.tidy?.enabled ?? false) && !keyKnownUnhealthy(),
         model: runtime.tidy?.model || DEFAULT_TIDY_MODEL,
         conventions: resolveTidyConventions(runtime.tidy?.conventions),
       },
@@ -797,6 +820,16 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
       throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+    }
+
+    // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
+    // required, so an ordinary validate() failure should have caught a missing date before this
+    // point. A hand-rolled validate (or a descriptor built outside normalizeConcepts) could still
+    // pass with no usable date, and manifestEntryFromFile's resolvePermalink below throws on
+    // exactly that case. Catch it here with the same editor-voiced redirect bounce every other
+    // save failure uses, rather than letting that throw escape as a raw 500.
+    if (permalinkUsesDateToken(concept.permalink) && !asDate(result.data.date)) {
+      throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent('Pick a date for this entry.')}${suffix}`);
     }
 
     if (allowed !== null && taxField !== null) {

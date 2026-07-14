@@ -46,11 +46,12 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `dictionary.added` | info | A personal-dictionary add commits the new words to the committed dictionary file. | `editor`, `words` (the added words), `retried` (true when the commit landed on the post-conflict retry) |
 | `dictionary.add_conflict` | warn | A personal-dictionary add hits a second commit conflict and gives up; the client keeps the words pending and re-attempts on the next save. | `editor`, `words` |
 | `tidy.done` | info | A tidy copy-edit returns a corrected document. Carries no content and no key. | `editor`, `model`, `usage` (the token counts) |
-| `tidy.error` | warn | A tidy call fails: a deadline overrun, a client abort, or a model error. Maps to a retryable fail(502). Carries no content and no key. | `editor`, `model`, `aborted` |
+| `tidy.error` | warn | A tidy call fails. `reason: "auth"` means Anthropic rejects the key with a 401 or 403, which maps to the non-retryable fail(503) and marks the key unhealthy in the shared cache (save-500-honest-errors, Task 5). The remaining reasons all map to the retryable fail(502): `"timeout"` means the action's own deadline fired, `"abort"` means a different cancellation reached the call, and `"model"` covers a rate limit, an overload, a server error, or a network failure. Carries no content and no key. | `editor`, `model`, `reason` (`auth`, `timeout`, `abort`, or `model`) |
 | `tidy.refused` | warn | The model refuses to edit the text. Maps to fail(422); the author's text is untouched. | `editor`, `model` |
 | `tidy.empty` | warn | The model returns no text. Maps to fail(502). | `editor`, `model` |
 | `admin.action.audited` | info | A custom admin action wrapped in `adminAction` calls `ctx.audit`. | `editor`, `action`, `entity`, `entityId`, `detail` |
 | `admin.action.unaudited` | error | A custom admin action wrapped in `adminAction` returns normally (not SvelteKit's `fail()`, which mutated nothing and is exempt) having called `ctx.audit` zero times, in production (dev throws instead). | `editor`, `path` |
+| `admin.action.failed` | error | The single-mount admin's action chokepoint catches an unexpected throw from an engine action (a bug, not a validated refusal already turned into a redirect or a `fail()`); the editor sees the calm failure strip instead of the platform's raw 500. | `action`, `concept` and `id` when the view carries them, `editor` when a session exists, `error` (the thrown error's message, never a stack) |
 
 A few fields recur across families and are worth knowing up front. `branch` (`cairn/<concept>/<id>`)
 appears on `commit.succeeded`, `commit.failed`, and `publish.failed` only on the save path. Deletes,

@@ -351,6 +351,35 @@ describe('saveAction taxonomy enforcement', () => {
   });
 });
 
+describe('saveAction belt-and-braces date guard', () => {
+  /** A dated permalink whose validate passes with no usable date, the shape a hand-rolled or
+   *  pre-normalization validator could produce. `manifestEntryFromFile`'s resolvePermalink would
+   *  throw on this; saveToBranch must bounce first. */
+  function datedRuntime(): CairnRuntime {
+    return baseRuntime({
+      concepts: [
+        postsConcept({
+          permalink: '/:year/:month/:slug',
+          datePrefix: 'month',
+          fields: [{ type: 'text', name: 'title', label: 'Title', required: true }],
+          validate: () => ({ ok: true, data: { title: 'Hi' } }),
+        }),
+      ],
+    });
+  }
+
+  it('bounces with an error, never throwing, when the date-token permalink has no usable date', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(datedRuntime());
+    const { location } = await expectRedirect(() =>
+      routes.saveAction(saveEvent('2026-05-hi', { title: 'Hi', body: 'plain body' }) as never),
+    );
+    expect(location).toMatch(/error=.*Pick%20a%20date/i);
+    expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/trees'))).toBe(false);
+  });
+});
+
 it('CommitConflictError is importable for the instanceof branch', () => {
   expect(new CommitConflictError('p')).toBeInstanceOf(Error);
 });

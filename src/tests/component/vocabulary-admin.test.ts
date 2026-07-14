@@ -17,6 +17,7 @@ function data(over: Partial<VocabularyLoadData> = {}): VocabularyLoadData {
     ],
     usage: { 'snow-report': 8, gear: 0 },
     unlisted: [{ value: 'trip-reports', count: 3 }],
+    error: null,
     ...over,
   };
 }
@@ -150,5 +151,11 @@ describe('VocabularyAdmin', () => {
     const screen = render(VocabularyAdmin, { data: data() });
     expect(screen.container.innerHTML).not.toContain('var(--color-muted)');
     expect(screen.container.innerHTML).not.toContain('var(--color-subtle)');
+  });
+
+  it('surfaces a redirected error read from ?error= (a validated save refusal or an unexpected action failure)', async () => {
+    const screen = render(VocabularyAdmin, { data: data({ error: 'The site config changed since you opened it.' }) });
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert?.textContent).toContain('The site config changed since you opened it.');
   });
 });

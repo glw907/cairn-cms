@@ -114,7 +114,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const f = field as NamedField & TextareaField}
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} rows={f.rows ?? 3}>{str(frontmatter[f.name])}</textarea>
+    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
       {@render fieldHint(f.name, f.help)}
     {/if}
@@ -160,7 +160,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     <span class="text-sm font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
-    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(frontmatter[field.name])} />
+    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(frontmatter[field.name])} required={field.required} />
     {@render fieldHint(field.name, field.help || DATE_PUBLISH_HINT)}
   </label>
 {:else if field.type === 'boolean'}
@@ -215,6 +215,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       aria-describedby={f.help ? `${f.name}-hint` : undefined}
       placeholder={f.placeholder ?? (f.help ? undefined : 'Separate values with commas')}
       value={tagValue}
+      required={f.required}
     />
     {#if f.help}
       {@render fieldHint(f.name, f.help)}

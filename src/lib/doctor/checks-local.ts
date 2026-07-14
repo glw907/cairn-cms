@@ -180,15 +180,45 @@ function tidyEnabled(text: string): boolean {
 // The Anthropic key is a Worker secret, so the doctor cannot prove it is unset (it is in neither the
 // committed wrangler config nor anything readFile reaches). It CAN read the two spots a key would also
 // appear if set as a plain var: the wrangler config text and .dev.vars. A bare presence-by-name read
-// is enough for the heuristic; the runtime fail(503) and --probe are the real truth checks.
+// is enough to know the name is referenced somewhere.
 function keyAppearsIn(text: string | null): boolean {
   return text !== null && text.includes('ANTHROPIC_API_KEY');
 }
 
-// The tidy secret heuristic. It reuses the config.bindings-missing condition rather than registering a
-// new one, so the readiness count holds (the same pattern configMediaBucket uses). A warn here is not a
-// definitive unset claim: it asks the operator to verify the secret, since a wrangler secret is
-// invisible to the CLI.
+// Pull a literal ANTHROPIC_API_KEY value out of a plain-var file (.dev.vars' KEY=value lines, or a
+// wrangler vars entry shaped ANTHROPIC_API_KEY: "value" / ANTHROPIC_API_KEY = "value"). Undefined
+// when the name is absent or the value cannot be isolated (a Worker secret is invisible to any of
+// this, by design), matching keyAppearsIn's fallback presence check.
+function extractKeyValue(text: string | null): string | undefined {
+  if (text === null) return undefined;
+  const match = /ANTHROPIC_API_KEY["']?\s*[:=]\s*"?([^"\s,}]+)"?/.exec(text);
+  return match?.[1];
+}
+
+// The zero-token key-health probe (save-500-honest-errors, Task 5), a raw fetch against the models
+// endpoint mirroring the doctor's own githubApp check idiom (checks-github.ts): a real live call
+// through ctx.fetch, never the SDK, so a test's fetch stub stands in with no real network or key.
+// A 401/403 confirms the key is invalid; any other failure (network, DNS, a non-2xx the API never
+// returns for a bad key) fails soft to 'unknown' rather than a false claim of invalid.
+async function probeAnthropicKey(fetchImpl: typeof fetch, apiKey: string): Promise<'valid' | 'invalid' | 'unknown'> {
+  try {
+    const res = await fetchImpl('https://api.anthropic.com/v1/models?limit=1', {
+      headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+    });
+    if (res.status === 401 || res.status === 403) return 'invalid';
+    return res.ok ? 'valid' : 'unknown';
+  } catch {
+    return 'unknown';
+  }
+}
+
+// The tidy secret check. It reuses the config.bindings-missing condition rather than registering a
+// new one, so the readiness count holds (the same pattern configMediaBucket uses). Presence alone
+// stopped being the bar (save-500-honest-errors, Task 5): when a literal value is readable locally
+// (the common `.dev.vars` case, or an unusual literal wrangler var), the doctor actively verifies it
+// against Anthropic and reports valid/invalid distinctly, the same live-network posture as the
+// GitHub App check; when only the NAME is referenced (a real deployed Worker secret, invisible to
+// this CLI), it still passes but says so honestly rather than claiming verification it cannot do.
 export const configTidyKey: DoctorCheck = {
   id: 'config.tidy-key',
   conditionId: 'config.bindings-missing',
@@ -197,18 +227,28 @@ export const configTidyKey: DoctorCheck = {
     const text = await readSiteConfigText(ctx);
     if (text === null) return skip('no site.config.yaml found, so tidy enablement is unknown');
     if (!tidyEnabled(text)) return skip('tidy is not enabled in the site config');
-    const wrangler =
-      (await ctx.readFile('wrangler.jsonc')) ?? (await ctx.readFile('wrangler.toml'));
-    if (keyAppearsIn(wrangler)) {
-      return pass('ANTHROPIC_API_KEY appears in the wrangler vars (verify it is the real key, not a placeholder)');
-    }
+
+    const wrangler = (await ctx.readFile('wrangler.jsonc')) ?? (await ctx.readFile('wrangler.toml'));
     const devVars = await ctx.readFile('.dev.vars');
-    if (keyAppearsIn(devVars)) {
-      return pass('ANTHROPIC_API_KEY appears in .dev.vars (the local override; verify the Worker secret is set for production)');
+    const key = extractKeyValue(devVars) ?? extractKeyValue(wrangler);
+
+    if (key === undefined) {
+      if (keyAppearsIn(wrangler) || keyAppearsIn(devVars)) {
+        return pass(
+          'ANTHROPIC_API_KEY is referenced, but the doctor could not read a literal value locally to verify it (a Worker secret is invisible to the CLI); verify with wrangler secret put or --probe against a deployed admin'
+        );
+      }
+      return fail(
+        'tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY'
+      );
     }
-    return fail(
-      'tidy is enabled but ANTHROPIC_API_KEY is in neither the wrangler vars nor .dev.vars; verify the secret is configured with wrangler secret put ANTHROPIC_API_KEY'
-    );
+
+    const status = await probeAnthropicKey(ctx.fetch, key);
+    if (status === 'valid') return pass('ANTHROPIC_API_KEY is present and Anthropic accepts it');
+    if (status === 'invalid') {
+      return fail('ANTHROPIC_API_KEY is present but Anthropic rejected it (401/403); it may be revoked or mistyped');
+    }
+    return pass('ANTHROPIC_API_KEY is present, but the doctor could not reach Anthropic to verify it (a network error); this is not a failure, just unverified');
   },
 };
 

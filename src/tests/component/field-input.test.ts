@@ -36,6 +36,43 @@ describe('FieldInput name-prefix contract', () => {
   });
 });
 
+describe('FieldInput required attribute', () => {
+  it('renders required on a required textarea', async () => {
+    const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary', required: true };
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="summary"]');
+    expect(textarea?.required).toBe(true);
+  });
+
+  it('omits required on an optional textarea', async () => {
+    const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary' };
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const textarea = document.querySelector<HTMLTextAreaElement>('textarea[name="summary"]');
+    expect(textarea?.required).toBe(false);
+  });
+
+  it('renders required on a required date field', async () => {
+    const field: NamedField = { type: 'date', name: 'date', label: 'Date', required: true };
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="date"]');
+    expect(input?.required).toBe(true);
+  });
+
+  it('omits required on an optional date field', async () => {
+    const field: NamedField = { type: 'date', name: 'date', label: 'Date' };
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="date"]');
+    expect(input?.required).toBe(false);
+  });
+
+  it('renders required on a required open (free-form) multiselect', async () => {
+    const field: NamedField = { type: 'multiselect', name: 'tags', label: 'Tags', required: true } as NamedField;
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const input = document.querySelector<HTMLInputElement>('input[name="tags"]');
+    expect(input?.required).toBe(true);
+  });
+});
+
 describe('FieldInput closed-multiselect orphan flag', () => {
   // A closed taxonomy picker: options sourced from the vocabulary union the orphan, creatable off.
   const field: NamedField = {

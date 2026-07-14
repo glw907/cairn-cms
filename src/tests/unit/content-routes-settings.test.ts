@@ -10,7 +10,32 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseSiteConfig } from '../../lib/nav/site-config.js';
 import { runtime as baseRuntime, contentEvent, expectRedirect } from './_content-harness.js';
+import { resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
+
+/** A fake tidy client whose `models.list` resolves (a valid key), rejects with a status (invalid),
+ *  or has no `models` at all (an unverifiable probe surface, degrading to 'unknown'). The settings
+ *  load never calls `messages.create`, so that member is a stub that would fail loudly if reached. */
+function fakeTidyClient(models: 'valid' | 'invalid' | 'absent'): () => TidyClient {
+  return () => ({
+    messages: {
+      create: async () => {
+        throw new Error('settingsLoad must never call messages.create');
+      },
+    },
+    ...(models === 'absent'
+      ? {}
+      : {
+          models: {
+            list: async () => {
+              if (models === 'invalid') throw Object.assign(new Error('unauthorized'), { status: 401 });
+              return { data: [] };
+            },
+          },
+        }),
+  });
+}
 
 const CONFIG_PATH = 'src/lib/site.config.yaml';
 
@@ -121,38 +146,147 @@ describe('settingsSave', () => {
 });
 
 describe('settingsLoad', () => {
+  afterEach(() => resetKeyHealthForTest());
+
   function loadEvent(env: Record<string, unknown> = {}) {
     return contentEvent({ url: 'https://t.example/admin/settings', env });
   }
 
-  it('opens the editor tier only when tidy is enabled AND the key is present (truthful gate)', () => {
-    const routes = createContentRoutes(runtime());
-    const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+  it('opens the editor tier when tidy is enabled, the key is present, and the probe confirms it valid', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
     expect(data.enabled).toBe(true);
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(true);
+    expect(data.keyStatus).toBe('valid');
     expect(data.modelLabel).toBe('Claude Sonnet');
     expect(data.conventions.fixes).toBe(true);
   });
 
-  it('keeps the gate closed when the key is missing, even with tidy enabled', () => {
+  it('keeps the gate closed when the key is missing, even with tidy enabled (no probe attempted)', async () => {
     const routes = createContentRoutes(runtime());
-    const data = routes.settingsLoad(loadEvent({}) as never);
+    const data = await routes.settingsLoad(loadEvent({}) as never);
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(true);
     expect(data.keyConfigured).toBe(false);
+    expect(data.keyStatus).toBe('missing');
   });
 
-  it('never returns the API key, only a presence flag', () => {
-    const routes = createContentRoutes(runtime());
-    const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-secret-value' }) as never);
+  it('closes the gate when the probe confirms the key invalid, though it stays "configured"', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('invalid') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-dead' }) as never);
+    expect(data.enabled).toBe(false);
+    expect(data.keyConfigured).toBe(true);
+    expect(data.keyStatus).toBe('invalid');
+  });
+
+  it('fails soft to "unknown" and keeps the gate open when the probe cannot verify (no models surface)', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('absent') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(data.enabled).toBe(true);
+    expect(data.keyStatus).toBe('unknown');
+  });
+
+  it('never returns the API key, only a presence flag and the probe verdict', async () => {
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeTidyClient('valid') } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-secret-value' }) as never);
     expect(JSON.stringify(data)).not.toContain('sk-secret-value');
   });
 
-  it('keeps the gate closed when tidy is off', () => {
+  it('keeps the gate closed when tidy is off, and never runs the probe', async () => {
     const routes = createContentRoutes(runtime({ tidy: { enabled: false } }));
-    const data = routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
     expect(data.enabled).toBe(false);
     expect(data.tidyEnabled).toBe(false);
+  });
+});
+
+describe('settingsLoad: probe bound + cached (save-500-hardening)', () => {
+  afterEach(() => resetKeyHealthForTest());
+
+  function loadEvent(env: Record<string, unknown> = {}) {
+    return contentEvent({ url: 'https://t.example/admin/settings', env });
+  }
+
+  /** A fake client whose `models.list` hangs until the probe's own deadline fires the abort, the
+   *  way a real fetch honors an AbortSignal. Records the signal it was handed so the test can
+   *  assert the probe actually wired one through. */
+  function hangingTidyClient(): { factory: () => TidyClient; sawSignal: () => AbortSignal | undefined } {
+    let sawSignal: AbortSignal | undefined;
+    const factory = (): TidyClient => ({
+      messages: {
+        create: async () => {
+          throw new Error('settingsLoad must never call messages.create');
+        },
+      },
+      models: {
+        list: (_params, options) => {
+          sawSignal = options?.signal;
+          return new Promise((_resolve, reject) => {
+            options?.signal?.addEventListener('abort', () => {
+              const err = new Error('Request was aborted.');
+              err.name = 'AbortError';
+              reject(err);
+            });
+          });
+        },
+      },
+    });
+    return { factory, sawSignal: () => sawSignal };
+  }
+
+  it('bounds the probe with the same deadline as tidy calls, resolving unknown on a timeout', async () => {
+    const hanging = hangingTidyClient();
+    const routes = createContentRoutes(runtime(), { tidy: { client: hanging.factory, timeoutMs: 20 } });
+    const data = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(hanging.sawSignal()).toBeInstanceOf(AbortSignal);
+    expect(hanging.sawSignal()?.aborted).toBe(true);
+    expect(data.keyStatus).toBe('unknown');
+    // 'unknown' fails soft and keeps the gate open, same as a client with no probe surface.
+    expect(data.enabled).toBe(true);
+  });
+
+  it('caches the probe result so a second load within the TTL performs no live call', async () => {
+    const list = vi.fn(async () => ({ data: [] }));
+    const client = (): TidyClient => ({
+      messages: {
+        create: async () => {
+          throw new Error('settingsLoad must never call messages.create');
+        },
+      },
+      models: { list },
+    });
+    const routes = createContentRoutes(runtime(), { tidy: { client } });
+    const first = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(first.keyStatus).toBe('valid');
+    expect(list).toHaveBeenCalledTimes(1);
+
+    const second = await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+    expect(second.keyStatus).toBe('valid');
+    expect(list).toHaveBeenCalledTimes(1);
+  });
+
+  it('re-probes once the cached record ages past the TTL', async () => {
+    vi.useFakeTimers();
+    try {
+      const list = vi.fn(async () => ({ data: [] }));
+      const client = (): TidyClient => ({
+        messages: {
+          create: async () => {
+            throw new Error('settingsLoad must never call messages.create');
+          },
+        },
+        models: { list },
+      });
+      const routes = createContentRoutes(runtime(), { tidy: { client } });
+      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+      expect(list).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(11 * 60 * 1000); // past the 10-minute TTL
+      await routes.settingsLoad(loadEvent({ ANTHROPIC_API_KEY: 'sk-test' }) as never);
+      expect(list).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

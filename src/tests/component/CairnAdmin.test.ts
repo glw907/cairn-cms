@@ -64,6 +64,7 @@ function editorsData(): AdminData {
     page: {
       editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const }],
       self: 'owner@t',
+      error: null,
     },
   };
 }
@@ -88,6 +89,7 @@ function settingsData(): AdminData {
       enabled: true,
       tidyEnabled: true,
       keyConfigured: true,
+      keyStatus: 'valid',
       model: 'claude-sonnet-4-6',
       modelLabel: 'Claude Sonnet',
       conventions: { fixes: true, enDashRanges: false, smartQuotes: false, brandCaps: false },

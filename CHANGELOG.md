@@ -1,3 +1,70 @@
+## Unreleased
+
+### Changed
+
+- A dated concept whose permalink pattern uses `:year`, `:month`, or `:day` now structurally
+  requires a `date` field of that name and type. `defineConcept` and `normalizeConcepts` both
+  throw at declaration when the field is missing or the wrong type, and both normalize the
+  declared field to `required: true`, since the permalink cannot resolve without a date. A concept
+  whose permalink carries no date token keeps its declared optionality unchanged. No consumer
+  action needed unless a site's dated permalink was already missing its `date` field, in which case
+  the fix is to declare one.
+
+### Fixed
+
+- Saving a brand-new dated entry (a post under a `:year`/`:month`/`:day` permalink, for example)
+  no longer raises a raw server error when the date was left blank. The create dialog's collected
+  date now rides the create redirect into the fresh editor, seeding the date field instead of
+  opening it empty, and a save that still reaches the backend with no usable date bounces to the
+  editor with "Pick a date for this entry." rather than throwing while resolving the entry's
+  address. No consumer action needed.
+- An unexpected failure inside an admin action (a bug, not a validated refusal) now shows the
+  editor a calm error strip instead of the platform's raw 500 page, and logs a new
+  `admin.action.failed` event naming the action, the concept and entry when there is one, and the
+  acting editor. Every engine action shares the same guard, so the class of failure the ecxc save
+  500 exposed can no longer escape from any of them. No consumer action needed.
+- A script-posted action's unexpected failure (tidy, a dictionary word, an upload) no longer tells
+  the editor their session expired. These actions fetch with `redirect: 'manual'`, so the guard
+  above's redirect fallback read as an opaque, status-0 response and the client folded that into a
+  false "sign in again" message for what was actually an unrelated bug; the same actions now return
+  a `fail(500)` carrying the calm copy inline, which the client already renders verbatim. Form-nav
+  actions (save, publish) are unaffected and still redirect. No consumer action needed.
+- A required textarea, date, or free-form (open) multiselect field in the editor now carries the
+  browser's native `required` attribute, so an empty one trips the capture-phase invalid handler
+  and opens the Details panel before the save even reaches the server, matching the number, select,
+  text, url, email, and datetime arms, which already had it. Previously these three arms enforced
+  requiredness server-side only, so a required field with no value surfaced no client-side signal
+  at all (this is how the ecxc "Description is required with no visible field" report happened,
+  and how a required date field could reach the server unset). No consumer action needed.
+- The showcase's edit-page preview now renders with the reading surface's typography (headings,
+  lists, blockquotes, paragraph rhythm), not bare unstyled markup. Its `editor.preview.containerClass`
+  named only `'site-main'`, the site layout's outer `<main>` wrapper, while every typography rule in
+  `prose.css` is scoped to `.prose`, the nested `<article>`'s class; since the preview frame renders
+  one wrapper element, not the page's nested pair, the fix is `containerClass: 'site-main prose'`, both
+  classes on that one element. This is showcase-only (`examples/showcase`, which sites copy at
+  scaffold time), not an engine change: a site whose `containerClass` names one wrapper class while its
+  real page nests two should name both, space-separated, on the preview knob.
+- A tidy call that fails because Anthropic rejects the API key (a 401 or 403, a revoked or
+  mistyped key) no longer tells the editor "Try again." That auth failure is not retryable, so it
+  now returns a distinct `fail(503)` reading "Tidy isn't available right now. Your site's AI
+  access needs attention; let your site developer know," and the `tidy.error` log gains a `reason`
+  field (`auth`, `timeout`, `abort`, or `model`) so an operator can tell an auth failure from a
+  transient one at a glance. This is the exact gap the ecxc revoked-key incident exposed: every
+  attempt logged the same retryable warning while the real cause needed a site developer, not
+  another click. No consumer action needed.
+- Tidy's visibility is now truthful about a broken key, not just its presence. An auth failure
+  marks a small per-isolate cache unhealthy for ten minutes, and the edit page's tidy projection
+  reads that cache (never an inline probe, so an edit load pays no added latency): the Tidy control
+  disappears entirely rather than staying live to fail the same way on the next click, and it
+  returns on its own once the mark expires or a fresh call succeeds. The settings screen and
+  `cairn-doctor` both upgrade from a presence check to an active, zero-token probe against
+  Anthropic, reporting missing, invalid, and valid distinctly (`SettingsData` gains `keyStatus`);
+  a probe that cannot reach Anthropic fails soft to an honest "could not verify" rather than a
+  false claim of invalid. The settings screen's probe is bounded by the same deadline as a tidy
+  call (an unbounded probe on every load could otherwise hang on the Anthropic SDK's own
+  multi-minute default) and its verdict is cached for the same ten-minute window, so a run of
+  settings navigations spends at most one live round trip. No consumer action needed.
+
 ## 0.84.3
 
 ### Changed

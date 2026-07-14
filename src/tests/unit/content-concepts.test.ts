@@ -103,10 +103,77 @@ describe('normalizeConcepts URL policy', () => {
   });
   it('takes permalink and datePrefix from the concept declaration', () => {
     const [posts] = normalizeConcepts({
-      posts: { ...cfg, routing: 'feed', permalink: '/:year/:month/:slug', datePrefix: 'month' },
+      posts: {
+        ...cfg,
+        routing: 'feed',
+        permalink: '/:year/:month/:slug',
+        datePrefix: 'month',
+        fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+      },
     });
     expect(posts.permalink).toBe('/:year/:month/:slug');
     expect(posts.datePrefix).toBe('month');
+  });
+
+  it('throws when a date-token permalink declares no date field', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          routing: 'feed',
+          permalink: '/:year/:month/:slug',
+          datePrefix: 'month',
+          fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+        },
+      }),
+    ).toThrow(
+      'cairn: concept "posts" permalink "/:year/:month/:slug" uses a date token, so it must declare a field named "date" of type "date"',
+    );
+  });
+
+  it('throws when the declared "date" field is not type date', () => {
+    expect(() =>
+      normalizeConcepts({
+        posts: {
+          dir: 'p',
+          routing: 'feed',
+          permalink: '/:year/:month/:slug',
+          datePrefix: 'month',
+          fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.text({ label: 'Date' }) }),
+        },
+      }),
+    ).toThrow(
+      'cairn: concept "posts" permalink "/:year/:month/:slug" uses a date token, so it must declare a field named "date" of type "date"',
+    );
+  });
+
+  it('forces required: true on the declared date field for a date-token permalink', () => {
+    const [posts] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        routing: 'feed',
+        permalink: '/:year/:month/:slug',
+        datePrefix: 'month',
+        fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+      },
+    });
+    const dateField = posts.fields.find((f) => f.name === 'date');
+    expect(dateField?.required).toBe(true);
+    // The validator enforces it too: an empty date fails the save.
+    expect(posts.validate({ title: 'Hi' }, 'body').ok).toBe(false);
+  });
+
+  it('leaves a dated concept whose permalink carries no date token with its declared optional date', () => {
+    const [posts] = normalizeConcepts({
+      posts: {
+        dir: 'p',
+        routing: 'feed', // dated, default permalink /posts/:slug carries no date token
+        fields: fieldset({ title: fields.text({ label: 'Title' }), date: fields.date({ label: 'Date' }) }),
+      },
+    });
+    const dateField = posts.fields.find((f) => f.name === 'date');
+    expect(dateField?.required).toBeUndefined();
+    expect(posts.validate({ title: 'Hi' }, 'body').ok).toBe(true);
   });
 
   // normalizeConcepts keeps its own validateUrlPolicy call (defense-in-depth beside defineConcept), so a

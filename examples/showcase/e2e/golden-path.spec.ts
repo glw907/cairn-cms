@@ -90,6 +90,12 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
   await expect(previewSheets.first()).toHaveAttribute('href', /\.css/);
   await expect(previewSheets.last()).toHaveAttribute('href', /\.css/);
   await expect(frame.locator('.site-main')).toHaveCSS('max-width', '704px');
+  // The wrapper also carries .prose (adapter's containerClass: 'site-main prose'), so the reading
+  // surface's typography applies too, not just the measure column. overflow-wrap: anywhere is a
+  // prose.css-only rule (site.css's own .site-main sets no such property), so it pins the class is
+  // really there rather than merely present in the attribute.
+  await expect(frame.locator('.site-main')).toHaveClass(/\bprose\b/);
+  await expect(frame.locator('.site-main')).toHaveCSS('overflow-wrap', 'anywhere');
   await expect(page.getByText('Preview shows unstyled markup')).toHaveCount(0);
 
   // The width menu sizes the frame: pick Phone (each item names its width for assistive tech)

@@ -5,8 +5,10 @@ import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
+import { log } from '../../lib/log/index.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -196,7 +198,7 @@ describe('content actions', () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);
     const event = actionEvent('/admin/posts', { form: { title: 'Hello', slug: 'hello', date: '2026-06-11' } });
-    await expectRedirect(admin.actions.create(event as never), '/admin/posts/2026-06-11-hello?new=1&title=Hello');
+    await expectRedirect(admin.actions.create(event as never), '/admin/posts/2026-06-11-hello?new=1&date=2026-06-11&title=Hello');
   });
 
   it('save delegates on the edit view: commits to the pending branch and redirects saved', async () => {
@@ -555,15 +557,204 @@ describe('settings view', () => {
 
   it('serves the settings view load: the read-only developer facts', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(tidyRuntime(), deps);
+    // The settings load now actively probes the key (save-500-honest-errors, Task 5), so a fake
+    // client stands in for the real SDK; models.list resolving proves the probe reads 'valid'.
+    const anthropic = vi.fn(() => ({
+      messages: { create: async () => { throw new Error('unused'); } },
+      models: { list: async () => ({ data: [] }) },
+    }));
+    const admin = createCairnAdmin(tidyRuntime(), { ...deps, tidy: { client: anthropic } });
     const event = actionEvent('/admin/settings', { env: { ANTHROPIC_API_KEY: 'sk-test' } });
     const data = (await admin.load({ ...event, setHeaders: () => {} } as never)) as {
       view: string;
-      page: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; modelLabel: string };
+      page: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: string; modelLabel: string };
     };
     expect(data.view).toBe('settings');
     expect(data.page.enabled).toBe(true);
     expect(data.page.keyConfigured).toBe(true);
+    expect(data.page.keyStatus).toBe('valid');
     expect(data.page.modelLabel).toBe('Claude Sonnet');
+  });
+});
+
+/** A Backend whose every method throws, standing in for an unanticipated failure (a GitHub
+ *  outage, a bug) deep inside an action's own call chain: exactly the class the ecxc save 500
+ *  proved reachable. */
+function throwingBackend(message = 'boom: github unreachable'): Backend {
+  const boom = (): never => {
+    throw new Error(message);
+  };
+  return {
+    defaultBranch: 'main',
+    readFile: async () => boom(),
+    readEntries: async () => boom(),
+    branchHead: async () => boom(),
+    listBranches: async () => boom(),
+    commit: async () => boom(),
+    createBranch: async () => boom(),
+    deleteBranch: async () => boom(),
+  };
+}
+
+const CALM_COPY =
+  'Something went wrong and your changes were not saved. Your writing is still here. Try again, and if it keeps failing, let your site developer know.';
+
+describe('unexpected admin action failures (admin.action.failed, no raw 500)', () => {
+  it('a throwing create action on the list view redirects with the calm copy and logs admin.action.failed', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
+    expect(result).toEqual({ status: 303, location: `/admin/pages?error=${encodeURIComponent(CALM_COPY)}` });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'create',
+      concept: 'pages',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy (no new=1: the flag was never posted)', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
+    expect(result).toEqual({ status: 303, location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}` });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'save',
+      concept: 'posts',
+      id: '2026-05-01-hi',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing save on a brand-new entry (new=1) preserves the flag on the bounce, so the next load does not 404 the stranded draft', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
+    expect(result).toEqual({
+      status: 303,
+      location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}&new=1`,
+    });
+  });
+
+  it('a throwing script-posted action (addDictionaryWord) returns fail(500) with the calm copy, not a redirect, and still logs admin.action.failed (save-500-hardening)', async () => {
+    // addDictionaryWordAction rethrows any non-conflict commit error, so a throwingBackend reaches
+    // viewAction's catch exactly like the save/create cases above. Unlike those, addDictionaryWord is
+    // marked scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the
+    // client posts with `redirect: 'manual'`, and a redirect here would read as an opaque, status-0
+    // response the client folds into a false "your session expired" message.
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const base = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ word: 'trailhead' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.addDictionaryWord(event as never)) as {
+      status?: number;
+      data?: { error?: string };
+    };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'addDictionaryWord',
+      concept: 'posts',
+      id: '2026-05-01-hi',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing tidy action returns fail(500) with the calm copy, not a redirect (save-500-hardening)', async () => {
+    // Force a genuine throw deep inside tidyAction, past its own try/catch: a malformed conventions
+    // block (never produced by the validated settings save, but a stand-in for the class of bug the
+    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy is
+    // scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the client
+    // posts with `redirect: 'manual'` and would otherwise read a redirect as an opaque, status-0
+    // response and show a false "your session expired" message.
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const tidyRuntime = {
+      ...runtime(),
+      tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
+    } as CairnRuntime;
+    const admin = createCairnAdmin(tidyRuntime, deps);
+    const event = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.tidy(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      'admin.action.failed',
+      expect.objectContaining({ action: 'tidy', concept: 'posts', id: '2026-05-01-hi', editor: 'ed@t' }),
+    );
+  });
+
+  it('a redirect thrown by an action (its own validated bounce) still propagates untouched, with no log', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const event = actionEvent('/admin/pages', { form: { title: '', slug: 'not valid slug!' } });
+    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
+    expect(result).toEqual({
+      status: 303,
+      location: `/admin/pages?error=${encodeURIComponent('Enter a valid address: lowercase letters, numbers, and hyphens.')}`,
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('an HttpError thrown by an action (its own deliberate 404) still propagates untouched, with no log', async () => {
+    // No navMenu configured, so the nav branch of save's delegate throws error(404) itself.
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
+    await expect(admin.actions.save(event as never)).rejects.toMatchObject({ status: 404 });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('a fail() return (a validated refusal) passes through unchanged, with no log', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await admin.actions.mediaUpload(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });

@@ -199,3 +199,20 @@ showcase with its own guide.
 The admin nav labels the screen "Media" (CairnAdminShell.svelte:82) while the docs vocabulary
 and the initiative memory call it the Library. One word, two names; rename the nav item or
 settle the vocabulary.
+
+## 2026-07-13 — a required checkbox-group multiselect has no honest client-side signal (editor)
+
+The required-attribute pass fixed the textarea, date, and open-multiselect arms, but the CLOSED
+multiselect (the checkbox group) stayed server-side only, deliberately: native `required` on a
+set of same-named checkboxes means "check every box," not "check at least one," so the attribute
+would lie. The validator enforces at-least-one; matching that client-side needs a small
+setCustomValidity wiring on the group. An editor who misses a required tag set still learns it
+only from the save bounce.
+
+## 2026-07-13 — required image/reference fields are invisible to constraint validation (editor)
+
+The image and reference arms submit through hidden inputs, which the browser's constraint API
+ignores regardless of `required`. A required hero image or author reference therefore never
+trips the capture-phase invalid handler that opens the Details panel; the failure surfaces only
+server-side. Wiring true required-visibility needs new props threaded into
+MediaHeroField/ReferenceField (an aria-invalid + focus-target pattern, not a native attribute).

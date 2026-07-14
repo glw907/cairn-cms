@@ -273,12 +273,25 @@ describe('shellPayload: navFilter', () => {
 describe('indexRedirect', () => {
   it('redirects /admin to the first concept', () => {
     const routes = createContentRoutes(runtime());
-    expect(() => routes.indexRedirect()).toThrow();
+    const e = event('/admin', 'owner');
+    expect(() => routes.indexRedirect(e)).toThrow();
     try {
-      routes.indexRedirect();
-    } catch (e) {
-      expect((e as { status: number; location: string }).status).toBe(307);
-      expect((e as { location: string }).location).toBe('/admin/posts');
+      routes.indexRedirect(e);
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts');
+    }
+  });
+
+  it('carries a bounced ?error= through to the first concept, rather than dropping it', () => {
+    const routes = createContentRoutes(runtime());
+    const e = event('/admin?error=Something%20went%20wrong', 'owner');
+    try {
+      routes.indexRedirect(e);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts?error=Something%20went%20wrong');
     }
   });
 });

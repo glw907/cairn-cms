@@ -7,10 +7,15 @@ Two tiers with a truthful visibility gate:
   - The DEVELOPER tier (the master switch, the API key, the model) is shown READ-ONLY: an editor sees
     that tidy is enabled, a key is configured, and which model runs, but cannot edit any of it. The
     literal deploy-time tokens sit in a marked "For your developer" sub-block.
-  - The EDITOR tier (the per-convention config) renders ONLY when tidy is enabled AND the key is
-    present (`data.enabled`). When tidy is not enabled, the editor tier is ABSENT, replaced
-    by an honest labelled gate region with a read-only "what your developer needs to do" checklist and
-    a "spellcheck still works" reassurance. No teasing disabled controls sit in the tab order.
+  - The EDITOR tier (the per-convention config) renders ONLY when tidy is enabled, the key is
+    present, AND the key is not confirmed invalid by the active probe (`data.enabled`). Presence
+    alone is no longer the bar (save-500-honest-errors, Task 5): `data.keyStatus` distinguishes
+    `'missing'` / `'invalid'` / `'valid'` / `'unknown'`, and the screen renders one of three states
+    accordingly: the editor tier, the missing-setup gate (a deploy-time step is undone), or a
+    distinct broken-key region (both steps are done, but Anthropic rejects the key) when the probe
+    confirms `'invalid'`. An unverifiable probe (`'unknown'`, a network hiccup or a client with no
+    probe surface) fails soft and keeps the editor tier open rather than punishing an unproven
+    state. No teasing disabled controls sit in the tab order in either gated state.
 
 The resting state is the safe default: Fixes on, every style convention off, every variant collapsed.
 Each binary toggle is the shipped check-and-tint aria-pressed button; each variant chooser is the
@@ -342,7 +347,11 @@ home), diffable and shared across editors.
           </div>
           <div class="flex items-baseline gap-2 text-[0.8125rem]">
             <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-semibold text-[var(--color-positive-ink)]"><CheckIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />API key</span>
-            <span>Set, and kept on the server</span>
+            <span>
+              {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
+              {:else}Set, and kept on the server<span class="text-muted"> &middot; could not verify it just now</span>
+              {/if}
+            </span>
           </div>
           <div class="flex items-baseline gap-2 text-[0.8125rem]">
             <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-semibold text-[var(--color-positive-ink)]"><CheckIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Model</span>
@@ -537,10 +546,38 @@ home), diffable and shared across editors.
         <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
       </div>
     </form>
+  {:else if data.keyStatus === 'invalid'}
+    <!-- THE BROKEN-KEY STATE (save-500-honest-errors, Task 5): tidy is on and the key is present,
+         but the active probe confirmed Anthropic rejects it. Distinct from the missing-setup gate
+         below: both deploy-time steps are done, so this names the actual problem (truthful
+         visibility applied to the settings screen, not just the edit-page Tidy button) instead of
+         re-showing an unchecked "add a key" checklist for a key that is already there. -->
+    <div role="region" aria-label="Tidy's key isn't working" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-error-ink)_12%,transparent)] text-[var(--cairn-error-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
+      <div class="text-xl font-bold tracking-tight">Tidy's key isn't working</div>
+      <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
+        Tidy is turned on and a key is set, but Anthropic isn't accepting it. It may have been
+        revoked or was never valid. Until it's fixed, editors won't see the Tidy control at all.
+      </div>
+      <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
+        <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
+          <span class="flex-none text-[var(--color-positive-ink)]"><CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
+          <span class="text-[0.8125rem] leading-snug">Your developer turned tidy on for the site.</span>
+        </div>
+        <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-error-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-error-ink)_6%,var(--color-base-100))] p-3">
+          <span class="flex-none text-[var(--cairn-error-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
+          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn't been revoked or rotated elsewhere.</span></span>
+        </div>
+      </div>
+      <div class="w-full max-w-md text-left">
+        <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
+        <div class="mt-1 text-xs leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page or run <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">cairn-doctor</code> to confirm it again.</div>
+      </div>
+    </div>
   {:else}
-    <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer. The convention list is
-         absent, not disabled. One honest labelled region names the deploy-time task and who does it,
-         with no disabled controls in the tab order. -->
+    <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer, or no key present yet. The
+         convention list is absent, not disabled. One honest labelled region names the
+         deploy-time task and who does it, with no disabled controls in the tab order. -->
     <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-base-content/[0.06] text-muted"><SparklesIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="text-xl font-bold tracking-tight">Tidy is not set up yet</div>

@@ -9,6 +9,7 @@ function data() {
       { email: 'ed@t', displayName: 'Ed Two', role: 'editor' as const },
     ],
     self: 'owner@t',
+    error: null,
   };
 }
 
@@ -59,5 +60,14 @@ describe('ManageEditors', () => {
     expect(alert?.getAttribute('role')).toBeNull();
     const region = screen.container.querySelector('[aria-live="polite"]');
     expect(region?.textContent ?? '').toContain('That editor already exists');
+  });
+
+  it('surfaces a redirected unexpected-failure error carried on data.error (no fail() form)', async () => {
+    const screen = render(ManageEditors, {
+      data: { ...data(), error: 'Something went wrong and your changes were not saved.' },
+      form: null,
+    });
+    const alert = screen.container.querySelector('.alert-error');
+    expect(alert?.textContent).toContain('Something went wrong and your changes were not saved.');
   });
 });

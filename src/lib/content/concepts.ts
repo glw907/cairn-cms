@@ -4,6 +4,8 @@
 // `content` and declaring its own routing and URL policy, with no reshape here.
 import type { ConceptConfig, ConceptDescriptor, ConceptUrlPolicy, NamedField, RoutingRule } from './types.js';
 import type { Fieldset } from './fieldset.js';
+import type { FieldDescriptor } from './fields.js';
+import { permalinkUsesDateToken } from './url-policy.js';
 
 /** Re-attach each fieldset record key to its descriptor as `name`, the normalized `NamedField[]`. */
 function namedFields(schema: Fieldset): NamedField[] {
@@ -42,6 +44,7 @@ export function defineConcept<const C extends ConceptConfig>(concept: C): C {
     id,
     { permalink: concept.permalink, datePrefix: concept.datePrefix },
     resolveRouting(concept.routing, id).dated,
+    concept.fields.fields,
   );
   return concept;
 }
@@ -64,11 +67,30 @@ const DATE_TOKENS = new Set(['year', 'month', 'day']);
 const DATE_PREFIXES = new Set<string>(['year', 'month', 'day']);
 
 /**
+ * A permalink using a date token cannot resolve without a `date` field of type `date` (see
+ * `resolvePermalink`), so a dated permalink pattern makes that field structurally required, not
+ * merely declared. Throws a declaration-time error naming the concept and the pattern when the
+ * field is missing or the wrong type; otherwise normalizes it in place to `required: true`, so both
+ * the editor form's native `required` and `concept.validate` enforce it. Fields objects are the same
+ * reference the fieldset's validator closes over, so the mutation reaches both.
+ */
+function requireDateField(id: string, pattern: string, fields: Record<string, FieldDescriptor>): void {
+  const date = fields.date;
+  if (!date || date.type !== 'date') {
+    throw new Error(
+      `cairn: concept "${id}" permalink "${pattern}" uses a date token, so it must declare a field named "date" of type "date"`,
+    );
+  }
+  date.required = true;
+}
+
+/**
  * Validate one concept's URL policy at build, so a misconfigured permalink or datePrefix fails loudly
  * here rather than emitting a wrong or defaulted URL at render. The permalink must be root-relative and
- * use only known tokens, a date token requires a dated concept, and the datePrefix must be in range.
+ * use only known tokens, a date token requires a dated concept and a declared `date` field, and the
+ * datePrefix must be in range.
  */
-function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean): void {
+function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean, fields: Record<string, FieldDescriptor>): void {
   if (policy.permalink !== undefined) {
     const pattern = policy.permalink;
     if (!pattern.startsWith('/')) {
@@ -84,6 +106,9 @@ function validateUrlPolicy(id: string, policy: ConceptUrlPolicy, dated: boolean)
           `cairn: concept "${id}" is not dated, so permalink "${pattern}" cannot use the date token ":${token}"`,
         );
       }
+    }
+    if (permalinkUsesDateToken(pattern)) {
+      requireDateField(id, pattern, fields);
     }
   }
   if (policy.datePrefix !== undefined && !DATE_PREFIXES.has(policy.datePrefix)) {
@@ -139,7 +164,7 @@ export function normalizeConcepts(
       permalink: config.permalink,
       datePrefix: config.datePrefix,
     };
-    validateUrlPolicy(id, policy, conceptRouting.dated);
+    validateUrlPolicy(id, policy, conceptRouting.dated, fs.fields);
     const fields = namedFields(fs);
     const label = config.label ?? defaultLabel(id);
     descriptors.push({

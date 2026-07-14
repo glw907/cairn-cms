@@ -6,7 +6,13 @@ import { fieldset } from '../../lib/content/fieldset.js';
 import { fields } from '../../lib/content/fields.js';
 
 const [posts] = normalizeConcepts({
-  posts: { dir: 'p', routing: 'feed', permalink: '/:year/:month/:day/:slug', datePrefix: 'day', fields: fieldset({}) },
+  posts: {
+    dir: 'p',
+    routing: 'feed',
+    permalink: '/:year/:month/:day/:slug',
+    datePrefix: 'day',
+    fields: fieldset({ date: fields.date({ label: 'Date' }) }),
+  },
 });
 const [pages] = normalizeConcepts({ pages: { dir: 'g', fields: fieldset({}) } });
 

@@ -83,17 +83,40 @@ left untouched, restored via npm ci after a wrong-branch commit was reset). All 
 deploys green. Geoff's own magic-link click on each admin remains the human smoke step.
 
 **NEXT (a fresh session; the queue, in order):**
-1. **Preview shows no formatting on ecxc (Geoff, live report, UNDIAGNOSED).** Reproduce
+1. **P0: SAVING A POST ON LIVE ECXC RETURNS A BARE 500 (Geoff, live report, UNDIAGNOSED;
+   an editor cannot save).** Logs first: ecxc has `observability.enabled = true`, so the
+   exception is in Workers Logs; query around Geoff's attempt (2026-07-13 ~19:30 AK) for
+   the unhandled error and any `commit.failed`, or `npx wrangler tail ecxc` while
+   reproducing. Diagnostic frame: earlier today the required-description validation
+   blocked his saves BEFORE the commit path, so this 500 may be a pre-existing failure
+   the ecxc Summary-field fix (now optional) newly exposes, not necessarily an 0.84.3
+   regression; but treat the window's `createAction`/`editLoad` title-seed change as a
+   suspect too (a new-entry save via `?new=1&title=...`). The GitHub commit path
+   (ensure-branch, manifest upsert) is the other suspect family. Reproduce on the
+   showcase first if possible.
+2. **Engine hardening rider on #1: a save must never surface SvelteKit's raw 500 page to
+   an editor.** Wrap the save/publish action's unexpected-exception path into the
+   editor-visible error strip with honest, calm copy (the admin voice), and log the
+   event. Geoff's words: "that's a useless error for an end user."
+3. **Tidy on ecxc BLOCKED on a fresh ANTHROPIC_API_KEY (diagnosed, one Geoff step).**
+   The workstation store's key answers 401 from the API (revoked upstream); it was the
+   only Anthropic credential in any store. Geoff mints a new key at
+   console.anthropic.com/settings/keys, then:
+   `~/.dotfiles/scripts/secrets/secret-set.sh ANTHROPIC_API_KEY --value '<key>'`, then
+   `sync.sh --worker ecxc`, update the registry rotation note. No redeploy needed.
+   Everything else in tidy's path is verified good (config gate, key plumbing, the
+   default model id `claude-sonnet-4-6` is valid and active).
+4. **Preview shows no formatting on ecxc (Geoff, live report, UNDIAGNOSED).** Reproduce
    first on the showcase preview tab, then ecxc (its `preview` knob looks correct:
    `stylesheets: [themeCss?url, siteCss?url]`, `containerClass: 'site-main'`). Decide
    engine vs site; suspects: the srcdoc iframe's stylesheet resolution, the
    containerClass wrap, or a longstanding ecxc-only gap.
-2. **Required textarea skips native validation (engine bug, DIAGNOSED).**
+5. **Required textarea skips native validation (engine bug, DIAGNOSED).**
    `FieldInput.svelte:117` omits `required` on the textarea; every other field type
    carries it. So a required textarea never trips the capture-phase invalid handler that
    opens the Details panel, and the save fails server-side with a bare error (exactly
    Geoff's "Description is required" with no visible field). One-attribute fix + test.
-3. **Fluid address until first save (design ruled by the slug survey; awaiting Geoff's
+6. **Fluid address until first save (design ruled by the slug survey; awaiting Geoff's
    approval).** Pre-first-save the Details Address is editable and auto-follows the
    title (detach on manual edit); first Save commits it with the create-time collision
    guards; after save/publish today's rename flow stands. Survey grounding is in the

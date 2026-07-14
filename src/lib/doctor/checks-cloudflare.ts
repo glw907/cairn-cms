@@ -19,6 +19,7 @@ import { fail, pass, skip } from './types.js';
 import type { CheckOutcome, CheckResult, DoctorCheck, DoctorContext } from './types.js';
 import { cfGet, cfPost, NO_ACCOUNT, NO_FROM, NO_TOKEN } from './cloudflare-api.js';
 import { readWranglerConfig } from './wrangler-config.js';
+import { DEFAULT_ROLES, ownerLevelRoles } from '../auth/roles.js';
 
 // 30 days. The production zones run two years; anything under a month is a trivial pin.
 const MIN_HSTS_MAX_AGE = 2592000;
@@ -169,12 +170,13 @@ const AUTH_TABLES = ['editor', 'magic_token', 'session'];
 async function d1Query(
   ctx: DoctorContext,
   databaseId: string,
-  sql: string
+  sql: string,
+  params: unknown[] = []
 ): Promise<CheckOutcome<Record<string, unknown>[]>> {
   const res = await cfPost(
     ctx,
     `/accounts/${ctx.cfAccountId}/d1/database/${encodeURIComponent(databaseId)}/query`,
-    { sql }
+    { sql, params }
   );
   if (!res.ok) {
     return {
@@ -205,13 +207,82 @@ export const authStore: DoctorCheck = {
       if (missing.length) {
         return fail(`auth schema is missing: ${missing.join(', ')}`);
       }
-      const owners = await d1Query(ctx, facts.authDbId, "SELECT count(*) AS n FROM editor WHERE role='owner'");
+      const ownerRoles = ownerLevelRoles(ctx.roles);
+      const roles = ownerRoles.length > 0 ? ownerRoles : ['owner'];
+      const placeholders = roles.map(() => '?').join(', ');
+      const owners = await d1Query(
+        ctx,
+        facts.authDbId,
+        `SELECT count(*) AS n FROM editor WHERE role IN (${placeholders})`,
+        roles
+      );
       if ('fail' in owners) return owners.fail;
       const n = owners.value[0]?.n;
       if (typeof n === 'number' && n >= 1) {
-        return pass(`auth schema present with ${n} owner row(s)`);
+        return pass(`auth schema present with ${n} owner-capability row(s)`);
       }
-      return fail('the editor table holds no owner row');
+      return fail('the editor table holds no owner-capability row');
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : String(err));
+    }
+  },
+};
+
+/**
+ * A role string declared in the vocabulary, checked by name (not resolved capability), so a role
+ * explicitly declared with `'none'` capability is still counted as known.
+ */
+function isDeclaredRole(roles: DoctorContext['roles'], role: string): boolean {
+  const vocabulary = roles ?? DEFAULT_ROLES;
+  return Object.hasOwn(vocabulary, role);
+}
+
+export const roleVocabulary: DoctorCheck = {
+  id: 'auth.role-vocabulary',
+  conditionId: 'auth.unknown-role',
+  title: 'Editor role vocabulary',
+  async run(ctx: DoctorContext): Promise<CheckResult> {
+    if (!ctx.cfToken || !ctx.cfAccountId) return NO_ACCOUNT;
+    const facts = await readWranglerConfig(ctx.readFile);
+    if (typeof facts?.authDbId !== 'string') {
+      return skip('no AUTH_DB database_id in wrangler.jsonc or wrangler.toml');
+    }
+    try {
+      const rows = await d1Query(ctx, facts.authDbId, 'SELECT DISTINCT role FROM editor');
+      if ('fail' in rows) return rows.fail;
+      const unknown = rows.value
+        .map((row) => String(row.role))
+        .filter((role) => !isDeclaredRole(ctx.roles, role));
+      if (unknown.length > 0) {
+        return fail(`editor row(s) use role(s) outside the declared vocabulary: ${unknown.join(', ')}`);
+      }
+      return pass('every editor role is declared in the vocabulary');
+    } catch (err) {
+      return fail(err instanceof Error ? err.message : String(err));
+    }
+  },
+};
+
+export const emailNormalization: DoctorCheck = {
+  id: 'auth.email-normalization',
+  conditionId: 'auth.email-not-normalized',
+  title: 'Editor email normalization',
+  async run(ctx: DoctorContext): Promise<CheckResult> {
+    if (!ctx.cfToken || !ctx.cfAccountId) return NO_ACCOUNT;
+    const facts = await readWranglerConfig(ctx.readFile);
+    if (typeof facts?.authDbId !== 'string') {
+      return skip('no AUTH_DB database_id in wrangler.jsonc or wrangler.toml');
+    }
+    try {
+      const rows = await d1Query(ctx, facts.authDbId, 'SELECT email FROM editor');
+      if ('fail' in rows) return rows.fail;
+      const bad = rows.value
+        .map((row) => String(row.email))
+        .filter((email) => email !== email.trim().toLowerCase());
+      if (bad.length > 0) {
+        return fail(`editor row(s) with a non-normalized email: ${bad.join(', ')}`);
+      }
+      return pass('every editor email is trimmed and lowercase');
     } catch (err) {
       return fail(err instanceof Error ? err.message : String(err));
     }

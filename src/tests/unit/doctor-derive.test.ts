@@ -11,6 +11,7 @@ const ADAPTER = {
   repo: 'site',
   from: 'adapter@example.com',
   mediaBucketBinding: 'MEDIA_BUCKET',
+  roles: { owner: 'owner' as const, instructor: { capability: 'editor' as const, home: '/admin/schedule' } },
 };
 
 function sources(overrides: Partial<DerivationSources> = {}): DerivationSources {
@@ -48,10 +49,16 @@ describe('deriveMissingInputs', () => {
     expect(out).toMatchObject(expected);
   });
 
-  it('never reads the adapter when from, repo, and the media binding are all provided', async () => {
+  it('never reads the adapter when from, repo, the media binding, and roles are all provided', async () => {
     const adapterFacts = vi.fn(async () => ADAPTER);
     await deriveMissingInputs(
-      { cwd: '/site', from: 'a@b.c', repo: 'o/r', mediaBucketBinding: 'MEDIA_BUCKET' },
+      {
+        cwd: '/site',
+        from: 'a@b.c',
+        repo: 'o/r',
+        mediaBucketBinding: 'MEDIA_BUCKET',
+        roles: { owner: 'owner' },
+      },
       sources({ adapterFacts })
     );
     expect(adapterFacts).not.toHaveBeenCalled();
@@ -72,6 +79,27 @@ describe('deriveMissingInputs', () => {
     );
     expect(adapterFacts).toHaveBeenCalledTimes(1);
     expect(out.mediaBucketBinding).toBe('MEDIA_BUCKET');
+  });
+
+  it('reads the adapter for the role vocabulary even when every other input is provided', async () => {
+    // The role vocabulary has no env source either, so it always needs the adapter read.
+    const adapterFacts = vi.fn(async () => ADAPTER);
+    const out = await deriveMissingInputs(
+      { cwd: '/site', from: 'a@b.c', repo: 'o/r', mediaBucketBinding: 'MEDIA_BUCKET' },
+      sources({ adapterFacts })
+    );
+    expect(adapterFacts).toHaveBeenCalledTimes(1);
+    expect(out.roles).toEqual(ADAPTER.roles);
+  });
+
+  it('a provided role vocabulary beats the adapter', async () => {
+    const adapterFacts = vi.fn(async () => ADAPTER);
+    const provided = { owner: 'owner' as const };
+    const out = await deriveMissingInputs(
+      { cwd: '/site', roles: provided },
+      sources({ adapterFacts })
+    );
+    expect(out.roles).toBe(provided);
   });
 
   it('never reads the wrangler config when the account id is provided', async () => {
@@ -207,6 +235,25 @@ export const siteConfig = {};
       repo: 'site',
       from: 'cms@acme.test',
       mediaBucketBinding: 'MEDIA_BUCKET',
+    });
+  }, 30000);
+
+  it('reads the roles vocabulary off the adapter', async () => {
+    const dir = tempProject({
+      'vite.config.ts': PLUGIN_CONFIG,
+      'src/lib/cairn.config.ts': `export const cairn = {
+  backend: { kind: 'github-app', owner: 'acme', repo: 'site', branch: 'main' },
+  email: { from: 'cms@acme.test' },
+  roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
+};
+export const siteConfig = {};
+`,
+    });
+    expect(await readAdapterFacts(dir)).toEqual({
+      owner: 'acme',
+      repo: 'site',
+      from: 'cms@acme.test',
+      roles: { owner: 'owner', instructor: { capability: 'editor', home: '/admin/schedule' } },
     });
   }, 30000);
 

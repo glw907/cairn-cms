@@ -12,6 +12,12 @@
 
 ### Fixed
 
+- A brand-new entry now opens with the title typed in the create dialog. The create step
+  collected the title but dropped it, so the editor's title field opened blank and the top bar
+  showed the address instead. The typed title now rides the create redirect into the fresh
+  editor. No consumer action needed.
+- A brand-new, never-saved entry's status badge read Published. It now reads New until the entry
+  first lands on the live site, matching the list's vocabulary. No consumer action needed.
 - Common English contractions (you've, they're, doesn't, and the rest of the standard set) no
   longer show as spelling errors. The bundled en-US frequency list carried only a handful of
   contractions; the standard set is now included. Words written with a curly apostrophe (as

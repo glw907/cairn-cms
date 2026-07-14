@@ -105,7 +105,11 @@ Declare one concept while preserving its fieldset type for typed reads, the conc
 to `defineAdapter`. It also validates the concept's URL policy at declaration, so a bad `permalink`,
 `datePrefix`, or `routing` throws at module load rather than defaulting or resolving silently. A
 concept declares its routing with `routing` (the `'feed'`, `'page'`, or `'embedded'` shorthand only)
-and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`.
+and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'page'`. When the
+resolved permalink uses a date token (`:year`, `:month`, or `:day`), the concept must declare a
+field named `date` of type `date`; `defineConcept` and `normalizeConcepts` both throw at
+declaration on a missing or wrong-typed one, and both normalize the declared field to
+`required: true`, since the permalink cannot resolve without it.
 
 <!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
 ```ts
@@ -114,7 +118,10 @@ posts: defineConcept({
   routing: 'feed',
   permalink: '/:year/:month/:slug',
   datePrefix: 'month',
-  fields: fieldset({ title: fields.text({ label: 'Title', required: true }) }),
+  fields: fieldset({
+    title: fields.text({ label: 'Title', required: true }),
+    date: fields.date({ label: 'Date' }),
+  }),
 }),
 ```
 

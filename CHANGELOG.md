@@ -1,3 +1,24 @@
+## Unreleased
+
+### Changed
+
+- A dated concept whose permalink pattern uses `:year`, `:month`, or `:day` now structurally
+  requires a `date` field of that name and type. `defineConcept` and `normalizeConcepts` both
+  throw at declaration when the field is missing or the wrong type, and both normalize the
+  declared field to `required: true`, since the permalink cannot resolve without a date. A concept
+  whose permalink carries no date token keeps its declared optionality unchanged. No consumer
+  action needed unless a site's dated permalink was already missing its `date` field, in which case
+  the fix is to declare one.
+
+### Fixed
+
+- Saving a brand-new dated entry (a post under a `:year`/`:month`/`:day` permalink, for example)
+  no longer raises a raw server error when the date was left blank. The create dialog's collected
+  date now rides the create redirect into the fresh editor, seeding the date field instead of
+  opening it empty, and a save that still reaches the backend with no usable date bounces to the
+  editor with "Pick a date for this entry." rather than throwing while resolving the entry's
+  address. No consumer action needed.
+
 ## 0.84.3
 
 ### Changed

@@ -107,7 +107,10 @@ No `routing` here, so it defaults to `page`. Permalinks default by concept id to
 to `/:slug` at the site root, and any other concept resolves under its own id, `/posts/:slug` for a
 concept named `posts`. Override either with `permalink` (a root-relative pattern using `:slug`,
 `:year`, `:month`, `:day`) or `datePrefix` (the filename date-prefix granularity for a dated
-concept, `year`, `month`, or `day`, defaulting to `day`) when the defaults don't fit your site.
+concept, `year`, `month`, or `day`, defaulting to `day`) when the defaults don't fit your site. A
+permalink that uses `:year`, `:month`, or `:day` needs a `date` field of that name and type
+declared on the same concept; `defineConcept` enforces this and makes the field required, since
+the permalink cannot resolve without it.
 
 ## Point the adapter at your GitHub repo
 

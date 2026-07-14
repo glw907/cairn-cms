@@ -68,7 +68,26 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-14, later: the EXTENSIBLE ROLES pass is EXECUTING)
+## Immediate next action (2026-07-14, night: EXTENSIBLE ROLES MERGED; release cutting now)
+
+**THE EXTENSIBLE-ROLES PASS IS COMPLETE AND MERGED TO MAIN (c5bef146).** The full ratified
+spec shipped: `defineRoles` site-declared vocabularies over the three capability levels,
+Register-typed `Role`, `requireEditor` + the none contract (its own integration tests plus a
+live smoke), migration 0001, the vocabulary-driven ManageEditors, per-role `home` landing +
+the welcome view, capability-gated nav, `bootstrapOwner`, the doctor checks, and the full
+docs window including the new give-a-role-its-own-admin-area guide and the site-contract
+updates in architecture + the adapter guide. Evidence at close: check 0/0, 3370 tests exit 0,
+all seven named gates by name, CI e2e green (run 29376490741), local CI-mode e2e 94/94, live
+showcase smoke (owner/none/unknown-role matrix), and a zero-findings close-out adversarial
+review over the delta commits. The battery-interrupted first session's gap was caught at
+close: the none-nav leak (fc31ea4b) and the dev-package drift (d0ca8704) — both found by the
+smoke and the branch's first CI e2e, both fixed and pinned. Post-mortem: in the plan file.
+**NOW: cut 0.85.0 via cairn-release (Geoff pre-authorized; consumer trigger = ASC's
+membership-admin collapse). Then: ASC's own bump + collapse run in an ASC session.**
+Filed for a future session (Geoff, 2026-07-14): the editor-first admin-nav organization
+question — research + brainstorm, ROADMAP Next entry has the framing.
+
+## Prior next action (2026-07-14, later: the EXTENSIBLE ROLES pass was EXECUTING)
 
 **THE ROLES DESIGN IS RATIFIED AND THE PLAN IS AUTHORED.** Spec:
 docs/superpowers/specs/2026-07-14-extensible-roles-design.md (committed 174ee8c8; Geoff

@@ -68,7 +68,23 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-13, late: 0.84.3 SHIPPED to all three sites; three editor follow-ups queued)
+## Immediate next action (2026-07-13, night: the save-500 pass EXECUTING)
+
+**THE P0 IS DIAGNOSED AND THE PASS IS RUNNING** (plan:
+docs/superpowers/plans/2026-07-13-save-500-honest-errors.md, on worktree
+`save-500-hardening` off main; cairn-implementer per task, test-first, full gate). The 500:
+ecxc's date-token permalink (`/:year/:month/:slug`) + a dateless new entry — createAction
+collects the date for the id then drops it, the form opens with an empty non-required Date,
+validation passes, and `resolvePermalink` throws unhandled inside saveToBranch's manifest
+upsert (Workers Logs ray a1ad4af02a3277a3). Tasks: the date seed + structural requiredness
+(T1), the no-raw-500 action chokepoint (T2), the missing `required` attributes (T3), tidy
+error voice (T4), tidy key truthful visibility (T5), preview-formatting diagnosis (T6).
+Geoff authorized (mid-session, 2026-07-13): workflow for the review gate; when fixes are
+verified, cut a release and update all sites, ecxc first. Still queued behind the pass:
+the fluid-address design (awaiting Geoff's approval) and the tidy key mint (Geoff's one
+step; everything else in tidy's path is verified good).
+
+## Prior next action (2026-07-13, late: 0.84.3 SHIPPED to all three sites; three editor follow-ups queued)
 
 **0.84.3 IS PUBLISHED AND LIVE EVERYWHERE** (plan + post-mortem:
 docs/superpowers/plans/2026-07-13-editor-publish-visibility.md). The window: the

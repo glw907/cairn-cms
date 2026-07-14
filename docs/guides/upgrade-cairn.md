@@ -50,6 +50,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.84.3: the editor lifecycle rounded out (non-breaking)
+
+Four editor changes, no consumer action. The Publish button now shows on every entry,
+resting dimmed with "Nothing new to publish" until a typed edit, a saved draft, or a new
+entry gives it something to take live (it used to appear only after a save). A new
+entry opens with the title typed in the create dialog and its badge reads New instead of
+Published. The spellchecker knows the standard English contractions and accepts curly
+apostrophes from pasted prose.
+
+Consumers must: nothing.
+
 ## 0.84.2: the admin hang after login fixed (non-breaking)
 
 On roughly 0.77 and later, a cold Worker isolate could wedge the whole admin for 55 minutes:

@@ -167,6 +167,23 @@ the named human gates only):**
 
 ## Next
 
+- **Extensible editor/admin roles (Geoff, 2026-07-13): one identity, a site-declared role
+  vocabulary.** The engine hard-codes `Role = 'owner' | 'editor'`, so a site whose people carry
+  more than content duty builds a parallel identity system: aksailingclub-org already runs a
+  second `club_roles` D1 table with its own guards, its own management screen, and an env cast
+  bridge — the grounding evidence that the seam is missing. The shape to brainstorm when its
+  turn comes: the role vocabulary opens as site config (git-committed, per the YAML
+  site-config architecture) with `owner`/`editor` staying the engine's reserved semantics;
+  each declared role maps onto one of the engine's own capability levels (owner-level,
+  editor-level, or none — a sign-in-only role whose surface is entirely the site's, the ASC
+  instructor case); assignment rows stay in the one D1 `editor` table and the one
+  ManageEditors screen (killing the parallel-table pattern); site routes keep reading
+  `locals.editor` through the existing seam, with the role typed to the site's declared
+  vocabulary (the fieldset const-generics DX pattern). It is a site-contract and architecture
+  issue, so the design runs charter-first: cairn stays not-an-auth-platform — no permission
+  policy engine, no per-entry ACLs, and member-scale auth stays out (the magic-link allowlist
+  is staff-scale; ASC's member login is rightly its own system). First consumer: ASC collapses
+  `club_roles` onto the seam.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

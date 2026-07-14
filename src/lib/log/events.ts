@@ -42,4 +42,5 @@ export type CairnLogEvent =
   | 'tidy.refused'
   | 'tidy.empty'
   | 'admin.action.audited'
-  | 'admin.action.unaudited';
+  | 'admin.action.unaudited'
+  | 'admin.action.failed';

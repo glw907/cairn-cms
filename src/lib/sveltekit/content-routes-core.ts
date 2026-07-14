@@ -398,11 +398,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     };
   }
 
-  /** Redirect /admin to the first concept's list (spec §7.6: land on the first concept). */
-  function indexRedirect(): never {
+  /**
+   * Redirect /admin to the first concept's list (spec §7.6: land on the first concept). The
+   *  shell posts publishAll and logout to this exact path from every admin page, so an
+   *  unexpected-failure `?error=` those actions bounce back with rides along to the first
+   *  concept's list rather than being dropped by this redirect, keeping the editor-visible
+   *  guarantee for the two actions that always land here.
+   */
+  function indexRedirect(event: ContentEvent): never {
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
-    throw redirect(307, `/admin/${first.id}`);
+    const bounced = event.url.searchParams.get('error');
+    const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
+    throw redirect(307, `/admin/${first.id}${suffix}`);
   }
 
   /**

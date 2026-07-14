@@ -5,8 +5,10 @@ import { GithubDouble } from './_github-double.js';
 import { createCairnAdmin } from '../../lib/sveltekit/cairn-admin.js';
 import type { TidyClient } from '../../lib/sveltekit/content-routes.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Backend } from '../../lib/github/backend.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { expectRedirect as expectRedirectAssertion } from '../_redirect-assertions.js';
+import { log } from '../../lib/log/index.js';
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
 function runtime(): CairnRuntime {
@@ -565,5 +567,93 @@ describe('settings view', () => {
     expect(data.page.enabled).toBe(true);
     expect(data.page.keyConfigured).toBe(true);
     expect(data.page.modelLabel).toBe('Claude Sonnet');
+  });
+});
+
+/** A Backend whose every method throws, standing in for an unanticipated failure (a GitHub
+ *  outage, a bug) deep inside an action's own call chain: exactly the class the ecxc save 500
+ *  proved reachable. */
+function throwingBackend(message = 'boom: github unreachable'): Backend {
+  const boom = (): never => {
+    throw new Error(message);
+  };
+  return {
+    defaultBranch: 'main',
+    readFile: async () => boom(),
+    readEntries: async () => boom(),
+    branchHead: async () => boom(),
+    listBranches: async () => boom(),
+    commit: async () => boom(),
+    createBranch: async () => boom(),
+    deleteBranch: async () => boom(),
+  };
+}
+
+const CALM_COPY =
+  'Something went wrong and your changes were not saved. Your writing is still here. Try again, and if it keeps failing, let your site developer know.';
+
+describe('unexpected admin action failures (admin.action.failed, no raw 500)', () => {
+  it('a throwing create action on the list view redirects with the calm copy and logs admin.action.failed', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
+    expect(result).toEqual({ status: 303, location: `/admin/pages?error=${encodeURIComponent(CALM_COPY)}` });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'create',
+      concept: 'pages',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
+    expect(result).toEqual({ status: 303, location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}` });
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'save',
+      concept: 'posts',
+      id: '2026-05-01-hi',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a redirect thrown by an action (its own validated bounce) still propagates untouched, with no log', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const event = actionEvent('/admin/pages', { form: { title: '', slug: 'not valid slug!' } });
+    const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
+    expect(result).toEqual({
+      status: 303,
+      location: `/admin/pages?error=${encodeURIComponent('Enter a valid address: lowercase letters, numbers, and hyphens.')}`,
+    });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('an HttpError thrown by an action (its own deliberate 404) still propagates untouched, with no log', async () => {
+    // No navMenu configured, so the nav branch of save's delegate throws error(404) itself.
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const event = actionEvent('/admin/nav', { form: { tree: '[]' } });
+    await expect(admin.actions.save(event as never)).rejects.toMatchObject({ status: 404 });
+    expect(errorSpy).not.toHaveBeenCalled();
+  });
+
+  it('a fail() return (a validated refusal) passes through unchanged, with no log', async () => {
+    new GithubDouble({ main: {} }).install();
+    const admin = createCairnAdmin(runtime(), deps);
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = await admin.actions.mediaUpload(actionEvent('/admin/media') as never);
+    expect(result).toMatchObject({ status: 503 });
+    expect(errorSpy).not.toHaveBeenCalled();
   });
 });

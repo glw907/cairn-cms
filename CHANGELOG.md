@@ -18,6 +18,11 @@
   opening it empty, and a save that still reaches the backend with no usable date bounces to the
   editor with "Pick a date for this entry." rather than throwing while resolving the entry's
   address. No consumer action needed.
+- An unexpected failure inside an admin action (a bug, not a validated refusal) now shows the
+  editor a calm error strip instead of the platform's raw 500 page, and logs a new
+  `admin.action.failed` event naming the action, the concept and entry when there is one, and the
+  acting editor. Every engine action shares the same guard, so the class of failure the ecxc save
+  500 exposed can no longer escape from any of them. No consumer action needed.
 
 ## 0.84.3
 

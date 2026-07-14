@@ -4,8 +4,9 @@
 // route exports. The path authority is admin-dispatch's parseAdminPath; this module only maps
 // each view to the wrapped load it delegates to, and each named action validates that the
 // parsed view supports it before delegating to the same wrapped factories.
-import { error } from '@sveltejs/kit';
+import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { parseAdminPath, type AdminView } from './admin-dispatch.js';
+import { log } from '../log/index.js';
 import { createAuthRoutes } from './auth-routes.js';
 import {
   createContentRoutes,
@@ -72,7 +73,7 @@ export type AdminData =
   | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
-  | { view: 'editors'; page: { editors: Editor[]; self: string } }
+  | { view: 'editors'; page: { editors: Editor[]; self: string; error: string | null } }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
@@ -124,7 +125,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     if (!view) throw error(404, 'Not found');
     switch (view.view) {
       case 'index':
-        return content.indexRedirect();
+        return content.indexRedirect(contentEvent(event, {}));
       case 'login':
         return { view: 'login', page: auth.loginLoad(event) };
       case 'confirm':
@@ -161,11 +162,30 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   }
 
   /**
+   * The editor-voiced copy for an admin action's unexpected failure: the class of bug the
+   *  original ecxc save 500 exposed (an exception escaping deep inside an action, past every
+   *  validated refusal). Calm and honest, no jargon: the writing survives (nothing here has
+   *  discarded it) and the retry is the editor's, with a hand-off to their site developer if it
+   *  keeps failing.
+   */
+  const UNEXPECTED_ACTION_ERROR =
+    'Something went wrong and your changes were not saved. Your writing is still here. Try again, and if it keeps failing, let your site developer know.';
+
+  /**
    * Wrap a delegate in the parse-and-check every action shares: parse the pathname exactly
    *  as load does, 404 on a null parse or a view outside the allowed set, then hand the
-   *  narrowed view to the delegate.
+   *  narrowed view to the delegate. An unexpected throw from the delegate (a bug, not a
+   *  validated refusal the action already turned into a redirect or a `fail()`) never escapes
+   *  as SvelteKit's raw 500: a redirect or an `HttpError` is the action's own deliberate control
+   *  flow and passes through untouched (an `ActionFailure` from `fail()` is a return value, not
+   *  a throw, so it already passes through with no help from this wrapper); anything else logs
+   *  `admin.action.failed` (the action name, the concept and id when the view carries them, the
+   *  signed-in editor when there is one, and the thrown error's message, never a stack or a
+   *  token) and bounces back to the posted path with the calm `?error=` every view's own
+   *  validated failures already redirect through.
    */
   function viewAction<V extends AdminView['view'], R>(
+    action: string,
     allowed: readonly V[],
     delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
   ): (event: AdminEvent) => Promise<R> {
@@ -173,7 +193,26 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
       if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
       // The includes check above proves the membership the cast asserts.
-      return delegate(event, view as Extract<AdminView, { view: V }>);
+      const narrowed = view as Extract<AdminView, { view: V }>;
+      try {
+        return await delegate(event, narrowed);
+      } catch (err) {
+        if (isRedirect(err) || isHttpError(err)) throw err;
+        const fields: Record<string, unknown> = { action, error: err instanceof Error ? err.message : String(err) };
+        // `view`, not `narrowed`: it is the concrete AdminView union, so the `in` checks below
+        // narrow it cleanly, unlike the generic-parameterized `narrowed`.
+        if ('concept' in view) fields.concept = view.concept.id;
+        if ('id' in view) fields.id = view.id;
+        // A failure reading the editor must never mask the original error logged above.
+        try {
+          const editor = event.locals.editor;
+          if (editor) fields.editor = editor.email;
+        } catch {
+          // No editor to attribute; the record still names the action and the error.
+        }
+        log.error('admin.action.failed', fields);
+        throw redirect(303, `${event.url.pathname}?error=${encodeURIComponent(UNEXPECTED_ACTION_ERROR)}`);
+      }
     };
   }
 
@@ -191,11 +230,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  editor actions gate themselves with requireOwner, so no second gate is added here.
    */
   const actions = {
-    request: viewAction(['login'], (event) => auth.requestAction(event)),
-    confirm: viewAction(['confirm'], (event) => auth.confirmAction(event)),
-    logout: viewAction(anyView, (event) => auth.logoutAction(event)),
-    create: viewAction(['list'], (event, view) => content.createAction(contentEvent(event, { concept: view.concept.id }))),
-    save: viewAction(['edit', 'nav'], (event, view) => {
+    request: viewAction('request', ['login'], (event) => auth.requestAction(event)),
+    confirm: viewAction('confirm', ['confirm'], (event) => auth.confirmAction(event)),
+    logout: viewAction('logout', anyView, (event) => auth.logoutAction(event)),
+    create: viewAction('create', ['list'], (event, view) => content.createAction(contentEvent(event, { concept: view.concept.id }))),
+    save: viewAction('save', ['edit', 'nav'], (event, view) => {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
       if (!nav) throw error(404, 'Not found');
       return nav.navSave(contentEvent(event, {}));
@@ -203,49 +242,49 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
-    saveSettings: viewAction(['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
+    saveSettings: viewAction('saveSettings', ['settings'], (event) => content.settingsSave(contentEvent(event, {}))),
     // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
-    saveVocabulary: viewAction(['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
-    upload: viewAction(['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    publish: viewAction(['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    discard: viewAction(['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    rename: viewAction(['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    saveVocabulary: viewAction('saveVocabulary', ['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
+    upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
-    addDictionaryWord: viewAction(['edit'], (event, view) =>
+    addDictionaryWord: viewAction('addDictionaryWord', ['edit'], (event, view) =>
       content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
-    tidy: viewAction(['edit'], (event, view) =>
+    tidy: viewAction('tidy', ['edit'], (event, view) =>
       content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    delete: viewAction(['edit', 'list'], (event, view) =>
+    delete: viewAction('delete', ['edit', 'list'], (event, view) =>
       view.view === 'edit'
         ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))
         : content.listDeleteAction(contentEvent(event, { concept: view.concept.id })),
     ),
-    mediaDelete: viewAction(['media'], (event) => content.mediaDeleteAction(contentEvent(event, {}))),
-    mediaUpdate: viewAction(['media'], (event) => content.mediaUpdateAction(contentEvent(event, {}))),
+    mediaDelete: viewAction('mediaDelete', ['media'], (event) => content.mediaDeleteAction(contentEvent(event, {}))),
+    mediaUpdate: viewAction('mediaUpdate', ['media'], (event) => content.mediaUpdateAction(contentEvent(event, {}))),
     // The Library is not entry-scoped, so a replace uploads its new file through the same content-
     // addressed ingest mounted media-scoped (uploadAction reads no concept/id), then previews and
     // applies the repoint. Alt propagation previews and applies the alt fill. The preview pair are 2a
     // fetch actions; the apply pair are form posts. All gate on the media view.
-    mediaUpload: viewAction(['media'], (event) => content.uploadAction(contentEvent(event, {}))),
-    mediaLibraryUpload: viewAction(['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {}))),
-    mediaReplacePreview: viewAction(['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
-    mediaReplace: viewAction(['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
-    mediaAltPreview: viewAction(['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
-    mediaAltPropagate: viewAction(['media'], (event) => content.mediaAltApplyAction(contentEvent(event, {}))),
+    mediaUpload: viewAction('mediaUpload', ['media'], (event) => content.uploadAction(contentEvent(event, {}))),
+    mediaLibraryUpload: viewAction('mediaLibraryUpload', ['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {}))),
+    mediaReplacePreview: viewAction('mediaReplacePreview', ['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
+    mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
+    mediaAltPreview: viewAction('mediaAltPreview', ['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),
+    mediaAltPropagate: viewAction('mediaAltPropagate', ['media'], (event) => content.mediaAltApplyAction(contentEvent(event, {}))),
     // Pass C library actions: a multi-select bulk delete, the on-demand orphan scan, and the
     // irreversible byte purge. The component posts to `?/mediaBulkDelete`, `?/mediaOrphanScan`, and
     // `?/mediaPurge` (the purge key is short of its content method name). All gate on the media view.
-    mediaBulkDelete: viewAction(['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
-    mediaOrphanScan: viewAction(['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
-    mediaPurge: viewAction(['media'], (event) => content.mediaPurgeOrphansAction(contentEvent(event, {}))),
-    publishAll: viewAction(authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
-    addEditor: viewAction(['editors'], (event) => editors.addEditorAction(event)),
-    removeEditor: viewAction(['editors'], (event) => editors.removeEditorAction(event)),
-    setRole: viewAction(['editors'], (event) => editors.setRoleAction(event)),
+    mediaBulkDelete: viewAction('mediaBulkDelete', ['media'], (event) => content.mediaBulkDeleteAction(contentEvent(event, {}))),
+    mediaOrphanScan: viewAction('mediaOrphanScan', ['media'], (event) => content.mediaOrphanScanAction(contentEvent(event, {}))),
+    mediaPurge: viewAction('mediaPurge', ['media'], (event) => content.mediaPurgeOrphansAction(contentEvent(event, {}))),
+    publishAll: viewAction('publishAll', authedViews, (event) => content.publishAllAction(contentEvent(event, {}))),
+    addEditor: viewAction('addEditor', ['editors'], (event) => editors.addEditorAction(event)),
+    removeEditor: viewAction('removeEditor', ['editors'], (event) => editors.removeEditorAction(event)),
+    setRole: viewAction('setRole', ['editors'], (event) => editors.setRoleAction(event)),
   };
 
   /**

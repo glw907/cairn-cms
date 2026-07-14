@@ -64,6 +64,7 @@ function editorsData(): AdminData {
     page: {
       editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const }],
       self: 'owner@t',
+      error: null,
     },
   };
 }

@@ -11,8 +11,9 @@ dispatcher defines.
   import type { Editor } from '../auth/types.js';
 
   interface Props {
-    /** The editors load's data: the allowlist and the acting owner's email. */
-    data: { editors: Editor[]; self: string };
+    /** The editors load's data: the allowlist, the acting owner's email, and any `?error=` an
+     *  unexpected action failure bounced back with. */
+    data: { editors: Editor[]; self: string; error: string | null };
     /** The last action's result (an error message when it failed). */
     form: { error?: string; ok?: boolean } | null;
   }
@@ -21,6 +22,11 @@ dispatcher defines.
 
   // Eyebrow styling for the table column headers, matching the concept list.
   const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+
+  // The one lifecycle error to announce: a rejected addEditor/removeEditor/setRole `fail()` leads
+  // (form?.error), else a redirected unexpected-failure bounce (data.error) from an action, like
+  // publishAll, that carries no form of its own here.
+  const lifecycleError = $derived(form?.error ?? data.error ?? '');
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second submit failing the same way) would otherwise go silent. An invisible nonce flips on
@@ -32,16 +38,18 @@ dispatcher defines.
   function nonce(): string {
     return announceNonce % 2 === 0 ? '' : '​';
   }
-  // Each submit hands a fresh `form` object, so the nonce bumps once per submit, keyed to the submit
-  // identity rather than to a string change the live region would swallow.
-  let lastForm: unknown;
+  // Each submit hands a fresh `form` (or `data` on a load) object, so the nonce bumps once per
+  // submit or load, keyed to that identity rather than to a string change the live region would
+  // swallow.
+  let lastSubmit: unknown;
   $effect(() => {
-    if (form !== lastForm) {
-      lastForm = form;
-      if (form?.error) announceNonce++;
+    const submit = form ?? data;
+    if (submit !== lastSubmit) {
+      lastSubmit = submit;
+      if (lifecycleError) announceNonce++;
     }
   });
-  const liveError = $derived(form?.error ? `${form.error}${nonce()}` : '');
+  const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
 <header class="mb-6">
@@ -49,8 +57,8 @@ dispatcher defines.
 </header>
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
-{#if form?.error}
-  <div class="alert alert-error mb-4 text-sm">{form.error}</div>
+{#if lifecycleError}
+  <div class="alert alert-error mb-4 text-sm">{lifecycleError}</div>
 {/if}
 
 <div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">

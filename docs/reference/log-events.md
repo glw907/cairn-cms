@@ -51,6 +51,7 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `tidy.empty` | warn | The model returns no text. Maps to fail(502). | `editor`, `model` |
 | `admin.action.audited` | info | A custom admin action wrapped in `adminAction` calls `ctx.audit`. | `editor`, `action`, `entity`, `entityId`, `detail` |
 | `admin.action.unaudited` | error | A custom admin action wrapped in `adminAction` returns normally (not SvelteKit's `fail()`, which mutated nothing and is exempt) having called `ctx.audit` zero times, in production (dev throws instead). | `editor`, `path` |
+| `admin.action.failed` | error | The single-mount admin's action chokepoint catches an unexpected throw from an engine action (a bug, not a validated refusal already turned into a redirect or a `fail()`); the editor sees the calm failure strip instead of the platform's raw 500. | `action`, `concept` and `id` when the view carries them, `editor` when a session exists, `error` (the thrown error's message, never a stack) |
 
 A few fields recur across families and are worth knowing up front. `branch` (`cairn/<concept>/<id>`)
 appears on `commit.succeeded`, `commit.failed`, and `publish.failed` only on the save path. Deletes,

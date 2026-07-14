@@ -117,6 +117,27 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
   // The card recipe shared by the add and list cards.
   const cardClass =
     'rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]';
+
+  // The polite live region's text re-announces only when it changes, so a repeated identical error
+  // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
+  // every fresh error so the region text always mutates and the screen reader speaks again (the
+  // NavTree/ConceptList discipline). The nonce is a zero-width space, never voiced, so the heard
+  // sentence is unchanged; the visible alert below keeps its own styling and drops the `role` (a
+  // fresh-inserted role element announces inconsistently and would clobber a repeat).
+  let announceNonce = $state(0);
+  function errorNonce(): string {
+    return announceNonce % 2 === 0 ? '' : '​';
+  }
+  // Each save hands a fresh `data` object (the action redirects on both success and failure, so the
+  // component always remounts), so the nonce bumps once per load, keyed to the load identity.
+  let lastData: unknown;
+  $effect(() => {
+    if (data !== lastData) {
+      lastData = data;
+      if (data.error) announceNonce++;
+    }
+  });
+  const liveError = $derived(data.error ? `${data.error}${errorNonce()}` : '');
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">
@@ -126,6 +147,11 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
     A tag groups related posts. This list is shared across the site, so every editor picks from the
     same names. Add one, rename it, or remove a tag nothing uses.
   </p>
+
+  <div class="sr-only" aria-live="polite">{liveError}</div>
+  {#if data.error}
+    <div class="alert alert-error mt-3 text-sm">{data.error}</div>
+  {/if}
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and
        seed. Empty at rest. -->

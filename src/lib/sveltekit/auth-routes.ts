@@ -12,7 +12,15 @@ import {
   SEND_COOLDOWN_MS,
   sessionCookieName,
 } from '../auth/crypto.js';
-import { findEditor, issueToken, consumeToken, createSession, deleteSession, recentlyIssued } from '../auth/store.js';
+import {
+  findEditor,
+  issueToken,
+  consumeToken,
+  createSession,
+  deleteSession,
+  recentlyIssued,
+  insertOwnerIfEmpty,
+} from '../auth/store.js';
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken } from './csrf.js';
 import { log } from '../log/index.js';
@@ -21,6 +29,13 @@ import type { RequestContext } from './types.js';
 export interface AuthRoutesConfig {
   branding: AuthBranding;
   send?: SendMagicLink;
+  /**
+   * A site-declared owner to seed the allowlist through the request action, in place of a
+   * hand-run `wrangler d1 execute` INSERT. Grants nothing once any editor row exists; the email
+   * is compared trimmed and lowercased, matching the normalization every write path already
+   * applies.
+   */
+  bootstrapOwner?: { email: string; displayName: string };
 }
 
 /**
@@ -67,13 +82,22 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
     // fits well under this; only a junk payload is truncated.
     log.info('auth.link.requested', { email: email.slice(0, 320) });
 
+    const now = Date.now();
+    // Bootstrap: an empty allowlist plus a matching configured owner inserts the owner row
+    // atomically, before the lookup below, so the normal flow finds it and proceeds exactly as
+    // it would for any other allow-listed editor. A non-matching email or a non-empty table
+    // grants nothing, so this encodes exactly the trust the hand-seed SQL already encodes.
+    if (config.bootstrapOwner && email && email === config.bootstrapOwner.email.trim().toLowerCase()) {
+      const inserted = await insertOwnerIfEmpty(db, email, config.bootstrapOwner.displayName, now);
+      if (inserted) log.info('editor.bootstrapped', { email });
+    }
+
     const editor = email ? await findEditor(db, email) : null;
     // Non-editor: byte-identical to the editor send-ok path, so the response body never leaks
     // membership. Response timing still differs (the editor path awaits the send), the side-channel
     // the design accepts as strictly weaker than the explicit throttled signal below.
     if (!editor) return { status: 'sent', sent: true };
 
-    const now = Date.now();
     // Per-email cooldown: an editor who requested within the window gets the throttled signal rather
     // than a second email. This reveals editor membership, the deliberate relaxed-non-leak posture.
     if (await recentlyIssued(db, email, now - SEND_COOLDOWN_MS)) {

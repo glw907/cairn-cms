@@ -15,7 +15,7 @@ import type { Editor } from '../../lib/auth/types.js';
 
 afterEach(() => resetKeyHealthForTest());
 
-const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner' };
+const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner', capability: 'owner' };
 const CSRF = 'csrf-token-value-0123456789abcdef';
 
 /** A minimal runtime with tidy enabled. Only the tidy config and backend the action reads are

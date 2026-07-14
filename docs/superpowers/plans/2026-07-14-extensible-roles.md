@@ -68,11 +68,11 @@ closed). `Role` derives from `CairnRolesRegister` via the Register pattern and i
 `'owner' | 'editor'` when unaugmented; a type-level test (`expectTypeOf` or equivalent)
 pins both the unaugmented default and the augmented narrowing. `Editor` gains `capability`.
 
-- [ ] Failing unit tests for every validation rule, resolution case (bare capability,
+- [x] Failing unit tests for every validation rule, resolution case (bare capability,
   object form, unknown role, undefined vocabulary), `ownerLevelRoles` over a vocabulary
   with two owner-level names, and the `Role` type-level pins
-- [ ] Implement `roles.ts`, the type derivation, and the root exports
-- [ ] Gate green; commit `feat(auth): site-declared role vocabulary core`
+- [x] Implement `roles.ts`, the type derivation, and the root exports
+- [x] Gate green; commit `feat(auth): site-declared role vocabulary core`
 
 **Docs rider:** reference entry for the new root exports (`defineRoles`, `Capability`,
 `RolesDeclaration`, `CairnRolesRegister`) in the core reference page, including the
@@ -90,11 +90,11 @@ pins both the unaugmented default and the augmented narrowing. `Editor` gains `c
 using SQLite's create-copy-drop-rename sequence, preserving the primary key, column
 types, and all rows. Role validity is app-layer from here on.
 
-- [ ] Failing integration test: apply 0000, seed rows (`owner`, `editor`), apply 0001,
+- [x] Failing integration test: apply 0000, seed rows (`owner`, `editor`), apply 0001,
   assert rows intact and an `INSERT` with role `club-admin` now succeeds; also assert
   the vitest integration harness applies both migrations for the rest of the suite
-- [ ] Write the migration; verify the harness picks it up
-- [ ] Gate green; commit `feat(auth): open the editor role column (migration 0001)`
+- [x] Write the migration; verify the harness picks it up
+- [x] Gate green; commit `feat(auth): open the editor role column (migration 0001)`
 
 **Docs rider:** the configure-auth guide's migration section notes the new file in its
 `wrangler d1 migrations apply` step (no wording change beyond the count).
@@ -124,13 +124,13 @@ identity is legitimate (logout, the shell payload, the none landing). The none c
 (spec section 4) holds: authenticated, populated typed `locals.editor`, custom-route
 seam unaffected.
 
-- [ ] Failing tests: the guard matrix (owner/editor/none/unknown-role x
+- [x] Failing tests: the guard matrix (owner/editor/none/unknown-role x
   requireSession/requireEditor/requireOwner), the unknown-role event emission, an
   integration test driving a none-capability session against a content list load and a
   save action (403) and against a shell-mounted custom route (admitted)
-- [ ] Implement; sweep every engine load/action for the requireSession-to-requireEditor
+- [x] Implement; sweep every engine load/action for the requireSession-to-requireEditor
   switch (enumerate them in the diff for review)
-- [ ] Gate green; commit `feat(auth): capability resolution, requireEditor, none contract`
+- [x] Gate green; commit `feat(auth): capability resolution, requireEditor, none contract`
 
 **Docs rider:** guard reference page gains `requireEditor` and the none-contract
 guarantee stated verbatim as a contract; `log-events.md` gains `auth.role.unknown`.
@@ -164,12 +164,12 @@ only such guard. `createCairnAdmin` threads the adapter's declared roles to thes
 and to the guard-independent places that materialize `Editor` (capability filled
 wherever an `Editor` object is built).
 
-- [ ] Failing tests: add/setRole rejecting an out-of-vocabulary role; setRole accepting
+- [x] Failing tests: add/setRole rejecting an out-of-vocabulary role; setRole accepting
   `club-admin` under an ASC-shaped vocabulary; the last-owner guard refusing to demote
   the final owner-capability row when a second owner-level NAME exists but has no rows;
   events carrying `capability`
-- [ ] Implement; keep every statement prepared and atomic as today
-- [ ] Gate green; commit `feat(auth): editors routes and last-owner guard over the vocabulary`
+- [x] Implement; keep every statement prepared and atomic as today
+- [x] Gate green; commit `feat(auth): editors routes and last-owner guard over the vocabulary`
 
 **Docs rider:** editors-routes reference signatures updated (`check:reference:signatures`
 will hold this); `log-events.md` rows for the widened event fields.
@@ -188,11 +188,11 @@ declared role with its capability shown beside the name (admin design system idi
 read `docs/internal/admin-design-system.md` before touching the component). The role
 badge distinguishes owner-capability rows. Self-actions stay disabled as today.
 
-- [ ] Failing component tests: default pair renders the toggle; a three-role vocabulary
+- [x] Failing component tests: default pair renders the toggle; a three-role vocabulary
   renders the select with capability labels; submitting a role change posts the
   selected role name
-- [ ] Implement in the DaisyUI admin idiom
-- [ ] Gate green; commit `feat(admin): vocabulary-driven role control in ManageEditors`
+- [x] Implement in the DaisyUI admin idiom
+- [x] Gate green; commit `feat(admin): vocabulary-driven role control in ManageEditors`
 
 **Docs rider:** the components reference's ManageEditors entry mentions the
 vocabulary-driven control.
@@ -218,11 +218,11 @@ sign-out, one calm "no content access here" line in the admin voice). The shell 
 hides engine content nav and `canManageEditors` from none-capability sessions;
 site-granted custom nav still renders, filtered by the site's `navFilter` as today.
 
-- [ ] Failing tests: instructor-with-home redirected to its home; none-without-home gets
+- [x] Failing tests: instructor-with-home redirected to its home; none-without-home gets
   the welcome view; editor-capability landing unchanged; none session's shell payload
   carries no engine concept nav
-- [ ] Implement; welcome copy follows the admin voice (Microsoft register, calm, no blame)
-- [ ] Gate green; commit `feat(admin): role-aware landing and capability-gated nav`
+- [x] Implement; welcome copy follows the admin voice (Microsoft register, calm, no blame)
+- [x] Gate green; commit `feat(admin): role-aware landing and capability-gated nav`
 
 **Docs rider:** the components reference documents the welcome view; the admin-design
 doc is not touched (no new design language).
@@ -249,11 +249,11 @@ inserted atomically and the normal flow proceeds; `editor.bootstrapped` (field: 
 fires on insert. Once any row exists the config grants nothing; a non-matching email on
 an empty table behaves exactly as an unknown email today.
 
-- [ ] Failing tests: empty-table match inserts and proceeds; non-empty table ignores the
+- [x] Failing tests: empty-table match inserts and proceeds; non-empty table ignores the
   config; two concurrent requests yield exactly one row (D1 statement atomicity);
   mixed-case configured email still matches
-- [ ] Implement
-- [ ] Gate green; commit `feat(auth): config-declared bootstrap owner`
+- [x] Implement
+- [x] Gate green; commit `feat(auth): config-declared bootstrap owner`
 
 **Docs rider:** the configure-auth guide's seed section rewrites around
 `bootstrapOwner` with the SQL kept as fallback; `log-events.md` gains
@@ -275,9 +275,9 @@ vocabulary, (2) editor rows whose email is not lowercase+trimmed (the manual-ins
 hole), and (3) its existing owner-count diagnostic now counts owner-capability rows.
 The email-normalization invariant is stated in the auth explanation/reference doc.
 
-- [ ] Failing tests for the three checks (healthy and unhealthy fixtures each)
-- [ ] Implement
-- [ ] Gate green; commit `feat(doctor): vocabulary and email-normalization checks`
+- [x] Failing tests for the three checks (healthy and unhealthy fixtures each)
+- [x] Implement
+- [x] Gate green; commit `feat(doctor): vocabulary and email-normalization checks`
 
 **Docs rider:** the doctor guide/reference lists the new checks; the normalization
 invariant lands in the auth reference wording.
@@ -300,9 +300,9 @@ existing sites; augment the registry if you declare roles"; the ROADMAP Now entr
 gone (shipped history lives in STATUS and this plan's post-mortem). Grep the whole
 `docs/` tree for phrasing that hard-codes the two-role world and repoint every hit.
 
-- [ ] `check:reference`, `check:reference:signatures`, `check:package`, `check:docs`,
+- [x] `check:reference`, `check:reference:signatures`, `check:package`, `check:docs`,
   `check:snippets`, `check:comments`, `check:surface` all green by name
-- [ ] Commit `docs: extensible-roles window (reference, guides, changelog, roadmap prune)`
+- [x] Commit `docs: extensible-roles window (reference, guides, changelog, roadmap prune)`
 
 ### Task 10: pass close (ritual, main-loop owned)
 
@@ -330,3 +330,66 @@ Signatures cross-checked across tasks (Capability, RolesDeclaration, ownerRoles
 threading, the vocabulary payload). No placeholders; the two spec-deferred details are
 settled here: the unknown-role event is `auth.role.unknown`, and the registry interface
 is `CairnRolesRegister` exported from the root subpath.
+
+## Post-mortem (2026-07-14, pass close)
+
+**What shipped.** The full spec: `defineRoles` and the vocabulary core with the Register-typed
+`Role` (T1, 77ae707e), migration 0001 dropping the role CHECK (T2, d7b6ed0c), capability at the
+guard with `requireEditor` and the none contract (T3, 8477c382), editors routes and the
+set-based last-owner guard over the vocabulary (T4, 2641c37a), the vocabulary-driven
+ManageEditors control (T5, 0d34a556), role-aware landing and capability-gated nav (T6,
+67aaf82c), the config bootstrap owner (T7, e2f23d7b), the doctor vocabulary and
+email-normalization checks (T8, 5b0a1aad), and the docs window (T9, 81af8a1b). The first
+adversarial review folded as 3a6b9689 (required `Editor.capability`, capability-keyed nav
+filtering); simplifier passes 7faf0707 and 964d24fe.
+
+**Session interruption and what the close found.** The executing session died (battery) after
+the simplifier, before the T10 ritual. The resumed close re-ran the full gate green, then the
+live admin smoke and the first-ever CI e2e run on the branch each surfaced one real defect the
+interrupted session had not seen:
+
+1. *None-capability nav leak* (fc31ea4b). The shell payload hid concepts and `canManageEditors`
+   from a none session, but `CairnAdminShell` hard-codes Library, Tags, the nav-menu item,
+   Settings, and Help; all five 403 a none session. Fix: `AdminShellData.user` gains
+   `capability` and the shell gates its engine items on it; custom nav untouched. Verified
+   live against the showcase (none session: welcome view plus custom nav only).
+2. *Dev-package drift* (d0ca8704). `@glw907/cairn-cms-dev`'s handle minted `locals.editor`
+   without `capability` (requireOwner now keys on it, so every owner surface 403'd under the
+   dev handle: 5 e2e specs failed), and its fake AUTH_DB matched the old single-name
+   last-owner SQL rather than the new set-based form. Fixed and pinned with new fixture tests.
+   Gate gap recorded: `npm run check` scopes to `src/`, so the dev package's type break only
+   fails in CI's separate `check:dev-package` step.
+
+Also folded at close, per Geoff's live directives: the site-contract docs gap (architecture
+explanation and the adapter guide never gained the `roles` member; 825bc755, via workflow),
+and the roles docs completeness sweep plus the new `give-a-role-its-own-admin-area` guide
+(18d7e629).
+
+**Verification evidence.** Full gate on the final tree: `npm run check` 0/0 (1364 files),
+`npm test` exit 0 (300 files, 3370 tests), `check:comments`, `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:snippets`, `check:surface`
+all exit 0 by name. Consumer build proven twice: local `CI=1` showcase e2e 94/94 exit 0, and
+the CI e2e workflow green on d0ca8704 (run 29376490741). Live admin smoke on the showcase
+(session rows minted per admin-smoke-test.md): anon 303, owner 307 to the concept list with
+full nav, unknown-role session authenticates, emits `auth.role.unknown`, gets the welcome view
+with custom nav only, and 403s on engine surfaces. The close-out adversarial review workflow
+(three Opus lenses over the delta commits: auth security, Svelte runes, dev-double fidelity)
+returned zero findings.
+
+**Decisions locked in.** The none-session shell shows site custom nav only (Help included in
+the hidden set, since helpLoad requires editor capability). The HTTP status for an
+error-paged admin route under the streamed shell payload is 200 with the error page rendered;
+this predates the pass (verified identical for the pre-existing editor-vs-owner 404 path) and
+was left as-is, noted here rather than fixed.
+
+**Carried forward.** (1) The editor-first admin-nav organization question (Geoff, mid-close):
+filed in ROADMAP Next with the research-then-brainstorm framing. (2) The `check:dev-package`
+scope gap stays CI-only by design but bit this pass; a future gate pass could fold it into the
+local ritual. (3) The reference gates do not validate type-literal doc drift (the
+`AdminShellData` table row was a manual rider).
+
+**Budget.** Interaction points this close: four (the workflow opt-in, the publish directive,
+the docs-contract directive, the nav-organization question; none were corrections of finished
+work — the docs-contract directive landed while its workflow task was already in flight).
+Tokens: the close ran roughly 0.9M subagent tokens across two implementer dispatches, one
+simplifier, the review workflow (347k), and the docs sweep, plus the main loop.

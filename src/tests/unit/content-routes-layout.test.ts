@@ -3,6 +3,7 @@ import { makeGithubBackend } from '../../lib/github/backend.js';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
+import { defineRoles } from '../../lib/auth/roles.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import type { AdminNavConfig } from '../../lib/sveltekit/admin-nav.js';
@@ -22,14 +23,50 @@ function runtime(): CairnRuntime {
   });
 }
 
+/** ASC-shaped vocabulary: an instructor lands on its own declared home, at none capability. */
+const CLUB_ROLES = defineRoles({
+  owner: 'owner',
+  'club-admin': 'editor',
+  instructor: { capability: 'none' as const, home: '/admin/classes' },
+});
+
+/** The same posts/pages runtime, but declaring CLUB_ROLES instead of the implicit default. */
+function runtimeWithRoles(): CairnRuntime {
+  return { ...runtime(), roles: CLUB_ROLES };
+}
+
 function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: Backend = backend) {
   return contentEvent({
     url: `https://test.example${pathname}`,
-    editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role },
+    editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role, capability: role },
     eventBackend,
     env: {},
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
   });
+}
+
+/**
+ * Build the structural event a route factory reads for an editor carrying a role outside the
+ *  `'owner' | 'editor'` harness literal (a custom vocabulary's own name), the same inline shape the
+ *  none-contract shellPayload test above already uses.
+ */
+function customRoleEvent(
+  pathname: string,
+  role: string,
+  capability: 'owner' | 'editor' | 'none',
+  eventBackend: Backend = backend,
+) {
+  return {
+    url: new URL(`https://test.example${pathname}`),
+    params: {},
+    request: new Request(`https://test.example${pathname}`),
+    locals: {
+      editor: { email: 'inst@test', displayName: 'Inst', role, capability },
+      backend: eventBackend,
+    },
+    platform: { env: {} },
+    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+  };
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -57,7 +94,7 @@ describe('shellPayload', () => {
     const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
-    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     expect(shell.concepts).toEqual([
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },
@@ -83,6 +120,44 @@ describe('shellPayload', () => {
     const { shell } = await routes.shellPayload(event('/admin/pages', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.canManageEditors).toBe(false);
+    await shell.pendingEntries;
+  });
+
+  it('admits a none-capability session (the none contract): the shell stays reachable so a shell-mounted custom route is admitted, unlike the engine content and roster surfaces', async () => {
+    const routes = createContentRoutes(runtime());
+    const noneEvent = {
+      url: new URL('https://test.example/admin/posts'),
+      params: {},
+      request: new Request('https://test.example/admin/posts'),
+      locals: {
+        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        backend: quickFailBackend(),
+      },
+      platform: { env: {} },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    };
+    const { shell } = await routes.shellPayload(noneEvent as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.user.email).toBe('inst@test');
+    // Task 6: a none-capability session carries no engine concept nav (every route it links to
+    // refuses a none session with 403) and no manage-editors capability.
+    expect(shell.concepts).toEqual([]);
+    expect(shell.canManageEditors).toBe(false);
+    // Pinned so the shell payload carries the capability the CairnAdminShell component gates its
+    // engine nav items on.
+    expect(shell.user.capability).toBe('none');
+    await shell.pendingEntries;
+  });
+
+  it('grants manage-editors capability to an owner-capability role that is not literally named owner', async () => {
+    const rt = runtimeWithRoles();
+    const routes = createContentRoutes(rt);
+    const { shell } = await routes.shellPayload(
+      customRoleEvent('/admin/posts', 'club-admin', 'owner', quickFailBackend()) as never,
+    );
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.canManageEditors).toBe(true);
+    expect(shell.concepts).not.toEqual([]);
     await shell.pendingEntries;
   });
 
@@ -252,7 +327,7 @@ describe('shellPayload: navFilter', () => {
     // Exact equality proves navFilter saw only the two custom items above, resolved and
     // role-filtered, and nothing from the built-in concepts/Library/Tags/Settings entries.
     expect(received).toEqual(RESOLVED_NAV_WITH_SECTION);
-    expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     if (!shell.public) await shell.pendingEntries;
   });
 
@@ -264,7 +339,7 @@ describe('shellPayload: navFilter', () => {
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual([]);
     expect(shell.siteName).toBe('Test Site');
-    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     expect(shell.canManageEditors).toBe(true);
     await shell.pendingEntries;
   });
@@ -293,5 +368,38 @@ describe('indexRedirect', () => {
       expect((err as { status: number; location: string }).status).toBe(307);
       expect((err as { location: string }).location).toBe('/admin/posts?error=Something%20went%20wrong');
     }
+  });
+
+  it('lands an editor-capability role on the first concept, unchanged by the role-aware landing', () => {
+    const routes = createContentRoutes(runtime());
+    const e = event('/admin', 'editor');
+    try {
+      routes.indexRedirect(e);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts');
+    }
+  });
+
+  it('redirects a role with a declared home there, with a 303, over the default list landing', () => {
+    const routes = createContentRoutes(runtimeWithRoles());
+    const e = customRoleEvent('/admin', 'instructor', 'none');
+    try {
+      routes.indexRedirect(e as never);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(303);
+      expect((err as { location: string }).location).toBe('/admin/classes');
+    }
+  });
+
+  it('lands a none-capability role with no declared home on the welcome view, not a redirect', () => {
+    const routes = createContentRoutes(runtimeWithRoles());
+    const e = customRoleEvent('/admin', 'volunteer', 'none');
+    expect(routes.indexRedirect(e as never)).toEqual({
+      view: 'welcome',
+      page: { displayName: 'Inst', siteName: 'Test Site' },
+    });
   });
 });

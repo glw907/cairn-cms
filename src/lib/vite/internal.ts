@@ -13,6 +13,7 @@ import type { Plugin, PluginOption } from 'vite';
 import { writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { resolveViteRoot } from './resolve-root.js';
+import type { RolesDeclaration } from '../auth/roles.js';
 
 /**
  * The key the cairnManifest plugin stashes its options under, so the write path can read them off the
@@ -259,6 +260,11 @@ export interface AdapterFacts {
    *  media. The doctor's conditional media-bucket check reads it.
    */
   mediaBucketBinding?: string;
+  /**
+   * `cairn.roles`, the site's declared role vocabulary; undefined for a zero-config site. The
+   *  doctor's vocabulary-aware checks read it, falling back to the implicit owner/editor pair.
+   */
+  roles?: RolesDeclaration;
 }
 
 /**
@@ -273,6 +279,7 @@ import { cairn } from ${JSON.stringify(opts.configModule)};
 const backend = cairn?.backend ?? {};
 const email = cairn?.email ?? {};
 const media = cairn?.media ?? {};
+const roles = cairn?.roles;
 const facts = {};
 // The owner/repo identity is GitHub-specific, so it is read only off the github-app provider.
 if (backend.kind === 'github-app') {
@@ -281,6 +288,7 @@ if (backend.kind === 'github-app') {
 }
 if (typeof email.from === 'string') facts.from = email.from;
 if (typeof media.bucketBinding === 'string') facts.mediaBucketBinding = media.bucketBinding;
+if (roles && typeof roles === 'object') facts.roles = roles;
 export const result = JSON.stringify(facts);
 `;
 }
@@ -314,6 +322,9 @@ export async function readAdapterFacts(cwd: string = process.cwd()): Promise<Ada
     if (typeof parsed.repo === 'string') facts.repo = parsed.repo;
     if (typeof parsed.from === 'string') facts.from = parsed.from;
     if (typeof parsed.mediaBucketBinding === 'string') facts.mediaBucketBinding = parsed.mediaBucketBinding;
+    if (parsed.roles !== undefined && typeof parsed.roles === 'object' && parsed.roles !== null) {
+      facts.roles = parsed.roles as RolesDeclaration;
+    }
     return facts;
   } catch {
     return null;

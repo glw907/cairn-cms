@@ -23,7 +23,7 @@ function contentsReads(gh: GithubDouble): string[] {
 }
 
 function listEvent(params: Record<string, string>, search = '', eventBackend?: Backend) {
-  return contentEvent({ url: `https://t.example/admin/posts${search}`, params, editor: { email: 'e@t', displayName: 'E', role: 'editor' }, eventBackend });
+  return contentEvent({ url: `https://t.example/admin/posts${search}`, params, editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' }, eventBackend });
 }
 
 afterEach(() => vi.restoreAllMocks());
@@ -44,7 +44,7 @@ const quickFailBackend = () =>
  *  since none of this block's tests care about the backend's identity, only its shell fields. */
 function makeEvent(opts: {
   pathname: string;
-  editor: { email: string; displayName: string; role: 'owner' | 'editor' };
+  editor: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' };
   cookies?: Record<string, string>;
 }) {
   return contentEvent({
@@ -73,7 +73,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'owner', capability: 'owner' },
       cookies: { 'cairn-admin-theme': 'cairn-admin-dark' },
     }));
     expect(shell.user.email).toBe('ed@example.com');
@@ -84,7 +84,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
       cookies: {},
     }));
     expect(shell.theme).toBe('cairn-admin');
@@ -94,7 +94,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
       cookies: { 'cairn-admin-theme': 'bogus' },
     }));
     expect(shell.theme).toBe('cairn-admin');
@@ -104,7 +104,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
       cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
     }));
     expect(shell.collapsedNav).toEqual(['Core', 'Black & White']);
@@ -114,7 +114,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
-      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
       cookies: {},
     }));
     expect(shell.collapsedNav).toEqual([]);
@@ -380,7 +380,7 @@ describe('listLoad without a manifest (fallback crawl)', () => {
 });
 
 describe('createAction', () => {
-  const CREATE_EDITOR = { email: 'e@t', displayName: 'E', role: 'editor' as const };
+  const CREATE_EDITOR = { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const };
 
   function createEvent(form: Record<string, string>) {
     return contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form, editor: CREATE_EDITOR });

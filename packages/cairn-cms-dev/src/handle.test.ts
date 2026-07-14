@@ -24,6 +24,7 @@ test('the handle sets the dev backend, an owner editor, and the AUTH_DB and APP_
     email: expect.any(String),
     displayName: expect.any(String),
     role: 'owner',
+    capability: 'owner',
   });
   expect(event.platform.env.AUTH_DB).toBeTruthy();
   // APP_DB is the developer-binding example: the custom Signups screen reads and writes its own D1.

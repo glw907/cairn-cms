@@ -753,6 +753,84 @@ declare class SiteConfigError extends Error {
 is thrown by `parseSiteConfig` on a malformed root, and its `conditionId` (always
 `config.site-config-invalid`) names the registered diagnostic condition the fault maps to.
 
+### Roles
+
+The engine hard-codes three capability levels, `owner`, `editor`, and `none`, but not the role
+names a site's people carry. `defineRoles` maps a site's own role names onto those three levels; a
+site that declares no `roles` gets the implicit `{ owner: 'owner', editor: 'editor' }` pair, so a
+zero-config site sees no change here.
+
+#### `defineRoles`
+
+Stability tier: Extension API.
+
+```ts
+declare function defineRoles<const R extends RolesDeclaration>(roles: R): R;
+declare const DEFAULT_ROLES: { owner: 'owner'; editor: 'editor' };
+```
+
+Declare a site's role vocabulary on the adapter's `roles` member, the const-generic companion to
+`defineAdapter` and `defineConcept`: it const-captures the literal role names for the typed
+read-side below, and validates at construction, so a misdeclared vocabulary fails at build. It
+throws on an empty record, an empty role name, a malformed declaration, a `home` that is not an
+absolute `/admin`-prefixed path, a missing `owner` key, or an `owner` mapped to anything but owner
+capability; `owner` is the one reserved name, since the last-owner guard and the bootstrap owner
+both anchor on it. Every other name is free, and a common name like `editor` may be omitted, or
+declared like any other name.
+
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the roles member -->
+```ts
+// src/lib/cairn.config.ts
+import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
+
+export const roles = defineRoles({
+  owner: 'owner',
+  'club-admin': 'editor',
+  instructor: { capability: 'none', home: '/admin/classes' },
+});
+
+export const cairn = defineAdapter({
+  // ...content, backend, email, rendering...
+  roles,
+});
+```
+
+#### `resolveCapability`, `roleHome`, `ownerLevelRoles`
+
+Stability tier: Extension API.
+
+```ts
+declare function resolveCapability(roles: RolesDeclaration | undefined, role: string): Capability;
+declare function roleHome(roles: RolesDeclaration | undefined, role: string): string | undefined;
+declare function ownerLevelRoles(roles: RolesDeclaration | undefined): string[];
+```
+
+The engine calls these to resolve `locals.editor.capability` and the `/admin` landing at the guard
+and the routes; a custom admin route reads the same helpers to gate itself against a vocabulary
+without re-deriving the mapping. `resolveCapability` returns the mapped capability, treating an
+`undefined` vocabulary as `DEFAULT_ROLES`, and returns `'none'` for a role name absent from the
+vocabulary, so a pruned config or a hand-edited row fails closed rather than locking the person out
+of sign-in. `roleHome` returns the declared `home`, or `undefined` when the role declares none or
+is unknown. `ownerLevelRoles` lists every name mapped to owner capability, the set the last-owner
+guard counts across instead of the literal `'owner'` string.
+
+#### The typed read-side: `CairnRolesRegister`
+
+A site augments this empty registry interface once to narrow the public `Role` type to its own
+declared names everywhere the engine and the site's own routes read `locals.editor.role`,
+including custom admin routes. Unaugmented, `Role` stays exactly `'owner' | 'editor'`, today's type.
+
+```ts
+// src/app.d.ts
+import { roles } from './lib/cairn.config.js';
+
+declare module '@glw907/cairn-cms' {
+  interface CairnRolesRegister {
+    roles: typeof roles;
+  }
+}
+```
+
 ---
 
 ## Types
@@ -795,8 +873,12 @@ function signatures above reference these.
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |
-| <a id="role"></a>`Role` | Extension API | `type Role` | An editor's role: owner or editor. |
-| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. |
+| <a id="capability"></a>`Capability` | Extension API | `type Capability` | The three levels the engine understands: `'owner'` (manages the roster), `'editor'` (edits content), `'none'` (an authenticated identity with no engine content access). |
+| `RoleDeclaration` | Extension API | `type RoleDeclaration` | One role's mapping in a `defineRoles` vocabulary: a bare `Capability`, or `{ capability: Capability; home?: string }` naming the `/admin` route that role lands on. |
+| `RolesDeclaration` | Extension API | `type RolesDeclaration` | A site's whole role vocabulary: role name to `RoleDeclaration`, the shape `defineRoles` validates and returns. |
+| <a id="cairnrolesregister"></a>`CairnRolesRegister` | Extension API | `interface CairnRolesRegister {}` | The empty registry interface a site augments to narrow `Role` to its own declared role names (see the preceding [Roles](#roles) section). |
+| <a id="role"></a>`Role` | Extension API | `type Role` | The role names `locals.editor.role` carries: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
+| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role, and its resolved `capability`. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
 | `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |

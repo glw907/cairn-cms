@@ -13,9 +13,12 @@ that route, close to verbatim.
 The rest of this guide grows that one screen into a whole custom *section*, the shape a real site
 proves once it has more than a screen or two of its own admin surface. The worked pattern below is
 drawn from an aksailingclub.org production build: a `/admin/club/**` section (events, classes,
-members, assets) gated by a club-specific role that has nothing to do with cairn's own
-owner/editor split. The code here describes that pattern; it is not the site's own files, since a
-site's role model, database, and screens are always its own.
+members, assets) gated by a club-specific role, member-scale and outside cairn's own capability
+model. The code here describes that pattern; it is not the site's own files, since a site's role
+model, database, and screens are always its own. A staff-scale role that only ever needs cairn's
+own three capability levels belongs on the [declared role vocabulary](../reference/core.md#roles)
+instead; a custom D1-backed role model like this one is for a role cairn was never meant to know
+about (a large, dynamic membership, say, not a handful of staff).
 
 ## Add the route
 
@@ -113,20 +116,34 @@ no stylesheet of its own. [`OfficeList`](../reference/components.md#officelist) 
 header-plus-card shell for you, with an optional `eyebrow` naming the section a screen belongs to;
 the Club section's own screens below all pass `eyebrow="Club"`.
 
-## Gate it with `requireSession` or `requireOwner`
+## Gate it with `requireSession`, `requireEditor`, or `requireOwner`
 
 The engine's auth guard already ran before this route's `load` does, and it set
 `event.locals.editor` for the whole `/admin/*` subtree, typed with no work on your part by the one
 `import '@glw907/cairn-cms/ambient';` line every site's `src/app.d.ts` carries (see the [ambient
 types reference](../reference/ambient.md)). Reading that identity, and refusing the request when it
 isn't good enough, is
-[`requireSession`](../reference/sveltekit.md#requiresession) and
-[`requireOwner`](../reference/sveltekit.md#requireowner). Both take the same minimal shape,
+[`requireSession`](../reference/sveltekit.md#requiresession),
+[`requireEditor`](../reference/sveltekit.md#requireeditor), and
+[`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same minimal shape,
 `{ locals: { editor } }`, so they read straight off your route's own `load` or action event.
-`requireSession` returns the signed-in editor or redirects to
-`/admin/login`. `requireOwner` does the same, then also answers a non-owner editor with a 403. The
-signups list is owner-only management, so every preceding load and action calls `requireOwner`; a
-screen every editor should be able to use would call `requireSession` instead.
+`requireSession` returns the signed-in editor, of any [capability](../reference/core.md#roles), or
+redirects to `/admin/login`. `requireEditor` does the same, then also answers a `none`-capability
+session with a 403. `requireOwner` goes further still, answering anything short of owner with a
+403. The signups list is owner-only management, so every preceding load and action calls
+`requireOwner`; a screen every editor should be able to use would call `requireSession` or
+`requireEditor` instead, depending on whether a `none`-capability role should reach it.
+
+**A `none`-capability session, the third rung of cairn's [declared role
+vocabulary](../reference/core.md#roles), still authenticates like any other editor: it carries the
+same populated, typed `locals.editor` and passes through this custom-route seam untouched.** Only
+cairn's own content and roster surfaces refuse it, by calling `requireEditor` or `requireOwner`
+themselves. Nothing here blocks a `none`-capability role from reaching your own screen. You decide
+with whichever of the three preceding calls matches the screen, or your own check on
+`event.locals.editor.capability`. [Give a role its own admin
+area](./give-a-role-its-own-admin-area.md) walks that exact case end to end, and [the
+`requireEditor` reference](../reference/sveltekit.md#requireeditor) states the none contract in
+full.
 
 The `requireOwner(event)` call is the server-side gate. A sidebar entry can hide a link from an editor (the
 next section shows how), but hiding a link isn't access control, and nothing stops an editor from
@@ -297,13 +314,14 @@ adminNav icon "mail" is not one of anchor, calendar, clipboard-list, list, users
 adminNav href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
 ```
 
-Set `ownerOnly: true` on an entry to hide it from a signed-in editor who isn't an owner. That flag
-only decides what the sidebar renders. It changes nothing about what the route itself allows. The
+Set `ownerOnly: true` on an entry to hide it from a signed-in editor whose resolved capability isn't
+`owner`, whatever their role name. That flag only decides what the sidebar renders. It changes
+nothing about what the route itself allows. The
 full seam, including the validated `ResolvedNavEntry` shape the shell
 actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
 in the SvelteKit reference.
 
-**`ownerOnly` only reaches cairn's own owner/editor split.** A whole section gated by a site-owned
+**`ownerOnly` only reaches cairn's own declared role vocabulary.** A whole section gated by a site-owned
 role, the Club section above, say, needs its sidebar entry hidden from an editor who has no club
 role at all, a question `ownerOnly` cannot answer. `navFilter`, a per-request hook on
 [`createCairnAdmin`](../reference/admin-routes.md) and `createContentRoutes`, is that seam: it

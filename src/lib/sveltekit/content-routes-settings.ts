@@ -17,7 +17,7 @@ import {
 import type { TidyConventions, VocabularyEntry } from '../nav/site-config.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
-import { requireSession } from './guard.js';
+import { requireEditor } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import { cachedProbeResult } from './tidy-key-health.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -159,7 +159,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  Anthropic SDK's own multi-minute default.
    */
   async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
-    requireSession(event);
+    requireEditor(event);
     const tidy = runtime.tidy;
     const tidyEnabled = tidy?.enabled === true;
     const keyPresent = keyConfigured(event);
@@ -198,7 +198,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
   async function settingsSave(event: ContentEvent): Promise<never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
     // surface to commit), the server half of the truthful gate.
     if (runtime.tidy?.enabled !== true) throw error(404, 'Tidy is not enabled for this site');
@@ -256,7 +256,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
    */
   async function vocabularyLoad(event: ContentEvent): Promise<VocabularyLoadData> {
-    requireSession(event);
+    requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     let vocabulary: VocabularyEntry[] = [];
@@ -315,7 +315,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
   async function vocabularySave(event: ContentEvent): Promise<never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
 
     const form = await event.request.formData();
     let posted: VocabularyEntry[];

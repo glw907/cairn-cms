@@ -40,9 +40,11 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `media.alt_propagated` | info | An alt-propagation fills the asset's default alt into its empty placements (and customized ones on the opt-in) across the referencing entries. | `editor`, `hash`, `overwrite`, `written` (the count of rewritten entries) |
 | `media.bulk_deleted` | info | A bulk delete commits, removing the manifest rows of the unreferenced assets in the batch. | `editor`, `deleted` (the count removed), `skipped` (the count still in use and left alone) |
 | `media.orphans_purged` | info | The orphan purge runs, deleting stored R2 bytes that no manifest row and no reference points at. | `editor`, `purged` (the count of byte objects removed) |
-| `editor.added` | info | An owner adds an editor to the D1 allowlist. | `owner` (the acting owner), `target` (the added editor), `role` |
+| `editor.added` | info | An owner adds an editor to the D1 allowlist. | `owner` (the acting owner), `target` (the added editor), `role`, `capability` (the role's resolved capability) |
 | `editor.removed` | info | An owner removes an editor from the D1 allowlist. | `owner` (the acting owner), `target` (the removed editor) |
-| `editor.role_changed` | info | An owner changes an editor's role. | `owner` (the acting owner), `target` (the changed editor), `role` (the new role) |
+| `editor.role_changed` | info | An owner changes an editor's role. | `owner` (the acting owner), `target` (the changed editor), `role` (the new role), `capability` (the new role's resolved capability) |
+| `editor.bootstrapped` | info | A magic-link request from the configured `bootstrapOwner` address inserts the first owner row into an empty `editor` table. | `email` |
+| `auth.role.unknown` | warn | A session resolves against a role string outside the declared vocabulary (a pruned config, a hand-edited row). The session still authenticates at `none` capability. | `email`, `role` |
 | `dictionary.added` | info | A personal-dictionary add commits the new words to the committed dictionary file. | `editor`, `words` (the added words), `retried` (true when the commit landed on the post-conflict retry) |
 | `dictionary.add_conflict` | warn | A personal-dictionary add hits a second commit conflict and gives up; the client keeps the words pending and re-attempts on the next save. | `editor`, `words` |
 | `tidy.done` | info | A tidy copy-edit returns a corrected document. Carries no content and no key. | `editor`, `model`, `usage` (the token counts) |

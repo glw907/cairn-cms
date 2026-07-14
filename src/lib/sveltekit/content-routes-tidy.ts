@@ -4,7 +4,7 @@
 import { fail } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';
-import { requireSession } from './guard.js';
+import { requireEditor } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus } from './content-routes-context.js';
@@ -55,7 +55,8 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *
    *  Gate order (every refusal happens before the next step, so a refused request spends nothing):
    *    1. validateCsrfHeader FIRST (the header witness is the authority for a raw-body POST).
-   *    2. requireSession (an expired session throws the manual-redirect 303 the client reads as status-0).
+   *    2. requireEditor (an expired session throws the manual-redirect 303 the client reads as
+   *       status-0; a none-capability session throws a real 403 instead).
    *    3. Read the key and config; refuse fail(503) if tidy is disabled or the key is missing.
    *    4. Parse and bound the body; refuse fail(400) on malformed JSON, fail(413) on an over-long text.
    *    5. Only then build the prompt and call the model, bounded by the Worker deadline.
@@ -80,7 +81,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf' } satisfies TidyFailure);
     }
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
 
     // Fail-fast: refuse before any model call if tidy is off or the key is missing. The model is read
     // from config (a stated fact in this tier); a missing key is the "not enabled" refusal. No secret is

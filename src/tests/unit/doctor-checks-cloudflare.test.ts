@@ -4,8 +4,11 @@ import {
   edgeHttpsForced,
   edgeHsts,
   authStore,
+  roleVocabulary,
+  emailNormalization,
 } from '../../lib/doctor/checks-cloudflare.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
+import type { RolesDeclaration } from '../../lib/auth/roles.js';
 
 const API = 'https://api.cloudflare.com/client/v4';
 
@@ -263,10 +266,11 @@ describe('auth.store', () => {
     });
   }
 
-  function d1Ctx(fetch: typeof globalThis.fetch): DoctorContext {
+  function d1Ctx(fetch: typeof globalThis.fetch, roles?: RolesDeclaration): DoctorContext {
     return ctx({
       ...CREDS,
       fetch,
+      roles,
       readFile: async (relPath) => (relPath === 'wrangler.jsonc' ? WRANGLER_JSONC : null),
     });
   }
@@ -285,15 +289,30 @@ describe('auth.store', () => {
     expect(result.detail).toContain('wrangler');
   });
 
-  it('passes when the schema is present and an owner row exists', async () => {
+  it('passes when the schema is present and an owner-capability row exists', async () => {
     const { fetch, calls } = d1Fetch({ tables: SCHEMA_ROWS, owners: [{ n: 1 }] });
     const result = await authStore.run(d1Ctx(fetch));
     expect(result.status).toBe('pass');
     expect(calls).toHaveLength(2);
-    const sqls = calls.map((c) => (JSON.parse(String(c.init?.body)) as { sql: string }).sql);
-    expect(sqls[0]).toContain("type='table'");
-    expect(sqls[1]).toContain("role='owner'");
+    const bodies = calls.map((c) => JSON.parse(String(c.init?.body)) as { sql: string; params?: unknown[] });
+    expect(bodies[0].sql).toContain("type='table'");
+    expect(bodies[1].sql).toContain('role IN (?)');
+    expect(bodies[1].params).toEqual(['owner']);
     expect(calls.every((c) => bearer(c) === 'Bearer tok')).toBe(true);
+  });
+
+  it('counts every owner-capability role name under a custom vocabulary', async () => {
+    const roles: RolesDeclaration = {
+      owner: 'owner',
+      admin: 'owner',
+      editor: 'editor',
+    };
+    const { fetch, calls } = d1Fetch({ tables: SCHEMA_ROWS, owners: [{ n: 2 }] });
+    const result = await authStore.run(d1Ctx(fetch, roles));
+    expect(result.status).toBe('pass');
+    const body = JSON.parse(String(calls[1].init?.body)) as { sql: string; params?: unknown[] };
+    expect(body.sql).toContain('role IN (?, ?)');
+    expect(body.params).toEqual(['owner', 'admin']);
   });
 
   it('fails as unreachable on a non-ok response', async () => {
@@ -363,5 +382,137 @@ describe('auth.store', () => {
 
   it('ties to the auth.store-unreachable condition', () => {
     expect(authStore.conditionId).toBe('auth.store-unreachable');
+  });
+});
+
+describe('auth.role-vocabulary', () => {
+  function d1RoleFetch(roleRows: unknown) {
+    return scripted((url) => {
+      expect(url).toBe(`${API}/accounts/acct/d1/database/abc-123/query`);
+      return { result: [{ results: roleRows }] };
+    });
+  }
+
+  function d1Ctx(fetch: typeof globalThis.fetch, roles?: RolesDeclaration): DoctorContext {
+    return ctx({
+      ...CREDS,
+      fetch,
+      roles,
+      readFile: async (relPath) => (relPath === 'wrangler.jsonc' ? WRANGLER_JSONC : null),
+    });
+  }
+
+  it('skips naming both credential vars when they are absent', async () => {
+    const result = await roleVocabulary.run(ctx({ from: 'a@ecxc.ski' }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
+  });
+
+  it('skips naming the wrangler config when no AUTH_DB database_id is declared', async () => {
+    const result = await roleVocabulary.run(ctx({ cfToken: 'tok', cfAccountId: 'acct' }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('wrangler');
+  });
+
+  it('passes when every role is in the implicit owner/editor vocabulary', async () => {
+    const { fetch } = d1RoleFetch([{ role: 'owner' }, { role: 'editor' }]);
+    const result = await roleVocabulary.run(d1Ctx(fetch));
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails naming a role outside the implicit vocabulary', async () => {
+    const { fetch } = d1RoleFetch([{ role: 'owner' }, { role: 'club-admin' }]);
+    const result = await roleVocabulary.run(d1Ctx(fetch));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('club-admin');
+  });
+
+  it('passes a declared role under a custom vocabulary', async () => {
+    const roles: RolesDeclaration = {
+      owner: 'owner',
+      instructor: { capability: 'editor', home: '/admin/schedule' },
+    };
+    const { fetch } = d1RoleFetch([{ role: 'owner' }, { role: 'instructor' }]);
+    const result = await roleVocabulary.run(d1Ctx(fetch, roles));
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails a role absent from a custom vocabulary even when it matches no built-in name', async () => {
+    const roles: RolesDeclaration = {
+      owner: 'owner',
+      instructor: { capability: 'editor', home: '/admin/schedule' },
+    };
+    const { fetch } = d1RoleFetch([{ role: 'owner' }, { role: 'editor' }]);
+    const result = await roleVocabulary.run(d1Ctx(fetch, roles));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('editor');
+  });
+
+  it('fails with the error string when the fetch rejects', async () => {
+    const fetch = (async () => {
+      throw new Error('socket hang up');
+    }) as unknown as typeof globalThis.fetch;
+    const result = await roleVocabulary.run(d1Ctx(fetch));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('socket hang up');
+  });
+
+  it('ties to the auth.unknown-role condition', () => {
+    expect(roleVocabulary.conditionId).toBe('auth.unknown-role');
+  });
+});
+
+describe('auth.email-normalization', () => {
+  function d1EmailFetch(emailRows: unknown) {
+    return scripted((url) => {
+      expect(url).toBe(`${API}/accounts/acct/d1/database/abc-123/query`);
+      return { result: [{ results: emailRows }] };
+    });
+  }
+
+  function d1Ctx(fetch: typeof globalThis.fetch): DoctorContext {
+    return ctx({
+      ...CREDS,
+      fetch,
+      readFile: async (relPath) => (relPath === 'wrangler.jsonc' ? WRANGLER_JSONC : null),
+    });
+  }
+
+  it('skips naming both credential vars when they are absent', async () => {
+    const result = await emailNormalization.run(ctx({ from: 'a@ecxc.ski' }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('CLOUDFLARE_API_TOKEN');
+  });
+
+  it('skips naming the wrangler config when no AUTH_DB database_id is declared', async () => {
+    const result = await emailNormalization.run(ctx({ cfToken: 'tok', cfAccountId: 'acct' }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('wrangler');
+  });
+
+  it('passes when every email is trimmed and lowercase', async () => {
+    const { fetch } = d1EmailFetch([{ email: 'a@ecxc.ski' }, { email: 'b@ecxc.ski' }]);
+    const result = await emailNormalization.run(d1Ctx(fetch));
+    expect(result.status).toBe('pass');
+  });
+
+  it('fails naming a row with an uppercase or untrimmed email', async () => {
+    const { fetch } = d1EmailFetch([{ email: 'a@ecxc.ski' }, { email: ' B@ecxc.ski ' }]);
+    const result = await emailNormalization.run(d1Ctx(fetch));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('B@ecxc.ski');
+  });
+
+  it('fails with the error string when the fetch rejects', async () => {
+    const fetch = (async () => {
+      throw new Error('socket hang up');
+    }) as unknown as typeof globalThis.fetch;
+    const result = await emailNormalization.run(d1Ctx(fetch));
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('socket hang up');
+  });
+
+  it('ties to the auth.email-not-normalized condition', () => {
+    expect(emailNormalization.conditionId).toBe('auth.email-not-normalized');
   });
 });

@@ -37,13 +37,23 @@ function fakeDb(rows: { email: string; display_name: string; role: string }[]) {
 /** Build the catch-all event: only `params.path` exists on the real one, so none is synthesized here. */
 function adminEvent(
   pathname: string,
-  opts: { editor?: { email: string; displayName: string; role: 'owner' | 'editor' } | null; search?: string; db?: unknown } = {},
+  opts: {
+    editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
+    search?: string;
+    db?: unknown;
+  } = {},
 ) {
   const headers: Record<string, string> = {};
   return {
     url: new URL(`https://t.example${pathname}${opts.search ?? ''}`),
     request: new Request(`https://t.example${pathname}`),
-    locals: { editor: opts.editor === undefined ? { email: 'e@t', displayName: 'E', role: 'editor' as const } : opts.editor, backend },
+    locals: {
+      editor:
+        opts.editor === undefined
+          ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
+          : opts.editor,
+      backend,
+    },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', AUTH_DB: opts.db } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),
@@ -138,7 +148,7 @@ describe('authed views', () => {
     gh.install();
     const admin = createCairnAdmin(runtime(), deps);
     const event = adminEvent('/admin/editors', {
-      editor: { email: 'own@t', displayName: 'Own', role: 'owner' },
+      editor: { email: 'own@t', displayName: 'Own', role: 'owner', capability: 'owner' },
       db: fakeDb([
         { email: 'ed@t', display_name: 'Ed', role: 'editor' },
         { email: 'own@t', display_name: 'Own', role: 'owner' },

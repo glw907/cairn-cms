@@ -50,6 +50,23 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: site-declared role vocabulary and capability levels (non-breaking)
+
+Sites now declare their own role vocabulary instead of the two names `'owner'` and `'editor'` the
+engine used to hard-code. `defineRoles` on the adapter's new `roles` member maps each of your own
+role names onto one of the engine's three fixed capability levels, `owner`, `editor`, or `none` (an
+authenticated identity with no engine content access); a role can also declare a `home`, the
+`/admin` route it lands on. A site that declares no `roles` gets the implicit `{ owner: 'owner',
+editor: 'editor' }` pair, so this release changes nothing you'd notice.
+
+Consumers must: nothing, for an existing site. To open a larger vocabulary, declare `roles` on your
+adapter with `defineRoles`, apply the new `migrations/0001_roles.sql` once you introduce a role
+name outside `owner`/`editor` (see [Configure auth and
+D1](./configure-auth-and-d1.md#provision-the-d1-database)), and augment `CairnRolesRegister` in
+your `app.d.ts` if you want `locals.editor.role` narrowed to your declared names. See [the roles
+reference](../reference/core.md#roles) for the full contract and [Give a role its own admin
+area](./give-a-role-its-own-admin-area.md) for the worked walkthrough.
+
 ## 0.84.3: the editor lifecycle rounded out (non-breaking)
 
 Four editor changes, no consumer action. The Publish button now shows on every entry,

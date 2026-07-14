@@ -141,6 +141,23 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		remediation: 'Create the database, apply the auth schema with `wrangler d1 execute <db> --remote --file ./migrations/0000_auth.sql`, seed the owner row, and check the AUTH_DB binding id in wrangler.jsonc.',
 		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
 	},
+	'auth.unknown-role': {
+		id: 'auth.unknown-role',
+		severity: 'warning',
+		title: 'Editor row uses an undeclared role',
+		why: "An editor row's role is not a key in the site's declared vocabulary (a pruned config or a hand-edited row), so that session resolves to none capability: it can sign in but the guard refuses every content and admin-mutation route.",
+		remediation: 'Either restore the role to the vocabulary, or set the row to a declared role name through the manage-editors screen.',
+		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		logEvent: 'auth.role.unknown',
+	},
+	'auth.email-not-normalized': {
+		id: 'auth.email-not-normalized',
+		severity: 'warning',
+		title: 'Editor email is not trimmed and lowercase',
+		why: 'An editor row carries an email that is not trimmed and lowercase, breaking the invariant the auth store, the allowlist lookup, and a consumer\'s own domain tables all rely on as a join key. This usually comes from a manual D1 insert.',
+		remediation: 'Update the row so its email is trimmed and lowercase, matching what every write path (magic-link request, manage-editors) already normalizes to.',
+		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+	},
 	'github.app-unreachable': {
 		id: 'github.app-unreachable',
 		severity: 'blocker',

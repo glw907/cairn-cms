@@ -86,42 +86,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **Extensible editor/admin roles (Geoff, 2026-07-13): one identity, a site-declared role
-  vocabulary.** The engine hard-codes `Role = 'owner' | 'editor'`, so a site whose people carry
-  more than content duty builds a parallel identity system: aksailingclub-org already runs a
-  second `club_roles` D1 table with its own guards, its own management screen, and an env cast
-  bridge — the grounding evidence that the seam is missing. The shape to brainstorm when its
-  turn comes: the role vocabulary opens as site config (git-committed, per the YAML
-  site-config architecture) with `owner`/`editor` staying the engine's reserved semantics;
-  each declared role maps onto one of the engine's own capability levels (owner-level,
-  editor-level, or none — a sign-in-only role whose surface is entirely the site's, the ASC
-  instructor case); assignment rows stay in the one D1 `editor` table and the one
-  ManageEditors screen (killing the parallel-table pattern); site routes keep reading
-  `locals.editor` through the existing seam, with the role typed to the site's declared
-  vocabulary (the fieldset const-generics DX pattern). It is a site-contract and architecture
-  issue, so the design runs charter-first: cairn stays not-an-auth-platform — no permission
-  policy engine, no per-entry ACLs, and member-scale auth stays out (the magic-link allowlist
-  is staff-scale; ASC's member login is rightly its own system). First consumer: ASC collapses
-  `club_roles` onto the seam. **The consumer brief exists and the brainstorm consumes it:**
-  `aksailingclub-org/docs/2026-07-13-cairn-editor-roles-consumer-brief.md` (pushed e6bbe02,
-  Geoff-verified against ASC's live code and database). Its load-bearing additions: a
-  none-capability session MUST still authenticate and reach site-mounted admin routes through
-  the shell's custom-route seam when the site's own gate admits it (otherwise the instructor
-  mapping breaks and the duplicated guards return); lowercase-normalized email matching (the
-  join key to the member domain and the likeliest silent failure); the last-owner guard
-  becomes strictly the engine's; migration defaults plus a config-declared bootstrap owner; no
-  invite ceremony; auditable role changes. ASC's fork answers from the consumer seat: three
-  capability levels hold, per-request nav-filter code is fine. **ASC is the FIRST consumer,
-  not the design's ceiling (Geoff, 2026-07-13):** the vocabulary is unbounded by construction
-  (any site, any number of roles, any names); ASC's answers are one consumer's evidence, and
-  the brainstorm weighs them as such — in particular the capability-level count stays a real
-  fork until a second consumer shape (or the charter) settles it.
-  **PROMOTED TO NOW (Geoff, 2026-07-14): full scope, Fable-conducted, needed for ongoing
-  ASC work.** The brainstorm covers the whole design in one sitting (vocabulary, capability
-  mapping, typed read-side contract, ManageEditors surface, migration + bootstrap-owner
-  mechanics, auditable role changes, email normalization); implementation stages into
-  gate-sized tasks without staging the design.
-
 - **A `getPlatformProxy` media-delivery smoke (born from the 0.84.x local-dev bounce,
   2026-07-08).** Two miniflare serialization bugs shipped past a green suite because no gate
   drives the media route through the dev platform proxy: the vitest workers pool binds native
@@ -204,6 +168,14 @@ the named human gates only):**
 ## Next
 
 
+- **Editor-first admin nav organization (Geoff, 2026-07-14): research + brainstorm before any
+  change.** The sidebar today groups by provenance — the engine's items, then the site's custom
+  section — which is a developer's mental model. Geoff's question: would an editor rather see a
+  task-shaped organization (write, organize, site)? Raised while the extensible-roles pass was
+  closing; the per-role nav gating that pass added makes the question sharper, since different
+  capabilities already see different sidebars. Run a survey of how comparable CMS admin navs
+  group their items, then a brainstorm with Geoff; any change lands through the shell payload
+  contract, which is now versioned surface.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

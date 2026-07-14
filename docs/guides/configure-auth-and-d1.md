@@ -48,7 +48,35 @@ CREATE INDEX idx_magic_token_email ON magic_token (email);
 CREATE INDEX idx_session_email ON session (email);
 ```
 
-Apply it to both the local database `wrangler dev` reads and the remote one your deploy reads:
+A site whose people carry more than one role name (an `instructor`, a `club-admin`, and so on,
+mapped onto cairn's owner/editor/none capability levels through
+[`defineRoles`](../reference/core.md#roles)) needs a second migration: the `role` column's `CHECK`
+constraint above only ever allows the literal strings `owner` and `editor`, so any other role name
+fails the `INSERT`. Save this as `migrations/0001_roles.sql`, right beside the preceding one:
+
+```sql
+-- Drop the role CHECK constraint. SQLite has no ALTER TABLE DROP CONSTRAINT, so this rebuilds the
+-- table via the create-copy-drop-rename sequence, inside the migration's implicit transaction.
+-- Role validity moves to the app layer from here on, validated against the site's declared role
+-- vocabulary.
+CREATE TABLE editor_new (
+  email TEXT PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  role TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+INSERT INTO editor_new (email, display_name, role, created_at)
+SELECT email, display_name, role, created_at FROM editor;
+
+DROP TABLE editor;
+
+ALTER TABLE editor_new RENAME TO editor;
+```
+
+A zero-config site (the implicit owner/editor pair) can skip it: the `CHECK` constraint never
+rejects those two names. Apply whichever migrations you added to both the local database
+`wrangler dev` reads and the remote one your deploy reads:
 
 ```bash
 npx wrangler d1 migrations apply your-site-auth --local
@@ -86,7 +114,28 @@ clicks a link.
 ## Seed the first owner
 
 The engine ships no signup flow, on purpose: cairn's allowlist is a roster you control. The public
-can't add themselves; you insert every editor by hand. Insert the first row yourself:
+can't add themselves; the first owner row gets in one of two ways.
+
+The config-declared bootstrap owner needs no D1 access at all: name yourself on
+`CairnAdminDeps.auth.bootstrapOwner` (or `AuthRoutesConfig.bootstrapOwner` on a per-route mount),
+and your very first magic-link request, once the `editor` table is empty, inserts that row and
+signs you in normally.
+
+```ts
+// src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
+
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime, {
+  auth: { bootstrapOwner: { email: 'you@your-site.example', displayName: 'Your Name' } },
+});
+```
+
+Once any editor row exists, the config grants nothing, so leaving it in your source after the
+first sign-in is harmless. If you'd rather not carry the address in your config, the direct D1
+insert still works and stays the fallback:
 
 ```bash
 npx wrangler d1 execute your-site-auth --remote --command \
@@ -97,8 +146,8 @@ npx wrangler d1 execute your-site-auth --remote --command \
 The `created_at` value is cosmetic (nothing reads it for access control), so `0` is fine for a
 seed row. Add more editors later from the admin's own `/admin/editors` screen, which is
 owner-gated: an `editor`-role account can sign in and write content but never sees that screen.
-cairn also refuses to let the allowlist reach zero owners, so removing or demoting the last owner
-through the admin fails closed rather than locking everyone out.
+cairn also refuses to let the allowlist reach zero owner-capability rows, so removing or demoting
+the last one through the admin fails closed rather than locking everyone out.
 
 ## Onboard your sending domain
 

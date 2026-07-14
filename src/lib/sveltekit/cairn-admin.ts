@@ -18,11 +18,13 @@ import {
   type SettingsData,
   type VocabularyLoadData,
   type HelpData,
+  type WelcomeData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthBranding, SendMagicLink } from '../email.js';
 import type { AuthEnv, Editor } from '../auth/types.js';
+import type { Capability } from '../auth/roles.js';
 import type { BackendEnv } from '../github/credentials.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CookieJar, EventBase } from './types.js';
@@ -49,6 +51,11 @@ export interface CairnAdminDeps {
     branding?: AuthBranding;
     /** The same seam the underlying auth factory takes. */
     send?: SendMagicLink;
+    /**
+     * A site-declared owner to seed an empty allowlist on the next magic-link request, in place
+     * of a hand-run `wrangler d1 execute` INSERT. See `AuthRoutesConfig['bootstrapOwner']`.
+     */
+    bootstrapOwner?: { email: string; displayName: string };
   };
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
@@ -73,12 +80,16 @@ export type AdminData =
   | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
-  | { view: 'editors'; page: { editors: Editor[]; self: string; error: string | null } }
+  | {
+      view: 'editors';
+      page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] };
+    }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
   | { view: 'vocabulary'; page: VocabularyLoadData }
-  | { view: 'help'; page: HelpData };
+  | { view: 'help'; page: HelpData }
+  | { view: 'welcome'; page: WelcomeData };
 
 /**
  *
@@ -91,9 +102,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     from: runtime.sender.from,
     replyTo: runtime.sender.replyTo,
   };
-  const auth = createAuthRoutes({ branding, send: deps.auth?.send });
+  const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
   const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter });
-  const editors = createEditorRoutes();
+  const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;
 

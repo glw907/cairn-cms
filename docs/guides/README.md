@@ -29,6 +29,9 @@ later, or the upkeep of a running site.
   otherwise-static rendered content
 - **[Add a custom admin screen](./add-a-custom-admin-screen.md)**: add your own SvelteKit route
   under `/admin`, with no plugin API to register against
+- **[Give a role its own admin area](./give-a-role-its-own-admin-area.md)**: declare a role that
+  authenticates like any editor but sees none of cairn's own content surfaces, and land it on a
+  screen your site built
 - **[Link content with references](./link-content-with-references.md)**: connect one concept's
   entries to another's with a typed reference field
 - **[Declare structured fields](./structured-fields.md)**: the rest of the field vocabulary,

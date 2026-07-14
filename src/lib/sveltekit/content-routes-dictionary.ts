@@ -7,7 +7,7 @@ import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { validateCsrfHeader } from './csrf.js';
-import { requireSession } from './guard.js';
+import { requireEditor } from './guard.js';
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 
@@ -95,7 +95,7 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf' } satisfies DictionaryAddFailure);
     }
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
 
     let payload: { word?: unknown; words?: unknown };
     try {

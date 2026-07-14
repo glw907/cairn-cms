@@ -19,6 +19,7 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   import CairnTidySettings from './CairnTidySettings.svelte';
   import VocabularyAdmin from './VocabularyAdmin.svelte';
   import HelpHome from './HelpHome.svelte';
+  import WelcomeView from './WelcomeView.svelte';
   import type { AdminData } from '../sveltekit/cairn-admin.js';
   import type { ContentFormFailure } from '../sveltekit/content-routes.js';
   import type { ComponentRegistry } from '../render/registry.js';
@@ -81,4 +82,6 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   <VocabularyAdmin data={data.page} />
 {:else if data.view === 'help'}
   <HelpHome data={data.page} />
+{:else if data.view === 'welcome'}
+  <WelcomeView data={data.page} />
 {/if}

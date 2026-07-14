@@ -14,7 +14,7 @@ import type { Editor } from '../../lib/auth/types.js';
 
 const bucket = env.MEDIA_BUCKET;
 
-const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner' };
+const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner', capability: 'owner' };
 
 const CSRF = 'csrf-token-value-0123456789abcdef';
 

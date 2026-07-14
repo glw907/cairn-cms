@@ -32,9 +32,10 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
-import { requireSession, isPublicAdminPath } from './guard.js';
+import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
+import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -63,7 +64,7 @@ export type AdminShellData =
   | {
       public: false;
       siteName: string;
-      user: { displayName: string; email: string; role: Role };
+      user: { displayName: string; email: string; role: Role; capability: Capability };
       concepts: NavConcept[];
       /**
        * The developer's custom sidebar entries and sections, validated at construction,
@@ -223,6 +224,16 @@ export interface HelpData {
   supportContact?: string;
 }
 
+/**
+ * The welcome view's data: the calm, minimal screen a none-capability role with no declared `home`
+ *  lands on at the admin root (spec section 4). Carries just enough for the greeting; the sign-out
+ *  control already lives in the shell chrome.
+ */
+export interface WelcomeData {
+  displayName: string;
+  siteName: string;
+}
+
 /** A blocked save or publish: `fail(400)` when the body links to a target absent from main. */
 export interface SaveFailure {
   /** The one-line human summary every content action failure carries. */
@@ -280,7 +291,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
  *  instead, a different shape left to validate inline.
  */
 function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
-  const editor = requireSession(event);
+  const editor = requireEditor(event);
   const concept = conceptOf(runtime, event.params);
   const id = event.params.id ?? '';
   if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -353,19 +364,24 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // editor may see, disappearing once every child is hidden), then the site's own navFilter, if
     // configured, sees only that already-filtered set and the signed-in editor. Absent navFilter,
     // this is exactly today's pure role filter.
-    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.role);
+    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.capability);
     const customNav = ctx.deps.navFilter
       ? await ctx.deps.navFilter(roleFilteredNav, { editor, event })
       : roleFilteredNav;
+    // A none-capability session (the spec's none contract) still authenticates and reaches the
+    // shell, but the engine's own content nav and the owner-only Editors entry serve no purpose:
+    // every route they link to refuses a none session with 403. Hiding them here, in the payload,
+    // keeps the shell component a pure renderer of whatever nav it is handed.
+    const capability = editor.capability;
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
-        user: { displayName: editor.displayName, email: editor.email, role: editor.role },
-        concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+        user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
+        concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
         customNav,
         pathname: event.url.pathname,
-        canManageEditors: editor.role === 'owner',
+        canManageEditors: capability === 'owner',
         navLabel: runtime.navMenu?.label ?? null,
         theme,
         collapsedNav,
@@ -381,7 +397,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same GitHub fail-safe the shell uses.
    */
   async function helpLoad(event: ContentEvent): Promise<HelpData> {
-    requireSession(event);
+    requireEditor(event);
     let manifest = emptyManifest();
     let pending: { concept: string; id: string }[] = [];
     try {
@@ -403,18 +419,27 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Redirect /admin to the first concept's list (spec §7.6: land on the first concept). The
-   *  shell posts publishAll and logout to this exact path from every admin page, so an
-   *  unexpected-failure `?error=` those actions bounce back with rides along to the first
-   *  concept's list rather than being dropped by this redirect, keeping the editor-visible
-   *  guarantee for the two actions that always land here.
+   * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
+   *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
+   *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
+   *  dead-end redirect. The shell posts publishAll and logout to this exact path from every admin
+   *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
+   *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
    */
-  function indexRedirect(event: ContentEvent): never {
-    const first = runtime.concepts[0];
-    if (!first) throw error(404, 'No content types configured');
+  function indexRedirect(event: ContentEvent): { view: 'welcome'; page: WelcomeData } {
+    const editor = requireSession(event);
     const bounced = event.url.searchParams.get('error');
     const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
-    throw redirect(307, `/admin/${first.id}${suffix}`);
+    const home = roleHome(runtime.roles, editor.role);
+    if (home) {
+      throw redirect(303, `${home}${suffix}`);
+    }
+    if (editor.capability !== 'none') {
+      const first = runtime.concepts[0];
+      if (!first) throw error(404, 'No content types configured');
+      throw redirect(307, `/admin/${first.id}${suffix}`);
+    }
+    return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };
   }
 
   /**
@@ -477,7 +502,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  to an inline error, not a thrown 500.
    */
   async function listLoad(event: ContentEvent): Promise<ListData> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
@@ -523,7 +548,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const rawTitle = String(form.get('title') ?? '').trim();
@@ -565,7 +590,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
   async function editLoad(event: ContentEvent): Promise<EditData> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -1028,7 +1053,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  concept param is ignored and the redirect lands on the first configured concept.
    */
   async function publishAllAction(event: ContentEvent): Promise<never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
     const backend = ctx.resolveBackend(event);
@@ -1236,7 +1261,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Delete an entry from the concept list. The id comes from the form body. */
   async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');

@@ -71,7 +71,7 @@ function editEvent(id: string, search = '') {
   return contentEvent({
     url: `https://t.example/admin/posts/${id}${search}`,
     params: { concept: 'posts', id },
-    editor: { email: 'e@t', displayName: 'E', role: 'editor' },
+    editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' },
   });
 }
 
@@ -479,7 +479,7 @@ describe('editLoad address-collision advisory', () => {
     return contentEvent({
       url: `https://t.example/admin/pages/${id}${search}`,
       params: { concept: 'pages', id },
-      editor: { email: 'e@t', displayName: 'E', role: 'editor' },
+      editor: { email: 'e@t', displayName: 'E', role: 'editor', capability: 'editor' },
     });
   }
 

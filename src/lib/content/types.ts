@@ -16,6 +16,7 @@ import type { Fieldset } from './fieldset.js';
 import type { FieldDescriptor } from './fields.js';
 import type { LinkResolve } from './links.js';
 import type { VariantSpec } from '../media/transform-url.js';
+import type { RolesDeclaration } from '../auth/roles.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
 import type { AdminNavConfig } from '../sveltekit/admin-nav.js';
@@ -210,6 +211,13 @@ export type SiteRender = (input: {
 export interface CairnAdapter {
   /** The site's concepts, keyed by id. Posts and pages are the documented defaults; a site may add more. */
   content: Record<string, ConceptConfig>;
+  /**
+   * The site's role vocabulary, from `defineRoles({ ... })`. Absent, a site gets the implicit
+   *  `{ owner: 'owner', editor: 'editor' }` pair with no behavior change. Maps the site's own role
+   *  names onto the engine's three capability levels; the guard and the editors routes read it
+   *  through the composed runtime.
+   */
+  roles?: RolesDeclaration;
   /** The commit backend provider, from `githubApp({ ... })` (the GitHub App today). */
   backend: BackendProvider;
   /** The magic-link sender. */
@@ -327,6 +335,12 @@ export interface ConceptDescriptor {
 export interface CairnRuntime {
   siteName: string;
   concepts: ConceptDescriptor[];
+  /**
+   * The site's declared role vocabulary, carried through from the adapter by `composeRuntime`.
+   *  Absent, the guard and the editors routes resolve every session against the implicit
+   *  owner/editor pair.
+   */
+  roles?: RolesDeclaration;
   /** The commit backend provider, carried through from the adapter by `composeRuntime`. */
   backend: BackendProvider;
   sender: SenderConfig;

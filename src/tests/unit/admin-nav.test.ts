@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { normalizeAdminNav, filterNavByRole, flattenNavEntries } from '../../lib/sveltekit/admin-nav.js';
+import { defineRoles, resolveCapability } from '../../lib/auth/roles.js';
 const concepts = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }] as never;
 
 describe('normalizeAdminNav: validates and defaults a custom nav entry', () => {
@@ -84,6 +85,43 @@ describe('filterNavByRole', () => {
 
   it('drops owner-only children for an editor, and an all-owner-only section disappears entirely', () => {
     const out = filterNavByRole(resolved, 'editor');
+    expect(out).toEqual([
+      { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ]);
+  });
+
+  it('drops owner-only children for a none-capability session', () => {
+    const out = filterNavByRole(resolved, 'none');
+    expect(out).toEqual([
+      { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ]);
+  });
+
+  // A vocabulary where a second role name, 'chief', also carries owner capability. filterNavByRole
+  // takes the already-resolved capability, not the literal role name, so an owner-only entry stays
+  // visible to a 'chief' session and hidden from every non-owner-capability session, whatever its
+  // role name.
+  const CLUB_ROLES = defineRoles({ owner: 'owner', chief: 'owner', member: 'editor', guest: 'none' });
+
+  it('keeps owner-only entries for an owner-capability session whose role name is not "owner"', () => {
+    const capability = resolveCapability(CLUB_ROLES, 'chief');
+    expect(filterNavByRole(resolved, capability)).toEqual(resolved);
+  });
+
+  it('hides owner-only entries from an editor-capability session under a custom role name', () => {
+    const capability = resolveCapability(CLUB_ROLES, 'member');
+    const out = filterNavByRole(resolved, capability);
+    expect(out).toEqual([
+      { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ]);
+  });
+
+  it('hides owner-only entries from a none-capability session under a custom role name', () => {
+    const capability = resolveCapability(CLUB_ROLES, 'guest');
+    const out = filterNavByRole(resolved, capability);
     expect(out).toEqual([
       { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
       { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },

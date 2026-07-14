@@ -9,7 +9,7 @@ sibling page owns them.
 
 | Boundary | cairn handles | Your site handles |
 | --- | --- | --- |
-| Who may edit | Magic-link delivery, single-use tokens, session rows, CSRF on every unsafe request | The allowlist itself (who's an owner, who's an editor), and swapping in a different identity provider if you want one |
+| Who may edit | Magic-link delivery, single-use tokens, session rows, CSRF on every unsafe request | The allowlist itself (who holds which of your declared roles), and swapping in a different identity provider if you want one |
 | What a save can write | Author/committer separation, branch confinement, path confinement to your declared concepts | Which repo the GitHub App installs on, branch protection on `main`, who reviews what lands there |
 | What an author's markdown can render | The sanitize floor (scripts, event handlers, dangerous URL schemes stripped before delivery) | Your own `render()` function and any component registry you add to it |
 
@@ -27,8 +27,11 @@ simply isn't there to consume, and two confirms racing the same link can't both 
 confirmed token creates a session row (30-day expiry) and sets a session cookie, `__Host-`
 prefixed on HTTPS, `HttpOnly`, and scoped so no script on the page can read it. Every admin
 request resolves that cookie against the live session row, joined to the editor's current
-role, so a role change or a removed editor takes effect on the very next request rather than
-waiting for a stale session to expire on its own.
+role, resolving it to one of the engine's three capability levels (owner, editor, or none) fresh
+on every request, so a role change or a removed editor takes effect on the very next request
+rather than waiting for a stale session to expire on its own. A role your config no longer
+declares still authenticates; it just resolves to no content access, and never locks the person
+out of signing in.
 
 The request path never confirms or denies whether an email is on the allowlist: an unknown
 address gets the identical response as a known one, so the login form can't be used to probe
@@ -87,10 +90,10 @@ adds on top, and a site's own extensions can only add to that allowlist, never w
 including how a site's own renderer inherits it.
 
 **Residual risk.** The floor stops an author's markdown from executing script in a visitor's
-browser. It says nothing about what an author is allowed to write in the first place, since
-editors are a trusted role by cairn's design, per [who may edit](#who-may-edit); a site that
-needs to defend against a malicious editor, rather than an accidental one, needs its own review
-step before publish.
+browser. It says nothing about what an author is allowed to write in the first place, since any
+role with editor capability is trusted by cairn's design, per [who may edit](#who-may-edit); a
+site that needs to defend against a malicious editor, rather than an accidental one, needs its own
+review step before publish.
 
 ## What the operational logs can reveal
 

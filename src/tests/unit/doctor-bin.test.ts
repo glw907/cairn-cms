@@ -118,7 +118,7 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-  it('returns the fourteen checks in registry order', () => {
+  it('returns the sixteen checks in registry order', () => {
     expect(defaultChecks().map((c) => c.id)).toEqual([
       'config.bindings',
       'config.media-bucket',
@@ -133,6 +133,8 @@ describe('defaultChecks', () => {
       'edge.https-forced',
       'edge.hsts',
       'auth.store',
+      'auth.role-vocabulary',
+      'auth.email-normalization',
       'github.app',
     ]);
   });
@@ -148,7 +150,7 @@ describe('defaultChecks', () => {
   it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-    expect(defaultChecks()).toHaveLength(14);
+    expect(defaultChecks()).toHaveLength(16);
   });
 });
 

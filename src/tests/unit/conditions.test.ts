@@ -97,10 +97,25 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at sixteen entries', () => {
-    // Fifteen through the dependency-floors addition, plus admin.mount-incomplete for the
-    // doctor's best-effort /admin mount-shape nudge. Grow this count only with a registry change.
-    expect(allConditions()).toHaveLength(16);
+  it('pins the registry at eighteen entries', () => {
+    // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
+    // auth.email-not-normalized for the extensible-roles doctor checks. Grow this count only
+    // with a registry change.
+    expect(allConditions()).toHaveLength(18);
+  });
+
+  it('resolves the vocabulary and email-normalization conditions (extensible roles)', () => {
+    const unknownRole = condition('auth.unknown-role');
+    expect(unknownRole.severity).toBe('warning');
+    expect(unknownRole.why).toMatch(/vocabulary/i);
+    expect(unknownRole.logEvent).toBe('auth.role.unknown');
+    expect(unknownRole.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+
+    const badEmail = condition('auth.email-not-normalized');
+    expect(badEmail.severity).toBe('warning');
+    expect(badEmail.why).toMatch(/trimmed and lowercase/i);
+    expect(badEmail.logEvent).toBeUndefined();
+    expect(badEmail.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
   });
 
   it('carries no logEvent on the config and hsts entries', () => {

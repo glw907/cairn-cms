@@ -3,6 +3,7 @@
 // The module is internal; no public subpath exports it, and index.ts's barrel plus the bin
 // are its only consumers.
 import type { DoctorCheck, DoctorContext } from './types.js';
+import type { RolesDeclaration } from '../auth/roles.js';
 import {
   configBindings,
   configMediaBucket,
@@ -14,7 +15,14 @@ import {
   adminMountShape,
 } from './checks-local.js';
 import { configDependencyFloors } from './check-floors.js';
-import { emailSenderOnboarded, edgeHttpsForced, edgeHsts, authStore } from './checks-cloudflare.js';
+import {
+  emailSenderOnboarded,
+  edgeHttpsForced,
+  edgeHsts,
+  authStore,
+  roleVocabulary,
+  emailNormalization,
+} from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
 
 const USAGE =
@@ -107,6 +115,7 @@ export interface DerivationSources {
     repo?: string;
     from?: string;
     mediaBucketBinding?: string;
+    roles?: RolesDeclaration;
   } | null>;
   /** Returns the wrangler config's account_id, or undefined when none is declared. */
   wranglerAccountId: () => Promise<string | undefined>;
@@ -125,13 +134,15 @@ export async function deriveMissingInputs(
   sources: DerivationSources
 ): Promise<Omit<DoctorContext, 'fetch' | 'readFile'>> {
   const out = { ...ctx };
-  // The adapter read also carries the media bucket binding, which has no env source, so it runs
-  // when from, repo, or the media binding is still missing. A failure leaves each input absent so
-  // its check skips with the usual remediation rather than the doctor crashing.
+  // The adapter read also carries the media bucket binding and the role vocabulary, neither of
+  // which has an env source, so it runs when from, repo, the media binding, or the vocabulary is
+  // still missing. A failure leaves each input absent so its check skips with the usual
+  // remediation rather than the doctor crashing.
   if (
     out.from === undefined ||
     out.repo === undefined ||
-    out.mediaBucketBinding === undefined
+    out.mediaBucketBinding === undefined ||
+    out.roles === undefined
   ) {
     const facts = await sources.adapterFacts().catch(() => null);
     if (out.from === undefined && typeof facts?.from === 'string') {
@@ -146,6 +157,9 @@ export async function deriveMissingInputs(
     }
     if (out.mediaBucketBinding === undefined && typeof facts?.mediaBucketBinding === 'string') {
       out.mediaBucketBinding = facts.mediaBucketBinding;
+    }
+    if (out.roles === undefined && facts?.roles !== undefined) {
+      out.roles = facts.roles;
     }
   }
   if (out.cfAccountId === undefined) {
@@ -175,6 +189,8 @@ export function defaultChecks(): DoctorCheck[] {
     edgeHttpsForced,
     edgeHsts,
     authStore,
+    roleVocabulary,
+    emailNormalization,
     githubApp,
   ];
 }

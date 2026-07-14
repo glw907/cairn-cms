@@ -85,11 +85,14 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       } as unknown as App.Platform;
     }
     if (isAdmin) {
-      // Editor shape: { email, displayName, role }, the engine's Editor type (src/lib/auth/types.ts).
+      // Editor shape: { email, displayName, role, capability }, the engine's Editor type
+      // (src/lib/auth/types.ts). The dev backend always mints an owner session, so capability is
+      // the literal 'owner' rather than a resolveCapability() call against a declared vocabulary.
       event.locals.editor = {
         email: 'editor@showcase.test',
         displayName: 'Demo Editor',
         role: 'owner',
+        capability: 'owner',
       };
     }
     return resolve(event);

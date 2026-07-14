@@ -1,6 +1,8 @@
 // The doctor's check model (diagnostics spec, Arm B). Each check is isolated: no check reads
 // another's result. The conditionId ties the check to the registry entry whose why/remediation
 // the report prints, keeping the doctor, the runtime errors, and the checklist on one identity.
+import type { RolesDeclaration } from '../auth/roles.js';
+
 type CheckStatus = 'pass' | 'fail' | 'skip';
 
 export interface CheckResult {
@@ -67,6 +69,12 @@ export interface DoctorContext {
   mediaBucketBinding?: string;
   /** GITHUB_APP_ID / GITHUB_APP_INSTALLATION_ID / GITHUB_APP_PRIVATE_KEY_B64. */
   github?: { appId: string; installationId: string; privateKeyB64: string };
+  /**
+   * The site's declared role vocabulary, derived off the adapter's `roles` field the same way
+   *  `mediaBucketBinding` is derived. Undefined for a zero-config site, in which case the
+   *  vocabulary-aware checks fall back to the implicit owner/editor pair.
+   */
+  roles?: RolesDeclaration;
   /** Injected fetch for tests; defaults to global fetch. */
   fetch: typeof fetch;
   /** Read a file under cwd, or null when absent. Injected for tests. */

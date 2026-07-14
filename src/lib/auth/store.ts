@@ -2,16 +2,24 @@
 // the `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
 // SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
 import type { D1Database } from '@cloudflare/workers-types';
-import type { Editor, Role } from './types.js';
+import type { Role } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: Role };
 
-function toEditor(row: EditorCols): Editor {
+/**
+ * An allowlist row as the store reads it: email, displayName, and the bare role name. The store
+ * has no access to the site's declared vocabulary, so it can never resolve `capability`; a caller
+ * that needs a full `Editor` (the guard, `editorsLoad`) resolves capability itself and spreads it
+ * onto this shape.
+ */
+export type EditorRow = { email: string; displayName: string; role: Role };
+
+function toEditor(row: EditorCols): EditorRow {
   return { email: row.email, displayName: row.display_name, role: row.role };
 }
 
 /** Look an email up in the allowlist. */
-export async function findEditor(db: D1Database, email: string): Promise<Editor | null> {
+export async function findEditor(db: D1Database, email: string): Promise<EditorRow | null> {
   const row = await db
     .prepare('SELECT email, display_name, role FROM editor WHERE email = ?')
     .bind(email)
@@ -78,7 +86,7 @@ export async function createSession(
  * Resolve a session to its editor, joining `editor` so the role is read live. An expired
  * session or a removed editor resolves to null, which revokes access on the next request.
  */
-export async function resolveSession(db: D1Database, id: string, now: number): Promise<Editor | null> {
+export async function resolveSession(db: D1Database, id: string, now: number): Promise<EditorRow | null> {
   const row = await db
     .prepare(
       `SELECT e.email AS email, e.display_name AS display_name, e.role AS role
@@ -96,7 +104,7 @@ export async function deleteSession(db: D1Database, id: string): Promise<void> {
 }
 
 /** The full allowlist, sorted by email. */
-export async function listEditors(db: D1Database): Promise<Editor[]> {
+export async function listEditors(db: D1Database): Promise<EditorRow[]> {
   const { results } = await db
     .prepare('SELECT email, display_name, role FROM editor ORDER BY email')
     .all<EditorCols>();
@@ -127,19 +135,23 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
 }
 
 /**
- * Remove an owner only if another owner remains. The count is part of the DELETE, so two
- * concurrent removals cannot both pass a separate check and strand the allowlist at zero
- * owners. Returns false (and writes nothing) when this is the last owner. On success the
- * editor's sessions and pending token go too.
+ * Remove an owner-capability editor only if another owner-capability row remains. The count is
+ * part of the DELETE, so two concurrent removals cannot both pass a separate check and strand the
+ * allowlist below one owner. `ownerRoles` is the vocabulary's owner-capability name set (see
+ * `ownerLevelRoles`), not the literal `'owner'` string, so a site with more than one owner-level
+ * role name stays safe. Returns false (and writes nothing) when this is the last owner-capability
+ * row. On success the editor's sessions and pending token go too.
  */
-export async function removeOwnerIfNotLast(db: D1Database, email: string): Promise<boolean> {
+export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerRoles: string[]): Promise<boolean> {
+  if (ownerRoles.length === 0) return false;
+  const placeholders = ownerRoles.map(() => '?').join(', ');
   const res = await db
     .prepare(
       `DELETE FROM editor
-       WHERE email = ? AND role = 'owner'
-         AND (SELECT COUNT(*) FROM editor WHERE role = 'owner') > 1`,
+       WHERE email = ? AND role IN (${placeholders})
+         AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
     )
-    .bind(email)
+    .bind(email, ...ownerRoles, ...ownerRoles)
     .run();
   if (res.meta.changes !== 1) return false;
   await db.batch([
@@ -149,23 +161,55 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string): Promi
   return true;
 }
 
+/**
+ * Insert the owner row when the allowlist is empty, in one atomic statement
+ * (`INSERT ... SELECT ... WHERE NOT EXISTS`), so two concurrent bootstrap requests race safely
+ * to exactly one inserted row. Returns whether this call performed the insert; a non-empty
+ * table writes nothing and returns false.
+ */
+export async function insertOwnerIfEmpty(
+  db: D1Database,
+  email: string,
+  displayName: string,
+  now: number,
+): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `INSERT INTO editor (email, display_name, role, created_at)
+       SELECT ?, ?, 'owner', ?
+       WHERE NOT EXISTS (SELECT 1 FROM editor)`,
+    )
+    .bind(email, displayName, now)
+    .run();
+  return res.meta.changes === 1;
+}
+
 /** Change an editor's role. The guard reads the new role on the next request. */
 export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
   await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, email).run();
 }
 
 /**
- * Demote an owner to editor only if another owner remains, in one atomic statement (see
- * `removeOwnerIfNotLast`). Returns false (and writes nothing) when this is the last owner.
+ * Demote an owner-capability editor to `newRole` only if another owner-capability row remains,
+ * in one atomic statement (see `removeOwnerIfNotLast`). `ownerRoles` is the vocabulary's
+ * owner-capability name set, so a site with more than one owner-level role name stays safe.
+ * Returns false (and writes nothing) when this is the last owner-capability row.
  */
-export async function demoteOwnerIfNotLast(db: D1Database, email: string): Promise<boolean> {
+export async function demoteOwnerIfNotLast(
+  db: D1Database,
+  email: string,
+  ownerRoles: string[],
+  newRole: string,
+): Promise<boolean> {
+  if (ownerRoles.length === 0) return false;
+  const placeholders = ownerRoles.map(() => '?').join(', ');
   const res = await db
     .prepare(
-      `UPDATE editor SET role = 'editor'
-       WHERE email = ? AND role = 'owner'
-         AND (SELECT COUNT(*) FROM editor WHERE role = 'owner') > 1`,
+      `UPDATE editor SET role = ?
+       WHERE email = ? AND role IN (${placeholders})
+         AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
     )
-    .bind(email)
+    .bind(newRole, email, ...ownerRoles, ...ownerRoles)
     .run();
   return res.meta.changes === 1;
 }

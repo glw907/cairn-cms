@@ -41,6 +41,7 @@ export type {
   ListData,
   EditData,
   HelpData,
+  WelcomeData,
   SaveFailure,
   DeleteRefusal,
   RenameFailure,

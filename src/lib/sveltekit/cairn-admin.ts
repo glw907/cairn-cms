@@ -183,17 +183,29 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  signed-in editor when there is one, and the thrown error's message, never a stack or a
    *  token) and bounces back to the posted path with the calm `?error=` every view's own
    *  validated failures already redirect through.
+   *
+   *  `carriesNewFlag` opts an action into preserving its posted `new=1` form flag on that bounce:
+   *  a first save or publish of a brand-new entry posts `new=1` (saveToBranch's `suffix`), and
+   *  `editLoad` 404s an unsaved entry with no `?new=1` on the next GET, so losing the flag here
+   *  would strand the editor's draft behind a 404, exactly the P0's scenario. Only `save` and
+   *  `publish` set it: cloning the request has a real cost for a large upload body, so every other
+   *  action skips the clone entirely.
    */
   function viewAction<V extends AdminView['view'], R>(
     action: string,
     allowed: readonly V[],
     delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
+    opts: { carriesNewFlag?: boolean } = {},
   ): (event: AdminEvent) => Promise<R> {
     return async (event) => {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
       if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
       // The includes check above proves the membership the cast asserts.
       const narrowed = view as Extract<AdminView, { view: V }>;
+      // Cloned before the delegate ever reads the body, so the clone is never locked; read only
+      // in the catch below, well after the delegate's own formData() call has consumed the
+      // original.
+      const clonedRequest = opts.carriesNewFlag ? event.request.clone() : null;
       try {
         return await delegate(event, narrowed);
       } catch (err) {
@@ -211,7 +223,18 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
           // No editor to attribute; the record still names the action and the error.
         }
         log.error('admin.action.failed', fields);
-        throw redirect(303, `${event.url.pathname}?error=${encodeURIComponent(UNEXPECTED_ACTION_ERROR)}`);
+        // A failure reading the cloned form must never mask the original error either; it just
+        // bounces without the flag, the same as an action that never carried one.
+        let newSuffix = '';
+        if (clonedRequest) {
+          try {
+            const form = await clonedRequest.formData();
+            if (form.get('new') === '1') newSuffix = '&new=1';
+          } catch {
+            // No posted form to read; bounce without the flag.
+          }
+        }
+        throw redirect(303, `${event.url.pathname}?error=${encodeURIComponent(UNEXPECTED_ACTION_ERROR)}${newSuffix}`);
       }
     };
   }
@@ -238,7 +261,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
       if (view.view === 'edit') return content.saveAction(contentEvent(event, { concept: view.concept.id, id: view.id }));
       if (!nav) throw error(404, 'Not found');
       return nav.navSave(contentEvent(event, {}));
-    }),
+    }, { carriesNewFlag: true }),
     // The tidy settings save (spec 2.8, Task 15): the editor commits the per-convention block to the
     // committed YAML. Gated to the settings view, so it 404s elsewhere; the action itself 404s again
     // when tidy is off, the server half of the truthful visibility gate.
@@ -247,7 +270,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
     saveVocabulary: viewAction('saveVocabulary', ['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
     upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
-    publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { carriesNewFlag: true }),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at

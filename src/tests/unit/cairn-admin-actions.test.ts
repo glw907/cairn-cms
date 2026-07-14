@@ -609,7 +609,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
-  it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy', async () => {
+  it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy (no new=1: the flag was never posted)', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
     const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
@@ -623,6 +623,17 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       id: '2026-05-01-hi',
       editor: 'ed@t',
       error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing save on a brand-new entry (new=1) preserves the flag on the bounce, so the next load does not 404 the stranded draft', async () => {
+    const admin = createCairnAdmin(runtime(), deps);
+    const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
+    expect(result).toEqual({
+      status: 303,
+      location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}&new=1`,
     });
   });
 

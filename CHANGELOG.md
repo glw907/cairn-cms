@@ -30,6 +30,14 @@
   requiredness server-side only, so a required field with no value surfaced no client-side signal
   at all (this is how the ecxc "Description is required with no visible field" report happened,
   and how a required date field could reach the server unset). No consumer action needed.
+- The showcase's edit-page preview now renders with the reading surface's typography (headings,
+  lists, blockquotes, paragraph rhythm), not bare unstyled markup. Its `editor.preview.containerClass`
+  named only `'site-main'`, the site layout's outer `<main>` wrapper, while every typography rule in
+  `prose.css` is scoped to `.prose`, the nested `<article>`'s class; since the preview frame renders
+  one wrapper element, not the page's nested pair, the fix is `containerClass: 'site-main prose'`, both
+  classes on that one element. This is showcase-only (`examples/showcase`, which sites copy at
+  scaffold time), not an engine change: a site whose `containerClass` names one wrapper class while its
+  real page nests two should name both, space-separated, on the preview knob.
 
 ## 0.84.3
 

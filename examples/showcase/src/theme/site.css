@@ -8,8 +8,9 @@
 
    The sheet is referenced only through Vite ?url imports: the (site) layout links the resolved URL,
    and the adapter's preview knob hands the same URL to the editor's preview frame. The preview's
-   `containerClass` is `site-main`, so the frame reproduces the same centered column the reader sees;
-   the figure rules below are scoped to `.site-main` for that reason. A static `import './site.css'`
+   `containerClass` is `site-main prose`, so the frame's one wrapper div reproduces both the site's
+   centered column (this sheet) and the article's typography (prose.css); the figure rules below are
+   scoped to `.site-main` for that reason. A static `import './site.css'`
    in the layout would fold the sheet into the layout's CSS chunk, whose basename differs between the
    client and server builds, so the server-resolved ?url would 404 in the browser. Referenced only as
    an asset, both builds emit site.<hash>.css under one content hash, and the URL holds.

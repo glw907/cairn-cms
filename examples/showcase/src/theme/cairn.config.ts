@@ -419,9 +419,14 @@ export const cairn = defineAdapter({
     // The custom-screen sidebar entry: data-only, a typed Lucide icon name, an unclaimed /admin href.
     // The /admin/signups route gates server-side; this entry only renders the link in the shell.
     adminNav: [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
-    // The preview knob: the (site) layout renders entries inside <main class="site-main">, so the
-    // frame links site.css and reproduces that container for a design-accurate proof.
-    preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main' },
+    // The preview knob: the (site) layout renders an entry inside
+    // <main class="site-main"><article class="prose">, and every typography rule in prose.css is
+    // scoped to .prose, so the frame needs both classes on its one wrapper div (buildPreviewDoc
+    // renders a single element, not the nested main/article pair). Neither sheet declares a
+    // descendant rule between the two classes (site.css's figure-placement rules key off .site-main
+    // alone; prose.css's typography keys off .prose alone), so naming both on one element reproduces
+    // the real page's rendering exactly.
+    preview: { stylesheets: [themeCss, siteCss], containerClass: 'site-main prose' },
   },
 });
 

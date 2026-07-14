@@ -4,13 +4,16 @@
 // network call ever happens and no real key is needed. The injection seam is ContentRoutesDeps.tidy.client:
 // a factory the action calls with the resolved key, returning a structural client whose messages.create
 // the test stubs. The default factory (unset here) builds the real SDK client.
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
+import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
+
+afterEach(() => resetKeyHealthForTest());
 
 const editor: Editor = { email: 'a@b.test', displayName: 'A Tester', role: 'owner' };
 const CSRF = 'csrf-token-value-0123456789abcdef';
@@ -266,5 +269,48 @@ describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
 
     expect(res.status).toBe(502);
     expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'model' }));
+  });
+});
+
+describe('tidy action: key health cache (save-500-honest-errors, Task 5)', () => {
+  it('marks the key unhealthy on a 401', async () => {
+    const create = vi.fn(async () => {
+      throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    await routes.tidyAction(tidyEvent());
+    expect(keyKnownUnhealthy()).toBe(true);
+  });
+
+  it('marks the key unhealthy on a 403 too', async () => {
+    const create = vi.fn(async () => {
+      throw Object.assign(new Error('forbidden'), { status: 403 });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    await routes.tidyAction(tidyEvent());
+    expect(keyKnownUnhealthy()).toBe(true);
+  });
+
+  it('never marks the key unhealthy on a retryable failure (timeout or plain model error)', async () => {
+    const create = vi.fn(async () => {
+      throw new Error('overloaded');
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    await routes.tidyAction(tidyEvent());
+    expect(keyKnownUnhealthy()).toBe(false);
+  });
+
+  it('a successful call clears a prior unhealthy mark', async () => {
+    const failing = vi.fn(async () => {
+      throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
+    }) as unknown as TidyClient['messages']['create'];
+    let routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(failing) } });
+    await routes.tidyAction(tidyEvent());
+    expect(keyKnownUnhealthy()).toBe(true);
+
+    const succeeding = vi.fn(async () => cannedMessage('fixed'));
+    routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(succeeding) } });
+    await routes.tidyAction(tidyEvent());
+    expect(keyKnownUnhealthy()).toBe(false);
   });
 });

@@ -18,6 +18,7 @@ import type { TidyConventions, VocabularyEntry } from '../nav/site-config.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireSession } from './guard.js';
+import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 
 /**
@@ -31,9 +32,10 @@ import type { ContentRoutesContext, ContentEvent } from './content-routes-contex
  */
 export interface SettingsData {
   /**
-   * The truthful gate: tidy is enabled AND the API key is present. The screen renders the editor
-   *  tier only when this is true, and the honest gate note (a labelled region, no disabled controls)
-   *  otherwise.
+   * The truthful gate: tidy is enabled, the API key is present, and the key is not confirmed
+   *  invalid by the active probe. The screen renders the editor tier only when this is true;
+   *  otherwise it renders the honest gate note (missing setup) or the distinct broken-key note
+   *  (present but rejected), never disabled controls.
    */
   enabled: boolean;
   /**
@@ -43,6 +45,16 @@ export interface SettingsData {
   tidyEnabled: boolean;
   /** Whether the API key secret is present in the Worker env. A presence flag, never the key. */
   keyConfigured: boolean;
+  /**
+   * The active-probe verdict for the resolved key (save-500-honest-errors, Task 5): `'missing'`
+   *  when no key is present, `'valid'` when a zero-token Anthropic call accepts it, `'invalid'`
+   *  when Anthropic rejects it (401/403, most likely revoked or mistyped), or `'unknown'` when the
+   *  probe did not run (tidy is off) or could not reach Anthropic (a client with no probe surface,
+   *  a network failure), a fail-soft result, never a false claim of invalid. Probed only when
+   *  `tidyEnabled` and the key is present; a probe result also updates the shared key-health cache
+   *  that gates `editLoad`'s Tidy control.
+   */
+  keyStatus: TidyKeyProbeResult | 'missing';
   /** The model id (a developer-tier fact, read-only on the screen). */
   model: string;
   /**
@@ -124,21 +136,36 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
   /**
    * Load the two-tier tidy settings (spec 2.8, Task 15). The developer tier (enabled, key, model) is
    *  read-only; the editor tier is the resolved conventions block. The visibility gate is truthful: the
-   *  `enabled` flag is true only when `tidy.enabled` is set AND the key is present, so the screen renders
-   *  the convention list only then and the honest gate note otherwise. No secret is returned: only a
-   *  presence flag for the key. The conventions come straight from the runtime config (the same source
-   *  the tidy action's prompt reads), so the screen and the prompt can never diverge.
+   *  `enabled` flag is true only when `tidy.enabled` is set, the key is present, AND the key is not
+   *  confirmed invalid, so the screen renders the convention list only then. No secret is returned: only
+   *  a presence flag and the probe verdict for the key. The conventions come straight from the runtime
+   *  config (the same source the tidy action's prompt reads), so the screen and the prompt can never
+   *  diverge.
+   *
+   *  The active key probe (save-500-honest-errors, Task 5) runs only when tidy is on and the key is
+   *  present, since it would otherwise spend a network round trip proving nothing the screen can use.
+   *  A confirmed-invalid key still counts as `keyConfigured` (the checklist item stays checked; the
+   *  problem is correctness, not presence) but closes the gate, and an unverifiable probe (`'unknown'`,
+   *  a network hiccup or a dev client with no probe surface) never closes it: the gate fails open on an
+   *  unproven state, closing only on a confirmed rejection.
    */
-  function settingsLoad(event: ContentEvent): SettingsData {
+  async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
     requireSession(event);
     const tidy = runtime.tidy;
     const tidyEnabled = tidy?.enabled === true;
     const keyPresent = keyConfigured(event);
     const model = tidy?.model || DEFAULT_TIDY_MODEL;
+    let keyStatus: SettingsData['keyStatus'] = keyPresent ? 'unknown' : 'missing';
+    if (tidyEnabled && keyPresent) {
+      const env = (event.platform?.env ?? {}) as Record<string, unknown>;
+      const apiKey = typeof env.ANTHROPIC_API_KEY === 'string' ? env.ANTHROPIC_API_KEY : '';
+      keyStatus = await probeTidyKey(ctx.anthropicClient({ apiKey }));
+    }
     return {
-      enabled: tidyEnabled && keyPresent,
+      enabled: tidyEnabled && keyPresent && keyStatus !== 'invalid',
       tidyEnabled,
       keyConfigured: keyPresent,
+      keyStatus,
       model,
       modelLabel: tidyModelLabel(model),
       conventions: resolveTidyConventions(tidy?.conventions),

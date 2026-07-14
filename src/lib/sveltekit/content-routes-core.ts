@@ -26,6 +26,7 @@ import { isConflict } from '../github/types.js';
 import { log } from '../log/index.js';
 import { dictionaryFileForDialect, DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import type { TidyConventions } from '../nav/site-config.js';
+import { keyKnownUnhealthy } from './tidy-key-health.js';
 import { parseMediaEntries, parseMediaManifest, upsertMediaEntry, serializeMediaManifest } from '../media/manifest.js';
 import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
@@ -195,7 +196,10 @@ export interface EditData {
    * The editor-tier tidy facts the review surface needs (spec 2.5): whether tidy is enabled, the model
    *  that runs (for the head pill), and the RESOLVED conventions (the only data source for a
    *  normalization's because-line and the local category inference). The API key never appears here, it
-   *  is a Worker secret. `enabled` false hides the Tidy control.
+   *  is a Worker secret. `enabled` false hides the Tidy control, whether because the developer never
+   *  turned tidy on or because a prior call already proved the key unhealthy (save-500-honest-errors,
+   *  Task 5): this is a cache read only, never an inline probe, so an edit load pays no added latency,
+   *  and a dead key is absent, not disabled, until the cache's TTL clears or a fresh call succeeds.
    */
   tidy: { enabled: boolean; model: string; conventions: TidyConventions };
   /** Non-blocking editor advisories built server-side; today the cross-branch address collision. */
@@ -721,7 +725,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       // conventions (the because-line and category inference read only these). The API key is never
       // exposed here. A site with no tidy block reads disabled with the default conventions.
       tidy: {
-        enabled: runtime.tidy?.enabled ?? false,
+        enabled: (runtime.tidy?.enabled ?? false) && !keyKnownUnhealthy(),
         model: runtime.tidy?.model || DEFAULT_TIDY_MODEL,
         conventions: resolveTidyConventions(runtime.tidy?.conventions),
       },

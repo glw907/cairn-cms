@@ -14,6 +14,7 @@ function data(over: Partial<SettingsData> = {}): SettingsData {
     enabled: true,
     tidyEnabled: true,
     keyConfigured: true,
+    keyStatus: 'valid',
     model: 'claude-sonnet-4-6',
     modelLabel: 'Claude Sonnet',
     conventions: defaultTidyConventions(),
@@ -30,7 +31,7 @@ function conventions(over: Partial<TidyConventions> = {}): TidyConventions {
 describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
   it('renders the honest gate region and no editor-tier section', async () => {
     const screen = render(CairnTidySettings, {
-      data: data({ enabled: false, tidyEnabled: false, keyConfigured: false }),
+      data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing' }),
     });
     // The gate is a labelled region.
     await expect.element(screen.getByRole('region', { name: /tidy is not set up/i })).toBeInTheDocument();
@@ -41,7 +42,7 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
   });
 
   it('puts no convention control in the tab order (absent, not disabled)', async () => {
-    const screen = render(CairnTidySettings, { data: data({ enabled: false, tidyEnabled: false, keyConfigured: false }) });
+    const screen = render(CairnTidySettings, { data: data({ enabled: false, tidyEnabled: false, keyConfigured: false, keyStatus: 'missing' }) });
     // No check-and-tint toggle (aria-pressed) anywhere: the convention list is gone, not disabled.
     expect(screen.container.querySelectorAll('[aria-pressed]').length).toBe(0);
     // No radiogroup variant chooser either.
@@ -120,5 +121,25 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     await screen.getByRole('button', { name: 'Oxford comma' }).click();
     const field = screen.container.querySelector<HTMLInputElement>('input[name="conventions"]')!;
     expect(JSON.parse(field.value).oxfordComma).toBe('always');
+  });
+});
+
+describe('CairnTidySettings: the broken-key state (save-500-honest-errors, Task 5)', () => {
+  it('renders a distinct broken-key region, not the missing-setup gate, when the probe confirms invalid', async () => {
+    const screen = render(CairnTidySettings, {
+      data: data({ enabled: false, keyConfigured: true, keyStatus: 'invalid' }),
+    });
+    // A distinct labelled region names the broken key, not the "not set up yet" gate.
+    await expect.element(screen.getByRole('region', { name: /key isn.t working/i })).toBeInTheDocument();
+    expect(screen.container.querySelector('[aria-label="Tidy is not set up"]')).toBeNull();
+    // No editor-tier section either: the gate stays closed.
+    expect(screen.container.querySelector('form[action="?/saveSettings"]')).toBeNull();
+  });
+
+  it('keeps the editor tier open when the probe is unverifiable ("unknown"), never punishing it', async () => {
+    const screen = render(CairnTidySettings, {
+      data: data({ enabled: true, keyConfigured: true, keyStatus: 'unknown' }),
+    });
+    expect(screen.container.querySelector('form[action="?/saveSettings"]')).not.toBeNull();
   });
 });

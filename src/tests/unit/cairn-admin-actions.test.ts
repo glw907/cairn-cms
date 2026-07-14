@@ -557,15 +557,22 @@ describe('settings view', () => {
 
   it('serves the settings view load: the read-only developer facts', async () => {
     new GithubDouble({ main: {} }).install();
-    const admin = createCairnAdmin(tidyRuntime(), deps);
+    // The settings load now actively probes the key (save-500-honest-errors, Task 5), so a fake
+    // client stands in for the real SDK; models.list resolving proves the probe reads 'valid'.
+    const anthropic = vi.fn(() => ({
+      messages: { create: async () => { throw new Error('unused'); } },
+      models: { list: async () => ({ data: [] }) },
+    }));
+    const admin = createCairnAdmin(tidyRuntime(), { ...deps, tidy: { client: anthropic } });
     const event = actionEvent('/admin/settings', { env: { ANTHROPIC_API_KEY: 'sk-test' } });
     const data = (await admin.load({ ...event, setHeaders: () => {} } as never)) as {
       view: string;
-      page: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; modelLabel: string };
+      page: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: string; modelLabel: string };
     };
     expect(data.view).toBe('settings');
     expect(data.page.enabled).toBe(true);
     expect(data.page.keyConfigured).toBe(true);
+    expect(data.page.keyStatus).toBe('valid');
     expect(data.page.modelLabel).toBe('Claude Sonnet');
   });
 });

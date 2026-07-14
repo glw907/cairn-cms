@@ -46,6 +46,15 @@
   transient one at a glance. This is the exact gap the ecxc revoked-key incident exposed: every
   attempt logged the same retryable warning while the real cause needed a site developer, not
   another click. No consumer action needed.
+- Tidy's visibility is now truthful about a broken key, not just its presence. An auth failure
+  marks a small per-isolate cache unhealthy for ten minutes, and the edit page's tidy projection
+  reads that cache (never an inline probe, so an edit load pays no added latency): the Tidy control
+  disappears entirely rather than staying live to fail the same way on the next click, and it
+  returns on its own once the mark expires or a fresh call succeeds. The settings screen and
+  `cairn-doctor` both upgrade from a presence check to an active, zero-token probe against
+  Anthropic, reporting missing, invalid, and valid distinctly (`SettingsData` gains `keyStatus`);
+  a probe that cannot reach Anthropic fails soft to an honest "could not verify" rather than a
+  false claim of invalid. No consumer action needed.
 
 ## 0.84.3
 

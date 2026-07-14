@@ -8,6 +8,7 @@ import { requireSession } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus } from './content-routes-context.js';
+import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
 import type { ContentRoutesContext, ContentEvent, TidyClient } from './content-routes-context.js';
 
 /**
@@ -67,9 +68,11 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *
    *  A model-call failure classifies into one of two voices (save-500-honest-errors, Task 4): an
    *  auth/permission failure (401/403) is not retryable, since the key itself is the problem, so it
-   *  returns the calm non-retry copy naming the site developer rather than the retryable "Try
-   *  again." copy. The log's `reason` field (`auth`/`timeout`/`abort`/`model`) names which one
-   *  fired, so an operator can tell an auth failure from a transient one at a glance.
+   *  returns the calm non-retry copy naming the site developer and marks the shared key-health cache
+   *  unhealthy (Task 5), which hides the Tidy button on the next edit load rather than offering a
+   *  control that will fail again. Everything else (a deadline overrun, another abort, a model error)
+   *  stays the retryable "Try again." copy, with the log's `reason` field (`timeout`/`abort`/`model`)
+   *  naming which.
    */
   async function tidyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
@@ -145,7 +148,10 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       const status = tidyClientErrorStatus(err);
       if (status === 401 || status === 403) {
         // An auth/permission failure is not retryable: the key itself is the problem, not a transient
-        // model hiccup, so "Try again." would be a false promise.
+        // model hiccup, so "Try again." would be a false promise. Mark the shared key-health cache
+        // unhealthy (Task 5) so editLoad's tidy projection hides the button for the TTL rather than
+        // offering a control that will fail the same way on the next click.
+        markKeyUnhealthy();
         log.warn('tidy.error', { editor: editor.email, model, reason: 'auth' });
         return fail(503, {
           error: "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
@@ -165,6 +171,9 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     } finally {
       clearTimeout(timer);
     }
+    // The call reached Anthropic and it accepted the key: clear any prior unhealthy mark so the Tidy
+    // button (and the settings screen) reflect a recovered key immediately, without waiting out the TTL.
+    markKeyHealthy();
 
     // A model refusal (the streaming-classifier intervention) is a clean fail(422): the author's text is
     // untouched, so the editor can leave it as-is.

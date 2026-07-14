@@ -67,11 +67,13 @@ editor sees tidy report itself unavailable.
 npx cairn-doctor
 ```
 
-The check confirms presence, not correctness: a wrangler secret is invisible to any CLI, so the
-doctor can only confirm `ANTHROPIC_API_KEY` appears somewhere it would if it were a plain var, the
-wrangler config or `.dev.vars`. A pass still asks you to verify it's the real key and not a
-placeholder. See [the doctor's check table](../reference/doctor.md#the-checks) for the exact
-condition and what makes it skip.
+When a literal key value is readable locally, typically your `.dev.vars` during local
+development, the doctor actively verifies it with a zero-token call to Anthropic and reports
+valid or invalid distinctly. When the key lives only as a deployed Worker secret, invisible to any
+command-line tool, the check falls back to confirming the name is referenced somewhere it would be
+if it were a plain var, and says so honestly rather than claiming a verification it can't do. See
+[the doctor's check table](../reference/doctor.md#the-checks) for the exact condition and what
+makes it skip.
 
 The real test is running tidy once. Open an entry in the admin, invoke tidy on a paragraph, and
 confirm it comes back with proposals. With observability on, a successful call logs `tidy.done`
@@ -101,7 +103,15 @@ Once `tidy.enabled` is `true` and the key resolves, the in-admin settings screen
 (`/admin/settings`) drops its gate note and opens the conventions editor: the per-convention
 toggles an editor sets for their own site, saved straight back into `site.config.yaml`'s
 `tidy.conventions` block. The developer-tier facts you just set, whether tidy is on, whether the
-key is set, and which model, show there too, read-only.
+key is set, and which model, show there too, read-only. The settings screen also actively probes
+the key on every load, so a revoked or mistyped one surfaces its own distinct note there instead
+of quietly claiming success because a value is merely present.
+
+If a tidy call ever fails because Anthropic rejects the key, the Tidy control disappears from the
+editor for a while rather than staying live to fail the same way again: a present-but-broken key
+is absent, not disabled, the same truthful-visibility rule the settings screen follows. It comes
+back on its own a short while after the key starts working again, or immediately on the next
+successful call, whichever comes first; nothing you do in the editor forces the recheck.
 
 Past that screen, tidy is an editing feature the editor drives from the toolbar. That flow, and
 tidy's remit of small fixes that never touch voice or structure, is

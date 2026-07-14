@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes, type EditData } from '../../lib/sveltekit/content-routes.js';
+import { markKeyUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMarkdown, frontmatterFromForm } from '../../lib/content/frontmatter.js';
 import { serializeMediaManifest, type MediaEntry } from '../../lib/media/manifest.js';
@@ -84,7 +85,10 @@ function editFetch(entry: string | null, manifest: string | null = null) {
   }));
 }
 
-afterEach(() => vi.restoreAllMocks());
+afterEach(() => {
+  vi.restoreAllMocks();
+  resetKeyHealthForTest();
+});
 
 describe('editLoad', () => {
   it('loads an existing file with parsed, form-ready frontmatter and body', async () => {
@@ -720,5 +724,37 @@ describe('editLoad taxonomy enforcement', () => {
     expect(topics?.creatable).toBe(true);
     expect(topics?.options).toBeUndefined();
     expect(data.orphanTags).toEqual([]);
+  });
+});
+
+describe('editLoad tidy projection: truthful visibility on a cached-unhealthy key (Task 5)', () => {
+  function tidyRuntime(): CairnRuntime {
+    return { ...runtime(), tidy: { enabled: true, model: 'claude-sonnet-4-6', conventions: {} } };
+  }
+
+  it('reads enabled when tidy is on and the key-health cache is clean', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    const routes = createContentRoutes(tidyRuntime());
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.tidy.enabled).toBe(true);
+  });
+
+  it('hides the Tidy control when the cache says the key is unhealthy', async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    markKeyUnhealthy();
+    const routes = createContentRoutes(tidyRuntime());
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    expect(data.tidy.enabled).toBe(false);
+  });
+
+  it("shows the control again once the unhealthy mark's TTL has passed", async () => {
+    editFetch('---\ntitle: Hello\n---\nThe body.');
+    markKeyUnhealthy(0);
+    vi.useFakeTimers();
+    vi.setSystemTime(11 * 60 * 1000);
+    const routes = createContentRoutes(tidyRuntime());
+    const data = await routes.editLoad(editEvent('2026-05-hello') as never);
+    vi.useRealTimers();
+    expect(data.tidy.enabled).toBe(true);
   });
 });

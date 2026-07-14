@@ -293,7 +293,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   indexRedirect: () => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
-  settingsLoad: (event: ContentEvent) => SettingsData;
+  settingsLoad: (event: ContentEvent) => Promise<SettingsData>;
   settingsSave: (event: ContentEvent) => Promise<never>;
   vocabularyLoad: (event: ContentEvent) => Promise<VocabularyLoadData>;
   vocabularySave: (event: ContentEvent) => Promise<never>;
@@ -396,7 +396,12 @@ deletes the pending branch, returning to the edit page for a published entry (`?
 to the list for an entry that never published. `renameAction` refuses with a 409 while a pending
 branch exists, and a delete cascades to the pending branch after its own commit lands.
 
-`settingsLoad` and `settingsSave` back the tidy settings screen, and `vocabularyLoad` and
+`settingsLoad` and `settingsSave` back the tidy settings screen. `settingsLoad` actively probes a
+present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'` / `'invalid'` /
+`'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
+`enabled` gate distinctly from a never-configured one; the probe result also feeds the same
+key-health cache `editLoad`'s Tidy control reads, so a confirmed-invalid key hides that control on
+the next edit load without a separate check. `vocabularyLoad` and
 `vocabularySave` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
 `VocabularyLoadData` the screen renders: the committed `{ value, label }` vocabulary in config order
 (`vocabulary`), each value's cross-branch in-use count (`usage`, keyed by value over the default
@@ -429,11 +434,11 @@ below. Their request shapes and `fail` payloads:
   disabled or the key is missing, bounds the body, and only then builds the prompt and calls the model
   under its own deadline. It commits nothing. Success returns `TidyResult`
   (`{ corrected, model, usage }`, the corrected markdown plus the model id and token counts; the diff is
-  computed on the client). A refusal returns `TidyFailure`
+  computed on the client) and marks the shared key-health cache healthy. A refusal returns `TidyFailure`
   (`{ error }`): `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API key is
-  missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable and reads
-  "Tidy isn't available right now" rather than the generic retry copy), `fail(413)` for an over-long
-  body (tidy a selection instead), `fail(502)` for a deadline
+  missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable, marks the
+  key unhealthy in the shared cache, and reads "Tidy isn't available right now" rather than the generic
+  retry copy), `fail(413)` for an over-long body (tidy a selection instead), `fail(502)` for a deadline
   overrun, a different abort, a model error, or an empty result (all retryable), `fail(422)` for a model
   refusal, `fail(400)` for a malformed body. The `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and
   `DictionaryAddFailure` shapes are admin-internal: the editor host reads them by `type`/`status` off the

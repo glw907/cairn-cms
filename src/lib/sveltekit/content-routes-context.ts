@@ -57,6 +57,28 @@ export interface TidyClient {
       usage: { input_tokens: number; output_tokens: number };
     }>;
   };
+  /**
+   * The zero-token key-health probe (save-500-honest-errors, Task 5): list available models to
+   *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
+   *  only `messages.create` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades
+   *  to 'unknown' when a client omits it rather than throwing.
+   */
+  models?: {
+    list(params?: { limit?: number }): Promise<unknown>;
+  };
+}
+
+/**
+ * Read an HTTP status off a thrown tidy-client error, structurally: the Anthropic SDK's
+ *  `APIError` (and its subclasses, `AuthenticationError`/`PermissionDeniedError`) carry a numeric
+ *  `status`, and a test's injected error can shape the same field without importing the SDK's
+ *  class. Returns undefined for anything else (a network failure, a plain `Error`, an abort),
+ *  which the caller treats as a retryable, non-auth failure.
+ */
+export function tidyClientErrorStatus(err: unknown): number | undefined {
+  if (typeof err !== 'object' || err === null) return undefined;
+  const status = (err as { status?: unknown }).status;
+  return typeof status === 'number' ? status : undefined;
 }
 
 export interface ContentRoutesDeps {

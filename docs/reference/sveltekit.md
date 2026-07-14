@@ -429,13 +429,15 @@ below. Their request shapes and `fail` payloads:
   disabled or the key is missing, bounds the body, and only then builds the prompt and calls the model
   under its own deadline. It commits nothing. Success returns `TidyResult`
   (`{ corrected, model, usage }`, the corrected markdown plus the model id and token counts; the diff is
-  computed on the client). A refusal returns `TidyFailure` (`{ error }`): `fail(403)` on a failed CSRF
-  check, `fail(503)` when tidy is disabled or the API key is missing, `fail(413)` for an over-long body
-  (tidy a selection instead), `fail(502)` for a deadline overrun, a client abort, a model error, or an
-  empty result (all retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. The
-  `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and `DictionaryAddFailure` shapes are
-  admin-internal: the editor host reads them by `type`/`status` off the deserialized envelope, so they
-  are not exported on the `sveltekit` subpath and carry no Types row.
+  computed on the client). A refusal returns `TidyFailure`
+  (`{ error }`): `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API key is
+  missing, or Anthropic rejects the key outright (a 401 or 403; this branch is not retryable and reads
+  "Tidy isn't available right now" rather than the generic retry copy), `fail(413)` for an over-long
+  body (tidy a selection instead), `fail(502)` for a deadline
+  overrun, a different abort, a model error, or an empty result (all retryable), `fail(422)` for a model
+  refusal, `fail(400)` for a malformed body. The `TidyResult`, `TidyFailure`, `DictionaryAddResult`, and
+  `DictionaryAddFailure` shapes are admin-internal: the editor host reads them by `type`/`status` off the
+  deserialized envelope, so they are not exported on the `sveltekit` subpath and carry no Types row.
 
 Every action failure carries `error: string` as its one-line summary, alongside the payload that
 names what refused: a blocked save or publish returns `SaveFailure` (the broken links and the

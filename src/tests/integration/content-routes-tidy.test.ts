@@ -7,6 +7,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
+import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
@@ -207,5 +208,63 @@ describe('tidy action: the remote model-call boundary (Task 11)', () => {
 
     expect(res.status).toBe(400);
     expect(create).not.toHaveBeenCalled();
+  });
+});
+
+describe('tidy action: error voice (save-500-honest-errors, Task 4)', () => {
+  it('maps a 401 to the calm non-retry fail(503) and logs reason auth', async () => {
+    const create = vi.fn(async () => {
+      throw Object.assign(new Error('invalid x-api-key'), { status: 401 });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(503);
+    expect(res.data?.error).toBe(
+      "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
+    );
+    expect(res.data?.error).not.toMatch(/try again/i);
+    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'auth' }));
+  });
+
+  it('maps a 403 the same way as a 401 (both are auth failures)', async () => {
+    const create = vi.fn(async () => {
+      throw Object.assign(new Error('forbidden'), { status: 403 });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(503);
+  });
+
+  it('a deadline overrun logs reason timeout (retryable)', async () => {
+    const create = vi.fn((_body: unknown, options?: { signal?: AbortSignal }) => {
+      return new Promise((_resolve, reject) => {
+        options?.signal?.addEventListener('abort', () => {
+          const err = new Error('Request was aborted.');
+          err.name = 'AbortError';
+          reject(err);
+        });
+      });
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create), timeoutMs: 20 } });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(502);
+    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'timeout' }));
+  });
+
+  it('a plain model error logs reason model (retryable)', async () => {
+    const create = vi.fn(async () => {
+      throw new Error('overloaded');
+    }) as unknown as TidyClient['messages']['create'];
+    const routes = createContentRoutes(runtime(), { tidy: { client: fakeAnthropic(create) } });
+    const warn = vi.spyOn(log, 'warn');
+    const res = (await routes.tidyAction(tidyEvent())) as TidyResult;
+
+    expect(res.status).toBe(502);
+    expect(warn).toHaveBeenCalledWith('tidy.error', expect.objectContaining({ reason: 'model' }));
   });
 });

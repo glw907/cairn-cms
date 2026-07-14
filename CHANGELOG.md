@@ -38,6 +38,14 @@
   classes on that one element. This is showcase-only (`examples/showcase`, which sites copy at
   scaffold time), not an engine change: a site whose `containerClass` names one wrapper class while its
   real page nests two should name both, space-separated, on the preview knob.
+- A tidy call that fails because Anthropic rejects the API key (a 401 or 403, a revoked or
+  mistyped key) no longer tells the editor "Try again." That auth failure is not retryable, so it
+  now returns a distinct `fail(503)` reading "Tidy isn't available right now. Your site's AI
+  access needs attention; let your site developer know," and the `tidy.error` log gains a `reason`
+  field (`auth`, `timeout`, `abort`, or `model`) so an operator can tell an auth failure from a
+  transient one at a glance. This is the exact gap the ecxc revoked-key incident exposed: every
+  attempt logged the same retryable warning while the real cause needed a site developer, not
+  another click. No consumer action needed.
 
 ## 0.84.3
 

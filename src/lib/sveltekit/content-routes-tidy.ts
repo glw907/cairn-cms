@@ -7,6 +7,7 @@ import { log } from '../log/index.js';
 import { requireSession } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
+import { tidyClientErrorStatus } from './content-routes-context.js';
 import type { ContentRoutesContext, ContentEvent, TidyClient } from './content-routes-context.js';
 
 /**
@@ -22,10 +23,12 @@ export interface TidyResult {
 }
 
 /**
- * A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled or the API
- * key is missing, `fail(413)` for an over-long body, `fail(502)` for a deadline overrun, abort, or
- * model error (all retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just
- * the one-line summary; the action commits nothing, so a refusal can never corrupt the entry.
+ * A refused tidy: `fail(403)` on a failed CSRF check, `fail(503)` when tidy is disabled, the API
+ * key is missing, or Anthropic rejects the key outright (401/403, a non-retryable auth failure,
+ * distinct from the retryable model errors below), `fail(413)` for an over-long body, `fail(502)`
+ * for a deadline overrun, an abort, or a model error (rate limit, overload, 5xx, network; all
+ * retryable), `fail(422)` for a model refusal, `fail(400)` for a malformed body. Just the one-line
+ * summary; the action commits nothing, so a refusal can never corrupt the entry.
  */
 export interface TidyFailure {
   error: string;
@@ -61,6 +64,12 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  not returned and not logged, and the log line carries no content. The action commits NOTHING, so a
    *  failed, aborted, or refused tidy can never corrupt the entry; the diff is computed on the client
    *  (Task 12), so the server stays a thin model-call boundary.
+   *
+   *  A model-call failure classifies into one of two voices (save-500-honest-errors, Task 4): an
+   *  auth/permission failure (401/403) is not retryable, since the key itself is the problem, so it
+   *  returns the calm non-retry copy naming the site developer rather than the retryable "Try
+   *  again." copy. The log's `reason` field (`auth`/`timeout`/`abort`/`model`) names which one
+   *  fired, so an operator can tell an auth failure from a transient one at a glance.
    */
   async function tidyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
@@ -110,9 +119,15 @@ export function createTidyActions(ctx: ContentRoutesContext) {
     // Bound the model call with the Worker's own deadline (shorter than the platform limit), so a slow
     // call becomes a retryable fail(502) rather than a platform timeout. The client also drives its own
     // AbortController (Cancel + a bounded timeout, Task 14); this action accepts an aborted request
-    // cleanly by mapping any abort to the same fail(502).
+    // cleanly by mapping any abort to the same fail(502). `deadlineHit` distinguishes the deadline
+    // timer's own abort from some other abort reaching the same signal (a client disconnect cancelling
+    // the underlying subrequest), so the log's `reason` names which one actually happened.
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), ctx.tidyTimeoutMs);
+    let deadlineHit = false;
+    const timer = setTimeout(() => {
+      deadlineHit = true;
+      controller.abort();
+    }, ctx.tidyTimeoutMs);
     let message: Awaited<ReturnType<TidyClient['messages']['create']>>;
     try {
       const client = ctx.anthropicClient({ apiKey });
@@ -127,10 +142,25 @@ export function createTidyActions(ctx: ContentRoutesContext) {
         { signal: controller.signal },
       );
     } catch (err) {
-      // A deadline overrun, a client abort, or a model error (rate limit, overload, 5xx) all map to the
-      // retryable fail(502). The error string is not surfaced to the client (it may carry internal
-      // detail); the log line carries the editor and the kind, never the key or the content.
-      log.warn('tidy.error', { editor: editor.email, model, aborted: controller.signal.aborted });
+      const status = tidyClientErrorStatus(err);
+      if (status === 401 || status === 403) {
+        // An auth/permission failure is not retryable: the key itself is the problem, not a transient
+        // model hiccup, so "Try again." would be a false promise.
+        log.warn('tidy.error', { editor: editor.email, model, reason: 'auth' });
+        return fail(503, {
+          error: "Tidy isn't available right now. Your site's AI access needs attention; let your site developer know.",
+        } satisfies TidyFailure);
+      }
+      // Everything else stays retryable: a deadline overrun, an abort from elsewhere, or a model error
+      // (rate limit, overload, 5xx, network). The error string is not surfaced to the client (it may
+      // carry internal detail); the log line carries the editor, the model, and which of the three it
+      // was, never the key or the content.
+      const reason: 'timeout' | 'abort' | 'model' = deadlineHit
+        ? 'timeout'
+        : err instanceof Error && err.name === 'AbortError'
+          ? 'abort'
+          : 'model';
+      log.warn('tidy.error', { editor: editor.email, model, reason });
       return fail(502, { error: 'Tidy could not finish. Try again.' } satisfies TidyFailure);
     } finally {
       clearTimeout(timer);

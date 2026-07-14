@@ -6,6 +6,8 @@ import {
   markKeyUnhealthy,
   markKeyHealthy,
   keyKnownUnhealthy,
+  recordProbeResult,
+  cachedProbeResult,
   resetKeyHealthForTest,
 } from '../../lib/sveltekit/tidy-key-health.js';
 
@@ -38,5 +40,27 @@ describe('tidy key health cache', () => {
   it('defaults `now` to Date.now() when the caller passes none', () => {
     markKeyUnhealthy();
     expect(keyKnownUnhealthy()).toBe(true);
+  });
+});
+
+describe('settings-load probe cache (save-500-hardening)', () => {
+  it('reports no cached result before any probe has run', () => {
+    expect(cachedProbeResult(0)).toBeNull();
+  });
+
+  it('reuses a recorded verdict through the TTL window', () => {
+    recordProbeResult('valid', 1_000_000);
+    expect(cachedProbeResult(1_000_000)).toBe('valid');
+    expect(cachedProbeResult(1_000_000 + TEN_MINUTES - 1)).toBe('valid');
+  });
+
+  it('goes stale once the TTL window passes', () => {
+    recordProbeResult('valid', 1_000_000);
+    expect(cachedProbeResult(1_000_000 + TEN_MINUTES)).toBeNull();
+  });
+
+  it('caches every verdict, including unknown, the same as a confirmed one', () => {
+    recordProbeResult('unknown', 1_000_000);
+    expect(cachedProbeResult(1_000_000)).toBe('unknown');
   });
 });

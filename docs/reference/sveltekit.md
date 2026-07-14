@@ -401,7 +401,11 @@ present key with a zero-token Anthropic call and reports `keyStatus` (`'missing'
 `'valid'` / `'unknown'`) alongside the presence-only `keyConfigured`, so a revoked key closes the
 `enabled` gate distinctly from a never-configured one; the probe result also feeds the same
 key-health cache `editLoad`'s Tidy control reads, so a confirmed-invalid key hides that control on
-the next edit load without a separate check. `vocabularyLoad` and
+the next edit load without a separate check. The same deadline that bounds a tidy call also bounds
+the probe, so a hung Anthropic connection resolves to `'unknown'` rather than stalling the load
+on the SDK's own multi-minute timeout. The key-health cache holds the probe's verdict for the
+same ten-minute window as its mark, so a run of settings navigations spends at most one live
+round trip. `vocabularyLoad` and
 `vocabularySave` back the tag-vocabulary screen at `/admin/vocabulary`. `vocabularyLoad` returns the
 `VocabularyLoadData` the screen renders: the committed `{ value, label }` vocabulary in config order
 (`vocabulary`), each value's cross-branch in-use count (`usage`, keyed by value over the default

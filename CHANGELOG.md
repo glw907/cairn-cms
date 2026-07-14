@@ -54,7 +54,10 @@
   `cairn-doctor` both upgrade from a presence check to an active, zero-token probe against
   Anthropic, reporting missing, invalid, and valid distinctly (`SettingsData` gains `keyStatus`);
   a probe that cannot reach Anthropic fails soft to an honest "could not verify" rather than a
-  false claim of invalid. No consumer action needed.
+  false claim of invalid. The settings screen's probe is bounded by the same deadline as a tidy
+  call (an unbounded probe on every load could otherwise hang on the Anthropic SDK's own
+  multi-minute default) and its verdict is cached for the same ten-minute window, so a run of
+  settings navigations spends at most one live round trip. No consumer action needed.
 
 ## 0.84.3
 

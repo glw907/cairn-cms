@@ -61,10 +61,12 @@ export interface TidyClient {
    * The zero-token key-health probe (save-500-honest-errors, Task 5): list available models to
    *  confirm the key without spending output tokens. Optional so an existing fake client stubbing
    *  only `messages.create` still satisfies this type; `probeTidyKey` (tidy-key-probe.ts) degrades
-   *  to 'unknown' when a client omits it rather than throwing.
+   *  to 'unknown' when a client omits it rather than throwing. The signal rides the second
+   *  argument, mirroring `messages.create`'s options shape (save-500-hardening), so the probe is
+   *  bounded by the same deadline as a tidy call instead of the SDK's own multi-minute default.
    */
   models?: {
-    list(params?: { limit?: number }): Promise<unknown>;
+    list(params?: { limit?: number }, options?: { signal?: AbortSignal }): Promise<unknown>;
   };
 }
 

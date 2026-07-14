@@ -104,8 +104,9 @@ Once `tidy.enabled` is `true` and the key resolves, the in-admin settings screen
 toggles an editor sets for their own site, saved straight back into `site.config.yaml`'s
 `tidy.conventions` block. The developer-tier facts you just set, whether tidy is on, whether the
 key is set, and which model, show there too, read-only. The settings screen also actively probes
-the key on every load, so a revoked or mistyped one surfaces its own distinct note there instead
-of quietly claiming success because a value is merely present.
+the key, so a revoked or mistyped one surfaces its own distinct note there instead of quietly
+claiming success because a value is merely present. It reuses a recent probe's result for a few
+minutes rather than reaching Anthropic on every single load.
 
 If a tidy call ever fails because Anthropic rejects the key, the Tidy control disappears from the
 editor for a while rather than staying live to fail the same way again: a present-but-broken key

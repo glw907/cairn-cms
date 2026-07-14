@@ -19,6 +19,7 @@ import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireSession } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
+import { cachedProbeResult } from './tidy-key-health.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 
 /**
@@ -52,7 +53,9 @@ export interface SettingsData {
    *  probe did not run (tidy is off) or could not reach Anthropic (a client with no probe surface,
    *  a network failure), a fail-soft result, never a false claim of invalid. Probed only when
    *  `tidyEnabled` and the key is present; a probe result also updates the shared key-health cache
-   *  that gates `editLoad`'s Tidy control.
+   *  that gates `editLoad`'s Tidy control. Bounded by the same deadline as a tidy call and cached
+   *  for a TTL window (save-500-hardening), so a run of settings navigations costs at most one
+   *  live probe (`tidy-key-health.ts`'s `cachedProbeResult`).
    */
   keyStatus: TidyKeyProbeResult | 'missing';
   /** The model id (a developer-tier fact, read-only on the screen). */
@@ -148,6 +151,12 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  problem is correctness, not presence) but closes the gate, and an unverifiable probe (`'unknown'`,
    *  a network hiccup or a dev client with no probe surface) never closes it: the gate fails open on an
    *  unproven state, closing only on a confirmed rejection.
+   *
+   *  The probe itself is bounded and cached (save-500-hardening): it consults `cachedProbeResult`
+   *  first and reuses a fresh verdict, so a run of settings navigations spends at most one live
+   *  round trip within the TTL window; only a stale-or-absent record calls `probeTidyKey`, which is
+   *  itself bounded by `ctx.tidyTimeoutMs`, the same deadline a tidy call gets, rather than the
+   *  Anthropic SDK's own multi-minute default.
    */
   async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
     requireSession(event);
@@ -157,9 +166,14 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const model = tidy?.model || DEFAULT_TIDY_MODEL;
     let keyStatus: SettingsData['keyStatus'] = keyPresent ? 'unknown' : 'missing';
     if (tidyEnabled && keyPresent) {
-      const env = (event.platform?.env ?? {}) as Record<string, unknown>;
-      const apiKey = typeof env.ANTHROPIC_API_KEY === 'string' ? env.ANTHROPIC_API_KEY : '';
-      keyStatus = await probeTidyKey(ctx.anthropicClient({ apiKey }));
+      const cached = cachedProbeResult();
+      if (cached !== null) {
+        keyStatus = cached;
+      } else {
+        const env = (event.platform?.env ?? {}) as Record<string, unknown>;
+        const apiKey = typeof env.ANTHROPIC_API_KEY === 'string' ? env.ANTHROPIC_API_KEY : '';
+        keyStatus = await probeTidyKey(ctx.anthropicClient({ apiKey }), ctx.tidyTimeoutMs);
+      }
     }
     return {
       enabled: tidyEnabled && keyPresent && keyStatus !== 'invalid',

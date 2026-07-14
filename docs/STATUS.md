@@ -68,7 +68,23 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-14: 0.84.4 SHIPPED and rolled out; NEXT is the EXTENSIBLE ROLES initiative)
+## Immediate next action (2026-07-14, later: the EXTENSIBLE ROLES pass is EXECUTING)
+
+**THE ROLES DESIGN IS RATIFIED AND THE PLAN IS AUTHORED.** Spec:
+docs/superpowers/specs/2026-07-14-extensible-roles-design.md (committed 174ee8c8; Geoff
+approved with both forks ruled: config bootstrapOwner IN; landing is per-role via a
+declared `home` on the role). Plan: docs/superpowers/plans/2026-07-14-extensible-roles.md
+(ten tasks, T1 vocabulary core through T9 docs close plus the T10 ritual). Execution:
+Geoff authorized a WORKFLOW ("Proceed with a workflow") — serial cairn-implementer
+pipeline on the `extensible-roles` worktree off main (test-first, full gate per task),
+then the adversarial review workflow at the gate (web-auth-security-reviewer mandatory),
+then the main-loop close ritual (simplifier, named gates, consumer build, admin smoke,
+post-mortem, STATUS, merge). Resume prompt if interrupted: "Resume the extensible-roles
+pass: read the plan file and continue from the first unchecked task on the
+extensible-roles worktree." Release: hold unpublished per doctrine, but ASC needs the
+seam (its membership-admin collapse), so a cut likely follows the merge via cairn-release.
+
+## Prior next action (2026-07-14: 0.84.4 SHIPPED and rolled out; roles promoted to Now)
 
 **0.84.4 IS PUBLISHED AND LIVE ON ALL THREE SITES** (plan + post-mortem:
 docs/superpowers/plans/2026-07-13-save-500-honest-errors.md; release: v0.84.4, OIDC-verified

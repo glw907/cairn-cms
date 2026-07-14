@@ -34,13 +34,13 @@ beforeEach(async () => {
 
 /** Build an event whose locals.editor is the acting owner (as the guard would set it). */
 function asOwner(form?: Record<string, string>) {
-  const ev = makeEvent({ url: 'https://test.dev/admin/editors', form, editor: { email: 'own@x.dev', displayName: 'Own', role: 'owner' } });
+  const ev = makeEvent({ url: 'https://test.dev/admin/editors', form, editor: { email: 'own@x.dev', displayName: 'Own', role: 'owner', capability: 'owner' } });
   return ev;
 }
 
 describe('management gate (scenario 7)', () => {
   it('rejects an editor from the management surface with 403', async () => {
-    const ev = makeEvent({ url: 'https://test.dev/admin/editors', editor: { email: 'ed@x.dev', displayName: 'Ed', role: 'editor' } });
+    const ev = makeEvent({ url: 'https://test.dev/admin/editors', editor: { email: 'ed@x.dev', displayName: 'Ed', role: 'editor', capability: 'editor' } });
     const r = await expectHttpError(() => routes.editorsLoad(ev));
     expect(r.status).toBe(403);
   });

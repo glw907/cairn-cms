@@ -2,16 +2,24 @@
 // the `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
 // SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
 import type { D1Database } from '@cloudflare/workers-types';
-import type { Editor, Role } from './types.js';
+import type { Role } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: Role };
 
-function toEditor(row: EditorCols): Editor {
+/**
+ * An allowlist row as the store reads it: email, displayName, and the bare role name. The store
+ * has no access to the site's declared vocabulary, so it can never resolve `capability`; a caller
+ * that needs a full `Editor` (the guard, `editorsLoad`) resolves capability itself and spreads it
+ * onto this shape.
+ */
+export type EditorRow = { email: string; displayName: string; role: Role };
+
+function toEditor(row: EditorCols): EditorRow {
   return { email: row.email, displayName: row.display_name, role: row.role };
 }
 
 /** Look an email up in the allowlist. */
-export async function findEditor(db: D1Database, email: string): Promise<Editor | null> {
+export async function findEditor(db: D1Database, email: string): Promise<EditorRow | null> {
   const row = await db
     .prepare('SELECT email, display_name, role FROM editor WHERE email = ?')
     .bind(email)
@@ -78,7 +86,7 @@ export async function createSession(
  * Resolve a session to its editor, joining `editor` so the role is read live. An expired
  * session or a removed editor resolves to null, which revokes access on the next request.
  */
-export async function resolveSession(db: D1Database, id: string, now: number): Promise<Editor | null> {
+export async function resolveSession(db: D1Database, id: string, now: number): Promise<EditorRow | null> {
   const row = await db
     .prepare(
       `SELECT e.email AS email, e.display_name AS display_name, e.role AS role
@@ -96,7 +104,7 @@ export async function deleteSession(db: D1Database, id: string): Promise<void> {
 }
 
 /** The full allowlist, sorted by email. */
-export async function listEditors(db: D1Database): Promise<Editor[]> {
+export async function listEditors(db: D1Database): Promise<EditorRow[]> {
   const { results } = await db
     .prepare('SELECT email, display_name, role FROM editor ORDER BY email')
     .all<EditorCols>();

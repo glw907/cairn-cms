@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { requireOwner, requireEditor, requireSession, isPublicAdminPath } from '../../lib/sveltekit/guard.js';
 import type { Role } from '../../lib/auth/types.js';
 
-const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const };
-const editor = { email: 'e@x.test', displayName: 'E', role: 'editor' as const };
+const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };
+const editor = { email: 'e@x.test', displayName: 'E', role: 'editor' as const, capability: 'editor' as const };
 // Role narrows to 'owner' | 'editor' in this unaugmented test file; a site that declares a wider
 // vocabulary widens it via the CairnRolesRegister augmentation (see auth-roles.test.ts). The
 // double cast stands in for that augmentation so this fixture can name an out-of-vocabulary role,
@@ -30,13 +30,6 @@ describe('requireOwner', () => {
       expect.objectContaining({ status: 403 }),
     );
   });
-  it('requireOwner falls back to the default vocabulary when capability is unset (a bare owner literal)', () => {
-    // Most of the suite constructs Editor literals with only `role`, predating the guard's
-    // capability attachment; requireOwner must still resolve them under the default vocabulary.
-    expect(requireOwner({ locals: { editor: { email: 'o2@x.test', displayName: 'O2', role: 'owner' } } })).toEqual(
-      expect.objectContaining({ role: 'owner' }),
-    );
-  });
 });
 
 describe('requireEditor', () => {
@@ -58,11 +51,6 @@ describe('requireEditor', () => {
   });
   it('redirects when no editor', () => {
     expect(() => requireEditor({ locals: { editor: null } })).toThrow();
-  });
-  it('falls back to the default vocabulary when capability is unset (a bare editor literal)', () => {
-    expect(requireEditor({ locals: { editor: { email: 'e2@x.test', displayName: 'E2', role: 'editor' } } })).toEqual(
-      expect.objectContaining({ role: 'editor' }),
-    );
   });
 });
 

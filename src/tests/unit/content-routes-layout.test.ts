@@ -38,7 +38,7 @@ function runtimeWithRoles(): CairnRuntime {
 function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: Backend = backend) {
   return contentEvent({
     url: `https://test.example${pathname}`,
-    editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role },
+    editor: role === null ? null : { email: 'e@test', displayName: 'Ed', role, capability: role },
     eventBackend,
     env: {},
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
@@ -324,7 +324,7 @@ describe('shellPayload: navFilter', () => {
     // Exact equality proves navFilter saw only the two custom items above, resolved and
     // role-filtered, and nothing from the built-in concepts/Library/Tags/Settings entries.
     expect(received).toEqual(RESOLVED_NAV_WITH_SECTION);
-    expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     if (!shell.public) await shell.pendingEntries;
   });
 

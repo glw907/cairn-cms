@@ -229,7 +229,7 @@ describe('mediaReplacePreview', () => {
       url: 'https://t.example/admin/media',
       body: '{ not json',
       headers: { 'content-type': 'application/json', 'x-cairn-csrf': CSRF },
-      editor: { email: 'ed@t', displayName: 'Ed', role: 'editor' },
+      editor: { email: 'ed@t', displayName: 'Ed', role: 'editor', capability: 'editor' },
       env: {},
       cookies: cookieJar(CSRF),
     });

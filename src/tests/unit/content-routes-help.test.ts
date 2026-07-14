@@ -51,7 +51,7 @@ const ONE_PUBLISHED_POST: Manifest = {
 function event(eventBackend?: Backend) {
   return contentEvent({
     url: 'https://test.example/admin/help',
-    editor: { email: 'e@test', displayName: 'Ed', role: 'editor' },
+    editor: { email: 'e@test', displayName: 'Ed', role: 'editor', capability: 'editor' },
     eventBackend,
     env: {},
   });

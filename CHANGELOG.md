@@ -18,7 +18,10 @@
   through the `CairnAdminShell` custom-route seam untouched, so a site's own admin routes can grant
   a none-capability role access to a screen cairn's own surfaces refuse. `ManageEditors` renders
   the declared vocabulary: the default pair keeps today's toggle, and a larger vocabulary renders a
-  labeled select naming each role's capability. `CairnAdminDeps.auth` gains `bootstrapOwner`, a
+  labeled select naming each role's capability. A custom `adminNav` entry's `ownerOnly` flag now
+  gates on resolved owner capability, not the literal `'owner'` role name, so a vocabulary with a
+  second owner-level role name shows those entries to every owner-capability session.
+  `CairnAdminDeps.auth` gains `bootstrapOwner`, a
   config-declared email and display name that seeds the very first owner row on an empty `editor`
   table from the ordinary magic-link request flow, no `wrangler d1 execute` required. A new
   migration, `migrations/0001_roles.sql`, drops the `editor.role` column's `CHECK` constraint

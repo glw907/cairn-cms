@@ -54,7 +54,7 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
 }
 
 /** The editor literal the majority of this cluster's fixtures commit as. */
-export const ED_EDITOR = { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const };
+export const ED_EDITOR = { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const };
 
 /** Options for {@link contentEvent}; every field but `url` is optional and defaults to the
  *  cluster's common fixture shape. */
@@ -70,7 +70,7 @@ export interface ContentEventOptions {
   /** A raw POST body (e.g. a JSON string), for the CSRF-header raw-body actions. */
   body?: BodyInit;
   headers?: Record<string, string>;
-  editor?: { email: string; displayName: string; role: 'owner' | 'editor' } | null;
+  editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
   eventBackend?: Backend;
   cookies?: CookieJar;
   env?: Record<string, unknown>;

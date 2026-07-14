@@ -660,8 +660,9 @@ interface AdminNavEntry {
 One developer-declared sidebar entry. `label` names the link, `icon` is a name from the bundled
 allowlist (see [`AdminNavIcon`](#adminnavicon)), and `href` points at the site's own `/admin/` route.
 The href must not collide with a built-in admin view; a collision throws at startup with the
-conflicting view named. Set `ownerOnly` to hide the link from a non-owner. The flag is cosmetic, so the
-route itself must still gate server-side.
+conflicting view named. Set `ownerOnly` to hide the link from a session that does not resolve to
+owner capability, regardless of its role name. The flag is cosmetic, so the route itself must still
+gate server-side.
 
 ### `AdminNavIcon`
 
@@ -697,7 +698,7 @@ interface ResolvedNavEntry {
 ```
 
 The validated shape the shell renders, produced from an `AdminNavEntry`: the icon name resolved and
-`ownerOnly` defaulted to false. The authed shell payload carries the role-filtered set of these.
+`ownerOnly` defaulted to false. The authed shell payload carries the capability-filtered set of these.
 
 ### `AdminNavSection`
 

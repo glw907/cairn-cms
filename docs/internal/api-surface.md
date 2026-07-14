@@ -29,7 +29,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `defineConcept`: <const C extends ConceptConfig>(concept: C) => C
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
-- `Editor`: { email: string; displayName: string; role: "owner" | "editor"; capability?: Capability }
+- `Editor`: { email: string; displayName: string; role: "owner" | "editor"; capability: "owner" | "editor" | "none" }
 - `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "attachment" | "inline" }
 - `EmailRecipient`: string | { email: string; name?: string }
 - `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]

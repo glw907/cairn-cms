@@ -5,7 +5,7 @@
 // a concept route), so a partial reserved-segment list is never reimplemented here.
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
-import type { Role } from '../auth/types.js';
+import type { Capability } from '../auth/roles.js';
 
 /** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
 const ADMIN_NAV_ICON_NAMES = [
@@ -134,12 +134,14 @@ export function normalizeAdminNav(
 }
 
 /**
- * Role-filter a resolved adminNav for one editor: a flat entry's `ownerOnly` hides it from a
- *  non-owner, and a section keeps only the children an editor may see, disappearing entirely once
- *  every child is hidden (an all-owner-only section never teases an empty group at a non-owner).
+ * Capability-filter a resolved adminNav for one editor: a flat entry's `ownerOnly` hides it from a
+ *  non-owner-capability session (owner-capability *only*, not the literal `'owner'` role name, so a
+ *  vocabulary with a second owner-level role name sees the same entries as `'owner'` does), and a
+ *  section keeps only the children an editor may see, disappearing entirely once every child is
+ *  hidden (an all-owner-only section never teases an empty group at a non-owner).
  */
-export function filterNavByRole(items: ResolvedNavItem[], role: Role): ResolvedNavItem[] {
-  const visible = (entry: ResolvedNavEntry) => !entry.ownerOnly || role === 'owner';
+export function filterNavByRole(items: ResolvedNavItem[], capability: Capability): ResolvedNavItem[] {
+  const visible = (entry: ResolvedNavEntry) => !entry.ownerOnly || capability === 'owner';
   const out: ResolvedNavItem[] = [];
   for (const item of items) {
     if (isResolvedNavSection(item)) {

@@ -4,7 +4,7 @@ import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionA
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
-const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner' };
+const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner', capability: 'owner' };
 
 function jar(initial: Record<string, string> = {}): CookieJar {
   const store = new Map(Object.entries(initial));

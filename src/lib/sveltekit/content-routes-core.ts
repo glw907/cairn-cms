@@ -35,8 +35,7 @@ import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
-import { resolveCapability, roleHome } from '../auth/roles.js';
-import type { Capability } from '../auth/roles.js';
+import { roleHome } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -276,15 +275,6 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
   };
 }
 
-/**
- * An editor's resolved capability, falling back to the site's declared vocabulary when the object
- *  carries none (a fixture built before the guard attached it). Mirrors the guard's own fallback so
- *  a role-aware decision here always agrees with `requireEditor`/`requireOwner`.
- */
-function capabilityOf(runtime: CairnRuntime, editor: Editor): Capability {
-  return editor.capability ?? resolveCapability(runtime.roles, editor.role);
-}
-
 /** Look up the concept named by the `[concept]` route param, or a 404. */
 function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
   const concept = findConcept(runtime.concepts, params.concept ?? '');
@@ -374,7 +364,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // editor may see, disappearing once every child is hidden), then the site's own navFilter, if
     // configured, sees only that already-filtered set and the signed-in editor. Absent navFilter,
     // this is exactly today's pure role filter.
-    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.role);
+    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.capability);
     const customNav = ctx.deps.navFilter
       ? await ctx.deps.navFilter(roleFilteredNav, { editor, event })
       : roleFilteredNav;
@@ -382,7 +372,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // shell, but the engine's own content nav and the owner-only Editors entry serve no purpose:
     // every route they link to refuses a none session with 403. Hiding them here, in the payload,
     // keeps the shell component a pure renderer of whatever nav it is handed.
-    const capability = capabilityOf(runtime, editor);
+    const capability = editor.capability;
     return {
       shell: {
         public: false,
@@ -444,7 +434,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (home) {
       throw redirect(303, `${home}${suffix}`);
     }
-    if (capabilityOf(runtime, editor) !== 'none') {
+    if (editor.capability !== 'none') {
       const first = runtime.concepts[0];
       if (!first) throw error(404, 'No content types configured');
       throw redirect(307, `/admin/${first.id}${suffix}`);

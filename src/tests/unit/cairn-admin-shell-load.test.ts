@@ -32,13 +32,21 @@ const deps = {};
 /** Build the catch-all event the shell load reads; only `params.path` exists on the real one. */
 function eventFor(
   pathname: string,
-  opts: { editor?: { email: string; displayName: string; role: 'owner' | 'editor' } | null } = {},
+  opts: {
+    editor?: { email: string; displayName: string; role: 'owner' | 'editor'; capability: 'owner' | 'editor' } | null;
+  } = {},
 ) {
   const headers: Record<string, string> = {};
   return {
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`),
-    locals: { editor: opts.editor === undefined ? { email: 'e@t', displayName: 'E', role: 'editor' as const } : opts.editor, backend },
+    locals: {
+      editor:
+        opts.editor === undefined
+          ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
+          : opts.editor,
+      backend,
+    },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
     setHeaders: (h: Record<string, string>) => Object.assign(headers, h),

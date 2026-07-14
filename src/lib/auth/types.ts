@@ -23,14 +23,15 @@ export type Role = CairnRolesRegister extends { roles: infer R }
 
 /**
  * The session shape the whole admin reads: guard, loads, content fns, manage-editors. `capability`
- * is resolved from the role wherever the engine materializes an `Editor` (the guard, the store); it
- * is optional here because Task 1 introduces the field and later tasks fill every construction site.
+ * is resolved from the role wherever the engine materializes an `Editor`; the store itself does not
+ * know the vocabulary, so it returns the narrower `EditorRow` (see `../auth/store.js`) and only the
+ * guard and the routes that read the vocabulary fill this field.
  */
 export interface Editor {
   email: string;
   displayName: string;
   role: Role;
-  capability?: Capability;
+  capability: Capability;
 }
 
 /**

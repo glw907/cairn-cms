@@ -21,8 +21,8 @@ const ASC_VOCABULARY: { role: string; capability: Capability }[] = [
 function data() {
   return {
     editors: [
-      { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
-      { email: 'ed@t', displayName: 'Ed Two', role: 'editor' as const },
+      { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
+      { email: 'ed@t', displayName: 'Ed Two', role: 'editor' as const, capability: 'editor' as const },
     ],
     self: 'owner@t',
     error: null,
@@ -100,11 +100,12 @@ describe('ManageEditors vocabulary-driven role control', () => {
     const screen = render(ManageEditors, {
       data: {
         editors: [
-          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
           {
             email: 'ted@t',
             displayName: 'Ted Instructor',
             role: 'instructor' as unknown as Role,
+            capability: 'none' as const,
           },
         ],
         self: 'owner@t',
@@ -125,11 +126,12 @@ describe('ManageEditors vocabulary-driven role control', () => {
     const screen = render(ManageEditors, {
       data: {
         editors: [
-          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
           {
             email: 'ted@t',
             displayName: 'Ted Instructor',
             role: 'club-admin' as unknown as Role,
+            capability: 'editor' as const,
           },
         ],
         self: 'owner@t',
@@ -165,11 +167,12 @@ describe('ManageEditors vocabulary-driven role control', () => {
     const screen = render(ManageEditors, {
       data: {
         editors: [
-          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' as const },
           {
             email: 'pres@t',
             displayName: 'President Two',
             role: 'president' as unknown as Role,
+            capability: 'owner' as const,
           },
         ],
         self: 'owner@t',

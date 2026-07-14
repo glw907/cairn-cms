@@ -300,8 +300,9 @@ adminNav icon "mail" is not one of anchor, calendar, clipboard-list, list, users
 adminNav href "/admin/media" collides with cairn's built-in "media" view; choose an unclaimed /admin/<segment>
 ```
 
-Set `ownerOnly: true` on an entry to hide it from a signed-in editor who isn't an owner. That flag
-only decides what the sidebar renders. It changes nothing about what the route itself allows. The
+Set `ownerOnly: true` on an entry to hide it from a signed-in editor whose resolved capability isn't
+`owner`, whatever their role name. That flag only decides what the sidebar renders. It changes
+nothing about what the route itself allows. The
 full seam, including the validated `ResolvedNavEntry` shape the shell
 actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
 in the SvelteKit reference.

@@ -23,6 +23,13 @@
   `admin.action.failed` event naming the action, the concept and entry when there is one, and the
   acting editor. Every engine action shares the same guard, so the class of failure the ecxc save
   500 exposed can no longer escape from any of them. No consumer action needed.
+- A required textarea, date, or free-form (open) multiselect field in the editor now carries the
+  browser's native `required` attribute, so an empty one trips the capture-phase invalid handler
+  and opens the Details panel before the save even reaches the server, matching the number, select,
+  text, url, email, and datetime arms, which already had it. Previously these three arms enforced
+  requiredness server-side only, so a required field with no value surfaced no client-side signal
+  at all (this is how the ecxc "Description is required with no visible field" report happened,
+  and how a required date field could reach the server unset). No consumer action needed.
 
 ## 0.84.3
 

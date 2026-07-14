@@ -23,6 +23,12 @@
   `admin.action.failed` event naming the action, the concept and entry when there is one, and the
   acting editor. Every engine action shares the same guard, so the class of failure the ecxc save
   500 exposed can no longer escape from any of them. No consumer action needed.
+- A script-posted action's unexpected failure (tidy, a dictionary word, an upload) no longer tells
+  the editor their session expired. These actions fetch with `redirect: 'manual'`, so the guard
+  above's redirect fallback read as an opaque, status-0 response and the client folded that into a
+  false "sign in again" message for what was actually an unrelated bug; the same actions now return
+  a `fail(500)` carrying the calm copy inline, which the client already renders verbatim. Form-nav
+  actions (save, publish) are unaffected and still redirect. No consumer action needed.
 - A required textarea, date, or free-form (open) multiselect field in the editor now carries the
   browser's native `required` attribute, so an empty one trips the capture-phase invalid handler
   and opens the Details panel before the save even reaches the server, matching the number, select,

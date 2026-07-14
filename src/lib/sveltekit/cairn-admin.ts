@@ -4,7 +4,7 @@
 // route exports. The path authority is admin-dispatch's parseAdminPath; this module only maps
 // each view to the wrapped load it delegates to, and each named action validates that the
 // parsed view supports it before delegating to the same wrapped factories.
-import { error, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
+import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { parseAdminPath, type AdminView } from './admin-dispatch.js';
 import { log } from '../log/index.js';
 import { createAuthRoutes } from './auth-routes.js';
@@ -190,12 +190,29 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  would strand the editor's draft behind a 404, exactly the P0's scenario. Only `save` and
    *  `publish` set it: cloning the request has a real cost for a large upload body, so every other
    *  action skips the clone entirely.
+   *
+   *  `scriptPosted` opts an action into `fail(500, { error: UNEXPECTED_ACTION_ERROR })` instead of
+   *  the redirect (save-500-hardening): a form-nav action's redirect lands cleanly on the next
+   *  page, but a script-posted action (tidy, a dictionary word, an upload, all of which fetch with
+   *  `redirect: 'manual'` so the guard's own expired-session 303 reads as an opaque, status-0
+   *  response) sees THIS redirect the identical way, and the client helpers fold that shape into
+   *  "your session expired, sign in again," a false and pointless re-login loop for what is
+   *  actually an unrelated server bug. A `fail(500)` reaches the same client code as a genuine
+   *  status, so it renders the calm copy inline instead. Set only on the actions whose own client
+   *  posts with `redirect: 'manual'`: `upload`, `mediaUpload`, `mediaLibraryUpload`,
+   *  `addDictionaryWord`, and `tidy`. Every other script-posted media action (a preview, a bulk
+   *  apply, a scan) posts with the default `redirect: 'follow'`, so this wrapper's own redirect
+   *  never reaches them as an opaque response in the first place. The return type only proves out
+   *  for a call site whose delegate's own declared return already includes
+   *  `ReturnType<typeof fail>`, so the cast below just names that fact; `R` is abstract inside this
+   *  generic wrapper, unlike the `throw redirect(...)` fallback, which needs no cast because a
+   *  throw satisfies every instantiation of R.
    */
   function viewAction<V extends AdminView['view'], R>(
     action: string,
     allowed: readonly V[],
     delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
-    opts: { carriesNewFlag?: boolean } = {},
+    opts: { carriesNewFlag?: boolean; scriptPosted?: boolean } = {},
   ): (event: AdminEvent) => Promise<R> {
     return async (event) => {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
@@ -223,6 +240,11 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
           // No editor to attribute; the record still names the action and the error.
         }
         log.error('admin.action.failed', fields);
+        if (opts.scriptPosted) {
+          // Verified per call site (see the doc comment above): R for every scriptPosted action
+          // already includes ReturnType<typeof fail>, so this genuinely satisfies R at runtime.
+          return fail(500, { error: UNEXPECTED_ACTION_ERROR }) as R;
+        }
         // A failure reading the cloned form must never mask the original error either; it just
         // bounces without the flag, the same as an action that never carried one.
         let newSuffix = '';
@@ -269,18 +291,18 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // The tag-vocabulary save (Plan 3): the editor commits the curated vocabulary to the committed
     // YAML, with the cross-branch delete gate failing closed. Gated to the vocabulary view.
     saveVocabulary: viewAction('saveVocabulary', ['vocabulary'], (event) => content.vocabularySave(contentEvent(event, {}))),
-    upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+    upload: viewAction('upload', ['edit'], (event, view) => content.uploadAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     publish: viewAction('publish', ['edit'], (event, view) => content.publishAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { carriesNewFlag: true }),
     discard: viewAction('discard', ['edit'], (event, view) => content.discardAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     rename: viewAction('rename', ['edit'], (event, view) => content.renameAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
     // The personal-dictionary add (spec 1.6): the editor commits its pending add-to-dictionary words at
     // save time. Gated to the edit view, where the spellcheck surface lives, so it 404s elsewhere.
     addDictionaryWord: viewAction('addDictionaryWord', ['edit'], (event, view) =>
-      content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+      content.addDictionaryWordAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     // Tidy (spec 2.1): the editor posts the buffer to `?/tidy` for a light LLM copy-edit. Gated to the
     // edit view, where the review surface lives, so it 404s elsewhere.
     tidy: viewAction('tidy', ['edit'], (event, view) =>
-      content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id }))),
+      content.tidyAction(contentEvent(event, { concept: view.concept.id, id: view.id })), { scriptPosted: true }),
     delete: viewAction('delete', ['edit', 'list'], (event, view) =>
       view.view === 'edit'
         ? content.deleteAction(contentEvent(event, { concept: view.concept.id, id: view.id }))
@@ -292,8 +314,8 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     // addressed ingest mounted media-scoped (uploadAction reads no concept/id), then previews and
     // applies the repoint. Alt propagation previews and applies the alt fill. The preview pair are 2a
     // fetch actions; the apply pair are form posts. All gate on the media view.
-    mediaUpload: viewAction('mediaUpload', ['media'], (event) => content.uploadAction(contentEvent(event, {}))),
-    mediaLibraryUpload: viewAction('mediaLibraryUpload', ['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {}))),
+    mediaUpload: viewAction('mediaUpload', ['media'], (event) => content.uploadAction(contentEvent(event, {})), { scriptPosted: true }),
+    mediaLibraryUpload: viewAction('mediaLibraryUpload', ['media'], (event) => content.mediaLibraryUploadAction(contentEvent(event, {})), { scriptPosted: true }),
     mediaReplacePreview: viewAction('mediaReplacePreview', ['media'], (event) => content.mediaReplacePreviewAction(contentEvent(event, {}))),
     mediaReplace: viewAction('mediaReplace', ['media'], (event) => content.mediaReplaceApplyAction(contentEvent(event, {}))),
     mediaAltPreview: viewAction('mediaAltPreview', ['media'], (event) => content.mediaAltPreviewAction(contentEvent(event, {}))),

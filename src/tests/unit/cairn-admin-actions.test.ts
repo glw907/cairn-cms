@@ -644,6 +644,89 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
     });
   });
 
+  it('a throwing script-posted action (addDictionaryWord) returns fail(500) with the calm copy, not a redirect, and still logs admin.action.failed (save-500-hardening)', async () => {
+    // addDictionaryWordAction rethrows any non-conflict commit error, so a throwingBackend reaches
+    // viewAction's catch exactly like the save/create cases above. Unlike those, addDictionaryWord is
+    // marked scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the
+    // client posts with `redirect: 'manual'`, and a redirect here would read as an opaque, status-0
+    // response the client folds into a false "your session expired" message.
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const base = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ word: 'trailhead' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+    const admin = createCairnAdmin(runtime(), deps);
+    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.addDictionaryWord(event as never)) as {
+      status?: number;
+      data?: { error?: string };
+    };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith('admin.action.failed', {
+      action: 'addDictionaryWord',
+      concept: 'posts',
+      id: '2026-05-01-hi',
+      editor: 'ed@t',
+      error: 'boom: github unreachable',
+    });
+  });
+
+  it('a throwing tidy action returns fail(500) with the calm copy, not a redirect (save-500-hardening)', async () => {
+    // Force a genuine throw deep inside tidyAction, past its own try/catch: a malformed conventions
+    // block (never produced by the validated settings save, but a stand-in for the class of bug the
+    // wrapper exists to catch) makes resolveTidyConventions throw reading off null. tidy is
+    // scriptPosted, so the wrapper's fallback must be a fail(500) value, never a redirect: the client
+    // posts with `redirect: 'manual'` and would otherwise read a redirect as an opaque, status-0
+    // response and show a false "your session expired" message.
+    const csrf = 'csrf-token-value-0123456789abcdef';
+    const url = new URL('https://t.example/admin/posts/2026-05-01-hi');
+    const tidyRuntime = {
+      ...runtime(),
+      tidy: { enabled: true, model: 'claude-test', conventions: null as unknown as Record<string, unknown> },
+    } as CairnRuntime;
+    const admin = createCairnAdmin(tidyRuntime, deps);
+    const event = {
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
+        headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
+      }),
+      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const } },
+      platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
+      cookies: {
+        get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
+        set: () => {},
+        delete: () => {},
+      },
+      setHeaders: () => {},
+    };
+    const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
+    const result = (await admin.actions.tidy(event as never)) as { status?: number; data?: { error?: string } };
+    expect(result.status).toBe(500);
+    expect(result.data?.error).toBe(CALM_COPY);
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      'admin.action.failed',
+      expect.objectContaining({ action: 'tidy', concept: 'posts', id: '2026-05-01-hi', editor: 'ed@t' }),
+    );
+  });
+
   it('a redirect thrown by an action (its own validated bounce) still propagates untouched, with no log', async () => {
     new GithubDouble({ main: {} }).install();
     const admin = createCairnAdmin(runtime(), deps);

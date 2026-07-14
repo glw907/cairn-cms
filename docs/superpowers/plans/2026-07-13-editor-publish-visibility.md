@@ -164,3 +164,39 @@ Tests:
 reviewer fan-out (svelte-reviewer, daisyui-a11y-reviewer), code-simplifier, then merge
 to `main`. Release follows separately (`cairn-release`): Geoff wants this published and
 all three consumer sites (ecxc, 907-life, aksailingclub-org) bumped and deployed.
+
+## Post-mortem (2026-07-13)
+
+Shipped, all on `editor-publish-visibility`: the always-visible guarded Publish
+(c5187cc), the contraction dictionary and curly-apostrophe normalization (13d7db1),
+the seeded create-title and the New status badge (9b3b1bd), the docs and changelog
+(bb91f9c, 3bdcee7), and the CI-regenerated edit-page baselines (a14b559).
+
+What was verified: full gate per task (check 0/0, npm test exit 0, check:comments,
+check:prose, the four doc gates, check:surface), code-simplifier (no changes needed),
+svelte-reviewer and daisyui-a11y-reviewer both sound. The one substantive review
+finding, DaisyUI's own [aria-disabled] rule already dims the button so the extra
+opacity-50 double-dimmed it and halved the focus ring on a focusable control, was
+applied; aria-disabled is now also emitted only while guarded, resolving the
+busy-state contradiction both reviewers noted. The main loop read the regenerated
+light edit-page render: the band reads complete on a clean entry, both lifecycle
+buttons resting dimmed.
+
+Decisions locked: Publish keeps its label in every state (the Sanity/Contentful
+stance); the actionable condition is dirty || pending || isNew, aligned with the
+publish action's publish-what-you-see contract; Delete stays in the overflow (the
+survey was near-unanimous); the guarded state uses aria-disabled plus
+cairn-btn-guarded, never native disabled, with the label-in-name accessible name.
+
+Grounding: two survey workflows (nine agents on save/publish/delete conventions,
+five on slug UX), both under this session's workflow transcripts.
+
+Follow-up scoped, not started: fluid address until first save (the slug survey's
+recommendation adapted to cairn's save-commits-the-branch model); awaiting Geoff's
+call.
+
+Budgets: the pass ran orchestrate-and-verify with three Sonnet implementer
+dispatches, one Opus simplifier, two Opus reviewers, and two Sonnet survey
+workflows (~950k subagent tokens + ~290k/660k workflow tokens). Interaction points:
+Geoff reported the three live bugs and made the two design calls (always-visible
+pair, delete stays); no mid-execution approvals were requested.

@@ -68,7 +68,26 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-13: 0.84.2 SHIPPED — the admin login hang fixed and verified live)
+## Immediate next action (2026-07-13, late: the editor-lifecycle pass MERGED; releasing 0.84.3 to all three sites)
+
+**THE PUBLISH-VISIBILITY PASS IS MERGED TO MAIN** (plan + post-mortem:
+docs/superpowers/plans/2026-07-13-editor-publish-visibility.md). Four editor fixes from
+Geoff's live ecxc use: the Publish button is always visible (guarded via aria-disabled +
+cairn-btn-guarded when nothing can go live; grounded in a nine-agent CMS survey), the
+spellcheck dictionary covers the standard contraction set plus curly-apostrophe
+normalization at lookup, the create dialog's title threads through to the fresh editor,
+and a brand-new entry's badge reads New (was Published). Full gate + CI e2e green (the
+two edit-page visual baselines regenerated on CI and render-read). Tidy was separately
+ENABLED ON ECXC earlier today (site config + ANTHROPIC_API_KEY routed via sync.sh,
+deployed, registry updated). IN FLIGHT: cut **0.84.3** (verified free) and bump ALL
+THREE sites per Geoff's explicit instruction, which supersedes the ASC design-arc hold
+for this bump (commit only the two dependency files; the WIP stays local). The ecxc bump
+also carries the posts `description` field fix: optional, relabeled Summary with help
+text (it blocked saves and misread as the post content; the engine excerpt falls back to
+the body). QUEUED DESIGN CALL (Geoff, not yet ruled): fluid address until first save for
+new entries (survey-grounded recommendation delivered; a follow-up pass if approved).
+
+## Prior next action (2026-07-13: 0.84.2 SHIPPED — the admin login hang fixed and verified live)
 
 **THE ADMIN HANG AFTER LOGIN IS FIXED, PUBLISHED, AND VERIFIED ON BOTH PRODUCTION SITES.** The
 ecxc live diagnosis (docs/internal/2026-07-13-admin-token-cache-poisoning.md) traced the hang to

@@ -161,11 +161,9 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       // (rate limit, overload, 5xx, network). The error string is not surfaced to the client (it may
       // carry internal detail); the log line carries the editor, the model, and which of the three it
       // was, never the key or the content.
-      const reason: 'timeout' | 'abort' | 'model' = deadlineHit
-        ? 'timeout'
-        : err instanceof Error && err.name === 'AbortError'
-          ? 'abort'
-          : 'model';
+      let reason: 'timeout' | 'abort' | 'model' = 'model';
+      if (deadlineHit) reason = 'timeout';
+      else if (err instanceof Error && err.name === 'AbortError') reason = 'abort';
       log.warn('tidy.error', { editor: editor.email, model, reason });
       return fail(502, { error: 'Tidy could not finish. Try again.' } satisfies TidyFailure);
     } finally {

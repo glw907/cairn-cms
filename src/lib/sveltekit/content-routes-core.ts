@@ -35,6 +35,8 @@ import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
+import { resolveCapability, roleHome } from '../auth/roles.js';
+import type { Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -223,6 +225,16 @@ export interface HelpData {
   supportContact?: string;
 }
 
+/**
+ * The welcome view's data: the calm, minimal screen a none-capability role with no declared `home`
+ *  lands on at the admin root (spec section 4). Carries just enough for the greeting; the sign-out
+ *  control already lives in the shell chrome.
+ */
+export interface WelcomeData {
+  displayName: string;
+  siteName: string;
+}
+
 /** A blocked save or publish: `fail(400)` when the body links to a target absent from main. */
 export interface SaveFailure {
   /** The one-line human summary every content action failure carries. */
@@ -262,6 +274,15 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
     bodyClass: override?.bodyClass ?? preview.bodyClass,
     containerClass: override?.containerClass ?? preview.containerClass,
   };
+}
+
+/**
+ * An editor's resolved capability, falling back to the site's declared vocabulary when the object
+ *  carries none (a fixture built before the guard attached it). Mirrors the guard's own fallback so
+ *  a role-aware decision here always agrees with `requireEditor`/`requireOwner`.
+ */
+function capabilityOf(runtime: CairnRuntime, editor: Editor): Capability {
+  return editor.capability ?? resolveCapability(runtime.roles, editor.role);
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -357,15 +378,20 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const customNav = ctx.deps.navFilter
       ? await ctx.deps.navFilter(roleFilteredNav, { editor, event })
       : roleFilteredNav;
+    // A none-capability session (the spec's none contract) still authenticates and reaches the
+    // shell, but the engine's own content nav and the owner-only Editors entry serve no purpose:
+    // every route they link to refuses a none session with 403. Hiding them here, in the payload,
+    // keeps the shell component a pure renderer of whatever nav it is handed.
+    const capability = capabilityOf(runtime, editor);
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role },
-        concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+        concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
         customNav,
         pathname: event.url.pathname,
-        canManageEditors: editor.role === 'owner',
+        canManageEditors: capability === 'owner',
         navLabel: runtime.navMenu?.label ?? null,
         theme,
         collapsedNav,
@@ -403,18 +429,27 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /**
-   * Redirect /admin to the first concept's list (spec §7.6: land on the first concept). The
-   *  shell posts publishAll and logout to this exact path from every admin page, so an
-   *  unexpected-failure `?error=` those actions bounce back with rides along to the first
-   *  concept's list rather than being dropped by this redirect, keeping the editor-visible
-   *  guarantee for the two actions that always land here.
+   * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
+   *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
+   *  as before this pass (spec §7.6); a none-capability role gets the calm welcome view instead of a
+   *  dead-end redirect. The shell posts publishAll and logout to this exact path from every admin
+   *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
+   *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
    */
-  function indexRedirect(event: ContentEvent): never {
-    const first = runtime.concepts[0];
-    if (!first) throw error(404, 'No content types configured');
+  function indexRedirect(event: ContentEvent): { view: 'welcome'; page: WelcomeData } {
+    const editor = requireSession(event);
     const bounced = event.url.searchParams.get('error');
     const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
-    throw redirect(307, `/admin/${first.id}${suffix}`);
+    const home = roleHome(runtime.roles, editor.role);
+    if (home) {
+      throw redirect(303, `${home}${suffix}`);
+    }
+    if (capabilityOf(runtime, editor) !== 'none') {
+      const first = runtime.concepts[0];
+      if (!first) throw error(404, 'No content types configured');
+      throw redirect(307, `/admin/${first.id}${suffix}`);
+    }
+    return { view: 'welcome', page: { displayName: editor.displayName, siteName: runtime.siteName } };
   }
 
   /**

@@ -18,6 +18,7 @@ import {
   type SettingsData,
   type VocabularyLoadData,
   type HelpData,
+  type WelcomeData,
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
@@ -82,7 +83,8 @@ export type AdminData =
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
   | { view: 'vocabulary'; page: VocabularyLoadData }
-  | { view: 'help'; page: HelpData };
+  | { view: 'help'; page: HelpData }
+  | { view: 'welcome'; page: WelcomeData };
 
 /**
  *

@@ -58,6 +58,10 @@ function confirmData(): AdminData {
   };
 }
 
+function welcomeData(): AdminData {
+  return { view: 'welcome', page: { displayName: 'Inst', siteName: 'Test Site' } };
+}
+
 function editorsData(): AdminData {
   return {
     view: 'editors',
@@ -163,6 +167,13 @@ describe('CairnAdmin', () => {
     const form = screen.container.querySelector('form[method="POST"]');
     expect(form?.getAttribute('action')).toBe('?/confirm');
     expect(chromeNav(screen)).toBeNull();
+  });
+
+  it('renders the welcome view with the signed-in name and a calm no-content line, no action forms', async () => {
+    const screen = render(CairnAdmin, { data: welcomeData() });
+    await expect.element(screen.getByText(/inst/i)).toBeInTheDocument();
+    await expect.element(screen.getByText(/no content here/i)).toBeInTheDocument();
+    expect(screen.container.querySelector('form')).toBeNull();
   });
 
   it('renders the list view bare (chrome now rides the shell, not CairnAdmin)', async () => {

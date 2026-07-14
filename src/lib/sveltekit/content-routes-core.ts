@@ -421,7 +421,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   /**
    * The role-aware admin-root landing (spec section 4). A role with a declared `home` is sent
    *  there. Absent a `home`, an owner- or editor-capability role lands on the first concept's list,
-   *  as before this pass (spec §7.6); a none-capability role gets the calm welcome view instead of a
+   *  the default landing (spec §7.6); a none-capability role gets the calm welcome view instead of a
    *  dead-end redirect. The shell posts publishAll and logout to this exact path from every admin
    *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
    *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.

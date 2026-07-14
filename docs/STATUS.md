@@ -81,8 +81,11 @@ then the adversarial review workflow at the gate (web-auth-security-reviewer man
 then the main-loop close ritual (simplifier, named gates, consumer build, admin smoke,
 post-mortem, STATUS, merge). Resume prompt if interrupted: "Resume the extensible-roles
 pass: read the plan file and continue from the first unchecked task on the
-extensible-roles worktree." Release: hold unpublished per doctrine, but ASC needs the
-seam (its membership-admin collapse), so a cut likely follows the merge via cairn-release.
+extensible-roles worktree." Release: **Geoff authorized the publish
+at pass end (2026-07-14, "go ahead and publish once you're done")** — the
+consumer-needs-it trigger (ASC's membership-admin collapse); cut via cairn-release after
+the close ritual (a minor; verify the number free via npm view). ASC's own bump +
+collapse run in an ASC session against its settled arc.
 
 ## Prior next action (2026-07-14: 0.84.4 SHIPPED and rolled out; roles promoted to Now)
 

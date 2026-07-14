@@ -257,7 +257,7 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createEditorRoutes(): {
-  editorsLoad: (event: RequestContext) => Promise<{ editors: Editor[]; self: string }>;
+  editorsLoad: (event: RequestContext) => Promise<{ editors: Editor[]; self: string; error: string | null }>;
   addEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   removeEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   setRoleAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
@@ -290,7 +290,7 @@ Stability tier: Unstable API.
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
   shellPayload: (event: ContentEvent) => Promise<{ shell: AdminShellData }>;
   helpLoad: (event: ContentEvent) => Promise<HelpData>;
-  indexRedirect: () => never;
+  indexRedirect: (event: ContentEvent) => never;
   listLoad: (event: ContentEvent) => Promise<ListData>;
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
   settingsLoad: (event: ContentEvent) => Promise<SettingsData>;

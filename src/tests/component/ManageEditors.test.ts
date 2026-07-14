@@ -1,6 +1,22 @@
 import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ManageEditors from '../../lib/components/ManageEditors.svelte';
+import type { Capability } from '../../lib/auth/roles.js';
+import type { Role } from '../../lib/auth/types.js';
+
+const DEFAULT_VOCABULARY: { role: string; capability: Capability }[] = [
+  { role: 'owner', capability: 'owner' },
+  { role: 'editor', capability: 'editor' },
+];
+
+// An ASC-shaped vocabulary: 'owner' plus 'president' (a second owner-level name), 'club-admin'
+// (editor capability under a site-chosen name), and 'instructor' (none capability).
+const ASC_VOCABULARY: { role: string; capability: Capability }[] = [
+  { role: 'owner', capability: 'owner' },
+  { role: 'president', capability: 'owner' },
+  { role: 'club-admin', capability: 'editor' },
+  { role: 'instructor', capability: 'none' },
+];
 
 function data() {
   return {
@@ -10,6 +26,7 @@ function data() {
     ],
     self: 'owner@t',
     error: null,
+    vocabulary: DEFAULT_VOCABULARY,
   };
 }
 
@@ -69,5 +86,100 @@ describe('ManageEditors', () => {
     });
     const alert = screen.container.querySelector('.alert-error');
     expect(alert?.textContent).toContain('Something went wrong and your changes were not saved.');
+  });
+});
+
+describe('ManageEditors vocabulary-driven role control', () => {
+  it('renders the owner/editor toggle button for the default two-role vocabulary', async () => {
+    const screen = render(ManageEditors, { data: data(), form: null });
+    await expect.element(screen.getByRole('button', { name: /toggle role for owner one/i })).toBeInTheDocument();
+    expect(screen.container.querySelector('select[aria-label*="Change role"]')).toBeNull();
+  });
+
+  it('renders a labeled select with capability shown beside each name for a larger vocabulary', async () => {
+    const screen = render(ManageEditors, {
+      data: {
+        editors: [
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          {
+            email: 'ted@t',
+            displayName: 'Ted Instructor',
+            role: 'instructor' as unknown as Role,
+          },
+        ],
+        self: 'owner@t',
+        error: null,
+        vocabulary: ASC_VOCABULARY,
+      },
+      form: null,
+    });
+    expect(screen.container.querySelector('button[aria-label*="Toggle role"]')).toBeNull();
+    const select = screen.container.querySelector('select[aria-label="Change role for Ted Instructor"]');
+    expect(select).not.toBeNull();
+    const optionText = [...(select as unknown as HTMLSelectElement).options].map((option) => option.textContent);
+    expect(optionText).toContain('instructor (none)');
+    expect(optionText).toContain('club-admin (editor)');
+  });
+
+  it('submits the selected role name from the vocabulary select', async () => {
+    const screen = render(ManageEditors, {
+      data: {
+        editors: [
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          {
+            email: 'ted@t',
+            displayName: 'Ted Instructor',
+            role: 'club-admin' as unknown as Role,
+          },
+        ],
+        self: 'owner@t',
+        error: null,
+        vocabulary: ASC_VOCABULARY,
+      },
+      form: null,
+    });
+    const select = screen.container.querySelector(
+      'select[aria-label="Change role for Ted Instructor"]',
+    ) as unknown as HTMLSelectElement;
+    const captured = { role: '', email: '' };
+    const stop = (event: Event) => {
+      event.preventDefault();
+      const form = event.target as unknown as HTMLFormElement;
+      captured.role = (form.elements.namedItem('role') as unknown as HTMLSelectElement).value;
+      captured.email = (form.elements.namedItem('email') as unknown as HTMLInputElement).value;
+    };
+    document.addEventListener('submit', stop, true);
+    try {
+      select.value = 'instructor';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+      const form = select.closest('form') as unknown as HTMLFormElement;
+      (form.querySelector('button[type="submit"]') as unknown as HTMLButtonElement).click();
+    } finally {
+      document.removeEventListener('submit', stop, true);
+    }
+    expect(captured.role).toBe('instructor');
+    expect(captured.email).toBe('ted@t');
+  });
+
+  it('marks an owner-capability row with the primary badge under a non-owner role name', async () => {
+    const screen = render(ManageEditors, {
+      data: {
+        editors: [
+          { email: 'owner@t', displayName: 'Owner One', role: 'owner' as const },
+          {
+            email: 'pres@t',
+            displayName: 'President Two',
+            role: 'president' as unknown as Role,
+          },
+        ],
+        self: 'owner@t',
+        error: null,
+        vocabulary: ASC_VOCABULARY,
+      },
+      form: null,
+    });
+    const badges = [...screen.container.querySelectorAll('.badge')];
+    const presidentBadge = badges.find((badge) => badge.textContent?.trim() === 'president');
+    expect(presidentBadge?.classList.contains('badge-primary')).toBe(true);
   });
 });

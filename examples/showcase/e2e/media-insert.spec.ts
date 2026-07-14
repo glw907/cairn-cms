@@ -23,8 +23,10 @@ test('the insert UI: choose an image, the placeholder resolves to a media: refer
   page,
   request,
 }) => {
-  await page.goto('/admin/posts');
-  await page.locator(`a[href="/admin/posts/${SEED}"]`).click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto(`/admin/posts/${SEED}`);
   await expect(page).toHaveURL(new RegExp(`/admin/posts/${SEED}$`));
 
   // 1. Open the popover from the toolbar Insert image control. The chooser view leads with upload.

@@ -216,3 +216,16 @@ ignores regardless of `required`. A required hero image or author reference ther
 trips the capture-phase invalid handler that opens the Details panel; the failure surfaces only
 server-side. Wiring true required-visibility needs new props threaded into
 MediaHeroField/ReferenceField (an aria-invalid + focus-target pattern, not a native attribute).
+
+## 2026-07-14 — e2e specs assume the seed post sits on the admin list's first page (developer)
+
+The media-insert and media-slice e2e specs opened the seed post by clicking its list link on
+`/admin/posts`, but the list paginates at ten rows newest-first, and sibling entries created by
+earlier specs in the run pushed the June seed to page two, so the click timed out (green on the
+0.84.3 window, red on the next merge as the entry count crossed ten). Fixed both by navigating to
+the edit URL directly. golden-path.spec.ts keeps four convenience seed-clicks that pass only
+because it runs earlier with fewer entries; they share the latent fragility and should convert to
+direct navigation the next time that file is touched (its first test legitimately exercises the
+list-click path and stays a click). Deeper signal: the e2e suite's cross-spec entry accumulation
+against a paginated list is an ordering coupling; a per-spec content reset (or a seed post dated
+in the future so it stays on page one) would remove the whole class.

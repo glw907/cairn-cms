@@ -1,6 +1,6 @@
 import { env } from 'cloudflare:test';
 import { describe, it, expect, beforeEach } from 'vitest';
-import { seedEditor } from './_auth-harness.js';
+import { seedEditor, countRows } from './_auth-harness.js';
 import {
   findEditor,
   issueToken,
@@ -14,6 +14,7 @@ import {
   setEditorRole,
   removeOwnerIfNotLast,
   demoteOwnerIfNotLast,
+  insertOwnerIfEmpty,
 } from '../../lib/auth/store.js';
 
 const db = env.AUTH_DB;
@@ -89,6 +90,32 @@ describe('last-owner guards (atomic)', () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
     expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner', 'president'], 'editor')).toBe(false);
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
+  });
+});
+
+describe('insertOwnerIfEmpty (bootstrap owner)', () => {
+  it('inserts the owner row on an empty table and returns true', async () => {
+    const inserted = await insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', Date.now());
+    expect(inserted).toBe(true);
+    expect(await findEditor(db, 'boss@x.dev')).toEqual({ email: 'boss@x.dev', displayName: 'Boss', role: 'owner' });
+  });
+
+  it('writes nothing and returns false when a row already exists', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const inserted = await insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', Date.now());
+    expect(inserted).toBe(false);
+    expect(await findEditor(db, 'boss@x.dev')).toBeNull();
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('races two concurrent calls to exactly one inserted row', async () => {
+    const now = Date.now();
+    const [first, second] = await Promise.all([
+      insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', now),
+      insertOwnerIfEmpty(db, 'boss@x.dev', 'Boss', now),
+    ]);
+    expect([first, second].filter(Boolean)).toHaveLength(1);
+    expect(await countRows('editor')).toBe(1);
   });
 });
 

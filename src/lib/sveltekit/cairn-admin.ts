@@ -51,6 +51,11 @@ export interface CairnAdminDeps {
     branding?: AuthBranding;
     /** The same seam the underlying auth factory takes. */
     send?: SendMagicLink;
+    /**
+     * A site-declared owner to seed an empty allowlist on the next magic-link request, in place
+     * of a hand-run `wrangler d1 execute` INSERT. See `AuthRoutesConfig['bootstrapOwner']`.
+     */
+    bootstrapOwner?: { email: string; displayName: string };
   };
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
@@ -97,7 +102,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     from: runtime.sender.from,
     replyTo: runtime.sender.replyTo,
   };
-  const auth = createAuthRoutes({ branding, send: deps.auth?.send });
+  const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
   const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter });
   const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.

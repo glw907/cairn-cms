@@ -153,6 +153,29 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerR
   return true;
 }
 
+/**
+ * Insert the owner row when the allowlist is empty, in one atomic statement
+ * (`INSERT ... SELECT ... WHERE NOT EXISTS`), so two concurrent bootstrap requests race safely
+ * to exactly one inserted row. Returns whether this call performed the insert; a non-empty
+ * table writes nothing and returns false.
+ */
+export async function insertOwnerIfEmpty(
+  db: D1Database,
+  email: string,
+  displayName: string,
+  now: number,
+): Promise<boolean> {
+  const res = await db
+    .prepare(
+      `INSERT INTO editor (email, display_name, role, created_at)
+       SELECT ?, ?, 'owner', ?
+       WHERE NOT EXISTS (SELECT 1 FROM editor)`,
+    )
+    .bind(email, displayName, now)
+    .run();
+  return res.meta.changes === 1;
+}
+
 /** Change an editor's role. The guard reads the new role on the next request. */
 export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
   await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, email).run();

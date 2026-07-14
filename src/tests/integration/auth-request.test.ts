@@ -121,6 +121,75 @@ describe('request hardening (Unit 4)', () => {
   });
 });
 
+describe('bootstrap owner (config-declared, Task 7)', () => {
+  const url = 'https://test.dev/admin/auth/request';
+  const bootstrapOwner = { email: 'Boss@X.dev', displayName: 'Boss' };
+
+  it('inserts the owner on an empty table for the matching email, then proceeds normally', async () => {
+    const { routes, sent } = (() => {
+      const s: MagicLinkMessage[] = [];
+      return { routes: createAuthRoutes({ branding, bootstrapOwner, send: async (_e, m) => void s.push(m) }), sent: s };
+    })();
+    const result = await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
+    expect(result).toEqual({ status: 'sent', sent: true });
+    expect(sent).toHaveLength(1);
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('matches the configured email case-insensitively', async () => {
+    const routes = createAuthRoutes({ branding, bootstrapOwner, send: async () => {} });
+    await routes.requestAction(makeEvent({ url, form: { email: 'BOSS@X.DEV' } }));
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('grants nothing once any editor row already exists', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const { routes, sent } = (() => {
+      const s: MagicLinkMessage[] = [];
+      return { routes: createAuthRoutes({ branding, bootstrapOwner, send: async (_e, m) => void s.push(m) }), sent: s };
+    })();
+    const result = await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
+    // The bootstrap email is not itself an editor and the table is non-empty, so it behaves
+    // exactly like an unknown email today.
+    expect(result).toEqual({ status: 'sent', sent: true });
+    expect(sent).toHaveLength(0);
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('behaves like an unknown email on an empty table when the email does not match', async () => {
+    const routes = createAuthRoutes({ branding, bootstrapOwner, send: async () => {} });
+    const result = await routes.requestAction(makeEvent({ url, form: { email: 'stranger@x.dev' } }));
+    expect(result).toEqual({ status: 'sent', sent: true });
+    expect(await countRows('editor')).toBe(0);
+  });
+
+  it('inserts exactly one owner row across two concurrent matching requests', async () => {
+    const routes = createAuthRoutes({ branding, bootstrapOwner, send: async () => {} });
+    await Promise.all([
+      routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } })),
+      routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } })),
+    ]);
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('logs editor.bootstrapped with the email on insert', async () => {
+    const infoSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const routes = createAuthRoutes({ branding, bootstrapOwner, send: async () => {} });
+    await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
+    const record = infoSpy.mock.calls
+      .map((c) => c[0] as { event?: string; email?: string })
+      .find((r) => r.event === 'editor.bootstrapped');
+    expect(record?.email).toBe('boss@x.dev');
+    vi.restoreAllMocks();
+  });
+
+  it('never inserts when no bootstrapOwner is configured', async () => {
+    const { routes } = routesWithSink();
+    await routes.requestAction(makeEvent({ url, form: { email: 'boss@x.dev' } }));
+    expect(await countRows('editor')).toBe(0);
+  });
+});
+
 describe('request logging', () => {
   const url = 'https://test.dev/admin/auth/request';
 

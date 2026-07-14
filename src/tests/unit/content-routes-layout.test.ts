@@ -86,6 +86,25 @@ describe('shellPayload', () => {
     await shell.pendingEntries;
   });
 
+  it('admits a none-capability session (the none contract): the shell stays reachable so a shell-mounted custom route is admitted, unlike the engine content and roster surfaces', async () => {
+    const routes = createContentRoutes(runtime());
+    const noneEvent = {
+      url: new URL('https://test.example/admin/posts'),
+      params: {},
+      request: new Request('https://test.example/admin/posts'),
+      locals: {
+        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        backend: quickFailBackend(),
+      },
+      platform: { env: {} },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    };
+    const { shell } = await routes.shellPayload(noneEvent as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.user.email).toBe('inst@test');
+    await shell.pendingEntries;
+  });
+
   it('exposes the nav label when a navMenu is configured', async () => {
     const rt = runtime();
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };

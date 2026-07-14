@@ -35,6 +35,7 @@ export type CairnLogEvent =
   | 'editor.added'
   | 'editor.removed'
   | 'editor.role_changed'
+  | 'auth.role.unknown'
   | 'dictionary.added'
   | 'dictionary.add_conflict'
   | 'tidy.done'

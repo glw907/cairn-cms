@@ -113,4 +113,16 @@ describe('navLoad', () => {
     const routes = createNavRoutes(runtime(undefined));
     await expect(routes.navLoad(loadEvent() as never)).rejects.toMatchObject({ status: 404 });
   });
+
+  it('refuses a none-capability session with 403 (the nav editor is an engine admin-mutation surface)', async () => {
+    const routes = createNavRoutes(runtime(NAV));
+    const event = {
+      url: new URL('https://t.example/admin/nav'),
+      params: {},
+      request: new Request('https://t.example/admin/nav'),
+      locals: { editor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
+      platform: { env: {} },
+    };
+    await expect(routes.navLoad(event as never)).rejects.toMatchObject({ status: 403 });
+  });
 });

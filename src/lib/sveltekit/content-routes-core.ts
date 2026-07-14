@@ -32,7 +32,7 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
-import { requireSession, isPublicAdminPath } from './guard.js';
+import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
@@ -280,7 +280,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
  *  instead, a different shape left to validate inline.
  */
 function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
-  const editor = requireSession(event);
+  const editor = requireEditor(event);
   const concept = conceptOf(runtime, event.params);
   const id = event.params.id ?? '';
   if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -381,7 +381,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same GitHub fail-safe the shell uses.
    */
   async function helpLoad(event: ContentEvent): Promise<HelpData> {
-    requireSession(event);
+    requireEditor(event);
     let manifest = emptyManifest();
     let pending: { concept: string; id: string }[] = [];
     try {
@@ -477,7 +477,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  to an inline error, not a thrown 500.
    */
   async function listLoad(event: ContentEvent): Promise<ListData> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
@@ -523,7 +523,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const rawTitle = String(form.get('title') ?? '').trim();
@@ -565,7 +565,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
   async function editLoad(event: ContentEvent): Promise<EditData> {
-    requireSession(event);
+    requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
@@ -1028,7 +1028,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  concept param is ignored and the redirect lands on the first configured concept.
    */
   async function publishAllAction(event: ContentEvent): Promise<never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
     const backend = ctx.resolveBackend(event);
@@ -1236,7 +1236,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Delete an entry from the concept list. The id comes from the form body. */
   async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');

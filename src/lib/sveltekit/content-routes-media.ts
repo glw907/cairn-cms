@@ -28,7 +28,7 @@ import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX } from '../content/pending.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
-import { requireSession } from './guard.js';
+import { requireEditor } from './guard.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 // R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
 // appears in an exported signature, so it does not reach the public `.d.ts`.
@@ -366,7 +366,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture.
    */
   async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
-    requireSession(event);
+    requireEditor(event);
     // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
     // `?publishedAll` grammar: a deleted/updated success flag and a commit-conflict error. The
     // conflict error rides its own slot so it never collides with the degraded-load `error` below.
@@ -640,7 +640,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  delete-races-an-edit window every safe delete carries.
    */
   async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -750,7 +750,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  (deleted / skipped with reasons / failed); there is no success redirect.
    */
   async function mediaBulkDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     // Read the selected hashes from the form. Accept the repeated `hash` field, falling back to a JSON
@@ -853,7 +853,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
   async function mediaOrphanScanAction(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
-    requireSession(event);
+    requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
@@ -910,7 +910,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
    */
   async function mediaPurgeOrphansAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
@@ -983,7 +983,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  next placement, never a propagating edit of the alt already committed in existing placements.
    */
   async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -1039,7 +1039,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
-    requireSession(event);
+    requireEditor(event);
 
     // Parse the JSON body. A malformed body or a hash that fails the 16-hex grammar refuses with a 400
     // before any GitHub read. The slug is the OLD asset's: a replace keeps the name and changes only the
@@ -1116,7 +1116,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
    */
   async function mediaReplaceApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -1233,7 +1233,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf' } satisfies MediaAltPropagateFailure);
     }
-    requireSession(event);
+    requireEditor(event);
 
     let payload: { hash?: unknown };
     try {
@@ -1305,7 +1305,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
    */
   async function mediaAltApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
-    const editor = requireSession(event);
+    const editor = requireEditor(event);
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();

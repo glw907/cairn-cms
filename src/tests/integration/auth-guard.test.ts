@@ -4,6 +4,7 @@ import { seedEditor, makeCookies, expectRedirect } from './_auth-harness.js';
 import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
+import { defineRoles } from '../../lib/auth/roles.js';
 import type { RequestContext } from '../../lib/sveltekit/types.js';
 
 const db = env.AUTH_DB;
@@ -77,7 +78,7 @@ describe('guard (scenario 6)', () => {
     const ev = event('/admin', cookies);
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner' });
+    expect(ev.locals.editor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
   });
 
   it('lets the login and auth endpoints through without a session', async () => {
@@ -90,6 +91,61 @@ describe('guard (scenario 6)', () => {
   it('ignores non-admin paths', async () => {
     const res = await handle({ event: event('/about'), resolve: async () => OK });
     expect(res).toBe(OK);
+  });
+});
+
+describe('capability resolution (a site-declared vocabulary)', () => {
+  const ROLES = defineRoles({
+    owner: 'owner',
+    'club-admin': 'editor',
+    instructor: { capability: 'none', home: '/admin/classes' },
+  });
+  const guard = createAuthGuard({ roles: ROLES });
+
+  it('resolves a declared non-canonical role to its mapped capability', async () => {
+    await db
+      .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+      .bind('club@x.dev', 'Club', 'club-admin', Date.now())
+      .run();
+    await createSession(db, 'sid-club', 'club@x.dev', Date.now() + 10_000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-club' }));
+    const res = await guard({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
+  });
+
+  it('resolves a declared none-capability role, authenticating without a warn log', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await db
+      .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+      .bind('inst@x.dev', 'Inst', 'instructor', Date.now())
+      .run();
+    await createSession(db, 'sid-inst', 'inst@x.dev', Date.now() + 10_000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-inst' }));
+    const res = await guard({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
+    const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
+    expect(events).not.toContain('auth.role.unknown');
+    vi.restoreAllMocks();
+  });
+
+  it('resolves a role absent from the vocabulary to none, still authenticates, and logs auth.role.unknown', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await db
+      .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+      .bind('orphan@x.dev', 'Orphan', 'retired-role', Date.now())
+      .run();
+    await createSession(db, 'sid-orphan', 'orphan@x.dev', Date.now() + 10_000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-orphan' }));
+    const res = await guard({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor).toEqual({ email: 'orphan@x.dev', displayName: 'Orphan', role: 'retired-role', capability: 'none' });
+    const records = warnSpy.mock.calls.map(
+      (c) => c[0] as { event?: string; email?: string; role?: string },
+    );
+    expect(records.some((r) => r.event === 'auth.role.unknown' && r.email === 'orphan@x.dev' && r.role === 'retired-role')).toBe(true);
+    vi.restoreAllMocks();
   });
 });
 

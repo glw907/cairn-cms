@@ -2,14 +2,36 @@
 // manage-editors screen. AuthEnv is a structural subset of Platform.env, so auth code takes it
 // directly instead of importing a consumer's whole platform type.
 import type { D1Database } from '@cloudflare/workers-types';
+import type { Capability, RolesDeclaration } from './roles.js';
 
-export type Role = 'owner' | 'editor';
+/**
+ * The Register interface a site augments to type its role vocabulary. A site declares
+ * `interface CairnRolesRegister { roles: typeof roles }` in `app.d.ts`; `Role` then narrows to the
+ * site's declared names. Unaugmented, it stays empty and `Role` defaults to the owner/editor pair.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface CairnRolesRegister {}
 
-/** The session shape the whole admin reads: guard, loads, content fns, manage-editors. */
+/**
+ * The role names the engine reads on `locals.editor`. Registry-derived: the site's declared names
+ * when it augments `CairnRolesRegister`, else the implicit `'owner' | 'editor'` pair.
+ */
+export type Role = CairnRolesRegister extends { roles: infer R }
+  ? R extends RolesDeclaration
+    ? Extract<keyof R, string>
+    : 'owner' | 'editor'
+  : 'owner' | 'editor';
+
+/**
+ * The session shape the whole admin reads: guard, loads, content fns, manage-editors. `capability`
+ * is resolved from the role wherever the engine materializes an `Editor` (the guard, the store); it
+ * is optional here because Task 1 introduces the field and later tasks fill every construction site.
+ */
 export interface Editor {
   email: string;
   displayName: string;
   role: Role;
+  capability?: Capability;
 }
 
 /**

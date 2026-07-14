@@ -85,11 +85,11 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 
    # authed: the index redirects to the first concept, lists render
    curl -s -o /dev/null -w "%{http_code} %{redirect_url}\n" -H "$CK" http://localhost:8787/admin     # 307 -> /admin/<first concept>
-   curl -s -H "$CK" http://localhost:8787/admin/<concept> | grep -o 'New entry'                       # present
+   curl -s -H "$CK" http://localhost:8787/admin/<concept> | grep -o 'New Post'                        # present
    curl -s -o /dev/null -w "%{http_code}\n" -H "$CK" http://localhost:8787/admin/edit/<concept>/<id>   # 200
    ```
    Confirm the sidebar nav has one entry per `adapter` concept (ecnordic: Posts and Pages;
-   907: Posts only), that an owner session shows the `/admin/admins` link and an editor session
+   907: Posts only), that an owner session shows the `/admin/editors` link and an editor session
    does not, and that the rendered HTML carries the neutral `cairn-admin` shell class. To see
    the live-role read in action, change the editor's role with an `UPDATE editor SET role = ...`
    and rerun an authed check; the new role applies on that next request without a new cookie.

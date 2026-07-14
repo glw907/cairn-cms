@@ -15,7 +15,7 @@ function shell(): AdminShellData {
   return {
     public: false,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role: 'owner' },
+    user: { displayName: 'Ed', email: 'ed@example.com', role: 'owner', capability: 'owner' },
     concepts: [{ id: 'posts', label: 'Posts' }],
     customNav: [],
     pathname: '/admin/posts',

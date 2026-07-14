@@ -10,7 +10,12 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
+    user: {
+      displayName: 'Ed',
+      email: 'ed@example.com',
+      role: canManageEditors ? ('owner' as const) : ('editor' as const),
+      capability: canManageEditors ? ('owner' as const) : ('editor' as const),
+    },
     concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
     customNav: [] as ResolvedNavEntry[],
     pathname,

@@ -81,6 +81,10 @@ renders the children bare with no chrome; an authed payload renders the full chr
 data-driven nav, user, theme, and streamed publish-all count. The discriminant gates the chrome, so a
 public payload always renders bare.
 
+For a none-capability `user.capability` (the spec's none contract), the shell drops every built-in
+engine screen from the nav, Library, Tags, the nav-menu editor, Settings, and Help, since each one
+refuses that session with a 403; the site's own custom nav still renders in full.
+
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
 drifts with the page scroll), and it stays open across navigation—including to a site's own
 deep custom-nav routes like `/admin/club/events`. It recedes to the toggle-controlled overlay

@@ -82,23 +82,27 @@ discriminant, not the fields, gates the chrome).
 
   // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
   // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
-  // the owner-only Editors. Empty on a public payload (the nav never renders there).
+  // the owner-only Editors. Empty on a public payload (the nav never renders there). A none-capability
+  // session (the spec's none contract) gets none of the engine's own screens, since every one of them
+  // 403s on that session; only the site's own custom flat entries carry over.
   const coreItems: NavItem[] = $derived(
     shell
-      ? [
-          ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-          // The developer's custom flat screens, right after the concepts. A custom section (grouped
-          // separately below) never folds in here.
-          ...customFlatEntries.map(navItemOf),
-          // Library is a content peer, immediately after the concepts (the media screen; the route
-          // stays /admin/media, but the settled editor-facing label is Library, not Media).
-          { label: 'Library', icon: ImageIcon, href: '/admin/media' },
-          // Tags is the shared tag-vocabulary screen, after Library.
-          { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
-          ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
-          { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
-          ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
-        ]
+      ? shell.user.capability === 'none'
+        ? [...customFlatEntries.map(navItemOf)]
+        : [
+            ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+            // The developer's custom flat screens, right after the concepts. A custom section (grouped
+            // separately below) never folds in here.
+            ...customFlatEntries.map(navItemOf),
+            // Library is a content peer, immediately after the concepts (the media screen; the route
+            // stays /admin/media, but the settled editor-facing label is Library, not Media).
+            { label: 'Library', icon: ImageIcon, href: '/admin/media' },
+            // Tags is the shared tag-vocabulary screen, after Library.
+            { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
+            ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
+            { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
+            ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
+          ]
       : [],
   );
 
@@ -215,7 +219,9 @@ discriminant, not the fields, gates the chrome).
 
   const paletteCommands = $derived<Command[]>([
     ...coreItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
-    { label: 'Help', icon: HelpCircleIcon, href: '/admin/help' },
+    // Help 403s a none-capability session the same as the engine's other screens, so the palette
+    // omits it there too.
+    ...(shell && shell.user.capability !== 'none' ? [{ label: 'Help', icon: HelpCircleIcon, href: '/admin/help' }] : []),
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
     theme === 'cairn-admin'
       ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
@@ -528,8 +534,11 @@ discriminant, not the fields, gates the chrome).
         </div>
 
         <!-- Help is a standing utility destination, pinned at the foot of the nav and set apart from
-             the content concepts by a top hairline. It is always present, labeled in plain text, and
-             styled as a peer of the nav items above it. -->
+             the content concepts by a top hairline. It is present for every owner- and editor-
+             capability session, labeled in plain text, and styled as a peer of the nav items above
+             it. A none-capability session omits it too: the Help route 403s the same as the engine's
+             other screens. -->
+        {#if data.user.capability !== 'none'}
         <div class="flex-none border-t border-[var(--cairn-card-border)] px-2 py-2">
           <ul class="menu menu-sm w-full gap-0.5 p-0">
             <li>
@@ -546,6 +555,7 @@ discriminant, not the fields, gates the chrome).
             </li>
           </ul>
         </div>
+        {/if}
 
         <div class="flex-none border-t border-[var(--cairn-card-border)] px-5 py-4">
           <div class="flex items-center gap-3">

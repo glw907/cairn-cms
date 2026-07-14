@@ -35,7 +35,7 @@ import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
 import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
-import { roleHome } from '../auth/roles.js';
+import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -64,7 +64,7 @@ export type AdminShellData =
   | {
       public: false;
       siteName: string;
-      user: { displayName: string; email: string; role: Role };
+      user: { displayName: string; email: string; role: Role; capability: Capability };
       concepts: NavConcept[];
       /**
        * The developer's custom sidebar entries and sections, validated at construction,
@@ -377,7 +377,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       shell: {
         public: false,
         siteName: runtime.siteName,
-        user: { displayName: editor.displayName, email: editor.email, role: editor.role },
+        user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
         concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
         customNav,
         pathname: event.url.pathname,

@@ -94,7 +94,7 @@ describe('shellPayload', () => {
     const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.siteName).toBe('Test Site');
-    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     expect(shell.concepts).toEqual([
       { id: 'posts', label: 'Posts' },
       { id: 'pages', label: 'Pages' },
@@ -143,6 +143,9 @@ describe('shellPayload', () => {
     // refuses a none session with 403) and no manage-editors capability.
     expect(shell.concepts).toEqual([]);
     expect(shell.canManageEditors).toBe(false);
+    // Pinned so the shell payload carries the capability the CairnAdminShell component gates its
+    // engine nav items on.
+    expect(shell.user.capability).toBe('none');
     await shell.pendingEntries;
   });
 
@@ -336,7 +339,7 @@ describe('shellPayload: navFilter', () => {
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.customNav).toEqual([]);
     expect(shell.siteName).toBe('Test Site');
-    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner' });
+    expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     expect(shell.canManageEditors).toBe(true);
     await shell.pendingEntries;
   });

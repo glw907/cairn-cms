@@ -10,13 +10,25 @@ const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
 // The authed shell payload. pendingEntries is a streamed promise now, so a default resolves to null
 // (GitHub unreachable, so the publish-all action hides); the pending-count tests pass a resolved
-// array override.
-function data(canManageEditors: boolean, navLabel: string | null = null, pathname = '/admin/posts') {
+// array override. A none-capability payload gets no concepts and no manage-editors capability, the
+// same shape shellPayload itself produces (content-routes-core.ts), so the harness accepts a
+// pre-shaped none payload through the `capability` override rather than reconstructing that shape.
+function data(
+  canManageEditors: boolean,
+  navLabel: string | null = null,
+  pathname = '/admin/posts',
+  capability: 'owner' | 'editor' | 'none' = canManageEditors ? 'owner' : 'editor',
+) {
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role: canManageEditors ? ('owner' as const) : ('editor' as const) },
-    concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
+    user: {
+      displayName: 'Ed',
+      email: 'ed@example.com',
+      role: canManageEditors ? ('owner' as const) : ('editor' as const),
+      capability,
+    },
+    concepts: capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
     customNav: [] as ResolvedNavEntry[],
     pathname,
     canManageEditors,
@@ -91,6 +103,39 @@ describe('CairnAdminShell', () => {
   it('hides the manage-editors link from an editor', async () => {
     const screen = render(CairnAdminShell, { data: data(false), children: child });
     await expect.element(screen.getByRole('link', { name: /editors/i })).not.toBeInTheDocument();
+  });
+
+  it('hides every engine nav item from a none-capability session but keeps the site custom nav', async () => {
+    // A none-capability session (the spec's none contract) still authenticates and reaches the
+    // shell, but every engine screen (Library, Tags, the nav-menu editor, Settings, Help) 403s it,
+    // so the sidebar carries only the site's own custom nav.
+    const customNav: ResolvedNavEntry[] = [
+      { label: 'Roster', iconName: 'inbox', href: '/admin/roster', ownerOnly: false },
+    ];
+    const screen = render(CairnAdminShell, {
+      data: { ...data(false, 'Primary nav', '/admin/roster', 'none'), customNav },
+      children: child,
+    });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    await expect.element(sidebar.getByRole('link', { name: 'Roster' })).toBeInTheDocument();
+    expect(sidebar.getByRole('link', { name: 'Library' }).query()).toBeNull();
+    expect(sidebar.getByRole('link', { name: 'Tags' }).query()).toBeNull();
+    expect(sidebar.getByRole('link', { name: 'Settings' }).query()).toBeNull();
+    expect(sidebar.getByRole('link', { name: 'Primary nav' }).query()).toBeNull();
+    expect(sidebar.getByRole('link', { name: 'Help' }).query()).toBeNull();
+    expect(sidebar.getByRole('link', { name: 'Posts' }).query()).toBeNull();
+  });
+
+  it('renders every engine nav item for an editor-capability session (regression pin)', async () => {
+    const screen = render(CairnAdminShell, { data: data(false, 'Primary nav', '/admin/posts', 'editor'), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    await expect.element(sidebar.getByRole('link', { name: 'Posts' })).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Library' })).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Tags' })).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Primary nav' })).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Settings' })).toBeInTheDocument();
+    await expect.element(sidebar.getByRole('link', { name: 'Help' })).toBeInTheDocument();
+    expect(sidebar.getByRole('link', { name: /editors/i }).query()).toBeNull();
   });
 
   it('shows the navigation link when a nav menu is configured', async () => {

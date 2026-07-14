@@ -873,7 +873,7 @@ function signatures above reference these.
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |
-| `Capability` | Extension API | `type Capability` | The three levels the engine understands: `'owner'` (manages the roster), `'editor'` (edits content), `'none'` (an authenticated identity with no engine content access). |
+| <a id="capability"></a>`Capability` | Extension API | `type Capability` | The three levels the engine understands: `'owner'` (manages the roster), `'editor'` (edits content), `'none'` (an authenticated identity with no engine content access). |
 | `RoleDeclaration` | Extension API | `type RoleDeclaration` | One role's mapping in a `defineRoles` vocabulary: a bare `Capability`, or `{ capability: Capability; home?: string }` naming the `/admin` route that role lands on. |
 | `RolesDeclaration` | Extension API | `type RolesDeclaration` | A site's whole role vocabulary: role name to `RoleDeclaration`, the shape `defineRoles` validates and returns. |
 | <a id="cairnrolesregister"></a>`CairnRolesRegister` | Extension API | `interface CairnRolesRegister {}` | The empty registry interface a site augments to narrow `Role` to its own declared role names (see the preceding [Roles](#roles) section). |

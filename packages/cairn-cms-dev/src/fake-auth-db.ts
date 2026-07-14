@@ -12,7 +12,11 @@
 
 import { createFakeStatement, type FakeExecResult, type FakeStatement } from './fake-d1-statement.js';
 
-type Role = 'owner' | 'editor';
+// A site's declared role vocabulary can name any string, not just 'owner'/'editor' (see
+// src/lib/auth/roles.ts), so the fixture's role column is a bare string rather than a fixed
+// union; the guarded delete/update below key on membership in a bound owner-role set, not on
+// the literal 'owner'.
+type Role = string;
 
 /** A row in the fake `editor` table, in the store's column shape. */
 interface EditorRow {
@@ -35,7 +39,10 @@ export function createFakeAuthDb(): FakeAuthDb {
     ['writer@showcase.test', { email: 'writer@showcase.test', display_name: 'Sample Writer', role: 'editor' }],
   ]);
 
-  const ownerCount = () => [...editors.values()].filter((e) => e.role === 'owner').length;
+  // The guard's live count: how many rows carry a role in the bound owner-role set, not the
+  // literal 'owner' (a site can name more than one owner-capability role, see ownerLevelRoles).
+  const ownerCount = (ownerRoles: string[]) =>
+    [...editors.values()].filter((e) => ownerRoles.includes(e.role)).length;
 
   function execute(rawSql: string, args: unknown[]): FakeExecResult<EditorRow> {
     const sql = rawSql.replace(/\s+/g, ' ').trim();
@@ -65,11 +72,15 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: 1 };
     }
 
-    // removeOwnerIfNotLast's guarded delete; checked before the plain editor delete below
-    // because its SQL contains that statement's substring too.
-    if (sql.includes("DELETE FROM editor WHERE email = ? AND role = 'owner'")) {
-      const target = editors.get(String(args[0]));
-      if (!target || target.role !== 'owner' || ownerCount() <= 1) return none;
+    // removeOwnerIfNotLast's guarded delete: a set-based `role IN (...)` membership test plus a
+    // COUNT(*) subquery over that same set, bound (email, ...ownerRoles, ...ownerRoles). Checked
+    // before the plain editor delete below because its SQL contains that statement's substring
+    // too; the `role IN (` marker distinguishes the guarded shape.
+    if (sql.startsWith('DELETE FROM editor') && sql.includes('role IN (') && sql.includes('COUNT(*)')) {
+      const email = String(args[0]);
+      const ownerRoles = args.slice(1, 1 + (args.length - 1) / 2).map(String);
+      const target = editors.get(email);
+      if (!target || !ownerRoles.includes(target.role) || ownerCount(ownerRoles) <= 1) return none;
       editors.delete(target.email);
       return { ...none, changes: 1 };
     }
@@ -79,11 +90,16 @@ export function createFakeAuthDb(): FakeAuthDb {
       return { ...none, changes: editors.delete(String(args[0])) ? 1 : 0 };
     }
 
-    // demoteOwnerIfNotLast's guarded update; checked before the plain role update below.
-    if (sql.includes("UPDATE editor SET role = 'editor' WHERE email = ? AND role = 'owner'")) {
-      const target = editors.get(String(args[0]));
-      if (!target || target.role !== 'owner' || ownerCount() <= 1) return none;
-      target.role = 'editor';
+    // demoteOwnerIfNotLast's guarded update: the same set-based membership plus COUNT(*) shape,
+    // bound (newRole, email, ...ownerRoles, ...ownerRoles). Checked before the plain role update
+    // below for the same reason as the guarded delete above.
+    if (sql.startsWith('UPDATE editor SET role = ?') && sql.includes('role IN (') && sql.includes('COUNT(*)')) {
+      const newRole = String(args[0]);
+      const email = String(args[1]);
+      const ownerRoles = args.slice(2, 2 + (args.length - 2) / 2).map(String);
+      const target = editors.get(email);
+      if (!target || !ownerRoles.includes(target.role) || ownerCount(ownerRoles) <= 1) return none;
+      target.role = newRole;
       return { ...none, changes: 1 };
     }
 

@@ -85,26 +85,25 @@ discriminant, not the fields, gates the chrome).
   // the owner-only Editors. Empty on a public payload (the nav never renders there). A none-capability
   // session (the spec's none contract) gets none of the engine's own screens, since every one of them
   // 403s on that session; only the site's own custom flat entries carry over.
-  const coreItems: NavItem[] = $derived(
-    shell
-      ? shell.user.capability === 'none'
-        ? [...customFlatEntries.map(navItemOf)]
-        : [
-            ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-            // The developer's custom flat screens, right after the concepts. A custom section (grouped
-            // separately below) never folds in here.
-            ...customFlatEntries.map(navItemOf),
-            // Library is a content peer, immediately after the concepts (the media screen; the route
-            // stays /admin/media, but the settled editor-facing label is Library, not Media).
-            { label: 'Library', icon: ImageIcon, href: '/admin/media' },
-            // Tags is the shared tag-vocabulary screen, after Library.
-            { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
-            ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
-            { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
-            ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
-          ]
-      : [],
-  );
+  const coreItems: NavItem[] = $derived.by(() => {
+    if (!shell) return [];
+    // The developer's custom flat screens, right after the concepts. A custom section (grouped
+    // separately below) never folds in here.
+    const customItems = customFlatEntries.map(navItemOf);
+    if (shell.user.capability === 'none') return customItems;
+    return [
+      ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
+      ...customItems,
+      // Library is a content peer, immediately after the concepts (the media screen; the route
+      // stays /admin/media, but the settled editor-facing label is Library, not Media).
+      { label: 'Library', icon: ImageIcon, href: '/admin/media' },
+      // Tags is the shared tag-vocabulary screen, after Library.
+      { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
+      ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
+      { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
+      ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
+    ];
+  });
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {

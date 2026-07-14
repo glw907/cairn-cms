@@ -146,6 +146,18 @@ export type OutboundMessage = ReadyMessage | CheckResult | SuggestResult | Error
 type Post = (message: OutboundMessage) => void;
 
 /**
+ * Normalizes a curly apostrophe (U+2019) to the straight quote (U+0027) for lookup purposes only.
+ * Word processors and paste-from-web prose routinely produce curly apostrophes, and the extraction
+ * regex in `spellcheck.ts` already captures them, but the dictionary asset holds straight-quote
+ * contractions only. Every lookup key (`isCorrect`, `addWord`, `ignoreWord`, `suggest`) normalizes
+ * through this helper so a curly and a straight form of the same contraction share one dictionary
+ * entry; the posted word text and diagnostic ranges stay untouched.
+ */
+function normalizeApostrophe(word: string): string {
+  return word.replace(/’/g, "'");
+}
+
+/**
  * The pure message handler. It owns the personal dictionary and the session ignore set and answers
  * `check`/`suggest`/`addWord`/`ignoreWord` against the injected engine. It holds NO reference to a
  * Worker context: it posts through the sink it is handed, so a test drives it with a fake engine and
@@ -162,10 +174,11 @@ export function createSpellcheckHandler(engine: SpellEngine): {
   const ignored = new Set<string>();
 
   function isCorrect(word: string): boolean {
-    const lower = word.toLowerCase();
+    const normalized = normalizeApostrophe(word);
+    const lower = normalized.toLowerCase();
     // Dialect first, then personal, then ignore. Sets are matched lowercased to mirror the engine's
     // case-insensitive lookup, so "Cairn" added once answers for "cairn".
-    return engine.check(word) || personal.has(lower) || ignored.has(lower);
+    return engine.check(normalized) || personal.has(lower) || ignored.has(lower);
   }
 
   return {
@@ -181,17 +194,19 @@ export function createSpellcheckHandler(engine: SpellEngine): {
             type: 'suggested',
             seq: message.seq,
             word: message.word,
-            suggestions: engine.suggest(message.word),
+            suggestions: engine.suggest(normalizeApostrophe(message.word)),
           });
           break;
         }
         case 'addWord': {
-          if (message.word) personal.add(message.word.toLowerCase());
-          if (message.words) for (const w of message.words) personal.add(w.toLowerCase());
+          if (message.word) personal.add(normalizeApostrophe(message.word).toLowerCase());
+          if (message.words) {
+            for (const w of message.words) personal.add(normalizeApostrophe(w).toLowerCase());
+          }
           break;
         }
         case 'ignoreWord': {
-          ignored.add(message.word.toLowerCase());
+          ignored.add(normalizeApostrophe(message.word).toLowerCase());
           break;
         }
       }

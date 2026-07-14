@@ -68,7 +68,35 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-13, night: the save-500 pass EXECUTING)
+## Immediate next action (2026-07-14: the save-500 pass MERGED; release + rollout executing, then the ROLES initiative)
+
+**THE SAVE-500 PASS IS MERGED TO MAIN (7ac6d58c; plan + post-mortem:
+docs/superpowers/plans/2026-07-13-save-500-honest-errors.md).** The window under
+`## Unreleased`: the three-layer P0 fix (create-dialog date seeded through the redirect;
+date-token permalinks structurally require their date field; save-time bounce), the
+admin-action raw-500 guard (`admin.action.failed` event; script-posted actions fail inline),
+FieldInput required attributes, tidy error voice (`tidy.error` reason field), tidy key
+truthful visibility (per-isolate health cache; bounded TTL-cached probes in settings +
+doctor), and the showcase preview `containerClass: 'site-main prose'` fix. Full gate green at
+merge (check 0/0, 3273 tests exit 0, all seven named gates); the adversarial review workflow
+(16 agents) confirmed and folded 2 real defects, refuted 6. NOW EXECUTING (Geoff-authorized):
+`cairn-release` cut, then rollout ecxc → 907.life → aksailingclub-org main. Each site's deploy
+also fixes its own preview containerClass (ecxc :108, 907 :94, ASC :196 — same chassis defect
+as the showcase) and gets a live save verification; Geoff's magic-link click stays the human
+smoke step.
+
+**THEN (fresh session): the EXTENSIBLE ROLES initiative, FULL SCOPE, Fable-conducted (Geoff,
+2026-07-13/14: "we can do the deeper work... while I have Fable available"; needed for ongoing
+ASC work).** Entry point: a full-scope brainstorm (the human gate) covering the open role
+vocabulary, the capability mapping, the read-side typed contract, the ManageEditors surface,
+migration + bootstrap-owner mechanics, auditable role changes, and email normalization. The
+grounding inputs, all committed: the ROADMAP Now entry, the ASC consumer brief
+(aksailingclub-org/docs/2026-07-13-cairn-editor-roles-consumer-brief.md, e6bbe02,
+Geoff-verified), and the charter (cairn is not an auth platform; ASC is the first consumer,
+not the ceiling). Resume prompt: "Run the extensible-roles full-scope brainstorm; read the
+ROADMAP Now entry and the ASC consumer brief first."
+
+## Prior next action (2026-07-13, night: the save-500 pass EXECUTING)
 
 **THE P0 IS DIAGNOSED AND THE PASS IS RUNNING** (plan:
 docs/superpowers/plans/2026-07-13-save-500-honest-errors.md, on worktree

@@ -62,9 +62,13 @@ function editorsData(): AdminData {
   return {
     view: 'editors',
     page: {
-      editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const }],
+      editors: [{ email: 'owner@t', displayName: 'Owner One', role: 'owner' as const, capability: 'owner' }],
       self: 'owner@t',
       error: null,
+      vocabulary: [
+        { role: 'owner', capability: 'owner' },
+        { role: 'editor', capability: 'editor' },
+      ],
     },
   };
 }

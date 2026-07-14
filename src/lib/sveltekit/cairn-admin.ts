@@ -23,6 +23,7 @@ import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthBranding, SendMagicLink } from '../email.js';
 import type { AuthEnv, Editor } from '../auth/types.js';
+import type { Capability } from '../auth/roles.js';
 import type { BackendEnv } from '../github/credentials.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CookieJar, EventBase } from './types.js';
@@ -73,7 +74,10 @@ export type AdminData =
   | { view: 'confirm'; page: { token: string; siteName: string; error: string | null; csrf: string } }
   | { view: 'list'; page: ListData }
   | { view: 'edit'; page: EditData }
-  | { view: 'editors'; page: { editors: Editor[]; self: string; error: string | null } }
+  | {
+      view: 'editors';
+      page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] };
+    }
   | { view: 'nav'; page: NavLoadData }
   | { view: 'media'; page: MediaLibraryData }
   | { view: 'settings'; page: SettingsData }
@@ -93,7 +97,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   };
   const auth = createAuthRoutes({ branding, send: deps.auth?.send });
   const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter });
-  const editors = createEditorRoutes();
+  const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;
 

@@ -53,21 +53,42 @@ describe('editors', () => {
 describe('last-owner guards (atomic)', () => {
   it('refuses to remove or demote the last owner and writes nothing', async () => {
     await seedEditor('own@x.dev', 'Own', 'owner');
-    expect(await removeOwnerIfNotLast(db, 'own@x.dev')).toBe(false);
+    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toBe(false);
     expect(await findEditor(db, 'own@x.dev')).not.toBeNull();
-    expect(await demoteOwnerIfNotLast(db, 'own@x.dev')).toBe(false);
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner'], 'editor')).toBe(false);
     expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
   });
 
   it('removes or demotes an owner when another owner remains', async () => {
     await seedEditor('a@x.dev', 'A', 'owner');
     await seedEditor('b@x.dev', 'B', 'owner');
-    expect(await demoteOwnerIfNotLast(db, 'a@x.dev')).toBe(true);
+    expect(await demoteOwnerIfNotLast(db, 'a@x.dev', ['owner'], 'editor')).toBe(true);
     expect((await findEditor(db, 'a@x.dev'))?.role).toBe('editor');
 
     await seedEditor('c@x.dev', 'C', 'owner'); // b and c are owners now
-    expect(await removeOwnerIfNotLast(db, 'b@x.dev')).toBe(true);
+    expect(await removeOwnerIfNotLast(db, 'b@x.dev', ['owner'])).toBe(true);
     expect(await findEditor(db, 'b@x.dev')).toBeNull();
+  });
+
+  it('counts across a two-owner-level-name vocabulary, not the literal owner string', async () => {
+    // A club-shaped vocabulary where both 'owner' and 'president' carry owner capability. A row
+    // under either name counts toward the "another owner remains" test.
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    await seedEditor('pres@x.dev', 'Pres', 'president');
+    const ownerRoles = ['owner', 'president'];
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ownerRoles, 'club-admin')).toBe(true);
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('club-admin');
+    // Only 'pres@x.dev' carries an owner-level role now; refuse to strand the roster.
+    expect(await removeOwnerIfNotLast(db, 'pres@x.dev', ownerRoles)).toBe(false);
+    expect(await findEditor(db, 'pres@x.dev')).not.toBeNull();
+  });
+
+  it('refuses when a second owner-level name is declared but has no rows', async () => {
+    // The vocabulary declares both 'owner' and 'president' as owner-capability, but only one row
+    // exists. The declared name set must not be mistaken for actual headcount.
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await demoteOwnerIfNotLast(db, 'own@x.dev', ['owner', 'president'], 'editor')).toBe(false);
+    expect((await findEditor(db, 'own@x.dev'))?.role).toBe('owner');
   });
 });
 

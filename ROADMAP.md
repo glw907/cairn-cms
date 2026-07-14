@@ -192,7 +192,11 @@ the named human gates only):**
   join key to the member domain and the likeliest silent failure); the last-owner guard
   becomes strictly the engine's; migration defaults plus a config-declared bootstrap owner; no
   invite ceremony; auditable role changes. ASC's fork answers from the consumer seat: three
-  capability levels hold, per-request nav-filter code is fine.
+  capability levels hold, per-request nav-filter code is fine. **ASC is the FIRST consumer,
+  not the design's ceiling (Geoff, 2026-07-13):** the vocabulary is unbounded by construction
+  (any site, any number of roles, any names); ASC's answers are one consumer's evidence, and
+  the brainstorm weighs them as such — in particular the capability-level count stays a real
+  fork until a second consumer shape (or the charter) settles it.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

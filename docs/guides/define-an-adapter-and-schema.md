@@ -254,6 +254,35 @@ a reference. Piggybacking the author field on `pages`, the way the earlier examp
 but a dedicated concept reads better once a site has more than one or two authors. [Add authors to
 your site](./add-authors.md) walks that dedicated-concept version of the same pattern end to end.
 
+## Name your own roles
+
+The engine hard-codes three capability levels, owner, editor, and none, but not what your own
+roster calls its people. Skip `roles` entirely and cairn keeps the implicit `owner`/`editor`
+pair it has always had. Add it only when your site's people use their own names, or when a role
+needs its own admin screen with no engine content access at all.
+
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full above) to focus on the roles member -->
+```ts
+import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
+
+const roles = defineRoles({
+  owner: 'owner',
+  'club-admin': 'editor',
+  instructor: { capability: 'none', home: '/admin/classes' },
+});
+
+export const cairn = defineAdapter({
+  // ...content, backend, email, rendering...
+  roles,
+});
+```
+
+Each name on the left maps onto one of the three levels on the right. `instructor` here lands on
+its own screen after sign-in and never touches content at all. [Roles](../reference/core.md#roles)
+in the core reference covers the full validation rules, the typed `CairnRolesRegister`
+augmentation, and the helpers a custom admin route calls to gate itself against the same
+vocabulary.
+
 ## What's next
 
 The adapter also has two smaller groups this guide didn't need: `media`, which turns on R2-backed

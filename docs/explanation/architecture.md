@@ -53,6 +53,15 @@ and their render are code, so they live in `cairn.config.ts`. Nav menus and the 
 change without a deploy, so they live in the YAML that your editors' own admin screens commit
 back to git.
 
+Your adapter can also declare what your own site calls its people. The engine hard-codes three
+capability levels, owner, editor, and none, but leaves the role names open. `defineRoles` maps
+each of your role names onto one of those three levels, and can name the `/admin` route a role
+lands on after sign-in. A site that declares no `roles` keeps the implicit `owner`/`editor` pair
+the engine has always had, so this changes nothing for a zero-config site. See
+[roles](../reference/core.md#roles) in the core reference for the full mapping rules and the
+typed read-side a site augments so its own routes see its declared role names on
+`locals.editor.role`.
+
 ## The admin mount
 
 A site mounts the whole `/admin` surface with one catch-all route pair and one server

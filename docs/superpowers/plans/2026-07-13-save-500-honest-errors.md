@@ -139,3 +139,52 @@ deploy + live verification per site (ecxc.ski, 907.life, aksailingclub-org main 
 any live WIP in the ASC tree). The human step stays Geoff's magic-link click; the smoke
 session covers the rest, including a real dated new-entry save on ecxc reproducing the P0
 flow end to end.
+
+## Post-mortem (2026-07-13, pass close)
+
+**Built (12 commits on `save-500-hardening`):** the three-layer P0 fix (date seeded through the
+create redirect; date-token permalinks structurally require their `date` field at declaration,
+forced `required: true`; save-time bounce as belt and braces), the admin-action raw-500 guard at
+the `viewAction` chokepoint (`admin.action.failed` log event; `?error=` bounce with `new=1`
+preserved via a scoped request clone; the editors and vocabulary views gained error rendering;
+`indexRedirect` forwards a bounced error; script-posted actions return `fail(500)` inline instead
+of a bounce the client misreads as session expiry), the FieldInput `required` attributes
+(textarea, date, open multiselect), the tidy error voice (401/403 → non-retryable `fail(503)`
+naming the site developer; `tidy.error` gains `reason`), tidy key truthful visibility (per-isolate
+TTL health cache; edit loads read the cache only; the settings screen and doctor run an active
+zero-token probe, bounded by `tidyTimeoutMs` and TTL-cached after review), and the showcase
+preview `containerClass: 'site-main prose'` fix with the recipe documented.
+
+**Verified:** every task test-first through the full gate; final state `npm run check` 0/0
+(1359 files), `npm test` exit 0 (297 files, 3273 tests), and all seven named gates green
+(`check:comments`, `check:reference`, `check:reference:signatures`, `check:package`,
+`check:docs`, `check:snippets`, `check:surface`). The preview fix was verified by a
+production-shaped showcase build with before/after renders read in the main loop, plus a
+golden-path e2e regression assertion (13/13). The review gate ran as an adversarial
+find-and-verify workflow (5 finders, 11 raw findings, 11 deduped, per-finding Opus refuters):
+6 refuted with code-grounded reasoning, 5 confirmed collapsing to 2 real defects (the unbounded
+settings-page key probe; the session-expired mislabel), both folded and re-gated. The two
+`check:reference:signatures` drifts T2 left were caught by T4/T5's close-out and fixed here —
+the CI-only-gate lesson held its value again.
+
+**Diagnosis lessons banked:** the P0 was found in ONE Workers Logs query (the structured-log
+investment paying off exactly as designed); the preview bug was a chassis-propagated config
+defect all four family sites inherited, caught by reproducing on the showcase first. Both
+STATUS queue hypotheses (Summary-fix unmasking; not an 0.84.3 regression) were confirmed.
+
+**Decisions locked:** structural requiredness lives at normalization, not in per-site schema
+discipline; the unexpected-failure surface is the `?error=` bounce for form-nav actions and
+inline `fail(500)` for the five `redirect:'manual'` call sites (enumerated in the viewAction
+doc comment); key health is lazy-degrade plus bounded active probes, never an inline edit-load
+probe; `containerClass` must name the site's full content-wrapper class list.
+
+**Budgets:** ~3.4M subagent output tokens (implementers 1.5M, review workflow 1.19M at 16
+agents, simplifier 87k, diagnosis 105k, review folds 244k) plus the Fable main loop. Human
+interaction points: zero questions from the pass (Geoff's messages were new scope, a go, and
+the roles-initiative thread); zero corrections of pass work. The review workflow's cost bought
+two real pre-release defects, both in brand-new code, one of which (the unbounded probe) would
+have shipped a hung settings page to three production sites.
+
+**Carried forward:** the two required-visibility gaps (checkbox-group, hidden-input arms) are
+in the friction log; the roles initiative is promoted to Now (full scope, Fable window) per
+Geoff's ruling, with the ASC consumer brief as its grounding input.

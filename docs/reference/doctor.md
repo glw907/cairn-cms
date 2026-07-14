@@ -65,7 +65,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Fourteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Sixteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share. Some checks share one condition id (`config.media-bucket` and
 `config.tidy-key` both reuse `config.bindings-missing`), so the readiness count holds while the
@@ -85,7 +85,9 @@ checklist gains a distinct line.
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |
 | `edge.hsts` | `edge.hsts-off` | HSTS is enabled with a max-age of at least 30 days. | No API token, or no from-address. |
-| `auth.store` | `auth.store-unreachable` | The `AUTH_DB` D1 database answers, the `editor`, `magic_token`, and `session` tables exist, and an owner row is present. | No API token or account id, or the wrangler config carries no `AUTH_DB` `database_id`. |
+| `auth.store` | `auth.store-unreachable` | The `AUTH_DB` D1 database answers, the `editor`, `magic_token`, and `session` tables exist, and at least one owner-capability row is present (every declared role mapped to owner capability, `owner` when the site declares none). | No API token or account id, or the wrangler config carries no `AUTH_DB` `database_id`. |
+| `auth.role-vocabulary` | `auth.unknown-role` | Every distinct `role` value in the `editor` table is a name the site's declared vocabulary knows (checked by name, not resolved capability, so a role explicitly declared `none` still counts as known). | Same as `auth.store`. |
+| `auth.email-normalization` | `auth.email-not-normalized` | Every `editor.email` is trimmed and lowercase, the invariant every write and lookup path holds; a manual `wrangler d1 execute` insert is the one way to violate it. | Same as `auth.store`. |
 | `github.app` | `github.app-unreachable` | The App key parses and signs, an installation token mints, and the repository answers a read. | The GitHub credential trio or the repo is missing. |
 | `email.live-send` | `email.send-failed` | One real message sends through the Email Sending REST API. Runs only with `--send-test`. | No API token, account id, or from-address. |
 | `admin.login-probe` | `admin.login-probe-failed` | The deployed `/admin/login` answers with a working sign-in envelope, and the request action accepts a POST. Runs only with `--probe`. | Bare `--probe` finds no URL in the wrangler vars or `PUBLIC_ORIGIN`. |

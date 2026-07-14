@@ -62,6 +62,17 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   still scan the page for underlines. Left out of the a11y hardening pass because it is a new UI surface,
   not a gap in the existing one. Resurfaced 2026-07-03 while writing the editor guide, whose draft had
   claimed a visible count that does not exist; now queued in the pre-beta engine pass plan. LOW.
+- **developer** (`filterNavByRole`'s `ownerOnly` check is literal-role, not capability): surfaced
+  while documenting the extensible-roles pass (2026-07-14). Custom nav's `ownerOnly` flag hides an
+  entry unless `editor.role === 'owner'` literally (`src/lib/sveltekit/admin-nav.ts`); every other
+  owner-facing gate in this pass (`canManageEditors`, the last-owner guard, `requireOwner`) was
+  regeneralized to `resolveCapability(...) === 'owner'`, but this one comparison was not in this
+  pass's task list and stayed on the literal string. A site whose vocabulary maps a *second* name
+  to owner capability (`club-admin: 'owner'` beside `owner: 'owner'`) would see its own `ownerOnly`
+  custom nav entries hidden from that second owner-capability role, even though it can manage the
+  roster and survives the last-owner guard. Candidate: widen `filterNavByRole` to accept the
+  editor's resolved capability (or the vocabulary) instead of the bare role string. MEDIUM: no
+  known consumer declares a second owner-level name yet, but ASC's brief leaves the door open.
 
 ### Gates and test infrastructure
 

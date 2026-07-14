@@ -24,7 +24,7 @@ Eight words the docs use precisely:
 - **Concept** — a first-class content kind your adapter declares (Posts, Pages, or your own), a directory of markdown with a frontmatter schema.
 - **Adapter** — the one place your site describes itself to the engine: concepts, the GitHub target, the sender address, your `render`.
 - **Render** — your markdown-to-HTML function; the editor preview and your public pages both call it, so there is exactly one way content looks.
-- **Owner / editor** — the two roles: owners manage the editor list; editors write and publish.
+- **Role / capability** — your site names its own roles (owner and editor by default); each maps onto one of three capability levels the engine understands: owner (manages the editor list), editor (writes and publishes), or none (signed in, no content access).
 - **Holding branch** — where a save waits (`cairn/<concept>/<id>`, one per entry) until a deliberate Publish copies it to `main`.
 - **Seam** — a documented extension point (a custom admin screen, the identity hand-off, your own routes beside the engine's) with a stability promise attached.
 - **Island** — an interactive Svelte component hydrated inside otherwise-static rendered content.

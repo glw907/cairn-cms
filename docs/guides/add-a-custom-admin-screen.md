@@ -13,9 +13,12 @@ that route, close to verbatim.
 The rest of this guide grows that one screen into a whole custom *section*, the shape a real site
 proves once it has more than a screen or two of its own admin surface. The worked pattern below is
 drawn from an aksailingclub.org production build: a `/admin/club/**` section (events, classes,
-members, assets) gated by a club-specific role that has nothing to do with cairn's own
-owner/editor split. The code here describes that pattern; it is not the site's own files, since a
-site's role model, database, and screens are always its own.
+members, assets) gated by a club-specific role, member-scale and outside cairn's own capability
+model. The code here describes that pattern; it is not the site's own files, since a site's role
+model, database, and screens are always its own. A staff-scale role that only ever needs cairn's
+own three capability levels belongs on the [declared role vocabulary](../reference/core.md#roles)
+instead; a custom D1-backed role model like this one is for a role cairn was never meant to know
+about (a large, dynamic membership, say, not a handful of staff).
 
 ## Add the route
 
@@ -303,7 +306,7 @@ full seam, including the validated `ResolvedNavEntry` shape the shell
 actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
 in the SvelteKit reference.
 
-**`ownerOnly` only reaches cairn's own owner/editor split.** A whole section gated by a site-owned
+**`ownerOnly` only reaches cairn's own declared role vocabulary.** A whole section gated by a site-owned
 role, the Club section above, say, needs its sidebar entry hidden from an editor who has no club
 role at all, a question `ownerOnly` cannot answer. `navFilter`, a per-request hook on
 [`createCairnAdmin`](../reference/admin-routes.md) and `createContentRoutes`, is that seam: it

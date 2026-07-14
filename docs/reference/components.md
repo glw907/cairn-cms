@@ -40,8 +40,9 @@ let { data, form, render, registry, icons }: {
 
 The single-mount admin page. Render it from the catch-all `/admin/[...path]` route with the
 discriminated `AdminData` that `createCairnAdmin`'s load returns, and it switches `data.view` to
-mount the right component: the sign-in and confirm pages, and the list, edit, editors, and nav
-views. It renders each view bare; the shared chrome rides the separate `/admin/+layout` shell
+mount the right component: the sign-in and confirm pages, the list, edit, editors, and nav views,
+and the `'welcome'` view, the calm signed-in screen a none-capability role with no declared `home`
+lands on. It renders each view bare; the shared chrome rides the separate `/admin/+layout` shell
 (see [`CairnAdminShell`](#cairnadminshell)), not `CairnAdmin`. The edit view reads its `siteName`
 from `page.data.shell`. `form` forwards the route's action result to whichever view rendered, so a
 blocked save reaches `EditPage` and a login outcome reaches `LoginPage` through the one prop.
@@ -348,17 +349,23 @@ Stability tier: Unstable API.
 
 ```ts
 let { data, form }: {
-  data: { editors: Editor[]; self: string };
+  data: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] };
   form: { error?: string; ok?: boolean } | null;
 };
 ```
 
-The owner-only editors screen: the allowlist and the add and remove actions. `data.editors` is the
-current allowlist and `data.self` is the acting owner's email, which the anti-lockout guard uses.
-`form` carries the last action's result. Its forms post the named `?/addEditor`, `?/removeEditor`,
-and `?/setRole` actions, the names `createCairnAdmin`'s actions record defines. On the per-route
-mounting it lives at `src/routes/admin/(app)/editors/+page.svelte` against the editors load and
-actions, registered under the same names.
+The owner-only editors screen: the allowlist and the add, remove, and role-flip actions.
+`data.editors` is the current allowlist and `data.self` is the acting owner's email, which the
+anti-lockout guard uses. `data.vocabulary` is the site's declared [role vocabulary](./core.md#roles),
+each name paired with its resolved capability; with the default owner/editor pair the role
+control renders today's toggle unchanged, and with any larger or differently shaped vocabulary it
+renders a labeled select listing every declared role with its capability shown alongside, and an
+owner-capability row's badge distinguishes it from an editor- or none-capability one. `form`
+carries the last action's result. Its forms post the named `?/addEditor`, `?/removeEditor`, and
+`?/setRole` actions, the names `createCairnAdmin`'s actions record defines; `setRole` rejects a
+posted role outside the vocabulary as a form validation error. On the per-route mounting it lives
+at `src/routes/admin/(app)/editors/+page.svelte` against the editors load and actions, registered
+under the same names.
 
 ```svelte
 <script lang="ts">

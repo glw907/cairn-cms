@@ -1,3 +1,40 @@
+## Unreleased
+
+### Added
+
+- Sites now declare their own role vocabulary and map each role onto one of the engine's three
+  fixed capability levels: `owner` (manages the roster), `editor` (writes and publishes), or
+  `none` (an authenticated identity with no engine content access). `defineRoles` on the adapter's
+  new `roles` member validates the vocabulary at construction; a site that declares none gets the
+  implicit `{ owner: 'owner', editor: 'editor' }` pair, so a zero-config site sees no change
+  anywhere in this release. A new `CairnRolesRegister` interface (a root export) lets a site
+  augment `Role` in its own `app.d.ts` to narrow `locals.editor.role` to its declared names,
+  including on its own custom admin routes. A role can additionally declare a `home`, the
+  `/admin` route that role lands on; `/admin`'s landing is now role-aware, and a none-capability
+  role with no declared `home` lands on a calm signed-in welcome view instead of the content list.
+  A new `requireEditor` guard (the engine's own content and roster surfaces now call it instead of
+  `requireSession`) refuses a none-capability session with 403 while still authenticating it: the
+  none contract is that such a session carries a populated, typed `locals.editor` and passes
+  through the `CairnAdminShell` custom-route seam untouched, so a site's own admin routes can grant
+  a none-capability role access to a screen cairn's own surfaces refuse. `ManageEditors` renders
+  the declared vocabulary: the default pair keeps today's toggle, and a larger vocabulary renders a
+  labeled select naming each role's capability. `CairnAdminDeps.auth` gains `bootstrapOwner`, a
+  config-declared email and display name that seeds the very first owner row on an empty `editor`
+  table from the ordinary magic-link request flow, no `wrangler d1 execute` required. A new
+  migration, `migrations/0001_roles.sql`, drops the `editor.role` column's `CHECK` constraint
+  (role validity moves to the app layer, validated against the declared vocabulary); a zero-config
+  site can skip it, since the constraint never rejected `owner` or `editor`. `cairn-doctor` gains
+  two checks, `auth.role-vocabulary` (an editor row using an undeclared role) and
+  `auth.email-normalization` (an editor row whose email isn't trimmed and lowercase), and its
+  existing owner-count check now counts every owner-capability row, not just the literal `owner`
+  string.
+
+No consumer action needed for an existing site: the implicit owner/editor vocabulary behaves
+exactly as before. To open a larger vocabulary, declare `roles` on the adapter with `defineRoles`
+and augment `CairnRolesRegister` in `app.d.ts` if you want the narrowed `Role` type; see the
+[roles reference](./docs/reference/core.md#roles) and the
+[upgrade guide](./docs/guides/upgrade-cairn.md).
+
 ## 0.84.4
 
 ### Changed

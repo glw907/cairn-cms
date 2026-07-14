@@ -130,10 +130,18 @@ the same SSL/TLS, Edge Certificates panel, with a max-age of six months or more.
 ## Provision the auth store
 
 The `AUTH_DB` D1 database needs to answer, carry the `editor`, `magic_token`, and `session`
-tables, and hold at least one owner row. Missing any of the three means no magic-link token can be
-minted and nobody signs in. Create the database, apply the schema with
-`wrangler d1 migrations apply your-site-auth --remote`, and seed the owner row; the
+tables, and hold at least one owner-capability row. Missing any of the three means no magic-link
+token can be minted and nobody signs in. Create the database, apply the schema with
+`wrangler d1 migrations apply your-site-auth --remote`, and seed the owner row (or declare a
+config bootstrap owner, which needs no D1 access); the
 [configure auth and D1 guide](./configure-auth-and-d1.md) walks the full sequence.
+
+Two more checks read the same table. `auth.role-vocabulary` flags an editor row whose `role` isn't
+one of the site's declared names, a pruned config or a hand-edited row (the runtime resolves it to
+`none` capability rather than locking the person out, but the doctor still surfaces the drift).
+`auth.email-normalization` flags a row whose email isn't trimmed and lowercase, the one hygiene
+hole a manual `wrangler d1 execute` insert can open. Both skip under the same conditions
+`auth.store` does.
 
 ## Install the GitHub App
 

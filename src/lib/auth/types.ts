@@ -9,7 +9,6 @@ import type { Capability, RolesDeclaration } from './roles.js';
  * `interface CairnRolesRegister { roles: typeof roles }` in `app.d.ts`; `Role` then narrows to the
  * site's declared names. Unaugmented, it stays empty and `Role` defaults to the owner/editor pair.
  */
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CairnRolesRegister {}
 
 /**

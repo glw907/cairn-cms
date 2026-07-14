@@ -14,6 +14,7 @@ export type {
   AdvisoryNotice,
   AdvisoryAction,
   HelpData,
+  WelcomeData,
   MediaUsageInfo,
   MediaLibraryData,
   ContentEvent,

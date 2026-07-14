@@ -8,9 +8,9 @@ Most of the system works out of sight. The part that concerns you is the one it 
 
 Two facts about the arrangement are worth holding from the start. Nothing you do while drafting can break the live site, since your work stays private until you deliberately publish it. And every save is kept, so no version of your work is ever lost. The rest of this page fills in what sits between those two facts: how you sign in, how the writing works, and what happens when you publish.
 
-## Two roles
+## Roles
 
-Cairn has exactly two roles, and they are the entire permission model. Editors write, save, and publish. Owners do everything editors do and also manage the editor list itself: adding a new colleague, removing a departed one, granting ownership to another. There are no finer-grained permissions to learn or administer, no workflows to configure, and no approval queues; a site of this scale runs on trust, and cairn's design assumes it.
+By default, cairn has exactly two roles, and they are the entire permission model. Editors write, save, and publish. Owners do everything editors do and also manage the editor list itself: adding a new colleague, removing a departed one, granting ownership to another. Some organizations name their own roles on top of this (an instructor, a club admin) for a screen your developer built, but for cairn's own writing surface, you're still either an editor or an owner. There are no finer-grained permissions to learn or administer within it, no workflows to configure, and no approval queues; a site of this scale runs on trust, and cairn's design assumes it.
 
 ## Signing in
 

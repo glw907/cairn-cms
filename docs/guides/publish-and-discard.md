@@ -20,7 +20,7 @@ A saved draft carries two kinds of advisory. Cairn refuses the save when a body 
 
 ## Publish puts your draft on the live site
 
-Publish (`Ctrl Shift S`, or the Publish button beside Save) is the deliberate step that changes what a reader sees. It publishes exactly what's on your screen at that moment, including anything typed since your last save, so there's never a mismatch between the preview you checked and the page that goes live. The Publish button appears only on an entry that has unpublished changes waiting.
+Publish (`Ctrl Shift S`, or the Publish button beside Save) is the deliberate step that changes what a reader sees. It publishes exactly what's on your screen at that moment, including anything typed since your last save, so there's never a mismatch between the preview you checked and the page that goes live. The Publish button sits beside Save on every entry. While nothing new is waiting, it rests dimmed and answers "Nothing new to publish"; type an edit or save a draft and it wakes.
 
 Publishing copies your draft from its holding branch onto the site's main line of content:
 

@@ -1420,18 +1420,20 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
              on the figure-control pattern this repo already owns: aria-disabled (never the native
              attribute, so the control stays focusable and its reason reaches assistive technology),
              the cairn-btn-guarded marker so the title tooltip survives DaisyUI's pointer-events
-             kill, and opacity/cursor dimming rather than .btn-disabled. Native disabled is reserved
-             for busy (mid-submit), the one case the guidance sanctions. onPublishClick cancels a
-             guarded click's own submit, since aria-disabled alone blocks nothing. -->
+             kill, and a not-allowed cursor rather than .btn-disabled. DaisyUI's own [aria-disabled]
+             rule supplies the dimming, so no opacity utility rides on top (a second dimming would
+             halve the focus ring on this still-focusable control). Native disabled is reserved for
+             busy (mid-submit), the one case the guidance sanctions, and aria-disabled is emitted
+             only while guarded so the two never contradict. onPublishClick cancels a guarded click's
+             own submit, since aria-disabled alone blocks nothing. -->
         <button
           bind:this={publishButton}
           type="submit"
           form="cairn-edit-form"
           formaction="?/publish"
           class="btn btn-outline btn-primary btn-sm cairn-btn-guarded"
-          class:opacity-50={!publishActionable}
           class:cursor-not-allowed={!publishActionable}
-          aria-disabled={!publishActionable}
+          aria-disabled={publishActionable ? undefined : true}
           aria-label={publishGuardName}
           title={publishGuardReason}
           disabled={busy}

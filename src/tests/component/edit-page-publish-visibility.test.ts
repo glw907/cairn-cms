@@ -92,13 +92,13 @@ describe('EditPage Publish visibility', () => {
   it('renders Publish actionable when edits are pending', async () => {
     const screen = render(EditPage, postProps({ pending: true }));
     const publish = publishButton(screen);
-    expect(publish.getAttribute('aria-disabled')).toBe('false');
+    expect(publish.getAttribute('aria-disabled')).toBe(null);
   });
 
   it('renders Publish actionable for a brand-new entry', async () => {
     const screen = render(EditPage, postProps({ isNew: true, pending: false, published: false }));
     const publish = publishButton(screen);
-    expect(publish.getAttribute('aria-disabled')).toBe('false');
+    expect(publish.getAttribute('aria-disabled')).toBe(null);
   });
 
   it('flips a clean published entry from guarded to actionable after a body edit, and the click submits', async () => {
@@ -106,7 +106,7 @@ describe('EditPage Publish visibility', () => {
     const publish = publishButton(screen);
     expect(publish.getAttribute('aria-disabled')).toBe('true');
     await makeDirty(screen);
-    await expect.poll(() => publish.getAttribute('aria-disabled')).toBe('false');
+    await expect.poll(() => publish.getAttribute('aria-disabled')).toBe(null);
     let formaction: string | null = 'unset';
     const stop = (e: SubmitEvent) => {
       e.preventDefault();

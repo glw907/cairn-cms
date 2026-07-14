@@ -106,6 +106,58 @@ handler with a fake engine, plus a dictionary-content assertion):
 - Gates: the four doc gates plus `check:prose` (new UI string "Nothing new to
   publish").
 
+## Task 4: New-entry create flow correctness (added mid-pass from live ecxc report)
+
+Three reported symptoms on creating a new post, two root causes.
+
+Root cause A: `createAction` (`content-routes-core.ts` ~512) collects the create
+dialog's `title` but drops it. It validates, derives the id from the slug, and redirects
+to `?new=1` carrying only the id. So the new-doc `editLoad` seeds the title field from
+the schema default (blank), and `EditData.title` falls back to the id. Symptoms: the
+editor's title field opens blank, and the breadcrumb shows the address (id) rather than
+the title (which read as "correct in the top bar" because the id looks like the typed
+title).
+
+Root cause B: the `status` derived in `EditPage.svelte` (~931) returns `'Published'`
+whenever `!data.pending`. A brand-new never-saved entry is `pending: false, published:
+false`, so it wrongly reads "Published"; it should read "New".
+
+Outcome:
+
+- Thread the typed title through create. `createAction` redirects with
+  `?new=1&title=<encodeURIComponent(rawTitle)>` (the raw title before slugification; it
+  may differ from the slug when the author set an explicit address). `editLoad`, when
+  `isNew`, reads the `title` search param and layers it into `loadFrontmatter` over the
+  schema defaults and under any parsed frontmatter (a blank new doc has none); an
+  empty/whitespace param is ignored. The id and address are unchanged. `EditData.title`
+  reads from the seeded `loadFrontmatter` (not `parsed.frontmatter`), so the breadcrumb
+  and the `sr-only` h1 show the real title. On first Save the existing `name="title"`
+  field posts that value; no create-time file write is added (the reserve-address model
+  holds).
+- Fix the status derived: `data.pending ? (data.published ? 'Edited' : 'New') : (data.published ? 'Published' : 'New')`. A new entry reads "New" (badge-info), matching ConceptList's vocabulary.
+
+Not in scope (a design question raised separately, not a bug): whether the address
+should live-track title edits in the editor after creation. The address is committed at
+create time; live rename-on-type carries collision and history implications. Once the
+title displays correctly, the breadcrumb shows the title and the confusion resolves.
+
+Also fold in the two optional review nits on Task 1:
+
+- Add a Ctrl+Shift+S chord test (the guard moved from `!data.pending` to
+  `!publishActionable`): the chord no-ops when guarded, and calls the form's submit
+  through the Publish submitter when actionable.
+
+Tests:
+
+- `content-routes-list.test.ts`: the existing `createAction` redirect assertions now
+  expect the `&title=` param; a new-doc `editLoad` with `?new=1&title=Hello%20World`
+  seeds `frontmatter.title` and `EditData.title` to `Hello World`, not the id. Update
+  `cairn-admin-actions.test.ts:199`'s exact-redirect assertion for the param.
+- A component test (EditPage or the desk harness): the status badge reads "New" for a
+  new entry (`pending:false, published:false, isNew:true`), "Published" for
+  `published:true, pending:false`, "Edited" for `pending:true, published:true`.
+- The chord test above.
+
 ## Exit
 
 `npm run check` 0/0, `npm test` exit 0, `check:comments`, `check:prose`, doc gates,

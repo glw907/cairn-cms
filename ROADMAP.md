@@ -183,7 +183,16 @@ the named human gates only):**
   issue, so the design runs charter-first: cairn stays not-an-auth-platform — no permission
   policy engine, no per-entry ACLs, and member-scale auth stays out (the magic-link allowlist
   is staff-scale; ASC's member login is rightly its own system). First consumer: ASC collapses
-  `club_roles` onto the seam.
+  `club_roles` onto the seam. **The consumer brief exists and the brainstorm consumes it:**
+  `aksailingclub-org/docs/2026-07-13-cairn-editor-roles-consumer-brief.md` (pushed e6bbe02,
+  Geoff-verified against ASC's live code and database). Its load-bearing additions: a
+  none-capability session MUST still authenticate and reach site-mounted admin routes through
+  the shell's custom-route seam when the site's own gate admits it (otherwise the instructor
+  mapping breaks and the duplicated guards return); lowercase-normalized email matching (the
+  join key to the member domain and the likeliest silent failure); the last-owner guard
+  becomes strictly the engine's; migration defaults plus a config-declared bootstrap owner; no
+  invite ceremony; auditable role changes. ASC's fork answers from the consumer seat: three
+  capability levels hold, per-request nav-filter code is fine.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

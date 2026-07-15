@@ -74,17 +74,17 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Re-pin the default-synthesis unit fixtures in `nav-layout-resolve.test.ts` to the
+- [x] **Step 1:** Re-pin the default-synthesis unit fixtures in `nav-layout-resolve.test.ts` to the
   flat shape (loose engine/legacy-flat nodes, then legacy sections; no `Core`). Add one new case if
   none exists: a none-capability session with one site entry yields that entry as a loose node, no
   section. Run `npx vitest run src/tests/unit/nav-layout-resolve.test.ts`; expect the re-pinned
   cases to FAIL against the current synthesis.
-- [ ] **Step 2:** Change `resolveDefaultLayout` to emit the loose shape; update its doc comment.
+- [x] **Step 2:** Change `resolveDefaultLayout` to emit the loose shape; update its doc comment.
   Run the same file; expect PASS.
-- [ ] **Step 3:** Re-pin the three sibling unit files (`cairn-admin-shell-load`,
+- [x] **Step 3:** Re-pin the three sibling unit files (`cairn-admin-shell-load`,
   `content-routes-layout`, `content-routes-list`) to the flat shape. Run each; expect PASS.
-- [ ] **Step 4:** `npm run check` (0/0) and `npm test` (exit 0).
-- [ ] **Step 5:** Commit: `feat(admin-nav): flat zero-config sidebar default (drop the Core section)`.
+- [x] **Step 4:** `npm run check` (0/0) and `npm test` (exit 0).
+- [x] **Step 5:** Commit: `feat(admin-nav): flat zero-config sidebar default (drop the Core section)`.
 
 ### Task 2: Component parity re-pins
 
@@ -110,11 +110,11 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Re-pin the assertions. Run
+- [x] **Step 1:** Re-pin the assertions. Run
   `npx vitest run src/tests/component/CairnAdminShell.test.ts`; expect PASS against Task 1's
   synthesis (these tests re-pin, they do not drive new engine behavior).
-- [ ] **Step 2:** `npm run check` and `npm test`; expect 0/0 and exit 0.
-- [ ] **Step 3:** Commit: `test(admin-shell): re-pin the zero-config parity contract to the flat default`.
+- [x] **Step 2:** `npm run check` and `npm test`; expect 0/0 and exit 0.
+- [x] **Step 3:** Commit: `test(admin-shell): re-pin the zero-config parity contract to the flat default`.
 
 ### Task 3: Zen recedes the sidebar (audit rider, plan-locked call 1)
 

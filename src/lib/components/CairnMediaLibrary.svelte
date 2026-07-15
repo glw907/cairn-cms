@@ -1405,7 +1405,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
   </div>
-  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85" onclick={onUploadButtonClick}>
+  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-base-content hover:text-base-100" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
   </button>
 </header>
@@ -1447,7 +1447,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </p>
     </div>
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-sm border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85" onclick={onUploadButtonClick}>
+      <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none hover:bg-base-content hover:text-base-100" onclick={onUploadButtonClick}>
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
       <span class="text-xs">or drop a file anywhere on this page</span>

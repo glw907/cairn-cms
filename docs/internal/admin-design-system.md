@@ -34,6 +34,23 @@ the Warm Stone palette, the type pairing, and the voice, never in decoration; "p
 absence of small defects (keming, misalignment, inconsistent spacing rhythm) more than the
 presence of flourish.
 
+Calibration (Geoff, 2026-07-15):
+
+- **The anchor product, in spirit, is iA Writer**: calm, typography-first, the chrome defers to
+  the manuscript, restraint as the aesthetic. Not a visual clone; the spirit.
+- **The archetypal editor is the ASC volunteer**, the less technical writer. When a design choice
+  trades their ease against a technical user's power, the volunteer wins; technical editors
+  adapt, and the harder design problem is the one worth solving.
+- **Microcopy voice: professional, restrained, slightly academic.** Warmth stays material (color,
+  type, spacing); it does not become cute, chatty, or illustrated.
+- **A phone is a full writing device.** The edit experience must be genuinely good at phone
+  widths, designed for the context rather than merely responsive, while accepting it cannot equal
+  a desktop.
+- **Standing grades against the current admin** (small issues, the whole "pretty good"): the
+  color reads a little too aggressive; the sidebar looks a little too complex at a glance; the
+  icons and help around the editor may challenge a less technical writer. These seed any
+  refinement work until resolved.
+
 ## Load-bearing rules (break these and the admin renders wrong)
 
 - **`data-theme` goes on a bare wrapper, never on an element that also carries styled classes.** Every

@@ -188,6 +188,16 @@ the named human gates only):**
   docs/superpowers/specs/2026-07-14-admin-reorganization-design.md. Entry point now:
   `superpowers:writing-plans` against the spec, after 0.86.0 ships and the nav-layout pass
   merges (ASC's bump does not wait for this pass).
+- **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
+  extension idiom currently rests on docs and recipes; a developer re-derives the page header,
+  card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
+  built-in-from-the-get-go goal (the design charter) holds only by diligence. A small kit of
+  composable admin components would enforce it structurally. Real new public surface with a
+  stability promise, so it is a deliberate design effort, not a fold-in: scope it against the
+  charter's leanness boundary (the fewest components that cover a custom section's skeleton),
+  and design it after the admin UI/UX audit reports, so the kit encodes the audited idiom rather
+  than freezing today's. Weigh whether it gates 1.0 (the extending-developer seam story is
+  stronger with it).
 - **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
   real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
   design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger

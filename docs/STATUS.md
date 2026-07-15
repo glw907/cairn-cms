@@ -82,8 +82,10 @@ showcase smoke (owner/none/unknown-role matrix), and a zero-findings close-out a
 review over the delta commits. The battery-interrupted first session's gap was caught at
 close: the none-nav leak (fc31ea4b) and the dev-package drift (d0ca8704) — both found by the
 smoke and the branch's first CI e2e, both fixed and pinned. Post-mortem: in the plan file.
-**NOW: cut 0.85.0 via cairn-release (Geoff pre-authorized; consumer trigger = ASC's
-membership-admin collapse). Then: ASC's own bump + collapse run in an ASC session.**
+**0.85.0 IS PUBLISHED (OIDC verified; `npm view` serves 0.85.0 on latest; release
+v0.85.0, publish run 29377784911 green). NEXT: ASC's own bump + membership-admin collapse
+run in an ASC session against its settled arc; Geoff's magic-link click stays each site's
+human smoke step. ecxc/907 have no roles need — they ride the range on their next bump.**
 Filed for a future session (Geoff, 2026-07-14): the editor-first admin-nav organization
 question — research + brainstorm, ROADMAP Next entry has the framing.
 

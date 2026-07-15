@@ -167,30 +167,6 @@ the named human gates only):**
 
 ## Next
 
-
-- **Admin panel reorganization pass (Geoff, 2026-07-14): apply the 0.86.0 `navLayout` seam,
-  research-grounded.** The nav-layout pass ships the mechanism (the site-declared sidebar); this
-  pass uses it to actually reorganize the admin panel around what serves an editor or admin best,
-  and it begins with research, not arrangement. Ground it in the 2026-07-14 nav-organization
-  survey (docs/internal/2026-07-14-admin-nav-organization-research.md: four recurring organizing
-  principles across nine products) plus a fresh editor/admin-effectiveness round: what a
-  non-technical editor and a site admin each reach for first, task-shaped versus provenance-shaped
-  grouping in practice, and what the comparables changed since the survey. Scope questions for the
-  brainstorm: whether the engine DEFAULT arrangement should change (the nav-layout spec ruled it
-  unchanged for that window; this pass may revisit with evidence), what the showcase exemplar and
-  the organize-your-admin-nav guide should model, and what cairn recommends per scale (six screens
-  versus ASC's twenty). ASC's own declared arrangement executes in its repo's sessions against its
-  real roles; this entry owns the cairn-side research, guidance, and any engine-default ruling.
-  RESEARCHED AND RATIFIED (2026-07-14, same day): the fresh evidence + comparables rounds are
-  committed (docs/internal/2026-07-14-admin-nav-evidence-research.md and
-  -comparables-refresh.md) and the brainstorm settled the design — the FLAT DEFAULT (drop the
-  Core header; Geoff ratified) plus the evidence-grounded guide upgrade. Spec:
-  docs/superpowers/specs/2026-07-14-admin-reorganization-design.md. Entry point now:
-  `superpowers:writing-plans` against the spec, after 0.86.0 ships and the nav-layout pass
-  merges (ASC's bump does not wait for this pass). The 2026-07-15 admin UX audit
-  (docs/internal/2026-07-15-admin-ux-audit.md) folds two riders into this pass's plan: the
-  sidebar simplification beyond the flat default (findings 4) and the zen-recedes-the-sidebar
-  ruling (finding 6); the audit's PAPERCUTS bucket runs as its own small pass after.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the

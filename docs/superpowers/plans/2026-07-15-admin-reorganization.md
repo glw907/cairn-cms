@@ -230,9 +230,9 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Review the showcase layout against the guide tiers; apply or record no-change.
-- [ ] **Step 2:** Update ROADMAP.
-- [ ] **Step 3:** `npm run check` and `npm test`; 0/0 and exit 0. Commit:
+- [x] **Step 1:** Review the showcase layout against the guide tiers; apply or record no-change.
+- [x] **Step 2:** Update ROADMAP.
+- [x] **Step 3:** `npm run check` and `npm test`; 0/0 and exit 0. Commit:
   `docs(roadmap): close the admin reorganization entry (verdict on the showcase exemplar in-message)`.
 
 ### Task 7: Close ritual (cairn-pass)

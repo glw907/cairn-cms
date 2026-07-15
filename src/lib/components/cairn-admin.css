@@ -435,10 +435,21 @@
    handler already guards inertness; pointer-events:none would kill that tooltip. Restore it for a
    marked guarded button. Deliberately UNLAYERED, the same mechanism as the .menu focus override above:
    no layered rule can outrank daisyUI's utilities-layer rule.
+   The same rule also raises the resting emphasis of a guarded GHOST button (audit finding 7): daisyUI's
+   own [aria-disabled] selector dims the background only for `:not(.btn-link,.btn-ghost)`, since a ghost
+   button carries no resting fill to dim, but the toolbar's icon-only Figure button IS a ghost square with
+   no border either, so the exclusion plus its own already-faint 20%-alpha disabled icon color read as an
+   empty gap rather than a disabled control. Re-declaring the identical 10% background daisyUI already
+   gives every outline/filled guarded button (Publish) closes that gap for the ghost case and is a no-op
+   restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
+   below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
+   halved this control's visibility again on top of daisyUI's own dimming.
    PINNED unlayered rule 2 of 4 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
-   toolbar button losing its why-it-is-off tooltip to pointer-events:none. */
+   toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
+   fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
   pointer-events: auto;
+  background-color: color-mix(in oklab, var(--color-base-content) 10%, transparent);
 }
 
 /* DaisyUI's `.lg:drawer-open` desktop sidebar is `position: sticky`, in the utilities layer. Sticky

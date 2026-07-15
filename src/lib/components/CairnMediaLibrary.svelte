@@ -1594,6 +1594,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               {:else}
                 <span class="inline-flex items-center gap-1 text-[var(--color-positive-ink)]" role="img" aria-label="Described">
                   <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                  <span class="text-[0.625rem] font-medium">Described</span>
                 </span>
               {/if}
             </div>

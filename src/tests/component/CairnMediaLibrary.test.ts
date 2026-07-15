@@ -90,9 +90,11 @@ describe('CairnMediaLibrary grid', () => {
     // The Needs-alt tile names its status as a label, never hue alone.
     const needsAltTile = options.find((o) => /valley-ridge/.test(o.textContent ?? ''))!;
     expect(needsAltTile.textContent ?? '').toMatch(/needs alt/i);
-    // The described tile carries the Described accessible name.
+    // The described tile carries the Described accessible name, AND a visible text label beside
+    // the check glyph (audit finding 10: the glyph-plus-label rule, never hue or the glyph alone).
     const describedTile = options.find((o) => /first-light/.test(o.textContent ?? ''))!;
     expect(describedTile.querySelector('[aria-label="Described"]')).not.toBeNull();
+    expect(describedTile.textContent ?? '').toMatch(/described/i);
 
     // The no-references tile carries the "No refs" marker; the used tile names its count. The
     // category never reads "Unused" (the rename: absence of a found reference is not proof of disuse).

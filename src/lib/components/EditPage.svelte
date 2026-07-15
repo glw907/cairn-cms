@@ -1755,12 +1755,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
                not the native disabled attribute, so the control stays focusable and its reason reaches
                assistive technology; openFigure() early-returns so the dead click is inert. The dimming
-               uses opacity and cursor utilities, never .btn-disabled, because that sets
-               pointer-events: none and would suppress the title tooltip a mouse user reads for the why. -->
+               rides daisyUI's own [aria-disabled] treatment (icon color, plus the cairn-btn-guarded
+               background raise in cairn-admin.css for this ghost variant), like Publish; no opacity
+               utility rides on top, since a second dimming here is what read as a rendering gap
+               (audit finding 7). cursor-not-allowed still names the non-interactive state, and never
+               .btn-disabled, which sets pointer-events: none and would suppress the title tooltip a
+               mouse user reads for the why. -->
           <button
             type="button"
             class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-            class:opacity-50={!figureAvailable}
             class:cursor-not-allowed={!figureAvailable}
             aria-haspopup="dialog"
             aria-label={figureLabel}

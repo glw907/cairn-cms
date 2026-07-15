@@ -2749,4 +2749,45 @@ describe('EditPage', () => {
       });
     }
   });
+
+  describe('guarded Figure control emphasis (audit finding 7)', () => {
+    // Same rationale as the desk-band and footer suites above: the compiled sheet carries daisyUI's
+    // real [aria-disabled] dimming and the admin's own unlayered cairn-btn-guarded override, so this
+    // is the only harness that reproduces the reported "reads as a rendering gap" defect.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
+    it('renders the unavailable Figure control as visibly disabled, not an empty gap, with its tooltip intact', async () => {
+      // Default caret placement (no media at the caret): the toolbar's Figure control is guarded.
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const button = screen.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Place the cursor on an image to add a figure"]',
+      )!;
+      expect(button.getAttribute('aria-disabled')).toBe('true');
+      // The reason survives as a title tooltip (the cairn-btn-guarded seam restores the pointer-events
+      // DaisyUI's own [aria-disabled] selector would otherwise strip).
+      expect(button.getAttribute('title')).toBe('Place the cursor on an image to add a figure');
+      const style = getComputedStyle(button);
+      // The control itself is not additionally faded on top of daisyUI's own disabled treatment (a
+      // second, compounding dim is what read as a rendering gap).
+      expect(style.opacity).toBe('1');
+      // A guarded ghost button still shows a visible resting box, the same background tint daisyUI's
+      // own [aria-disabled] rule already gives every outline/filled guarded button (Publish), so the
+      // Figure control's square footprint reads as a deliberately disabled control rather than empty
+      // space.
+      expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
+    });
+  });
 });

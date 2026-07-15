@@ -7,6 +7,7 @@ import { readWranglerConfig } from './wrangler-config.js';
 import { requireOrigin } from '../env.js';
 import { parseSiteConfig } from '../nav/site-config.js';
 import type { SiteConfig } from '../nav/site-config.js';
+import { DEFAULT_ROLES } from '../auth/roles.js';
 
 const NO_WRANGLER: CheckResult = skip('no wrangler.jsonc or wrangler.toml found');
 
@@ -307,5 +308,66 @@ export const adminMountShape: DoctorCheck = {
       return pass('the /admin mount wires shellLoad and renders CairnAdminShell (heuristic text read)');
     }
     return skip(ADMIN_MOUNT_GUIDANCE);
+  },
+};
+
+// The double-wiring failure this catches: a site declares a role vocabulary on its adapter with
+// defineRoles, but forgets the second half of the wiring, createAuthGuard({ roles }) in
+// src/hooks.server.ts. The running guard then falls back to the implicit owner/editor pair, and
+// every editor whose role is outside that pair resolves to `none` capability (verified: an
+// undeclared role resolves to none, not owner). The auth.role-vocabulary check cannot see this,
+// because the editor rows still match the *declared* vocabulary; the divergence is between the
+// declaration and the guard's own construction, which only the hooks source reveals.
+//
+// What the doctor can see: the declared vocabulary (ctx.roles, derived off the adapter) and the
+// hooks source via readFile. What it cannot see: the guard object the runtime actually builds. So
+// this reads the nearest observable proxy, the createAuthGuard call in the conventional hooks file,
+// the same heuristic-text stance configCsrfDisable takes. The residual gap: a site that wraps the
+// guard in another module, or builds the roles argument dynamically, reads as 'absent' and skips
+// rather than failing, so a positive fail is high-confidence and a miss is a skip, never a false red.
+
+// The role names a site declares beyond the implicit owner/editor pair. These are exactly the roles
+// a guard on the default fallback would resolve to `none`, so they are what makes the wiring matter.
+function customRoleNames(roles: DoctorContext['roles']): string[] {
+  if (roles === undefined) return [];
+  return Object.keys(roles).filter((name) => !Object.hasOwn(DEFAULT_ROLES, name));
+}
+
+// Read the createAuthGuard call in the hooks text and report whether it is passed a roles argument.
+// 'absent' when no direct createAuthGuard call is found (wrapped or renamed elsewhere), so the
+// caller skips rather than failing on a site it cannot see. The non-greedy capture takes the call's
+// own argument list; a `roles` word inside it is the wiring signal.
+function guardRoleWiring(text: string): 'wired' | 'unwired' | 'absent' {
+  const match = /createAuthGuard\s*\(([\s\S]*?)\)/.exec(text);
+  if (!match) return 'absent';
+  return /\broles\b/.test(match[1]) ? 'wired' : 'unwired';
+}
+
+export const roleWiring: DoctorCheck = {
+  id: 'auth.role-wiring',
+  conditionId: 'auth.role-wiring-missing',
+  title: 'Guard role wiring',
+  async run(ctx: DoctorContext): Promise<CheckResult> {
+    const custom = customRoleNames(ctx.roles);
+    if (custom.length === 0) {
+      return skip('no custom roles declared; the guard fallback owner/editor already matches the vocabulary');
+    }
+    const hooks =
+      (await ctx.readFile('src/hooks.server.ts')) ?? (await ctx.readFile('src/hooks.server.js'));
+    if (hooks === null) {
+      return skip('src/hooks.server.ts not found, so the guard role wiring cannot be checked');
+    }
+    const wiring = guardRoleWiring(hooks);
+    if (wiring === 'absent') {
+      return skip(
+        'no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module'
+      );
+    }
+    if (wiring === 'unwired') {
+      return fail(
+        `the adapter declares custom role(s) ${custom.join(', ')} but createAuthGuard in src/hooks.server.ts is not passed { roles }; the running guard falls back to owner/editor and resolves those roles to none capability (heuristic text read)`
+      );
+    }
+    return pass('createAuthGuard is passed the declared role vocabulary (heuristic text read)');
   },
 };

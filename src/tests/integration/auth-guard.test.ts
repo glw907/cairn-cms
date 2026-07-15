@@ -149,6 +149,32 @@ describe('capability resolution (a site-declared vocabulary)', () => {
   });
 });
 
+describe('double-wiring: a custom role against a guard that was never handed the vocabulary', () => {
+  // The failure the ASC harvest reported as "every row resolves owner". The code disproves that:
+  // a guard constructed with no `roles` falls back to DEFAULT_ROLES (owner/editor), and a custom
+  // role name absent from that pair resolves to `none`, not owner. The editor authenticates but the
+  // engine refuses every content and admin-mutation route. This test pins the real semantics so the
+  // doctor check and its report rest on verified behavior.
+  const unwiredGuard = createAuthGuard(); // the double-wiring bug: defineRoles declared, guard not told
+
+  it('resolves a custom role to none (never owner) and warns auth.role.unknown', async () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await db
+      .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
+      .bind('inst@x.dev', 'Inst', 'instructor', Date.now())
+      .run();
+    await createSession(db, 'sid-unwired', 'inst@x.dev', Date.now() + 10_000, Date.now());
+    const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-unwired' }));
+    const res = await unwiredGuard({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.editor?.capability).toBe('none');
+    expect(ev.locals.editor?.capability).not.toBe('owner');
+    const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; role?: string });
+    expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'instructor')).toBe(true);
+    vi.restoreAllMocks();
+  });
+});
+
 describe('https requirement on a deployed host', () => {
   it('serves the help page for an http admin request and never resolves', async () => {
     let resolved = false;

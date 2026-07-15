@@ -157,6 +157,12 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
   keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
 - Radii: `--radius-field: 0.625rem` (inputs, buttons, badges), `--radius-box: 1rem` (cards, modals).
+- **The ink story (design arc, 2026-07-15).** Exactly two dark-fill tones exist on a page:
+  standing dark fills (the ink-opener buttons, the profile avatar) rest on the solid `neutral`
+  token, and hover/press deepens to `--cairn-ink-hover` (set per theme root; light deepens, dark
+  brightens). Never build a dark fill from an opacity blend over the ground (`bg-neutral/85`,
+  `bg-base-content/80`): the blend with the warm surfaces manufactures a third, browner tone and
+  the page loses its one black story.
 - Elevation: `--cairn-shadow` (soft layered shadow) and `--cairn-card-border` (the theme-adaptive
   hairline). Both are set per theme root.
 - The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
@@ -234,15 +240,20 @@ Recipes:
   a pick-one partition (All, Pending edits, Published) and a separate orthogonal Hidden toggle, each
   carrying a live count from the loaded set. The axes are independent, so a published-but-hidden entry
   counts in both Published and Hidden, and the Hidden toggle composes with whichever partition is
-  active. Filtering, counts, and search all run client-side over the already-loaded entries. The rows
-  are an enriched sortable `<table>` (the title with a muted summary line beneath it, then the date,
-  the status badge, and the always-visible delete), so each row describes itself instead of being a
-  bare title. The summary line is `EntrySummary.summary` (from `deriveExcerpt`: the frontmatter
-  description, else a body excerpt), truncated at the column edge and omitted when null. The Edited
-  badge tints primary (`bg-primary/10 text-primary`) as the one state to act on, rhyming with the
-  topbar's "Publish site (N)"; New stays `badge-info`, Published `badge-ghost`. Hidden is a row
-  treatment, not a fourth badge: the row de-emphasizes (~0.62 opacity on title and summary) and carries
-  an eye-off "Hidden" tag by the title, leaving the status cell to one publish-state badge. A quiet
+  active. Filtering, counts, and search all run client-side over the already-loaded entries. The whole
+  page composes at the document list's natural measure, one centered `max-w-3xl` column inside the
+  shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list opens a dead band
+  between short titles and the date). The rows are a sortable `<table>` of ONE-LINE rows at the 15px
+  chrome step with `py-2.5` cells: the title (`font-medium`, truncating; weight stays medium because
+  nothing sits under it to out-rank), the date (muted, tabular), the status pill, and the quiet delete
+  (45% ink, full on hover/focus; red lives only in the confirm dialog). `EntrySummary.summary` stays
+  off the list (the density ruling; it still serves the edit page). The status pills are ONE family:
+  shared geometry (`badge badge-xs sm:badge-sm border-transparent`) and shared base ink
+  (`bg-base-content/[0.06] text-base-content`), each state differing on exactly one attribute:
+  Published `font-medium`, New `font-semibold`, Edited swaps the wash for the act-on tint
+  (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)" pill. Hidden is a row
+  treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title) and carries an
+  eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. A quiet
   trailing "New {concept}" row at the foot of the card opens the create dialog, so a short list always
   shows its next step. A filter or search that matches nothing keeps the card and offers a Clear action;
   a concept with no entries at all uses the page-owning empty state above.

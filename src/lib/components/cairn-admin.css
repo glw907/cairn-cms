@@ -155,6 +155,9 @@
   /* Soft, layered elevation: a close contact shadow plus a wide, diffuse one, warm-tinted. The cards
      float gently instead of sitting in hard boxes, which reads more current than a flat border. */
   --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  /* The ink story's hover step: standing dark fills rest on the solid neutral token and deepen to
+     this on hover. Solid on purpose; an opacity blend over the warm ground reads brown. */
+  --cairn-ink-hover: oklch(20% 0.012 75);
   /* A faint hairline for the floating cards in light, where the shadow carries the definition. */
   --cairn-card-border: oklch(93% 0.008 75);
 }
@@ -285,6 +288,8 @@
 
   /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards. */
   --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  /* The ink story's hover step in dark: fills are light here, so hover brightens. */
+  --cairn-ink-hover: oklch(90% 0.008 75);
   /* On dark the shadow does little, so the card keeps a visible border for definition. */
   --cairn-card-border: oklch(30% 0.014 75);
 }

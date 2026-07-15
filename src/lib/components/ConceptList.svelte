@@ -2,10 +2,11 @@
 @component
 One concept's list view, dressed to the office gold standard. A triage bar partitions by publish
 state (a bordered segmented control with live counts) beside an orthogonal Hidden toggle. The list
-is an enriched sortable table: each row carries a title with a muted summary sub-line, the date, the
-publish-state badge, and a delete action. A draft row de-emphasizes and carries an eye-off Hidden
-tag by the title. A trailing New row at the foot of the card opens the same create dialog as the
-header button. Filtering, sorting, and paging run over the loaded entries in component state.
+is a sortable table of one-line rows composed at the document list's 3xl natural measure: the title,
+the date, the publish-state pill, and a quiet delete action. A draft row de-emphasizes and carries
+an eye-off Hidden tag inline beside the title. A trailing New row at the foot of the card opens the
+same create dialog as the header button. Filtering, sorting, and paging run over the loaded entries
+in component state.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
@@ -241,6 +242,9 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
 {/snippet}
 
+<!-- The office natural-measure rule (design arc 2026-07-15): a document list composes at 3xl
+     within the shell's 5xl ceiling, so short titles never open a dead band against the date. -->
+<div class="mx-auto w-full max-w-3xl">
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
   <!-- Below sm the search and the New button stack full-width instead of sharing one row: at 320
@@ -251,7 +255,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
       <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
     </label>
-    <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral/85 text-neutral-content shadow-none hover:bg-base-content hover:text-base-100 sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
@@ -324,7 +328,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
       <p class="text-sm text-muted">Stack your first one and it will show up here.</p>
     </div>
-    <button type="button" class="btn btn-sm border-transparent bg-neutral/85 text-neutral-content shadow-none hover:bg-base-content hover:text-base-100" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
@@ -397,9 +401,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
               <td class="w-16 px-2 sm:w-28 sm:px-4">
                 <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
                      status stays legible without keeping the desktop-width column. -->
-                {#if entry.status === 'new'}<span class="badge badge-ghost badge-xs font-semibold sm:badge-sm">New</span>
+                <!-- One pill family (design arc 2026-07-15): shared geometry and base ink; each
+                     state differs on exactly one attribute (New: weight; Edited: the act-on tint). -->
+                {#if entry.status === 'new'}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-semibold text-base-content sm:badge-sm">New</span>
                 {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary sm:badge-sm">Edited</span>
-                {:else}<span class="badge badge-ghost badge-xs font-medium sm:badge-sm">Published</span>{/if}
+                {:else}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-medium text-base-content sm:badge-sm">Published</span>{/if}
               </td>
               <td class="w-12 px-2 text-right sm:px-4">
                 {#if deleteRefused?.id === entry.id}
@@ -451,6 +457,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
     </div>
   </div>
 {/if}
+</div>
 
 <dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
   <div class="modal-box">

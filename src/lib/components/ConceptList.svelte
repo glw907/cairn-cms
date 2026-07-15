@@ -343,7 +343,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
         {/if}
       </div>
     {:else}
-      <table class="table text-[0.9375rem]">
+      <table class="table text-[0.9375rem] [&_:where(td)]:py-2.5">
         <thead>
           <tr class="border-base-300">
             <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
@@ -379,17 +379,19 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
           {#each pageRows as entry (entry.id)}
             <tr class="transition-colors hover:bg-base-200/60">
               <td class="max-w-0">
-                <a class="block truncate font-semibold hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
-                {#if entry.draft}
-                  <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
-                       eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
-                  <span class="mt-0.5 inline-flex items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
-                    <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
-                  </span>
-                {/if}
-                {#if entry.summary}
-                  <div data-summary class="mt-0.5 truncate text-[0.875rem] text-muted">{entry.summary}</div>
-                {/if}
+                <!-- One-line row (density ruling, design arc 2026-07-15): the scan job is
+                     title-status-date, so the summary line stays off the office list and the
+                     Hidden tag sits inline beside the title. -->
+                <div class="flex items-center gap-2">
+                  <a class="truncate font-semibold hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                  {#if entry.draft}
+                    <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
+                         eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
+                    <span class="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
+                      <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
+                    </span>
+                  {/if}
+                </div>
               </td>
               {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
               <td class="w-16 px-2 sm:w-28 sm:px-4">

@@ -68,7 +68,45 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15, later: REORG PASS MERGED; next = papercuts+DX pass, OPUS-conducted, fresh session)
+## Immediate next action (2026-07-15, latest: PAPERCUTS+DX PASS SHIPPED as 0.86.1; next = the design-refinement ARC with Geoff)
+
+**THE ADMIN PAPERCUTS + DX PASS IS COMPLETE, MERGED (bdfa6d49), AND PUBLISHED AS 0.86.1.** Plan +
+post-mortem: docs/superpowers/plans/2026-07-15-admin-papercuts-dx.md. The window (patch, rolling the
+reorg pass + this pass; no new public surface, zero Consumers-must): the audit's mechanical PAPERCUTS
+bucket (desk-band + footer phone-width composition, office max-width at 2560 + 320 list recompose,
+palette inset/focus, guarded-control emphasis, dark Published-pill contrast, the drawer APG-dialog
+treatment, the voice sweep + showcase `singular`) and the ASC initiative-5 DX items (D1 migrations now
+ship in the package with a `check:package` assertion; the `auth.role-wiring` doctor check; session-doc
+verification). Evidence at close: full gate 0/0 + 3465 tests exit 0 + every named gate; PR #2 CI green
+(test/e2e/design/scaffold); admin-visual baselines regenerated on CI (run 29413888542) and render-read
+in the main loop; reviewer gate (svelte + a11y) one blocking drawer-focus finding folded; simplifier
+one refinement. **0.86.1 PUBLISHED** (OIDC green, `npm view` serves 0.86.1 on latest, both migrations
+confirmed in the published tarball). Two lessons banked in the post-mortem: (1) the ASC harvest's
+"resolves to owner" claim was FALSE — an unwired guard resolves a custom role to `none` (a lockout),
+verified before the doctor check was written; a harvest note is a lead, not a spec. (2) A CI-only
+`check:package` failure (npm `prepare`/svelte-package stdout leaking ahead of the `npm pack --json`
+output on CI's npm, passing on cleaner local npm) is now pinned by a regression test.
+
+**NEXT (fresh session, GEOFF-IN-THE-LOOP — not an autonomous execute): the DESIGN-REFINEMENT ARC.** This
+is item 3 of the design-arc queue ([[cairn-admin-design-arc-queue]]) and it is deliberately collaborative:
+color budget, type scale, phone-desk composition, and the wordmark keming, iterated FULLY LOCAL with
+Geoff's eyes per round per [[design-iteration-economics]] (notes are probes, ceremony once at settle, no
+per-round ceremony). Inputs, all committed: the audit findings 1 (phone desk), 3 (color over budget), 5
+(base type size), 7-partial (icon/label/help affordances), and the keming item, in
+docs/internal/2026-07-15-admin-ux-audit.md; the design charter + calibration in
+docs/internal/admin-design-system.md (the grader); and the arc absorbs the Typography and Color sections
+of the invisible-craft brief (docs/internal/2026-07-15-admin-resolved-polish-brief.md). The arc is
+Fable-worthy (taste calls, Geoff's seat) — but Geoff decides when to spend it against the Fable budget.
+Resume prompt: "Start the admin design-refinement arc with me: read docs/internal/2026-07-15-admin-ux-audit.md
+(findings 1/3/5/7/keming), docs/internal/admin-design-system.md, and the cairn-admin-design-arc-queue
+memory; iterate locally against the showcase admin per design-iteration-economics." Launch inside
+~/Projects/cairn-cms. After the arc settles: the invisible-craft polish pass (item 4), then the component
+kit (item 5). CARRIED into the arc (parked from this pass, correctly not built mechanically): the desk
+band's status cluster still overlaps slightly in the rare Published + Hidden(draft) + dirty triple at 320
+— a badge-treatment design call for the arc. INDEPENDENT: ASC initiative-5 landed on 0.86.0; no cairn
+release is owed to it (0.86.1 is additive on top).
+
+## Prior next action (2026-07-15, later: REORG PASS MERGED; next = papercuts+DX pass, OPUS-conducted, fresh session)
 
 **THE ADMIN REORGANIZATION PASS IS COMPLETE AND MERGED TO MAIN.** The full ratified spec plus the
 zen rider shipped: the flat zero-config sidebar default (no synthesized Core section; loose

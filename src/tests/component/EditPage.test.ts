@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from 'vitest/browser';
+import { userEvent, page } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
 import { stringify as devalueStringify } from 'devalue';
 import * as ingest from '../../lib/components/client-ingest.js';
@@ -52,6 +52,10 @@ import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
 import { page as appPage } from './_app-state.js';
 import { COLD_START } from './_fake-spell-worker.js';
+// The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
+// phone-width tests below so their bounding-box measurements reflect production control
+// footprints, never the UA-default widths the source partial alone leaves.
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function postProps(over = {}) {
   return {
@@ -2605,5 +2609,86 @@ describe('EditPage', () => {
       expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
       vi.unstubAllGlobals();
     });
+  });
+
+  describe('desk band collisions at phone widths (audit finding 2)', () => {
+    // The compiled sheet carries daisyUI's real .badge/.btn sizing, scoped to the theme, so these
+    // measurements reflect production control footprints. The harness's drawer-toggle and
+    // theme-toggle stand-ins (_EditPageDesk.svelte) mirror CairnAdminShell's real desk-route
+    // navbar siblings with the same classes, so a width-driven collision between the desk
+    // snippet's own content and its real neighbors reproduces here.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      // Restore a normal-width viewport so a later test file's default layout assumptions hold.
+      await page.viewport(1280, 720);
+    });
+
+    /**
+     * Every band control with a real rendered footprint at the current width: the badges, the
+     * harness's drawer-toggle and theme-toggle stand-ins, and the visible lifecycle buttons.
+     * A folded-away control (Details, the standalone theme toggle) renders at zero size below the
+     * fold cutoff, and a popover's own menu items render off-screen until the popover opens, so
+     * filtering to a positive footprint excludes both without special-casing either. The sr-only
+     * default submit button is excluded on purpose: it is never meant to be seen.
+     */
+    function bandRects(band: HTMLElement): DOMRect[] {
+      return Array.from(band.querySelectorAll<HTMLElement>('.badge, [data-testid$="-stub"], button:not(.sr-only)'))
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+    }
+
+    function assertNoOverlap(rects: DOMRect[]) {
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i];
+          const b = rects[j];
+          const overlaps = !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+          expect(overlaps, `rect ${JSON.stringify(a)} overlaps rect ${JSON.stringify(b)}`).toBe(false);
+        }
+      }
+    }
+
+    for (const width of [320, 390, 768]) {
+      it(`keeps every desk-band control unobstructed at ${width}px on a published entry`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+        assertNoOverlap(bandRects(band));
+        // The status badge text is unobstructed: its own rect carries positive area, not squeezed
+        // to nothing by a neighbor claiming the same space.
+        const badge = band.querySelector<HTMLElement>('.badge')!;
+        const badgeRect = badge.getBoundingClientRect();
+        expect(badgeRect.width).toBeGreaterThan(0);
+        expect(badge.textContent?.trim()).toBe('Published');
+        // Save and Publish stay directly visible (a nonzero footprint) at every width.
+        await expect.element(screen.getByRole('button', { name: /publish/i })).toBeInTheDocument();
+        const saveButton = screen.getByRole('button', { name: 'Save', exact: true });
+        await expect.element(saveButton).toBeInTheDocument();
+        expect((await saveButton.element()).getBoundingClientRect().width).toBeGreaterThan(0);
+      });
+
+      it(`keeps every desk-band control unobstructed at ${width}px on a dirty entry (the widest save-state text)`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+        content.focus();
+        await userEvent.keyboard('x');
+        const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+        await expect.poll(() => band.querySelector('.cairn-save-state .bg-warning')).not.toBeNull();
+        assertNoOverlap(bandRects(band));
+      });
+    }
   });
 });

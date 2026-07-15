@@ -105,6 +105,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The holder is absent only when EditPage renders outside CairnAdminShell (it always renders inside
   // it in the app); the optional chaining keeps that case inert.
   const topbar = useTopbar();
+  // The narrow-width theme-toggle fold (audit finding 2): CairnAdminShell mirrors the live theme
+  // and its toggle into the same holder, in the reverse direction from desk/zen above, so the
+  // overflow menu below can offer the control the shell hides past its own width cutoff.
+  const themeToggleFold = $derived(topbar?.toggleTheme);
+  const currentTheme = $derived(topbar?.theme);
   $effect(() => {
     if (!topbar) return;
     topbar.desk = desk;
@@ -1314,22 +1319,28 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      second hairline into the quiet pair (Details, overflow) and the lifecycle pair
      (Publish, Save). The breadcrumb itself stays in CairnAdminShell, so the duplicate is gone. -->
 {#snippet desk()}
-  <div class="ml-2 flex min-w-0 flex-1 items-center gap-3">
-    <!-- The document status, fenced off by a hairline on its left. -->
-    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-      <span class="badge badge-sm font-medium {statusBadge}">{status}</span>
+  <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
+    <!-- The document status, fenced off by a hairline on its left. The hairline and its padding
+         are decorative grouping, not content, so they drop below sm along with the wider gaps
+         (the desk band collision fix, audit finding 2): the badge and the actions cluster below
+         both need the room, and without this the badge was the one getting squeezed away behind
+         the actions cluster's own controls. -->
+    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
+      <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
       {#if data.frontmatter.draft === true}
-        <span class="badge badge-neutral badge-sm font-medium">Hidden</span>
+        <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
       {/if}
       <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
-           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue. -->
+           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue,
+           and stays the cue on its own below sm: the label text is the redundant part (the dot
+           already carries the state), so it drops there rather than crowding the band. -->
       <span
         class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
         class:opacity-0={!saveState}
         aria-live="off"
       >
         {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
-        {saveState}
+        <span class="max-sm:hidden">{saveState}</span>
       </span>
       {#if tidyApplied}
         <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
@@ -1342,7 +1353,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       {/if}
     </div>
 
-    <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+    <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
       <!-- The form's default button, FIRST in the actions cluster (and so first among the form's
            submit buttons in tree order, since the band precedes the form). The default button for
            implicit submission (Enter in a single-line field) is the first form-owned submit button
@@ -1362,11 +1373,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       </button>
 
       <!-- The quiet pair: the Details panel trigger and the overflow menu. The trigger toggles
-           the slide-over; aria-expanded mirrors its state and focus returns here on close. -->
+           the slide-over; aria-expanded mirrors its state and focus returns here on close. Below
+           the sm cutoff the band has no room for both this trigger and the badge/actions beside
+           it (the desk band collision fix, audit finding 2), so Details folds into the overflow
+           menu below and the standalone trigger hides rather than overlapping its neighbors. -->
       <button
         bind:this={detailsTrigger}
         type="button"
-        class="btn btn-ghost btn-sm btn-square"
+        class="btn btn-ghost btn-sm btn-square max-sm:hidden"
         aria-label="Details"
         title="Details"
         aria-expanded={detailsOpen}
@@ -1379,7 +1393,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            position-anchor placement). -->
       <button
         type="button"
-        class="btn btn-ghost btn-sm btn-square"
+        class="btn btn-ghost btn-sm btn-square shrink-0"
         aria-label="More actions"
         title="More actions"
         aria-expanded={actionsOpen}
@@ -1400,6 +1414,23 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         ontoggle={(e) => (actionsOpen = e.newState === 'open')}
         class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
       >
+        <!-- The narrow-width fold: below sm this is the only way to reach Details and the theme
+             toggle, mirroring the hidden standalone controls above (Details here) and in
+             CairnAdminShell (the theme toggle, folded through the topbar holder). Hidden at sm
+             and up, where both controls stand on their own. -->
+        <li class="sm:hidden">
+          <button type="button" aria-expanded={detailsOpen} onclick={() => pickAction(toggleDetails)}>
+            Details
+          </button>
+        </li>
+        {#if themeToggleFold}
+          <li class="sm:hidden">
+            <button type="button" onclick={() => pickAction(themeToggleFold)}>
+              {currentTheme === 'cairn-admin' ? 'Switch to dark mode' : 'Switch to light mode'}
+            </button>
+          </li>
+        {/if}
+        <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {#if data.pending}
           <li>
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
@@ -1414,8 +1445,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         </li>
       </ul>
 
-      <!-- The lifecycle pair, fenced off by their own hairline. -->
-      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+      <!-- The lifecycle pair, fenced off by their own hairline (a decorative divider that drops
+           below sm along with the others, the desk band collision fix, audit finding 2). -->
+      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
         <!-- Publish always renders (the grounding survey favors permanent visibility over hiding
              the control until a draft exists). Outline keeps Save the single solid primary action;
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
@@ -1433,7 +1465,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           type="submit"
           form="cairn-edit-form"
           formaction="?/publish"
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded"
+          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded shrink-0"
           class:cursor-not-allowed={!publishActionable}
           aria-disabled={publishActionable ? undefined : true}
           aria-label={publishGuardName}
@@ -1445,7 +1477,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         </button>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
-        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>
+        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm shrink-0" disabled={busy || (!dirty && !data.isNew)}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
       </div>

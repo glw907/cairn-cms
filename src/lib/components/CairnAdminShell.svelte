@@ -350,6 +350,15 @@ discriminant, not the fields, gates the chrome).
   // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
   let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
+
+  // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
+  // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
+  // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
+  // the shell writes and EditPage reads through the same portal.
+  $effect(() => {
+    topbar.theme = theme;
+    topbar.toggleTheme = toggleTheme;
+  });
 </script>
 
 <svelte:head>
@@ -409,7 +418,10 @@ discriminant, not the fields, gates the chrome).
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
            metrics, and the two border-bottoms stop meeting at the seam). -->
-      <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
+      <div
+        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
+        class:max-sm:px-2={isDeskRoute}
+      >
         <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
@@ -462,7 +474,10 @@ discriminant, not the fields, gates the chrome).
             {/if}
           {/await}
         {/if}
-        <div class="flex-none">
+        <!-- Below the sm cutoff a desk route folds this into EditPage's own overflow menu instead
+             of shrinking it in place (the desk band collision fix, audit finding 2): the office
+             routes keep it visible at every width, since only the desk band runs out of room. -->
+        <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
           </button>

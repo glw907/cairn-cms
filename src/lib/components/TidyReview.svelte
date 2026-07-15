@@ -302,7 +302,7 @@ must never make, so no such count exists.
     <!-- the bulk bar: the live tally (role=status, bulk-only) + Accept fixes / Reject all -->
     <div class="flex items-center gap-3 border-b border-[var(--cairn-card-border)] bg-base-200 px-4 py-2.5">
       <span class="inline-flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="tidy-tally">
-        <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">
+        <span class="inline-flex items-center gap-1 font-semibold text-base-content">
           <CheckIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{keptCount}</span> kept
         </span>
         <span class="opacity-40" aria-hidden="true">&middot;</span>
@@ -310,16 +310,16 @@ must never make, so no such count exists.
           <TriangleAlertIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{reviewCount}</span> to review
         </span>
         <span class="opacity-40" aria-hidden="true">&middot;</span>
-        <span class="inline-flex items-center gap-1 font-semibold text-[var(--cairn-error-ink)]">
+        <span class="inline-flex items-center gap-1 font-semibold text-muted">
           <XIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{skipCount}</span> skipping
         </span>
       </span>
       <span class="flex-1"></span>
       <button type="button" class="btn btn-sm btn-outline" onclick={acceptFixes}>
-        <CheckIcon class="size-3 text-[var(--color-positive-ink)]" aria-hidden="true" />Accept fixes
+        <CheckIcon class="size-3" aria-hidden="true" />Accept fixes
       </button>
       <button type="button" class="btn btn-sm btn-outline" onclick={rejectAll}>
-        <XIcon class="size-3 text-[var(--cairn-error-ink)]" aria-hidden="true" />Reject all
+        <XIcon class="size-3" aria-hidden="true" />Reject all
       </button>
     </div>
 
@@ -372,7 +372,7 @@ must never make, so no such count exists.
                 type="button"
                 class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'kept'
-                  ? 'bg-[color-mix(in_oklab,var(--color-positive-ink)_13%,transparent)] text-[var(--color-positive-ink)]'
+                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
                   : 'text-muted'}"
                 aria-pressed={decided === 'kept'}
                 onclick={() => acceptHunk(h)}
@@ -383,7 +383,7 @@ must never make, so no such count exists.
                 type="button"
                 class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'rejected'
-                  ? 'bg-[color-mix(in_oklab,var(--cairn-error-ink)_12%,transparent)] text-[var(--cairn-error-ink)]'
+                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
                   : 'text-muted'}"
                 aria-pressed={decided === 'rejected'}
                 onclick={() => rejectHunk(h)}
@@ -402,16 +402,16 @@ must never make, so no such count exists.
               </div>
             {/if}
             <div class="flex items-baseline bg-[var(--cairn-tidy-del-row)]">
-              <span class="w-6 flex-none select-none text-center font-semibold text-[var(--cairn-error-ink)]" aria-hidden="true">&minus;</span>
+              <span class="w-6 flex-none select-none text-center font-semibold text-muted" aria-hidden="true">&minus;</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.delRun.pre}<span
-                  class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-px text-[var(--cairn-error-ink)] line-through decoration-1"
+                  class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-px text-muted line-through decoration-1"
                   data-testid="tidy-del"
                 >{h.delRun.mid}</span>{h.delRun.post}</span>
             </div>
             <div class="flex items-baseline bg-[var(--cairn-tidy-add-row)] {decided === 'rejected' ? 'opacity-70' : ''}">
-              <span class="w-6 flex-none select-none text-center font-semibold text-[var(--color-positive-ink)]" aria-hidden="true">+</span>
+              <span class="w-6 flex-none select-none text-center font-semibold text-base-content" aria-hidden="true">+</span>
               <span class="flex-1 whitespace-pre-wrap break-words px-1 py-0.5">{h.addRun.pre}<span
-                  class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-px text-[var(--color-positive-ink)] {decided ===
+                  class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-px font-semibold text-base-content {decided ===
                   'rejected'
                     ? 'line-through opacity-70'
                     : ''}"
@@ -443,7 +443,7 @@ must never make, so no such count exists.
     <!-- the review footer: the commit note + Cancel + the one-transaction Apply -->
     <div class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)] px-4 py-3.5">
       <span class="flex flex-1 items-center gap-1.5 text-[0.6875rem] leading-snug text-muted">
-        <CheckIcon class="size-3 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+        <CheckIcon class="size-3 flex-none text-muted" aria-hidden="true" />
         Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.
       </span>
       <button type="button" class="btn btn-sm" onclick={cancel}>Cancel</button>

@@ -253,10 +253,12 @@ Recipes:
   Published `font-medium`, New `font-semibold`, Edited swaps the wash for the act-on tint
   (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)" pill. Hidden is a row
   treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title) and carries an
-  eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. A quiet
-  trailing "New {concept}" row at the foot of the card opens the create dialog, so a short list always
-  shows its next step. A filter or search that matches nothing keeps the card and offers a Clear action;
-  a concept with no entries at all uses the page-owning empty state above.
+  eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. The
+  header's ink New button is the ONE create affordance on a populated list (the old trailing foot row
+  duplicated it and read as a content row; removed 2026-07-15). The card's frame is the column-header
+  band alone (the gentle 0.04 wash), so content rows are the card's only white rows. A filter or search
+  that matches nothing keeps the card and offers a Clear action; a concept with no entries at all uses
+  the page-owning empty state above, which carries its own create CTA.
 - **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
   button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid

@@ -69,6 +69,27 @@ describe('CairnTidySettings: the editor tier (enabled with key)', () => {
     await expect.element(screen.getByRole('button', { name: 'Oxford comma' })).toHaveAttribute('aria-pressed', 'false');
     // No variant chooser is open at rest (every style off).
     expect(screen.container.querySelectorAll('[role="radiogroup"]').length).toBe(0);
+    // A pressed on/off toggle carries the neutral pressed pair, never a primary tint (the design
+    // arc's accent reservation, 2026-07-15): weight and a neutral wash mark the active state.
+    const fixesButton = screen.container.querySelector('[aria-label="Fixes"]');
+    expect(fixesButton?.className).toContain('bg-base-content/[0.07]');
+    expect(fixesButton?.className).not.toContain('bg-primary');
+    expect(fixesButton?.className).not.toContain('text-primary');
+  });
+
+  it('renders the example diff chips colorless: muted strikethrough deletion, semibold insertion', async () => {
+    // Same grammar TidyReview pins (the design arc's accent reservation, 2026-07-15): no red, no
+    // green. A deletion is muted with line-through on the neutral del-run wash; an insertion is
+    // semibold body ink on the neutral add-run wash.
+    const screen = render(CairnTidySettings, { data: data() });
+    const del = screen.container.querySelector<HTMLElement>('.line-through');
+    expect(del).not.toBeNull();
+    expect(del?.className).toContain('text-muted');
+    expect(del?.className).not.toMatch(/error-ink|text-error/);
+    const add = del?.nextElementSibling?.nextElementSibling as HTMLElement | undefined;
+    expect(add?.className).toContain('font-semibold');
+    expect(add?.className).toContain('text-base-content');
+    expect(add?.className).not.toMatch(/positive-ink|text-success/);
   });
 
   it('reveals a radiogroup variant chooser when a multi-position row is turned on', async () => {

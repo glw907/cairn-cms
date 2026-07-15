@@ -477,12 +477,12 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
   // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
   // shrink a segment until its own label wraps mid-word.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's

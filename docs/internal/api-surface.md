@@ -286,7 +286,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `requireEditor`: (event: { locals: { editor?: Editor | null } }) => Editor
 - `requireOwner`: (event: { locals: { editor?: Editor | null } }) => Editor
 - `requireSession`: (event: { locals: { editor?: Editor | null } }) => Editor
-- `ResolvedEngineNavEntry`: { screen: "help" | "media" | "vocabulary" | "nav" | "settings" | "editors" | (string & {}); label: string; href: string }
+- `ResolvedEngineNavEntry`: { screen: "help" | "media" | "vocabulary" | "nav" | "settings" | "editors" | (string & {}); label: string; href: string; dated?: boolean }
 - `ResolvedLayoutChild`: ResolvedNavEntry | ResolvedEngineNavEntry
 - `ResolvedLayoutNode`: ResolvedLayoutChild | ResolvedLayoutSection
 - `ResolvedLayoutSection`: { label: string; children: ResolvedLayoutChild[] }
@@ -295,7 +295,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ResolvedNavLayout`: { items: ResolvedLayoutNode[]; fallback: ResolvedLayoutChild[] }
 - `ResolvedNavSection`: { label: string; children: ResolvedNavEntry[] }
 - `resolveNavLayout`: (opts: ResolveNavLayoutOptions) => ResolvedNavLayout
-- `ResolveNavLayoutOptions`: { layout: NavLayout; adminNav: ResolvedNavItem[]; concepts: { id: string; label: string }[]; navMenuLabel: string | null; capability: "owner" | "editor" | "none"; role: string }
+- `ResolveNavLayoutOptions`: { layout: NavLayout; adminNav: ResolvedNavItem[]; concepts: { id: string; label: string; routing?: { dated: boolean } }[]; navMenuLabel: string | null; capability: "owner" | "editor" | "none"; role: string }
 - `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 - `validateNavLayout`: (layout: NavLayout, ctx: { conceptIds: string[]; navMenuConfigured: boolean; roleNames: string[]; hasAdminNav: boolean }) => void

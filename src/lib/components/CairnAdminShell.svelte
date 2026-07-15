@@ -27,6 +27,7 @@ discriminant, not the fields, gates the chrome).
     ADMIN_NAV_FALLBACK_ICON,
     ENGINE_NAV_ICONS,
     ENGINE_NAV_FALLBACK_ICON,
+    ENGINE_CONCEPT_DATED_ICON,
   } from './admin-nav-icons.js';
   import type {
     ResolvedNavEntry,
@@ -85,9 +86,10 @@ discriminant, not the fields, gates the chrome).
     return 'children' in node;
   }
   function layoutChildItem(node: ResolvedLayoutChild): NavItem {
-    return isEngineChild(node)
-      ? { label: node.label, icon: ENGINE_NAV_ICONS[node.screen] ?? ENGINE_NAV_FALLBACK_ICON, href: node.href }
-      : navItemOf(node);
+    if (!isEngineChild(node)) return navItemOf(node);
+    const icon =
+      ENGINE_NAV_ICONS[node.screen] ?? (node.dated ? ENGINE_CONCEPT_DATED_ICON : ENGINE_NAV_FALLBACK_ICON);
+    return { label: node.label, icon, href: node.href };
   }
 
   // One rendered group of the sidebar's scroll area: a named, collapsible section, or a batch of

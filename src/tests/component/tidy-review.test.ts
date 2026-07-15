@@ -81,7 +81,7 @@ const objectiveHunks = (c: Element) => hunkEls(c).filter((h) => h.dataset.object
 const judgmentHunks = (c: Element) => hunkEls(c).filter((h) => h.dataset.objective === 'false');
 
 describe('TidyReview (real browser)', () => {
-  it('renders insertions as additions and deletions struck through in the deletion ink', async () => {
+  it('renders insertions as semibold ink and deletions as muted strikethrough (the colorless diff)', async () => {
     const { reviewContainer } = await mountReview(ORIGINAL, CORRECTED);
     await expect.poll(() => hunkEls(reviewContainer).length).toBe(3);
     // An addition row carries the proposed text; a deletion row carries the original run to remove.
@@ -89,12 +89,13 @@ describe('TidyReview (real browser)', () => {
     const del = reviewContainer.querySelector<HTMLElement>('[data-testid="tidy-del"]');
     expect(add?.textContent).toContain('accommodate');
     expect(del?.textContent).toContain('accomodate');
-    // The locked color pair and the non-color cue ride utility classes (the admin CSS build resolves
-    // them in the app; the test page loads no build, so the assertion is on the class tokens that carry
-    // the intent). The insertion uses --color-positive-ink; the deletion uses --cairn-error-ink and
-    // line-through, so the two never share a color and the deletion reads without hue alone.
-    expect(add?.className).toContain('--color-positive-ink');
-    expect(del?.className).toContain('--cairn-error-ink');
+    // The diff is colorless (the design arc's accent reservation, 2026-07-15): no red, no green.
+    // Weight and strike carry the pair: insertion is semibold body ink, deletion is muted with
+    // line-through, so the semantics never depended on hue. The assertion rides the class tokens
+    // (the test page loads no compiled build).
+    expect(add?.className).toContain('font-semibold');
+    expect(add?.className).toContain('text-base-content');
+    expect(del?.className).toContain('text-muted');
     expect(del?.className).toContain('line-through');
     // The gutter glyphs carry the +/- so the rows read without color.
     expect(reviewContainer.textContent).toContain('+');

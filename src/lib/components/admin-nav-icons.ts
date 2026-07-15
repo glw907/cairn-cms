@@ -11,6 +11,7 @@ import InboxIcon from '@lucide/svelte/icons/inbox';
 import TableIcon from '@lucide/svelte/icons/table';
 import WrenchIcon from '@lucide/svelte/icons/wrench';
 import FileTextIcon from '@lucide/svelte/icons/file-text';
+import NewspaperIcon from '@lucide/svelte/icons/newspaper';
 import SignpostIcon from '@lucide/svelte/icons/signpost';
 import SettingsIcon from '@lucide/svelte/icons/settings';
 import ImageIcon from '@lucide/svelte/icons/image';
@@ -37,8 +38,9 @@ export const ADMIN_NAV_FALLBACK_ICON = ListIcon;
 
 /**
  * Maps each of the engine's fixed utility screen ids to its Lucide icon; a content concept's id is
- *  never a key here (its glyph is {@link ENGINE_NAV_FALLBACK_ICON}), since a concept id is dynamic
- *  per site and shares one door glyph the way it always has.
+ *  never a key here. A concept's glyph follows its kind instead: dated concepts take
+ *  {@link ENGINE_CONCEPT_DATED_ICON} and undated ones {@link ENGINE_NAV_FALLBACK_ICON}, so adjacent
+ *  concepts (Posts beside Pages) stop sharing one document silhouette.
  */
 export const ENGINE_NAV_ICONS: Record<string, Component> = {
   media: ImageIcon,
@@ -49,5 +51,8 @@ export const ENGINE_NAV_ICONS: Record<string, Component> = {
   help: HelpCircleIcon,
 };
 
-/** The glyph shown for a resolved engine screen with no entry in {@link ENGINE_NAV_ICONS}: a content concept's door. */
+/** The glyph for a dated concept's door (posts-like: feed entries with dates). */
+export const ENGINE_CONCEPT_DATED_ICON = NewspaperIcon;
+
+/** The glyph for an undated concept's door, and the fallback for any unmapped engine screen. */
 export const ENGINE_NAV_FALLBACK_ICON = FileTextIcon;

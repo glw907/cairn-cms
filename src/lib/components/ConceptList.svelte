@@ -4,9 +4,9 @@ One concept's list view, dressed to the office gold standard. A triage bar parti
 state (a bordered segmented control with live counts) beside an orthogonal Hidden toggle. The list
 is a sortable table of one-line rows composed at the document list's 3xl natural measure: the title,
 the date, the publish-state pill, and a quiet delete action. A draft row de-emphasizes and carries
-an eye-off Hidden tag inline beside the title. A trailing New row at the foot of the card opens the
-same create dialog as the header button. Filtering, sorting, and paging run over the loaded entries
-in component state.
+an eye-off Hidden tag inline beside the title. The header's New button is the one create affordance
+on a populated list (the empty state carries its own CTA). Filtering, sorting, and paging run over
+the loaded entries in component state.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
@@ -428,12 +428,6 @@ in component state.
           {/each}
         </tbody>
       </table>
-      <!-- The create affordance baked into the list body: a full-width borderless foot row so a
-           short list always shows its next step rather than just stopping. Same action as the
-           header New button. -->
-      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-content/[0.04] px-6 py-3 text-[0.9375rem] font-medium text-subtle hover:bg-base-content/[0.08] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-        <PlusIcon class="h-4 w-4" /> New {createNoun}
-      </button>
     {/if}
   </div>
 {/if}

@@ -68,7 +68,30 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15: 0.86.0 SHIPPED; next = the admin design arc in a FRESH session)
+## Immediate next action (2026-07-15: the ADMIN UX AUDIT IS DONE; next = the reorganization plan)
+
+**THE ADMIN UI/UX AUDIT IS COMPLETE AND COMMITTED: docs/internal/2026-07-15-admin-ux-audit.md.**
+Method as briefed: the 0.86.0 render set, eight fresh-context single-lens Sonnet critics, main-loop
+triage that refuted six weak findings against the renders and the committed baselines (the
+refutations are recorded in the doc's appendix). The ranked result, by charter weight: (1) the
+phone desk fails the "full writing device" calibration (67% chrome at keyboard-open height, 31-32px
+touch targets, top-right-only reach) — the widest gap; (2) real desk-band layout collisions at
+320/390 (theme toggle over Save/Publish, a glyph over the Published badge); (3) the color system
+over budget (13 saturated accents on the posts list, ~26 on Tidy settings, the always-red delete
+column, five semantic hues per session); then sidebar complexity beyond the flat default, the
+hedged type-size grade, the zen ruling (RECOMMENDED: zen recedes the sidebar too), editor
+approachability, extreme-width composition, a voice sweep (jargon leaks incl. the cheap "New
+Posts"→"New post" showcase `singular` fix), the polish tail, and the idiom-variance/component-kit
+inventory (finding 11 unblocks the ROADMAP Next kit entry). Routing per finding: ARC
+(color/type/phone-desk composition, fully local with Geoff per design-iteration-economics), REORG
+riders (sidebar simplification, zen), a PAPERCUTS pass (collisions, composition, copy), KIT.
+**NEXT (this session continues): superpowers:writing-plans for the reorganization pass**
+(spec: docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, ratified) with the two
+audit riders folded in; the plan is the one human gate (Geoff approves, then execution per
+cairn-pass). After the reorg pass: the PAPERCUTS pass, then the ARC with Geoff, then the KIT
+design. INDEPENDENT: the ASC bump (roles + navLayout, once) still runs in ASC's own session.
+
+## Prior next action (2026-07-15: 0.86.0 SHIPPED; next = the admin design arc in a FRESH session)
 
 **NEXT (fresh session): the ADMIN UI/UX AUDIT, then the reorganization pass.** The design
 charter + calibration are committed (docs/internal/admin-design-system.md, the charter

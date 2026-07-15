@@ -187,7 +187,10 @@ the named human gates only):**
   Core header; Geoff ratified) plus the evidence-grounded guide upgrade. Spec:
   docs/superpowers/specs/2026-07-14-admin-reorganization-design.md. Entry point now:
   `superpowers:writing-plans` against the spec, after 0.86.0 ships and the nav-layout pass
-  merges (ASC's bump does not wait for this pass).
+  merges (ASC's bump does not wait for this pass). The 2026-07-15 admin UX audit
+  (docs/internal/2026-07-15-admin-ux-audit.md) folds two riders into this pass's plan: the
+  sidebar simplification beyond the flat default (findings 4) and the zen-recedes-the-sidebar
+  ruling (finding 6); the audit's PAPERCUTS bucket runs as its own small pass after.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
@@ -197,7 +200,12 @@ the named human gates only):**
   charter's leanness boundary (the fewest components that cover a custom section's skeleton),
   and design it after the admin UI/UX audit reports, so the kit encodes the audited idiom rather
   than freezing today's. Weigh whether it gates 1.0 (the extending-developer seam story is
-  stronger with it).
+  stronger with it). THE AUDIT HAS REPORTED (2026-07-15,
+  docs/internal/2026-07-15-admin-ux-audit.md, finding 11): the engine's own screens carry the
+  page-header idiom five ways, counts three ways, and search placement two ways, so the kit's
+  first deliverable is convergence (pick the canonical recipes, re-express the engine screens in
+  them), then ship the components; the audit carries the full inventory. The showcase Signups
+  screen still needs a render for the bolted-on-vs-native judgment.
 - **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
   real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
   design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger

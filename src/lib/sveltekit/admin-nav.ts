@@ -6,6 +6,7 @@
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Capability } from '../auth/roles.js';
+import type { Role } from '../auth/types.js';
 
 /** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
 const ADMIN_NAV_ICON_NAMES = [
@@ -157,4 +158,155 @@ export function filterNavByRole(items: ResolvedNavItem[], capability: Capability
 /** Flatten a resolved adminNav into its flat entries, section children included, in visual order. */
 export function flattenNavEntries(items: ResolvedNavItem[]): ResolvedNavEntry[] {
   return items.flatMap((item) => (isResolvedNavSection(item) ? item.children : [item]));
+}
+
+// The navLayout seam: a site's optional whole-sidebar arrangement, mixing engine screens and its
+// own entries. `normalizeAdminNav`/`filterNavByRole` above stay in force for the legacy adminNav
+// path and for the default arrangement navLayout's resolver synthesizes when a site declares none.
+
+/** The engine's own fixed admin screens, each a navLayout reference target beyond a concept id. */
+const ENGINE_SCREEN_IDS = ['media', 'vocabulary', 'nav', 'settings', 'editors', 'help'] as const;
+
+/**
+ * One of the engine's own admin screens, or a site's own concept id. The six literals autocomplete
+ *  in an editor while a dynamic concept id, not knowable at the type level, stays assignable;
+ *  {@link validateNavLayout} is the real gate against a site's declared concepts and screens.
+ */
+export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
+
+/**
+ * A navLayout node that places one of the engine's own screens: a concept's list/edit pair, or one
+ *  of the fixed utility screens. `label` relabels the door without touching its engine-owned icon or
+ *  href; `hidden: true` removes the door deliberately (the route itself stays live, since nav
+ *  placement is never authorization).
+ */
+export interface NavLayoutEngineRef {
+  screen: EngineScreenId;
+  label?: string;
+  hidden?: true;
+}
+
+/** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
+export interface NavLayoutEntry extends AdminNavEntry {
+  /** Renders only when the signed-in editor's role is in this list; absent renders for every role. */
+  roles?: Role[];
+}
+
+/**
+ * One named group inside a navLayout tree, holding a mix of site entries and engine references (no
+ *  nesting, the same one-level rule `AdminNavSection` keeps). `roles` gates every child at once,
+ *  composing with the capability gates each child already carries.
+ */
+export interface NavLayoutSection {
+  label: string;
+  children: (NavLayoutEntry | NavLayoutEngineRef)[];
+  roles?: Role[];
+}
+
+/** A site's whole declared sidebar: engine references, its own entries, and sections, in declaration order. */
+export type NavLayout = (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[];
+
+/** True when a navLayout node is a section (carries `children`) rather than an entry or an engine reference. */
+function isNavLayoutSection(
+  node: NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection,
+): node is NavLayoutSection {
+  return 'children' in node;
+}
+
+/** True when a navLayout child is an engine reference (carries `screen`) rather than a site entry. */
+function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node is NavLayoutEngineRef {
+  return 'screen' in node;
+}
+
+/**
+ * Validate a site's raw navLayout tree once at construction (server start), `defineRoles`-style:
+ *  throws a `navLayout`-prefixed, actionable error naming the bad node, so a misconfiguration fails
+ *  at server start rather than rendering a broken or silently-wrong sidebar. Checks, in order: a site
+ *  cannot declare both `adminNav` and `navLayout` (no single source of truth for the sidebar
+ *  otherwise); every engine reference names a real screen (a declared concept id or one of the fixed
+ *  utility screens) and is referenced at most once, a hidden reference included; `'nav'` is
+ *  referenced only when the site configures a navMenu; a relabel is never blank; a section carries no
+ *  nested section and at least one child; a `roles` list, on an entry or a section, names only a role
+ *  the site's vocabulary actually declares. A site entry embedded in the tree is validated the same
+ *  way a flat `adminNav` entry is (the bundled icon allowlist, the built-in href collision), reusing
+ *  {@link resolveEntry} so the two paths can never drift.
+ * @param layout - The raw config.
+ *
+ * The second parameter carries context this validation needs but does not itself derive: the
+ *  site's concept ids (for the engine screen-id set and the embedded-entry href collision check),
+ *  whether a navMenu is configured, the declared role vocabulary's names, and whether the site also
+ *  declared `adminNav`.
+ */
+export function validateNavLayout(
+  layout: NavLayout,
+  ctx: {
+    conceptIds: string[];
+    navMenuConfigured: boolean;
+    roleNames: string[];
+    hasAdminNav: boolean;
+  },
+): void {
+  if (ctx.hasAdminNav) {
+    throw new Error(
+      'navLayout: a site cannot declare both adminNav and navLayout; declare custom screens inside navLayout',
+    );
+  }
+  const knownScreens = new Set<string>([...ctx.conceptIds, ...ENGINE_SCREEN_IDS]);
+  // parseAdminPath's concept lookup (findConcept) reads only `.id`, so a minimal stub carries the ids
+  // this validation receives without materializing full ConceptDescriptor objects (fields, schema,
+  // validate) that no path here needs.
+  const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];
+  const seenScreens = new Set<string>();
+
+  function checkRoles(roles: Role[] | undefined, where: string): void {
+    if (!roles) return;
+    for (const name of roles) {
+      if (!ctx.roleNames.includes(name)) {
+        throw new Error(
+          `navLayout: ${where} names role "${name}", outside the declared vocabulary (${ctx.roleNames.join(', ')})`,
+        );
+      }
+    }
+  }
+
+  function checkEngineRef(ref: NavLayoutEngineRef): void {
+    if (!knownScreens.has(ref.screen)) {
+      throw new Error(`navLayout: unknown screen "${ref.screen}"`);
+    }
+    if (ref.screen === 'nav' && !ctx.navMenuConfigured) {
+      throw new Error('navLayout: screen "nav" is referenced but no navMenu is configured');
+    }
+    if (seenScreens.has(ref.screen)) {
+      throw new Error(`navLayout: screen "${ref.screen}" is referenced more than once`);
+    }
+    seenScreens.add(ref.screen);
+    if (ref.label !== undefined && ref.label.trim() === '') {
+      throw new Error(`navLayout: screen "${ref.screen}" has an empty relabel`);
+    }
+  }
+
+  for (const node of layout) {
+    if (isNavLayoutSection(node)) {
+      if (node.children.length === 0) {
+        throw new Error(`navLayout: section "${node.label}" has no children`);
+      }
+      checkRoles(node.roles, `section "${node.label}"`);
+      for (const child of node.children) {
+        if (isNavLayoutSection(child)) {
+          throw new Error(`navLayout: section "${node.label}" cannot contain a nested section`);
+        }
+        if (isNavLayoutEngineRef(child)) {
+          checkEngineRef(child);
+        } else {
+          resolveEntry(child, stubConcepts);
+          checkRoles(child.roles, `an entry in section "${node.label}"`);
+        }
+      }
+    } else if (isNavLayoutEngineRef(node)) {
+      checkEngineRef(node);
+    } else {
+      resolveEntry(node, stubConcepts);
+      checkRoles(node.roles, 'a top-level entry');
+    }
+  }
 }

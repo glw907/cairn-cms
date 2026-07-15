@@ -168,9 +168,9 @@ construction) so a bad declaration throws at boot, not at request time.
 
 **Steps:**
 
-- [ ] Write failing unit tests for every validation throw plus the valid-tree case
-- [ ] Implement types + `validateNavLayout`; wire the construction-time call and the adapter type
-- [ ] Full gate (`npm run check`, `npm test`), commit
+- [x] Write failing unit tests for every validation throw plus the valid-tree case
+- [x] Implement types + `validateNavLayout`; wire the construction-time call and the adapter type
+- [x] Full gate (`npm run check`, `npm test`), commit
 
 ### Task 2: layout resolution and filter composition
 

@@ -43,6 +43,7 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     icons: adapter.rendering.icons,
     navMenu: adapter.editor?.nav,
     adminNav: adapter.editor?.adminNav,
+    navLayout: adapter.editor?.navLayout,
     publishActions: adapter.editor?.publishActions,
     preview: adapter.editor?.preview,
     assets: adapter.media,

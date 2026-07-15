@@ -9,7 +9,8 @@ import type { Backend } from '../github/backend.js';
 import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, type ResolvedNavItem } from './admin-nav.js';
+import { normalizeAdminNav, validateNavLayout, type ResolvedNavItem } from './admin-nav.js';
+import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
@@ -200,6 +201,18 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.
   const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
+  // Validate a declared navLayout the same fail-loud-at-startup way, beside adminNav's own
+  // validation, so a bad screen reference, an unresolvable role, or declaring both seams throws
+  // here rather than at request time. Undeclared (the common case) skips validation entirely; the
+  // resolver (a later task) synthesizes the default arrangement for that case.
+  if (runtime.navLayout) {
+    validateNavLayout(runtime.navLayout, {
+      conceptIds: runtime.concepts.map((concept) => concept.id),
+      navMenuConfigured: runtime.navMenu !== undefined,
+      roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
+      hasAdminNav: runtime.adminNav !== undefined,
+    });
+  }
   // Validate the developer's publishActions once at construction, the same fail-loud posture: a
   // blank field or an unknown concept throws here rather than silently rendering no link (or the
   // wrong one) after a publish. editLoad resolves this per request into the templated links for the

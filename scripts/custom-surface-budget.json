@@ -13,7 +13,8 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true']",
           "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side",
-          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side"
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
+          ":where([data-theme='cairn-admin-dark']) .badge-ghost"
         ],
         "componentsLayerCap": 14,
         "retiredTokenBudget": 0

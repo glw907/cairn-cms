@@ -2103,6 +2103,20 @@ describe('EditPage', () => {
       expect((await exit.element()).textContent ?? '').toContain('Esc');
     });
 
+    it('gates the zen Esc hint on pointer:coarse and marks the editor card zen for the resting-frame CSS (audit finding 10)', async () => {
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const editorCard = screen.container.querySelector('[role="group"][aria-label="Editor"]')!;
+      expect(editorCard.className).not.toContain('cairn-editor-zen');
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      // The Esc hint is meaningless on a touch device (no Esc key to press).
+      const escHint = screen.container.querySelector('.cairn-zen-chip kbd')!;
+      expect(escHint.className).toContain('pointer-coarse:hidden');
+      // The editor card carries the zen marker the resting-frame CSS keys on.
+      expect(editorCard.className).toContain('cairn-editor-zen');
+    });
+
     it('enters and exits zen on Ctrl+Shift+.', async () => {
       const screen = render(EditPage, postProps());
       const enter = new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true });

@@ -461,7 +461,10 @@ discriminant, not the fields, gates the chrome).
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               <span class="truncate">Search or jump to&hellip;</span>
-              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
+              <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
+                   it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
+                   above sm would otherwise still show it. -->
+              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:pointer-fine:inline">&#8984;K</kbd>
             </button>
           </div>
           {#await data.pendingEntries then pending}

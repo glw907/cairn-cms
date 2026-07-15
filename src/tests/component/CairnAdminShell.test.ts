@@ -113,6 +113,17 @@ describe('CairnAdminShell', () => {
     await expect.element(screen.getByText('View the live site')).toBeInTheDocument();
   });
 
+  it('gates the palette ⌘K hint on pointer:fine, not only the sm width (audit finding 10)', async () => {
+    // A touch tablet at or above sm has no ⌘K to press, so the hint must not show there; the
+    // width-only `sm:inline` a touch device at that width would still match, `pointer:fine` names
+    // the actual capability instead of guessing it from viewport width.
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const kbd = screen.container.querySelector('kbd')!;
+    expect(kbd.className).toContain('hidden');
+    expect(kbd.className).toContain('sm:pointer-fine:inline');
+    expect(kbd.className).not.toMatch(/(?<!pointer-fine:)\bsm:inline\b/);
+  });
+
   it('closes the command palette once a navigation lands', async () => {
     // A destination command is a plain link that navigates; the palette closes itself from the
     // pathname effect after the route changes, rather than racing a close() against the link's own

@@ -1658,6 +1658,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <div
       bind:this={editorCard}
       class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]"
+      class:cairn-editor-zen={zen}
       role="group"
       aria-label="Editor"
     >
@@ -2076,7 +2077,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       class="ftr-link inline-flex items-center cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
       onclick={() => setZen(false)}
     >
-      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline" aria-hidden="true">Esc</kbd>
+      <!-- The Esc hint is meaningless on a touch device (no Esc key to press), so it gates on
+           pointer:coarse rather than hiding by viewport width, which does not track touch capability
+           on a tablet. -->
+      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
     </button>
   </div>
 {/if}

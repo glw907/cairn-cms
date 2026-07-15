@@ -355,7 +355,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
               </button>
             </th>
             {#if data.dated}
-              <th class="hidden w-28 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+              <!-- w-32, not w-28: a two-digit day ("May 18, 2026") needs a few px more than the
+                   column had (audit finding 10), which wrapped it to two lines while a single-digit
+                   day fit. whitespace-nowrap on the cell below is the actual no-wrap guarantee; the
+                   wider column keeps that text from crowding the Status column beside it. -->
+              <th class="hidden w-32 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
                   Date
                   {#if sortKey === 'date'}
@@ -387,7 +391,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-muted">{entry.summary}</div>
                 {/if}
               </td>
-              {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
+              {#if data.dated}<td class="hidden w-32 whitespace-nowrap text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
               <td class="w-16 px-2 sm:w-28 sm:px-4">
                 <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
                      status stays legible without keeping the desktop-width column. -->

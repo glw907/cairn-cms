@@ -429,4 +429,63 @@ describe('ConceptList', () => {
       expect(rect.height).toBeLessThanOrEqual(28);
     });
   });
+
+  // Task 6 (audit finding 10): the mechanical polish tail. The compiled sheet carries daisyUI's
+  // real .table/.badge sizing, the same reason the 320px suite above injects it.
+  describe('mechanical polish tail (audit finding 10)', () => {
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      // Restore a normal-width viewport so a later test file's default layout assumptions hold.
+      await page.viewport(1280, 720);
+    });
+
+    it('never wraps the date column to two lines, whatever the day carries a one- or two-digit day', async () => {
+      // The Date column is hidden below sm (640px) and shows at sm and up; a desktop width is
+      // where the reported wrap actually happened.
+      await page.viewport(1024, 720);
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      const entries = [
+        { id: 'june', title: 'June entry', date: '2026-06-01', draft: false, status: 'published' as const, summary: null },
+        { id: 'may', title: 'May entry', date: '2026-05-18', draft: false, status: 'published' as const, summary: null },
+      ];
+      const screen = render(ConceptList, { data: data({ entries }) });
+      const cells = screen.container.querySelectorAll('td.tabular-nums');
+      expect(cells.length).toBe(2);
+      for (const cell of cells) {
+        // The cell carries vertical padding regardless of line count, so height alone does not
+        // signal a wrap; a Range over the text node's own rendered rects does, directly counting
+        // line boxes.
+        const textNode = cell.firstChild!;
+        const range = document.createRange();
+        range.selectNodeContents(textNode);
+        expect(range.getClientRects().length).toBe(1);
+      }
+    });
+
+    it('gives the dark Published pill a fill distinct from its own card, clearing a real contrast step', async () => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin-dark');
+      const entries = [{ id: 'pub', title: 'Pub entry', date: '2026-05-01', draft: false, status: 'published' as const, summary: null }];
+      const screen = render(ConceptList, { data: data({ entries }) });
+      const badge = screen.container.querySelector('.badge-ghost')!;
+      const badgeBg = getComputedStyle(badge).backgroundColor;
+      // Pin the exact fill: base-300, the dark counterpart, not merely "differs from the card" (a
+      // weak check base-200, the pre-fix near-invisible fill, would also pass, since base-200 and
+      // base-100 are technically different oklch values despite reading as the same tone).
+      const probe = document.createElement('div');
+      probe.style.backgroundColor = 'var(--color-base-300)';
+      document.body.appendChild(probe);
+      const expectedBg = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      expect(badgeBg).toBe(expectedBg);
+    });
+  });
 });

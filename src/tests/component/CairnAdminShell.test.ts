@@ -439,6 +439,28 @@ describe('CairnAdminShell', () => {
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
   });
 
+  it('recedes the persistent sidebar under zen at every width, and restores it on exit', async () => {
+    // Zen is an explicit, reversible editor choice (plan-locked call 1,
+    // docs/superpowers/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
+    // topbar in stepping back so the manuscript takes the whole frame, at every width, not just the
+    // desk route's tablet band. The overlay checkbox keeps reaching the nav under zen; only the
+    // persistent breakpoint classes recede.
+    const screen = render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+      zen: true,
+    });
+    const drawer = () => screen.container.querySelector('.drawer')!;
+    const content = () => screen.container.querySelector('.drawer-content')!;
+    expect(drawer().classList.contains('lg:drawer-open')).toBe(false);
+    expect(drawer().classList.contains('xl:drawer-open')).toBe(false);
+    expect(content().classList.contains('lg:ml-56')).toBe(false);
+    expect(content().classList.contains('xl:ml-56')).toBe(false);
+
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: false });
+    expect(drawer().classList.contains('xl:drawer-open')).toBe(true);
+    expect(content().classList.contains('xl:ml-56')).toBe(true);
+  });
+
   it('lays out the shell as nested drawer regions, not merely styled parts', async () => {
     // The visual proof of the shell confirms only "styled", not "laid out": a DaisyUI nested-scoping
     // bug once shipped a non-rendering (display:block) drawer whose classes were all present. This

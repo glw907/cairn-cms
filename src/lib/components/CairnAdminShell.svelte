@@ -346,6 +346,11 @@ discriminant, not the fields, gates the chrome).
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
        still governs the overlay at every width below each route's persist breakpoint, so the toggle
        (and Cmd/Ctrl+B) reopens the nav over the document on demand.
+       Zen recedes the sidebar too, at every width regardless of route kind (plan-locked call 1,
+       docs/superpowers/plans/2026-07-15-admin-reorganization.md): it is an explicit, reversible
+       editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
+       still governs the whole sidebar under zen, so the toggle (and Cmd/Ctrl+B) never traps an
+       editor away from the nav.
        At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
        own `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
        load-bearing rules there), not sticky: a host that omits Preflight (the embed-anywhere default
@@ -356,15 +361,15 @@ discriminant, not the fields, gates the chrome).
        already uses, so it carries no such drift and needs no document-level change. -->
   <div
     class="drawer min-h-screen bg-base-200 text-base-content"
-    class:lg:drawer-open={!isDeskRoute}
-    class:xl:drawer-open={isDeskRoute}
+    class:lg:drawer-open={!isDeskRoute && !topbar.zen}
+    class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div
       class="drawer-content flex flex-col"
-      class:lg:ml-56={!isDeskRoute}
-      class:xl:ml-56={isDeskRoute}
+      class:lg:ml-56={!isDeskRoute && !topbar.zen}
+      class:xl:ml-56={isDeskRoute && !topbar.zen}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
@@ -572,10 +577,11 @@ discriminant, not the fields, gates the chrome).
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           <!-- shell.nav.items is the whole arranged, filtered scroll area in declaration order: a
-               section renders as its own collapsible group (the Core built-in group when no
-               navLayout is declared, or a site's own named group); a loose top-level node (a site
-               entry or engine reference placed outside any section) batches with its neighbors into
-               a plain, header-less list rather than opening a group of its own. -->
+               section renders as its own collapsible group (a site's own declared navLayout
+               section, or a legacy adminNav section); the zero-config default synthesizes no
+               section at all, so its concepts, legacy flat entries, and engine screens arrive as
+               loose top-level nodes. A loose node batches with its neighbors into a plain,
+               header-less list rather than opening a group of its own. -->
           <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
                adminNav path can synthesize two same-labeled groups, e.g. a legacy section named
                "Core" colliding with the built-in Core group; validateNavLayout cannot retroactively

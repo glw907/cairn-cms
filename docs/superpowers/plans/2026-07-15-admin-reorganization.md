@@ -143,16 +143,16 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Add the component test: with the desk harness in zen, the wrapper carries
+- [x] **Step 1:** Add the component test: with the desk harness in zen, the wrapper carries
   neither `lg:drawer-open` nor `xl:drawer-open` (and neither `ml-56` class); exiting zen restores
   the desk pair. Run it; expect FAIL.
-- [ ] **Step 2:** Apply the class-condition change; run the component file; expect PASS.
-- [ ] **Step 3:** Extend the e2e zen round trip: after entering zen at the desktop project width,
+- [x] **Step 2:** Apply the class-condition change; run the component file; expect PASS.
+- [x] **Step 3:** Extend the e2e zen round trip: after entering zen at the desktop project width,
   assert the persistent sidebar is gone (the drawer-side element hidden or the drawer-open class
   absent); after Escape, assert it returns. Run the golden-path spec locally in CI mode; expect
   PASS.
-- [ ] **Step 4:** `npm run check` and `npm test`; 0/0 and exit 0.
-- [ ] **Step 5:** Commit: `feat(admin-shell): zen recedes the persistent sidebar (audit finding 6)`.
+- [x] **Step 4:** `npm run check` and `npm test`; 0/0 and exit 0.
+- [x] **Step 5:** Commit: `feat(admin-shell): zen recedes the persistent sidebar (audit finding 6)`.
 
 ### Task 4: The guide upgrade
 

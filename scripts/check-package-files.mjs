@@ -36,7 +36,9 @@ function packedFilePaths() {
     encoding: 'utf8',
   });
   const parsed = JSON.parse(out);
-  return (parsed[0]?.files ?? []).map((f) => f.path);
+  /** @type {{ path: string }[]} */
+  const files = parsed[0]?.files ?? [];
+  return files.map((f) => f.path);
 }
 
 function main() {

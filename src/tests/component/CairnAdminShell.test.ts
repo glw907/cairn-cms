@@ -119,10 +119,13 @@ describe('CairnAdminShell', () => {
     expect(document.querySelector<HTMLDialogElement>('dialog.modal')?.open).toBe(false);
   });
 
-  it('renders the core group with its built-in entries', async () => {
+  it('renders the built-in engine entries as loose top-level links, not inside a section', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
-    await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
     await expect.element(screen.getByRole('link', { name: /settings/i })).toBeInTheDocument();
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    expect(sidebar.querySelectorAll('details').length).toBe(0);
+    const settingsLink = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent?.trim() === 'Settings')!;
+    expect(settingsLink.closest('details')).toBeNull();
   });
 
   it('shows the manage-editors link to an owner', async () => {
@@ -405,11 +408,15 @@ describe('CairnAdminShell', () => {
     // A pathname change alone must never touch the collapsed-section state or its cookie: that
     // state is owned solely by the section's own toggle. Regression guard for the drawer's
     // pathname effect, which resets other navigation-scoped UI (the palette, drawerOpen) but must
-    // leave the persisted `collapsed` set alone.
+    // leave the persisted `collapsed` set alone. The flat default carries no section of its own, so
+    // this fixture declares one legacy adminNav section to exercise the toggle.
     document.cookie = 'cairn-admin-nav-collapsed=; path=/admin; max-age=0';
-    const screen = render(CairnAdminShell, { data: data(true), children: child });
-    await expect.element(screen.getByText('Core', { exact: true })).toBeInTheDocument();
-    await screen.rerender({ data: data(true, null, '/admin/pages'), children: child });
+    const adminNav: ResolvedNavItem[] = [
+      { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
+    ];
+    const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
+    await expect.element(screen.getByText('Club', { exact: true })).toBeInTheDocument();
+    await screen.rerender({ data: data(true, null, '/admin/pages', undefined, adminNav), children: child });
     const details = screen.container.querySelector('details')!;
     expect(details.open).toBe(true);
     expect(document.cookie).not.toContain('cairn-admin-nav-collapsed=');
@@ -430,6 +437,28 @@ describe('CairnAdminShell', () => {
     const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
+  });
+
+  it('recedes the persistent sidebar under zen at every width, and restores it on exit', async () => {
+    // Zen is an explicit, reversible editor choice (plan-locked call 1,
+    // docs/superpowers/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
+    // topbar in stepping back so the manuscript takes the whole frame, at every width, not just the
+    // desk route's tablet band. The overlay checkbox keeps reaching the nav under zen; only the
+    // persistent breakpoint classes recede.
+    const screen = render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+      zen: true,
+    });
+    const drawer = () => screen.container.querySelector('.drawer')!;
+    const content = () => screen.container.querySelector('.drawer-content')!;
+    expect(drawer().classList.contains('lg:drawer-open')).toBe(false);
+    expect(drawer().classList.contains('xl:drawer-open')).toBe(false);
+    expect(content().classList.contains('lg:ml-56')).toBe(false);
+    expect(content().classList.contains('xl:ml-56')).toBe(false);
+
+    await screen.rerender({ data: data(true, null, '/admin/posts/2026-05-hello'), zen: false });
+    expect(drawer().classList.contains('xl:drawer-open')).toBe(true);
+    expect(content().classList.contains('xl:ml-56')).toBe(true);
   });
 
   it('lays out the shell as nested drawer regions, not merely styled parts', async () => {
@@ -460,6 +489,24 @@ describe('CairnAdminShell', () => {
     await expect.poll(() => toggle().checked).toBe(!before);
   });
 
+  it('moves focus into the drawer nav on Ctrl+B open, and restores it on Ctrl+B close', async () => {
+    // The overlay drawer covers the editor at every width the shortcut opens it over; a shortcut
+    // toggle that left focus behind on the obscured trigger would strand a keyboard user. Opening
+    // moves focus to the first focusable element inside the drawer's own nav; closing returns it to
+    // whatever was focused beforehand.
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
+    searchTrigger.focus();
+    expect(document.activeElement).toBe(searchTrigger);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+    const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+    await expect.poll(() => document.activeElement).toBe(brandLink);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+    await expect.poll(() => document.activeElement).toBe(searchTrigger);
+  });
+
   it('posts the logout form to the absolute /admin?/logout catch-all', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     const form = screen.container.querySelector('form[action="/admin?/logout"]');
@@ -476,35 +523,39 @@ describe('CairnAdminShell', () => {
     await expect.element(sidebar.getByRole('link', { name: 'Signups' })).toBeInTheDocument();
   });
 
-  it('renders a custom adminNav section as its own collapsible group beside Core', async () => {
+  it('renders a custom adminNav section as the only collapsible group, beside the loose defaults', async () => {
     const adminNav: ResolvedNavItem[] = [
       { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
     ];
     const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
-    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
-    await expect.element(sidebar.getByText('Club')).toBeInTheDocument();
-    await expect.element(sidebar.getByRole('link', { name: 'Events' })).toBeInTheDocument();
-    // The section is its own group, not folded into Core: Core's own summary is still present too.
-    await expect.element(sidebar.getByText('Core')).toBeInTheDocument();
+    await expect.element(screen.getByText('Club')).toBeInTheDocument();
+    await expect.element(screen.getByRole('link', { name: 'Events' })).toBeInTheDocument();
+    // Club is the only collapsible group: the flat default's concepts and engine screens render as
+    // loose links beside it, not folded into a second section.
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = sidebar.querySelectorAll('details');
+    expect(details).toHaveLength(1);
+    expect(details[0].querySelector('summary')?.textContent?.trim()).toBe('Club');
+    const postsLink = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent?.trim() === 'Posts')!;
+    expect(postsLink.closest('details')).toBeNull();
   });
 
-  it('renders without throwing when a legacy adminNav section shares a label with the synthesized Core group', async () => {
-    // validateNavLayout cannot retroactively reject the legacy adminNav path: a site can still
-    // declare a section literally named "Core", which the default arrangement's resolver then
-    // places beside the built-in Core group, producing two same-labeled sections in shell.nav.items.
-    // The group each in CairnAdminShell keys on index for exactly this reason (task 2); a label key
-    // would crash the render here.
+  it('renders without throwing when a legacy adminNav section is literally named Core', async () => {
+    // With no synthesized Core group, a site section literally named "Core" no longer collides with
+    // anything (plan-locked call 3); this guard keeps the no-throw contract with its new expected
+    // shape, one declared section beside the loose defaults.
     const adminNav: ResolvedNavItem[] = [
       { label: 'Core', children: [{ label: 'Roster', iconName: 'users', href: '/admin/roster', ownerOnly: false }] },
     ];
     const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
-    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
-    const sidebarEl = sidebar.element() as HTMLElement;
-    const coreSummaries = Array.from(sidebarEl.querySelectorAll('summary')).filter(
-      (el) => el.textContent?.trim() === 'Core',
-    );
-    expect(coreSummaries).toHaveLength(2);
-    await expect.element(sidebar.getByRole('link', { name: 'Roster' })).toBeInTheDocument();
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = sidebar.querySelectorAll('details');
+    expect(details).toHaveLength(1);
+    expect(details[0].querySelector('summary')?.textContent?.trim()).toBe('Core');
+    expect(Array.from(details[0].querySelectorAll('a')).map((a) => a.textContent?.trim())).toEqual(['Roster']);
+    // The default's loose engine entries sit beside the declared section, not inside it.
+    const postsLink = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent?.trim() === 'Posts')!;
+    expect(postsLink.closest('details')).toBeNull();
   });
 
   it('omits an owner-only custom entry the payload has already role-filtered out', async () => {
@@ -526,10 +577,10 @@ describe('CairnAdminShell', () => {
     expect(screen.container.querySelector('form[action="/admin?/logout"]')).toBeNull();
   });
 
-  it('renders the zero-config default arrangement exactly: Core in order, Help alone in the foot', async () => {
-    // The default synthesis (an undeclared navLayout) reproduces today's render exactly: one Core
-    // section holding the concepts, the legacy flat entry, then the engine screens in order, and
-    // Help left unreferenced so it resolves into the fallback foot band.
+  it('renders the zero-config default arrangement flat: loose items in order, zero sections, Help alone in the foot', async () => {
+    // The default synthesis (an undeclared navLayout) is flat: the concepts, the legacy flat entry,
+    // then the engine screens in order, all as loose top-level links with no wrapping section; Help
+    // is left unreferenced, so it resolves into the fallback foot band.
     const adminNav: ResolvedNavItem[] = [
       { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
     ];
@@ -538,10 +589,13 @@ describe('CairnAdminShell', () => {
       children: child,
     });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
-    const details = sidebar.querySelectorAll('details');
-    expect(details.length).toBe(1); // Core is the only section; Help is not a section.
-    const coreLabels = Array.from(details[0].querySelectorAll('a')).map((a) => a.textContent?.trim());
-    expect(coreLabels).toEqual([
+    // Scope to the items scroll area, below the brand band, which also renders a link.
+    const items = sidebar.querySelector('.flex-1.space-y-1')!;
+    expect(items.querySelectorAll('details').length).toBe(0); // no section wraps the default.
+    const foot = sidebar.querySelector('[data-testid="cairn-nav-fallback"]');
+    expect(foot).not.toBeNull();
+    const looseLabels = Array.from(items.querySelectorAll('a')).map((a) => a.textContent?.trim());
+    expect(looseLabels).toEqual([
       'Posts',
       'Pages',
       'Signups',
@@ -551,10 +605,7 @@ describe('CairnAdminShell', () => {
       'Settings',
       'Editors',
     ]);
-    const foot = sidebar.querySelector('[data-testid="cairn-nav-fallback"]');
-    expect(foot).not.toBeNull();
     expect(Array.from(foot!.querySelectorAll('a')).map((a) => a.textContent?.trim())).toEqual(['Help']);
-    expect(foot!.compareDocumentPosition(details[0]) & Node.DOCUMENT_POSITION_PRECEDING).not.toBe(0);
   });
 
   it('renders an arranged navLayout in declared order, with a relabel and a fallback foot', async () => {
@@ -604,24 +655,26 @@ describe('CairnAdminShell', () => {
     expect(rosterLink.closest('details')).toBeNull();
   });
 
-  it('hides every engine door for a none-capability session, with no empty Core header', async () => {
-    // With no custom adminNav at all, every candidate for the Core section is an engine screen, and
-    // every engine screen is stripped for a none-capability session: Core would be empty, so it must
-    // not render at all (the deliberate none-session delta, locked call 7), and the fallback foot
-    // stays empty too (Help is itself an engine screen, gated the same way).
+  it('hides every engine door for a none-capability session, with no engine doors and no section chrome at all', async () => {
+    // With no custom adminNav at all, every candidate for the flat default is an engine screen, and
+    // every engine screen is stripped for a none-capability session: the sidebar renders no loose
+    // links and no section at all, and the fallback foot stays empty too (Help is itself an engine
+    // screen, gated the same way).
     const screen = render(CairnAdminShell, {
       data: data(false, 'Primary nav', '/admin/posts', 'none'),
       children: child,
     });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
-    expect(sidebar.textContent).not.toContain('Core');
-    expect(sidebar.querySelectorAll('details').length).toBe(0);
+    // Scope to the items scroll area, below the brand band, which also renders a link.
+    const items = sidebar.querySelector('.flex-1.space-y-1')!;
+    expect(items.querySelectorAll('a').length).toBe(0);
+    expect(items.querySelectorAll('details').length).toBe(0);
     expect(sidebar.querySelector('[data-testid="cairn-nav-fallback"]')).toBeNull();
   });
 
-  it('keeps a site custom entry inside the Core section for a none-capability session', async () => {
+  it('keeps a site custom entry as a loose node for a none-capability session', async () => {
     // A site's own custom entry is not an engine screen, so it survives capability filtering and
-    // still folds into the default Core section, even though every engine door beside it is gone.
+    // still renders as a loose top-level link, even though every engine door beside it is gone.
     const adminNav: ResolvedNavItem[] = [
       { label: 'Roster', iconName: 'inbox', href: '/admin/roster', ownerOnly: false },
     ];
@@ -632,6 +685,8 @@ describe('CairnAdminShell', () => {
     const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
     expect(sidebar.querySelector('[data-testid="cairn-nav-fallback"]')).toBeNull();
     await expect.element(screen.getByRole('link', { name: 'Roster' })).toBeInTheDocument();
+    const rosterLink = Array.from(sidebar.querySelectorAll('a')).find((a) => a.textContent?.trim() === 'Roster')!;
+    expect(rosterLink.closest('details')).toBeNull();
   });
 
   it('lists a section child in the command palette', async () => {

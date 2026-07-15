@@ -100,8 +100,9 @@ complexity remains after that:
   lines of text where the eye should rest.
 - **Chevron chrome** persists on any site-declared section after the default flattens.
 
-**Routing:** REORG riders where the pass already touches the sidebar render (the foot, the active
-state, icon dedup); anything needing a taste call joins the ARC.
+**Routing:** ARC (updated at the reorganization plan, plan-locked call 2: every slice here is a
+taste call or infeasible mechanically — concepts share one default glyph by design — so none rode
+the pass; the flat default itself shipped there).
 
 ### 5. (seeded) Base type size — hedged, route to the arc
 

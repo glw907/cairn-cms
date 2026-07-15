@@ -12,7 +12,7 @@ route. Failure mode: a public payload that carried chrome fields would still ren
 discriminant, not the fields, gates the chrome).
 -->
 <script lang="ts">
-  import { onMount, setContext, untrack, type Component, type Snippet } from 'svelte';
+  import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -97,10 +97,11 @@ discriminant, not the fields, gates the chrome).
 
   // shell.nav.items is the whole arranged, filtered scroll-area tree the resolver produced, in
   // declaration order: a declared navLayout as written, or, absent one, today's default arrangement
-  // through the same resolver (one Core section holding the concepts, the legacy flat adminNav
-  // entries, and the engine screens, followed by each legacy adminNav section). Consecutive loose
-  // top-level nodes batch into one group so they render together, without opening a collapsible
-  // section of their own.
+  // through the same resolver, which synthesizes no section at all: the concepts, the legacy flat
+  // adminNav entries, and the engine screens arrive as loose top-level nodes rendered in a plain,
+  // header-less list, and each legacy adminNav section still renders as its own collapsible group
+  // after them. Consecutive loose top-level nodes batch into one group so they render together,
+  // without opening a collapsible section of their own.
   const navGroups: NavGroup[] = $derived.by(() => {
     if (!shell) return [];
     const groups: NavGroup[] = [];
@@ -158,16 +159,43 @@ discriminant, not the fields, gates the chrome).
 
   let drawerOpen = $state(false);
 
+  // The drawer's own nav region, so the shortcut can find its first focusable child and so the
+  // close-side restore can tell whether focus is still inside it (the overlay-backdrop path below).
+  let drawerNavEl = $state<HTMLElement>();
+
+  // Where focus was before the shortcut opened the drawer, so a shortcut close (or an overlay
+  // backdrop close while focus never left the drawer) can put it back. Set only by the shortcut, so
+  // a mouse-driven open (the hamburger label) leaves this minimal contract alone (locked to the
+  // review finding's scope; a full focus trap and Escape binding are deferred to the papercuts pass).
+  let drawerRestoreFocusEl: HTMLElement | null = null;
+
   function onKeydown(e: KeyboardEvent) {
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      drawerOpen = !drawerOpen;
+      if (!drawerOpen) {
+        drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        drawerOpen = true;
+        tick().then(() => {
+          drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
+        });
+      } else {
+        drawerOpen = false;
+      }
     }
     if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       openPalette();
     }
   }
+
+  // Restores focus once the drawer closes, whether the shortcut closed it (above) or the overlay
+  // backdrop did (a plain checkbox toggle with no keydown involved): only when the shortcut is what
+  // opened it (drawerRestoreFocusEl set) and focus never left the drawer's own nav in the meantime.
+  $effect(() => {
+    if (drawerOpen || !drawerRestoreFocusEl || !drawerNavEl?.contains(document.activeElement)) return;
+    drawerRestoreFocusEl.focus();
+    drawerRestoreFocusEl = null;
+  });
 
   // Close the mobile drawer and the command palette whenever the active path changes (a nav click
   // navigated). Closing the palette here, after the navigation lands, avoids racing a synchronous
@@ -346,6 +374,11 @@ discriminant, not the fields, gates the chrome).
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
        still governs the overlay at every width below each route's persist breakpoint, so the toggle
        (and Cmd/Ctrl+B) reopens the nav over the document on demand.
+       Zen recedes the sidebar too, at every width regardless of route kind (plan-locked call 1,
+       docs/superpowers/plans/2026-07-15-admin-reorganization.md): it is an explicit, reversible
+       editor choice, so the persistent breakpoint never overrides it. The checkbox-driven overlay
+       still governs the whole sidebar under zen, so the toggle (and Cmd/Ctrl+B) never traps an
+       editor away from the nav.
        At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
        own `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
        load-bearing rules there), not sticky: a host that omits Preflight (the embed-anywhere default
@@ -356,15 +389,15 @@ discriminant, not the fields, gates the chrome).
        already uses, so it carries no such drift and needs no document-level change. -->
   <div
     class="drawer min-h-screen bg-base-200 text-base-content"
-    class:lg:drawer-open={!isDeskRoute}
-    class:xl:drawer-open={isDeskRoute}
+    class:lg:drawer-open={!isDeskRoute && !topbar.zen}
+    class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
     <div
       class="drawer-content flex flex-col"
-      class:lg:ml-56={!isDeskRoute}
-      class:xl:ml-56={isDeskRoute}
+      class:lg:ml-56={!isDeskRoute && !topbar.zen}
+      class:xl:ml-56={isDeskRoute && !topbar.zen}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
@@ -527,7 +560,11 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <nav class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
+      <nav
+        bind:this={drawerNavEl}
+        class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
+        aria-label="Site content"
+      >
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and
              wordmark link to the admin home. -->
@@ -572,16 +609,17 @@ discriminant, not the fields, gates the chrome).
 
         <div class="flex-1 space-y-1 overflow-y-auto py-4">
           <!-- shell.nav.items is the whole arranged, filtered scroll area in declaration order: a
-               section renders as its own collapsible group (the Core built-in group when no
-               navLayout is declared, or a site's own named group); a loose top-level node (a site
-               entry or engine reference placed outside any section) batches with its neighbors into
-               a plain, header-less list rather than opening a group of its own. -->
+               section renders as its own collapsible group (a site's own declared navLayout
+               section, or a legacy adminNav section); the zero-config default synthesizes no
+               section at all, so its concepts, legacy flat entries, and engine screens arrive as
+               loose top-level nodes. A loose node batches with its neighbors into a plain,
+               header-less list rather than opening a group of its own. -->
           <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
-               adminNav path can synthesize two same-labeled groups, e.g. a legacy section named
-               "Core" colliding with the built-in Core group; validateNavLayout cannot retroactively
-               reject that path). This list is fully derived and stateless, and the collapsed-group
-               open state derives from the label-keyed `collapsed` Set, not DOM identity, so index
-               keys never desync a group's open/closed state from its content. -->
+               adminNav path can synthesize two same-labeled groups, e.g. two legacy adminNav
+               sections both named "Club"; validateNavLayout cannot retroactively reject that
+               path). This list is fully derived and stateless, and the collapsed-group open state
+               derives from the label-keyed `collapsed` Set, not DOM identity, so index keys never
+               desync a group's open/closed state from its content. -->
           {#each navGroups as group, i (i)}
             {#if group.kind === 'section'}
               {@render navSection(group.label, group.items)}

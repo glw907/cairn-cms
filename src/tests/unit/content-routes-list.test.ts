@@ -105,9 +105,9 @@ describe('shellPayload', () => {
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
-      cookies: { 'cairn-admin-nav-collapsed': `Core,${encodeURIComponent('Black & White')}` },
+      cookies: { 'cairn-admin-nav-collapsed': `Tools,${encodeURIComponent('Black & White')}` },
     }));
-    expect(shell.collapsedNav).toEqual(['Core', 'Black & White']);
+    expect(shell.collapsedNav).toEqual(['Tools', 'Black & White']);
   });
 
   it('defaults collapsedNav to empty when no cookie is set', async () => {

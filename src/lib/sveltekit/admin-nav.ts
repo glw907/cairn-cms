@@ -35,9 +35,10 @@ export interface AdminNavEntry {
 
 /**
  * One level of grouping: a named section of the developer's own entries, rendered as its own
- *  collapsible sidebar group beside the built-in Core section (`ConceptList`'s concepts, Library,
- *  Tags, Settings, and the rest). A section holds only flat entries, so grouping stays exactly one
- *  level deep; nest no further.
+ *  collapsible sidebar group beside the default's loose top-level nodes (the concepts, Library,
+ *  Tags, Settings, and the rest, rendered as a plain header-less list rather than a built-in
+ *  section). A section holds only flat entries, so grouping stays exactly one level deep; nest no
+ *  further.
  */
 export interface AdminNavSection {
   label: string;
@@ -519,33 +520,30 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
 }
 
 /**
- * Synthesize today's default arrangement (locked call 6) for a site that declares no navLayout: one
- *  `Core` section holding the concepts, the legacy flat adminNav entries, then the fixed engine
- *  screens in their existing order (media, vocabulary, nav when configured, settings, editors),
- *  followed by each legacy adminNav section in declaration order; `help` is deliberately left
- *  unreferenced, so it resolves into `fallback`. This reproduces today's render exactly, including
- *  the `Core` header disappearing once empty (the deliberate none-session delta, empty sections
- *  disappearing uniformly).
+ * Synthesize the flat zero-config default arrangement for a site that declares no navLayout: the
+ *  concepts, the legacy flat adminNav entries, then the fixed engine screens in their existing order
+ *  (media, vocabulary, nav when configured, settings, editors) as loose top-level nodes, followed by
+ *  each legacy adminNav section in declaration order; `help` is deliberately left unreferenced, so it
+ *  resolves into `fallback`. No section wraps the engine or legacy-flat nodes: at the sizes a
+ *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
+ *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1).
  */
 function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
   const roleFiltered = filterNavByRole(opts.adminNav, opts.capability);
   const legacyFlatEntries = roleFiltered.filter(isResolvedNavEntry);
   const legacySections = roleFiltered.filter(isResolvedNavSection);
 
-  const coreChildren: ResolvedLayoutChild[] = [];
+  const items: ResolvedLayoutNode[] = [];
   for (const concept of opts.concepts) {
-    if (engineVisible(concept.id, opts)) coreChildren.push(engineEntry(concept.id, opts));
+    if (engineVisible(concept.id, opts)) items.push(engineEntry(concept.id, opts));
   }
-  coreChildren.push(...legacyFlatEntries);
+  items.push(...legacyFlatEntries);
   // engineVisible is the single visibility authority (nav needs a configured navMenu, editors needs
   // owner, all need capability !== 'none'), the same gate the concept loop above and the help
   // fallback below rely on.
   for (const screen of ['media', 'vocabulary', 'nav', 'settings', 'editors']) {
-    if (engineVisible(screen, opts)) coreChildren.push(engineEntry(screen, opts));
+    if (engineVisible(screen, opts)) items.push(engineEntry(screen, opts));
   }
-
-  const items: ResolvedLayoutNode[] = [];
-  if (coreChildren.length > 0) items.push({ label: 'Core', children: coreChildren });
   items.push(...legacySections);
 
   const fallback: ResolvedLayoutChild[] = engineVisible('help', opts) ? [engineEntry('help', opts)] : [];

@@ -74,17 +74,17 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Re-pin the default-synthesis unit fixtures in `nav-layout-resolve.test.ts` to the
+- [x] **Step 1:** Re-pin the default-synthesis unit fixtures in `nav-layout-resolve.test.ts` to the
   flat shape (loose engine/legacy-flat nodes, then legacy sections; no `Core`). Add one new case if
   none exists: a none-capability session with one site entry yields that entry as a loose node, no
   section. Run `npx vitest run src/tests/unit/nav-layout-resolve.test.ts`; expect the re-pinned
   cases to FAIL against the current synthesis.
-- [ ] **Step 2:** Change `resolveDefaultLayout` to emit the loose shape; update its doc comment.
+- [x] **Step 2:** Change `resolveDefaultLayout` to emit the loose shape; update its doc comment.
   Run the same file; expect PASS.
-- [ ] **Step 3:** Re-pin the three sibling unit files (`cairn-admin-shell-load`,
+- [x] **Step 3:** Re-pin the three sibling unit files (`cairn-admin-shell-load`,
   `content-routes-layout`, `content-routes-list`) to the flat shape. Run each; expect PASS.
-- [ ] **Step 4:** `npm run check` (0/0) and `npm test` (exit 0).
-- [ ] **Step 5:** Commit: `feat(admin-nav): flat zero-config sidebar default (drop the Core section)`.
+- [x] **Step 4:** `npm run check` (0/0) and `npm test` (exit 0).
+- [x] **Step 5:** Commit: `feat(admin-nav): flat zero-config sidebar default (drop the Core section)`.
 
 ### Task 2: Component parity re-pins
 
@@ -110,11 +110,11 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Re-pin the assertions. Run
+- [x] **Step 1:** Re-pin the assertions. Run
   `npx vitest run src/tests/component/CairnAdminShell.test.ts`; expect PASS against Task 1's
   synthesis (these tests re-pin, they do not drive new engine behavior).
-- [ ] **Step 2:** `npm run check` and `npm test`; expect 0/0 and exit 0.
-- [ ] **Step 3:** Commit: `test(admin-shell): re-pin the zero-config parity contract to the flat default`.
+- [x] **Step 2:** `npm run check` and `npm test`; expect 0/0 and exit 0.
+- [x] **Step 3:** Commit: `test(admin-shell): re-pin the zero-config parity contract to the flat default`.
 
 ### Task 3: Zen recedes the sidebar (audit rider, plan-locked call 1)
 
@@ -143,16 +143,16 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Add the component test: with the desk harness in zen, the wrapper carries
+- [x] **Step 1:** Add the component test: with the desk harness in zen, the wrapper carries
   neither `lg:drawer-open` nor `xl:drawer-open` (and neither `ml-56` class); exiting zen restores
   the desk pair. Run it; expect FAIL.
-- [ ] **Step 2:** Apply the class-condition change; run the component file; expect PASS.
-- [ ] **Step 3:** Extend the e2e zen round trip: after entering zen at the desktop project width,
+- [x] **Step 2:** Apply the class-condition change; run the component file; expect PASS.
+- [x] **Step 3:** Extend the e2e zen round trip: after entering zen at the desktop project width,
   assert the persistent sidebar is gone (the drawer-side element hidden or the drawer-open class
   absent); after Escape, assert it returns. Run the golden-path spec locally in CI mode; expect
   PASS.
-- [ ] **Step 4:** `npm run check` and `npm test`; 0/0 and exit 0.
-- [ ] **Step 5:** Commit: `feat(admin-shell): zen recedes the persistent sidebar (audit finding 6)`.
+- [x] **Step 4:** `npm run check` and `npm test`; 0/0 and exit 0.
+- [x] **Step 5:** Commit: `feat(admin-shell): zen recedes the persistent sidebar (audit finding 6)`.
 
 ### Task 4: The guide upgrade
 
@@ -181,10 +181,10 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Write the upgraded guide. Run `npm run check:docs` and `npm run check:snippets`;
+- [x] **Step 1:** Write the upgraded guide. Run `npm run check:docs` and `npm run check:snippets`;
   expect OK.
-- [ ] **Step 2:** Vale clean on the guide (the vale-hook surfaces findings on save; resolve them).
-- [ ] **Step 3:** Commit: `docs(guides): evidence-grounded organize-your-admin-nav upgrade`.
+- [x] **Step 2:** Vale clean on the guide (the vale-hook surfaces findings on save; resolve them).
+- [x] **Step 3:** Commit: `docs(guides): evidence-grounded organize-your-admin-nav upgrade`.
 
 ### Task 5: The docs window (design-system record, reference, changelog)
 
@@ -207,9 +207,9 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Apply the three edits. Run `npm run check:docs`, `npm run check:reference`,
+- [x] **Step 1:** Apply the three edits. Run `npm run check:docs`, `npm run check:reference`,
   `npm run check:reference:signatures`; expect OK.
-- [ ] **Step 2:** Commit: `docs(admin): record the flat default and the zen recede in the design system, reference, changelog`.
+- [x] **Step 2:** Commit: `docs(admin): record the flat default and the zen recede in the design system, reference, changelog`.
 
 ### Task 6: Showcase-layout review and ROADMAP close
 
@@ -230,9 +230,9 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Review the showcase layout against the guide tiers; apply or record no-change.
-- [ ] **Step 2:** Update ROADMAP.
-- [ ] **Step 3:** `npm run check` and `npm test`; 0/0 and exit 0. Commit:
+- [x] **Step 1:** Review the showcase layout against the guide tiers; apply or record no-change.
+- [x] **Step 2:** Update ROADMAP.
+- [x] **Step 3:** `npm run check` and `npm test`; 0/0 and exit 0. Commit:
   `docs(roadmap): close the admin reorganization entry (verdict on the showcase exemplar in-message)`.
 
 ### Task 7: Close ritual (cairn-pass)
@@ -267,3 +267,48 @@ component parity test is that pin, consistent with the nav-layout pass's ruling)
 honored (after 0.86.0, patch-sized, numbered at a future cut). Audit riders: finding 6 → Task 3;
 finding 4 → routed to the ARC (plan-locked call 2). Types: `ResolvedNavLayout`/`ResolvedLayoutNode`
 names match `admin-nav.ts` as surveyed.
+
+---
+
+## Post-mortem (2026-07-15, at close)
+
+**What shipped.** The full ratified spec plus one audit rider: the flat zero-config sidebar
+default (`resolveDefaultLayout` emits loose top-level nodes; the `Core` section is gone), the
+re-pinned unit and component contracts, zen receding the persistent sidebar at every width with
+minimal Ctrl+B focus management (capture, focus-in after tick, restore on close), the
+evidence-grounded guide upgrade (all seven rulings plus the scale tiers), the docs window
+(design-system nav recipe, components reference, a fresh `## Unreleased` with the navFilter-Core
+caveat and no Consumers-must lines), and the showcase verdict (kept: its declared layout is the
+guide's own worked example). Holds unpublished; patch-sized at a future cut.
+
+**Evidence at close.** Full gate green in the worktree: `npm run check` 0/0 (1367 files),
+`npm test` exit 0 (303 files, 3419 tests), and by name: check:surface, check:reference,
+check:reference:signatures, check:docs, check:snippets, check:package, check:consumers,
+check:prose, check:comments. Local CI-mode e2e zen round trip green during T3; the branch e2e
+dispatched via workflow_dispatch (the workflow does not trigger on feature-branch pushes) and
+watched to green before merge. No admin visual baseline changed (the showcase declares its tree;
+the zero-config contract pins at unit+component level per the nav-layout ruling this pass moved
+deliberately).
+
+**Review gate.** svelte-reviewer: no blockers; three stale-Core-comment findings, all folded
+(982b17d5) including the public AdminNavSection TSDoc. daisyui-a11y-reviewer: DaisyUI 5/Tailwind 4
+clean; one should-fix (the zen recede extends the non-focus-managed overlay drawer to desktop)
+answered with the minimal focus contract, with the full APG-dialog treatment (trap, inert,
+independent Escape) deliberately deferred to the papercuts pass; one nit (no pointer affordance to
+open nav inside zen) accepted as designed, filed to the phone-desk arc work. T5's scope gap
+(docs/reference/sveltekit.md still narrating the Core synthesis) was found by the implementer's
+own report and folded in the same commit. Simplifier: no changes, diff already minimal.
+
+**Process lessons.** (1) The T1/T2 split was a plan-authoring defect: an atomic contract change
+(engine synthesis + its component re-pins) cannot be split across two full-gate tasks, because the
+first task's gate is necessarily red in the second task's file. The T1 implementer's refusal to
+commit a red gate was correct discipline; the fix was one combined dispatch. Plan rule going
+forward: a task boundary must leave the FULL suite green, so a contract move and every test that
+pins it belong to one task. (2) The workflow pipeline surfaced this cheaply: the serial
+stop-on-incomplete shape meant one wasted dispatch, not five. (3) Scope-discipline prompts
+("stop and report instead of expanding") produced two useful escalations (the T1 stop, the T5
+sveltekit.md gap) and zero scope creep.
+
+**Carried forward.** The drawer-overlay APG-dialog treatment and the audit's PAPERCUTS bucket form
+phase 1 of the two-phase polish effort (with the ASC DX harvest); the invisible-craft polish brief
+is phase 2. The ROADMAP entries carry both.

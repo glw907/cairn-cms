@@ -303,15 +303,21 @@ test('zen round trip: the footer toggle hides the band, the chip carries the way
   await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
-  // The band is present before zen, with its Save control.
+  // The band is present before zen, with its Save control. The persistent sidebar is also up: this
+  // is a desk route at the default (desktop) project width, which sits at the xl persist breakpoint.
   const band = page.locator('.navbar');
   await expect(band.getByRole('button', { name: 'Save', exact: true })).toBeVisible();
+  const sidebar = page.locator('nav[aria-label="Site content"]');
+  await expect(sidebar).toBeVisible();
 
   // Enter zen from the footer "Zen" toggle. AdminLayout reads the zen flag through the topbar
   // context holder and drops the whole band element; the document title, the toolbar strip, and
-  // the footer go with it. The floating chip is the one affordance that stays.
+  // the footer go with it. The floating chip is the one affordance that stays. The persistent
+  // sidebar recedes too (plan-locked call 1): zen is an explicit, reversible editor choice, so it
+  // steps back at every width, not just below its route's usual persist breakpoint.
   await page.getByRole('button', { name: 'Zen' }).click();
   await expect(page.locator('.navbar')).toHaveCount(0);
+  await expect(sidebar).toBeHidden();
 
   // The chip carries the two things the WordPress/Ghost rule keeps under zen: the live save state
   // and the way out.
@@ -329,10 +335,11 @@ test('zen round trip: the footer toggle hides the band, the chip carries the way
   await expect(page.locator('input[name="body"]')).toHaveValue('A line written under zen.', { timeout: 2000 });
   await expect(chip.locator('.cairn-save-state')).toContainText('Unsaved changes');
 
-  // Escape exits zen and the band returns.
+  // Escape exits zen and the band returns, with the persistent sidebar beside it.
   await page.keyboard.press('Escape');
   await expect(page.locator('.cairn-zen-chip')).toHaveCount(0);
   await expect(page.locator('.navbar')).toBeVisible();
+  await expect(sidebar).toBeVisible();
 
   // Save from the restored band; the edit written under zen commits.
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();

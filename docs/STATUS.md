@@ -68,7 +68,37 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15: the ADMIN UX AUDIT IS DONE; next = the reorganization plan)
+## Immediate next action (2026-07-15, later: REORG PASS MERGED; next = papercuts+DX pass, OPUS-conducted, fresh session)
+
+**THE ADMIN REORGANIZATION PASS IS COMPLETE AND MERGED TO MAIN.** The full ratified spec plus the
+zen rider shipped: the flat zero-config sidebar default (no synthesized Core section; loose
+top-level nodes through the same resolver), re-pinned unit + component contracts, zen recedes the
+persistent sidebar at every width with minimal Ctrl+B focus management, the evidence-grounded
+organize-your-admin-nav guide (all seven rulings + scale tiers), the docs window (design-system,
+components reference, sveltekit reference, `## Unreleased` changelog with the navFilter-Core
+caveat, zero Consumers-must lines), and the showcase verdict (kept: it is the guide's own worked
+example; no baseline changed). Evidence at close: full gate 0/0 + 3419 tests exit 0 + all named
+gates by name; branch CI e2e green (dispatched run 29397334034); reviewer gate (svelte + a11y)
+findings all folded (982b17d5) or filed; simplifier no-changes. Post-mortem in the plan file
+(key lesson: a task boundary must leave the FULL suite green — the T1/T2 split was a
+plan-authoring defect the implementer's red-gate refusal caught). HOLDS UNPUBLISHED (patch-sized).
+
+**THE DESIGN-ARC QUEUE (Geoff's two-phase polish ruling + the ASC DX harvest, all 2026-07-15):**
+1. **NEXT: the papercuts + DX pass** — ROADMAP Next carries the full work list (audit PAPERCUTS
+   bucket + ASC initiative-5's three DX items incl. the npm migrations/ shipping gap and the
+   silent double-wiring of the roles vocabulary + the deferred drawer APG-dialog treatment).
+   **Run it OPUS-CONDUCTED in a fresh session (Geoff's 75%-Fable-budget flag): the work list is
+   fully specified, no new judgment needed.** Resume prompt: "Execute the admin papercuts + DX
+   pass: read ROADMAP's phase-1 entry and docs/internal/2026-07-15-admin-ux-audit.md, write the
+   plan via superpowers:writing-plans, execute per cairn-pass on a worktree off main."
+2. The design-refinement arc with Geoff (color budget, type scale, phone-desk composition,
+   keming) — FABLE-worthy: his eyes per round, per design-iteration-economics.
+3. The invisible-craft polish pass (phase 2) — docs/internal/2026-07-15-admin-resolved-polish-brief.md,
+   incl. final look-preserving color/type refinements (small changes there are high-leverage).
+4. The component kit (ROADMAP Next) encodes the resolved idiom last.
+INDEPENDENT: ASC initiative 5 landed on cairn 0.86.0 (their STATUS 3ff6857); no cairn release owed.
+
+## Prior next action (2026-07-15: the ADMIN UX AUDIT IS DONE; next = the reorganization plan)
 
 **THE ADMIN UI/UX AUDIT IS COMPLETE AND COMMITTED: docs/internal/2026-07-15-admin-ux-audit.md.**
 Method as briefed: the 0.86.0 render set, eight fresh-context single-lens Sonnet critics, main-loop

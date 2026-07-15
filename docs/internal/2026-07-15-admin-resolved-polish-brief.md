@@ -20,7 +20,10 @@ and being **resolved**.
    pass can and should make final color and typography refinements without changing the overall
    look"). The boundary is perceptual: the arc changes what a viewer would notice; the polish pass
    changes what they would only feel. A polish finding that WOULD change the overall look gets
-   raised, not applied.
+   raised, not applied. Calibration (Geoff, 2026-07-15): "small changes in color/typography can
+   make a substantial difference" — the constraint bounds the direction of change, never its
+   importance, so color/type refinements rank by perceptual leverage beside every other rubric
+   item, not as a cosmetic tail.
 5. The component kit encodes the resolved idiom last.
 
 ## Method notes

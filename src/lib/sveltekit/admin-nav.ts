@@ -515,8 +515,10 @@ function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout 
     if (engineVisible(concept.id, opts)) coreChildren.push(engineEntry(concept.id, opts));
   }
   coreChildren.push(...legacyFlatEntries);
+  // engineVisible is the single visibility authority (nav needs a configured navMenu, editors needs
+  // owner, all need capability !== 'none'), the same gate the concept loop above and the help
+  // fallback below rely on.
   for (const screen of ['media', 'vocabulary', 'nav', 'settings', 'editors']) {
-    if (screen === 'nav' && opts.navMenuLabel === null) continue;
     if (engineVisible(screen, opts)) coreChildren.push(engineEntry(screen, opts));
   }
 

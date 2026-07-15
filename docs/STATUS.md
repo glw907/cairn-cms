@@ -83,9 +83,22 @@ review over the delta commits. The battery-interrupted first session's gap was c
 close: the none-nav leak (fc31ea4b) and the dev-package drift (d0ca8704) — both found by the
 smoke and the branch's first CI e2e, both fixed and pinned. Post-mortem: in the plan file.
 **0.85.0 IS PUBLISHED (OIDC verified; `npm view` serves 0.85.0 on latest; release
-v0.85.0, publish run 29377784911 green). NEXT: ASC's own bump + membership-admin collapse
-run in an ASC session against its settled arc; Geoff's magic-link click stays each site's
-human smoke step. ecxc/907 have no roles need — they ride the range on their next bump.**
+v0.85.0, publish run 29377784911 green).**
+
+**NEXT (fresh session): the ADMIN NAV-LAYOUT pass.** The design is brainstorm-ratified and
+committed: docs/superpowers/specs/2026-07-14-admin-nav-layout-design.md (8caffb6e) — the
+`navLayout` full-tree seam (stable engine ids, relabel, omission-falls-back, explicit hide,
+typed declarative `roles` visibility), one resolved-tree rendering path (reshapes
+AdminShellData; removes the hard-coded-nav bug class), the organize-your-admin-nav guide,
+and the desk-route rider (sidebar persists at xl+, recedes in the tablet band; research
+grounded; admin-design-system.md desk section rewrites; edit-page baselines regenerate).
+Entry point: superpowers:writing-plans against the spec, then execute on a worktree off
+main per cairn-pass. Resume prompt: "Write and execute the admin nav-layout plan; read
+docs/superpowers/specs/2026-07-14-admin-nav-layout-design.md and STATUS first." Ships as
+**0.86.0** at the cut (new public surface; verify the number free). SEQUENCING: the ASC
+session waits for this cut so it bumps ONCE for roles + navLayout together; ASC's
+membership-admin collapse and its magic-link human smoke follow there. ecxc/907 have no
+roles/nav need — they ride the range on their next bump.
 Filed for a future session (Geoff, 2026-07-14): the editor-first admin-nav organization
 question — research + brainstorm, ROADMAP Next entry has the framing.
 

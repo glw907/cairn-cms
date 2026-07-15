@@ -18,8 +18,8 @@ npx wrangler d1 create your-site-auth
 ```
 
 The schema is three tables: an `editor` allowlist, single-use `magic_token` rows, and `session`
-rows. Save it as `migrations/0000_auth.sql` in your site's own repo (the engine doesn't ship this
-file inside the npm package, since a site's migrations are the site's to own and version):
+rows. The engine ships it in the package as `0000_auth.sql`. You copy it into your own repo below,
+where a site's migrations are the site's to own and version. For reference, it declares:
 
 ```sql
 -- Self-owned magic-link auth on D1. Timestamps are epoch milliseconds.
@@ -52,7 +52,7 @@ A site whose people carry more than one role name (an `instructor`, a `club-admi
 mapped onto cairn's owner/editor/none capability levels through
 [`defineRoles`](../reference/core.md#roles)) needs a second migration: the `role` column's `CHECK`
 constraint above only ever allows the literal strings `owner` and `editor`, so any other role name
-fails the `INSERT`. Save this as `migrations/0001_roles.sql`, right beside the preceding one:
+fails the `INSERT`. The engine ships this migration as `0001_roles.sql` too. For reference:
 
 ```sql
 -- Drop the role CHECK constraint. SQLite has no ALTER TABLE DROP CONSTRAINT, so this rebuilds the
@@ -74,9 +74,23 @@ DROP TABLE editor;
 ALTER TABLE editor_new RENAME TO editor;
 ```
 
-A zero-config site (the implicit owner/editor pair) can skip it: the `CHECK` constraint never
-rejects those two names. Apply whichever migrations you added to both the local database
-`wrangler dev` reads and the remote one your deploy reads:
+A zero-config site (the implicit owner/editor pair) can skip the second migration: the `CHECK`
+constraint never rejects those two names.
+
+Both files ship in the package, at `node_modules/@glw907/cairn-cms/migrations/`. `wrangler d1
+migrations apply` reads from your site's own `migrations/` directory (the `migrations_dir` in your
+wrangler config, `./migrations` by default), so copy the ones you need there once. This also keeps
+them committed and versioned alongside your site:
+
+```bash
+mkdir -p migrations
+cp node_modules/@glw907/cairn-cms/migrations/0000_auth.sql migrations/
+# only if you declare custom roles:
+cp node_modules/@glw907/cairn-cms/migrations/0001_roles.sql migrations/
+```
+
+Apply whichever you copied to both the local database `wrangler dev` reads and the remote one your
+deploy reads:
 
 ```bash
 npx wrangler d1 migrations apply your-site-auth --local

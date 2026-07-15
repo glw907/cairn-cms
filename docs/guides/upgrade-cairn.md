@@ -83,9 +83,10 @@ authenticated identity with no engine content access); a role can also declare a
 editor: 'editor' }` pair, so this release changes nothing you'd notice.
 
 Consumers must: nothing, for an existing site. To open a larger vocabulary, declare `roles` on your
-adapter with `defineRoles`, apply the new `migrations/0001_roles.sql` once you introduce a role
-name outside `owner`/`editor` (see [Configure auth and
-D1](./configure-auth-and-d1.md#provision-the-d1-database)), and augment `CairnRolesRegister` in
+adapter with `defineRoles`, apply the `0001_roles.sql` migration the engine ships in the package
+once you introduce a role name outside `owner`/`editor` (see [Configure auth and
+D1](./configure-auth-and-d1.md#provision-the-d1-database) for copying it out of `node_modules`),
+and augment `CairnRolesRegister` in
 your `app.d.ts` if you want `locals.editor.role` narrowed to your declared names. See [the roles
 reference](../reference/core.md#roles) for the full contract and [Give a role its own admin
 area](./give-a-role-its-own-admin-area.md) for the worked walkthrough.

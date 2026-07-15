@@ -447,6 +447,12 @@ discriminant, not the fields, gates the chrome).
 <svelte:head>
   <title>{pageTitle} · {data.siteName}</title>
   <link rel="icon" href={cairnFaviconHref} />
+  <!-- The UA's default 8px body margin misaligns the shell when the host never resets it: the
+       fixed sidebar pins to the true viewport while the flowing content offsets by the margin,
+       which opens a visible seam on both axes and adds 16px of permanent scroll under the
+       min-h-screen drawer. Zeroing it here scopes the reset to the admin's mount lifetime, so
+       the host site's own elements stay untouched (the no-Preflight rule). -->
+  {@html '<style>body { margin: 0; }</style>'}
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />

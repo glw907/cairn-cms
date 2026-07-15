@@ -82,6 +82,11 @@ describe('CairnAdminShell', () => {
     document.cookie = 'cairn-admin-theme=; path=/admin; max-age=0';
   });
 
+  it('zeroes the body margin while mounted (the fixed sidebar and the flowing content misalign under the UA default)', async () => {
+    render(CairnAdminShell, { data: data(true), children: child });
+    expect(getComputedStyle(document.body).margin).toBe('0px');
+  });
+
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('page body')).toBeInTheDocument();

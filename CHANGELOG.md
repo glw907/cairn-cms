@@ -1,5 +1,32 @@
 ## Unreleased
 
+### Added
+
+- The D1 migrations (`0000_auth.sql` and the roles migration `0001_roles.sql`) now ship inside the
+  npm package under `migrations/`, so a site installed from the registry can apply them without a repo
+  checkout: copy them from `node_modules/@glw907/cairn-cms/migrations/` into your own `migrations/`
+  directory, then `wrangler d1 migrations apply`. The auth-and-D1 guide carries the step. A packaging
+  gate (`check:package`) now fails if the migrations ever drop out of the published file set.
+- `cairn-doctor` gains an `auth.role-wiring` check. A site that declares a custom role vocabulary on
+  its adapter but forgets to pass the same vocabulary to `createAuthGuard({ roles })` gets a guard on
+  the implicit owner/editor fallback, which resolves every custom role to the `none` capability (the
+  editor authenticates but the guard refuses every route). The existing `auth.role-vocabulary` check
+  cannot see this, since the editor rows still match the declared vocabulary; the new check reads the
+  `createAuthGuard` call in `src/hooks.server.ts` and fails only on a high-confidence miss, skipping a
+  guard it cannot read rather than reporting a false positive.
+
+### Fixed
+
+- Admin papercuts from the 2026-07-15 UX audit, all internal to the admin chrome a consumer never
+  imports: the edit-route desk band and the editor footer now compose at phone widths instead of
+  colliding or truncating (no more theme toggle astride Save/Publish, no glyph over the Published
+  badge, no clipped footer labels); office lists cap at a readable width at 2560 and recompose at 320;
+  the command palette gains a phone top inset and the admin focus ring; the guarded Publish and Figure
+  controls read as deliberately disabled rather than as rendering gaps; the dark-mode Published badge
+  clears its contrast floor; the nav drawer gains the full APG modal-dialog treatment (focus trap,
+  `inert` background, independent Escape, focus return on every open method); and a copy sweep brings
+  the admin's editor-facing strings to the calibrated voice.
+
 ### Changed
 
 - The zero-config sidebar default now renders every item, cairn's own screens and a site's flat

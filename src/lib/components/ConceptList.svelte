@@ -120,11 +120,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
   // A segment of the bordered publish-state control: the shared group border carries the pick-one
   // semantics, so a segment stays borderless; the active one tints and bolds.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(pressed)}`;
+    return `inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(pressed)}`;
   }
   // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
   function hiddenToggleClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${segmentTintClass(pressed)}`;
+    return `inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${segmentTintClass(pressed)}`;
   }
   // Hidden is a row treatment: a draft row de-emphasizes its TITLE by opacity (the title is
   // high-contrast base-content, so it stays above the AA text floor when dimmed). The already-muted
@@ -243,12 +243,15 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
 
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
-  <div class="flex items-center gap-3 sm:flex-1 sm:flex-wrap sm:justify-end">
-    <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
+  <!-- Below sm the search and the New button stack full-width instead of sharing one row: at 320
+       a side-by-side row squeezes the search input to a few characters (the reported icon-plus-"S"
+       collapse), so each control gets the full row instead. -->
+  <div class="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+    <label class="input input-sm w-full min-w-0 sm:w-auto sm:max-w-xs sm:flex-1">
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
       <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
     </label>
-    <button type="button" class="btn btn-primary btn-sm shrink-0" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-primary btn-sm w-full shrink-0 sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
@@ -296,7 +299,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
        is a separate standalone check-and-tint toggle that composes with the active partition. Each
        count dims to muted when zero, so a sparse list never jumps. -->
   <div class="mb-4 flex flex-wrap items-center gap-3">
-    <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]">
+    <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex max-w-full items-center overflow-x-auto rounded-lg border border-[var(--cairn-card-border)]">
       {#each segments as seg, i (seg.value)}
         <button type="button" class="{segButtonClass(partition === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}" aria-pressed={partition === seg.value} onclick={() => setPartition(seg.value)}>
           {#if partition === seg.value}{@render check()}{/if}
@@ -352,7 +355,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
               </button>
             </th>
             {#if data.dated}
-              <th class="hidden w-28 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+              <!-- w-32, not w-28: a two-digit day ("May 18, 2026") needs a few px more than the
+                   column had (audit finding 10), which wrapped it to two lines while a single-digit
+                   day fit. whitespace-nowrap on the cell below is the actual no-wrap guarantee; the
+                   wider column keeps that text from crowding the Status column beside it. -->
+              <th class="hidden w-32 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
                 <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
                   Date
                   {#if sortKey === 'date'}
@@ -361,8 +368,11 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                 </button>
               </th>
             {/if}
-            <th class="{headerLabel} w-28">Status</th>
-            <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
+            <!-- Status and Actions trade the table's default 1rem cell padding for a tighter 0.5rem
+                 below sm, so their columns give the title column the freed width instead of the
+                 desktop-width columns the audit flagged (finding 8). -->
+            <th class="{headerLabel} w-16 px-2 sm:w-28 sm:px-4">Status</th>
+            <th class="w-12 px-2 text-right sm:px-4"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
         <tbody>
@@ -381,13 +391,15 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-muted">{entry.summary}</div>
                 {/if}
               </td>
-              {#if data.dated}<td class="hidden w-28 text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
-              <td class="w-28">
-                {#if entry.status === 'new'}<span class="badge badge-info badge-sm font-medium">New</span>
-                {:else if entry.status === 'edited'}<span class="badge badge-sm border-transparent bg-primary/10 font-medium text-primary">Edited</span>
-                {:else}<span class="badge badge-ghost badge-sm font-medium">Published</span>{/if}
+              {#if data.dated}<td class="hidden w-32 whitespace-nowrap text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
+              <td class="w-16 px-2 sm:w-28 sm:px-4">
+                <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
+                     status stays legible without keeping the desktop-width column. -->
+                {#if entry.status === 'new'}<span class="badge badge-info badge-xs font-medium sm:badge-sm">New</span>
+                {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary sm:badge-sm">Edited</span>
+                {:else}<span class="badge badge-ghost badge-xs font-medium sm:badge-sm">Published</span>{/if}
               </td>
-              <td class="w-12 text-right">
+              <td class="w-12 px-2 text-right sm:px-4">
                 {#if deleteRefused?.id === entry.id}
                   <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
                   <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} pending={entry.status !== 'published'} />

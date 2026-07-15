@@ -3,6 +3,10 @@ import { render } from 'vitest-browser-svelte';
 import { tick } from 'svelte';
 import { stringify as devalueStringify } from 'devalue';
 import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
+// The compiled sheet's real DaisyUI sizing, injected only for the tile-title-width suite below,
+// the same reason ConceptList's narrow/wide extremes suite does (the source partial alone leaves
+// UA-default widths, which never reproduces a real truncation defect).
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type {
   MediaLibraryData,
@@ -90,14 +94,17 @@ describe('CairnMediaLibrary grid', () => {
     // The Needs-alt tile names its status as a label, never hue alone.
     const needsAltTile = options.find((o) => /valley-ridge/.test(o.textContent ?? ''))!;
     expect(needsAltTile.textContent ?? '').toMatch(/needs alt/i);
-    // The described tile carries the Described accessible name.
+    // The described tile carries the Described accessible name, AND a visible text label beside
+    // the check glyph (audit finding 10: the glyph-plus-label rule, never hue or the glyph alone).
     const describedTile = options.find((o) => /first-light/.test(o.textContent ?? ''))!;
     expect(describedTile.querySelector('[aria-label="Described"]')).not.toBeNull();
+    expect(describedTile.textContent ?? '').toMatch(/described/i);
 
-    // The no-references tile carries the "No refs" marker; the used tile names its count. The
-    // category never reads "Unused" (the rename: absence of a found reference is not proof of disuse).
+    // The no-references tile carries the "Not referenced" marker; the used tile names its count.
+    // The category never reads "Unused" (the rename: absence of a found reference is not proof of
+    // disuse).
     const unusedTile = options.find((o) => /meadow-fence/.test(o.textContent ?? ''))!;
-    expect(unusedTile.textContent ?? '').toMatch(/no refs/i);
+    expect(unusedTile.textContent ?? '').toMatch(/not referenced/i);
     expect(unusedTile.textContent ?? '').not.toMatch(/unused/i);
     expect(describedTile.textContent ?? '').toMatch(/used/i);
   });
@@ -130,6 +137,38 @@ describe('CairnMediaLibrary grid', () => {
     // bare Enter leaves every option unselected.
     await expect.poll(() => screen.container.querySelector('[role="region"]')).not.toBeNull();
     expect(options().filter((o) => o.getAttribute('aria-selected') === 'true').length).toBe(0);
+  });
+
+  // Task 6 (audit finding 10): the alt-status marker beside the tile title reserves a fixed width
+  // regardless of its label ("Needs alt" vs "Described"), so the title's flex-1 truncation reads
+  // the same available width on every tile. The compiled sheet carries daisyUI's real sizing, the
+  // reason this is its own describe block.
+  describe('tile title truncation is independent of the alt-status label (audit finding 10)', () => {
+    let sheet: HTMLStyleElement;
+
+    beforeEach(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterEach(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
+    it('gives the Needs-alt and Described tiles the same title width at a narrow card size', async () => {
+      const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+      screen.container.style.width = '220px';
+      const describedTitle = [...screen.container.querySelectorAll('.cairn-ml-name')].find((n) =>
+        (n.textContent ?? '').includes('first-light'),
+      ) as HTMLElement;
+      const needsAltTitle = [...screen.container.querySelectorAll('.cairn-ml-name')].find((n) =>
+        (n.textContent ?? '').includes('valley-ridge'),
+      ) as HTMLElement;
+      expect(describedTitle.getBoundingClientRect().width).toBe(needsAltTitle.getBoundingClientRect().width);
+    });
   });
 });
 

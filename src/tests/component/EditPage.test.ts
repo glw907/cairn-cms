@@ -1,6 +1,6 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
-import { userEvent } from 'vitest/browser';
+import { userEvent, page } from 'vitest/browser';
 import type { BeforeNavigate } from '@sveltejs/kit';
 import { stringify as devalueStringify } from 'devalue';
 import * as ingest from '../../lib/components/client-ingest.js';
@@ -52,6 +52,10 @@ import { beforeNavigateCallbacks } from './_app-navigation.js';
 // The same module instance EditPage receives for $app/state via the project alias.
 import { page as appPage } from './_app-state.js';
 import { COLD_START } from './_fake-spell-worker.js';
+// The compiled sheet's text (daisyUI's real .badge/.btn sizing), injected only for the desk band
+// phone-width tests below so their bounding-box measurements reflect production control
+// footprints, never the UA-default widths the source partial alone leaves.
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function postProps(over = {}) {
   return {
@@ -171,8 +175,8 @@ describe('EditPage', () => {
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
     // Prose posture (the default) hugs the 72ch measure.
     expect(column.classList.contains('max-w-[49rem]')).toBe(true);
-    // Markup posture widens to the working ceiling.
-    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    // Wide posture widens to the working ceiling.
+    await screen.getByRole('button', { name: 'Wide', exact: true }).click();
     expect(column.classList.contains('max-w-[56rem]')).toBe(true);
     expect(localStorage.getItem('cairn-editor-surface')).toBe('markup');
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -186,7 +190,7 @@ describe('EditPage', () => {
     localStorage.setItem('cairn-editor-surface', 'markup');
     const screen = render(EditPage, postProps());
     await expect
-      .element(screen.getByRole('button', { name: 'Markup', exact: true }))
+      .element(screen.getByRole('button', { name: 'Wide', exact: true }))
       .toHaveAttribute('aria-pressed', 'true');
     await expect
       .element(screen.getByRole('button', { name: 'Prose', exact: true }))
@@ -202,16 +206,16 @@ describe('EditPage', () => {
     expect(group.className).toContain('border');
     expect(group.className).toContain('border-[var(--cairn-card-border)]');
     const segButtons = Array.from(group.querySelectorAll<HTMLButtonElement>('button'));
-    expect(segButtons.map((b) => b.textContent?.trim())).toEqual(['Prose', 'Markup']);
+    expect(segButtons.map((b) => b.textContent?.trim())).toEqual(['Prose', 'Wide']);
     // The check glyph rides inside the active segment only (the non-color cue, WCAG 1.4.1).
     const prose = screen.getByRole('button', { name: 'Prose', exact: true });
-    const markup = screen.getByRole('button', { name: 'Markup', exact: true });
+    const wide = screen.getByRole('button', { name: 'Wide', exact: true });
     await expect.element(prose).toHaveAttribute('aria-pressed', 'true');
     expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).not.toBeNull();
-    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).toBeNull();
-    await markup.click();
-    await expect.element(markup).toHaveAttribute('aria-pressed', 'true');
-    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).not.toBeNull();
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Wide')!.querySelector('svg')).toBeNull();
+    await wide.click();
+    await expect.element(wide).toHaveAttribute('aria-pressed', 'true');
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Wide')!.querySelector('svg')).not.toBeNull();
     expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).toBeNull();
   });
 
@@ -454,7 +458,7 @@ describe('EditPage', () => {
     expect(form.classList.contains('lg:grid')).toBe(false);
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
     expect(column.classList.contains('mx-auto')).toBe(true);
-    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    await screen.getByRole('button', { name: 'Wide', exact: true }).click();
     expect(form.classList.contains('lg:grid')).toBe(false);
     expect(column.classList.contains('mx-auto')).toBe(true);
   });
@@ -1793,9 +1797,9 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'the the cat' }));
     const count = () => screen.container.querySelector('[data-testid="cairn-issue-count"]');
     await expect.element(screen.getByText('3 words')).toBeInTheDocument(); // the editor has mounted
-    expect(count()?.textContent).toBe('0 issues');
+    expect(count()?.textContent).toBe('Nothing to review');
     expect(count()?.getAttribute('aria-hidden')).toBe('true');
-    await expect.poll(() => count()?.textContent, COLD_START).toBe('1 issue');
+    await expect.poll(() => count()?.textContent, COLD_START).toBe('1 to review');
     // The count sits inside the same footer strip as the word count, not off in its own region.
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
     expect(card.contains(count()!)).toBe(true);
@@ -2097,6 +2101,20 @@ describe('EditPage', () => {
       const exit = screen.getByRole('button', { name: /exit zen/i });
       await expect.element(exit).toBeInTheDocument();
       expect((await exit.element()).textContent ?? '').toContain('Esc');
+    });
+
+    it('gates the zen Esc hint on pointer:coarse and marks the editor card zen for the resting-frame CSS (audit finding 10)', async () => {
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const editorCard = screen.container.querySelector('[role="group"][aria-label="Editor"]')!;
+      expect(editorCard.className).not.toContain('cairn-editor-zen');
+      await screen.getByRole('button', { name: 'Zen', exact: true }).click();
+      await expect.poll(() => screen.container.querySelector('.cairn-zen-chip')).not.toBeNull();
+      // The Esc hint is meaningless on a touch device (no Esc key to press).
+      const escHint = screen.container.querySelector('.cairn-zen-chip kbd')!;
+      expect(escHint.className).toContain('pointer-coarse:hidden');
+      // The editor card carries the zen marker the resting-frame CSS keys on.
+      expect(editorCard.className).toContain('cairn-editor-zen');
     });
 
     it('enters and exits zen on Ctrl+Shift+.', async () => {
@@ -2604,6 +2622,186 @@ describe('EditPage', () => {
       );
       expect(document.querySelector('[data-testid="tidy-review"]')).toBeNull();
       vi.unstubAllGlobals();
+    });
+  });
+
+  describe('desk band collisions at phone widths (audit finding 2)', () => {
+    // The compiled sheet carries daisyUI's real .badge/.btn sizing, scoped to the theme, so these
+    // measurements reflect production control footprints. The harness's drawer-toggle and
+    // theme-toggle stand-ins (_EditPageDesk.svelte) mirror CairnAdminShell's real desk-route
+    // navbar siblings with the same classes, so a width-driven collision between the desk
+    // snippet's own content and its real neighbors reproduces here.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      // Restore a normal-width viewport so a later test file's default layout assumptions hold.
+      await page.viewport(1280, 720);
+    });
+
+    /**
+     * Every band control with a real rendered footprint at the current width: the badges, the
+     * harness's drawer-toggle and theme-toggle stand-ins, and the visible lifecycle buttons.
+     * A folded-away control (Details, the standalone theme toggle) renders at zero size below the
+     * fold cutoff, and a popover's own menu items render off-screen until the popover opens, so
+     * filtering to a positive footprint excludes both without special-casing either. The sr-only
+     * default submit button is excluded on purpose: it is never meant to be seen.
+     */
+    function bandRects(band: HTMLElement): DOMRect[] {
+      return Array.from(band.querySelectorAll<HTMLElement>('.badge, [data-testid$="-stub"], button:not(.sr-only)'))
+        .map((el) => el.getBoundingClientRect())
+        .filter((r) => r.width > 0 && r.height > 0);
+    }
+
+    function assertNoOverlap(rects: DOMRect[]) {
+      for (let i = 0; i < rects.length; i++) {
+        for (let j = i + 1; j < rects.length; j++) {
+          const a = rects[i];
+          const b = rects[j];
+          const overlaps = !(a.right <= b.left || b.right <= a.left || a.bottom <= b.top || b.bottom <= a.top);
+          expect(overlaps, `rect ${JSON.stringify(a)} overlaps rect ${JSON.stringify(b)}`).toBe(false);
+        }
+      }
+    }
+
+    for (const width of [320, 390, 768]) {
+      it(`keeps every desk-band control unobstructed at ${width}px on a published entry`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+        assertNoOverlap(bandRects(band));
+        // The status badge text is unobstructed: its own rect carries positive area, not squeezed
+        // to nothing by a neighbor claiming the same space.
+        const badge = band.querySelector<HTMLElement>('.badge')!;
+        const badgeRect = badge.getBoundingClientRect();
+        expect(badgeRect.width).toBeGreaterThan(0);
+        expect(badge.textContent?.trim()).toBe('Published');
+        // Save and Publish stay directly visible (a nonzero footprint) at every width.
+        await expect.element(screen.getByRole('button', { name: /publish/i })).toBeInTheDocument();
+        const saveButton = screen.getByRole('button', { name: 'Save', exact: true });
+        await expect.element(saveButton).toBeInTheDocument();
+        expect((await saveButton.element()).getBoundingClientRect().width).toBeGreaterThan(0);
+      });
+
+      it(`keeps every desk-band control unobstructed at ${width}px on a dirty entry (the widest save-state text)`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+        content.focus();
+        await userEvent.keyboard('x');
+        const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+        await expect.poll(() => band.querySelector('.cairn-save-state .bg-warning')).not.toBeNull();
+        assertNoOverlap(bandRects(band));
+      });
+    }
+  });
+
+  describe('editor footer overflow at phone widths (audit finding 1)', () => {
+    // Same rationale as the desk-band suite above: the compiled sheet carries the real .btn
+    // sizing the footer's ghost buttons render at, so a width-driven squeeze reproduces here.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      await page.viewport(1280, 720);
+    });
+
+    const footerLabels = ['Prose', 'Wide', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen', 'Markdown help'];
+
+    for (const width of [320, 390]) {
+      it(`renders every footer control unclipped and unwrapped at ${width}px`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const card = screen.container.querySelector<HTMLElement>('[aria-label="Editor"]')!;
+        const cardRect = card.getBoundingClientRect();
+        const footer = screen.container.querySelector<HTMLElement>('[data-testid="cairn-editor-footer"]')!;
+        const buttons = Array.from(footer.querySelectorAll<HTMLElement>('button'));
+        // Every labeled footer control renders, at its full un-truncated text, and none is silently
+        // dropped by a squeeze (a dropped control would be absent from this list entirely).
+        expect(buttons.map((b) => b.textContent?.trim())).toEqual(footerLabels);
+        for (const button of buttons) {
+          const rect = button.getBoundingClientRect();
+          // A nonzero footprint: nothing collapsed away (the reported "Typewriter dropped
+          // entirely at 320" defect).
+          expect(rect.width, `${button.textContent} has zero width`).toBeGreaterThan(0);
+          // A single text line's worth of height: a button whose own label wrapped to two lines
+          // (the reported "Focus mode wraps to two lines" defect) roughly doubles this.
+          expect(rect.height, `${button.textContent} wrapped to more than one line`).toBeLessThanOrEqual(28);
+          // Fully inside the editor card's own frame: neither clipped by its overflow-hidden
+          // ancestor (the reported "Markup" mid-word truncation) nor pushed off past its right
+          // edge (the reported Markdown help link going off-frame).
+          expect(rect.left, `${button.textContent} clipped on the left`).toBeGreaterThanOrEqual(cardRect.left - 1);
+          expect(rect.right, `${button.textContent} clipped on the right`).toBeLessThanOrEqual(cardRect.right + 1);
+        }
+        // The Markdown help link stays reachable and clickable at every phone width.
+        const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
+        await expect.element(help).toBeInTheDocument();
+        await help.click();
+        const dialog = screen.container.querySelector<HTMLDialogElement>(
+          'dialog[aria-labelledby="cairn-markdown-help-title"]',
+        )!;
+        expect(dialog.open).toBe(true);
+      });
+    }
+  });
+
+  describe('guarded Figure control emphasis (audit finding 7)', () => {
+    // Same rationale as the desk-band and footer suites above: the compiled sheet carries daisyUI's
+    // real [aria-disabled] dimming and the admin's own unlayered cairn-btn-guarded override, so this
+    // is the only harness that reproduces the reported "reads as a rendering gap" defect.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
+    it('renders the unavailable Figure control as visibly disabled, not an empty gap, with its tooltip intact', async () => {
+      // Default caret placement (no media at the caret): the toolbar's Figure control is guarded.
+      const screen = render(EditPage, postProps());
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const button = screen.container.querySelector<HTMLButtonElement>(
+        'button[aria-label="Place the cursor on an image to add a figure"]',
+      )!;
+      expect(button.getAttribute('aria-disabled')).toBe('true');
+      // The reason survives as a title tooltip (the cairn-btn-guarded seam restores the pointer-events
+      // DaisyUI's own [aria-disabled] selector would otherwise strip).
+      expect(button.getAttribute('title')).toBe('Place the cursor on an image to add a figure');
+      const style = getComputedStyle(button);
+      // The control itself is not additionally faded on top of daisyUI's own disabled treatment (a
+      // second, compounding dim is what read as a rendering gap).
+      expect(style.opacity).toBe('1');
+      // A guarded ghost button still shows a visible resting box, the same background tint daisyUI's
+      // own [aria-disabled] rule already gives every outline/filled guarded button (Publish), so the
+      // Figure control's square footprint reads as a deliberately disabled control rather than empty
+      // space.
+      expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
     });
   });
 });

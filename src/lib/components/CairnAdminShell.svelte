@@ -159,28 +159,43 @@ discriminant, not the fields, gates the chrome).
 
   let drawerOpen = $state(false);
 
-  // The drawer's own nav region, so the shortcut can find its first focusable child and so the
-  // close-side restore can tell whether focus is still inside it (the overlay-backdrop path below).
+  // The drawer's own nav region: the focus-in effect below (keyed on isDrawerOverlay) finds its
+  // first focusable child here, and the close-side restore effect checks whether focus is still
+  // inside it.
   let drawerNavEl = $state<HTMLElement>();
 
-  // Where focus was before the shortcut opened the drawer, so a shortcut close (or an overlay
-  // backdrop close while focus never left the drawer) can put it back. Set only by the shortcut, so
-  // a mouse-driven open (the hamburger label) leaves this minimal contract alone (locked to the
-  // review finding's scope; a full focus trap and Escape binding are deferred to the papercuts pass).
+  // Where focus was before the overlay opened, so the close-side restore effect below (or an
+  // overlay backdrop close while focus never left the drawer) can put it back. Captured by the
+  // focus-in effect keyed on isDrawerOverlay, so every open method carries the same contract:
+  // Ctrl+B, the hamburger label, and the checkbox itself.
   let drawerRestoreFocusEl: HTMLElement | null = null;
+
+  // Whether the viewport currently sits at each route kind's persistent-sidebar breakpoint (lg for
+  // an office route, xl for a desk route, per the context model), tracked live so the APG treatment
+  // below can tell an overlay drawer from a persistent one after a resize, not just at mount.
+  let matchesLg = $state(false);
+  let matchesXl = $state(false);
+
+  $effect(() => {
+    if (!window.matchMedia) return;
+    const lgQuery = window.matchMedia('(min-width: 1024px)');
+    const xlQuery = window.matchMedia('(min-width: 1280px)');
+    matchesLg = lgQuery.matches;
+    matchesXl = xlQuery.matches;
+    const onLgChange = () => (matchesLg = lgQuery.matches);
+    const onXlChange = () => (matchesXl = xlQuery.matches);
+    lgQuery.addEventListener('change', onLgChange);
+    xlQuery.addEventListener('change', onXlChange);
+    return () => {
+      lgQuery.removeEventListener('change', onLgChange);
+      xlQuery.removeEventListener('change', onXlChange);
+    };
+  });
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      if (!drawerOpen) {
-        drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        drawerOpen = true;
-        tick().then(() => {
-          drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
-        });
-      } else {
-        drawerOpen = false;
-      }
+      drawerOpen = !drawerOpen;
     }
     if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -188,9 +203,9 @@ discriminant, not the fields, gates the chrome).
     }
   }
 
-  // Restores focus once the drawer closes, whether the shortcut closed it (above) or the overlay
-  // backdrop did (a plain checkbox toggle with no keydown involved): only when the shortcut is what
-  // opened it (drawerRestoreFocusEl set) and focus never left the drawer's own nav in the meantime.
+  // Restores focus once the drawer closes, for whatever method opened it (the focus-in effect
+  // below captures drawerRestoreFocusEl for every overlay open, not just the shortcut): only when
+  // focus never left the drawer's own nav in the meantime.
   $effect(() => {
     if (drawerOpen || !drawerRestoreFocusEl || !drawerNavEl?.contains(document.activeElement)) return;
     drawerRestoreFocusEl.focus();
@@ -350,6 +365,83 @@ discriminant, not the fields, gates the chrome).
   // EditPage registers on mount and nulls it on teardown; the office routes leave it null.
   let topbar = $state<TopbarHolder>({ desk: null, zen: false });
   provideTopbar(topbar);
+
+  // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
+  // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
+  // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
+  // the shell writes and EditPage reads through the same portal. toggleTheme is stable for the
+  // component's life, so it is assigned once here; only the live theme value is reactive, so the
+  // effect below tracks it alone rather than rewriting the stable function on every theme flip.
+  topbar.toggleTheme = toggleTheme;
+  $effect(() => {
+    topbar.theme = theme;
+  });
+
+  // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same
+  // route-kind breakpoint its own lg:/xl:drawer-open classes key off above, with zen forcing it
+  // closed at every width (it recedes the sidebar regardless of route kind).
+  const isPersistentSidebar = $derived(!topbar.zen && (isDeskRoute ? matchesXl : matchesLg));
+
+  // The APG modal-dialog treatment, the focus trap, the inert background, role="dialog" plus
+  // aria-modal, and Escape closing independently, applies only while the drawer is open AND acting
+  // as an overlay: at the persistent breakpoint the sidebar sits beside the document rather than
+  // over it, so none of the modal contract belongs there (the lg+/xl persistent modes are untouched).
+  const isDrawerOverlay = $derived(drawerOpen && !isPersistentSidebar);
+
+  // Moves focus into the drawer nav, and captures where focus was so the restore effect above can
+  // put it back, for every way the overlay can open: Ctrl+B, the hamburger label, or the checkbox
+  // itself. Keyed on isDrawerOverlay rather than drawerOpen, so a persistent (lg/xl) open, which is
+  // not a modal, never receives this focus management, and re-runs only on the true/false edge
+  // (isDrawerOverlay is a boolean $derived, so an unrelated dependency change with the same value
+  // does not re-fire it).
+  $effect(() => {
+    if (!isDrawerOverlay) return;
+    drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    tick().then(() => {
+      drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
+    });
+  });
+
+  // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
+  // can never tab out into the inert document behind it. Redirects into the trap even when focus
+  // currently sits outside drawerNavEl (a defensive fallback for the moment before the focus-in
+  // effect above lands), the same fallback MediaInsertPopover's trap uses.
+  function trapDrawerTab(e: KeyboardEvent) {
+    if (!drawerNavEl) return;
+    const focusables = drawerNavEl.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !drawerNavEl.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || !drawerNavEl.contains(active)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  // A capture-phase listener so the drawer's own Escape and Tab handling always runs ahead of any
+  // other window keydown listener, most importantly EditPage's zen/details Escape handler, which
+  // listens in the bubble phase. Stopping propagation here (capture) keeps the drawer's Escape and
+  // every other Escape-driven affordance (zen, the details panel, a dialog) independent in both
+  // directions: a dialog's own Escape is the browser's native close-the-topmost-dialog default
+  // action, which fires regardless of script-level propagation, so it is unaffected either way.
+  function onDrawerOverlayKeydownCapture(e: KeyboardEvent) {
+    if (!isDrawerOverlay) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      drawerOpen = false;
+      return;
+    }
+    if (e.key === 'Tab') trapDrawerTab(e);
+  }
 </script>
 
 <svelte:head>
@@ -357,7 +449,7 @@ discriminant, not the fields, gates the chrome).
   <link rel="icon" href={cairnFaviconHref} />
 </svelte:head>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />
 
 {#if data.public}
   {@render children()}
@@ -392,12 +484,27 @@ discriminant, not the fields, gates the chrome).
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
-    <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
+    <!-- tabindex="-1" and aria-hidden pull this checkbox out of the tab order and the a11y tree: it
+         is DaisyUI's drawer-state mechanism (the for=/id= label toggle and the lg:/xl:drawer-open
+         responsive open all key off it), not an affordance an editor should ever land keyboard
+         focus on with no accessible name. The hamburger label and Ctrl/Cmd+B are the real triggers. -->
+    <input
+      id="cairn-shell-drawer"
+      type="checkbox"
+      class="drawer-toggle"
+      tabindex="-1"
+      aria-hidden="true"
+      bind:checked={drawerOpen}
+    />
 
+    <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
+         pointer, keyboard, and assistive tech (the APG modal-dialog contract, Task 8). Never inert
+         at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
     <div
       class="drawer-content flex flex-col"
       class:lg:ml-56={!isDeskRoute && !topbar.zen}
       class:xl:ml-56={isDeskRoute && !topbar.zen}
+      inert={isDrawerOverlay}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
@@ -409,7 +516,10 @@ discriminant, not the fields, gates the chrome).
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
            metrics, and the two border-bottoms stop meeting at the seam). -->
-      <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
+      <div
+        class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
+        class:max-sm:px-2={isDeskRoute}
+      >
         <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
              band, where the desk sidebar is receded). -->
@@ -449,7 +559,10 @@ discriminant, not the fields, gates the chrome).
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               <span class="truncate">Search or jump to&hellip;</span>
-              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:inline">&#8984;K</kbd>
+              <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
+                   it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
+                   above sm would otherwise still show it. -->
+              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:pointer-fine:inline">&#8984;K</kbd>
             </button>
           </div>
           {#await data.pendingEntries then pending}
@@ -462,7 +575,10 @@ discriminant, not the fields, gates the chrome).
             {/if}
           {/await}
         {/if}
-        <div class="flex-none">
+        <!-- Below the sm cutoff a desk route folds this into EditPage's own overflow menu instead
+             of shrinking it in place (the desk band collision fix, audit finding 2): the office
+             routes keep it visible at every width, since only the desk band runs out of room. -->
+        <div class="flex-none" class:max-sm:hidden={isDeskRoute}>
           <button type="button" class="btn btn-square btn-ghost" aria-label="Toggle theme" onclick={toggleTheme}>
             {#if theme === 'cairn-admin'}<MoonIcon class="h-5 w-5" />{:else}<SunIcon class="h-5 w-5" />{/if}
           </button>
@@ -471,11 +587,21 @@ discriminant, not the fields, gates the chrome).
       {/if}
 
       <main class="flex-1 p-4 lg:px-10 lg:py-8">
-        {@render children()}
+        {#if isDeskRoute}
+          {@render children()}
+        {:else}
+          <!-- Office screens (posts, media, editors, settings, help) share one content-width cap,
+               so a wide viewport does not stretch the list rows into a dead band (audit finding 8).
+               The desk manages its own manuscript width (EditPage's own max-w-[49rem]/[56rem]), so
+               the cap applies only off the desk route. -->
+          <div class="mx-auto w-full max-w-5xl">
+            {@render children()}
+          </div>
+        {/if}
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
-        <div class="modal-box max-w-xl self-start p-0 sm:mt-[12vh]">
+        <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
@@ -483,7 +609,7 @@ discriminant, not the fields, gates the chrome).
               type="text"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
-              class="w-full bg-transparent py-3.5 text-sm outline-hidden placeholder:text-muted"
+              class="w-full bg-transparent py-3.5 text-sm placeholder:text-muted"
               onkeydown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -560,10 +686,15 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
+      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (Task 8's APG
+           treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
+           never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
         bind:this={drawerNavEl}
         class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
         aria-label="Site content"
+        role={isDrawerOverlay ? 'dialog' : undefined}
+        aria-modal={isDrawerOverlay ? 'true' : undefined}
       >
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and

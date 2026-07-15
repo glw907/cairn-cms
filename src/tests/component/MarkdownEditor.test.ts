@@ -458,6 +458,43 @@ describe('MarkdownEditor', () => {
     }
   });
 
+  it('suppresses the resting focus hairline under zen, keeping it for real keyboard focus (audit finding 10)', async () => {
+    // Zen is the no-chrome mode, so the always-on hairline above would read as a resting frame
+    // the moment the editor is focused, effectively always while writing. The .cairn-editor-zen
+    // marker is EditPage's editor-card class, toggled from its zen $state; a pointer click must
+    // not draw the frame, but real keyboard focus (:focus-visible) still must.
+    document.documentElement.style.setProperty('--color-primary', 'rgb(12, 34, 56)');
+    const before = document.createElement('button');
+    before.textContent = 'before the editor';
+    document.body.appendChild(before);
+    try {
+      const screen = render(MarkdownEditor, { value: 'plain prose', name: 'body' });
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      screen.container.classList.add('cairn-editor-zen');
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      const editorEl = screen.container.querySelector<HTMLElement>('.cm-editor')!;
+
+      // A pointer click still focuses the surface (.cm-focused is set), but zen suppresses the
+      // outline since the click did not carry keyboard-focus-visible.
+      await userEvent.click(content);
+      await expect.poll(() => document.activeElement).toBe(content);
+      expect(editorEl.matches('.cm-focused')).toBe(true);
+      expect(getComputedStyle(editorEl).outlineStyle).toBe('none');
+
+      // Real keyboard navigation into the surface restores a visible indicator.
+      before.focus();
+      await userEvent.tab();
+      await expect.poll(() => document.activeElement).toBe(content);
+      expect(content.matches(':focus-visible')).toBe(true);
+      const focusedStyle = getComputedStyle(content);
+      expect(focusedStyle.outlineStyle).toBe('solid');
+      expect(focusedStyle.outlineWidth).toBe('1px');
+    } finally {
+      document.documentElement.style.removeProperty('--color-primary');
+      before.remove();
+    }
+  });
+
   it('passes a dark theme to CodeMirror inside the dark admin theme', async () => {
     document.body.setAttribute('data-theme', 'cairn-admin-dark');
     try {

@@ -310,6 +310,18 @@ through the adapter's render. Swapping the editor stays a one-file change.
           outline: '1px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
           outlineOffset: '-1px',
         },
+        // Zen is the no-chrome mode, so the always-on hairline above reads as a resting frame
+        // the moment the editor is focused, which is effectively always while writing. Suppress
+        // it there (higher specificity than the bare rule above wins regardless of source order),
+        // but keep a real focus indicator for actual keyboard navigation: .cm-content is the
+        // element that receives DOM focus, so :focus-visible applies to it directly, no :has()
+        // needed. The `.cairn-editor-zen` marker is the editor card's own class, toggled by
+        // EditPage's `zen` state.
+        '.cairn-editor-zen &.cm-focused': { outline: 'none' },
+        '.cairn-editor-zen & .cm-content:focus-visible': {
+          outline: '1px solid color-mix(in oklab, var(--color-primary) 70%, transparent)',
+          outlineOffset: '-1px',
+        },
         '.cm-line': { padding: '0' },
         // A quote or list line hangs its wrapped continuation under the content: padding-left
         // holds the marker width (the --cairn-hang the decoration sets) and the line's own

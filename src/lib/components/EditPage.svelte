@@ -15,7 +15,7 @@ and the lifecycle actions: Save, Publish (always present, riding the same form v
 guarded rather than hidden when there is nothing new to publish), and an overflow menu for
 Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
-count, the Prose/Markup posture pair, the focus and typewriter toggles, and the Markdown help.
+count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Markdown help.
 -->
 <script lang="ts">
   import { flushSync, untrack, getContext } from 'svelte';
@@ -105,6 +105,11 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // The holder is absent only when EditPage renders outside CairnAdminShell (it always renders inside
   // it in the app); the optional chaining keeps that case inert.
   const topbar = useTopbar();
+  // The narrow-width theme-toggle fold (audit finding 2): CairnAdminShell mirrors the live theme
+  // and its toggle into the same holder, in the reverse direction from desk/zen above, so the
+  // overflow menu below can offer the control the shell hides past its own width cutoff.
+  const themeToggleFold = $derived(topbar?.toggleTheme);
+  const currentTheme = $derived(topbar?.theme);
   $effect(() => {
     if (!topbar) return;
     topbar.desk = desk;
@@ -468,13 +473,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // A segment of the bordered posture control (the mockup's .seg). The shared group border carries
   // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
   // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.
+  // shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
+  // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
+  // shrink a segment until its own label wraps mid-word.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
-  // check-and-tint when pressed.
+  // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -1169,7 +1177,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // timed pass over the document. Starts at zero before the editor's first report lands.
   let diagnosticsCounts = $state<DiagnosticCounts>({ spelling: 0, style: 0 });
   const issueCount = $derived(diagnosticsCounts.spelling + diagnosticsCounts.style);
-  const issueLabel = $derived(issueCount === 1 ? '1 issue' : `${issueCount} issues`);
+  const issueLabel = $derived(
+    issueCount === 0 ? 'Nothing to review' : issueCount === 1 ? '1 to review' : `${issueCount} to review`,
+  );
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
@@ -1314,22 +1324,28 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
      second hairline into the quiet pair (Details, overflow) and the lifecycle pair
      (Publish, Save). The breadcrumb itself stays in CairnAdminShell, so the duplicate is gone. -->
 {#snippet desk()}
-  <div class="ml-2 flex min-w-0 flex-1 items-center gap-3">
-    <!-- The document status, fenced off by a hairline on its left. -->
-    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
-      <span class="badge badge-sm font-medium {statusBadge}">{status}</span>
+  <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
+    <!-- The document status, fenced off by a hairline on its left. The hairline and its padding
+         are decorative grouping, not content, so they drop below sm along with the wider gaps
+         (the desk band collision fix, audit finding 2): the badge and the actions cluster below
+         both need the room, and without this the badge was the one getting squeezed away behind
+         the actions cluster's own controls. -->
+    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
+      <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
       {#if data.frontmatter.draft === true}
-        <span class="badge badge-neutral badge-sm font-medium">Hidden</span>
+        <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
       {/if}
       <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
-           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue. -->
+           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue,
+           and stays the cue on its own below sm: the label text is the redundant part (the dot
+           already carries the state), so it drops there rather than crowding the band. -->
       <span
         class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
         class:opacity-0={!saveState}
         aria-live="off"
       >
         {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
-        {saveState}
+        <span class="max-sm:hidden">{saveState}</span>
       </span>
       {#if tidyApplied}
         <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
@@ -1342,7 +1358,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       {/if}
     </div>
 
-    <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+    <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
       <!-- The form's default button, FIRST in the actions cluster (and so first among the form's
            submit buttons in tree order, since the band precedes the form). The default button for
            implicit submission (Enter in a single-line field) is the first form-owned submit button
@@ -1362,11 +1378,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       </button>
 
       <!-- The quiet pair: the Details panel trigger and the overflow menu. The trigger toggles
-           the slide-over; aria-expanded mirrors its state and focus returns here on close. -->
+           the slide-over; aria-expanded mirrors its state and focus returns here on close. Below
+           the sm cutoff the band has no room for both this trigger and the badge/actions beside
+           it (the desk band collision fix, audit finding 2), so Details folds into the overflow
+           menu below and the standalone trigger hides rather than overlapping its neighbors. -->
       <button
         bind:this={detailsTrigger}
         type="button"
-        class="btn btn-ghost btn-sm btn-square"
+        class="btn btn-ghost btn-sm btn-square max-sm:hidden"
         aria-label="Details"
         title="Details"
         aria-expanded={detailsOpen}
@@ -1379,7 +1398,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            position-anchor placement). -->
       <button
         type="button"
-        class="btn btn-ghost btn-sm btn-square"
+        class="btn btn-ghost btn-sm btn-square shrink-0"
         aria-label="More actions"
         title="More actions"
         aria-expanded={actionsOpen}
@@ -1400,6 +1419,23 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         ontoggle={(e) => (actionsOpen = e.newState === 'open')}
         class="dropdown dropdown-end menu menu-sm bg-base-100 rounded-box w-44 border border-[var(--cairn-card-border)] p-1 shadow-[var(--cairn-shadow)]"
       >
+        <!-- The narrow-width fold: below sm this is the only way to reach Details and the theme
+             toggle, mirroring the hidden standalone controls above (Details here) and in
+             CairnAdminShell (the theme toggle, folded through the topbar holder). Hidden at sm
+             and up, where both controls stand on their own. -->
+        <li class="sm:hidden">
+          <button type="button" aria-expanded={detailsOpen} onclick={() => pickAction(toggleDetails)}>
+            Details
+          </button>
+        </li>
+        {#if themeToggleFold}
+          <li class="sm:hidden">
+            <button type="button" onclick={() => pickAction(themeToggleFold)}>
+              {currentTheme === 'cairn-admin' ? 'Switch to dark mode' : 'Switch to light mode'}
+            </button>
+          </li>
+        {/if}
+        <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
         {#if data.pending}
           <li>
             <button type="button" aria-haspopup="dialog" onclick={() => pickAction(() => discardDialog?.showModal())}>
@@ -1414,8 +1450,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         </li>
       </ul>
 
-      <!-- The lifecycle pair, fenced off by their own hairline. -->
-      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
+      <!-- The lifecycle pair, fenced off by their own hairline (a decorative divider that drops
+           below sm along with the others, the desk band collision fix, audit finding 2). -->
+      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
         <!-- Publish always renders (the grounding survey favors permanent visibility over hiding
              the control until a draft exists). Outline keeps Save the single solid primary action;
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
@@ -1433,7 +1470,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           type="submit"
           form="cairn-edit-form"
           formaction="?/publish"
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded"
+          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded shrink-0"
           class:cursor-not-allowed={!publishActionable}
           aria-disabled={publishActionable ? undefined : true}
           aria-label={publishGuardName}
@@ -1445,7 +1482,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
         </button>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
-        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm" disabled={busy || (!dirty && !data.isNew)}>
+        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm shrink-0" disabled={busy || (!dirty && !data.isNew)}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
       </div>
@@ -1623,6 +1660,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
     <div
       bind:this={editorCard}
       class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]"
+      class:cairn-editor-zen={zen}
       role="group"
       aria-label="Editor"
     >
@@ -1708,7 +1746,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               type="button"
               class="btn btn-sm btn-ghost gap-1.5"
               aria-label="Tidy"
-              title="Tidy: a light copy-edit you review before it lands"
+              title="Tidy: a light copy-edit you review before accepting"
               disabled={insertDisabled || tidyBusy}
               onclick={runTidy}
             >
@@ -1720,12 +1758,15 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
                enabled state changes (the Edit-block pattern). The unavailable state uses aria-disabled,
                not the native disabled attribute, so the control stays focusable and its reason reaches
                assistive technology; openFigure() early-returns so the dead click is inert. The dimming
-               uses opacity and cursor utilities, never .btn-disabled, because that sets
-               pointer-events: none and would suppress the title tooltip a mouse user reads for the why. -->
+               rides daisyUI's own [aria-disabled] treatment (icon color, plus the cairn-btn-guarded
+               background raise in cairn-admin.css for this ghost variant), like Publish; no opacity
+               utility rides on top, since a second dimming here is what read as a rendering gap
+               (audit finding 7). cursor-not-allowed still names the non-interactive state, and never
+               .btn-disabled, which sets pointer-events: none and would suppress the title tooltip a
+               mouse user reads for the why. -->
           <button
             type="button"
             class="btn btn-sm btn-ghost btn-square cairn-btn-guarded"
-            class:opacity-50={!figureAvailable}
             class:cursor-not-allowed={!figureAvailable}
             aria-haspopup="dialog"
             aria-label={figureLabel}
@@ -1831,10 +1872,16 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
            frame never jumps between tabs and the count keeps reading while proofing. The strip
            carries the writing environment (the count, the persisted writing modes, help) while
            the top toolbar acts on the text; the toggles live here visible rather than buried in
-           an overflow menu. -->
+           an overflow menu. Below the phone breakpoint the strip wraps as whole control groups
+           onto their own rows (flex-wrap at every level, each group shrink-0) rather than
+           letting flex squeeze a group until its own label truncates or wraps mid-word; a wide
+           viewport still lays the whole strip out on its usual single row. -->
       {#if !zen}
-      <div class="flex items-center justify-between border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted">
-        <span class="flex items-center gap-1.5">
+      <div
+        data-testid="cairn-editor-footer"
+        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
+      >
+        <span class="flex shrink-0 items-center gap-1.5">
           <span>{wordLabel}</span>
           <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
                already speaks this settled count in its own polite live region, so exposing this
@@ -1843,7 +1890,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <span aria-hidden="true" class="opacity-50">·</span>
           <span aria-hidden="true" data-testid="cairn-issue-count">{issueLabel}</span>
         </span>
-        <div class="flex items-center gap-3.5">
+        <div class="flex flex-wrap items-center gap-x-3.5 gap-y-1.5">
           <!-- The posture pair is one bordered segmented control: the shared border carries the
                pick-one semantics, so no group label is needed (the spec considered and declined
                them). The pressed check is the non-color state cue (WCAG 1.4.1): the segments share
@@ -1851,7 +1898,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
           <div
             role="group"
             aria-label="Editing surface"
-            class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
+            class="bg-base-100 inline-flex shrink-0 items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
           >
             <button
               type="button"
@@ -1869,11 +1916,14 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               onclick={() => setSurface('markup')}
             >
               {#if surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Markup
+              Wide
             </button>
           </div>
-          <!-- Focus mode and Typewriter are standalone check-and-tint toggles, no border. -->
-          <div class="flex items-center gap-0.5">
+          <!-- Focus mode and Typewriter are standalone check-and-tint toggles, no border. This
+               group also wraps its own toggles onto a further row if the group's whole natural
+               width still does not fit its own line, so a single toggle never shrinks below its
+               single-line footprint even at the narrowest supported phone width. -->
+          <div class="flex shrink-0 flex-wrap items-center gap-0.5">
             <button
               type="button"
               class={ftrToggleClass(focusMode)}
@@ -1916,10 +1966,12 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
             </button>
           </div>
           <!-- Markdown help is a plain underlined link-styled button (a reference, not a control),
-               no border, no fill. -->
+               no border, no fill. It stays the affordance an icon-confused phone writer needs, so
+               it keeps its own single-line footprint (shrink-0/whitespace-nowrap) and simply
+               wraps to its own row rather than clipping or being pushed off-frame. -->
           <button
             type="button"
-            class="ftr-link cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+            class="ftr-link shrink-0 cursor-pointer whitespace-nowrap text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
             aria-haspopup="dialog"
             onclick={() => helpDialog?.open()}
           >
@@ -2027,7 +2079,10 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       class="ftr-link inline-flex items-center cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
       onclick={() => setZen(false)}
     >
-      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline" aria-hidden="true">Esc</kbd>
+      <!-- The Esc hint is meaningless on a touch device (no Esc key to press), so it gates on
+           pointer:coarse rather than hiding by viewport width, which does not track touch capability
+           on a tablet. -->
+      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
     </button>
   </div>
 {/if}
@@ -2144,7 +2199,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
       <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
       <p class="max-w-prose text-sm text-muted">
-        Claude is reading your draft for a light copy-edit. You will review every change before it lands.
+        Claude is reading your draft for a light copy-edit. You will review each change before it is applied.
       </p>
       <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
     </div>

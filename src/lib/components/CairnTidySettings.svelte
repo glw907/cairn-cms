@@ -317,7 +317,7 @@ home), diffable and shared across editors.
   <h1 class="text-2xl font-bold tracking-tight">Tidy</h1>
   <p class="mt-1.5 max-w-prose text-[0.9375rem] leading-relaxed text-muted">
     A light copy-edit from Claude. Choose what tidy is allowed to change. You always review every
-    change as a diff before it lands.
+    change as a diff before accepting it.
   </p>
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
@@ -361,7 +361,7 @@ home), diffable and shared across editors.
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
           <div class="mt-1 text-xs leading-relaxed text-muted">
-            Tidy is on (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled</code>), the key rides in an Anthropic Worker secret (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{data.model}</code>. Switch to <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">claude-haiku-4-5</code> for a cheaper, faster run.
+            Tidy is on (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{data.model}</code>. Switch to <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">claude-haiku-4-5</code> for a cheaper, faster run.
           </div>
         </div>
       </div>
@@ -432,7 +432,7 @@ home), diffable and shared across editors.
               Style conventions
               <span role="status" aria-live="polite" class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">{styleOnCount} on<span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span></span>
             </h2>
-            <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Optional. cairn leaves your style alone until you turn one of these on. Turn one on to pick how it should read everywhere.</p>
+            <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
           </div>
           <div class="flex flex-none items-center gap-1">
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOn}>Turn all on</button>
@@ -496,7 +496,7 @@ home), diffable and shared across editors.
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
             <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
-              <span class="flex items-center gap-2 text-[0.9375rem] font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">Higher risk</span></span>
+              <span class="flex items-center gap-2 text-[0.9375rem] font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">Needs care</span></span>
               <span class="mt-0.5 block text-[0.8125rem] leading-snug text-muted">Two more changes that need a careful eye. Off by default. Open this only if you want them.</span>
             </span>
             <ArrowRightIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
@@ -504,7 +504,7 @@ home), diffable and shared across editors.
           <div class="border-t border-[var(--cairn-card-border)]">
             <div class="flex items-start gap-2.5 border-b border-[var(--cairn-card-border)] bg-warning/[0.08] p-3.5 text-[0.8125rem] leading-relaxed">
               <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
-              <span>These two reach a little further than the rest, so check the diff with care. <b class="font-semibold">Curly quotes can trip on apostrophes</b>, and brand names only fix from a list cairn keeps. Review every change before it lands, the same as always.</span>
+              <span>These two reach a little further than the rest, so check the diff with care. <b class="font-semibold">Curly quotes can trip on apostrophes</b>, and brand names only fix from a list cairn keeps. Review every change before accepting it, the same as always.</span>
             </div>
             {#each advancedRows as row, ai (row.key)}
               {@const on = rowOn(row.key)}
@@ -531,8 +531,8 @@ home), diffable and shared across editors.
 
       <!-- THE "NOT HERE YET" NOTE: honest, non-interactive -->
       <div class="mb-2 rounded-2xl border border-dashed border-[var(--cairn-card-border)] bg-base-content/[0.015] p-4">
-        <div class="flex items-center gap-2 text-[0.8125rem] font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not here yet</div>
-        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions are held back for now. Both can change how your writing sounds, not just how it looks, so cairn leaves them out until they are safe to offer.</div>
+        <div class="flex items-center gap-2 text-[0.8125rem] font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
+        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren't offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they're reliable enough to trust.</div>
         <ul class="mt-2 flex flex-col gap-1.5">
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
@@ -541,7 +541,7 @@ home), diffable and shared across editors.
 
       <div class="flex items-center gap-3 pt-4">
         <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
-          <ArrowRightIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Saving commits your choices to the site config, so every editor shares them.
+          <ArrowRightIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Saving applies your choices for every editor on this site.
         </span>
         <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
       </div>

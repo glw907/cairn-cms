@@ -1561,13 +1561,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               />
             </span>
             <div class="relative flex aspect-[4/3] items-center justify-center bg-base-200/60">
-              <!-- The usage marker, top-right: a used count, or the warning-ink "No refs" chip. The
-                   category reads "No references found" (renamed from "Unused"): a found reference is
-                   not proof of use, and absence of one is not proof of disuse. -->
+              <!-- The usage marker, top-right: a used count, or the warning-ink "Not referenced"
+                   chip. The category reads "No references found" (renamed from "Unused"): a found
+                   reference is not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">No refs</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">Not referenced</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
@@ -1586,14 +1586,22 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </div>
             <div class="flex items-center justify-between gap-2 border-t border-[var(--cairn-card-border)] px-2.5 py-2">
               <span class="cairn-ml-name min-w-0 flex-1 truncate text-[0.8125rem] font-medium">{asset.displayName}</span>
+              <!-- The alt-status marker reserves a fixed width, comfortably past either label's own
+                   natural width ("Needs alt" vs "Described", each with its glyph), and never
+                   shrinks, so the title's flex-1 truncation reads the same available width
+                   regardless of which state renders (audit finding 10: today the title only
+                   truncates for whichever label happens to be narrower). A flex item's default
+                   min-width:auto otherwise lets its own content override a smaller explicit width,
+                   so the reserve must exceed the content, not merely match it. -->
               {#if missing}
-                <span class="inline-flex items-center gap-1 text-[var(--cairn-warning-ink)]" role="img" aria-label="Needs alt text">
+                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1 text-[var(--cairn-warning-ink)]" role="img" aria-label="Needs alt text">
                   <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" />
                   <span class="text-[0.625rem] font-medium">Needs alt</span>
                 </span>
               {:else}
-                <span class="inline-flex items-center gap-1 text-[var(--color-positive-ink)]" role="img" aria-label="Described">
+                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1 text-[var(--color-positive-ink)]" role="img" aria-label="Described">
                   <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
+                  <span class="text-[0.625rem] font-medium">Described</span>
                 </span>
               {/if}
             </div>

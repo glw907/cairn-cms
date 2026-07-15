@@ -18,6 +18,16 @@ export interface TopbarHolder {
    *  breadcrumb, that must vanish with it). EditPage sets this; the office routes leave it false.
    */
   zen: boolean;
+  /**
+   * The live admin theme and its toggle, mirrored here by CairnAdminShell (the direction reverses
+   * from `desk`/`zen`: the shell writes, the desk document reads). Below the width cutoff where
+   * CairnAdminShell hides its standalone theme button, EditPage's own overflow menu folds a
+   * "Toggle theme" item in from these, so the control stays reachable rather than merely hidden.
+   * Undefined outside a themed shell (a bare component-test harness) leaves the fold absent.
+   */
+  theme?: 'cairn-admin' | 'cairn-admin-dark';
+  /** Flips the mirrored `theme` above; undefined alongside it. */
+  toggleTheme?: () => void;
 }
 
 /** Called by CairnAdminShell once: creates the holder, provides it on context, returns it to render. */

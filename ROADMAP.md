@@ -167,23 +167,6 @@ the named human gates only):**
 
 ## Next
 
-- **Admin papercuts + DX pass (phase 1 of the two-phase polish effort; Geoff, 2026-07-15).**
-  The mechanical bucket, no design rulings needed. From the UX audit
-  (docs/internal/2026-07-15-admin-ux-audit.md, PAPERCUTS routing): the desk-band collisions at
-  320/390 (theme toggle over Save/Publish, the glyph over the Published badge), the office
-  content max-width at 2560, the narrow-list recomposition at 320, the palette-390 top inset and
-  focus style, the footer-strip overflow, the Figure-control visibility, the dark Published-pill
-  contrast, the voice sweep (jargon leaks; the showcase `singular` declaration fixing "New
-  Posts"), and the drawer-overlay APG-dialog treatment the reorganization pass deferred (focus
-  trap, inert, independent Escape). From the ASC initiative-5 DX harvest (their STATUS close
-  3ff6857): (1) the npm package ships no `migrations/` directory (`files=[dist,CHANGELOG]`), so a
-  consumer cannot apply `0001_roles.sql` without a repo checkout — ship migrations in the package
-  and document the apply path; (2) the roles vocabulary wires twice (adapter `roles` +
-  `createAuthGuard` opts) and a missed guard wiring fails silently with every row resolving
-  owner — add a doctor check, and weigh single-source wiring as the deeper fix; (3) session-recipe
-  doc corrections (on https the cookie is `__Host-cairn_session`; `session.expires_at` is
-  milliseconds). Runs before the design-refinement arc; suitable for an Opus-conducted fresh
-  session (the plan needs no new judgment).
 - **Admin invisible-craft polish pass (phase 2; Geoff, 2026-07-15).** The "correct vs resolved"
   finisher: docs/internal/2026-07-15-admin-resolved-polish-brief.md carries the full rubric
   (spacing/rhythm, depth, motion, feedback, forms, micro-details) plus final look-preserving

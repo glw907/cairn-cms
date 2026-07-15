@@ -491,3 +491,20 @@ infrastructure, the two unlayered forced workarounds, the `.btn-primary` lift, a
 role utilities. The admin idiomatic re-expression sweep (Phases 0-6) is complete; what remains in the
 initiative is the starter-template track and the docs phase (which publishes the role vocabulary as the
 versioned seam in `admin-design-system.md`).
+
+## Post-sweep addendum: the badge-ghost dark counterpart (admin papercuts pass, 2026-07-15)
+
+The unlayered set grew from four pinned forced workarounds to five, the first growth since the
+sweep closed. The admin papercuts pass's audit (finding 10) found the dark-mode Published pill
+(`badge-ghost`) nearly vanishing: every other status badge reads a Tier-1 color already tuned per
+theme (New's `badge-info`, Edited's `primary` tint, the role pill's `badge-primary`), so it gets a
+real dark counterpart for free, but `badge-ghost` hardcodes `base-200`/`base-content` and dark's
+`base-200` sits only ~1.2:1 from the `base-100` card it renders on. daisyUI compiles `badge-ghost`
+into the utilities layer, which always outranks a `@layer components` rule regardless of
+specificity (the same mechanism the four existing forced workarounds document), so the fix could
+not live in `@layer components`; it is the fifth pinned unlayered rule,
+`:where([data-theme='cairn-admin-dark']) .badge-ghost`, repointing background and border to
+`base-300`, the existing Tier-1 token one step up (the same step `--cairn-card-border` already
+reaches for in dark). No new Tier-2 token: the selector references only Tier-1 theme color. Light
+is untouched (its wider `base-100`/`base-200` gap already reads legibly; verified by render).
+`componentsLayerCap` stays 14, unchanged.

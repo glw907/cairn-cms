@@ -44,7 +44,7 @@ test('Part A: set a hero through the field, the hidden inputs carry the structur
   // A unique slug per run, and a fresh entry so this spec never touches the shared seed branch.
   const slug = `hero-post-${Date.now()}`;
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Hero Post');

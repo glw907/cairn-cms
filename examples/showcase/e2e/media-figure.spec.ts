@@ -38,7 +38,7 @@ test('the figure flow: wrap an inserted image in a wide figure, render the figca
   // server), and a fresh entry so this spec never touches the shared seed branch.
   const slug = `figure-post-${Date.now()}`;
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Figure Post');

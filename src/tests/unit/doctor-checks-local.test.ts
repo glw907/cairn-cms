@@ -9,8 +9,10 @@ import {
   configSiteConfig,
   configPublicOrigin,
   configTidyKey,
+  roleWiring,
 } from '../../lib/doctor/checks-local.js';
 import type { DoctorContext } from '../../lib/doctor/types.js';
+import type { RolesDeclaration } from '../../lib/auth/roles.js';
 
 const GOOD_JSONC = `{
   // the worker name
@@ -610,5 +612,83 @@ describe('the full local set against one good site', () => {
       const result = await check.run(site);
       expect(result.status, check.id).toBe('pass');
     }
+  });
+});
+
+describe('auth.role-wiring (the double-wiring check)', () => {
+  const CUSTOM_ROLES: RolesDeclaration = {
+    owner: 'owner',
+    instructor: { capability: 'editor', home: '/admin/schedule' },
+  };
+  const WIRED_HOOKS = `import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { roles } from './lib/cairn.config';
+export const handle = createAuthGuard({ roles });
+`;
+  const UNWIRED_HOOKS = `import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+export const handle = createAuthGuard();
+`;
+  // A bare options identifier: the doctor cannot read into it, so it may well carry roles.
+  // Failing this would not be a high-confidence positive, so it must skip, not fail.
+  const INDIRECT_HOOKS = `import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { guardOpts } from './lib/guard-config';
+export const handle = createAuthGuard(guardOpts);
+`;
+
+  it('skips when the site declares no custom roles (the default owner/editor pair)', async () => {
+    const result = await roleWiring.run(ctx({ 'src/hooks.server.ts': UNWIRED_HOOKS }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('no custom roles');
+  });
+
+  it('skips when hooks.server is absent, since the wiring cannot be read', async () => {
+    const result = await roleWiring.run(ctx({}, { roles: CUSTOM_ROLES }));
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('hooks.server');
+  });
+
+  it('skips when no createAuthGuard call is in the hooks (wrapped in another module)', async () => {
+    const wrapped = `export { handle } from './lib/my-guard';\n`;
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.ts': wrapped }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('no createAuthGuard');
+  });
+
+  it('skips (not fails) when the guard is passed a bare options identifier the doctor cannot read', async () => {
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.ts': INDIRECT_HOOKS }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('options object');
+    expect(result.detail).toContain('cannot read');
+  });
+
+  it('fails when custom roles are declared but the guard is not passed roles', async () => {
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.ts': UNWIRED_HOOKS }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('fail');
+    expect(result.detail).toContain('instructor');
+    expect(result.detail).toContain('roles');
+    expect(result.detail).toContain('none capability');
+  });
+
+  it('passes when the guard is passed the declared vocabulary', async () => {
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.ts': WIRED_HOOKS }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('pass');
+  });
+
+  it('reads src/hooks.server.js when the .ts spelling is absent', async () => {
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.js': UNWIRED_HOOKS }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('fail');
+  });
+
+  it('ties to the auth.role-wiring-missing condition', () => {
+    expect(roleWiring.conditionId).toBe('auth.role-wiring-missing');
   });
 });

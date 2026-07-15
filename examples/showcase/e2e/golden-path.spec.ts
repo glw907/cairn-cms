@@ -162,7 +162,7 @@ test('the publish workflow round-trips: create, save, New, publish, edit, Edited
 
   // Create the entry through the header dialog. The date defaults to today; the create action
   // composes the dated id and redirects to the editor with ?new=1.
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Race Report');
@@ -264,7 +264,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
 
   // Create a fresh, never-published entry so the pending partition has a stable member to assert.
   const slug = `triage-draft-${Date.now()}`;
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Triage Draft');
@@ -479,7 +479,7 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   // this proves fold-on-open against a body only this test ever wrote.
   const slug = `fold-on-open-${Date.now()}`;
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Fold On Open');
@@ -517,7 +517,7 @@ test('the v2 status select round-trips: set it, save, reload, the value persists
   await page.goto('/admin/posts');
 
   // Create the entry. The status field declares default: 'draft', so the editor opens prefilled.
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Status Roundtrip');
@@ -572,7 +572,7 @@ test('reference fields round-trip through the editor, commit their edges, and re
   await page.goto('/admin/posts');
 
   // Create the entry through the header dialog.
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('References');

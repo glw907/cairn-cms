@@ -310,3 +310,234 @@ export function validateNavLayout(
     }
   }
 }
+
+// The resolver: turns a validated (or absent) navLayout, plus the per-request capability/role and
+// the site's own concepts/navMenu/legacy adminNav, into one arranged, filtered, serializable tree
+// the shell renders directly. Runs fresh per request (the capability/role gates are per-editor), but
+// the arrangement itself is pure data shuffling, no I/O.
+
+/** One resolved engine door: the fixed screen id, its label (declared default or a site relabel), and its engine-owned href. */
+export interface ResolvedEngineNavEntry {
+  screen: EngineScreenId;
+  label: string;
+  href: string;
+}
+
+/** One resolved leaf in a navLayout tree: a site's own entry, or one of the engine's own screens. */
+export type ResolvedLayoutChild = ResolvedNavEntry | ResolvedEngineNavEntry;
+
+/** One resolved named group in a navLayout tree, its children already filtered and non-empty. */
+export interface ResolvedLayoutSection {
+  label: string;
+  children: ResolvedLayoutChild[];
+}
+
+/** One resolved top-level navLayout node: a loose child, or a section of them. */
+export type ResolvedLayoutNode = ResolvedLayoutChild | ResolvedLayoutSection;
+
+/**
+ * The whole resolved sidebar for one request: the arranged, filtered scroll-area tree in
+ *  declaration order, plus the trailing `fallback` group of engine screens the tree never
+ *  referenced (rendered in the shell's foot slot, engine order, empty when every screen was
+ *  referenced).
+ */
+export interface ResolvedNavLayout {
+  items: ResolvedLayoutNode[];
+  fallback: ResolvedLayoutChild[];
+}
+
+/** The context resolveNavLayout needs to arrange and filter one request's sidebar. */
+export interface ResolveNavLayoutOptions {
+  /** The site's raw navLayout, or undefined for the default synthesized arrangement. */
+  layout: NavLayout | undefined;
+  /** The site's normalized legacy adminNav, folded into the default arrangement (locked call 6). */
+  adminNav: ResolvedNavItem[];
+  /** The site's concepts, each a navLayout reference target beyond the fixed engine screens. */
+  concepts: { id: string; label: string }[];
+  /** The nav-menu editor's label, or null when the site configures none (gates the `nav` screen). */
+  navMenuLabel: string | null;
+  /** The signed-in editor's capability, gating every engine screen (row 4 of the design table). */
+  capability: Capability;
+  /** The signed-in editor's role name, matched against a node's declarative `roles` list. */
+  role: string;
+}
+
+/** The engine's own screen defaults (label, href) not already covered by a site's concepts. */
+const ENGINE_SCREEN_DEFAULTS: Record<(typeof ENGINE_SCREEN_IDS)[number], { label: string; href: string }> = {
+  media: { label: 'Library', href: '/admin/media' },
+  vocabulary: { label: 'Tags', href: '/admin/vocabulary' },
+  nav: { label: '', href: '/admin/nav' }, // label substituted from navMenuLabel at resolve time
+  settings: { label: 'Settings', href: '/admin/settings' },
+  editors: { label: 'Editors', href: '/admin/editors' },
+  help: { label: 'Help', href: '/admin/help' },
+};
+
+/** The default label/href for one engine screen id: a concept's own label, or the fixed table above. */
+function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: string; href: string } {
+  const fixed = (ENGINE_SCREEN_DEFAULTS as Record<string, { label: string; href: string } | undefined>)[screen];
+  if (fixed) {
+    return screen === 'nav' ? { label: opts.navMenuLabel ?? '', href: fixed.href } : fixed;
+  }
+  const concept = opts.concepts.find((c) => c.id === screen);
+  return { label: concept?.label ?? screen, href: `/admin/${screen}` };
+}
+
+/**
+ * Whether one engine screen is visible for the current request: every engine screen requires
+ *  capability !== 'none' (the 0.85.0 rule); `editors` additionally requires owner capability; `nav`
+ *  additionally requires a configured navMenu.
+ */
+function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
+  if (opts.capability === 'none') return false;
+  if (screen === 'editors') return opts.capability === 'owner';
+  if (screen === 'nav') return opts.navMenuLabel !== null;
+  return true;
+}
+
+/** Resolve one engine screen into its door, applying a declared relabel when given. */
+function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverride?: string): ResolvedEngineNavEntry {
+  const fallback = engineDefault(screen, opts);
+  return { screen, label: labelOverride ?? fallback.label, href: fallback.href };
+}
+
+/** True when a resolved site entry stays visible: `ownerOnly` gates on capability alone. */
+function ownerOnlyVisible(entry: { ownerOnly?: boolean }, opts: ResolveNavLayoutOptions): boolean {
+  return !entry.ownerOnly || opts.capability === 'owner';
+}
+
+/**
+ * The engine's canonical screen order: each declared concept (by declaration order), then the
+ *  fixed utility screens, `nav` included only when a navMenu is configured (an unconfigured `nav`
+ *  is never a valid reference at all, so it never appears here or in `fallback`). Both the default
+ *  synthesis and the omission-fallback computation walk this same order.
+ */
+function engineScreenOrder(opts: ResolveNavLayoutOptions): string[] {
+  return [
+    ...opts.concepts.map((c) => c.id),
+    'media',
+    'vocabulary',
+    ...(opts.navMenuLabel !== null ? ['nav'] : []),
+    'settings',
+    'editors',
+    'help',
+  ];
+}
+
+/** Resolve one navLayout site entry (embedded in the tree), dropping its declarative `roles` field. */
+function resolvedLayoutEntry(entry: NavLayoutEntry): ResolvedNavEntry {
+  return { label: entry.label, iconName: entry.icon, href: entry.href, ownerOnly: entry.ownerOnly ?? false };
+}
+
+/**
+ * Whether a node's declarative `roles` list admits the current request's role. `roles` is typed
+ *  against the site's own Register-narrowed `Role` union, while the resolver only ever carries a
+ *  plain `string` (the signed-in editor's role name, unnarrowed at this generic layer); `Role`
+ *  always extends `string`, so the readonly-array widening below is the one safe hop, not a
+ *  blanket escape. Absent `roles` always admits.
+ */
+function roleMatches(roles: Role[] | undefined, role: string): boolean {
+  return !roles || (roles as readonly string[]).includes(role);
+}
+
+/**
+ * Arrange and filter a declared navLayout tree. Walks the tree in declaration order, resolving each
+ *  engine reference against the current request's capability (dropping it, but still marking it
+ *  referenced, when gated out or `hidden`) and each site entry against `ownerOnly` and its
+ *  declarative `roles`; a section additionally gates every child at once by its own `roles` and
+ *  disappears once its children are empty (whether from filtering or from a gated-out section). The
+ *  trailing `fallback` is every engine screen the tree never referenced, in engine order, still
+ *  subject to the same capability gate.
+ */
+function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions): ResolvedNavLayout {
+  const referenced = new Set<string>();
+
+  function resolveChild(node: NavLayoutEntry | NavLayoutEngineRef): ResolvedLayoutChild | null {
+    if (isNavLayoutEngineRef(node)) {
+      referenced.add(node.screen);
+      if (node.hidden || !engineVisible(node.screen, opts)) return null;
+      return engineEntry(node.screen, opts, node.label);
+    }
+    if (!ownerOnlyVisible(node, opts)) return null;
+    if (!roleMatches(node.roles, opts.role)) return null;
+    return resolvedLayoutEntry(node);
+  }
+
+  const items: ResolvedLayoutNode[] = [];
+  for (const node of layout) {
+    if (isNavLayoutSection(node)) {
+      if (!roleMatches(node.roles, opts.role)) {
+        // The section itself is gated out for this role, but its engine references still count as
+        // "referenced": a screen tucked inside a roles-gated section must not leak into fallback
+        // just because this editor cannot see the section that names it.
+        for (const child of node.children) {
+          if (isNavLayoutEngineRef(child)) referenced.add(child.screen);
+        }
+        continue;
+      }
+      const children: ResolvedLayoutChild[] = [];
+      for (const child of node.children) {
+        const resolved = resolveChild(child);
+        if (resolved) children.push(resolved);
+      }
+      if (children.length > 0) items.push({ label: node.label, children });
+    } else {
+      const resolved = resolveChild(node);
+      if (resolved) items.push(resolved);
+    }
+  }
+
+  const fallback: ResolvedLayoutChild[] = [];
+  for (const screen of engineScreenOrder(opts)) {
+    if (!referenced.has(screen) && engineVisible(screen, opts)) {
+      fallback.push(engineEntry(screen, opts));
+    }
+  }
+
+  return { items, fallback };
+}
+
+/**
+ * Synthesize today's default arrangement (locked call 6) for a site that declares no navLayout: one
+ *  `Core` section holding the concepts, the legacy flat adminNav entries, then the fixed engine
+ *  screens in their existing order (media, vocabulary, nav when configured, settings, editors),
+ *  followed by each legacy adminNav section in declaration order; `help` is deliberately left
+ *  unreferenced, so it resolves into `fallback`. This reproduces today's render exactly, including
+ *  the `Core` header disappearing once empty (the deliberate none-session delta, empty sections
+ *  disappearing uniformly).
+ */
+function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
+  const roleFiltered = filterNavByRole(opts.adminNav, opts.capability);
+  const legacyFlatEntries = roleFiltered.filter(isResolvedNavEntry);
+  const legacySections = roleFiltered.filter(isResolvedNavSection);
+
+  const coreChildren: ResolvedLayoutChild[] = [];
+  for (const concept of opts.concepts) {
+    if (engineVisible(concept.id, opts)) coreChildren.push(engineEntry(concept.id, opts));
+  }
+  coreChildren.push(...legacyFlatEntries);
+  for (const screen of ['media', 'vocabulary', 'nav', 'settings', 'editors']) {
+    if (screen === 'nav' && opts.navMenuLabel === null) continue;
+    if (engineVisible(screen, opts)) coreChildren.push(engineEntry(screen, opts));
+  }
+
+  const items: ResolvedLayoutNode[] = [];
+  if (coreChildren.length > 0) items.push({ label: 'Core', children: coreChildren });
+  items.push(...legacySections);
+
+  const fallback: ResolvedLayoutChild[] = engineVisible('help', opts) ? [engineEntry('help', opts)] : [];
+
+  return { items, fallback };
+}
+
+/**
+ * Resolve one request's whole sidebar: a declared navLayout arranges and filters as written; an
+ *  undeclared one synthesizes today's default arrangement through the same primitives, so the two
+ *  paths can never drift (locked call 6). Every engine screen is gated by the current capability
+ *  (row 4 of the design table); a site entry additionally gates on `ownerOnly` and its declarative
+ *  `roles`; a section gates all its children at once by its own `roles` and disappears once its
+ *  children resolve empty. `navFilter`, the site's per-request dynamic filter, is not applied here
+ *  (it runs afterward, over `items` only, in the shell payload).
+ */
+export function resolveNavLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
+  return opts.layout ? resolveDeclaredLayout(opts.layout, opts) : resolveDefaultLayout(opts);
+}

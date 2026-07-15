@@ -224,9 +224,9 @@ choice; the exported contract is the one function above.)
 
 **Steps:**
 
-- [ ] Write the failing resolution tests (the full matrix above)
-- [ ] Implement `resolveNavLayout`
-- [ ] Full gate, commit
+- [x] Write the failing resolution tests (the full matrix above)
+- [x] Implement `resolveNavLayout`
+- [x] Full gate, commit
 
 ### Task 3: one payload path (`shellPayload` + `AdminShellData` reshape)
 

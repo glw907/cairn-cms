@@ -87,6 +87,12 @@ deliberately and zero-config bit-for-bit parity pins at unit+component level ins
 nav-layout pass: read the plan file and continue from the first unchecked task on the
 nav-layout worktree." SEQUENCING unchanged: the ASC session waits for the 0.86.0 cut and
 bumps once for roles + navLayout together.
+FILED MID-PASS (Geoff, 2026-07-14): the ADMIN PANEL REORGANIZATION pass — post-0.86.0,
+apply navLayout to reorganize the admin around editor/admin effectiveness, research-grounded;
+the ROADMAP Next entry (rewritten on main from the old editor-first entry) carries the full
+framing. MERGE RECONCILIATION at close: plan T7 tells the implementer to REMOVE the old
+editor-first entry in the worktree while main now carries the rewritten one — resolve the
+ROADMAP conflict by keeping main's reorganization entry.
 
 ## Prior next action (2026-07-14, night: EXTENSIBLE ROLES MERGED; 0.85.0 published)
 

@@ -168,21 +168,21 @@ the named human gates only):**
 ## Next
 
 
-- **Editor-first admin nav organization (Geoff, 2026-07-14): research + brainstorm before any
-  change.** The sidebar today groups by provenance — the engine's items, then the site's custom
-  section — which is a developer's mental model. Geoff's question: would an editor rather see a
-  task-shaped organization (write, organize, site)? Raised while the extensible-roles pass was
-  closing; the per-role nav gating that pass added makes the question sharper, since different
-  capabilities already see different sidebars. The survey is done (docs/internal/2026-07-14-admin-nav-organization-research.md: four recurring
-  organizing principles across nine products; three candidate shapes as brainstorm inputs); next is
-  the brainstorm with Geoff. REFRAMED (Geoff, 2026-07-14, post-research): the sharper question is
-  whether the SITE CONTRACT should let the developer arrange the whole sidebar — engine and custom
-  screens interleaved — rather than the engine picking any grouping principle. Candidate shape: an
-  additive data-only nav-layout seam (engine screens get stable ids; a site may declare the full
-  tree mixing them with its own entries; unreferenced engine items fall to a default group; engine
-  keeps rendering, labels, and capability gating). Closest analogs: Statamic's nav customizations,
-  WordPress's menu filter hooks. Design it against ASC's post-collapse admin, the first real case;
-  any change lands through the shell payload contract, which is now versioned surface.
+- **Admin panel reorganization pass (Geoff, 2026-07-14): apply the 0.86.0 `navLayout` seam,
+  research-grounded.** The nav-layout pass ships the mechanism (the site-declared sidebar); this
+  pass uses it to actually reorganize the admin panel around what serves an editor or admin best,
+  and it begins with research, not arrangement. Ground it in the 2026-07-14 nav-organization
+  survey (docs/internal/2026-07-14-admin-nav-organization-research.md: four recurring organizing
+  principles across nine products) plus a fresh editor/admin-effectiveness round: what a
+  non-technical editor and a site admin each reach for first, task-shaped versus provenance-shaped
+  grouping in practice, and what the comparables changed since the survey. Scope questions for the
+  brainstorm: whether the engine DEFAULT arrangement should change (the nav-layout spec ruled it
+  unchanged for that window; this pass may revisit with evidence), what the showcase exemplar and
+  the organize-your-admin-nav guide should model, and what cairn recommends per scale (six screens
+  versus ASC's twenty). ASC's own declared arrangement executes in its repo's sessions against its
+  real roles; this entry owns the cairn-side research, guidance, and any engine-default ruling.
+  Entry point: research review, then `superpowers:brainstorming` with Geoff. Runs after 0.86.0 is
+  cut and ASC has bumped (its live usage is the field evidence).
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

@@ -168,21 +168,13 @@ the named human gates only):**
 ## Next
 
 
-- **Editor-first admin nav organization (Geoff, 2026-07-14): research + brainstorm before any
-  change.** The sidebar today groups by provenance — the engine's items, then the site's custom
-  section — which is a developer's mental model. Geoff's question: would an editor rather see a
-  task-shaped organization (write, organize, site)? Raised while the extensible-roles pass was
-  closing; the per-role nav gating that pass added makes the question sharper, since different
-  capabilities already see different sidebars. The survey is done (docs/internal/2026-07-14-admin-nav-organization-research.md: four recurring
-  organizing principles across nine products; three candidate shapes as brainstorm inputs); next is
-  the brainstorm with Geoff. REFRAMED (Geoff, 2026-07-14, post-research): the sharper question is
-  whether the SITE CONTRACT should let the developer arrange the whole sidebar — engine and custom
-  screens interleaved — rather than the engine picking any grouping principle. Candidate shape: an
-  additive data-only nav-layout seam (engine screens get stable ids; a site may declare the full
-  tree mixing them with its own entries; unreferenced engine items fall to a default group; engine
-  keeps rendering, labels, and capability gating). Closest analogs: Statamic's nav customizations,
-  WordPress's menu filter hooks. Design it against ASC's post-collapse admin, the first real case;
-  any change lands through the shell payload contract, which is now versioned surface.
+- **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
+  real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
+  design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger
+  allowlist is an independent, low-risk addition (more icon names, same validation shape) that
+  doesn't need the whole-sidebar contract to land first. Candidate: survey the icon names ASC and
+  907 actually reach for past the nine, then extend `ADMIN_NAV_ICON_NAMES` and
+  `ADMIN_NAV_ICONS` together, a non-breaking additive change.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

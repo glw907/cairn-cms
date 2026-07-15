@@ -291,7 +291,11 @@ still runs, just without that extension; a test asserting on the sink's own call
 ## Link it from the sidebar with `adminNav`
 
 A sidebar entry is validated data on your adapter's `editor` group. It does not register the
-route; the file already did that:
+route; the file already did that. This section covers `adminNav`, which adds an entry beside
+cairn's own built-in group; a site that wants to arrange the whole sidebar, cairn's own screens
+included, declares `navLayout` instead, covered in [Organize your admin
+nav](./organize-your-admin-nav.md) (the two are mutually exclusive). Either way the entry shape
+below is the same:
 
 ```ts
 import type { AdminNavEntry } from '@glw907/cairn-cms/sveltekit';
@@ -321,12 +325,13 @@ full seam, including the validated `ResolvedNavEntry` shape the shell
 actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
 in the SvelteKit reference.
 
-**`ownerOnly` only reaches cairn's own declared role vocabulary.** A whole section gated by a site-owned
-role, the Club section above, say, needs its sidebar entry hidden from an editor who has no club
-role at all, a question `ownerOnly` cannot answer. `navFilter`, a per-request hook on
-[`createCairnAdmin`](../reference/admin-routes.md) and `createContentRoutes`, is that seam: it
-receives the already role-filtered custom `adminNav` items plus the signed-in editor, and returns
-the items to render.
+**`ownerOnly`, and `navLayout`'s own declarative `roles`, only reach cairn's own declared role
+vocabulary.** A whole section gated by a site-owned role, the Club section above, say, needs its
+sidebar entry hidden from an editor who has no club role at all, a question neither can answer.
+`navFilter`, a per-request hook on [`createCairnAdmin`](../reference/admin-routes.md) and
+`createContentRoutes`, is that seam: it receives the already-arranged, already-gated top-level nodes
+(sections and loose entries, cairn's own screens included when the site declares `navLayout`) plus
+the signed-in editor, and returns the nodes to render.
 
 ```ts
 // src/lib/cairn.server.ts
@@ -334,14 +339,14 @@ import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from './cairn.config.js';
 import { getClubRole, resolveClubDb } from './club/roles.js';
-import type { ResolvedNavItem } from '@glw907/cairn-cms/sveltekit';
+import type { ResolvedLayoutNode } from '@glw907/cairn-cms/sveltekit';
 import type { Editor } from '@glw907/cairn-cms';
 import type { ContentEvent } from '@glw907/cairn-cms/sveltekit';
 
 async function filterClubNav(
-  items: ResolvedNavItem[],
+  items: ResolvedLayoutNode[],
   ctx: { editor: Editor; event: ContentEvent },
-): Promise<ResolvedNavItem[]> {
+): Promise<ResolvedLayoutNode[]> {
   const db = resolveClubDb(ctx.event.platform?.env);
   const role = db ? await getClubRole(db, ctx.editor.email) : null;
   return role ? items : items.filter((item) => item.label !== 'Club');
@@ -354,7 +359,8 @@ export const admin = createCairnAdmin(runtime, { navFilter: filterClubNav });
 Hiding the link this way is a courtesy, not a gate: an editor without the role never sees "Club" in
 the sidebar, and never lands on a URL the section's own `+layout.server.ts` guard would then refuse
 anyway. See [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) for the full
-`navFilter` signature.
+`navFilter` signature, and [Organize your admin nav](./organize-your-admin-nav.md) for arranging
+cairn's own screens alongside a section like this one.
 
 ## Reach your own data
 
@@ -407,6 +413,8 @@ used. [`adminAction`](../reference/sveltekit.md#adminaction) documents the admin
 wrapper the custom section composes. [The custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
 `AdminNavEntry`, `AdminNavIcon`, and the validated `ResolvedNavEntry` shape in full, and
 [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) documents `navFilter`.
+[Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging
+the whole sidebar rather than adding one entry to it.
 [`CairnAdminShell`](../reference/components.md#cairnadminshell), [`OfficeList`](../reference/components.md#officelist), and
 [`CsrfField`](../reference/components.md#csrffield) document the shell your screen renders inside,
 the header-plus-card frame a triage screen composes, and the field every one of its forms needs.

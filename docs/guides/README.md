@@ -29,6 +29,8 @@ later, or the upkeep of a running site.
   otherwise-static rendered content
 - **[Add a custom admin screen](./add-a-custom-admin-screen.md)**: add your own SvelteKit route
   under `/admin`, with no plugin API to register against
+- **[Organize your admin nav](./organize-your-admin-nav.md)**: declare the whole sidebar as one
+  arranged tree, mixing cairn's own screens with your own
 - **[Give a role its own admin area](./give-a-role-its-own-admin-area.md)**: declare a role that
   authenticates like any editor but sees none of cairn's own content surfaces, and land it on a
   screen your site built

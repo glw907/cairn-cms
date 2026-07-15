@@ -418,9 +418,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Draft the guide + reference updates; run the drift hunt
-- [ ] CHANGELOG + upgrade guide + ROADMAP prune + friction log
-- [ ] All doc gates green; commit
+- [x] Draft the guide + reference updates; run the drift hunt
+- [x] CHANGELOG + upgrade guide + ROADMAP prune + friction log
+- [x] All doc gates green; commit
 
 ### Task 8: close ritual (main loop, not dispatched)
 

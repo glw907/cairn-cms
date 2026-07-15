@@ -55,7 +55,9 @@ declare module '@glw907/cairn-cms' {
 
 [The `CairnRolesRegister` reference](../reference/core.md#roles) covers what this augmentation
 changes and what it doesn't: it's a read-side type only, and it has no effect on which capability a
-role resolves to at runtime.
+role resolves to at runtime. It's also the type a `navLayout` node's `roles` list narrows against
+once you declare one: see [Organize your admin nav](./organize-your-admin-nav.md#declare-the-tree)
+for a role-gated section built on the same vocabulary this guide declares.
 
 ## Mount the screen
 

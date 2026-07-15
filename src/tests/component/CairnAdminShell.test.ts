@@ -663,6 +663,32 @@ describe('CairnAdminShell', () => {
       await expect.poll(() => document.activeElement).toBe(searchTrigger);
     });
 
+    it('moves focus into the drawer nav on a pointer/checkbox open, not just Ctrl+B, and restores it on close', async () => {
+      // Finding 1 (BLOCKING review fold): the focus-in move and drawerRestoreFocusEl capture used
+      // to live only inside the Ctrl+B branch, so a pointer/hamburger open (the checkbox this test
+      // toggles directly, with no keydown at all) set role="dialog"/aria-modal="true" while DOM
+      // focus stayed outside the dialog, and no restore effect fired on close. The checkbox is what
+      // the hamburger label and a touch tap actually flip, so toggling it here (not clicking the
+      // label, since the checkbox is the real DaisyUI drawer-state input) proves the fix is keyed
+      // on isDrawerOverlay rather than living in the keydown handler.
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
+      searchTrigger.focus();
+      expect(document.activeElement).toBe(searchTrigger);
+
+      const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
+      toggle.click();
+      await expect.poll(() => toggle.checked).toBe(true);
+
+      const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+      await expect.poll(() => document.activeElement).toBe(brandLink);
+
+      toggle.click();
+      await expect.poll(() => toggle.checked).toBe(false);
+      await expect.poll(() => document.activeElement).toBe(searchTrigger);
+    });
+
     it('leaves Escape alone while the drawer is closed, so another window handler still sees it', async () => {
       await page.viewport(768, 700);
       render(CairnAdminShell, { data: data(true), children: child });

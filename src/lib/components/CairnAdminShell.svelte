@@ -159,15 +159,15 @@ discriminant, not the fields, gates the chrome).
 
   let drawerOpen = $state(false);
 
-  // The drawer's own nav region, so the shortcut can find its first focusable child and so the
-  // close-side restore can tell whether focus is still inside it (the overlay-backdrop path below).
+  // The drawer's own nav region: the focus-in effect below (keyed on isDrawerOverlay) finds its
+  // first focusable child here, and the close-side restore effect checks whether focus is still
+  // inside it.
   let drawerNavEl = $state<HTMLElement>();
 
-  // Where focus was before the shortcut opened the drawer, so a shortcut close (or an overlay
-  // backdrop close while focus never left the drawer) can put it back. Set only by the shortcut, so
-  // a mouse-driven open (the hamburger label) leaves this minimal contract alone; the mouse-driven
-  // path still gets the overlay-only trap, inert background, and Escape below, which do not depend
-  // on how the drawer opened.
+  // Where focus was before the overlay opened, so the close-side restore effect below (or an
+  // overlay backdrop close while focus never left the drawer) can put it back. Captured by the
+  // focus-in effect keyed on isDrawerOverlay, so every open method carries the same contract:
+  // Ctrl+B, the hamburger label, and the checkbox itself.
   let drawerRestoreFocusEl: HTMLElement | null = null;
 
   // Whether the viewport currently sits at each route kind's persistent-sidebar breakpoint (lg for
@@ -177,7 +177,7 @@ discriminant, not the fields, gates the chrome).
   let matchesXl = $state(false);
 
   $effect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return;
+    if (!window.matchMedia) return;
     const lgQuery = window.matchMedia('(min-width: 1024px)');
     const xlQuery = window.matchMedia('(min-width: 1280px)');
     matchesLg = lgQuery.matches;
@@ -195,15 +195,7 @@ discriminant, not the fields, gates the chrome).
   function onKeydown(e: KeyboardEvent) {
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      if (!drawerOpen) {
-        drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-        drawerOpen = true;
-        tick().then(() => {
-          drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
-        });
-      } else {
-        drawerOpen = false;
-      }
+      drawerOpen = !drawerOpen;
     }
     if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
@@ -211,9 +203,9 @@ discriminant, not the fields, gates the chrome).
     }
   }
 
-  // Restores focus once the drawer closes, whether the shortcut closed it (above) or the overlay
-  // backdrop did (a plain checkbox toggle with no keydown involved): only when the shortcut is what
-  // opened it (drawerRestoreFocusEl set) and focus never left the drawer's own nav in the meantime.
+  // Restores focus once the drawer closes, for whatever method opened it (the focus-in effect
+  // below captures drawerRestoreFocusEl for every overlay open, not just the shortcut): only when
+  // focus never left the drawer's own nav in the meantime.
   $effect(() => {
     if (drawerOpen || !drawerRestoreFocusEl || !drawerNavEl?.contains(document.activeElement)) return;
     drawerRestoreFocusEl.focus();
@@ -394,10 +386,24 @@ discriminant, not the fields, gates the chrome).
   // over it, so none of the modal contract belongs there (the lg+/xl persistent modes are untouched).
   const isDrawerOverlay = $derived(drawerOpen && !isPersistentSidebar);
 
+  // Moves focus into the drawer nav, and captures where focus was so the restore effect above can
+  // put it back, for every way the overlay can open: Ctrl+B, the hamburger label, or the checkbox
+  // itself. Keyed on isDrawerOverlay rather than drawerOpen, so a persistent (lg/xl) open, which is
+  // not a modal, never receives this focus management, and re-runs only on the true/false edge
+  // (isDrawerOverlay is a boolean $derived, so an unrelated dependency change with the same value
+  // does not re-fire it).
+  $effect(() => {
+    if (!isDrawerOverlay) return;
+    drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    tick().then(() => {
+      drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
+    });
+  });
+
   // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
   // can never tab out into the inert document behind it. Redirects into the trap even when focus
-  // currently sits outside drawerNavEl (a mouse-driven open via the hamburger label focuses the
-  // checkbox it is bound to, not a nav element), the same fallback MediaInsertPopover's trap uses.
+  // currently sits outside drawerNavEl (a defensive fallback for the moment before the focus-in
+  // effect above lands), the same fallback MediaInsertPopover's trap uses.
   function trapDrawerTab(e: KeyboardEvent) {
     if (!drawerNavEl) return;
     const focusables = drawerNavEl.querySelectorAll<HTMLElement>(
@@ -476,7 +482,18 @@ discriminant, not the fields, gates the chrome).
     class:lg:drawer-open={!isDeskRoute && !topbar.zen}
     class:xl:drawer-open={isDeskRoute && !topbar.zen}
   >
-    <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
+    <!-- tabindex="-1" and aria-hidden pull this checkbox out of the tab order and the a11y tree: it
+         is DaisyUI's drawer-state mechanism (the for=/id= label toggle and the lg:/xl:drawer-open
+         responsive open all key off it), not an affordance an editor should ever land keyboard
+         focus on with no accessible name. The hamburger label and Ctrl/Cmd+B are the real triggers. -->
+    <input
+      id="cairn-shell-drawer"
+      type="checkbox"
+      class="drawer-toggle"
+      tabindex="-1"
+      aria-hidden="true"
+      bind:checked={drawerOpen}
+    />
 
     <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
          pointer, keyboard, and assistive tech (the APG modal-dialog contract, Task 8). Never inert

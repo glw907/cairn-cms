@@ -473,16 +473,16 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
   // A segment of the bordered posture control (the mockup's .seg). The shared group border carries
   // the pick-one semantics, so a segment stays borderless; the active one tints and bolds. The
   // admin's scoped button reset (cairn-admin.css) already strips the UA border and fill.
-  // flex-shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
+  // shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
   // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
   // shrink a segment until its own label wraps mid-word.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
-  // check-and-tint when pressed. Same flex-shrink-0/whitespace-nowrap discipline as segButtonClass.
+  // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex flex-shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -1873,7 +1873,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
            carries the writing environment (the count, the persisted writing modes, help) while
            the top toolbar acts on the text; the toggles live here visible rather than buried in
            an overflow menu. Below the phone breakpoint the strip wraps as whole control groups
-           onto their own rows (flex-wrap at every level, each group flex-shrink-0) rather than
+           onto their own rows (flex-wrap at every level, each group shrink-0) rather than
            letting flex squeeze a group until its own label truncates or wraps mid-word; a wide
            viewport still lays the whole strip out on its usual single row. -->
       {#if !zen}
@@ -1881,7 +1881,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
         data-testid="cairn-editor-footer"
         class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
       >
-        <span class="flex flex-shrink-0 items-center gap-1.5">
+        <span class="flex shrink-0 items-center gap-1.5">
           <span>{wordLabel}</span>
           <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
                already speaks this settled count in its own polite live region, so exposing this
@@ -1898,7 +1898,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
           <div
             role="group"
             aria-label="Editing surface"
-            class="bg-base-100 inline-flex flex-shrink-0 items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
+            class="bg-base-100 inline-flex shrink-0 items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]"
           >
             <button
               type="button"
@@ -1923,7 +1923,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
                group also wraps its own toggles onto a further row if the group's whole natural
                width still does not fit its own line, so a single toggle never shrinks below its
                single-line footprint even at the narrowest supported phone width. -->
-          <div class="flex flex-shrink-0 flex-wrap items-center gap-0.5">
+          <div class="flex shrink-0 flex-wrap items-center gap-0.5">
             <button
               type="button"
               class={ftrToggleClass(focusMode)}
@@ -1967,11 +1967,11 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
           </div>
           <!-- Markdown help is a plain underlined link-styled button (a reference, not a control),
                no border, no fill. It stays the affordance an icon-confused phone writer needs, so
-               it keeps its own single-line footprint (flex-shrink-0/whitespace-nowrap) and simply
+               it keeps its own single-line footprint (shrink-0/whitespace-nowrap) and simply
                wraps to its own row rather than clipping or being pushed off-frame. -->
           <button
             type="button"
-            class="ftr-link flex-shrink-0 cursor-pointer whitespace-nowrap text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+            class="ftr-link shrink-0 cursor-pointer whitespace-nowrap text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
             aria-haspopup="dialog"
             onclick={() => helpDialog?.open()}
           >

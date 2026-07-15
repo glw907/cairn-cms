@@ -312,9 +312,9 @@ the FileText icon; media/vocabulary/nav/settings/editors/help to today's exact i
 
 **Steps:**
 
-- [ ] Write the failing component tests (parity, arranged, none, palette)
-- [ ] Rework the shell markup and palette derivation
-- [ ] Full gate, commit
+- [x] Write the failing component tests (parity, arranged, none, palette)
+- [x] Rework the shell markup and palette derivation
+- [x] Full gate, commit
 
 ### Task 5: desk routes persist the sidebar at `xl`
 

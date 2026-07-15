@@ -30,15 +30,31 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
+/**
+ * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
+ * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
+ * npm versions even under --ignore-scripts, so parse from the first array bracket, not the raw
+ * stream.
+ * @param {string} stdout the raw stdout of `npm pack --dry-run --json`
+ * @returns {string[]} the paths npm would include in the tarball
+ */
+export function parsePackFilePaths(stdout) {
+  const jsonStart = stdout.indexOf('[');
+  if (jsonStart === -1) {
+    throw new Error(`npm pack --json produced no JSON array; got: ${stdout.slice(0, 200)}`);
+  }
+  /** @type {{ files?: { path: string }[] }[]} */
+  const parsed = JSON.parse(stdout.slice(jsonStart));
+  const files = parsed[0]?.files ?? [];
+  return files.map((f) => f.path);
+}
+
 function packedFilePaths() {
   const out = execFileSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], {
     cwd: ROOT,
     encoding: 'utf8',
   });
-  const parsed = JSON.parse(out);
-  /** @type {{ path: string }[]} */
-  const files = parsed[0]?.files ?? [];
-  return files.map((f) => f.path);
+  return parsePackFilePaths(out);
 }
 
 function main() {

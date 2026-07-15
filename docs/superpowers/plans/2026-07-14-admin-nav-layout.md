@@ -276,10 +276,10 @@ navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: ContentE
 
 **Steps:**
 
-- [ ] Re-pin the shell-load unit tests to the new payload shape (failing first)
-- [ ] Write the failing integration composition test
-- [ ] Reshape the types, `shellPayload`, and the `navFilter` seam
-- [ ] Regenerate the surface snapshot; full gate; commit
+- [x] Re-pin the shell-load unit tests to the new payload shape (failing first)
+- [x] Write the failing integration composition test
+- [x] Reshape the types, `shellPayload`, and the `navFilter` seam
+- [x] Regenerate the surface snapshot; full gate; commit
 
 ### Task 4: `CairnAdminShell` renders the resolved tree
 

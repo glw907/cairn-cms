@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
-import type { ResolvedNavEntry, ResolvedNavItem } from '../../lib/sveltekit/admin-nav.js';
+import { resolveNavLayout, type ResolvedNavItem } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
 
@@ -13,26 +13,25 @@ const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 // array override. A none-capability payload gets no concepts and no manage-editors capability, the
 // same shape shellPayload itself produces (content-routes-core.ts), so the harness accepts a
 // pre-shaped none payload through the `capability` override rather than reconstructing that shape.
+// `nav` is built through the same `resolveNavLayout` shellPayload calls, with `adminNav` (the
+// legacy customNav shape) folded into the default arrangement, so a fixture always carries exactly
+// what production would produce for an undeclared navLayout.
 function data(
   canManageEditors: boolean,
   navLabel: string | null = null,
   pathname = '/admin/posts',
   capability: 'owner' | 'editor' | 'none' = canManageEditors ? 'owner' : 'editor',
+  adminNav: ResolvedNavItem[] = [],
 ) {
+  const role = canManageEditors ? ('owner' as const) : ('editor' as const);
+  const concepts = capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: {
-      displayName: 'Ed',
-      email: 'ed@example.com',
-      role: canManageEditors ? ('owner' as const) : ('editor' as const),
-      capability,
-    },
-    concepts: capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
-    customNav: [] as ResolvedNavEntry[],
+    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    concepts,
+    nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, capability, role }),
     pathname,
-    canManageEditors,
-    navLabel,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
@@ -109,11 +108,11 @@ describe('CairnAdminShell', () => {
     // A none-capability session (the spec's none contract) still authenticates and reaches the
     // shell, but every engine screen (Library, Tags, the nav-menu editor, Settings, Help) 403s it,
     // so the sidebar carries only the site's own custom nav.
-    const customNav: ResolvedNavEntry[] = [
+    const adminNav: ResolvedNavItem[] = [
       { label: 'Roster', iconName: 'inbox', href: '/admin/roster', ownerOnly: false },
     ];
     const screen = render(CairnAdminShell, {
-      data: { ...data(false, 'Primary nav', '/admin/roster', 'none'), customNav },
+      data: data(false, 'Primary nav', '/admin/roster', 'none', adminNav),
       children: child,
     });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
@@ -355,11 +354,11 @@ describe('CairnAdminShell', () => {
     // alone once misclassified this as a desk route and receded the persistent sidebar to the
     // toggle-controlled mobile overlay, which read as the sidebar sliding away on an ordinary
     // desktop nav click.
-    const customNav: ResolvedNavItem[] = [
+    const adminNav: ResolvedNavItem[] = [
       { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
     ];
     const screen = render(CairnAdminShell, {
-      data: { ...data(true, null, '/admin/club/events'), customNav },
+      data: data(true, null, '/admin/club/events', undefined, adminNav),
       children: child,
     });
     const drawer = screen.container.querySelector('.drawer')!;
@@ -430,19 +429,19 @@ describe('CairnAdminShell', () => {
   });
 
   it('renders a custom adminNav entry as a sidebar link to its href', async () => {
-    const customNav: ResolvedNavEntry[] = [
+    const adminNav: ResolvedNavItem[] = [
       { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
     ];
-    const screen = render(CairnAdminShell, { data: { ...data(true), customNav }, children: child });
+    const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     await expect.element(sidebar.getByRole('link', { name: 'Signups' })).toBeInTheDocument();
   });
 
   it('renders a custom adminNav section as its own collapsible group beside Core', async () => {
-    const customNav: ResolvedNavItem[] = [
+    const adminNav: ResolvedNavItem[] = [
       { label: 'Club', children: [{ label: 'Events', iconName: 'calendar', href: '/admin/club/events', ownerOnly: false }] },
     ];
-    const screen = render(CairnAdminShell, { data: { ...data(true), customNav }, children: child });
+    const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
     const sidebar = screen.getByRole('navigation', { name: 'Site content' });
     await expect.element(sidebar.getByText('Club')).toBeInTheDocument();
     await expect.element(sidebar.getByRole('link', { name: 'Events' })).toBeInTheDocument();

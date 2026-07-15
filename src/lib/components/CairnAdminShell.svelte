@@ -30,7 +30,13 @@ discriminant, not the fields, gates the chrome).
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
   import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
   import { ADMIN_NAV_ICONS, ADMIN_NAV_FALLBACK_ICON } from './admin-nav-icons.js';
-  import { isResolvedNavSection, isResolvedNavEntry, flattenNavEntries, type ResolvedNavEntry } from '../sveltekit/admin-nav.js';
+  import type {
+    ResolvedNavEntry,
+    ResolvedEngineNavEntry,
+    ResolvedLayoutChild,
+    ResolvedLayoutSection,
+    ResolvedLayoutNode,
+  } from '../sveltekit/admin-nav.js';
   import './cairn-admin.css';
 
   interface Props {
@@ -71,39 +77,51 @@ discriminant, not the fields, gates the chrome).
     return { label: e.label, icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON, href: e.href };
   }
 
-  // The developer's custom nav, split by shape: a flat entry folds into Core (below, unchanged
-  // placement), a section renders as its own named group. Empty on a public payload.
-  const customFlatEntries = $derived(shell ? shell.customNav.filter(isResolvedNavEntry) : []);
+  // The engine's own screen icons, by screen id; a concept id (dynamic, so never a key here) falls
+  // to the same file glyph the content concepts already used.
+  const ENGINE_SCREEN_ICON: Partial<Record<string, Component>> = {
+    media: ImageIcon,
+    vocabulary: TagIcon,
+    nav: SignpostIcon,
+    settings: SettingsIcon,
+    editors: UsersIcon,
+    help: HelpCircleIcon,
+  };
+
+  // shell.nav mixes the engine's own screens (carry `screen`) with the site's own entries (carry
+  // `iconName`); these two guards discriminate the resolved-layout shape the way
+  // isResolvedNavSection/isResolvedNavEntry discriminated the retired customNav shape.
+  function isEngineChild(node: ResolvedLayoutChild): node is ResolvedEngineNavEntry {
+    return 'screen' in node;
+  }
+  function isLayoutSection(node: ResolvedLayoutNode): node is ResolvedLayoutSection {
+    return 'children' in node;
+  }
+  function layoutChildItem(node: ResolvedLayoutChild): NavItem {
+    return isEngineChild(node)
+      ? { label: node.label, icon: ENGINE_SCREEN_ICON[node.screen] ?? FileTextIcon, href: node.href }
+      : navItemOf(node);
+  }
+
+  // shell.nav is the whole arranged, filtered sidebar the resolver produced: a declared navLayout
+  // as written, or, absent one, today's default arrangement through the same resolver (one Core
+  // section holding the concepts, the legacy flat adminNav entries, and the engine screens, in
+  // that order, followed by each legacy adminNav section). The shell still renders that Core-plus-
+  // sections shape below; only the data source moved off the retired customNav/navLabel/
+  // canManageEditors fields.
+  const coreSection = $derived(
+    shell
+      ? shell.nav.items.find((node): node is ResolvedLayoutSection => isLayoutSection(node) && node.label === 'Core')
+      : undefined,
+  );
+  const coreItems: NavItem[] = $derived(coreSection ? coreSection.children.map(layoutChildItem) : []);
   const customSections = $derived(
     shell
-      ? shell.customNav.filter(isResolvedNavSection).map((s) => ({ label: s.label, items: s.children.map(navItemOf) }))
+      ? shell.nav.items
+          .filter((node): node is ResolvedLayoutSection => isLayoutSection(node) && node.label !== 'Core')
+          .map((s) => ({ label: s.label, items: s.children.map(layoutChildItem) }))
       : [],
   );
-
-  // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
-  // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
-  // the owner-only Editors. Empty on a public payload (the nav never renders there). A none-capability
-  // session (the spec's none contract) gets none of the engine's own screens, since every one of them
-  // 403s on that session; only the site's own custom flat entries carry over.
-  const coreItems: NavItem[] = $derived.by(() => {
-    if (!shell) return [];
-    // The developer's custom flat screens, right after the concepts. A custom section (grouped
-    // separately below) never folds in here.
-    const customItems = customFlatEntries.map(navItemOf);
-    if (shell.user.capability === 'none') return customItems;
-    return [
-      ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-      ...customItems,
-      // Library is a content peer, immediately after the concepts (the media screen; the route
-      // stays /admin/media, but the settled editor-facing label is Library, not Media).
-      { label: 'Library', icon: ImageIcon, href: '/admin/media' },
-      // Tags is the shared tag-vocabulary screen, after Library.
-      { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
-      ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
-      { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
-      ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
-    ];
-  });
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -250,6 +268,15 @@ discriminant, not the fields, gates the chrome).
     href?: string;
   }
 
+  // Flatten the resolved nav's site entries (section children included, engine doors skipped): a
+  // custom route's crumb label below comes from its own declared entry, never an engine screen.
+  function flattenSiteEntries(nodes: ResolvedLayoutNode[]): ResolvedNavEntry[] {
+    return nodes.flatMap((node) => {
+      if (isLayoutSection(node)) return node.children.filter((c): c is ResolvedNavEntry => !isEngineChild(c));
+      return isEngineChild(node) ? [] : [node];
+    });
+  }
+
   // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
   // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
   const crumbs = $derived.by<Crumb[]>(() => {
@@ -259,7 +286,7 @@ discriminant, not the fields, gates the chrome).
     const concept = shell?.concepts.find((c) => c.id === conceptId);
     // A custom screen carries no concept, so resolve its href to the developer's nav label too; the
     // raw segment is the fallback when neither a concept nor a custom entry claims it.
-    const custom = shell && flattenNavEntries(shell.customNav).find((e) => e.href === `/admin/${conceptId}`);
+    const custom = shell && flattenSiteEntries(shell.nav.items).find((e) => e.href === `/admin/${conceptId}`);
     const out: Crumb[] = [
       { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
     ];

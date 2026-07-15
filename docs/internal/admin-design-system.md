@@ -78,12 +78,24 @@ Three rules carry the model:
   and clears it on teardown). The band reads as three clusters, not a uniform row: the way back (drawer
   toggle, breadcrumb), the document status behind a hairline, and the actions split by a second
   hairline into the quiet pair (Details, overflow) and the lifecycle pair (Publish, Save).
-- **The chrome recedes, the way out stays.** On a desk route the nav drawer opens closed (the
-  `lg:drawer-open` class is conditional on `!isDeskRoute`, resolved at SSR so it never flashes), the
-  details fields move behind a slide-over panel, and zen fades the band entirely. Through all of it the
-  way back and the save state never disappear: the breadcrumb is the exit, and zen keeps a floating
-  chip carrying the save state and an Exit control. This is the one rule WordPress and Ghost both hold
-  even at their most minimal.
+- **The chrome recedes through a band, not outright; it persists again at `xl`.** The persistent
+  sidebar sits at a route-kind-specific breakpoint: `lg` (1024px) for office routes, `xl` (1280px)
+  for desk routes (the desk rider, spec §5, 2026-07-14). A desk route no longer drops the sidebar
+  at every width the way it once did; it recedes behind the drawer toggle only through the `lg`-`xl`
+  tablet band (1024-1279px) and persists again at `xl` and up. The evidence for the rider: every
+  content-management comparable persists nav through editing (Payload, Sanity, Craft, Contentful,
+  Notion), and NN/g's zen-mode writeup argues hidden-by-default chrome taxes infrequent,
+  non-technical editors hardest. The counter-argument that survives is width economics, which is
+  exactly why the persist breakpoint sits one step wider than the office's, not why the sidebar
+  disappears outright. The classes are conditional on `isDeskRoute` (`lg:drawer-open`/`lg:ml-56` for
+  an office route, `xl:drawer-open`/`xl:ml-56` for a desk route), resolved at SSR so the chrome state
+  never flashes; the drawer toggle mirrors the same breakpoint (`lg:hidden` or `xl:hidden`), so it
+  never dangles beside a persistent sidebar. Below each route's own breakpoint the overlay drawer
+  behaves identically to today: the checkbox and the toggle (and Cmd/Ctrl+B) open it over the
+  document. Details fields still move behind a slide-over panel, and zen still fades the whole band
+  regardless of width. Through all of it the way back and the save state never disappear: the
+  breadcrumb is the exit, and zen keeps a floating chip carrying the save state and an Exit control.
+  This is the one rule WordPress and Ghost both hold even at their most minimal.
 - **Presentation only.** The context model is layout. The same one form, the same actions, the same
   loads; `CairnAdmin`'s view switching is untouched. A consumer site sees only the new chrome.
 

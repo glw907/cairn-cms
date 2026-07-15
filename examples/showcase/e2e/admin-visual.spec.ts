@@ -116,6 +116,31 @@ test('admin edit page — dark', async ({ page, context, baseURL }) => {
   await expect(page).toHaveScreenshot('admin-edit-page-dark.png', { fullPage: true, mask: [page.locator('.cm-content')] });
 });
 
+// The desk rider's width matrix (spec §5): the edit page persists its sidebar at xl (1280px+) and
+// recedes it behind the toggle through the lg-xl tablet band. 1440 sits above the persist
+// breakpoint (the sidebar is a visible fixed-position column); 768 sits below it (the sidebar is
+// gone, only the toggle remains), the same pair the family's responsive standard already reaches
+// for at the office route (admin-shell-sidebar.spec.ts) and the site pages (site-visual.spec.ts).
+test('admin edit page — 1440 (sidebar present)', async ({ page, context, baseURL }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+  await expect(page.locator('.drawer-side')).toBeVisible();
+  await expect(page).toHaveScreenshot('admin-edit-page-1440.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+});
+
+test('admin edit page — 768 (receded)', async ({ page, context, baseURL }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await context.addCookies([{ name: 'cairn-admin-theme', value: 'cairn-admin', url: baseURL! }]);
+  await page.emulateMedia({ colorScheme: 'light' });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+  await expect(page.locator('.drawer-side')).toBeHidden();
+  await expect(page).toHaveScreenshot('admin-edit-page-768.png', { fullPage: true, mask: [page.locator('.cm-content')] });
+});
+
 // The media library browse view (CairnMediaLibrary grid/triage), swept in Phase 5. The dev backend seeds
 // media assets, so the grid renders real tiles; the triage radiogroup settles the DOM before the screenshot.
 test('admin media library — light', async ({ page, context, baseURL }) => {

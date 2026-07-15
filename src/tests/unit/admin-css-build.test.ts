@@ -86,10 +86,23 @@ describe('admin css build', () => {
   });
 
   it('fixes the desktop sidebar to the viewport, overriding daisyUI\'s own sticky position', () => {
-    // The unlayered override (PINNED unlayered rule 3 of 3) that stops the desktop sidebar drifting
+    // The unlayered override (PINNED unlayered rule 3 of 4) that stops the desktop sidebar drifting
     // with a document scroll on a host whose body margin is unreset (the embed-anywhere default).
+    // The minifier merges this rule with its xl companion below into one comma-joined selector list
+    // (identical declarations), so the match allows an optional second selector before the brace.
     expect(css).toMatch(
-      /\.lg\\:drawer-open > \.drawer-toggle ~ \.drawer-side\s*\{\s*position:\s*fixed/,
+      /\.lg\\:drawer-open > \.drawer-toggle ~ \.drawer-side(?:,[^{]*)?\s*\{\s*position:\s*fixed/,
+    );
+  });
+
+  it('fixes the desk-route sidebar to the viewport at xl, its own persist breakpoint', () => {
+    // The unlayered `xl:drawer-open` companion (PINNED unlayered rule 4 of 4, spec §5's desk rider):
+    // a desk route persists its sidebar at xl instead of lg, and needs the identical fixed-position
+    // fix so it does not scroll-bleed either. Confirms Tailwind 4 actually generates the xl:drawer-open
+    // utility this rule overrides (the locked build assumption verified at first touch).
+    expect(css).toContain('.xl\\:drawer-open > .drawer-toggle ~ .drawer-side');
+    expect(css).toMatch(
+      /\.xl\\:drawer-open > \.drawer-toggle ~ \.drawer-side(?:,[^{]*)?\s*\{\s*position:\s*fixed/,
     );
   });
 

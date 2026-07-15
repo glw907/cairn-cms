@@ -69,3 +69,31 @@ test('at mobile width, the drawer still opens on demand and auto-closes after a 
   await expect(page).toHaveURL(/\/admin\/media$/);
   await expect(sidebar).toBeHidden();
 });
+
+// 3. The desk rider (spec §5): a desk route (the edit page) persists its sidebar one breakpoint
+//    wider than an office route, at `xl` (1280px) instead of `lg` (1024px), receding behind the
+//    toggle through the `lg`-`xl` tablet band and staying an overlay below `lg` as before.
+
+test('at 1440, a desk route persists the sidebar the same as an office route', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+
+  const drawer = page.locator('.drawer');
+  await expect(drawer).toHaveClass(/xl:drawer-open/);
+  await expect(page.locator('.drawer-side')).toBeVisible();
+  // The toggle stands in for the sidebar once it persists, so it hides rather than dangling beside it.
+  await expect(page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]')).toBeHidden();
+});
+
+test('at 768, a desk route recedes the sidebar behind the toggle, same as below lg on an office route', async ({ page }) => {
+  await page.setViewportSize({ width: 768, height: 900 });
+  await page.goto('/admin/posts/2026-06-hello');
+  await expect(page.getByRole('tab', { name: 'Write' })).toBeVisible();
+
+  const sidebar = page.locator('.drawer-side');
+  await expect(sidebar).toBeHidden();
+
+  await page.locator('label[for="cairn-shell-drawer"][aria-label="Open menu"]').click();
+  await expect(sidebar).toBeVisible();
+});

@@ -346,37 +346,42 @@ describe('CairnAdminShell', () => {
     await expect.element(emptyScreen.getByRole('button', { name: /publish site/i })).not.toBeInTheDocument();
   });
 
-  it('drops the persistent nav drawer on a desk route (SSR markup, no flash)', async () => {
-    // An open document recedes the nav: the drawer shell omits lg:drawer-open so the sidebar starts
-    // closed at desktop width. The class is conditional in the rendered markup (no effect flips it),
-    // so the chrome-free state resolves at SSR and never flashes.
+  it('recedes the nav drawer to the xl breakpoint on a desk route (SSR markup, no flash)', async () => {
+    // A desk route no longer drops the persistent sidebar outright: it recedes it behind the
+    // toggle through the lg-xl tablet band and persists it again at xl (the desk rider, spec §5).
+    // The class is conditional in the rendered markup (no effect flips it), so the chrome state
+    // resolves at SSR and never flashes.
     const screen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer.classList.contains('lg:drawer-open')).toBe(false);
+    expect(drawer.classList.contains('xl:drawer-open')).toBe(true);
   });
 
-  it('keeps the persistent nav drawer on a list route', async () => {
+  it('keeps the persistent nav drawer at lg on a list (office) route, with no xl-only gate', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     const drawer = screen.container.querySelector('.drawer')!;
     expect(drawer.classList.contains('lg:drawer-open')).toBe(true);
+    expect(drawer.classList.contains('xl:drawer-open')).toBe(false);
   });
 
-  it('reserves room for the fixed persistent sidebar on a list route, not on a desk route', async () => {
+  it('reserves room for the fixed persistent sidebar at the route kind\'s own breakpoint', async () => {
     // Regression guard for the production scroll-bleed report: the desktop sidebar is `position:
     // fixed` (cairn-admin.css), which needs `drawer-content` to reserve its own width instead of
-    // relying on grid track sizing (an out-of-flow item contributes no track width). A desk route
-    // drops the persistent sidebar entirely, so it must drop the reserved margin too.
+    // relying on grid track sizing (an out-of-flow item contributes no track width). An office
+    // route reserves it at lg; a desk route reserves it at xl instead (the desk rider).
     const listScreen = render(CairnAdminShell, { data: data(true), children: child });
     const listContent = listScreen.container.querySelector('.drawer-content')!;
     expect(listContent.classList.contains('lg:ml-56')).toBe(true);
+    expect(listContent.classList.contains('xl:ml-56')).toBe(false);
 
     const deskScreen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskContent = deskScreen.container.querySelector('.drawer-content')!;
     expect(deskContent.classList.contains('lg:ml-56')).toBe(false);
+    expect(deskContent.classList.contains('xl:ml-56')).toBe(true);
   });
 
   it('keeps the persistent nav drawer on a deep custom-nav route (path depth alone is not a desk route)', async () => {
@@ -410,18 +415,21 @@ describe('CairnAdminShell', () => {
     expect(document.cookie).not.toContain('cairn-admin-nav-collapsed=');
   });
 
-  it('shows the drawer toggle at desktop width on a desk route', async () => {
-    // On a desk route the toggle loses lg:hidden so it stays visible at desktop and reopens the nav
-    // as an overlay. On a list route the persistent sidebar is shown, so the toggle is lg:hidden.
+  it('shows the drawer toggle through the tablet band on a desk route, hiding only at xl', async () => {
+    // A desk route recedes the sidebar behind the toggle through lg-xl (the desk rider), so the
+    // toggle stays visible there and only hides once the sidebar persists again at xl. An office
+    // route's persistent sidebar stands in for the toggle starting at lg.
     const deskScreen = render(CairnAdminShellDeskHarness, {
       data: data(true, null, '/admin/posts/2026-05-hello'),
     });
     const deskToggleWrap = deskScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(deskToggleWrap.classList.contains('lg:hidden')).toBe(false);
+    expect(deskToggleWrap.classList.contains('xl:hidden')).toBe(true);
 
     const listScreen = render(CairnAdminShell, { data: data(true), children: child });
     const listToggleWrap = listScreen.container.querySelector('label[for="cairn-shell-drawer"]')!.parentElement!;
     expect(listToggleWrap.classList.contains('lg:hidden')).toBe(true);
+    expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
   });
 
   it('lays out the shell as nested drawer regions, not merely styled parts', async () => {

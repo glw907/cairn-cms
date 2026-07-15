@@ -346,9 +346,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Verify the `xl:drawer-open` assumption; write the failing component tests
-- [ ] Implement classes + CSS companion; update the design-system doc
-- [ ] Add width-matrix coverage; full gate (baselines regenerate on CI); commit
+- [x] Verify the `xl:drawer-open` assumption; write the failing component tests
+- [x] Implement classes + CSS companion; update the design-system doc
+- [x] Add width-matrix coverage; full gate (baselines regenerate on CI); commit
 
 ### Task 6: showcase declares a layout; e2e proves the seam
 

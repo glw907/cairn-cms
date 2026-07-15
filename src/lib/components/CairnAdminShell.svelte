@@ -339,23 +339,33 @@ discriminant, not the fields, gates the chrome).
      itself never matches. Keeping the drawer and its base/utility classes one level in lets the
      scoped sheet style them. -->
 <div data-theme={theme} bind:this={rootEl}>
-  <!-- The persistent desktop sidebar (lg:drawer-open) recedes inside an open document: a desk route
-       renders the drawer shell without it, so the nav starts closed at desktop width and the
-       manuscript takes the shell. This resolves at SSR from data.pathname (isDeskRoute), never in an
-       effect, so the chrome-free state does not flash. The checkbox still governs the overlay, so the
-       toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand.
-       At desktop width the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's own
-       `position: sticky` for `.lg:drawer-open`'s persistent sidebar; see the load-bearing rules
-       there), not sticky: a host that omits Preflight (the embed-anywhere default this admin
-       targets) leaves the UA's default body margin in place, and sticky computes its "before it
-       sticks" travel from the sidebar's static offset in the document, so an unreset body margin
-       gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll. Fixed
-       positioning is anchored to the viewport outright, the same mechanism the mobile overlay
+  <!-- The persistent desktop sidebar persists at a route-kind-specific breakpoint: office routes at
+       lg (1024px), desk routes at xl (1280px, the desk rider, spec §5) — a desk route recedes the
+       sidebar behind the toggle through the lg-xl tablet band instead of dropping it outright, since
+       the wider desk layout needs the room the office layout does not. This resolves at SSR from
+       data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
+       still governs the overlay at every width below each route's persist breakpoint, so the toggle
+       (and Cmd/Ctrl+B) reopens the nav over the document on demand.
+       At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
+       own `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
+       load-bearing rules there), not sticky: a host that omits Preflight (the embed-anywhere default
+       this admin targets) leaves the UA's default body margin in place, and sticky computes its
+       "before it sticks" travel from the sidebar's static offset in the document, so an unreset body
+       margin gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll.
+       Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
-  <div class="drawer min-h-screen bg-base-200 text-base-content" class:lg:drawer-open={!isDeskRoute}>
+  <div
+    class="drawer min-h-screen bg-base-200 text-base-content"
+    class:lg:drawer-open={!isDeskRoute}
+    class:xl:drawer-open={isDeskRoute}
+  >
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
-    <div class="drawer-content flex flex-col" class:lg:ml-56={!isDeskRoute}>
+    <div
+      class="drawer-content flex flex-col"
+      class:lg:ml-56={!isDeskRoute}
+      class:xl:ml-56={isDeskRoute}
+    >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
            three clusters include shell-owned chrome (the drawer toggle, the breadcrumb), so
@@ -367,10 +377,10 @@ discriminant, not the fields, gates the chrome).
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
            metrics, and the two border-bottoms stop meeting at the seam). -->
       <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
-        <!-- The drawer toggle is hidden at desktop width on the office routes (the persistent sidebar
-             stands in for it); on a desk route the sidebar is closed, so the toggle stays visible and
-             reopens the nav as an overlay. -->
-        <div class="flex-none" class:lg:hidden={!isDeskRoute}>
+        <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
+             routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
+             band, where the desk sidebar is receded). -->
+        <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
           <label for="cairn-shell-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>

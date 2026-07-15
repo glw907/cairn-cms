@@ -395,7 +395,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
               <td class="w-16 px-2 sm:w-28 sm:px-4">
                 <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
                      status stays legible without keeping the desktop-width column. -->
-                {#if entry.status === 'new'}<span class="badge badge-info badge-xs font-medium sm:badge-sm">New</span>
+                {#if entry.status === 'new'}<span class="text-xs font-semibold sm:text-[0.8125rem]">New</span>
                 {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary sm:badge-sm">Edited</span>
                 {:else}<span class="badge badge-ghost badge-xs font-medium sm:badge-sm">Published</span>{/if}
               </td>
@@ -407,8 +407,8 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   <form method="POST" action="?/delete">
                     <CsrfField />
                     <input type="hidden" name="id" value={entry.id} />
-                    <button type="submit" class="btn btn-ghost btn-sm" aria-label="Delete {entry.title}">
-                      <Trash2Icon class="h-4 w-4 text-error" />
+                    <button type="submit" class="btn btn-ghost btn-sm text-base-content/45 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
+                      <Trash2Icon class="h-4 w-4" />
                     </button>
                   </form>
                 {/if}
@@ -420,7 +420,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <!-- The create affordance baked into the list body: a full-width borderless foot row so a
            short list always shows its next step rather than just stopping. Same action as the
            header New button. -->
-      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-sm font-medium text-primary hover:bg-primary/[0.06]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-sm font-medium text-subtle underline [text-underline-offset:2px] hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
         <PlusIcon class="h-4 w-4" /> New {createNoun}
       </button>
     {/if}

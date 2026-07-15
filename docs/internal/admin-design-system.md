@@ -133,6 +133,12 @@ Three rules carry the model:
   regardless of width. Through all of it the way back and the save state never disappear: the
   breadcrumb is the exit, and zen keeps a floating chip carrying the save state and an Exit control.
   This is the one rule WordPress and Ghost both hold even at their most minimal.
+- **Office content width.** The shell caps every non-desk route's content at `max-w-5xl`, centered, so
+  a 2560px office list does not stretch its rows into a dead band between title and date. The desk route
+  is excluded, since the editor already caps its own manuscript. At 320 the office list recomposes rather
+  than squeezing: the title column takes the freed width while the status and actions columns trade cell
+  padding down, the status badge compacts to `badge-xs`, the header's search stacks full-width instead of
+  collapsing to a sliver, and the segmented triage chips stay one line with a horizontal-scroll fallback.
 - **Presentation only.** The context model is layout. The same one form, the same actions, the same
   loads; `CairnAdmin`'s view switching is untouched. A consumer site sees only the new chrome.
 
@@ -277,7 +283,10 @@ Recipes:
   `<ul class="dropdown menu" popover id="<id>">` with the matching `position-anchor`. Escape and light
   dismiss come from the Popover API. A pick runs its action, then `hidePopover()` if still open.
 - **Command palette:** `<dialog>` opened by the topbar trigger or Cmd/Ctrl+K; commands are the nav
-  destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`.
+  destinations plus View-site and theme, filtered as you type. Built in `AdminLayout.svelte`. The box
+  keeps a top inset at every width (`mt-4` below `sm`, `sm:mt-[12vh]` above) so it never sits flush
+  against the viewport top on a phone, and its search input carries no `outline-hidden`, so the admin's
+  `:focus-visible` brand ring applies rather than a bare UA outline.
 - **The desk band (the edit route's one header):** the edit page has no header of its own; it fills the
   topbar through the context portal (see the context model above). The `desk` snippet supplies the
   status cluster (the status badge, a `Hidden` badge when `draft`, the save-state with a `bg-warning`
@@ -289,9 +298,15 @@ Recipes:
   drops its own palette trigger and the site-wide Publish, so the band has one job. Publish renders in
   every entry state (the 2026-07 CMS survey norm: WordPress, Ghost, Sanity, and Contentful all keep it
   persistent) and is actionable whenever anything could go live (dirty, pending, or a new entry).
-  Otherwise it takes the guarded-button pattern (`aria-disabled`, `cairn-btn-guarded`, opacity/cursor
-  dimming, the stateful "Nothing new to publish" reason), never native `disabled` and never hidden; the
-  label stays "Publish", and native `disabled` is reserved for the mid-submit busy state.
+  Otherwise it takes the guarded-button pattern (`aria-disabled`, `cairn-btn-guarded`, a resting fill at
+  the same 10% base-content weight a real inactive control carries so it reads as deliberately disabled
+  rather than as a rendering gap, the `not-allowed` cursor, the stateful "Nothing new to publish"
+  reason), never native `disabled` and never hidden; the label stays "Publish", and native `disabled` is
+  reserved for the mid-submit busy state. Below `sm` the band composes rather than shrinks: the
+  save-state text drops to the dot alone, the decorative hairlines collapse, and the non-primary controls
+  (the Details trigger and the shell's theme toggle, the latter mirrored into the band through the
+  context portal) fold into the overflow popover, so Save and Publish stay directly reachable at every
+  width without any control clipping or overlapping.
 - **The details slide-over panel:** the frontmatter fields live in a right slide-over (`role="region"`,
   `aria-label="Entry details"`), opened by the band's Details trigger and `Ctrl+.`. It stays physically
   inside the edit form and toggles with the `hidden` attribute, so a closed panel is out of the a11y
@@ -369,7 +384,9 @@ Recipes:
   writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
   writing): word count left, then the posture pair, the writing-mode toggles, a hairline, and
   Markdown help, all ghost `btn-xs` with `aria-pressed` and the `bg-primary/10 text-primary`
-  pressed pair. The postures: Prose (default) is the writing instrument, a 72ch measure centered
+  pressed pair. The strip wraps at every nesting level below `sm` (each control `shrink-0` and
+  `whitespace-nowrap`), so a control moves whole to a new row rather than truncating its label or
+  clipping off-frame; the Markdown help link stays reachable at 320. The postures: Prose (default) is the writing instrument, a 72ch measure centered
   in a 49rem card at a 1.0625rem type step and 1.9 leading; Wide (labeled "Markup" in the
   `cairn-editor-surface` persisted value, since the calibrated voice sweep renamed only the
   visible label) is the working surface, a 56rem card the text fills at 1rem/1.8 for tables,

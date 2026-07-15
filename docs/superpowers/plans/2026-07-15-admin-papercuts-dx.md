@@ -296,3 +296,60 @@ pass branch before Task 10.
 - [ ] Post-mortem appended to this plan file (including Task 9's single-source-wiring
   recommendation); STATUS.md updated on `main` at the merge; hold unpublished, no version bump.
 - [ ] Merge `admin-papercuts` to `main` per repo conventions; prune the worktrees.
+
+---
+
+## Post-mortem
+
+**Built and verified.** All ten tasks landed. The UI cluster (Tasks 1–8) ran serially on the
+`admin-papercuts` worktree; the DX cluster (Task 9) ran as one Opus dispatch on `papercuts-dx` and
+merged in clean. Evidence at close: full gate 0/0 (1369 files), `npm test` exit 0 (3465 tests), and
+every named gate by name (`check:comments`, `check:docs`, `check:reference`,
+`check:reference:signatures`, `check:surface` matches the snapshot, `check:package` with the new
+`check-package-files` confirming two migrations pack). The admin-visual baselines regenerated on CI
+(the canonical renderer, run 29413888542) and were render-read in the main loop. The reviewer gate
+(svelte + daisyui-a11y) returned one blocking finding, folded before close; the simplifier made one
+refinement.
+
+**What each cluster delivered.** Desk-band and footer now compose at phone widths instead of
+colliding or truncating; office lists cap at `max-w-5xl` at 2560 and recompose at 320; the palette
+gained a phone inset and the admin focus ring; the guarded controls read as deliberately disabled;
+the dark Published badge clears its contrast floor; the nav drawer gained the full APG dialog
+treatment; and the voice sweep brought editor-facing strings to the calibrated register. The DX
+cluster shipped the D1 migrations inside the package (with a packaging gate), added the
+`auth.role-wiring` doctor check, and verified the session-recipe docs already matched code truth.
+
+**The blocking review finding (drawer focus).** Task 8 wired the APG focus-in/return only into the
+Ctrl+B open path, while `aria-modal`+`inert` applied to every open, so a pointer/hamburger open set
+`aria-modal="true"` with focus left outside the dialog. The component tests masked it because every
+drawer test opened via Ctrl+B. Fixed by driving focus-in and the restore-target capture from an
+`$effect` keyed on the `isDrawerOverlay` edge, so every open method gets the contract, plus a
+pointer-open test with a RED confirmation. Lesson: APG focus management belongs on the state-derived
+boolean, never inside one input handler.
+
+**The DX cluster corrected a false premise.** The ASC harvest claimed a missed guard wiring makes
+"every row resolve owner" (a privilege-escalation reading). The code is the opposite: an undeclared
+role resolves to `none` (a lockout), verified with a test before the doctor check was written. The
+check is grounded in the true semantics and states its own coverage honestly (it reads the
+`createAuthGuard` call in `src/hooks.server.ts` and skips a guard it cannot read, failing only on a
+high-confidence miss, including the bare-options-identifier case caught at review). This is the
+reason a harvest note is a lead, not a spec: the code is the authority.
+
+**Single-source-wiring recommendation (Task 9, deferred).** The double-wiring class the doctor check
+only diagnoses could be eliminated at the seam: let `createAuthGuard()` derive the vocabulary from
+the same resolved adapter the rest of the engine reads, keeping the explicit `{ roles }` argument as
+an override. Additive (not breaking) if the explicit argument still wins; the cost is coupling the
+guard to adapter resolution, a boundary held deliberately today. Worth doing at the next auth-seam
+pass.
+
+**Process notes.** The plan's task template carried a "regenerate screenshot baselines" line that
+does not match this repo: `src/tests/component/__screenshots__/` is gitignored and ephemeral (no
+`toHaveScreenshot` matcher), and the real admin visual baselines live only in the showcase
+Playwright suite, regenerated on CI. The Task 1 implementer caught it; the workflow preamble for
+Tasks 2–8 carried the correction. A future papercuts-style plan should state visual proof as
+"assertion-based component tests plus CI baseline regen," not per-task PNG regeneration.
+
+**Parked for the design-refinement arc (not built here, correctly).** The desk band's status
+cluster still overlaps slightly in the rare Published + Hidden(draft) + dirty triple at 320: closing
+it needs either a compact narrow-width treatment for the Hidden badge or more decorative-space
+savings, which is a badge-treatment design call, not a mechanical fix. Carried to the arc.

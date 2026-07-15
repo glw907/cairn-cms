@@ -701,4 +701,26 @@ describe('CairnAdminShell', () => {
     // Help, left unreferenced, resolves to the fallback foot; the palette still surfaces it.
     await expect.element(screen.getByRole('dialog').getByRole('link', { name: 'Help' })).toBeInTheDocument();
   });
+
+  // Task 3 (audit finding 8): office screens share one content-width cap, so a wide viewport never
+  // stretches the list into a dead band. The desk manages its own manuscript width, so the cap
+  // applies only off the desk route.
+  it('caps the office content column at a readable, centered width', async () => {
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const main = screen.container.querySelector('main')!;
+    const capped = main.querySelector<HTMLElement>('.max-w-5xl');
+    expect(capped).not.toBeNull();
+    expect(capped!.className).toContain('mx-auto');
+    // The page body renders inside the cap, not beside it.
+    await expect.element(screen.getByText('page body')).toBeInTheDocument();
+    expect(capped!.textContent).toContain('page body');
+  });
+
+  it('does not add the office content cap on a desk route, which caps its own manuscript', async () => {
+    const screen = render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    const main = screen.container.querySelector('main')!;
+    expect(main.querySelector('.max-w-5xl')).toBeNull();
+  });
 });

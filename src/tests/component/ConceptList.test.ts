@@ -1,6 +1,11 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { page } from 'vitest/browser';
 import ConceptList from '../../lib/components/ConceptList.svelte';
+// The compiled sheet's text (daisyUI's real .badge/.input/.btn sizing), injected only for the
+// narrow/wide extremes suite below so its bounding-box measurements reflect production control
+// footprints, never the UA-default widths the source partial alone leaves (the EditPage pattern).
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 function data(over = {}) {
   // The default sort is newest-first, so the last entry (Post 12) leads page 1; the draft sits there
@@ -352,5 +357,76 @@ describe('ConceptList', () => {
     // The query clears, so every row returns.
     await expect.element(screen.getByRole('link', { name: 'Post 12' })).toBeInTheDocument();
     await expect.element(search).toHaveValue('');
+  });
+
+  // Task 3 (audit finding 8): the narrow (320) list row recomposes so the title column carries the
+  // freed width, the header search never collapses to an icon and a stray letter, and the Pending
+  // edits filter chip stays on one line. The compiled sheet carries daisyUI's real .table/.input/
+  // .badge sizing (the EditPage phone-width pattern), so these measurements reflect production
+  // footprints, not the UA-default widths the source partial alone leaves.
+  describe('office composition at 320px (audit finding 8)', () => {
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      // Restore a normal-width viewport so a later test file's default layout assumptions hold.
+      await page.viewport(1280, 720);
+    });
+
+    // Mirrors the office shell's own content padding (main's p-4, 16px each side), so the measured
+    // columns reflect the real frame the list renders inside rather than an unconstrained test root.
+    function pad320(container: HTMLElement) {
+      container.style.padding = '16px';
+      container.style.boxSizing = 'border-box';
+      container.style.width = '320px';
+    }
+
+    it('gives the title column the majority of the row width, not the 7-10 character starve', async () => {
+      await page.viewport(320, 700);
+      const screen = render(ConceptList, { data: data() });
+      pad320(screen.container);
+      const row = screen.container.querySelector('tbody tr')!;
+      // The Date column drops below sm (a hidden zero-width cell), so filter it out rather than
+      // index by position: Title, Status, Delete are the three visible columns at 320.
+      const cells = Array.from(row.querySelectorAll('td')).filter((c) => !c.classList.contains('hidden'));
+      const rowWidth = row.getBoundingClientRect().width;
+      const titleWidth = cells[0].getBoundingClientRect().width;
+      const statusWidth = cells[1].getBoundingClientRect().width;
+      const deleteWidth = cells[2].getBoundingClientRect().width;
+      expect(titleWidth / rowWidth).toBeGreaterThan(0.5);
+      expect(statusWidth).toBeLessThan(titleWidth);
+      expect(deleteWidth).toBeLessThan(titleWidth);
+      // The delete column keeps its w-12 footprint (the design system's fixed action column).
+      const deleteHeader = screen.container.querySelector('thead th:last-child')!;
+      expect(deleteHeader.className).toContain('w-12');
+    });
+
+    it('keeps the search input at full row width, never collapsing to an icon and a stray letter', async () => {
+      await page.viewport(320, 700);
+      const screen = render(ConceptList, { data: data() });
+      pad320(screen.container);
+      const input = screen.container.querySelector('input[type="search"]') as HTMLInputElement;
+      // A collapsed search shrinks to a sliver (the reported "icon plus a stray S"); the full-width
+      // narrow row keeps it wide enough to show its placeholder text.
+      expect(input.getBoundingClientRect().width).toBeGreaterThan(200);
+    });
+
+    it('keeps the Pending edits filter chip on one line', async () => {
+      await page.viewport(320, 700);
+      const screen = render(ConceptList, { data: data({ entries: triageEntries() }) });
+      pad320(screen.container);
+      const pending = screen.getByRole('button', { name: /^pending edits/i });
+      const rect = (await pending.element()).getBoundingClientRect();
+      // A wrapped two-line chip roughly doubles its single-line height.
+      expect(rect.height).toBeLessThanOrEqual(28);
+    });
   });
 });

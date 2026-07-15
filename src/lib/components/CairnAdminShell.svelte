@@ -486,7 +486,17 @@ discriminant, not the fields, gates the chrome).
       {/if}
 
       <main class="flex-1 p-4 lg:px-10 lg:py-8">
-        {@render children()}
+        {#if isDeskRoute}
+          {@render children()}
+        {:else}
+          <!-- Office screens (posts, media, editors, settings, help) share one content-width cap,
+               so a wide viewport does not stretch the list rows into a dead band (audit finding 8).
+               The desk manages its own manuscript width (EditPage's own max-w-[49rem]/[56rem]), so
+               the cap applies only off the desk route. -->
+          <div class="mx-auto w-full max-w-5xl">
+            {@render children()}
+          </div>
+        {/if}
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">

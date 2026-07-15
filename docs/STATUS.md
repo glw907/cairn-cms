@@ -68,7 +68,7 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15: NAV-LAYOUT MERGED; cutting 0.86.0 now)
+## Immediate next action (2026-07-15: 0.86.0 PUBLISHED; ASC bumps next in its own session)
 
 **THE ADMIN NAV-LAYOUT PASS IS COMPLETE AND MERGED TO MAIN (7613b335).** The full spec shipped:
 the `navLayout` seam (engine refs with relabel + explicit hide, typed `roles` visibility,
@@ -81,9 +81,7 @@ the 14 regenerated PNGs byte-identical ("No baseline changes"); asserting CI e2e
 29389776988, 100/100); five baselines render-read in the main loop; live smoke 6/6 PASS.
 Review gate: security clean; the Svelte+a11y reviews' duplicate-key crash class folded in
 (3849dff1) with validation hardening and the none-session pending gate. Post-mortem: in the
-plan file (includes the workflow-concurrency anomaly watch item). **NEXT: cut 0.86.0 via
-cairn-release (authorized end-to-end by Geoff 2026-07-14; number verified free), then the ASC
-session bumps ONCE for roles + navLayout.** After the cut: the ADMIN REORGANIZATION pass is
+plan file (includes the workflow-concurrency anomaly watch item). **0.86.0 IS PUBLISHED (release v0.86.0, publish run 29390528028 green, OIDC verified; `npm view` serves 0.86.0 on latest). NEXT: the ASC session bumps ONCE for roles + navLayout.** After the cut: the ADMIN REORGANIZATION pass is
 spec-ratified and queued (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md —
 flat default + evidence-grounded guide upgrade; writing-plans when its turn arrives).
 

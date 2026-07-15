@@ -68,7 +68,26 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-14, late night: NAV-LAYOUT PLAN AUTHORED; executing via workflow)
+## Immediate next action (2026-07-15: NAV-LAYOUT MERGED; cutting 0.86.0 now)
+
+**THE ADMIN NAV-LAYOUT PASS IS COMPLETE AND MERGED TO MAIN (7613b335).** The full spec shipped:
+the `navLayout` seam (engine refs with relabel + explicit hide, typed `roles` visibility,
+sections, twelve construction throws), one resolved-tree rendering path (`resolveNavLayout`,
+`AdminShellData.nav`, the hard-coded shell list deleted), the desk-route xl sidebar rider, the
+showcase exemplar layout, the organize-your-admin-nav guide, and the docs window (two
+`Consumers must:` lines: the AdminShellData reshape, the widened navFilter input). Evidence at
+close: fresh gate check 0/0 + 3416 tests exit 0 + all named gates; CI baseline regen validated
+the 14 regenerated PNGs byte-identical ("No baseline changes"); asserting CI e2e green (run
+29389776988, 100/100); five baselines render-read in the main loop; live smoke 6/6 PASS.
+Review gate: security clean; the Svelte+a11y reviews' duplicate-key crash class folded in
+(3849dff1) with validation hardening and the none-session pending gate. Post-mortem: in the
+plan file (includes the workflow-concurrency anomaly watch item). **NEXT: cut 0.86.0 via
+cairn-release (authorized end-to-end by Geoff 2026-07-14; number verified free), then the ASC
+session bumps ONCE for roles + navLayout.** After the cut: the ADMIN REORGANIZATION pass is
+spec-ratified and queued (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md —
+flat default + evidence-grounded guide upgrade; writing-plans when its turn arrives).
+
+## Prior next action (2026-07-14, late night: NAV-LAYOUT PLAN AUTHORED; executing via workflow)
 
 **THE ADMIN NAV-LAYOUT PLAN IS AUTHORED AND EXECUTING.** Plan:
 docs/superpowers/plans/2026-07-14-admin-nav-layout.md (seven implementer tasks T1 types/

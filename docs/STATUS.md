@@ -68,7 +68,27 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-14, night: EXTENSIBLE ROLES MERGED; release cutting now)
+## Immediate next action (2026-07-14, late night: NAV-LAYOUT PLAN AUTHORED; executing via workflow)
+
+**THE ADMIN NAV-LAYOUT PLAN IS AUTHORED AND EXECUTING.** Plan:
+docs/superpowers/plans/2026-07-14-admin-nav-layout.md (seven implementer tasks T1 types/
+validation through T7 docs, plus the T8 close ritual), authored against the ratified spec
+(docs/superpowers/specs/2026-07-14-admin-nav-layout-design.md, 8caffb6e) and a full code
+survey. Execution: Geoff authorized a WORKFLOW through to the release ("continue to the next
+cairn release with a workflow") — serial cairn-implementer pipeline on the `nav-layout`
+worktree off main (test-first, full gate per task), then the reviewer gate, then the main-loop
+close ritual (simplifier, named gates, consumer build/CI e2e, admin smoke, render-read of
+regenerated baselines, post-mortem, STATUS, merge), then **cairn-release cuts 0.86.0**
+(number verified free 2026-07-14). Two plan-locked calls for Geoff's cheap veto at review:
+(1) adminNav and navLayout are mutually exclusive (construction throw, no silent precedence);
+(2) the showcase declares a real arranged layout, so its admin baselines regenerate
+deliberately and zero-config bit-for-bit parity pins at unit+component level instead
+(resolves the spec's §2-vs-§7 collision). Resume prompt if interrupted: "Resume the admin
+nav-layout pass: read the plan file and continue from the first unchecked task on the
+nav-layout worktree." SEQUENCING unchanged: the ASC session waits for the 0.86.0 cut and
+bumps once for roles + navLayout together.
+
+## Prior next action (2026-07-14, night: EXTENSIBLE ROLES MERGED; 0.85.0 published)
 
 **THE EXTENSIBLE-ROLES PASS IS COMPLETE AND MERGED TO MAIN (c5bef146).** The full ratified
 spec shipped: `defineRoles` site-declared vocabularies over the three capability levels,

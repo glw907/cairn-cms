@@ -167,6 +167,18 @@ the named human gates only):**
 
 ## Next
 
+- **Reusable content/components pass (Geoff, 2026-07-15; promoted from Considering's Fragments
+  seed).** Give cairn a way to author a piece of content once and reuse it across entries: the
+  ASC site is starting to need shared pieces (the production-site trigger the Considering entry
+  was waiting for), and Geoff had planned this direction earlier. The design question is the
+  pass's first deliverable, brainstorm-first: whether the lean shape is a third content concept
+  (Fragments: author-once markdown included into Posts/Pages via a directive), reusable
+  configured components (site-declared directive presets a volunteer can insert without
+  re-entering attributes), or both, and where the charter's fixed-concepts boundary draws the
+  line. Premise check before scope: this is cairn's job only insofar as it is managing markdown
+  content; anything domain-shaped stays the site's. Grounding to collect at brainstorm: the
+  concrete ASC reuse cases, and whether the existing component registry + `libraryFields`
+  already carry part of the need.
 - **Admin invisible-craft polish pass (phase 2; Geoff, 2026-07-15).** The "correct vs resolved"
   finisher: docs/internal/2026-07-15-admin-resolved-polish-brief.md carries the full rubric
   (spacing/rhythm, depth, motion, feedback, forms, micro-details) plus final look-preserving
@@ -483,8 +495,6 @@ the named human gates only):**
   branch, a documented Cron Trigger the site adds, and the existing publish action fired at the
   time; no queues and no recurring schedules. It cuts against the deliberate-Publish philosophy, so
   this is a product decision to make explicitly, not an engineering default.
-- **A third content concept (Fragments).** The fixed-concepts model leaves room for a Fragments concept
-  beyond Posts and Pages, scoped when a production site needs it.
 - **Editor find/replace.** A recipe-built find/replace panel on `@codemirror/search`'s `createPanel`,
   keeping CodeMirror's search state and commands but rendering cairn DOM. Bind only the search subset of
   `searchKeymap` (not the stock un-themed `gotoLine` panel or the multi-cursor bindings it also carries),

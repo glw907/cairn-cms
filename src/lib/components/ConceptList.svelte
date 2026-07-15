@@ -348,7 +348,10 @@ in component state.
       </div>
     {:else}
       <table class="table text-[0.9375rem] [&_:where(td)]:py-2.5 [&_:where(td,th):first-child]:pl-6">
-        <thead>
+        <!-- Frame zones (the column-header row and the foot action row) carry the sidebar's gentle
+             band so content rows are the card's only white rows; borders alone were not separating
+             the foot from the titles. -->
+        <thead class="bg-base-content/[0.04]">
           <tr class="border-base-300">
             <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
               <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
@@ -428,7 +431,7 @@ in component state.
       <!-- The create affordance baked into the list body: a full-width borderless foot row so a
            short list always shows its next step rather than just stopping. Same action as the
            header New button. -->
-      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-[0.9375rem] font-medium text-subtle hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-content/[0.04] px-6 py-3 text-[0.9375rem] font-medium text-subtle hover:bg-base-content/[0.08] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
         <PlusIcon class="h-4 w-4" /> New {createNoun}
       </button>
     {/if}

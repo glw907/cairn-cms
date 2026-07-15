@@ -173,8 +173,9 @@ the named human gates only):**
   section — which is a developer's mental model. Geoff's question: would an editor rather see a
   task-shaped organization (write, organize, site)? Raised while the extensible-roles pass was
   closing; the per-role nav gating that pass added makes the question sharper, since different
-  capabilities already see different sidebars. Run a survey of how comparable CMS admin navs
-  group their items, then a brainstorm with Geoff; any change lands through the shell payload
+  capabilities already see different sidebars. The survey is done (docs/internal/2026-07-14-admin-nav-organization-research.md: four recurring
+  organizing principles across nine products; three candidate shapes as brainstorm inputs); next is
+  the brainstorm with Geoff; any change lands through the shell payload
   contract, which is now versioned surface.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot

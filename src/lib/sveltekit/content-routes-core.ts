@@ -340,22 +340,28 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const collapsedNav = cookieCollapsed
       ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
       : [];
-    // resolveBackend can throw synchronously (the token mint), which a bare `.catch()` would miss.
-    // Defer the resolve into a Promise.resolve().then so a sync throw becomes a caught rejection
-    // that degrades to null, the fail-safe the shell needs so a token or network failure hides the
-    // publish-all action rather than throwing the whole shell.
-    const pendingEntries = Promise.resolve()
-      .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
-      .then((names) =>
-        names.flatMap((name) => {
-          const entry = pendingEntryOf(name);
-          return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
-        }),
-      )
-      .catch((err): { concept: string; id: string }[] | null => {
-        log.warn('github.unreachable', { scope: 'shell', error: String(err) });
-        return null;
-      });
+    // A none-capability session sees no publish surface (every engine content route already 403s
+    // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
+    // not theirs to read: skip the backend listing entirely rather than streaming a real pending
+    // count into a dead button. resolveBackend can throw synchronously (the token mint), which a
+    // bare `.catch()` would miss; deferring the resolve into a Promise.resolve().then turns a sync
+    // throw into a caught rejection that degrades to null, the fail-safe the shell needs so a token
+    // or network failure hides the publish-all action rather than throwing the whole shell.
+    const pendingEntries =
+      editor.capability === 'none'
+        ? Promise.resolve([] as { concept: string; id: string }[])
+        : Promise.resolve()
+            .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
+            .then((names) =>
+              names.flatMap((name) => {
+                const entry = pendingEntryOf(name);
+                return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+              }),
+            )
+            .catch((err): { concept: string; id: string }[] | null => {
+              log.warn('github.unreachable', { scope: 'shell', error: String(err) });
+              return null;
+            });
     // The whole arranged sidebar for this request: a declared navLayout resolves and gates as
     // written (engine capability, ownerOnly, declarative roles), or, absent one, the resolver
     // synthesizes today's default arrangement through the same code path, so the two can never

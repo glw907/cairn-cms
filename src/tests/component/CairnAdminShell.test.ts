@@ -488,6 +488,25 @@ describe('CairnAdminShell', () => {
     await expect.element(sidebar.getByText('Core')).toBeInTheDocument();
   });
 
+  it('renders without throwing when a legacy adminNav section shares a label with the synthesized Core group', async () => {
+    // validateNavLayout cannot retroactively reject the legacy adminNav path: a site can still
+    // declare a section literally named "Core", which the default arrangement's resolver then
+    // places beside the built-in Core group, producing two same-labeled sections in shell.nav.items.
+    // The group each in CairnAdminShell keys on index for exactly this reason (task 2); a label key
+    // would crash the render here.
+    const adminNav: ResolvedNavItem[] = [
+      { label: 'Core', children: [{ label: 'Roster', iconName: 'users', href: '/admin/roster', ownerOnly: false }] },
+    ];
+    const screen = render(CairnAdminShell, { data: data(true, null, undefined, undefined, adminNav), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const sidebarEl = sidebar.element() as HTMLElement;
+    const coreSummaries = Array.from(sidebarEl.querySelectorAll('summary')).filter(
+      (el) => el.textContent?.trim() === 'Core',
+    );
+    expect(coreSummaries).toHaveLength(2);
+    await expect.element(sidebar.getByRole('link', { name: 'Roster' })).toBeInTheDocument();
+  });
+
   it('omits an owner-only custom entry the payload has already role-filtered out', async () => {
     // The shell receives an already-role-filtered customNav (the server hides an owner-only entry
     // from a non-owner), so an editor payload simply carries no such entry and the link is absent.

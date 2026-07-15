@@ -225,10 +225,14 @@ function isNavLayoutEngineRef(node: NavLayoutEntry | NavLayoutEngineRef): node i
  *  cannot declare both `adminNav` and `navLayout` (no single source of truth for the sidebar
  *  otherwise); every engine reference names a real screen (a declared concept id or one of the fixed
  *  utility screens) and is referenced at most once, a hidden reference included; `'nav'` is
- *  referenced only when the site configures a navMenu; a relabel is never blank; a section carries no
- *  nested section and at least one child; a `roles` list, on an entry or a section, names only a role
- *  the site's vocabulary actually declares. A site entry embedded in the tree is validated the same
- *  way a flat `adminNav` entry is (the bundled icon allowlist, the built-in href collision), reusing
+ *  referenced only when the site configures a navMenu; a relabel is never blank; a section's own
+ *  label is never blank and never repeats another section's label; a section carries no nested
+ *  section and at least one child; two site entries, top-level or inside a section, never share an
+ *  href anywhere in the tree (a duplicate would resolve to two links pointing at the same route, and
+ *  the shell's key-safety fallback would otherwise be the only thing standing between that and a
+ *  silent last-write-wins render); a `roles` list, on an entry or a section, names only a role the
+ *  site's vocabulary actually declares. A site entry embedded in the tree is validated the same way a
+ *  flat `adminNav` entry is (the bundled icon allowlist, the built-in href collision), reusing
  *  {@link resolveEntry} so the two paths can never drift.
  * @param layout - The raw config.
  *
@@ -257,6 +261,15 @@ export function validateNavLayout(
   // validate) that no path here needs.
   const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];
   const seenScreens = new Set<string>();
+  const seenSectionLabels = new Set<string>();
+  const seenEntryHrefs = new Set<string>();
+
+  function checkHref(href: string, where: string): void {
+    if (seenEntryHrefs.has(href)) {
+      throw new Error(`navLayout: href "${href}" is used by more than one entry (${where} duplicates an earlier one); give each entry a unique href`);
+    }
+    seenEntryHrefs.add(href);
+  }
 
   function checkRoles(roles: Role[] | undefined, where: string): void {
     if (!roles) return;
@@ -287,6 +300,13 @@ export function validateNavLayout(
 
   for (const node of layout) {
     if (isNavLayoutSection(node)) {
+      if (node.label.trim() === '') {
+        throw new Error('navLayout: a section label cannot be blank');
+      }
+      if (seenSectionLabels.has(node.label)) {
+        throw new Error(`navLayout: two sections share the label "${node.label}"; give each section a unique label`);
+      }
+      seenSectionLabels.add(node.label);
       if (node.children.length === 0) {
         throw new Error(`navLayout: section "${node.label}" has no children`);
       }
@@ -299,6 +319,7 @@ export function validateNavLayout(
           checkEngineRef(child);
         } else {
           resolveEntry(child, stubConcepts);
+          checkHref(child.href, `an entry in section "${node.label}"`);
           checkRoles(child.roles, `an entry in section "${node.label}"`);
         }
       }
@@ -306,6 +327,7 @@ export function validateNavLayout(
       checkEngineRef(node);
     } else {
       resolveEntry(node, stubConcepts);
+      checkHref(node.href, 'a top-level entry');
       checkRoles(node.roles, 'a top-level entry');
     }
   }

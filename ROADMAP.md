@@ -448,6 +448,11 @@ the named human gates only):**
   planned fallback is an edge Transform Rule that injects `Origin` for `/admin` POSTs; the higher-leverage
   path is the upstream issue (sveltejs/kit#15992). Track the removal and act before a major lands.
   Reasoning in `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
+- **A collapsed sidebar section holding the active route's link does not auto-expand.** Landing on a
+  route whose nav entry sits inside a section the editor previously collapsed leaves that section
+  closed, so the active link is present but hidden. Consider forcing the section open when one of its
+  children `isActive`, without overriding a deliberate manual collapse of an inactive section. Review
+  finding, 2026-07-14 nav-layout pass.
 
 ## Considering
 

@@ -461,7 +461,7 @@ discriminant, not the fields, gates the chrome).
           </div>
           {#if paletteResults.length}
             <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
-              {#each paletteResults as cmd (cmd.label)}
+              {#each paletteResults as cmd, i (i)}
                 <li>
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
@@ -543,7 +543,7 @@ discriminant, not the fields, gates the chrome).
 
         {#snippet navItemList(items: NavItem[], extraClass: string = '')}
           <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`}>
-            {#each items as item (item.href)}
+            {#each items as item, i (i)}
               <li>
                 <a
                   href={item.href}
@@ -576,7 +576,13 @@ discriminant, not the fields, gates the chrome).
                navLayout is declared, or a site's own named group); a loose top-level node (a site
                entry or engine reference placed outside any section) batches with its neighbors into
                a plain, header-less list rather than opening a group of its own. -->
-          {#each navGroups as group, i (group.kind === 'section' ? group.label : `loose-${i}`)}
+          <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
+               adminNav path can synthesize two same-labeled groups, e.g. a legacy section named
+               "Core" colliding with the built-in Core group; validateNavLayout cannot retroactively
+               reject that path). This list is fully derived and stateless, and the collapsed-group
+               open state derives from the label-keyed `collapsed` Set, not DOM identity, so index
+               keys never desync a group's open/closed state from its content. -->
+          {#each navGroups as group, i (i)}
             {#if group.kind === 'section'}
               {@render navSection(group.label, group.items)}
             {:else}

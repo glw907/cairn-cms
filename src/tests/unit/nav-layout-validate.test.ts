@@ -80,6 +80,39 @@ describe('validateNavLayout: construction throws', () => {
       /cannot declare both adminNav and navLayout/,
     );
   });
+
+  it('rejects a blank or whitespace-only section label', () => {
+    const blank = [{ label: '', children: [{ screen: 'settings' }] }] as NavLayout;
+    expect(() => validateNavLayout(blank, ctx())).toThrow(/navLayout: a section label cannot be blank/);
+    const whitespace = [{ label: '   ', children: [{ screen: 'settings' }] }] as NavLayout;
+    expect(() => validateNavLayout(whitespace, ctx())).toThrow(/navLayout: a section label cannot be blank/);
+  });
+
+  it('rejects two sections sharing a label', () => {
+    const layout: NavLayout = [
+      { label: 'Club', children: [{ screen: 'settings' }] },
+      { label: 'Club', children: [{ screen: 'editors' }] },
+    ];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(
+      /navLayout: two sections share the label "Club"/,
+    );
+  });
+
+  it('rejects two site entries sharing an href, one top-level and one section-embedded', () => {
+    const layout = [
+      { label: 'X', icon: 'inbox', href: '/admin/dup' },
+      { label: 'Club', children: [{ label: 'Y', icon: 'list', href: '/admin/dup' }] },
+    ] as unknown as NavLayout;
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/navLayout: href "\/admin\/dup" is used by more than one entry/);
+  });
+
+  it('rejects two site entries sharing an href across two different sections', () => {
+    const layout: NavLayout = [
+      { label: 'Club', children: [{ label: 'X', icon: 'inbox', href: '/admin/dup' }] },
+      { label: 'Team', children: [{ label: 'Y', icon: 'list', href: '/admin/dup' }] },
+    ];
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/navLayout: href "\/admin\/dup" is used by more than one entry/);
+  });
 });
 
 describe('validateNavLayout: reuses adminNav entry validation for embedded site entries', () => {
@@ -105,6 +138,14 @@ describe('validateNavLayout: a valid tree', () => {
         children: [{ screen: 'editors' }, { label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
       },
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
+    ];
+    expect(() => validateNavLayout(layout, ctx())).not.toThrow();
+  });
+
+  it('validates without throwing: two sections with distinct labels, each entry with a distinct href', () => {
+    const layout: NavLayout = [
+      { label: 'Club', children: [{ label: 'X', icon: 'inbox', href: '/admin/club-x' }] },
+      { label: 'Team', children: [{ label: 'Y', icon: 'list', href: '/admin/team-y' }] },
     ];
     expect(() => validateNavLayout(layout, ctx())).not.toThrow();
   });

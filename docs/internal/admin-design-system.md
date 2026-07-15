@@ -158,8 +158,10 @@ Recipes:
   Use for the list table, the editor panes, the auth card. Do not use a flat `base-300` border.
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`.
-- **Collapsible group:** a native `<details>` per group with `bind:open` seeded from `data.collapsedNav`
-  (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash). The `<summary>` is
+- **Collapsible group:** a native `<details>` per group, its `open` computed one-way from a label-keyed
+  `collapsed` Set seeded from `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie,
+  read at SSR for no flash) and an `ontoggle` handler that mirrors each change back into that Set and the
+  cookie. The `<summary>` is
   the eyebrow plus a gentle band (`bg-base-content/[0.04] hover:bg-base-content/[0.08]`) and a
   `.cairn-caret` chevron that the scoped rule rotates when open. Items align with the group label and the
   brand mark on one left edge.

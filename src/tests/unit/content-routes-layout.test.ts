@@ -190,6 +190,33 @@ describe('shellPayload', () => {
     await shell.pendingEntries;
   });
 
+  it('resolves pendingEntries to [] for a none-capability session and never calls the backend', async () => {
+    // A none-capability session sees no publish surface (the topbar's "Publish site (N)" action is
+    // dead for it), so the count is not theirs to read: shellPayload must skip the backend listing
+    // entirely rather than streaming a real pending count into that dead button. A backend whose
+    // listBranches throws proves the skip: if shellPayload called it, the promise would degrade to
+    // null (the existing github.unreachable fail-safe), not resolve to [].
+    const listBranches = vi.fn(() => {
+      throw new Error('listBranches should not be called for a none-capability session');
+    });
+    const routes = createContentRoutes(runtime());
+    const noneEvent = {
+      url: new URL('https://test.example/admin/posts'),
+      params: {},
+      request: new Request('https://test.example/admin/posts'),
+      locals: {
+        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        backend: { listBranches },
+      },
+      platform: { env: {} },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    };
+    const { shell } = await routes.shellPayload(noneEvent as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([]);
+    expect(listBranches).not.toHaveBeenCalled();
+  });
+
   it('grants manage-editors capability to an owner-capability role that is not literally named owner', async () => {
     const rt = runtimeWithRoles();
     const routes = createContentRoutes(rt);

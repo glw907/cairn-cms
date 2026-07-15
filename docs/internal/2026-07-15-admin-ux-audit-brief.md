@@ -30,6 +30,10 @@ design-refinement arc for the material findings (color, type), and the component
   as "Caim"); every cairn admin carries the word.
 - A collapsed sidebar section containing the active route's link does not auto-expand
   (review finding, filed in ROADMAP Later).
+- Zen mode at `xl` now retains the persistent desk sidebar (an interaction the 0.86.0 desk
+  rider created: zen previously only dropped the topbar because the desk sidebar was always
+  receded). Decide whether zen should recede the sidebar too — the charter's anchor argues a
+  full-focus escape drops everything. Evidence: `edit-zen-1440.png` in the render set.
 
 ## Method
 

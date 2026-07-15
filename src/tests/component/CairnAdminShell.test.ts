@@ -1,10 +1,15 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll, vi } from 'vitest';
 import { render } from 'vitest-browser-svelte';
+import { page } from 'vitest/browser';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
 import { resolveNavLayout, type NavLayout, type ResolvedNavItem } from '../../lib/sveltekit/admin-nav.js';
 // CairnAdminShell joined to a descendant that fills the topbar holder, the way EditPage does.
 import CairnAdminShellDeskHarness from './_CairnAdminShellDeskHarness.svelte';
+// The compiled sheet carries the real .modal-box sizing and the utility layer (outline-hidden,
+// :focus-visible) the palette-inset and focus tests below measure against; the source partial
+// these other tests import has neither.
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
@@ -722,5 +727,61 @@ describe('CairnAdminShell', () => {
     });
     const main = screen.container.querySelector('main')!;
     expect(main.querySelector('.max-w-5xl')).toBeNull();
+  });
+
+  // Task 4 (audit finding 8, palette slice): below `sm` the palette sat flush against the
+  // viewport top (`self-start` with only `sm:mt-[12vh]`) and its input showed a bare UA focus
+  // outline instead of the admin's one brand-violet :focus-visible ring (cairn-admin.css:348),
+  // which a stray `outline-hidden` utility on the input was overriding. The compiled sheet
+  // carries both the real .modal-box geometry and the utility-layer rules the fix depends on.
+  describe('palette inset and focus treatment at 390 (audit finding 8, palette slice)', () => {
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      await page.viewport(1280, 720);
+    });
+
+    it('gives the palette a top inset below sm instead of sitting flush against the viewport', async () => {
+      await page.viewport(390, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      await screen.getByRole('button', { name: /search or jump to/i }).click();
+      const box = screen.container.ownerDocument.querySelector<HTMLElement>(
+        'dialog[aria-label="Search or jump to"] .modal-box',
+      )!;
+      // A modest margin off the top edge, not the near-zero gap the bare self-start produced.
+      expect(box.getBoundingClientRect().top).toBeGreaterThanOrEqual(24);
+    });
+
+    it('gives the palette input the admin brand-violet focus ring, not a bare UA outline', async () => {
+      await page.viewport(390, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      await screen.getByRole('button', { name: /search or jump to/i }).click();
+      const input = screen.container.ownerDocument.querySelector<HTMLInputElement>(
+        'dialog[aria-label="Search or jump to"] input[aria-label="Search or jump to"]',
+      )!;
+      expect(input.className).not.toContain('outline-hidden');
+      input.focus();
+      const style = getComputedStyle(input);
+      expect(style.outlineStyle).toBe('solid');
+      expect(style.outlineWidth).toBe('2px');
+      // The same custom property the admin's global :focus-visible ring reads, resolved to a
+      // color rather than compared as a raw string (getComputedStyle normalizes oklch()).
+      const primary = getComputedStyle(document.documentElement).getPropertyValue('--color-primary').trim();
+      const probe = document.createElement('div');
+      probe.style.color = primary;
+      document.body.appendChild(probe);
+      const resolvedPrimary = getComputedStyle(probe).color;
+      probe.remove();
+      expect(style.outlineColor).toBe(resolvedPrimary);
+    });
   });
 });

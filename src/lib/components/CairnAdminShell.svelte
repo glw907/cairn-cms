@@ -500,7 +500,7 @@ discriminant, not the fields, gates the chrome).
       </main>
 
       <dialog bind:this={paletteDialog} class="modal" aria-label="Search or jump to">
-        <div class="modal-box max-w-xl self-start p-0 sm:mt-[12vh]">
+        <div class="modal-box max-w-xl self-start mt-4 p-0 sm:mt-[12vh]">
           <div class="flex items-center gap-2 border-b border-[var(--cairn-card-border)] px-4">
             <SearchIcon class="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
             <input
@@ -508,7 +508,7 @@ discriminant, not the fields, gates the chrome).
               type="text"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
-              class="w-full bg-transparent py-3.5 text-sm outline-hidden placeholder:text-muted"
+              class="w-full bg-transparent py-3.5 text-sm placeholder:text-muted"
               onkeydown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();

@@ -245,20 +245,14 @@ in component state.
 <!-- The office natural-measure rule (design arc 2026-07-15): a document list composes at 3xl
      within the shell's 5xl ceiling, so short titles never open a dead band against the date. -->
 <div class="mx-auto w-full max-w-3xl">
+<!-- The header carries the page's two anchors only, title left and the one standing action right;
+     search lives in the triage row below (the toolbar placement, converging with Media), so the
+     header's right side never out-weighs the h1 (the page-balance ruling, design arc 2026-07-15). -->
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
-  <!-- Below sm the search and the New button stack full-width instead of sharing one row: at 320
-       a side-by-side row squeezes the search input to a few characters (the reported icon-plus-"S"
-       collapse), so each control gets the full row instead. -->
-  <div class="flex flex-col gap-3 sm:flex-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
-    <label class="input input-sm w-full min-w-0 sm:w-auto sm:max-w-xs sm:flex-1">
-      <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
-      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
-    </label>
-    <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
-      <PlusIcon class="h-4 w-4" /> New {createNoun}
-    </button>
-  </div>
+  <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <PlusIcon class="h-4 w-4" /> New {createNoun}
+  </button>
 </header>
 
 <!-- One persistent live region announces the publish-all flash (the EditPage pattern): a
@@ -316,6 +310,12 @@ in component state.
       {#if hiddenOnly}{@render check()}{/if}
       Hidden<span class="tabular-nums">{counts.hidden}</span>
     </button>
+    <!-- Below sm the search takes its own full row (at 320 a shared row squeezes the input to a
+         few characters, the reported icon-plus-"S" collapse). -->
+    <label class="input input-sm w-full min-w-0 sm:ml-auto sm:w-auto sm:max-w-56">
+      <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
+      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
+    </label>
   </div>
 {/if}
 
@@ -347,7 +347,7 @@ in component state.
         {/if}
       </div>
     {:else}
-      <table class="table text-[0.9375rem] [&_:where(td)]:py-2.5">
+      <table class="table text-[0.9375rem] [&_:where(td)]:py-2.5 [&_:where(td,th):first-child]:pl-6">
         <thead>
           <tr class="border-base-300">
             <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
@@ -387,7 +387,7 @@ in component state.
                      title-status-date, so the summary line stays off the office list and the
                      Hidden tag sits inline beside the title. -->
                 <div class="flex items-center gap-2">
-                  <a class="truncate font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                  <a class="truncate text-base font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                   {#if entry.draft}
                     <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                          eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
@@ -428,7 +428,7 @@ in component state.
       <!-- The create affordance baked into the list body: a full-width borderless foot row so a
            short list always shows its next step rather than just stopping. Same action as the
            header New button. -->
-      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-[0.9375rem] font-medium text-subtle underline [text-underline-offset:2px] hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-[0.9375rem] font-medium text-subtle hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
         <PlusIcon class="h-4 w-4" /> New {createNoun}
       </button>
     {/if}

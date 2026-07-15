@@ -47,9 +47,12 @@ Calibration (Geoff, 2026-07-15):
   widths, designed for the context rather than merely responsive, while accepting it cannot equal
   a desktop.
 - **Standing grades against the current admin** (small issues, the whole "pretty good"): the
-  color reads a little too aggressive; the sidebar looks a little too complex at a glance; the
-  icons and help around the editor may challenge a less technical writer. These seed any
-  refinement work until resolved.
+  color reads a little too aggressive, and there are probably too many popping colors on one
+  screen (the count of attention-demanding moments, not only the primary's intensity); the
+  sidebar looks a little too complex at a glance; the icons and help around the editor may
+  challenge a less technical writer; the base font size might be a little too small (Geoff's
+  hedge is real, so verify against the anchor's generosity rather than assuming). These seed
+  any refinement work until resolved.
 
 ## Load-bearing rules (break these and the admin renders wrong)
 

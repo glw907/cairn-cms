@@ -100,10 +100,11 @@ describe('CairnMediaLibrary grid', () => {
     expect(describedTile.querySelector('[aria-label="Described"]')).not.toBeNull();
     expect(describedTile.textContent ?? '').toMatch(/described/i);
 
-    // The no-references tile carries the "No refs" marker; the used tile names its count. The
-    // category never reads "Unused" (the rename: absence of a found reference is not proof of disuse).
+    // The no-references tile carries the "Not referenced" marker; the used tile names its count.
+    // The category never reads "Unused" (the rename: absence of a found reference is not proof of
+    // disuse).
     const unusedTile = options.find((o) => /meadow-fence/.test(o.textContent ?? ''))!;
-    expect(unusedTile.textContent ?? '').toMatch(/no refs/i);
+    expect(unusedTile.textContent ?? '').toMatch(/not referenced/i);
     expect(unusedTile.textContent ?? '').not.toMatch(/unused/i);
     expect(describedTile.textContent ?? '').toMatch(/used/i);
   });

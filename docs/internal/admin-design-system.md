@@ -370,9 +370,11 @@ Recipes:
   writing): word count left, then the posture pair, the writing-mode toggles, a hairline, and
   Markdown help, all ghost `btn-xs` with `aria-pressed` and the `bg-primary/10 text-primary`
   pressed pair. The postures: Prose (default) is the writing instrument, a 72ch measure centered
-  in a 49rem card at a 1.0625rem type step and 1.9 leading; Markup is the working surface, a
-  56rem card the text fills at 1rem/1.8 for tables, attributed directives, and long URLs. The
-  posture persists as `cairn-editor-surface`; the card cap and the title wrapper follow it.
+  in a 49rem card at a 1.0625rem type step and 1.9 leading; Wide (labeled "Markup" in the
+  `cairn-editor-surface` persisted value, since the calibrated voice sweep renamed only the
+  visible label) is the working surface, a 56rem card the text fills at 1rem/1.8 for tables,
+  attributed directives, and long URLs. The posture persists as `cairn-editor-surface`; the card
+  cap and the title wrapper follow it.
 - **Editor: the writing modes.** Focus mode dims non-caret paragraphs to `--cairn-focus-dim-ink`,
   a DELIBERATE sub-AA transient-state call (~3:1 floor, user-toggled, one activation from full
   contrast; G174 is the conformance shape) that also flattens chip backgrounds on dimmed lines

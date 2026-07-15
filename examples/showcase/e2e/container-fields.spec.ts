@@ -35,7 +35,7 @@ test('the FAQ array(object) round-trips: add two rows, reorder, remove one, save
   await page.goto('/admin/posts');
 
   // Create the entry through the header dialog.
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('FAQ Roundtrip');
@@ -105,7 +105,7 @@ test('the gallery array(image) round-trips: add an image row, save, reload, the 
   const slug = `gallery-roundtrip-${Date.now()}`;
 
   await page.goto('/admin/posts');
-  await page.locator('header').getByRole('button', { name: 'New Posts' }).click();
+  await page.locator('header').getByRole('button', { name: 'New post' }).click();
   const createDialog = page.locator('dialog[aria-labelledby="cairn-create-dialog-title"]');
   await expect(createDialog).toBeVisible();
   await createDialog.locator('input[name="title"]').fill('Gallery Roundtrip');

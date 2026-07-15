@@ -1561,13 +1561,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               />
             </span>
             <div class="relative flex aspect-[4/3] items-center justify-center bg-base-200/60">
-              <!-- The usage marker, top-right: a used count, or the warning-ink "No refs" chip. The
-                   category reads "No references found" (renamed from "Unused"): a found reference is
-                   not proof of use, and absence of one is not proof of disuse. -->
+              <!-- The usage marker, top-right: a used count, or the warning-ink "Not referenced"
+                   chip. The category reads "No references found" (renamed from "Unused"): a found
+                   reference is not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
                 <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">No refs</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">Not referenced</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">

@@ -175,8 +175,8 @@ describe('EditPage', () => {
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
     // Prose posture (the default) hugs the 72ch measure.
     expect(column.classList.contains('max-w-[49rem]')).toBe(true);
-    // Markup posture widens to the working ceiling.
-    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    // Wide posture widens to the working ceiling.
+    await screen.getByRole('button', { name: 'Wide', exact: true }).click();
     expect(column.classList.contains('max-w-[56rem]')).toBe(true);
     expect(localStorage.getItem('cairn-editor-surface')).toBe('markup');
     await screen.getByRole('tab', { name: 'Preview' }).click();
@@ -190,7 +190,7 @@ describe('EditPage', () => {
     localStorage.setItem('cairn-editor-surface', 'markup');
     const screen = render(EditPage, postProps());
     await expect
-      .element(screen.getByRole('button', { name: 'Markup', exact: true }))
+      .element(screen.getByRole('button', { name: 'Wide', exact: true }))
       .toHaveAttribute('aria-pressed', 'true');
     await expect
       .element(screen.getByRole('button', { name: 'Prose', exact: true }))
@@ -206,16 +206,16 @@ describe('EditPage', () => {
     expect(group.className).toContain('border');
     expect(group.className).toContain('border-[var(--cairn-card-border)]');
     const segButtons = Array.from(group.querySelectorAll<HTMLButtonElement>('button'));
-    expect(segButtons.map((b) => b.textContent?.trim())).toEqual(['Prose', 'Markup']);
+    expect(segButtons.map((b) => b.textContent?.trim())).toEqual(['Prose', 'Wide']);
     // The check glyph rides inside the active segment only (the non-color cue, WCAG 1.4.1).
     const prose = screen.getByRole('button', { name: 'Prose', exact: true });
-    const markup = screen.getByRole('button', { name: 'Markup', exact: true });
+    const wide = screen.getByRole('button', { name: 'Wide', exact: true });
     await expect.element(prose).toHaveAttribute('aria-pressed', 'true');
     expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).not.toBeNull();
-    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).toBeNull();
-    await markup.click();
-    await expect.element(markup).toHaveAttribute('aria-pressed', 'true');
-    expect(segButtons.find((b) => b.textContent?.trim() === 'Markup')!.querySelector('svg')).not.toBeNull();
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Wide')!.querySelector('svg')).toBeNull();
+    await wide.click();
+    await expect.element(wide).toHaveAttribute('aria-pressed', 'true');
+    expect(segButtons.find((b) => b.textContent?.trim() === 'Wide')!.querySelector('svg')).not.toBeNull();
     expect(segButtons.find((b) => b.textContent?.trim() === 'Prose')!.querySelector('svg')).toBeNull();
   });
 
@@ -458,7 +458,7 @@ describe('EditPage', () => {
     expect(form.classList.contains('lg:grid')).toBe(false);
     const column = screen.container.querySelector('form#cairn-edit-form > div')!;
     expect(column.classList.contains('mx-auto')).toBe(true);
-    await screen.getByRole('button', { name: 'Markup', exact: true }).click();
+    await screen.getByRole('button', { name: 'Wide', exact: true }).click();
     expect(form.classList.contains('lg:grid')).toBe(false);
     expect(column.classList.contains('mx-auto')).toBe(true);
   });
@@ -1797,9 +1797,9 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps({ body: 'the the cat' }));
     const count = () => screen.container.querySelector('[data-testid="cairn-issue-count"]');
     await expect.element(screen.getByText('3 words')).toBeInTheDocument(); // the editor has mounted
-    expect(count()?.textContent).toBe('0 issues');
+    expect(count()?.textContent).toBe('Nothing to review');
     expect(count()?.getAttribute('aria-hidden')).toBe('true');
-    await expect.poll(() => count()?.textContent, COLD_START).toBe('1 issue');
+    await expect.poll(() => count()?.textContent, COLD_START).toBe('1 to review');
     // The count sits inside the same footer strip as the word count, not off in its own region.
     const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
     expect(card.contains(count()!)).toBe(true);
@@ -2724,7 +2724,7 @@ describe('EditPage', () => {
       await page.viewport(1280, 720);
     });
 
-    const footerLabels = ['Prose', 'Markup', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen', 'Markdown help'];
+    const footerLabels = ['Prose', 'Wide', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen', 'Markdown help'];
 
     for (const width of [320, 390]) {
       it(`renders every footer control unclipped and unwrapped at ${width}px`, async () => {

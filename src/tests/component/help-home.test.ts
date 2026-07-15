@@ -28,7 +28,7 @@ describe('HelpHome', () => {
     render(HelpHome, { data: fixture() });
 
     await expect
-      .element(page.getByRole('heading', { name: 'Find your way around' }))
+      .element(page.getByRole('heading', { name: 'Find formatting help and get your site set up.' }))
       .toBeInTheDocument();
     await expect.element(page.getByText('1 of 3 done', { exact: false })).toBeInTheDocument();
     // Step 1 is done, so it shows the visible "Done" tag (exact, to skip the "of 3 done" count).

@@ -15,7 +15,7 @@ and the lifecycle actions: Save, Publish (always present, riding the same form v
 guarded rather than hidden when there is nothing new to publish), and an overflow menu for
 Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
-count, the Prose/Markup posture pair, the focus and typewriter toggles, and the Markdown help.
+count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Markdown help.
 -->
 <script lang="ts">
   import { flushSync, untrack, getContext } from 'svelte';
@@ -1177,7 +1177,9 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
   // timed pass over the document. Starts at zero before the editor's first report lands.
   let diagnosticsCounts = $state<DiagnosticCounts>({ spelling: 0, style: 0 });
   const issueCount = $derived(diagnosticsCounts.spelling + diagnosticsCounts.style);
-  const issueLabel = $derived(issueCount === 1 ? '1 issue' : `${issueCount} issues`);
+  const issueLabel = $derived(
+    issueCount === 0 ? 'Nothing to review' : issueCount === 1 ? '1 to review' : `${issueCount} to review`,
+  );
 
   // The manifest-backed resolver turns a cairn: link into its live permalink in the preview, and
   // returns undefined for a missing target so the render step marks it cairn-broken-link.
@@ -1744,7 +1746,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               type="button"
               class="btn btn-sm btn-ghost gap-1.5"
               aria-label="Tidy"
-              title="Tidy: a light copy-edit you review before it lands"
+              title="Tidy: a light copy-edit you review before accepting"
               disabled={insertDisabled || tidyBusy}
               onclick={runTidy}
             >
@@ -1914,7 +1916,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
               onclick={() => setSurface('markup')}
             >
               {#if surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Markup
+              Wide
             </button>
           </div>
           <!-- Focus mode and Typewriter are standalone check-and-tint toggles, no border. This
@@ -2197,7 +2199,7 @@ count, the Prose/Markup posture pair, the focus and typewriter toggles, and the 
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
       <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
       <p class="max-w-prose text-sm text-muted">
-        Claude is reading your draft for a light copy-edit. You will review every change before it lands.
+        Claude is reading your draft for a light copy-edit. You will review each change before it is applied.
       </p>
       <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
     </div>

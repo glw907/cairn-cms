@@ -99,8 +99,8 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     <!-- masthead: a real-sentence h1, the page's single display beat -->
     <div class="page-head">
       <span class="eyebrow">Help</span>
-      <h1 class="page-h1">Find your way around</h1>
-      <p class="page-lede">The place to get your bearings and look up how things work.</p>
+      <h1 class="page-h1">Find formatting help and get your site set up.</h1>
+      <p class="page-lede">If you need more, the get-help section below names who to ask.</p>
     </div>
 
     <!-- SECTION 1: getting started (omitted at 3 of 3) -->
@@ -270,7 +270,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
         <div class="section-titles">
           <span class="eyebrow" id="cairn-help-eye">Get help</span>
           <h2 class="section-h">
-            {support ? 'Ask the person who set up your site' : 'Stuck on something?'}
+            {support ? 'Ask the person who set up your site' : 'If you need more help'}
           </h2>
         </div>
       </div>

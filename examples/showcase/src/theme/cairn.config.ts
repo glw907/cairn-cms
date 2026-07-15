@@ -347,6 +347,10 @@ export const cairn = defineAdapter({
     posts: defineConcept({
       dir: 'src/content/posts',
       label: 'Posts',
+      // The create affordances read in the singular ("New post"); an omitted `singular` would
+      // fall back to `label` and read "New Posts" instead (ConceptList.svelte's documented
+      // fallback, exercised deliberately without one in the engine's own component tests).
+      singular: 'post',
       summaryFields: ['description'],
       routing: 'feed',
       fields: fieldset({

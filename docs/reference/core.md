@@ -109,7 +109,9 @@ and its URL policy with `permalink` and `datePrefix`; an omitted `routing` is `'
 resolved permalink uses a date token (`:year`, `:month`, or `:day`), the concept must declare a
 field named `date` of type `date`; `defineConcept` and `normalizeConcepts` both throw at
 declaration on a missing or wrong-typed one, and both normalize the declared field to
-`required: true`, since the permalink cannot resolve without it.
+`required: true`, since the permalink can't resolve without it. An omitted `singular` falls back to
+`label` with no warning, so a plural `label` like `'Posts'` reads "New Posts" on the create
+affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
 <!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
 ```ts

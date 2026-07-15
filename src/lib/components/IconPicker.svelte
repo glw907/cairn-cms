@@ -1,7 +1,8 @@
 <!--
 @component
 A visual icon choice over the site's IconSet. The choices form a radiogroup; each glyph is a radio
-button carrying aria-checked, and the selected one carries btn-primary for the visible state. When the
+button carrying aria-checked, and the selected one carries the neutral selected wash (weight and
+border, not hue, per the admin's emphasis ladder) for the visible state. When the
 field is optional, a None radio clears the value. A roving tabindex keeps a single tab stop and arrow
 keys move the selection, the standard radiogroup keyboard model. The glyph renders inline from the
 IconSet path data, matching the renderer's 256-unit viewBox.
@@ -68,8 +69,7 @@ IconSet path data, matching the renderer's 256-unit viewBox.
   {#if !required}
     <button
       type="button"
-      class="btn btn-sm"
-      class:btn-primary={value === ''}
+      class="btn btn-sm {value === '' ? 'border-base-content/25 bg-base-content/[0.07] font-semibold' : ''}"
       role="radio"
       aria-checked={value === ''}
       aria-label="None"
@@ -81,8 +81,7 @@ IconSet path data, matching the renderer's 256-unit viewBox.
   {#each names as name (name)}
     <button
       type="button"
-      class="btn btn-sm gap-1"
-      class:btn-primary={value === name}
+      class="btn btn-sm gap-1 {value === name ? 'border-base-content/25 bg-base-content/[0.07] font-semibold' : ''}"
       role="radio"
       aria-checked={value === name}
       aria-label={name}

@@ -251,7 +251,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
       <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
     </label>
-    <button type="button" class="btn btn-primary btn-sm w-full shrink-0 sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85 sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
@@ -324,7 +324,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
       <p class="text-sm text-muted">Stack your first one and it will show up here.</p>
     </div>
-    <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>

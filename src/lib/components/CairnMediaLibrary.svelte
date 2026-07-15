@@ -1387,7 +1387,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(on)}`;
   }
   function densityButtonClass(on: boolean): string {
-    return `inline-flex items-center justify-center rounded-md p-1.5 ${on ? 'bg-primary/10 text-primary' : 'text-muted hover:bg-base-content/[0.06]'}`;
+    return `inline-flex items-center justify-center rounded-md p-1.5 hover:bg-base-content/[0.06] ${segmentTintClass(on)}`;
   }
 
   const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
@@ -1405,7 +1405,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
   </div>
-  <button type="button" class="btn btn-primary btn-sm shrink-0" onclick={onUploadButtonClick}>
+  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
   </button>
 </header>
@@ -1447,7 +1447,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </p>
     </div>
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-primary btn-sm" onclick={onUploadButtonClick}>
+      <button type="button" class="btn btn-sm border-transparent bg-base-content text-base-100 shadow-none hover:bg-base-content/85" onclick={onUploadButtonClick}>
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
       <span class="text-xs">or drop a file anywhere on this page</span>
@@ -1685,8 +1685,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
               <td class="w-24 text-right text-sm tabular-nums text-muted">{formatAdded(asset.createdAt)}</td>
               <td class="w-12 text-right">
-                <button type="button" class="btn btn-ghost btn-sm" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
-                  <Trash2Icon class="h-4 w-4 text-error" />
+                <button type="button" class="btn btn-ghost btn-sm text-base-content/45 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
+                  <Trash2Icon class="h-4 w-4" />
                 </button>
               </td>
             </tr>

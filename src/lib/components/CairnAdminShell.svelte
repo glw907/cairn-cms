@@ -568,7 +568,7 @@ discriminant, not the fields, gates the chrome).
           {#await data.pendingEntries then pending}
             {#if pending && pending.length > 0}
               <div class="flex-none">
-                <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
                   Publish site ({pending.length})
                 </button>
               </div>

@@ -13,6 +13,7 @@ import {
   configPublicOrigin,
   configTidyKey,
   adminMountShape,
+  roleWiring,
 } from './checks-local.js';
 import { configDependencyFloors } from './check-floors.js';
 import {
@@ -190,6 +191,7 @@ export function defaultChecks(): DoctorCheck[] {
     edgeHsts,
     authStore,
     roleVocabulary,
+    roleWiring,
     emailNormalization,
     githubApp,
   ];

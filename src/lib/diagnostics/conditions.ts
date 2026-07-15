@@ -150,6 +150,15 @@ export const REGISTRY: Record<string, CairnCondition> = {
 		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
 		logEvent: 'auth.role.unknown',
 	},
+	'auth.role-wiring-missing': {
+		id: 'auth.role-wiring-missing',
+		severity: 'warning',
+		title: 'Guard is missing the declared role vocabulary',
+		why: 'The adapter declares custom roles with defineRoles, but createAuthGuard in src/hooks.server.ts was not passed { roles }, so the running guard falls back to the implicit owner/editor pair. Every editor whose role is outside that pair resolves to none capability: they authenticate but the guard refuses every content and admin-mutation route. This is the second half of a two-part wiring the auth.unknown-role check cannot see, since the editor rows still match the declared vocabulary.',
+		remediation: 'Pass the same declared vocabulary to the guard: createAuthGuard({ roles }) in src/hooks.server.ts, importing the roles the adapter declares with defineRoles.',
+		docsAnchor: 'cloudflare-readiness.md#provision-the-auth-store',
+		logEvent: 'auth.role.unknown',
+	},
 	'auth.email-not-normalized': {
 		id: 'auth.email-not-normalized',
 		severity: 'warning',

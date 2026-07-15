@@ -97,11 +97,12 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at eighteen entries', () => {
+  it('pins the registry at nineteen entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
-    // auth.email-not-normalized for the extensible-roles doctor checks. Grow this count only
-    // with a registry change.
-    expect(allConditions()).toHaveLength(18);
+    // auth.email-not-normalized for the extensible-roles doctor checks, plus
+    // auth.role-wiring-missing for the double-wiring doctor check. Grow this count only with a
+    // registry change.
+    expect(allConditions()).toHaveLength(19);
   });
 
   it('resolves the vocabulary and email-normalization conditions (extensible roles)', () => {
@@ -116,6 +117,16 @@ describe('condition registry', () => {
     expect(badEmail.why).toMatch(/trimmed and lowercase/i);
     expect(badEmail.logEvent).toBeUndefined();
     expect(badEmail.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+  });
+
+  it('resolves the role-wiring condition (the double-wiring doctor check)', () => {
+    const c = condition('auth.role-wiring-missing');
+    expect(c.severity).toBe('warning');
+    expect(c.why).toMatch(/createAuthGuard/);
+    expect(c.why).toMatch(/none capability/i);
+    expect(c.remediation).toMatch(/createAuthGuard\(\{ roles \}\)/);
+    expect(c.docsAnchor).toBe('cloudflare-readiness.md#provision-the-auth-store');
+    expect(c.logEvent).toBe('auth.role.unknown');
   });
 
   it('carries no logEvent on the config and hsts entries', () => {

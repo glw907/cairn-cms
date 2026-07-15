@@ -189,11 +189,17 @@ rather than typing the shape from scratch. Mounting the R2 bucket's own delivery
 
 ## Apply the auth schema
 
-`AUTH_DB` needs its schema before the guard can read or write a session. Copy
-`examples/showcase/migrations/0000_auth.sql` from the cairn repository into your own site's
-`migrations/` directory unchanged; it declares the three tables (`editor`, `magic_token`,
-`session`) every cairn site's auth store shares, and cairn owns their shape. Apply
-it against the database you just created:
+`AUTH_DB` needs its schema before the guard can read or write a session. The engine ships the
+migration in the package. Copy it into your own site's `migrations/` directory, where `wrangler d1
+migrations apply` reads it:
+
+```sh
+mkdir -p migrations
+cp node_modules/@glw907/cairn-cms/migrations/0000_auth.sql migrations/
+```
+
+It declares the three tables (`editor`, `magic_token`, `session`) every cairn site's auth store
+shares, and cairn owns their shape. Apply it against the database you just created:
 
 ```sh
 npx wrangler d1 migrations apply your-site-auth --remote

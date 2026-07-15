@@ -30,11 +30,11 @@ export const cairn = defineAdapter({
 ```
 
 `instructor` is a name outside the engine's default `owner`/`editor` pair, so the `editor.role`
-column's `CHECK` constraint rejects it until you apply `migrations/0001_roles.sql`. See [the
-migration section of Configure auth and
-D1](./configure-auth-and-d1.md#provision-the-d1-database) for the file and the
-`wrangler d1 migrations apply` step; a site already on a larger vocabulary has this applied
-already.
+column's `CHECK` constraint rejects it until you apply the `0001_roles.sql` migration the engine
+ships in the package. See [the migration section of Configure auth and
+D1](./configure-auth-and-d1.md#provision-the-d1-database) for copying it out of
+`node_modules/@glw907/cairn-cms/migrations/` and the `wrangler d1 migrations apply` step; a site
+already on a larger vocabulary has this applied already.
 
 ## Narrow the `Role` type
 

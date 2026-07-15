@@ -340,7 +340,7 @@ discriminant, not the fields, gates the chrome).
      scoped sheet style them. -->
 <div data-theme={theme} bind:this={rootEl}>
   <!-- The persistent desktop sidebar persists at a route-kind-specific breakpoint: office routes at
-       lg (1024px), desk routes at xl (1280px, the desk rider, spec §5) — a desk route recedes the
+       lg (1024px), desk routes at xl (1280px, the desk rider, spec §5). A desk route recedes the
        sidebar behind the toggle through the lg-xl tablet band instead of dropping it outright, since
        the wider desk layout needs the room the office layout does not. This resolves at SSR from
        data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox

@@ -68,7 +68,23 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15: 0.86.0 PUBLISHED; ASC bumps next in its own session)
+## Immediate next action (2026-07-15: 0.86.0 SHIPPED; next = the admin design arc in a FRESH session)
+
+**NEXT (fresh session): the ADMIN UI/UX AUDIT, then the reorganization pass.** The design
+charter + calibration are committed (docs/internal/admin-design-system.md, the charter
+section; Geoff 2026-07-15: iA Writer anchor in spirit, ASC-volunteer archetype,
+professional/restrained/slightly-academic voice, phone = a full writing device, plus five
+standing grades). The audit method, seeded findings, render-set location, lenses, and output
+contract are all in **docs/internal/2026-07-15-admin-ux-audit-brief.md** (READ FIRST). After
+the audit: superpowers:writing-plans for the reorganization pass
+(spec: docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, ratified) with
+adjacent audit fixes folded in; color/type findings run as a design-refinement arc with Geoff
+in the loop. Resume prompt: "Run the admin UI/UX audit: read
+docs/internal/2026-07-15-admin-ux-audit-brief.md and docs/STATUS.md first." Launch inside
+~/Projects/cairn-cms. INDEPENDENT: the ASC session bumps ONCE for roles + navLayout
+(0.85.0 + 0.86.0 are both on the registry); it does not wait for the design arc.
+
+## Prior next action (2026-07-15: 0.86.0 PUBLISHED; ASC bumps next in its own session)
 
 **THE ADMIN NAV-LAYOUT PASS IS COMPLETE AND MERGED TO MAIN (7613b335).** The full spec shipped:
 the `navLayout` seam (engine refs with relabel + explicit hide, typed `roles` visibility,

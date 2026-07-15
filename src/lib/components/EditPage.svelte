@@ -1644,7 +1644,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
            mirrors that geometry (the editor face at the prose size, the measure, auto margins).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
-      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.0625rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
         <input
           class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"

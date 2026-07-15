@@ -192,8 +192,14 @@ Recipes:
 - Page heading: `text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]`.
 - Eyebrow (sidebar group headers and table column labels):
   `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`.
-- Nav item: `text-sm` (the lists use `menu-sm`), `font-medium` inactive, `font-semibold` active.
-- Brand wordmark: `text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]`.
+- Nav item: `text-[0.9375rem]` (the lists use `menu-sm` for layout), `font-medium` inactive,
+  `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
+  table cells share it via `table text-[0.9375rem]`.
+- Brand wordmark: `text-[1.375rem] font-semibold font-[family-name:var(--font-display)]` — normal
+  tracking on purpose. The K4 keming fix (design arc, 2026-07-15): at the old
+  `text-xl font-bold tracking-[-0.01em]` the rn pair merged and "Cairn" read "Caim"; larger,
+  lighter, and untracked resolves it. The topbar site name drops `tracking-tight` for the same
+  reason. Do not reintroduce negative tracking on the display face at these sizes.
 
 ## Component recipes
 
@@ -387,7 +393,8 @@ Recipes:
   pressed pair. The strip wraps at every nesting level below `sm` (each control `shrink-0` and
   `whitespace-nowrap`), so a control moves whole to a new row rather than truncating its label or
   clipping off-frame; the Markdown help link stays reachable at 320. The postures: Prose (default) is the writing instrument, a 72ch measure centered
-  in a 49rem card at a 1.0625rem type step and 1.9 leading; Wide (labeled "Markup" in the
+  in a 49rem card at a 1.125rem type step and 1.85 leading (the T4 manuscript generosity, design
+  arc 2026-07-15); Wide (labeled "Markup" in the
   `cairn-editor-surface` persisted value, since the calibrated voice sweep renamed only the
   visible label) is the working surface, a 56rem card the text fills at 1rem/1.8 for tables,
   attributed directives, and long URLs. The posture persists as `cairn-editor-surface`; the card

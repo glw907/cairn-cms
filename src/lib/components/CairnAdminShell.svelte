@@ -540,7 +540,7 @@ discriminant, not the fields, gates the chrome).
               </ul>
             </nav>
           {:else}
-            <span class="font-semibold tracking-tight">{data.siteName}</span>
+            <span class="font-semibold">{data.siteName}</span>
           {/if}
         </div>
         {#if isDeskRoute}
@@ -704,7 +704,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
-            <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+            <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>
         </div>
@@ -716,8 +716,8 @@ discriminant, not the fields, gates the chrome).
                 <a
                   href={item.href}
                   class={isActive(item.href)
-                    ? 'bg-primary/10 font-semibold text-primary'
-                    : 'font-medium text-subtle'}
+                    ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary'
+                    : 'text-[0.9375rem] font-medium text-subtle'}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   <item.icon class="h-4 w-4" aria-hidden="true" />

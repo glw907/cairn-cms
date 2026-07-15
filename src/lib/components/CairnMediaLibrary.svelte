@@ -1617,7 +1617,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          keyboard navigation (arrow cell moves, roving tabindex) the table never implemented, so it
          is dropped: a plain table with a checkbox column is honest and fully usable. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
-      <table class="table">
+      <table class="table text-[0.9375rem]">
         <thead>
           <tr class="border-base-300">
             <th class="w-10"><span class="sr-only">Select</span></th>

@@ -343,7 +343,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
         {/if}
       </div>
     {:else}
-      <table class="table">
+      <table class="table text-[0.9375rem]">
         <thead>
           <tr class="border-base-300">
             <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
@@ -388,10 +388,10 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                   </span>
                 {/if}
                 {#if entry.summary}
-                  <div data-summary class="mt-0.5 truncate text-[0.8125rem] text-muted">{entry.summary}</div>
+                  <div data-summary class="mt-0.5 truncate text-[0.875rem] text-muted">{entry.summary}</div>
                 {/if}
               </td>
-              {#if data.dated}<td class="hidden w-32 whitespace-nowrap text-sm tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
+              {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
               <td class="w-16 px-2 sm:w-28 sm:px-4">
                 <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
                      status stays legible without keeping the desktop-width column. -->
@@ -420,7 +420,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
       <!-- The create affordance baked into the list body: a full-width borderless foot row so a
            short list always shows its next step rather than just stopping. Same action as the
            header New button. -->
-      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-sm font-medium text-subtle underline [text-underline-offset:2px] hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+      <button type="button" class="flex w-full items-center gap-2 border-t border-[var(--cairn-card-border)] px-6 py-3 text-[0.9375rem] font-medium text-subtle underline [text-underline-offset:2px] hover:bg-base-content/[0.04] hover:text-base-content" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
         <PlusIcon class="h-4 w-4" /> New {createNoun}
       </button>
     {/if}

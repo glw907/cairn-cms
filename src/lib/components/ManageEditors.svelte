@@ -90,7 +90,7 @@ dispatcher defines.
 {/if}
 
 <div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">
-  <table class="table">
+  <table class="table text-[0.9375rem]">
     <thead>
       <tr><th scope="col" class={col}>Name</th><th scope="col" class={col}>Email</th><th scope="col" class={col}>Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
     </thead>

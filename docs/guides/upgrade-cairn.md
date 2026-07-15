@@ -50,7 +50,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: site-declared role vocabulary and capability levels (non-breaking)
+## 0.85.0: site-declared role vocabulary and capability levels (non-breaking)
 
 Sites now declare their own role vocabulary instead of the two names `'owner'` and `'editor'` the
 engine used to hard-code. `defineRoles` on the adapter's new `roles` member maps each of your own

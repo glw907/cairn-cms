@@ -641,9 +641,10 @@ export const GET = async (event) => json(await healthLoad(event, runtime));
 A site adds a sidebar link to one of its own `/admin/` routes by declaring an `adminNav` entry in its
 adapter. The entries are plain data, validated when the runtime composes, so a bad icon or a colliding
 href fails the build rather than rendering a broken or shadowing link. `adminNav` is a mix of flat
-entries and one level of grouping: a plain `AdminNavEntry` folds into the built-in Core section
-beside the content concepts, and an `AdminNavSection` (a label plus its own flat `children`) renders
-as its own collapsible sidebar group, the way Part B's Club section joins Content/Media/Settings.
+entries and one level of grouping: a plain `AdminNavEntry` renders as a loose top-level node in the
+same header-less list as the content concepts and the engine's own screens, and an `AdminNavSection`
+(a label plus its own flat `children`) renders as its own collapsible sidebar group alongside that
+loose list.
 Stability tier: Extension API.
 
 A site that wants to arrange the *whole* sidebar, engine screens included, not just add to it,
@@ -719,8 +720,8 @@ interface AdminNavSection {
 ```
 
 One level of grouping: a named group of the developer's own flat entries, rendered as its own
-collapsible sidebar group beside the built-in Core section. A section holds only flat entries, so
-grouping stays exactly one level deep.
+collapsible sidebar group beside the loose top-level list of concepts, flat entries, and engine
+screens. A section holds only flat entries, so grouping stays exactly one level deep.
 
 ### `AdminNavConfig`
 
@@ -756,9 +757,10 @@ type ResolvedNavItem = ResolvedNavEntry | ResolvedNavSection;
 ```
 
 One resolved `adminNav` item: a flat entry, or a one-level section of them. A site that declares no
-`navLayout` gets these folded into the default arrangement's `Core` section (flat entries) and its
-own sections, through [`resolveNavLayout`](#resolvenavlayout); see [the navLayout
-seam](#the-navlayout-seam). Discriminate with `'children' in item`.
+`navLayout` gets these folded into the default arrangement, flat entries into the loose top-level
+list and sections rendered as their own collapsible groups after it, through
+[`resolveNavLayout`](#resolvenavlayout); see [the navLayout seam](#the-navlayout-seam). Discriminate
+with `'children' in item`.
 
 ---
 

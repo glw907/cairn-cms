@@ -12,7 +12,7 @@ route. Failure mode: a public payload that carried chrome fields would still ren
 discriminant, not the fields, gates the chrome).
 -->
 <script lang="ts">
-  import { onMount, setContext, untrack, type Component, type Snippet } from 'svelte';
+  import { onMount, setContext, tick, untrack, type Component, type Snippet } from 'svelte';
   import type { AdminShellData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -97,10 +97,11 @@ discriminant, not the fields, gates the chrome).
 
   // shell.nav.items is the whole arranged, filtered scroll-area tree the resolver produced, in
   // declaration order: a declared navLayout as written, or, absent one, today's default arrangement
-  // through the same resolver (one Core section holding the concepts, the legacy flat adminNav
-  // entries, and the engine screens, followed by each legacy adminNav section). Consecutive loose
-  // top-level nodes batch into one group so they render together, without opening a collapsible
-  // section of their own.
+  // through the same resolver, which synthesizes no section at all: the concepts, the legacy flat
+  // adminNav entries, and the engine screens arrive as loose top-level nodes rendered in a plain,
+  // header-less list, and each legacy adminNav section still renders as its own collapsible group
+  // after them. Consecutive loose top-level nodes batch into one group so they render together,
+  // without opening a collapsible section of their own.
   const navGroups: NavGroup[] = $derived.by(() => {
     if (!shell) return [];
     const groups: NavGroup[] = [];
@@ -158,16 +159,43 @@ discriminant, not the fields, gates the chrome).
 
   let drawerOpen = $state(false);
 
+  // The drawer's own nav region, so the shortcut can find its first focusable child and so the
+  // close-side restore can tell whether focus is still inside it (the overlay-backdrop path below).
+  let drawerNavEl = $state<HTMLElement>();
+
+  // Where focus was before the shortcut opened the drawer, so a shortcut close (or an overlay
+  // backdrop close while focus never left the drawer) can put it back. Set only by the shortcut, so
+  // a mouse-driven open (the hamburger label) leaves this minimal contract alone (locked to the
+  // review finding's scope; a full focus trap and Escape binding are deferred to the papercuts pass).
+  let drawerRestoreFocusEl: HTMLElement | null = null;
+
   function onKeydown(e: KeyboardEvent) {
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
-      drawerOpen = !drawerOpen;
+      if (!drawerOpen) {
+        drawerRestoreFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        drawerOpen = true;
+        tick().then(() => {
+          drawerNavEl?.querySelector<HTMLElement>('a[href], button:not([disabled]), input, [tabindex]')?.focus();
+        });
+      } else {
+        drawerOpen = false;
+      }
     }
     if (e.key.toLowerCase() === 'k' && (e.metaKey || e.ctrlKey)) {
       e.preventDefault();
       openPalette();
     }
   }
+
+  // Restores focus once the drawer closes, whether the shortcut closed it (above) or the overlay
+  // backdrop did (a plain checkbox toggle with no keydown involved): only when the shortcut is what
+  // opened it (drawerRestoreFocusEl set) and focus never left the drawer's own nav in the meantime.
+  $effect(() => {
+    if (drawerOpen || !drawerRestoreFocusEl || !drawerNavEl?.contains(document.activeElement)) return;
+    drawerRestoreFocusEl.focus();
+    drawerRestoreFocusEl = null;
+  });
 
   // Close the mobile drawer and the command palette whenever the active path changes (a nav click
   // navigated). Closing the palette here, after the navigation lands, avoids racing a synchronous
@@ -532,7 +560,11 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
-      <nav class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]" aria-label="Site content">
+      <nav
+        bind:this={drawerNavEl}
+        class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
+        aria-label="Site content"
+      >
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and
              wordmark link to the admin home. -->
@@ -583,11 +615,11 @@ discriminant, not the fields, gates the chrome).
                loose top-level nodes. A loose node batches with its neighbors into a plain,
                header-less list rather than opening a group of its own. -->
           <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
-               adminNav path can synthesize two same-labeled groups, e.g. a legacy section named
-               "Core" colliding with the built-in Core group; validateNavLayout cannot retroactively
-               reject that path). This list is fully derived and stateless, and the collapsed-group
-               open state derives from the label-keyed `collapsed` Set, not DOM identity, so index
-               keys never desync a group's open/closed state from its content. -->
+               adminNav path can synthesize two same-labeled groups, e.g. two legacy adminNav
+               sections both named "Club"; validateNavLayout cannot retroactively reject that
+               path). This list is fully derived and stateless, and the collapsed-group open state
+               derives from the label-keyed `collapsed` Set, not DOM identity, so index keys never
+               desync a group's open/closed state from its content. -->
           {#each navGroups as group, i (i)}
             {#if group.kind === 'section'}
               {@render navSection(group.label, group.items)}

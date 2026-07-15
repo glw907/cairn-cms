@@ -35,9 +35,10 @@ export interface AdminNavEntry {
 
 /**
  * One level of grouping: a named section of the developer's own entries, rendered as its own
- *  collapsible sidebar group beside the built-in Core section (`ConceptList`'s concepts, Library,
- *  Tags, Settings, and the rest). A section holds only flat entries, so grouping stays exactly one
- *  level deep; nest no further.
+ *  collapsible sidebar group beside the default's loose top-level nodes (the concepts, Library,
+ *  Tags, Settings, and the rest, rendered as a plain header-less list rather than a built-in
+ *  section). A section holds only flat entries, so grouping stays exactly one level deep; nest no
+ *  further.
  */
 export interface AdminNavSection {
   label: string;

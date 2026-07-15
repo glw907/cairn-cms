@@ -489,6 +489,24 @@ describe('CairnAdminShell', () => {
     await expect.poll(() => toggle().checked).toBe(!before);
   });
 
+  it('moves focus into the drawer nav on Ctrl+B open, and restores it on Ctrl+B close', async () => {
+    // The overlay drawer covers the editor at every width the shortcut opens it over; a shortcut
+    // toggle that left focus behind on the obscured trigger would strand a keyboard user. Opening
+    // moves focus to the first focusable element inside the drawer's own nav; closing returns it to
+    // whatever was focused beforehand.
+    const screen = render(CairnAdminShell, { data: data(true), children: child });
+    const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
+    searchTrigger.focus();
+    expect(document.activeElement).toBe(searchTrigger);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+    const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+    await expect.poll(() => document.activeElement).toBe(brandLink);
+
+    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+    await expect.poll(() => document.activeElement).toBe(searchTrigger);
+  });
+
   it('posts the logout form to the absolute /admin?/logout catch-all', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     const form = screen.container.querySelector('form[action="/admin?/logout"]');

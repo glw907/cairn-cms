@@ -181,10 +181,10 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Write the upgraded guide. Run `npm run check:docs` and `npm run check:snippets`;
+- [x] **Step 1:** Write the upgraded guide. Run `npm run check:docs` and `npm run check:snippets`;
   expect OK.
-- [ ] **Step 2:** Vale clean on the guide (the vale-hook surfaces findings on save; resolve them).
-- [ ] **Step 3:** Commit: `docs(guides): evidence-grounded organize-your-admin-nav upgrade`.
+- [x] **Step 2:** Vale clean on the guide (the vale-hook surfaces findings on save; resolve them).
+- [x] **Step 3:** Commit: `docs(guides): evidence-grounded organize-your-admin-nav upgrade`.
 
 ### Task 5: The docs window (design-system record, reference, changelog)
 

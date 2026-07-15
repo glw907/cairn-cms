@@ -81,16 +81,26 @@ renders the children bare with no chrome; an authed payload renders the full chr
 data-driven nav, user, theme, and streamed publish-all count. The discriminant gates the chrome, so a
 public payload always renders bare.
 
-For a none-capability `user.capability` (the spec's none contract), the shell drops every built-in
-engine screen from the nav, Library, Tags, the nav-menu editor, Settings, and Help, since each one
-refuses that session with a 403; the site's own custom nav still renders in full.
+The sidebar renders `data.nav`, one resolved [`ResolvedNavLayout`](./sveltekit.md#resolvednavlayout)
+tree computed server-side for every site, a declared `navLayout` or, absent one, today's default
+arrangement: `nav.items` renders in order (a section through its own collapsible group, keyed by
+label for the collapse cookie; loose entries between sections batch into a plain list), and
+`nav.fallback`, the engine screens the arrangement never referenced, renders in the same foot band
+below the scroll area that carried Help alone in the zero-config shape. Each item's icon resolves
+from an engine screen id or a site entry's bundled icon name. See [the navLayout
+seam](./sveltekit.md#the-navlayout-seam) for the full contract. For a none-capability
+`user.capability` (the spec's none contract), `nav` carries no engine screen anywhere, in `items` or
+`fallback`, since every engine screen refuses that session with a 403; a site's own `navLayout` or
+`adminNav` entries still render. The command palette lists every visible item in `nav`, section
+children and the fallback group included, alongside its own view-site and theme-toggle commands.
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
 drifts with the page scroll), and it stays open across navigation—including to a site's own
-deep custom-nav routes like `/admin/club/events`. It recedes to the toggle-controlled overlay
-only on the engine's document-editor routes, where an entry is open under a real content concept
-and the editing surface takes the full width. On small viewports it's always the overlay drawer,
-opened on demand and closed after a navigation.
+deep custom-nav routes like `/admin/club/events`. On an engine document-editor route (a desk route),
+the sidebar persists again at `xl` (1280px and up), recedes to the toggle-controlled overlay through
+the `lg`-`xl` tablet band (1024-1279px), where the editing surface takes priority on a narrower
+screen, and keeps the overlay drawer below `lg` like every other route. On small viewports it's
+always the overlay drawer, opened on demand and closed after a navigation.
 
 ```svelte
 <!-- src/routes/admin/+layout.svelte -->

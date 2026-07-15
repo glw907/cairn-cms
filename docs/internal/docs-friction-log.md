@@ -28,6 +28,15 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
 
 ### Engine and DX
 
+- **developer** (`navLayout`'s screen ids catch a typo only at server start, not in the editor):
+  `EngineScreenId` widens to `(string & {})` so a dynamic concept id stays assignable, which means
+  a misspelled built-in screen (`{ screen: 'setings' }`) shows no red squiggle; it surfaces only
+  when the runtime composes and `validateNavLayout` throws. This is the same tradeoff
+  `AdminNavIcon`'s bundled allowlist avoids by staying a closed literal union, so the asymmetry is
+  worth naming even though a wider net (a template-literal union of the site's own known concept
+  ids, resolved from the adapter's `content` block) would need type-level access to the adapter
+  this module doesn't have today. LOW: the construction throw is loud and names the bad value, so
+  the miss costs a `npm run dev` restart, not a silent wrong render.
 - **developer** (security policy): `SECURITY.md` describes the public-state vulnerability channel, but
   GitHub private vulnerability reporting cannot be enabled while the repo is private (the API returns
   404). Enable it when the repo goes public, or add an interim email fallback if the project takes

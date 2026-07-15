@@ -1,0 +1,141 @@
+// Task 3 (admin nav-layout plan): the driven-request proof that a declared navLayout, the roles
+// vocabulary, the engine's own capability gates, and a site's navFilter compose in the one order
+// spec section 7 promises: resolve arrangement -> engine capability -> ownerOnly -> declarative
+// roles -> navFilter. Every other stage is unit-tested in isolation (nav-layout-validate.test.ts,
+// nav-layout-resolve.test.ts, cairn-admin-shell-load.test.ts); this test drives the real
+// shellPayload through createContentRoutes so the composition itself, not just each stage alone,
+// is proven against a real request.
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { makeGithubBackend } from '../../lib/github/backend.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
+import { defineRoles } from '../../lib/auth/roles.js';
+import { githubApp } from '../../lib/index.js';
+import type { CairnRuntime } from '../../lib/content/types.js';
+import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
+import { fieldset } from '../../lib/content/fieldset.js';
+
+const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
+
+// This suite never installs a GitHub double: shellPayload's nav resolution never touches the
+// backend, only the fire-and-forget pendingEntries probe does. A token provider that throws
+// synchronously (the missing-secret shape the rest of the cluster uses) becomes a caught
+// rejection that degrades pendingEntries to null on the same microtask, so no request ever
+// reaches a real fetch and no promise is left dangling past the test's own return.
+const backend = makeGithubBackend(REPO, async () => {
+  throw new Error('GITHUB_APP_PRIVATE_KEY_B64 is not configured');
+});
+
+/** An ASC-shaped vocabulary: an owner, a club-admin editor role, a plain editor, and a
+ *  none-capability volunteer, so every capability tier the composition order gates on is
+ *  represented by a real signed-in role. */
+const ROLES = defineRoles({
+  owner: 'owner',
+  'club-admin': 'editor',
+  editor: 'editor',
+  volunteer: 'none' as const,
+});
+
+/** A single top-level engine door (posts), a roles-gated Club section (owner and club-admin
+ *  only), and an ungated Marker section the site's own navFilter drops for every session. The
+ *  Club section proves the declarative `roles` gate; Marker proves navFilter runs as its own
+ *  stage, after every built-in gate, for every role alike. 'club-admin' is not in the default
+ *  owner/editor Role union; a real site's own augmented vocabulary is what makes a name like
+ *  this assignable, so the cast exercises the same custom-role shape the validate suite casts. */
+const NAV_LAYOUT = [
+  { screen: 'posts' },
+  {
+    label: 'Club',
+    roles: ['owner', 'club-admin'],
+    children: [{ label: 'Roster', icon: 'users', href: '/admin/roster' }],
+  },
+  {
+    label: 'Marker',
+    children: [{ label: 'Marker item', icon: 'inbox', href: '/admin/marker' }],
+  },
+] as unknown as NavLayout;
+
+function runtime(): CairnRuntime {
+  return {
+    siteName: 'Club Site',
+    concepts: [
+      {
+        id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
+        routing: { routable: true, dated: false, inFeeds: true },
+        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        validate: () => ({ ok: true as const, data: {} }),
+      },
+    ],
+    backend: githubApp(REPO),
+    sender: { from: 'cms@test' },
+    render: ({ body }) => Promise.resolve(body),
+    manifestPath: 'src/content/.cairn/index.json',
+    mediaManifestPath: 'src/content/.cairn/media.json',
+    resolvedAssets: { enabled: false },
+    vocabulary: [],
+    roles: ROLES,
+    navLayout: NAV_LAYOUT,
+  };
+}
+
+/** A driven request for one signed-in role/capability pair. */
+function event(role: string, capability: 'owner' | 'editor' | 'none') {
+  return {
+    url: new URL('https://test.example/admin/posts'),
+    params: {},
+    request: new Request('https://test.example/admin/posts'),
+    locals: { editor: { email: `${role}@test`, displayName: role, role, capability }, backend },
+    platform: { env: {} },
+    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+  };
+}
+
+/** Every top-level section/entry label in a resolved nav's `items`. */
+function topLabels(items: { label: string }[]): string[] {
+  return items.map((item) => item.label);
+}
+
+describe('navLayout composition: capability, declarative roles, and navFilter over a driven request', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('composes every gate in order for an owner, a club-admin, a plain editor, and a none session', async () => {
+    const rt = runtime();
+    const routes = createContentRoutes(rt, {
+      // The site's own dynamic filter runs last, over the already-gated items, dropping the
+      // ungated Marker section for every session alike.
+      navFilter: (items) => items.filter((item) => item.label !== 'Marker'),
+    });
+
+    const owner = await routes.shellPayload(event('owner', 'owner') as never);
+    if (owner.shell.public) throw new Error('expected authed shell');
+    // The owner sees the engine door, the roles-gated Club section (owner is listed), and never
+    // the Marker section navFilter drops for every session.
+    expect(topLabels(owner.shell.nav.items)).toEqual(['Posts', 'Club']);
+    await owner.shell.pendingEntries;
+
+    const clubAdmin = await routes.shellPayload(event('club-admin', 'editor') as never);
+    if (clubAdmin.shell.public) throw new Error('expected authed shell');
+    // club-admin is an editor-capability role, but its name is in the Club section's roles list,
+    // so it sees Club even though it is not owner-capability.
+    expect(topLabels(clubAdmin.shell.nav.items)).toEqual(['Posts', 'Club']);
+    await clubAdmin.shell.pendingEntries;
+
+    const plainEditor = await routes.shellPayload(event('editor', 'editor') as never);
+    if (plainEditor.shell.public) throw new Error('expected authed shell');
+    // A plain editor has the same capability as club-admin, but its role name is absent from the
+    // Club section's roles list, so the declarative roles gate (not capability) hides it.
+    expect(topLabels(plainEditor.shell.nav.items)).toEqual(['Posts']);
+    await plainEditor.shell.pendingEntries;
+
+    const none = await routes.shellPayload(event('volunteer', 'none') as never);
+    if (none.shell.public) throw new Error('expected authed shell');
+    // A none-capability session loses the engine door (row 4's capability gate strips every
+    // engine screen, wherever it is placed) and the Club section (volunteer is also absent from
+    // its roles list); the composition never widens access at any stage.
+    expect(topLabels(none.shell.nav.items)).toEqual([]);
+    expect(none.shell.nav.fallback).toEqual([]);
+    await none.shell.pendingEntries;
+  });
+});

@@ -2,25 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { createRawSnippet } from 'svelte';
 import CairnAdminShell from '../../lib/components/CairnAdminShell.svelte';
-import type { ResolvedNavEntry } from '../../lib/sveltekit/admin-nav.js';
+import { resolveNavLayout } from '../../lib/sveltekit/admin-nav.js';
 
 const child = createRawSnippet(() => ({ render: () => '<p>page body</p>' }));
 
 function data(canManageEditors: boolean, navLabel: string | null = null, pathname = '/admin/posts') {
+  const role = canManageEditors ? ('owner' as const) : ('editor' as const);
+  const capability = role;
+  const concepts = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: {
-      displayName: 'Ed',
-      email: 'ed@example.com',
-      role: canManageEditors ? ('owner' as const) : ('editor' as const),
-      capability: canManageEditors ? ('owner' as const) : ('editor' as const),
-    },
-    concepts: [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }],
-    customNav: [] as ResolvedNavEntry[],
+    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    concepts,
+    nav: resolveNavLayout({ layout: undefined, adminNav: [], concepts, navMenuLabel: navLabel, capability, role }),
     pathname,
-    canManageEditors,
-    navLabel,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',

@@ -1,3 +1,46 @@
+## Unreleased
+
+### Added
+
+- Sites now declare `navLayout`, an optional adapter member that arranges the whole admin sidebar
+  as one ordered tree, mixing the engine's own screens with the site's custom ones. An engine
+  reference (`{ screen: 'settings', label: 'Site settings' }`) places one of cairn's own screens by
+  id and can relabel or `hidden: true` it; a site entry is today's `AdminNavEntry` shape, gaining a
+  declarative `roles` list; a section groups a mix of both under one label, one level deep.
+  `navLayout` and `adminNav` are mutually exclusive; declaring both throws at construction. An
+  engine screen the tree never references still renders, in a trailing group after a divider, in
+  engine order, so an engine update that ships a new screen surfaces instead of silently vanishing.
+  Absent `navLayout`, the sidebar renders today's default arrangement through the same resolver, so
+  a zero-config site's markup is unchanged. A new guide, [Organize your admin
+  nav](./docs/guides/organize-your-admin-nav.md), carries the grouping principles and a worked
+  example. See [the navLayout seam](./docs/reference/sveltekit.md#the-navlayout-seam) for the full
+  contract.
+- Desk routes (the entry editor) now persist the sidebar at `xl` (1280px and up) instead of
+  receding it at every width, on grounded UX research (every content-management comparable
+  persists nav through editing). It still recedes behind the drawer toggle in the `lg`-`xl` tablet
+  band (1024-1279px) and keeps the overlay drawer below `lg`, unchanged from before. Office routes
+  and zen mode are unchanged.
+- `CairnAdminShell`'s command palette now lists every visible item in the resolved sidebar,
+  including a section's children, not just its top-level entries.
+
+### Changed
+
+- `AdminShellData`'s authed arm collapses `customNav`, `canManageEditors` (as a nav signal), and
+  `navLabel` into one `nav: ResolvedNavLayout` field: the whole arranged, filtered sidebar for the
+  request, `items` in declared order plus the trailing `fallback` group of cairn's screens the
+  arrangement left unreferenced. `concepts` stays; its consumers are desk-route detection and
+  publish grouping, not nav arrangement. **Consumers must:** update any code that reads
+  `AdminShellData` fields directly (no known consumer does) to the new `nav` shape; see [the
+  navLayout seam](./docs/reference/sveltekit.md#the-navlayout-seam).
+- `navFilter` (`ContentRoutesDeps`, `CairnAdminDeps`) now receives the arranged top-level nodes of
+  the resolved sidebar (`ResolvedLayoutNode[]`, sections and loose entries, cairn's own screens
+  included when the site declares `navLayout`), not just the site's own custom `adminNav` entries,
+  and returns the same shape. `fallback` never passes through this seam, since it's engine-only and
+  already gated; a site hides one of its own doors with `hidden: true` inside `navLayout` instead.
+  **Consumers must:** widen a declared `navFilter`'s parameter and return type from
+  `ResolvedNavItem[]` to `ResolvedLayoutNode[]`; a filter that only reads `.label` (ASC's
+  label-based `filterClubNav`, for example) needs no other change.
+
 ## 0.85.0
 
 <!-- release-size: minor -->

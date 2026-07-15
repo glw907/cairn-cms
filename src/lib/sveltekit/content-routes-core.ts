@@ -33,7 +33,7 @@ import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
-import { filterNavByRole, type ResolvedNavItem } from './admin-nav.js';
+import { resolveNavLayout, type ResolvedNavLayout } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
@@ -54,10 +54,9 @@ export interface NavConcept {
  * The shared admin shell's data, produced by `shellPayload` and consumed by the CairnAdminShell
  *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
  *  carries only the site name and renders bare; an authed path carries the full admin payload, the
- *  site identity, the signed-in editor, the nav, the active path, the CSRF token, and the streamed
- *  pending entries, adds the developer's custom-nav entries, and streams the pending-publish set as
- *  a deferred promise so a custom route and the login page never block on a GitHub round-trip up
- *  front.
+ *  site identity, the signed-in editor, the one resolved nav tree, the active path, the CSRF
+ *  token, and the streamed pending entries, and streams the pending-publish set as a deferred
+ *  promise so a custom route and the login page never block on a GitHub round-trip up front.
  */
 export type AdminShellData =
   | { public: true; siteName: string }
@@ -67,15 +66,13 @@ export type AdminShellData =
       user: { displayName: string; email: string; role: Role; capability: Capability };
       concepts: NavConcept[];
       /**
-       * The developer's custom sidebar entries and sections, validated at construction,
-       *  role-filtered here, then narrowed further by the site's own `deps.navFilter` when
-       *  configured.
+       * The site's whole arranged, filtered sidebar for this request: a declared `navLayout`
+       *  resolved and gated (engine capability, `ownerOnly`, declarative `roles`), or, absent one,
+       *  today's default arrangement synthesized through the same resolver, then narrowed further
+       *  by the site's own `deps.navFilter` when configured.
        */
-      customNav: ResolvedNavItem[];
+      nav: ResolvedNavLayout;
       pathname: string;
-      canManageEditors: boolean;
-      /** The nav menu's label when the site configures one; gates the Navigation nav entry. Null otherwise. */
-      navLabel: string | null;
       /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
       theme: 'cairn-admin' | 'cairn-admin-dark';
       /** The nav group labels the user has collapsed, from the persisted cookie. Empty when none. */
@@ -328,9 +325,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  an unawaited promise, so the shell renders before the GitHub listing returns and a custom route
    *  never blocks on it. A synchronous token-mint throw, a network failure, or a non-ok response all
    *  degrade the promise to null, so the topbar hides the publish-all action rather than showing a
-   *  wrong count. `customNav` is awaited up front (never streamed): the engine's own role filter runs
-   *  first, then the site's `deps.navFilter`, if configured, over that already-filtered result, fresh
-   *  every request.
+   *  wrong count. `nav` is awaited up front (never streamed): `resolveNavLayout` arranges and gates
+   *  the declared (or default) tree first, then the site's `deps.navFilter`, if configured, narrows
+   *  that already-gated `items` set, fresh every request.
    */
   async function shellPayload(event: ContentEvent): Promise<{ shell: AdminShellData }> {
     if (isPublicAdminPath(event.url.pathname)) {
@@ -343,46 +340,53 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const collapsedNav = cookieCollapsed
       ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
       : [];
-    // resolveBackend can throw synchronously (the token mint), which a bare `.catch()` would miss.
-    // Defer the resolve into a Promise.resolve().then so a sync throw becomes a caught rejection
-    // that degrades to null, the fail-safe the shell needs so a token or network failure hides the
-    // publish-all action rather than throwing the whole shell.
-    const pendingEntries = Promise.resolve()
-      .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
-      .then((names) =>
-        names.flatMap((name) => {
-          const entry = pendingEntryOf(name);
-          return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
-        }),
-      )
-      .catch((err): { concept: string; id: string }[] | null => {
-        log.warn('github.unreachable', { scope: 'shell', error: String(err) });
-        return null;
-      });
-    // The developer's custom sidebar entries: the engine's own role filter runs first (an
-    // owner-only entry is hidden from a non-owner, and a section keeps only the children an
-    // editor may see, disappearing once every child is hidden), then the site's own navFilter, if
-    // configured, sees only that already-filtered set and the signed-in editor. Absent navFilter,
-    // this is exactly today's pure role filter.
-    const roleFilteredNav = filterNavByRole(ctx.adminNav, editor.capability);
-    const customNav = ctx.deps.navFilter
-      ? await ctx.deps.navFilter(roleFilteredNav, { editor, event })
-      : roleFilteredNav;
-    // A none-capability session (the spec's none contract) still authenticates and reaches the
-    // shell, but the engine's own content nav and the owner-only Editors entry serve no purpose:
-    // every route they link to refuses a none session with 403. Hiding them here, in the payload,
-    // keeps the shell component a pure renderer of whatever nav it is handed.
+    // A none-capability session sees no publish surface (every engine content route already 403s
+    // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
+    // not theirs to read: skip the backend listing entirely rather than streaming a real pending
+    // count into a dead button. resolveBackend can throw synchronously (the token mint), which a
+    // bare `.catch()` would miss; deferring the resolve into a Promise.resolve().then turns a sync
+    // throw into a caught rejection that degrades to null, the fail-safe the shell needs so a token
+    // or network failure hides the publish-all action rather than throwing the whole shell.
+    const pendingEntries =
+      editor.capability === 'none'
+        ? Promise.resolve([] as { concept: string; id: string }[])
+        : Promise.resolve()
+            .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
+            .then((names) =>
+              names.flatMap((name) => {
+                const entry = pendingEntryOf(name);
+                return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+              }),
+            )
+            .catch((err): { concept: string; id: string }[] | null => {
+              log.warn('github.unreachable', { scope: 'shell', error: String(err) });
+              return null;
+            });
+    // The whole arranged sidebar for this request: a declared navLayout resolves and gates as
+    // written (engine capability, ownerOnly, declarative roles), or, absent one, the resolver
+    // synthesizes today's default arrangement through the same code path, so the two can never
+    // drift. The site's own navFilter, if configured, then narrows the arranged items only;
+    // fallback is engine-only and already gated, so it never passes through that seam.
     const capability = editor.capability;
+    const resolved = resolveNavLayout({
+      layout: runtime.navLayout,
+      adminNav: ctx.adminNav,
+      concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+      navMenuLabel: runtime.navMenu?.label ?? null,
+      capability,
+      role: editor.role,
+    });
+    const nav: ResolvedNavLayout = ctx.deps.navFilter
+      ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }
+      : resolved;
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
         concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
-        customNav,
+        nav,
         pathname: event.url.pathname,
-        canManageEditors: capability === 'owner',
-        navLabel: runtime.navMenu?.label ?? null,
         theme,
         collapsedNav,
         csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',

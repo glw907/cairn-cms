@@ -50,6 +50,29 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: `navLayout`, the whole-sidebar seam, and the widened `navFilter`
+
+Sites now declare `navLayout` on the adapter's `editor` group to arrange the whole admin sidebar
+as one tree, mixing cairn's own screens with their own; see [Organize your admin
+nav](./organize-your-admin-nav.md). It's mutually exclusive with `adminNav`, and a site that
+declares neither sees no change: the sidebar renders today's default arrangement through the same
+resolver.
+
+Consumers must: nothing, for a site that declares neither `navLayout` nor a custom `navFilter`. Two
+narrower changes apply if you do:
+
+- **`AdminShellData`'s authed arm reshapes**: `customNav`, `canManageEditors` (as a nav signal),
+  and `navLabel` collapse into one `nav: ResolvedNavLayout` field. Update any code that reads
+  `AdminShellData`'s fields directly (no known consumer does) to the new shape.
+- **A declared `navFilter` widens**: it now receives the resolved sidebar's arranged top-level
+  nodes (`ResolvedLayoutNode[]`, cairn's own screens included when you declare `navLayout`), not
+  just your own custom `adminNav` entries, and returns the same shape. Widen the parameter and
+  return type from `ResolvedNavItem[]` to `ResolvedLayoutNode[]`; a filter that only reads an
+  item's `.label` needs no other change.
+
+Desk routes (the entry editor) also persist the sidebar at `xl` and up instead of receding it at
+every width; no action needed, this changes only what renders wider than 1280px.
+
 ## 0.85.0: site-declared role vocabulary and capability levels (non-breaking)
 
 Sites now declare their own role vocabulary instead of the two names `'owner'` and `'editor'` the

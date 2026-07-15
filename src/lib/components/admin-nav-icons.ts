@@ -10,6 +10,12 @@ import PackageIcon from '@lucide/svelte/icons/package';
 import InboxIcon from '@lucide/svelte/icons/inbox';
 import TableIcon from '@lucide/svelte/icons/table';
 import WrenchIcon from '@lucide/svelte/icons/wrench';
+import FileTextIcon from '@lucide/svelte/icons/file-text';
+import SignpostIcon from '@lucide/svelte/icons/signpost';
+import SettingsIcon from '@lucide/svelte/icons/settings';
+import ImageIcon from '@lucide/svelte/icons/image';
+import TagIcon from '@lucide/svelte/icons/tag';
+import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
 import type { Component } from 'svelte';
 import type { AdminNavIcon } from '../sveltekit/admin-nav.js';
 
@@ -28,3 +34,20 @@ export const ADMIN_NAV_ICONS: Record<AdminNavIcon, Component> = {
 
 /** The glyph shown when a custom-nav entry's icon name has no map entry, a defensive fallback. */
 export const ADMIN_NAV_FALLBACK_ICON = ListIcon;
+
+/**
+ * Maps each of the engine's fixed utility screen ids to its Lucide icon; a content concept's id is
+ *  never a key here (its glyph is {@link ENGINE_NAV_FALLBACK_ICON}), since a concept id is dynamic
+ *  per site and shares one door glyph the way it always has.
+ */
+export const ENGINE_NAV_ICONS: Record<string, Component> = {
+  media: ImageIcon,
+  vocabulary: TagIcon,
+  nav: SignpostIcon,
+  settings: SettingsIcon,
+  editors: UsersIcon,
+  help: HelpCircleIcon,
+};
+
+/** The glyph shown for a resolved engine screen with no entry in {@link ENGINE_NAV_ICONS}: a content concept's door. */
+export const ENGINE_NAV_FALLBACK_ICON = FileTextIcon;

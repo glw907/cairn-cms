@@ -416,9 +416,33 @@ export const cairn = defineAdapter({
   },
   editor: {
     nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
-    // The custom-screen sidebar entry: data-only, a typed Lucide icon name, an unclaimed /admin href.
-    // The /admin/signups route gates server-side; this entry only renders the link in the shell.
-    adminNav: [{ label: 'Signups', icon: 'inbox', href: '/admin/signups' }],
+    // The site's whole declared sidebar (spec §2, the organize-your-admin-nav guide's own worked
+    // shape): a Content group for what an editor touches day to day (both concepts, plus the custom
+    // Signups screen, data-only with the same allowlisted icon and unclaimed /admin href the legacy
+    // adminNav entry used), then a trailing Site group for configuration and roster, closing on the
+    // relabeled Settings door so the club-shaped naming collision the guide warns about never arises
+    // here either. Help stays unreferenced, so it falls back to the shell's foot slot exactly where
+    // the default arrangement already leaves it.
+    navLayout: [
+      {
+        label: 'Content',
+        children: [
+          { screen: 'posts' },
+          { screen: 'pages' },
+          { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
+        ],
+      },
+      {
+        label: 'Site',
+        children: [
+          { screen: 'media' },
+          { screen: 'vocabulary' },
+          { screen: 'nav' },
+          { screen: 'settings', label: 'Site settings' },
+          { screen: 'editors' },
+        ],
+      },
+    ],
     // The preview knob: the (site) layout renders an entry inside
     // <main class="site-main"><article class="prose">, and every typography rule in prose.css is
     // scoped to .prose, so the frame needs both classes on its one wrapper div (buildPreviewDoc

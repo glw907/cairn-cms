@@ -6,7 +6,12 @@ import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } fro
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { Backend } from '../../lib/github/backend.js';
-import type { AdminNavConfig } from '../../lib/sveltekit/admin-nav.js';
+import {
+  resolveNavLayout,
+  type AdminNavConfig,
+  type ResolvedLayoutNode,
+  type ResolvedNavItem,
+} from '../../lib/sveltekit/admin-nav.js';
 
 function runtime(): CairnRuntime {
   return baseRuntime({
@@ -71,6 +76,29 @@ function customRoleEvent(
 
 afterEach(() => vi.restoreAllMocks());
 
+/** Every engine `screen` id present anywhere in a resolved nav (a section's children recursed). */
+function screenIds(nodes: ResolvedLayoutNode[]): string[] {
+  const out: string[] = [];
+  for (const node of nodes) {
+    if ('children' in node) out.push(...screenIds(node.children));
+    else if ('screen' in node) out.push(node.screen);
+  }
+  return out;
+}
+
+/** The resolved engine door for one screen id, wherever it sits in the tree; undefined if absent. */
+function findScreen(nodes: ResolvedLayoutNode[], screen: string): { label: string; href: string } | undefined {
+  for (const node of nodes) {
+    if ('children' in node) {
+      const found = findScreen(node.children, screen);
+      if (found) return found;
+    } else if ('screen' in node && node.screen === screen) {
+      return node;
+    }
+  }
+  return undefined;
+}
+
 // A sync-throwing backend for a shellPayload test that never installs a GitHub double. The
 // shell's `pendingEntries` probe (content-routes-core.ts) is intentionally fire-and-forget, so a
 // test that resolves it against the real `backend` (a real fetch, a fake token) leaves that
@@ -100,10 +128,22 @@ describe('shellPayload', () => {
       { id: 'pages', label: 'Pages' },
     ]);
     expect(shell.pathname).toBe('/admin/posts');
-    expect(shell.canManageEditors).toBe(true);
-    expect(shell.navLabel).toBeNull();
-    // Task 3 fills customNav; until then it is always empty.
-    expect(shell.customNav).toEqual([]);
+    // The default arrangement: one Core section (the concepts, then the engine screens; no `nav`
+    // door since no navMenu is configured), Help left unreferenced into fallback.
+    expect(shell.nav.items).toEqual([
+      {
+        label: 'Core',
+        children: [
+          { screen: 'posts', label: 'Posts', href: '/admin/posts' },
+          { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+          { screen: 'media', label: 'Library', href: '/admin/media' },
+          { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
+          { screen: 'settings', label: 'Settings', href: '/admin/settings' },
+          { screen: 'editors', label: 'Editors', href: '/admin/editors' },
+        ],
+      },
+    ]);
+    expect(shell.nav.fallback).toEqual([{ screen: 'help', label: 'Help', href: '/admin/help' }]);
     await shell.pendingEntries;
   });
 
@@ -119,7 +159,7 @@ describe('shellPayload', () => {
     const routes = createContentRoutes(runtime());
     const { shell } = await routes.shellPayload(event('/admin/pages', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.canManageEditors).toBe(false);
+    expect(screenIds(shell.nav.items)).not.toContain('editors');
     await shell.pendingEntries;
   });
 
@@ -139,14 +179,42 @@ describe('shellPayload', () => {
     const { shell } = await routes.shellPayload(noneEvent as never);
     if (shell.public) throw new Error('expected authed shell');
     expect(shell.user.email).toBe('inst@test');
-    // Task 6: a none-capability session carries no engine concept nav (every route it links to
-    // refuses a none session with 403) and no manage-editors capability.
+    // A none-capability session carries no engine concept nav (every route it links to refuses a
+    // none session with 403) and no engine door anywhere in the resolved tree, items or fallback.
     expect(shell.concepts).toEqual([]);
-    expect(shell.canManageEditors).toBe(false);
+    expect(screenIds(shell.nav.items)).toEqual([]);
+    expect(screenIds(shell.nav.fallback)).toEqual([]);
     // Pinned so the shell payload carries the capability the CairnAdminShell component gates its
     // engine nav items on.
     expect(shell.user.capability).toBe('none');
     await shell.pendingEntries;
+  });
+
+  it('resolves pendingEntries to [] for a none-capability session and never calls the backend', async () => {
+    // A none-capability session sees no publish surface (the topbar's "Publish site (N)" action is
+    // dead for it), so the count is not theirs to read: shellPayload must skip the backend listing
+    // entirely rather than streaming a real pending count into that dead button. A backend whose
+    // listBranches throws proves the skip: if shellPayload called it, the promise would degrade to
+    // null (the existing github.unreachable fail-safe), not resolve to [].
+    const listBranches = vi.fn(() => {
+      throw new Error('listBranches should not be called for a none-capability session');
+    });
+    const routes = createContentRoutes(runtime());
+    const noneEvent = {
+      url: new URL('https://test.example/admin/posts'),
+      params: {},
+      request: new Request('https://test.example/admin/posts'),
+      locals: {
+        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        backend: { listBranches },
+      },
+      platform: { env: {} },
+      cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    };
+    const { shell } = await routes.shellPayload(noneEvent as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(await shell.pendingEntries).toEqual([]);
+    expect(listBranches).not.toHaveBeenCalled();
   });
 
   it('grants manage-editors capability to an owner-capability role that is not literally named owner', async () => {
@@ -156,7 +224,7 @@ describe('shellPayload', () => {
       customRoleEvent('/admin/posts', 'club-admin', 'owner', quickFailBackend()) as never,
     );
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.canManageEditors).toBe(true);
+    expect(screenIds(shell.nav.items)).toContain('editors');
     expect(shell.concepts).not.toEqual([]);
     await shell.pendingEntries;
   });
@@ -166,7 +234,7 @@ describe('shellPayload', () => {
     rt.navMenu = { configPath: 'x.yaml', menuName: 'primary', label: 'Primary nav', maxDepth: 2 };
     const { shell } = await createContentRoutes(rt).shellPayload(event('/admin/nav', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.navLabel).toBe('Primary nav');
+    expect(findScreen(shell.nav.items, 'nav')?.label).toBe('Primary nav');
     await shell.pendingEntries;
   });
 
@@ -250,8 +318,8 @@ const NAV_WITH_SECTION: AdminNavConfig = [
   },
 ];
 
-/** NAV_WITH_SECTION resolved, the shape filterNavByRole and navFilter both see. */
-const RESOLVED_NAV_WITH_SECTION = [
+/** NAV_WITH_SECTION resolved, the shape resolveNavLayout folds into the default arrangement. */
+const RESOLVED_NAV_WITH_SECTION: ResolvedNavItem[] = [
   { label: 'Standalone', iconName: 'wrench', href: '/admin/tools', ownerOnly: false },
   {
     label: 'Club',
@@ -261,6 +329,24 @@ const RESOLVED_NAV_WITH_SECTION = [
     ],
   },
 ];
+
+const NAV_WITH_SECTION_CONCEPTS = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
+
+/** The default arrangement resolveNavLayout produces for NAV_WITH_SECTION at one capability: the
+ *  flat 'Standalone' entry folds into Core (beside the concepts and engine screens), and the
+ *  legacy 'Club' section rides alongside Core as its own top-level node. Every navFilter test
+ *  below compares shellPayload's real output against this directly-computed baseline, so the
+ *  wiring assertion never has to hand-trace the resolver's own shape. */
+function defaultNav(capability: 'owner' | 'editor' | 'none') {
+  return resolveNavLayout({
+    layout: undefined,
+    adminNav: RESOLVED_NAV_WITH_SECTION,
+    concepts: NAV_WITH_SECTION_CONCEPTS,
+    navMenuLabel: null,
+    capability,
+    role: capability,
+  });
+}
 
 describe('shellPayload: navFilter', () => {
   // These tests never install a GitHub double, so the shell's fire-and-forget pendingEntries
@@ -274,13 +360,13 @@ describe('shellPayload: navFilter', () => {
     vi.restoreAllMocks();
   });
 
-  it('leaves customNav at exactly the role-filtered set when no navFilter is configured', async () => {
+  it('leaves nav.items at exactly the resolved arrangement when no navFilter is configured', async () => {
     const rt = runtime();
     rt.adminNav = NAV_WITH_SECTION;
     const routes = createContentRoutes(rt);
     const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.customNav).toEqual(RESOLVED_NAV_WITH_SECTION);
+    expect(shell.nav).toEqual(defaultNav('editor'));
     await shell.pendingEntries;
   });
 
@@ -292,7 +378,11 @@ describe('shellPayload: navFilter', () => {
     });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+    const expected = defaultNav('editor');
+    expect(shell.nav).toEqual({
+      ...expected,
+      items: expected.items.filter((item) => item.label !== 'Club'),
+    });
     await shell.pendingEntries;
   });
 
@@ -302,16 +392,20 @@ describe('shellPayload: navFilter', () => {
     const routes = createContentRoutes(rt, {
       navFilter: async (items) => {
         await Promise.resolve();
-        return items.filter((item) => item.label === 'Standalone');
+        return items.filter((item) => item.label === 'Core');
       },
     });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.customNav).toEqual([RESOLVED_NAV_WITH_SECTION[0]]);
+    const expected = defaultNav('editor');
+    expect(shell.nav).toEqual({
+      ...expected,
+      items: expected.items.filter((item) => item.label === 'Core'),
+    });
     await shell.pendingEntries;
   });
 
-  it('hands navFilter only the role-filtered custom items and the signed-in editor, never a built-in entry', async () => {
+  it('hands navFilter the whole arranged top-level items, engine nodes included, plus the signed-in editor', async () => {
     const rt = runtime();
     rt.adminNav = NAV_WITH_SECTION;
     let received: unknown;
@@ -324,23 +418,25 @@ describe('shellPayload: navFilter', () => {
       },
     });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
-    // Exact equality proves navFilter saw only the two custom items above, resolved and
-    // role-filtered, and nothing from the built-in concepts/Library/Tags/Settings entries.
-    expect(received).toEqual(RESOLVED_NAV_WITH_SECTION);
+    // Exact equality proves navFilter saw the whole resolved arrangement (the Core section with
+    // its engine screens and the folded-in Standalone entry, plus the Club section), not just the
+    // site's own custom items the legacy adminNav-only seam used to hand it.
+    expect(received).toEqual(defaultNav('owner').items);
     expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     if (!shell.public) await shell.pendingEntries;
   });
 
-  it('yields an empty customNav, with the rest of the payload intact, when navFilter returns []', async () => {
+  it('yields an empty nav.items, fallback and the rest of the payload intact, when navFilter returns []', async () => {
     const rt = runtime();
     rt.adminNav = NAV_WITH_SECTION;
     const routes = createContentRoutes(rt, { navFilter: () => [] });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
     if (shell.public) throw new Error('expected authed shell');
-    expect(shell.customNav).toEqual([]);
+    expect(shell.nav.items).toEqual([]);
+    // fallback never passes through navFilter: it is engine-only and already gated.
+    expect(shell.nav.fallback).toEqual(defaultNav('owner').fallback);
     expect(shell.siteName).toBe('Test Site');
     expect(shell.user).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
-    expect(shell.canManageEditors).toBe(true);
     await shell.pendingEntries;
   });
 });

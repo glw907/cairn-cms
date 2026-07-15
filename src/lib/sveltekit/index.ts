@@ -40,7 +40,19 @@ export type {
   ResolvedNavEntry,
   ResolvedNavSection,
   ResolvedNavItem,
+  EngineScreenId,
+  NavLayout,
+  NavLayoutEntry,
+  NavLayoutEngineRef,
+  NavLayoutSection,
+  ResolvedEngineNavEntry,
+  ResolvedLayoutChild,
+  ResolvedLayoutSection,
+  ResolvedLayoutNode,
+  ResolvedNavLayout,
+  ResolveNavLayoutOptions,
 } from './admin-nav.js';
+export { validateNavLayout, resolveNavLayout } from './admin-nav.js';
 export type { PublishActionEntry, PublishActionsConfig, PublishActionLink } from './publish-actions.js';
 export {
   adminAction,

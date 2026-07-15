@@ -168,9 +168,9 @@ construction) so a bad declaration throws at boot, not at request time.
 
 **Steps:**
 
-- [ ] Write failing unit tests for every validation throw plus the valid-tree case
-- [ ] Implement types + `validateNavLayout`; wire the construction-time call and the adapter type
-- [ ] Full gate (`npm run check`, `npm test`), commit
+- [x] Write failing unit tests for every validation throw plus the valid-tree case
+- [x] Implement types + `validateNavLayout`; wire the construction-time call and the adapter type
+- [x] Full gate (`npm run check`, `npm test`), commit
 
 ### Task 2: layout resolution and filter composition
 
@@ -224,9 +224,9 @@ choice; the exported contract is the one function above.)
 
 **Steps:**
 
-- [ ] Write the failing resolution tests (the full matrix above)
-- [ ] Implement `resolveNavLayout`
-- [ ] Full gate, commit
+- [x] Write the failing resolution tests (the full matrix above)
+- [x] Implement `resolveNavLayout`
+- [x] Full gate, commit
 
 ### Task 3: one payload path (`shellPayload` + `AdminShellData` reshape)
 
@@ -276,10 +276,10 @@ navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: ContentE
 
 **Steps:**
 
-- [ ] Re-pin the shell-load unit tests to the new payload shape (failing first)
-- [ ] Write the failing integration composition test
-- [ ] Reshape the types, `shellPayload`, and the `navFilter` seam
-- [ ] Regenerate the surface snapshot; full gate; commit
+- [x] Re-pin the shell-load unit tests to the new payload shape (failing first)
+- [x] Write the failing integration composition test
+- [x] Reshape the types, `shellPayload`, and the `navFilter` seam
+- [x] Regenerate the surface snapshot; full gate; commit
 
 ### Task 4: `CairnAdminShell` renders the resolved tree
 
@@ -312,9 +312,9 @@ the FileText icon; media/vocabulary/nav/settings/editors/help to today's exact i
 
 **Steps:**
 
-- [ ] Write the failing component tests (parity, arranged, none, palette)
-- [ ] Rework the shell markup and palette derivation
-- [ ] Full gate, commit
+- [x] Write the failing component tests (parity, arranged, none, palette)
+- [x] Rework the shell markup and palette derivation
+- [x] Full gate, commit
 
 ### Task 5: desk routes persist the sidebar at `xl`
 
@@ -346,9 +346,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Verify the `xl:drawer-open` assumption; write the failing component tests
-- [ ] Implement classes + CSS companion; update the design-system doc
-- [ ] Add width-matrix coverage; full gate (baselines regenerate on CI); commit
+- [x] Verify the `xl:drawer-open` assumption; write the failing component tests
+- [x] Implement classes + CSS companion; update the design-system doc
+- [x] Add width-matrix coverage; full gate (baselines regenerate on CI); commit
 
 ### Task 6: showcase declares a layout; e2e proves the seam
 
@@ -374,9 +374,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Declare the layout; write the failing e2e assertions
-- [ ] Run the showcase e2e; regenerate baselines
-- [ ] Full gate, commit
+- [x] Declare the layout; write the failing e2e assertions
+- [x] Run the showcase e2e; regenerate baselines
+- [x] Full gate, commit
 
 ### Task 7: docs window
 
@@ -418,9 +418,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Draft the guide + reference updates; run the drift hunt
-- [ ] CHANGELOG + upgrade guide + ROADMAP prune + friction log
-- [ ] All doc gates green; commit
+- [x] Draft the guide + reference updates; run the drift hunt
+- [x] CHANGELOG + upgrade guide + ROADMAP prune + friction log
+- [x] All doc gates green; commit
 
 ### Task 8: close ritual (main loop, not dispatched)
 
@@ -441,3 +441,59 @@ follows via `cairn-release` (verify the number free at cut time).
   to Geoff at plan review).
 - Type names are consistent across tasks (`NavLayout`, `ResolvedNavLayout`,
   `ResolvedLayoutNode`, `ResolvedEngineNavEntry`, `resolveNavLayout`, `validateNavLayout`).
+
+---
+
+## Post-mortem (2026-07-15, pass complete)
+
+**What shipped.** The full spec: the `navLayout` adapter seam (engine refs with relabel and
+explicit hide, site entries, sections, typed declarative `roles` visibility), construction
+validation (twelve throw cases after the review-gate hardening), the one resolved-tree rendering
+path (`resolveNavLayout` + the `AdminShellData` reshape to `nav: ResolvedNavLayout`; the shell's
+hard-coded item list and standalone Help foot deleted), the desk-route rider (sidebar persists at
+`xl`, recedes through the tablet band; the pinned CSS rule gained its `xl` companion), the
+showcase's declared exemplar layout, the organize-your-admin-nav guide, and the full docs window
+(reference rows, drift hunt, changelog with two `Consumers must:` lines, upgrade guide, ROADMAP).
+
+**Evidence at close.** Fresh main-loop gate on the final tree: check 0/0 (1367 files), 3416
+tests exit 0, comments/reference/signatures/docs/package/snippets/surface all green by name. CI:
+the baseline regen dispatch validated the branch's 14 regenerated PNGs byte-identical to the CI
+renderer ("No baseline changes to commit"), and a follow-up asserting e2e run passed (run
+29389776988, 100 e2e green). Render-read: five baselines read in the main loop covering every
+layout class (office light/dark, desk 1440/768, Library). Live smoke: six checks PASS (declared
+arrangement 1:1 with config, collapse cookie persistence, palette section children + Help, desk
+`xl` markers, no 500s); the edit-route GitHub fixture gap is environmental, verified through the
+sanctioned dev backend instead.
+
+**Review gate.** Simplifier: one real fix (a double-gated `nav` check). Security review: clean;
+the never-widens composition and the none contract hold across payload, component, and palette.
+Svelte + a11y reviews converged on one real defect class, duplicate-key sidebar crashes reachable
+through supported configs; folded in as 3849dff1 (validation throws for blank/duplicate section
+labels and duplicate hrefs; index keys absorbing the legacy "Core"-collision; plus the security
+review's none-session pending gate). DaisyUI mechanics were verified against compiled CSS
+(`xl:drawer-open` generates; the comma-merged pinned selector is intentional).
+
+**Deviations and anomalies.** (1) The workflow's serial implementers repeatedly observed edits
+and commits landing outside their own tool calls (T1/T2/T3/T5), consistent with duplicated agent
+executions racing on the worktree; every landed commit was verified against the task contract by
+its reporting agent and re-verified by the main-loop gate, and T3 removed two unexplained dead
+exports. Watch item: if this recurs in a future workflow, capture `ps` evidence early and file a
+harness report. (2) T6 committed locally-rendered baselines despite the CI-canonical convention;
+CI's regen validated them byte-identical, so no harm, but the convention held only by luck.
+(3) The showcase dev backend's seed content showed run-to-run count drift in full-suite e2e
+(pre-existing, flagged by T6). (4) Pre-existing dev-only SSR diagnostic in `EntryPicker.svelte`
+(`node_invalid_placement_ssr`, form nesting) surfaced during the smoke; not nav code.
+
+**Decisions locked in execution.** adminNav/navLayout mutual exclusivity (construction throw);
+`roles` on entries and sections only, engine refs inheriting the section gate; the fallback group
+rendering in the Help foot slot (which made default parity fall out of the omission rule); index
+keys for the three derived nav lists; none sessions no longer stream the pending-publish count.
+
+**Budgets.** Subagent tokens ≈ 2.3M (implementation workflow 1.43M across seven Sonnet tasks;
+survey 103K; simplifier 119K; three Opus reviewers ≈ 380K; fold-ins 133K; smoke 144K). Geoff
+interaction points for the pass itself: three (the launch prompt, the workflow opt-in, the
+release-through authorization); zero mid-execution questions.
+
+**Carried forward.** The auto-expand-active-section papercut (ROADMAP Later, filed). The
+nine-icon allowlist candidate (ROADMAP Next, filed by T7). The EntryPicker SSR diagnostic
+(above). The admin reorganization pass (spec ratified 2026-07-14) executes after this cut.

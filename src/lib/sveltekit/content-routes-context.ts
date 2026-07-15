@@ -9,7 +9,8 @@ import type { Backend } from '../github/backend.js';
 import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, type ResolvedNavItem } from './admin-nav.js';
+import { normalizeAdminNav, validateNavLayout, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
+import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
 import type { CookieJar, EventBase } from './types.js';
@@ -102,21 +103,23 @@ export interface ContentRoutesDeps {
     timeoutMs?: number;
   };
   /**
-   * A per-request filter over the site's own custom adminNav entries, run in the shell payload
-   *  build after the engine's own role filter (`filterNavByRole`) has already dropped any
-   *  `ownerOnly` entry the signed-in editor cannot see. It receives only the custom nav items
-   *  (the built-in Core section, Library, Tags, and Settings entries never pass through this
-   *  seam) and the signed-in editor, and returns the items to render, section-shaped the same
-   *  way. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses
-   *  this to hide a section from an editor who fails that check, rather than teasing a link the
-   *  route then refuses. Awaited fresh on every request; the engine never caches its result.
-   *  Absent, the shell renders exactly the role-filtered set, unchanged from before this seam
-   *  existed.
+   * A per-request filter over the site's whole arranged sidebar, run in the shell payload build
+   *  after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already
+   *  applied. It receives the resolved `navLayout`'s top-level `items` (sections and loose
+   *  entries, engine references included; a declared layout's arrangement or, absent one, today's
+   *  default) and the signed-in editor, and returns the items to render, same shape. `fallback`,
+   *  the trailing group of engine screens the layout never referenced, never passes through this
+   *  seam: it is engine-only and already gated, and a site hides one of its own doors with
+   *  `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside
+   *  cairn (a role stored in its own D1, say) uses this to hide a section or an item from an
+   *  editor who fails that check, rather than teasing a link the route then refuses. Awaited fresh
+   *  on every request; the engine never caches its result. Absent, the shell renders exactly the
+   *  arranged, gated tree, unchanged from before this seam existed.
    */
   navFilter?: (
-    items: ResolvedNavItem[],
+    items: ResolvedLayoutNode[],
     ctx: { editor: Editor; event: ContentEvent },
-  ) => ResolvedNavItem[] | Promise<ResolvedNavItem[]>;
+  ) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>;
 }
 
 /**
@@ -200,6 +203,18 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.
   const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);
+  // Validate a declared navLayout the same fail-loud-at-startup way, beside adminNav's own
+  // validation, so a bad screen reference, an unresolvable role, or declaring both seams throws
+  // here rather than at request time. Undeclared (the common case) skips validation entirely; the
+  // resolver (a later task) synthesizes the default arrangement for that case.
+  if (runtime.navLayout) {
+    validateNavLayout(runtime.navLayout, {
+      conceptIds: runtime.concepts.map((concept) => concept.id),
+      navMenuConfigured: runtime.navMenu !== undefined,
+      roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
+      hasAdminNav: runtime.adminNav !== undefined,
+    });
+  }
   // Validate the developer's publishActions once at construction, the same fail-loud posture: a
   // blank field or an unknown concept throws here rather than silently rendering no link (or the
   // wrong one) after a publish. editLoad resolves this per request into the templated links for the

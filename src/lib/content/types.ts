@@ -19,7 +19,7 @@ import type { VariantSpec } from '../media/transform-url.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
-import type { AdminNavConfig } from '../sveltekit/admin-nav.js';
+import type { AdminNavConfig, NavLayout } from '../sveltekit/admin-nav.js';
 // Also type-only, for the same layering reason: publishActions validates against the site's
 // concepts in the sveltekit layer, not here.
 import type { PublishActionsConfig } from '../sveltekit/publish-actions.js';
@@ -267,6 +267,14 @@ export interface CairnAdapter {
      */
     adminNav?: AdminNavConfig;
     /**
+     * The whole sidebar, arranged as one ordered tree mixing the engine's own screens with the
+     *  site's custom ones (a concept id or a fixed utility-screen name as an engine reference, an
+     *  `adminNav`-shaped entry, or a one-level section of either). Declaring this and `adminNav`
+     *  together throws at construction, since only one can be the sidebar's source of truth. Absent
+     *  leaves the sidebar to the default arrangement (today's built-in shape).
+     */
+    navLayout?: NavLayout;
+    /**
      * Next-step links rendered on the publish-success moment (the `adminNav` grammar applied to
      *  after a publish): a plain-data `{label, href}` list, `href` a template string substituted
      *  with the published entry's concept and id, filterable to specific concepts. The engine
@@ -378,6 +386,12 @@ export interface CairnRuntime {
    *  parseAdminPath, a sveltekit symbol, so it runs at admin construction, not here). Optional.
    */
   adminNav?: AdminNavConfig;
+  /**
+   * The raw navLayout config, passed through from the adapter unvalidated (validation runs at
+   *  admin construction, the same as `adminNav`, since it checks screen ids and roles against the
+   *  site's real concepts and vocabulary). Optional; mutually exclusive with `adminNav`.
+   */
+  navLayout?: NavLayout;
   /**
    * The raw publish-actions config, passed through from the adapter unvalidated (validation runs
    *  at admin construction, the same as `adminNav`, since it checks each entry's `concepts` filter

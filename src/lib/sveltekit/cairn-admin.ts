@@ -64,8 +64,8 @@ export interface CairnAdminDeps {
   tidy?: ContentRoutesDeps['tidy'];
   /**
    * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
-   *  stored in its own D1, say) injects this to hide a custom adminNav section from an editor who
-   *  fails that check. See `ContentRoutesDeps['navFilter']`.
+   *  stored in its own D1, say) injects this to hide a section or an item from the arranged
+   *  sidebar for an editor who fails that check. See `ContentRoutesDeps['navFilter']`.
    */
   navFilter?: ContentRoutesDeps['navFilter'];
 }

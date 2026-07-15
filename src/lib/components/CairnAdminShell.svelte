@@ -21,16 +21,20 @@ discriminant, not the fields, gates the chrome).
   import CairnLogo from './CairnLogo.svelte';
   import { cairnFaviconHref } from './cairn-favicon.js';
   import { warnIfChromeWrapped } from './chrome-guard.js';
-  import FileTextIcon from '@lucide/svelte/icons/file-text';
-  import SignpostIcon from '@lucide/svelte/icons/signpost';
-  import SettingsIcon from '@lucide/svelte/icons/settings';
-  import UsersIcon from '@lucide/svelte/icons/users';
-  import ImageIcon from '@lucide/svelte/icons/image';
-  import TagIcon from '@lucide/svelte/icons/tag';
   import ExternalLinkIcon from '@lucide/svelte/icons/external-link';
-  import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
-  import { ADMIN_NAV_ICONS, ADMIN_NAV_FALLBACK_ICON } from './admin-nav-icons.js';
-  import { isResolvedNavSection, isResolvedNavEntry, flattenNavEntries, type ResolvedNavEntry } from '../sveltekit/admin-nav.js';
+  import {
+    ADMIN_NAV_ICONS,
+    ADMIN_NAV_FALLBACK_ICON,
+    ENGINE_NAV_ICONS,
+    ENGINE_NAV_FALLBACK_ICON,
+  } from './admin-nav-icons.js';
+  import type {
+    ResolvedNavEntry,
+    ResolvedEngineNavEntry,
+    ResolvedLayoutChild,
+    ResolvedLayoutSection,
+    ResolvedLayoutNode,
+  } from '../sveltekit/admin-nav.js';
   import './cairn-admin.css';
 
   interface Props {
@@ -71,39 +75,55 @@ discriminant, not the fields, gates the chrome).
     return { label: e.label, icon: ADMIN_NAV_ICONS[e.iconName] ?? ADMIN_NAV_FALLBACK_ICON, href: e.href };
   }
 
-  // The developer's custom nav, split by shape: a flat entry folds into Core (below, unchanged
-  // placement), a section renders as its own named group. Empty on a public payload.
-  const customFlatEntries = $derived(shell ? shell.customNav.filter(isResolvedNavEntry) : []);
-  const customSections = $derived(
-    shell
-      ? shell.customNav.filter(isResolvedNavSection).map((s) => ({ label: s.label, items: s.children.map(navItemOf) }))
-      : [],
-  );
+  // shell.nav mixes the engine's own screens (carry `screen`) with the site's own entries (carry
+  // `iconName`); these two guards discriminate the resolved-layout shape the way
+  // isResolvedNavSection/isResolvedNavEntry discriminated the retired customNav shape.
+  function isEngineChild(node: ResolvedLayoutChild): node is ResolvedEngineNavEntry {
+    return 'screen' in node;
+  }
+  function isLayoutSection(node: ResolvedLayoutNode): node is ResolvedLayoutSection {
+    return 'children' in node;
+  }
+  function layoutChildItem(node: ResolvedLayoutChild): NavItem {
+    return isEngineChild(node)
+      ? { label: node.label, icon: ENGINE_NAV_ICONS[node.screen] ?? ENGINE_NAV_FALLBACK_ICON, href: node.href }
+      : navItemOf(node);
+  }
 
-  // The core Cairn functions, all in one group: the content concepts, the nav-menu editor (when the
-  // site configures one; a signpost, kept distinct from the Settings gear), the site Settings, and
-  // the owner-only Editors. Empty on a public payload (the nav never renders there). A none-capability
-  // session (the spec's none contract) gets none of the engine's own screens, since every one of them
-  // 403s on that session; only the site's own custom flat entries carry over.
-  const coreItems: NavItem[] = $derived.by(() => {
+  // One rendered group of the sidebar's scroll area: a named, collapsible section, or a batch of
+  // top-level loose nodes (site entries or engine references placed outside any section) rendered
+  // as a plain, header-less list between the sections around them.
+  type NavGroup = { kind: 'section'; label: string; items: NavItem[] } | { kind: 'loose'; items: NavItem[] };
+
+  // shell.nav.items is the whole arranged, filtered scroll-area tree the resolver produced, in
+  // declaration order: a declared navLayout as written, or, absent one, today's default arrangement
+  // through the same resolver (one Core section holding the concepts, the legacy flat adminNav
+  // entries, and the engine screens, followed by each legacy adminNav section). Consecutive loose
+  // top-level nodes batch into one group so they render together, without opening a collapsible
+  // section of their own.
+  const navGroups: NavGroup[] = $derived.by(() => {
     if (!shell) return [];
-    // The developer's custom flat screens, right after the concepts. A custom section (grouped
-    // separately below) never folds in here.
-    const customItems = customFlatEntries.map(navItemOf);
-    if (shell.user.capability === 'none') return customItems;
-    return [
-      ...shell.concepts.map((c) => ({ label: c.label, icon: FileTextIcon, href: `/admin/${c.id}` })),
-      ...customItems,
-      // Library is a content peer, immediately after the concepts (the media screen; the route
-      // stays /admin/media, but the settled editor-facing label is Library, not Media).
-      { label: 'Library', icon: ImageIcon, href: '/admin/media' },
-      // Tags is the shared tag-vocabulary screen, after Library.
-      { label: 'Tags', icon: TagIcon, href: '/admin/vocabulary' },
-      ...(shell.navLabel ? [{ label: shell.navLabel, icon: SignpostIcon, href: '/admin/nav' }] : []),
-      { label: 'Settings', icon: SettingsIcon, href: '/admin/settings' },
-      ...(shell.canManageEditors ? [{ label: 'Editors', icon: UsersIcon, href: '/admin/editors' }] : []),
-    ];
+    const groups: NavGroup[] = [];
+    let loose: NavItem[] = [];
+    for (const node of shell.nav.items) {
+      if (isLayoutSection(node)) {
+        if (loose.length > 0) {
+          groups.push({ kind: 'loose', items: loose });
+          loose = [];
+        }
+        groups.push({ kind: 'section', label: node.label, items: node.children.map(layoutChildItem) });
+      } else {
+        loose.push(layoutChildItem(node));
+      }
+    }
+    if (loose.length > 0) groups.push({ kind: 'loose', items: loose });
+    return groups;
   });
+
+  // The fallback foot band: the engine screens the arrangement never referenced (locked call 5),
+  // rendered in the same slot and styling as today's standalone Help foot. Empty (no engine screen
+  // omitted, or every one gated out by capability) renders nothing.
+  const fallbackItems: NavItem[] = $derived(shell ? shell.nav.fallback.map(layoutChildItem) : []);
 
   // Up to two uppercase initials from the display name, falling back to '?' for an empty name.
   function initialsOf(displayName: string): string {
@@ -216,11 +236,17 @@ discriminant, not the fields, gates the chrome).
     if (rootEl) warnIfChromeWrapped(rootEl);
   });
 
+  // Every visible item in the resolved layout, sections' children included (locked call 10), plus
+  // the fallback foot group (so an unreferenced Help still surfaces here, the way it did as a
+  // hard-coded palette entry before this task): a section's own label never becomes a command, only
+  // its leaves do.
+  const paletteNavItems: NavItem[] = $derived([
+    ...navGroups.flatMap((group) => group.items),
+    ...fallbackItems,
+  ]);
+
   const paletteCommands = $derived<Command[]>([
-    ...coreItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
-    // Help 403s a none-capability session the same as the engine's other screens, so the palette
-    // omits it there too.
-    ...(shell && shell.user.capability !== 'none' ? [{ label: 'Help', icon: HelpCircleIcon, href: '/admin/help' }] : []),
+    ...paletteNavItems.map((item) => ({ label: item.label, icon: item.icon, href: item.href })),
     { label: 'View the live site', icon: ExternalLinkIcon, href: '/', external: true },
     theme === 'cairn-admin'
       ? { label: 'Switch to dark mode', icon: MoonIcon, action: toggleTheme }
@@ -250,6 +276,15 @@ discriminant, not the fields, gates the chrome).
     href?: string;
   }
 
+  // Flatten the resolved nav's site entries (section children included, engine doors skipped): a
+  // custom route's crumb label below comes from its own declared entry, never an engine screen.
+  function flattenSiteEntries(nodes: ResolvedLayoutNode[]): ResolvedNavEntry[] {
+    return nodes.flatMap((node) => {
+      if (isLayoutSection(node)) return node.children.filter((c): c is ResolvedNavEntry => !isEngineChild(c));
+      return isEngineChild(node) ? [] : [node];
+    });
+  }
+
   // Path-derived breadcrumbs: the concept label (from the nav) then the entry id segment. Only the
   // /admin/<concept>/<id> depth shows a trail; a bare concept list shows just the concept.
   const crumbs = $derived.by<Crumb[]>(() => {
@@ -259,7 +294,7 @@ discriminant, not the fields, gates the chrome).
     const concept = shell?.concepts.find((c) => c.id === conceptId);
     // A custom screen carries no concept, so resolve its href to the developer's nav label too; the
     // raw segment is the fallback when neither a concept nor a custom entry claims it.
-    const custom = shell && flattenNavEntries(shell.customNav).find((e) => e.href === `/admin/${conceptId}`);
+    const custom = shell && flattenSiteEntries(shell.nav.items).find((e) => e.href === `/admin/${conceptId}`);
     const out: Crumb[] = [
       { label: concept?.label ?? custom?.label ?? conceptId, href: `/admin/${conceptId}` },
     ];
@@ -304,23 +339,33 @@ discriminant, not the fields, gates the chrome).
      itself never matches. Keeping the drawer and its base/utility classes one level in lets the
      scoped sheet style them. -->
 <div data-theme={theme} bind:this={rootEl}>
-  <!-- The persistent desktop sidebar (lg:drawer-open) recedes inside an open document: a desk route
-       renders the drawer shell without it, so the nav starts closed at desktop width and the
-       manuscript takes the shell. This resolves at SSR from data.pathname (isDeskRoute), never in an
-       effect, so the chrome-free state does not flash. The checkbox still governs the overlay, so the
-       toggle (and Cmd/Ctrl+B) reopens the nav over the document on demand.
-       At desktop width the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's own
-       `position: sticky` for `.lg:drawer-open`'s persistent sidebar; see the load-bearing rules
-       there), not sticky: a host that omits Preflight (the embed-anywhere default this admin
-       targets) leaves the UA's default body margin in place, and sticky computes its "before it
-       sticks" travel from the sidebar's static offset in the document, so an unreset body margin
-       gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll. Fixed
-       positioning is anchored to the viewport outright, the same mechanism the mobile overlay
+  <!-- The persistent desktop sidebar persists at a route-kind-specific breakpoint: office routes at
+       lg (1024px), desk routes at xl (1280px, the desk rider, spec §5). A desk route recedes the
+       sidebar behind the toggle through the lg-xl tablet band instead of dropping it outright, since
+       the wider desk layout needs the room the office layout does not. This resolves at SSR from
+       data.pathname (isDeskRoute), never in an effect, so the recede never flashes. The checkbox
+       still governs the overlay at every width below each route's persist breakpoint, so the toggle
+       (and Cmd/Ctrl+B) reopens the nav over the document on demand.
+       At its persist breakpoint the sidebar is `position: fixed` (cairn-admin.css overrides daisyUI's
+       own `position: sticky` for `.lg:drawer-open` and its `.xl:drawer-open` companion; see the
+       load-bearing rules there), not sticky: a host that omits Preflight (the embed-anywhere default
+       this admin targets) leaves the UA's default body margin in place, and sticky computes its
+       "before it sticks" travel from the sidebar's static offset in the document, so an unreset body
+       margin gave the sidebar a few visible pixels of travel at the top and bottom of a page scroll.
+       Fixed positioning is anchored to the viewport outright, the same mechanism the mobile overlay
        already uses, so it carries no such drift and needs no document-level change. -->
-  <div class="drawer min-h-screen bg-base-200 text-base-content" class:lg:drawer-open={!isDeskRoute}>
+  <div
+    class="drawer min-h-screen bg-base-200 text-base-content"
+    class:lg:drawer-open={!isDeskRoute}
+    class:xl:drawer-open={isDeskRoute}
+  >
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
-    <div class="drawer-content flex flex-col" class:lg:ml-56={!isDeskRoute}>
+    <div
+      class="drawer-content flex flex-col"
+      class:lg:ml-56={!isDeskRoute}
+      class:xl:ml-56={isDeskRoute}
+    >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
            three clusters include shell-owned chrome (the drawer toggle, the breadcrumb), so
@@ -332,10 +377,10 @@ discriminant, not the fields, gates the chrome).
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
            metrics, and the two border-bottoms stop meeting at the seam). -->
       <div class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8">
-        <!-- The drawer toggle is hidden at desktop width on the office routes (the persistent sidebar
-             stands in for it); on a desk route the sidebar is closed, so the toggle stays visible and
-             reopens the nav as an overlay. -->
-        <div class="flex-none" class:lg:hidden={!isDeskRoute}>
+        <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
+             routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
+             band, where the desk sidebar is receded). -->
+        <div class="flex-none" class:lg:hidden={!isDeskRoute} class:xl:hidden={isDeskRoute}>
           <label for="cairn-shell-drawer" aria-label="Open menu" class="btn btn-square btn-ghost">
             <MenuIcon class="h-5 w-5" />
           </label>
@@ -416,7 +461,7 @@ discriminant, not the fields, gates the chrome).
           </div>
           {#if paletteResults.length}
             <ul bind:this={paletteList} class="menu max-h-[60vh] w-full gap-0.5 overflow-y-auto p-2">
-              {#each paletteResults as cmd (cmd.label)}
+              {#each paletteResults as cmd, i (i)}
                 <li>
                   {#if cmd.href}
 <!-- An internal link navigates and the pathname effect closes the palette once the route lands,
@@ -496,63 +541,66 @@ discriminant, not the fields, gates the chrome).
           </a>
         </div>
 
-        <div class="flex-1 space-y-1 overflow-y-auto py-4">
-          {#snippet navSection(label: string, items: NavItem[])}
-            <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-              <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
-                <span class="truncate">{label}</span>
-                <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
-              </summary>
-              <ul class="menu menu-sm mt-1 w-full gap-0.5 p-0">
-                {#each items as item (item.href)}
-                  <li>
-                    <a
-                      href={item.href}
-                      class={isActive(item.href)
-                        ? 'bg-primary/10 font-semibold text-primary'
-                        : 'font-medium text-subtle'}
-                      aria-current={isActive(item.href) ? 'page' : undefined}
-                    >
-                      <item.icon class="h-4 w-4" aria-hidden="true" />
-                      {item.label}
-                    </a>
-                  </li>
-                {/each}
-              </ul>
-            </details>
-          {/snippet}
+        {#snippet navItemList(items: NavItem[], extraClass: string = '')}
+          <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`}>
+            {#each items as item, i (i)}
+              <li>
+                <a
+                  href={item.href}
+                  class={isActive(item.href)
+                    ? 'bg-primary/10 font-semibold text-primary'
+                    : 'font-medium text-subtle'}
+                  aria-current={isActive(item.href) ? 'page' : undefined}
+                >
+                  <item.icon class="h-4 w-4" aria-hidden="true" />
+                  {item.label}
+                </a>
+              </li>
+            {/each}
+          </ul>
+        {/snippet}
 
-          <!-- Core is the built-in Cairn functions, a collapsible section of the content concepts,
-               the nav and settings editors, and the owner-only Editors entry. -->
-          {@render navSection('Core', coreItems)}
-          <!-- A developer's custom adminNav sections render as their own collapsible groups, after
-               Core, in declaration order (a section joins the nav beside Content/Media/Settings). -->
-          {#each customSections as section (section.label)}
-            {@render navSection(section.label, section.items)}
+        {#snippet navSection(label: string, items: NavItem[])}
+          <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
+            <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
+              <span class="truncate">{label}</span>
+              <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
+            </summary>
+            {@render navItemList(items, 'mt-1')}
+          </details>
+        {/snippet}
+
+        <div class="flex-1 space-y-1 overflow-y-auto py-4">
+          <!-- shell.nav.items is the whole arranged, filtered scroll area in declaration order: a
+               section renders as its own collapsible group (the Core built-in group when no
+               navLayout is declared, or a site's own named group); a loose top-level node (a site
+               entry or engine reference placed outside any section) batches with its neighbors into
+               a plain, header-less list rather than opening a group of its own. -->
+          <!-- Index-keyed on purpose: a label-keyed each would crash on a duplicate (the legacy
+               adminNav path can synthesize two same-labeled groups, e.g. a legacy section named
+               "Core" colliding with the built-in Core group; validateNavLayout cannot retroactively
+               reject that path). This list is fully derived and stateless, and the collapsed-group
+               open state derives from the label-keyed `collapsed` Set, not DOM identity, so index
+               keys never desync a group's open/closed state from its content. -->
+          {#each navGroups as group, i (i)}
+            {#if group.kind === 'section'}
+              {@render navSection(group.label, group.items)}
+            {:else}
+              <div class="px-2">
+                {@render navItemList(group.items)}
+              </div>
+            {/if}
           {/each}
         </div>
 
-        <!-- Help is a standing utility destination, pinned at the foot of the nav and set apart from
-             the content concepts by a top hairline. It is present for every owner- and editor-
-             capability session, labeled in plain text, and styled as a peer of the nav items above
-             it. A none-capability session omits it too: the Help route 403s the same as the engine's
-             other screens. -->
-        {#if data.user.capability !== 'none'}
-        <div class="flex-none border-t border-[var(--cairn-card-border)] px-2 py-2">
-          <ul class="menu menu-sm w-full gap-0.5 p-0">
-            <li>
-              <a
-                href="/admin/help"
-                class={isActive('/admin/help')
-                  ? 'bg-primary/10 font-semibold text-primary'
-                  : 'font-medium text-subtle'}
-                aria-current={isActive('/admin/help') ? 'page' : undefined}
-              >
-                <HelpCircleIcon class="h-4 w-4" aria-hidden="true" />
-                Help
-              </a>
-            </li>
-          </ul>
+        <!-- The fallback foot: the engine screens the arrangement never referenced (an undeclared
+             navLayout deliberately leaves Help unreferenced, reproducing today's standing Help
+             foot), pinned below a hairline and styled as a peer of the nav items above it. Every
+             engine screen here is already capability-gated by the resolver, so a none-capability
+             session (which strips every engine screen) renders no foot band at all. -->
+        {#if fallbackItems.length > 0}
+        <div class="flex-none border-t border-[var(--cairn-card-border)] px-2 py-2" data-testid="cairn-nav-fallback">
+          {@render navItemList(fallbackItems)}
         </div>
         {/if}
 

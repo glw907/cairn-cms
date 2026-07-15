@@ -188,6 +188,13 @@ the named human gates only):**
   docs/superpowers/specs/2026-07-14-admin-reorganization-design.md. Entry point now:
   `superpowers:writing-plans` against the spec, after 0.86.0 ships and the nav-layout pass
   merges (ASC's bump does not wait for this pass).
+- **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
+  real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
+  design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger
+  allowlist is an independent, low-risk addition (more icon names, same validation shape) that
+  doesn't need the whole-sidebar contract to land first. Candidate: survey the icon names ASC and
+  907 actually reach for past the nine, then extend `ADMIN_NAV_ICON_NAMES` and
+  `ADMIN_NAV_ICONS` together, a non-breaking additive change.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code
@@ -461,6 +468,11 @@ the named human gates only):**
   planned fallback is an edge Transform Rule that injects `Origin` for `/admin` POSTs; the higher-leverage
   path is the upstream issue (sveltejs/kit#15992). Track the removal and act before a major lands.
   Reasoning in `docs/cairn-dx-feedback-2026-06-09-907-0.36-retrofit.md`.
+- **A collapsed sidebar section holding the active route's link does not auto-expand.** Landing on a
+  route whose nav entry sits inside a section the editor previously collapsed leaves that section
+  closed, so the active link is present but hidden. Consider forcing the section open when one of its
+  children `isActive`, without overriding a deliberate manual collapse of an inactive section. Review
+  finding, 2026-07-14 nav-layout pass.
 
 ## Considering
 

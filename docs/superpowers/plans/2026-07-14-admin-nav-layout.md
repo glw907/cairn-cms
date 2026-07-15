@@ -374,9 +374,9 @@ harness), `examples/showcase/e2e/` width matrix + visual baselines.
 
 **Steps:**
 
-- [ ] Declare the layout; write the failing e2e assertions
-- [ ] Run the showcase e2e; regenerate baselines
-- [ ] Full gate, commit
+- [x] Declare the layout; write the failing e2e assertions
+- [x] Run the showcase e2e; regenerate baselines
+- [x] Full gate, commit
 
 ### Task 7: docs window
 

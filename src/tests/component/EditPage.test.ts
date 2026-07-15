@@ -2691,4 +2691,62 @@ describe('EditPage', () => {
       });
     }
   });
+
+  describe('editor footer overflow at phone widths (audit finding 1)', () => {
+    // Same rationale as the desk-band suite above: the compiled sheet carries the real .btn
+    // sizing the footer's ghost buttons render at, so a width-driven squeeze reproduces here.
+    let sheet: HTMLStyleElement;
+
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+
+    afterAll(async () => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+      await page.viewport(1280, 720);
+    });
+
+    const footerLabels = ['Prose', 'Markup', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen', 'Markdown help'];
+
+    for (const width of [320, 390]) {
+      it(`renders every footer control unclipped and unwrapped at ${width}px`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        const card = screen.container.querySelector<HTMLElement>('[aria-label="Editor"]')!;
+        const cardRect = card.getBoundingClientRect();
+        const footer = screen.container.querySelector<HTMLElement>('[data-testid="cairn-editor-footer"]')!;
+        const buttons = Array.from(footer.querySelectorAll<HTMLElement>('button'));
+        // Every labeled footer control renders, at its full un-truncated text, and none is silently
+        // dropped by a squeeze (a dropped control would be absent from this list entirely).
+        expect(buttons.map((b) => b.textContent?.trim())).toEqual(footerLabels);
+        for (const button of buttons) {
+          const rect = button.getBoundingClientRect();
+          // A nonzero footprint: nothing collapsed away (the reported "Typewriter dropped
+          // entirely at 320" defect).
+          expect(rect.width, `${button.textContent} has zero width`).toBeGreaterThan(0);
+          // A single text line's worth of height: a button whose own label wrapped to two lines
+          // (the reported "Focus mode wraps to two lines" defect) roughly doubles this.
+          expect(rect.height, `${button.textContent} wrapped to more than one line`).toBeLessThanOrEqual(28);
+          // Fully inside the editor card's own frame: neither clipped by its overflow-hidden
+          // ancestor (the reported "Markup" mid-word truncation) nor pushed off past its right
+          // edge (the reported Markdown help link going off-frame).
+          expect(rect.left, `${button.textContent} clipped on the left`).toBeGreaterThanOrEqual(cardRect.left - 1);
+          expect(rect.right, `${button.textContent} clipped on the right`).toBeLessThanOrEqual(cardRect.right + 1);
+        }
+        // The Markdown help link stays reachable and clickable at every phone width.
+        const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
+        await expect.element(help).toBeInTheDocument();
+        await help.click();
+        const dialog = screen.container.querySelector<HTMLDialogElement>(
+          'dialog[aria-labelledby="cairn-markdown-help-title"]',
+        )!;
+        expect(dialog.open).toBe(true);
+      });
+    }
+  });
 });

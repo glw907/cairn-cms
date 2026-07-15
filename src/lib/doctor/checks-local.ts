@@ -323,8 +323,10 @@ export const adminMountShape: DoctorCheck = {
 // hooks source via readFile. What it cannot see: the guard object the runtime actually builds. So
 // this reads the nearest observable proxy, the createAuthGuard call in the conventional hooks file,
 // the same heuristic-text stance configCsrfDisable takes. The residual gap: a site that wraps the
-// guard in another module, or builds the roles argument dynamically, reads as 'absent' and skips
-// rather than failing, so a positive fail is high-confidence and a miss is a skip, never a false red.
+// guard in another module, builds the roles argument dynamically, or passes a bare options
+// identifier the doctor cannot read into (createAuthGuard(guardOpts)) reads as 'absent' or
+// 'indirect' and skips rather than failing, so a positive fail is high-confidence and a miss is a
+// skip, never a false red.
 
 // The role names a site declares beyond the implicit owner/editor pair. These are exactly the roles
 // a guard on the default fallback would resolve to `none`, so they are what makes the wiring matter.
@@ -334,13 +336,19 @@ function customRoleNames(roles: DoctorContext['roles']): string[] {
 }
 
 // Read the createAuthGuard call in the hooks text and report whether it is passed a roles argument.
-// 'absent' when no direct createAuthGuard call is found (wrapped or renamed elsewhere), so the
-// caller skips rather than failing on a site it cannot see. The non-greedy capture takes the call's
-// own argument list; a `roles` word inside it is the wiring signal.
-function guardRoleWiring(text: string): 'wired' | 'unwired' | 'absent' {
+// 'absent' when no direct createAuthGuard call is found (wrapped or renamed elsewhere). 'indirect'
+// when the call's argument is a bare reference the doctor cannot read into, such as
+// createAuthGuard(guardOpts): that object may well carry roles, so failing it would not be a
+// high-confidence positive. Both cases skip rather than fail. The non-greedy capture takes the
+// call's own argument list; a `roles` word inside it is the wiring signal, and an object literal
+// (a `{` in the capture) is what makes the argument readable at all.
+function guardRoleWiring(text: string): 'wired' | 'unwired' | 'indirect' | 'absent' {
   const match = /createAuthGuard\s*\(([\s\S]*?)\)/.exec(text);
   if (!match) return 'absent';
-  return /\broles\b/.test(match[1]) ? 'wired' : 'unwired';
+  const args = match[1].trim();
+  if (/\broles\b/.test(args)) return 'wired';
+  if (args !== '' && !args.includes('{')) return 'indirect';
+  return 'unwired';
 }
 
 export const roleWiring: DoctorCheck = {
@@ -361,6 +369,11 @@ export const roleWiring: DoctorCheck = {
     if (wiring === 'absent') {
       return skip(
         'no createAuthGuard call found in src/hooks.server.ts (heuristic text read); the guard may be wired in another module'
+      );
+    }
+    if (wiring === 'indirect') {
+      return skip(
+        'createAuthGuard is passed an options object the doctor cannot read (heuristic text read); verify the guard receives the declared roles'
       );
     }
     if (wiring === 'unwired') {

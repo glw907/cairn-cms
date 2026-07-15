@@ -627,6 +627,12 @@ export const handle = createAuthGuard({ roles });
   const UNWIRED_HOOKS = `import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
 export const handle = createAuthGuard();
 `;
+  // A bare options identifier: the doctor cannot read into it, so it may well carry roles.
+  // Failing this would not be a high-confidence positive, so it must skip, not fail.
+  const INDIRECT_HOOKS = `import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { guardOpts } from './lib/guard-config';
+export const handle = createAuthGuard(guardOpts);
+`;
 
   it('skips when the site declares no custom roles (the default owner/editor pair)', async () => {
     const result = await roleWiring.run(ctx({ 'src/hooks.server.ts': UNWIRED_HOOKS }));
@@ -647,6 +653,15 @@ export const handle = createAuthGuard();
     );
     expect(result.status).toBe('skip');
     expect(result.detail).toContain('no createAuthGuard');
+  });
+
+  it('skips (not fails) when the guard is passed a bare options identifier the doctor cannot read', async () => {
+    const result = await roleWiring.run(
+      ctx({ 'src/hooks.server.ts': INDIRECT_HOOKS }, { roles: CUSTOM_ROLES })
+    );
+    expect(result.status).toBe('skip');
+    expect(result.detail).toContain('options object');
+    expect(result.detail).toContain('cannot read');
   });
 
   it('fails when custom roles are declared but the guard is not passed roles', async () => {

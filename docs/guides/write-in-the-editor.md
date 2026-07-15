@@ -161,7 +161,7 @@ A table is drawn with pipes for columns and a row of dashes under the header:
 | Kestrel | Chen    | 2nd    |
 ```
 
-The alignment in your draft doesn't have to be neat, because the rendered table aligns itself; the pipes only have to be present. Even so, hand-drawing one is tedious, and the toolbar's table button inserts a starter table for you to fill in. For working on a table that's already large, the [Markup posture](#postures-and-modes) shows the text denser, which makes the columns easier to track.
+The alignment in your draft doesn't have to be neat, because the rendered table aligns itself; the pipes only have to be present. Even so, hand-drawing one is tedious, and the toolbar's table button inserts a starter table for you to fill in. For working on a table that's already large, the [Wide posture](#postures-and-modes) shows the text denser, which makes the columns easier to track.
 
 Tables are for tabular information—results, schedules, comparisons. They are the wrong tool for laying out a page visually, and the site's design will not style them for that.
 
@@ -185,7 +185,7 @@ Occasionally you want a mark to be just a character: an asterisk that means mult
 
 How you want the writing surface to look changes with the task. Drafting goes best with comfortable type and an uncluttered screen. Reworking a table is easier when the text is packed tightly, so the columns line up. For a final read you want to see the page the way a reader will. The editor gives you postures and modes for all of this. They are optional, and none of them changes your text.
 
-The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type, and it's where most writing happens. **Markup** shows the same text denser and closer to the raw marks, which earns its keep on tables, long link lists, and structural cleanup. One toolbar click switches them.
+The writing surface has two postures. **Prose**, the default, sets your text at a comfortable reading measure with generous type, and it's where most writing happens. **Wide** shows the same text denser and closer to the raw marks, which earns its keep on tables, long link lists, and structural cleanup. One toolbar click switches them.
 
 **Write and Preview** are the toolbar's two tabs, and `Ctrl Alt P` flips between them. Preview isn't an approximation: it renders your draft through the site's own machinery, typography and all, so what you see is the page as readers get it. While Preview is up, a width selector shows the page at desktop, tablet, phone, and small-phone sizes, so you can check the phone layout without a phone.
 

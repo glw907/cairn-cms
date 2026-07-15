@@ -128,20 +128,15 @@ describe('shellPayload', () => {
       { id: 'pages', label: 'Pages' },
     ]);
     expect(shell.pathname).toBe('/admin/posts');
-    // The default arrangement: one Core section (the concepts, then the engine screens; no `nav`
-    // door since no navMenu is configured), Help left unreferenced into fallback.
+    // The flat default arrangement: loose top-level nodes (the concepts, then the engine screens;
+    // no `nav` door since no navMenu is configured), Help left unreferenced into fallback.
     expect(shell.nav.items).toEqual([
-      {
-        label: 'Core',
-        children: [
-          { screen: 'posts', label: 'Posts', href: '/admin/posts' },
-          { screen: 'pages', label: 'Pages', href: '/admin/pages' },
-          { screen: 'media', label: 'Library', href: '/admin/media' },
-          { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
-          { screen: 'settings', label: 'Settings', href: '/admin/settings' },
-          { screen: 'editors', label: 'Editors', href: '/admin/editors' },
-        ],
-      },
+      { screen: 'posts', label: 'Posts', href: '/admin/posts' },
+      { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+      { screen: 'media', label: 'Library', href: '/admin/media' },
+      { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
+      { screen: 'settings', label: 'Settings', href: '/admin/settings' },
+      { screen: 'editors', label: 'Editors', href: '/admin/editors' },
     ]);
     expect(shell.nav.fallback).toEqual([{ screen: 'help', label: 'Help', href: '/admin/help' }]);
     await shell.pendingEntries;
@@ -333,10 +328,10 @@ const RESOLVED_NAV_WITH_SECTION: ResolvedNavItem[] = [
 const NAV_WITH_SECTION_CONCEPTS = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
 
 /** The default arrangement resolveNavLayout produces for NAV_WITH_SECTION at one capability: the
- *  flat 'Standalone' entry folds into Core (beside the concepts and engine screens), and the
- *  legacy 'Club' section rides alongside Core as its own top-level node. Every navFilter test
- *  below compares shellPayload's real output against this directly-computed baseline, so the
- *  wiring assertion never has to hand-trace the resolver's own shape. */
+ *  flat 'Standalone' entry rides as its own loose top-level node beside the concepts and engine
+ *  screens, and the legacy 'Club' section rides alongside them as its own top-level node. Every
+ *  navFilter test below compares shellPayload's real output against this directly-computed
+ *  baseline, so the wiring assertion never has to hand-trace the resolver's own shape. */
 function defaultNav(capability: 'owner' | 'editor' | 'none') {
   return resolveNavLayout({
     layout: undefined,
@@ -392,7 +387,7 @@ describe('shellPayload: navFilter', () => {
     const routes = createContentRoutes(rt, {
       navFilter: async (items) => {
         await Promise.resolve();
-        return items.filter((item) => item.label === 'Core');
+        return items.filter((item) => item.label === 'Standalone');
       },
     });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
@@ -400,7 +395,7 @@ describe('shellPayload: navFilter', () => {
     const expected = defaultNav('editor');
     expect(shell.nav).toEqual({
       ...expected,
-      items: expected.items.filter((item) => item.label === 'Core'),
+      items: expected.items.filter((item) => item.label === 'Standalone'),
     });
     await shell.pendingEntries;
   });
@@ -418,9 +413,9 @@ describe('shellPayload: navFilter', () => {
       },
     });
     const { shell } = await routes.shellPayload(event('/admin/posts', 'owner', quickFailBackend()) as never);
-    // Exact equality proves navFilter saw the whole resolved arrangement (the Core section with
-    // its engine screens and the folded-in Standalone entry, plus the Club section), not just the
-    // site's own custom items the legacy adminNav-only seam used to hand it.
+    // Exact equality proves navFilter saw the whole resolved arrangement (the loose concept and
+    // engine nodes, the loose Standalone entry, plus the Club section), not just the site's own
+    // custom items the legacy adminNav-only seam used to hand it.
     expect(received).toEqual(defaultNav('owner').items);
     expect(receivedEditor).toEqual({ displayName: 'Ed', email: 'e@test', role: 'owner', capability: 'owner' });
     if (!shell.public) await shell.pendingEntries;

@@ -93,7 +93,7 @@ describe('resolveNavLayout: hidden', () => {
 });
 
 describe('resolveNavLayout: default synthesis', () => {
-  it('reproduces the locked default arrangement for an undeclared layout', () => {
+  it('reproduces the locked default arrangement for an undeclared layout, as loose top-level nodes', () => {
     const adminNav: ResolvedNavItem[] = [
       { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
       {
@@ -103,25 +103,31 @@ describe('resolveNavLayout: default synthesis', () => {
     ];
     const resolved = resolveNavLayout(opts({ layout: undefined, adminNav }));
     expect(resolved.items).toEqual([
-      {
-        label: 'Core',
-        children: [
-          { screen: 'posts', label: 'Posts', href: '/admin/posts' },
-          { screen: 'pages', label: 'Pages', href: '/admin/pages' },
-          { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
-          { screen: 'media', label: 'Library', href: '/admin/media' },
-          { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
-          { screen: 'nav', label: 'Navigation', href: '/admin/nav' },
-          { screen: 'settings', label: 'Settings', href: '/admin/settings' },
-          { screen: 'editors', label: 'Editors', href: '/admin/editors' },
-        ],
-      },
+      { screen: 'posts', label: 'Posts', href: '/admin/posts' },
+      { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
+      { screen: 'media', label: 'Library', href: '/admin/media' },
+      { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
+      { screen: 'nav', label: 'Navigation', href: '/admin/nav' },
+      { screen: 'settings', label: 'Settings', href: '/admin/settings' },
+      { screen: 'editors', label: 'Editors', href: '/admin/editors' },
       {
         label: 'Tools',
         children: [{ label: 'X', iconName: 'wrench', href: '/admin/x', ownerOnly: false }],
       },
     ]);
     expect(resolved.fallback).toEqual([{ screen: 'help', label: 'Help', href: '/admin/help' }]);
+  });
+
+  it('yields a loose site entry with no section for a none-capability session', () => {
+    const adminNav: ResolvedNavItem[] = [
+      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
+    ];
+    const resolved = resolveNavLayout(opts({ layout: undefined, adminNav, capability: 'none' }));
+    expect(resolved.items).toEqual([
+      { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
+    ]);
+    expect(resolved.fallback).toEqual([]);
   });
 });
 
@@ -139,14 +145,12 @@ describe('resolveNavLayout: capability gates', () => {
 
   it('strips the editors screen for editor capability', () => {
     const resolved = resolveNavLayout(opts({ capability: 'editor', role: 'editor' }));
-    const core = resolved.items[0] as { label: string; children: unknown[] };
-    expect(core.children).not.toContainEqual(expect.objectContaining({ screen: 'editors' }));
+    expect(resolved.items).not.toContainEqual(expect.objectContaining({ screen: 'editors' }));
   });
 
   it('omits the nav screen from the default arrangement when no navMenu is configured', () => {
     const resolved = resolveNavLayout(opts({ navMenuLabel: null }));
-    const core = resolved.items[0] as { label: string; children: unknown[] };
-    expect(core.children).not.toContainEqual(expect.objectContaining({ screen: 'nav' }));
+    expect(resolved.items).not.toContainEqual(expect.objectContaining({ screen: 'nav' }));
     expect(resolved.fallback).not.toContainEqual(expect.objectContaining({ screen: 'nav' }));
   });
 });

@@ -90,11 +90,9 @@ describe('createCairnAdmin shellLoad', () => {
     });
     const { shell } = await shellLoad(eventFor('/admin/posts') as never);
     if (shell.public) throw new Error('expected authed shell');
-    // The default arrangement folds the flat 'Standalone' entry into Core and places the legacy
-    // 'Club' section as its own top-level node; the filter drops only the latter.
+    // The flat default arrangement places the flat 'Standalone' entry as its own loose top-level
+    // node and the legacy 'Club' section as another top-level node; the filter drops only the latter.
     expect(shell.nav.items.map((item) => item.label)).not.toContain('Club');
-    const core = shell.nav.items.find((item) => item.label === 'Core');
-    const coreLabels = core && 'children' in core ? core.children.map((c) => c.label) : [];
-    expect(coreLabels).toContain('Standalone');
+    expect(shell.nav.items.map((item) => item.label)).toContain('Standalone');
   });
 });

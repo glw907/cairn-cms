@@ -523,6 +523,160 @@ describe('CairnAdminShell', () => {
     await expect.poll(() => document.activeElement).toBe(searchTrigger);
   });
 
+  // Task 8: the drawer's deferred APG modal-dialog treatment. It applies only while the drawer is
+  // open AND rendering as an overlay (below the office route's lg breakpoint here), never at the
+  // persistent-sidebar breakpoint, so every test below opens at a narrow viewport and the suite's
+  // ambient 1280x720 default is restored once at the end (the same pattern the palette-inset block
+  // uses).
+  describe('drawer APG dialog treatment (Task 8)', () => {
+    afterAll(async () => {
+      await page.viewport(1280, 720);
+    });
+
+    it('gives the open overlay drawer role="dialog" and aria-modal="true", absent while closed', async () => {
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+      expect(nav.getAttribute('role')).toBeNull();
+      expect(nav.getAttribute('aria-modal')).toBeNull();
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      await expect.poll(() => nav.getAttribute('role')).toBe('dialog');
+      expect(nav.getAttribute('aria-modal')).toBe('true');
+    });
+
+    it('never applies the dialog role at the persistent-sidebar breakpoint, even with the checkbox checked', async () => {
+      // The office route persists the sidebar at lg (1024px); 1280 clears it, so the checkbox can
+      // still flip true (Ctrl+B always toggles it) while the drawer renders beside the document,
+      // never over it.
+      await page.viewport(1280, 720);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+      const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      await expect.poll(() => toggle.checked).toBe(true);
+      expect(nav.getAttribute('role')).toBeNull();
+      expect(nav.getAttribute('aria-modal')).toBeNull();
+    });
+
+    it('marks the document content inert while the overlay is open, interactive again once it closes', async () => {
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const content = screen.container.querySelector<HTMLElement>('.drawer-content')!;
+      expect(content.inert).toBe(false);
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      await expect.poll(() => content.inert).toBe(true);
+
+      const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+      await expect.poll(() => document.activeElement).toBe(brandLink);
+      brandLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await expect.poll(() => content.inert).toBe(false);
+    });
+
+    it('never marks the document content inert at the persistent-sidebar breakpoint', async () => {
+      await page.viewport(1280, 720);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const content = screen.container.querySelector<HTMLElement>('.drawer-content')!;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
+      await expect.poll(() => toggle.checked).toBe(true);
+      expect(content.inert).toBe(false);
+    });
+
+    it('traps Tab within the drawer nav while it is an open overlay', async () => {
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+      await expect.poll(() => nav.getAttribute('role')).toBe('dialog');
+
+      const focusables = nav.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      await expect.poll(() => document.activeElement).toBe(first);
+
+      // Forward Tab off the last focusable wraps to the first.
+      last.focus();
+      last.dispatchEvent(new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }));
+      await expect.poll(() => document.activeElement).toBe(first);
+
+      // Shift+Tab off the first focusable wraps to the last.
+      first.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }),
+      );
+      await expect.poll(() => document.activeElement).toBe(last);
+    });
+
+    it('does not trap Tab at the persistent-sidebar breakpoint', async () => {
+      await page.viewport(1280, 720);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
+      await expect.poll(() => toggle.checked).toBe(true);
+
+      const nav = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"]')!;
+      const brandLink = nav.querySelector<HTMLElement>('a')!;
+      brandLink.focus();
+      brandLink.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Tab', shiftKey: true, bubbles: true, cancelable: true }),
+      );
+      // No trap engaged: the default action is left alone, so nothing here redirects focus back
+      // into the nav (the real browser would move focus to whatever precedes it in tab order).
+      expect(document.activeElement).toBe(brandLink);
+    });
+
+    it('closes the overlay drawer on Escape without also triggering another window Escape handler', async () => {
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const toggle = screen.container.querySelector<HTMLInputElement>('#cairn-shell-drawer')!;
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      await expect.poll(() => toggle.checked).toBe(true);
+      const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+      await expect.poll(() => document.activeElement).toBe(brandLink);
+
+      // A stand-in for another window Escape handler (EditPage's zen/details listener, a dialog's
+      // own listener): the drawer's capture-phase handler must claim the event first and stop it
+      // from ever reaching a bubble-phase listener like this one.
+      const otherEscapeHandler = vi.fn();
+      window.addEventListener('keydown', otherEscapeHandler);
+      try {
+        brandLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        await expect.poll(() => toggle.checked).toBe(false);
+        expect(otherEscapeHandler).not.toHaveBeenCalled();
+      } finally {
+        window.removeEventListener('keydown', otherEscapeHandler);
+      }
+    });
+
+    it('restores focus on an Escape close, the same contract the Ctrl+B close keeps', async () => {
+      await page.viewport(768, 700);
+      const screen = render(CairnAdminShell, { data: data(true), children: child });
+      const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
+      searchTrigger.focus();
+
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
+      const brandLink = screen.container.querySelector<HTMLElement>('nav[aria-label="Site content"] a')!;
+      await expect.poll(() => document.activeElement).toBe(brandLink);
+
+      brandLink.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+      await expect.poll(() => document.activeElement).toBe(searchTrigger);
+    });
+
+    it('leaves Escape alone while the drawer is closed, so another window handler still sees it', async () => {
+      await page.viewport(768, 700);
+      render(CairnAdminShell, { data: data(true), children: child });
+      const otherEscapeHandler = vi.fn();
+      window.addEventListener('keydown', otherEscapeHandler);
+      try {
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }));
+        expect(otherEscapeHandler).toHaveBeenCalledTimes(1);
+      } finally {
+        window.removeEventListener('keydown', otherEscapeHandler);
+      }
+    });
+  });
+
   it('posts the logout form to the absolute /admin?/logout catch-all', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     const form = screen.container.querySelector('form[action="/admin?/logout"]');

@@ -165,9 +165,32 @@ discriminant, not the fields, gates the chrome).
 
   // Where focus was before the shortcut opened the drawer, so a shortcut close (or an overlay
   // backdrop close while focus never left the drawer) can put it back. Set only by the shortcut, so
-  // a mouse-driven open (the hamburger label) leaves this minimal contract alone (locked to the
-  // review finding's scope; a full focus trap and Escape binding are deferred to the papercuts pass).
+  // a mouse-driven open (the hamburger label) leaves this minimal contract alone; the mouse-driven
+  // path still gets the overlay-only trap, inert background, and Escape below, which do not depend
+  // on how the drawer opened.
   let drawerRestoreFocusEl: HTMLElement | null = null;
+
+  // Whether the viewport currently sits at each route kind's persistent-sidebar breakpoint (lg for
+  // an office route, xl for a desk route, per the context model), tracked live so the APG treatment
+  // below can tell an overlay drawer from a persistent one after a resize, not just at mount.
+  let matchesLg = $state(false);
+  let matchesXl = $state(false);
+
+  $effect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const lgQuery = window.matchMedia('(min-width: 1024px)');
+    const xlQuery = window.matchMedia('(min-width: 1280px)');
+    matchesLg = lgQuery.matches;
+    matchesXl = xlQuery.matches;
+    const onLgChange = () => (matchesLg = lgQuery.matches);
+    const onXlChange = () => (matchesXl = xlQuery.matches);
+    lgQuery.addEventListener('change', onLgChange);
+    xlQuery.addEventListener('change', onXlChange);
+    return () => {
+      lgQuery.removeEventListener('change', onLgChange);
+      xlQuery.removeEventListener('change', onXlChange);
+    };
+  });
 
   function onKeydown(e: KeyboardEvent) {
     if (e.key.toLowerCase() === 'b' && (e.metaKey || e.ctrlKey)) {
@@ -359,6 +382,58 @@ discriminant, not the fields, gates the chrome).
     topbar.theme = theme;
     topbar.toggleTheme = toggleTheme;
   });
+
+  // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same
+  // route-kind breakpoint its own lg:/xl:drawer-open classes key off above, with zen forcing it
+  // closed at every width (it recedes the sidebar regardless of route kind).
+  const isPersistentSidebar = $derived(!topbar.zen && (isDeskRoute ? matchesXl : matchesLg));
+
+  // The APG modal-dialog treatment, the focus trap, the inert background, role="dialog" plus
+  // aria-modal, and Escape closing independently, applies only while the drawer is open AND acting
+  // as an overlay: at the persistent breakpoint the sidebar sits beside the document rather than
+  // over it, so none of the modal contract belongs there (the lg+/xl persistent modes are untouched).
+  const isDrawerOverlay = $derived(drawerOpen && !isPersistentSidebar);
+
+  // Cycles Tab/Shift+Tab within the drawer's own nav while it is an open overlay, so a keyboard user
+  // can never tab out into the inert document behind it. Redirects into the trap even when focus
+  // currently sits outside drawerNavEl (a mouse-driven open via the hamburger label focuses the
+  // checkbox it is bound to, not a nav element), the same fallback MediaInsertPopover's trap uses.
+  function trapDrawerTab(e: KeyboardEvent) {
+    if (!drawerNavEl) return;
+    const focusables = drawerNavEl.querySelectorAll<HTMLElement>(
+      'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusables.length === 0) return;
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    const active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !drawerNavEl.contains(active)) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else if (active === last || !drawerNavEl.contains(active)) {
+      e.preventDefault();
+      first.focus();
+    }
+  }
+
+  // A capture-phase listener so the drawer's own Escape and Tab handling always runs ahead of any
+  // other window keydown listener, most importantly EditPage's zen/details Escape handler, which
+  // listens in the bubble phase. Stopping propagation here (capture) keeps the drawer's Escape and
+  // every other Escape-driven affordance (zen, the details panel, a dialog) independent in both
+  // directions: a dialog's own Escape is the browser's native close-the-topmost-dialog default
+  // action, which fires regardless of script-level propagation, so it is unaffected either way.
+  function onDrawerOverlayKeydownCapture(e: KeyboardEvent) {
+    if (!isDrawerOverlay) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      e.stopPropagation();
+      drawerOpen = false;
+      return;
+    }
+    if (e.key === 'Tab') trapDrawerTab(e);
+  }
 </script>
 
 <svelte:head>
@@ -366,7 +441,7 @@ discriminant, not the fields, gates the chrome).
   <link rel="icon" href={cairnFaviconHref} />
 </svelte:head>
 
-<svelte:window onkeydown={onKeydown} />
+<svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />
 
 {#if data.public}
   {@render children()}
@@ -403,10 +478,14 @@ discriminant, not the fields, gates the chrome).
   >
     <input id="cairn-shell-drawer" type="checkbox" class="drawer-toggle" bind:checked={drawerOpen} />
 
+    <!-- Inert while the drawer is open as an overlay, so the document behind it is unreachable to
+         pointer, keyboard, and assistive tech (the APG modal-dialog contract, Task 8). Never inert
+         at the persistent breakpoint, where the sidebar sits beside the document, not over it. -->
     <div
       class="drawer-content flex flex-col"
       class:lg:ml-56={!isDeskRoute && !topbar.zen}
       class:xl:ml-56={isDeskRoute && !topbar.zen}
+      inert={isDrawerOverlay}
     >
       <!-- Zen (rung 4) drops the whole topbar element, not just its contents: a desk document
            registers zen through the topbar holder and the band slides away entirely. The desk's
@@ -588,10 +667,15 @@ discriminant, not the fields, gates the chrome).
 
     <div class="drawer-side">
       <label for="cairn-shell-drawer" aria-label="Close menu" class="drawer-overlay"></label>
+      <!-- role="dialog"/aria-modal only while the drawer is genuinely an overlay (Task 8's APG
+           treatment): at the persistent breakpoint this is a plain nav landmark beside the document,
+           never a modal, so the two attributes stay conditional rather than standing. -->
       <nav
         bind:this={drawerNavEl}
         class="bg-base-100 flex min-h-full w-56 flex-col border-r border-[var(--cairn-card-border)]"
         aria-label="Site content"
+        role={isDrawerOverlay ? 'dialog' : undefined}
+        aria-modal={isDrawerOverlay ? 'true' : undefined}
       >
         <!-- Brand band, the same height as the topbar. The mark sits in a filled "app-icon" tile, which
              anchors the corner as a deliberate brand object rather than a washed box. The logo and

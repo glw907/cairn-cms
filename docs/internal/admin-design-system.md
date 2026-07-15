@@ -17,6 +17,23 @@ The admin is self-styled: the engine ships a scoped stylesheet (`dist/components
 compiled from `cairn-admin.css` plus DaisyUI/Tailwind by `scripts/build-admin-css.mjs`) so the admin
 looks identical on any host with no host CSS. DaisyUI v5, Tailwind v4, Svelte 5 runes.
 
+## The design charter (Geoff, 2026-07-15; grades every admin design decision)
+
+The admin aims to be **warm, refined, polished, classic, intuitive, and designed for an editor**. It
+must not be splashy, trendy, dated, complex, or hard to use. It follows CMS design best practices
+with an aggressive focus on the editing experience: when a convention and the editor's flow
+conflict, the editor's flow wins. It keeps **a clear interface idiom**, so a developer's custom
+section reads as built in from the start, not bolted on; the recipes and tokens in this doc are
+that idiom, and a gap in them that forces a developer to improvise is a defect against this
+charter. And it is **cleanly responsive**: composed at every width, not merely unbroken (the
+family five-viewport bar: 320, 390, 768, 1440, 2560).
+
+Use the charter's own words as review lenses. "Classic, not trendy" means a device must survive a
+decade, so prefer typographic hierarchy, whitespace, and restraint over effects; "warm" lives in
+the Warm Stone palette, the type pairing, and the voice, never in decoration; "polished" is the
+absence of small defects (keming, misalignment, inconsistent spacing rhythm) more than the
+presence of flourish.
+
 ## Load-bearing rules (break these and the admin renders wrong)
 
 - **`data-theme` goes on a bare wrapper, never on an element that also carries styled classes.** Every

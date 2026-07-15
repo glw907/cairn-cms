@@ -383,7 +383,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
                      title-status-date, so the summary line stays off the office list and the
                      Hidden tag sits inline beside the title. -->
                 <div class="flex items-center gap-2">
-                  <a class="truncate font-semibold hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                  <a class="truncate font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                   {#if entry.draft}
                     <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                          eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
@@ -397,7 +397,7 @@ header button. Filtering, sorting, and paging run over the loaded entries in com
               <td class="w-16 px-2 sm:w-28 sm:px-4">
                 <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
                      status stays legible without keeping the desktop-width column. -->
-                {#if entry.status === 'new'}<span class="text-xs font-semibold sm:text-[0.8125rem]">New</span>
+                {#if entry.status === 'new'}<span class="badge badge-ghost badge-xs font-semibold sm:badge-sm">New</span>
                 {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary sm:badge-sm">Edited</span>
                 {:else}<span class="badge badge-ghost badge-xs font-medium sm:badge-sm">Published</span>{/if}
               </td>

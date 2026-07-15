@@ -181,8 +181,13 @@ the named human gates only):**
   the organize-your-admin-nav guide should model, and what cairn recommends per scale (six screens
   versus ASC's twenty). ASC's own declared arrangement executes in its repo's sessions against its
   real roles; this entry owns the cairn-side research, guidance, and any engine-default ruling.
-  Entry point: research review, then `superpowers:brainstorming` with Geoff. Runs after 0.86.0 is
-  cut and ASC has bumped (its live usage is the field evidence).
+  RESEARCHED AND RATIFIED (2026-07-14, same day): the fresh evidence + comparables rounds are
+  committed (docs/internal/2026-07-14-admin-nav-evidence-research.md and
+  -comparables-refresh.md) and the brainstorm settled the design — the FLAT DEFAULT (drop the
+  Core header; Geoff ratified) plus the evidence-grounded guide upgrade. Spec:
+  docs/superpowers/specs/2026-07-14-admin-reorganization-design.md. Entry point now:
+  `superpowers:writing-plans` against the spec, after 0.86.0 ships and the nav-layout pass
+  merges (ASC's bump does not wait for this pass).
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

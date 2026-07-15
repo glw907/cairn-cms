@@ -82,11 +82,13 @@ data-driven nav, user, theme, and streamed publish-all count. The discriminant g
 public payload always renders bare.
 
 The sidebar renders `data.nav`, one resolved [`ResolvedNavLayout`](./sveltekit.md#resolvednavlayout)
-tree computed server-side for every site, a declared `navLayout` or, absent one, today's default
-arrangement: `nav.items` renders in order (a section through its own collapsible group, keyed by
-label for the collapse cookie; loose entries between sections batch into a plain list), and
-`nav.fallback`, the engine screens the arrangement never referenced, renders in the same foot band
-below the scroll area that carried Help alone in the zero-config shape. Each item's icon resolves
+tree computed server-side for every site, a declared `navLayout` or, absent one, the flat
+zero-config default: `nav.items` renders in order, a section through its own collapsible group
+(keyed by label for the collapse cookie), a loose item as a plain list entry beside it. A site with
+no declared `navLayout` gets no section at all, every item loose, since a zero-config sidebar never
+reaches the size a category label earns back. `nav.fallback`, the engine screens the arrangement
+never referenced, renders in the same foot band below the scroll area, Help alone in the
+zero-config shape. Each item's icon resolves
 from an engine screen id or a site entry's bundled icon name. See [the navLayout
 seam](./sveltekit.md#the-navlayout-seam) for the full contract. For a none-capability
 `user.capability` (the spec's none contract), `nav` carries no engine screen anywhere, in `items` or

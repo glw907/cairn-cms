@@ -195,10 +195,14 @@ Recipes:
   Use for the list table, the editor panes, the auth card. Do not use a flat `base-300` border.
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`.
-- **Collapsible group:** a native `<details>` per group, its `open` computed one-way from a label-keyed
-  `collapsed` Set seeded from `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie,
-  read at SSR for no flash) and an `ontoggle` handler that mirrors each change back into that Set and the
-  cookie. The `<summary>` is
+- **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
+  own screens and a site's flat entries alike, as loose top-level nodes with no section wrapper. A
+  category header costs a reader a decision on every visit, a cost the sizes a zero-config sidebar
+  actually reaches never earns back (`docs/superpowers/specs/2026-07-14-admin-reorganization-design.md`,
+  §1). A site that declares its own `navLayout` sections gets the collapsible-group recipe: a native
+  `<details>` per group, its `open` computed one-way from a label-keyed `collapsed` Set seeded from
+  `data.collapsedNav` (persisted via the `cairn-admin-nav-collapsed` cookie, read at SSR for no flash) and
+  an `ontoggle` handler that mirrors each change back into that Set and the cookie. The `<summary>` is
   the eyebrow plus a gentle band (`bg-base-content/[0.04] hover:bg-base-content/[0.08]`) and a
   `.cairn-caret` chevron that the scoped rule rotates when open. Items align with the group label and the
   brand mark on one left edge.
@@ -298,7 +302,8 @@ Recipes:
 - **Zen:** a footer toggle (and `Ctrl+Shift+.`) fades the chrome to leave the manuscript alone on the
   recessed ground. It is a `localStorage` preference (`cairn-editor-zen`), and it composes with focus
   mode and the postures. The band disappears through the context holder's `zen` flag (`AdminLayout`
-  drops the whole topbar), and a floating `.cairn-zen-chip` keeps the two things that never vanish: the
+  drops the whole topbar and the persistent sidebar, at every width), and a floating `.cairn-zen-chip`
+  keeps the two things that never vanish: the
   live save state and an Exit control with the `Esc` hint. Escape exits zen, after closing the details
   panel if it is open. Entering zen moves focus into the editor if the focused control hid.
 - **Segmented control and check-and-tint toggle:** a pick-one control is one bordered group (the shared

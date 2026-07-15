@@ -207,9 +207,9 @@ classes), and a docs window (guide, design-system record, components reference, 
 
 **Steps:**
 
-- [ ] **Step 1:** Apply the three edits. Run `npm run check:docs`, `npm run check:reference`,
+- [x] **Step 1:** Apply the three edits. Run `npm run check:docs`, `npm run check:reference`,
   `npm run check:reference:signatures`; expect OK.
-- [ ] **Step 2:** Commit: `docs(admin): record the flat default and the zen recede in the design system, reference, changelog`.
+- [x] **Step 2:** Commit: `docs(admin): record the flat default and the zen recede in the design system, reference, changelog`.
 
 ### Task 6: Showcase-layout review and ROADMAP close
 

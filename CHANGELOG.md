@@ -1,3 +1,17 @@
+## Unreleased
+
+### Changed
+
+- The zero-config sidebar default now renders every item, cairn's own screens and a site's flat
+  `adminNav` entries alike, as a loose top-level entry with no synthesized `Core` section wrapping
+  them: a category header costs a reader a decision on every visit, a cost the sizes a zero-config
+  sidebar actually reaches never earns back. See [Organize your admin
+  nav](./docs/guides/organize-your-admin-nav.md) for the evidence and the full grouping guidance.
+- A `navFilter` that matched the literal `Core` section label now sees those items as loose nodes
+  instead, since no `Core` section exists to match; no known consumer does this.
+- Zen now recedes the persistent sidebar too, at every width, alongside the topbar it already
+  dropped.
+
 ## 0.86.0
 
 <!-- release-size: minor -->

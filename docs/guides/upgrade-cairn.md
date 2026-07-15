@@ -50,7 +50,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: `navLayout`, the whole-sidebar seam, and the widened `navFilter`
+## 0.86.0: `navLayout`, the whole-sidebar seam, and the widened `navFilter`
 
 Sites now declare `navLayout` on the adapter's `editor` group to arrange the whole admin sidebar
 as one tree, mixing cairn's own screens with their own; see [Organize your admin

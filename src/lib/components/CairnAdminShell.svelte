@@ -369,10 +369,12 @@ discriminant, not the fields, gates the chrome).
   // Mirror the live theme and its toggle into the holder so a desk document's own overflow menu
   // can fold the standalone theme toggle in below the width cutoff where this shell hides it (the
   // desk band collision fix, admin-papercuts pass): the direction reverses from desk/zen above,
-  // the shell writes and EditPage reads through the same portal.
+  // the shell writes and EditPage reads through the same portal. toggleTheme is stable for the
+  // component's life, so it is assigned once here; only the live theme value is reactive, so the
+  // effect below tracks it alone rather than rewriting the stable function on every theme flip.
+  topbar.toggleTheme = toggleTheme;
   $effect(() => {
     topbar.theme = theme;
-    topbar.toggleTheme = toggleTheme;
   });
 
   // Whether the drawer currently renders as the persistent sidebar rather than an overlay: the same

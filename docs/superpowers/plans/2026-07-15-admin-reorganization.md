@@ -267,3 +267,48 @@ component parity test is that pin, consistent with the nav-layout pass's ruling)
 honored (after 0.86.0, patch-sized, numbered at a future cut). Audit riders: finding 6 → Task 3;
 finding 4 → routed to the ARC (plan-locked call 2). Types: `ResolvedNavLayout`/`ResolvedLayoutNode`
 names match `admin-nav.ts` as surveyed.
+
+---
+
+## Post-mortem (2026-07-15, at close)
+
+**What shipped.** The full ratified spec plus one audit rider: the flat zero-config sidebar
+default (`resolveDefaultLayout` emits loose top-level nodes; the `Core` section is gone), the
+re-pinned unit and component contracts, zen receding the persistent sidebar at every width with
+minimal Ctrl+B focus management (capture, focus-in after tick, restore on close), the
+evidence-grounded guide upgrade (all seven rulings plus the scale tiers), the docs window
+(design-system nav recipe, components reference, a fresh `## Unreleased` with the navFilter-Core
+caveat and no Consumers-must lines), and the showcase verdict (kept: its declared layout is the
+guide's own worked example). Holds unpublished; patch-sized at a future cut.
+
+**Evidence at close.** Full gate green in the worktree: `npm run check` 0/0 (1367 files),
+`npm test` exit 0 (303 files, 3419 tests), and by name: check:surface, check:reference,
+check:reference:signatures, check:docs, check:snippets, check:package, check:consumers,
+check:prose, check:comments. Local CI-mode e2e zen round trip green during T3; the branch e2e
+dispatched via workflow_dispatch (the workflow does not trigger on feature-branch pushes) and
+watched to green before merge. No admin visual baseline changed (the showcase declares its tree;
+the zero-config contract pins at unit+component level per the nav-layout ruling this pass moved
+deliberately).
+
+**Review gate.** svelte-reviewer: no blockers; three stale-Core-comment findings, all folded
+(982b17d5) including the public AdminNavSection TSDoc. daisyui-a11y-reviewer: DaisyUI 5/Tailwind 4
+clean; one should-fix (the zen recede extends the non-focus-managed overlay drawer to desktop)
+answered with the minimal focus contract, with the full APG-dialog treatment (trap, inert,
+independent Escape) deliberately deferred to the papercuts pass; one nit (no pointer affordance to
+open nav inside zen) accepted as designed, filed to the phone-desk arc work. T5's scope gap
+(docs/reference/sveltekit.md still narrating the Core synthesis) was found by the implementer's
+own report and folded in the same commit. Simplifier: no changes, diff already minimal.
+
+**Process lessons.** (1) The T1/T2 split was a plan-authoring defect: an atomic contract change
+(engine synthesis + its component re-pins) cannot be split across two full-gate tasks, because the
+first task's gate is necessarily red in the second task's file. The T1 implementer's refusal to
+commit a red gate was correct discipline; the fix was one combined dispatch. Plan rule going
+forward: a task boundary must leave the FULL suite green, so a contract move and every test that
+pins it belong to one task. (2) The workflow pipeline surfaced this cheaply: the serial
+stop-on-incomplete shape meant one wasted dispatch, not five. (3) Scope-discipline prompts
+("stop and report instead of expanding") produced two useful escalations (the T1 stop, the T5
+sveltekit.md gap) and zero scope creep.
+
+**Carried forward.** The drawer-overlay APG-dialog treatment and the audit's PAPERCUTS bucket form
+phase 1 of the two-phase polish effort (with the ASC DX harvest); the invisible-craft polish brief
+is phase 2. The ROADMAP entries carry both.

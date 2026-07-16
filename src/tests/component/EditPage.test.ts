@@ -659,6 +659,46 @@ describe('EditPage', () => {
     expect(banner!.querySelector('a[href="/admin/posts/b"]')).toBeTruthy();
   });
 
+  it('surfaces a refused fragment delete with inclusion-naming copy', async () => {
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    (props as Record<string, unknown>).form = {
+      error: 'Cannot delete welcome: 1 entry includes it. Remove the include first.',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      inboundKind: 'include',
+      id: 'welcome',
+    };
+    const screen = render(EditPage, props);
+    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('could not be deleted'),
+    );
+    expect(banner).toBeTruthy();
+    expect(banner!.textContent ?? '').toMatch(/1 entry includes it/i);
+    expect(banner!.textContent ?? '').toMatch(/remove the include first/i);
+    expect(banner!.textContent ?? '').not.toMatch(/link to it/i);
+    expect(banner!.textContent ?? '').toContain('Post B');
+    const region = screen.container.querySelector('[aria-live="assertive"]');
+    expect(region!.textContent ?? '').toMatch(/1 entry includes it/i);
+  });
+
+  it('names linking, not inclusion, when the links gate refuses a fragment delete', async () => {
+    // The links gate runs before the fragments gate, and a fragment can itself be a link target, so
+    // the concept alone does not identify the blocker. The copy follows the refusal's own kind;
+    // naming an include here would send the author hunting for one that does not exist.
+    const props = postProps({ conceptId: 'fragments', id: 'welcome', label: 'Fragment' });
+    (props as Record<string, unknown>).form = {
+      error: 'Cannot delete welcome: 1 page links to it.',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      id: 'welcome',
+    };
+    const screen = render(EditPage, props);
+    const banner = Array.from(screen.container.querySelectorAll('.alert')).find((el) =>
+      (el.textContent ?? '').includes('could not be deleted'),
+    );
+    expect(banner!.textContent ?? '').toMatch(/link to it/i);
+    expect(banner!.textContent ?? '').not.toMatch(/includes it/i);
+    expect(banner!.textContent ?? '').not.toMatch(/remove the include first/i);
+  });
+
   it('clears a fixed broken-link row after Remove link', async () => {
     const props = postProps();
     props.data.body = 'see [gone](cairn:pages/gone) here';

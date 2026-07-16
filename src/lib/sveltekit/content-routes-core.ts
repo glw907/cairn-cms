@@ -3,7 +3,7 @@
 // createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts) built
 // once by createContentRoutes, so a shim stays one line: `export const load = routes.editLoad`.
 import { redirect, error, fail } from '@sveltejs/kit';
-import { findConcept } from '../content/concepts.js';
+import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
 import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
@@ -19,7 +19,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
@@ -241,12 +241,18 @@ export interface SaveFailure {
   body: string;
 }
 
-/** A refused delete: `fail(409)` while other entries still link to this one. */
+/** A refused delete: `fail(409)` while other entries still link to (or include) this one. */
 export interface DeleteRefusal {
   /** The one-line human summary every content action failure carries. */
   error: string;
-  /** The entries whose bodies link to the refused one, for the blockers list. */
+  /** The entries whose bodies link to (or include) the refused one, for the blockers list. */
   inboundLinks: InboundLink[];
+  /**
+   * Which gate refused, so the admin copy names the real blocker. Absent reads as `'link'`. A
+   *  fragment can be blocked by either gate, and the links gate runs first, so the concept alone
+   *  does not identify the cause: only the refusing gate knows.
+   */
+  inboundKind?: 'link' | 'include';
   /** The refused entry's id, so a list view marks the right row. */
   id: string;
 }
@@ -1183,6 +1189,22 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         inboundLinks: inbound,
         id,
       } satisfies DeleteRefusal);
+    }
+
+    // The fragments-concept delete guard: a fragment id is unique within the fragments concept (the
+    // only concept an ::include directive can target), so only this concept's entries need the check.
+    // Same degrade-to-allow posture as the links gate above; a dangling include is the build's
+    // include-resolver backstop, not this request-time gate.
+    if (concept.id === FRAGMENTS_CONCEPT_ID) {
+      const includers = inboundIncludes(manifest, id);
+      if (includers.length) {
+        return fail(409, {
+          error: `Cannot delete ${id}: ${includers.length} ${includers.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first.`,
+          inboundLinks: includers,
+          inboundKind: 'include',
+          id,
+        } satisfies DeleteRefusal);
+      }
     }
 
     // Cross-branch reference gate (fail-closed). A strict reference index unions main's published edges

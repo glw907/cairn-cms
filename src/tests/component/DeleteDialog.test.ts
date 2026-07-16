@@ -3,7 +3,14 @@ import { render } from 'vitest-browser-svelte';
 import DeleteDialog from '../../lib/components/DeleteDialog.svelte';
 import type { InboundLink } from '../../lib/content/manifest.js';
 
-function open(props: { conceptId: string; id: string; label: string; inboundLinks: InboundLink[]; pending?: boolean }) {
+function open(props: {
+  conceptId: string;
+  id: string;
+  label: string;
+  inboundLinks: InboundLink[];
+  pending?: boolean;
+  inboundKind?: 'link' | 'include';
+}) {
   return render(DeleteDialog, props);
 }
 
@@ -67,5 +74,46 @@ describe('DeleteDialog', () => {
     // The link to the referrer's edit page is present.
     const link = screen.container.querySelector('dialog a[href="/admin/posts/b"]');
     expect(link).not.toBeNull();
+  });
+
+  it('defaults inboundKind to link, keeping the linking copy byte-identical', async () => {
+    const screen = open({
+      conceptId: 'pages', id: 'home', label: 'Page',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+    });
+    await screen.getByRole('button', { name: /delete/i }).click();
+    const text = screen.container.querySelector('dialog')!.textContent ?? '';
+    expect(text).toContain('link');
+    expect(text).not.toContain('include');
+  });
+
+  it('renders inclusion copy when blocked with inboundKind="include"', async () => {
+    const screen = open({
+      conceptId: 'fragments', id: 'welcome', label: 'Fragment',
+      inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }],
+      inboundKind: 'include',
+    });
+    await screen.getByRole('button', { name: /delete/i }).click();
+    const text = screen.container.querySelector('dialog')!.textContent ?? '';
+    expect(text).toMatch(/included by/i);
+    expect(text).toContain('1 entry');
+    expect(text).toMatch(/remove the include first/i);
+    expect(text).toContain('Post B');
+    // No confirm form when blocked.
+    expect(screen.container.querySelector('dialog form[action="?/delete"]')).toBeNull();
+  });
+
+  it('pluralizes the inclusion copy for more than one includer', async () => {
+    const screen = open({
+      conceptId: 'fragments', id: 'welcome', label: 'Fragment',
+      inboundLinks: [
+        { concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' },
+        { concept: 'pages', id: 'about', title: 'About', permalink: '/about' },
+      ],
+      inboundKind: 'include',
+    });
+    await screen.getByRole('button', { name: /delete/i }).click();
+    const text = screen.container.querySelector('dialog')!.textContent ?? '';
+    expect(text).toContain('2 entries');
   });
 });

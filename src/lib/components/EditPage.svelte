@@ -1096,6 +1096,10 @@ persistent "?" carries Markdown help, design-arc D2).
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
+  // Which gate refused, read straight from the refusal. Deriving this from the concept would
+  // misreport a fragment the links gate blocked (that gate runs first, and a fragment can itself be
+  // a link target), naming an include the author would search for and never find.
+  const deleteRefusedByInclusion = $derived(form?.inboundKind === 'include');
 
   // The shared failure summary, rendered only when no richer banner claims the failure: the save
   // and delete guards get their own banners from brokenLinks and inboundLinks below, so this
@@ -1174,7 +1178,10 @@ persistent "?" carries Markdown help, design-arc D2).
     if (formError) return formError;
     if (deleteRefusedLinks.length) {
       const count = deleteRefusedLinks.length;
-      return `This ${data.label.toLowerCase()} could not be deleted. ${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+      const detail = deleteRefusedByInclusion
+        ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
+        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+      return `This ${data.label.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
@@ -1613,7 +1620,11 @@ persistent "?" carries Markdown help, design-arc D2).
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
-    <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {#if deleteRefusedByInclusion}
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
+    {:else}
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
         <li>

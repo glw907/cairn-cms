@@ -182,8 +182,13 @@ the named human gates only):**
   Premise check before scope: this is cairn's job only insofar as it is managing markdown
   content; anything domain-shaped stays the site's. Grounding to collect at brainstorm: the
   concrete ASC reuse cases, and whether the existing component registry + `libraryFields`
-  already carry part of the need. Entry point for a fresh session: "Run the reusable-content
-  brainstorm: read this entry and the ASC reuse cases first," inside ~/Projects/cairn-cms.
+  already carry part of the need. **Execution model (Geoff, 2026-07-15, a deliberate
+  token-economy exception to same-session execution): a Fable-conducted brainstorm settles the
+  design and writes the plan; then Geoff clears context and an Opus-conducted session executes
+  it** (the plan is the handoff artifact — outcomes and acceptance criteria per task, dispatched
+  to cairn-implementer per cairn-pass). Entry point for the brainstorm session: "Run the
+  reusable-content brainstorm: read this entry and the ASC reuse cases first," inside
+  ~/Projects/cairn-cms.
 - **Admin invisible-craft polish pass (phase 2; Geoff, 2026-07-15).** The "correct vs resolved"
   finisher: docs/internal/2026-07-15-admin-resolved-polish-brief.md carries the full rubric
   (spacing/rhythm, depth, motion, feedback, forms, micro-details) plus final look-preserving

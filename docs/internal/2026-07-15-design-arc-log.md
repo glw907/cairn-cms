@@ -182,3 +182,44 @@ so it waits for the worktree.
   1.125rem/1.85 (editor theme + title wrapper measure basis). Design-system recipes updated
   with the K4/T4 values and the no-negative-tracking rule. Rendered: keming resolved on
   sidebar AND topbar; manuscript reads more generous. KEPT pending Geoff's read (committed).
+
+## Settle (2026-07-15): the arc's post-mortem
+
+**Shipped.** Sixteen commits on `admin-design-arc`, every workstream ratified by Geoff live:
+the emphasis ladder + accent reservation (A3), K4 wordmark + T4 type scale, the one-line
+office list at the 3xl natural measure with frame zones and one 24px gutter, the C1 phone
+desk (48px band, thumb-reach action bar, 34% keyboard-open chrome vs the 67% audit
+baseline), D2 toolbar clusters (Format/Structure/Insert; "Blocks" banned as a label — it
+collided with block = component) + the persistent help control, the display-face tracking
+rule (18 sites, two raw-CSS), the E3 tracking bands, the F3 proximity spacing scale, the
+colorless Tidy surfaces, the dark chroma step, the taxonomy razor (Signups→Site,
+Library→Content), and the body-margin engine fix (found by Geoff's eyes: a seam + phantom
+scroll on every host without a body reset).
+
+**Process lessons, each already banked durably:**
+1. **The round is the iteration unit, not the note.** Two rabbit holes shipped before the
+   rule bound: reactive per-note edits accreted an undesigned surface until Geoff called it
+   ("grouped feedback, holistic response"). The design-refinement skill now carries the
+   round contract, the oscillation and accretion tells, and the red flag; six fresh-context
+   pressure scenarios all passed against the patched wording (dotfiles ef54491, 69484c7).
+2. **Watchdogs arm at dispatch, never get discovered by conversation.** A C1 implementer
+   died silently mid-task ("I'll wait for this to complete") and the stall surfaced only
+   because Geoff remarked on the elapsed time. The single-agent stall watchdog (poke →
+   bounded watch → take over the tail) is now in the dispatch-discipline memory; the
+   workflow guard also needs a terminal condition so it stops when its run completes
+   (it false-alarmed STALL on a finished workflow).
+3. **Engine admin work breaks the minutes-per-turn design loop.** Vite's client dep
+   optimizer serves a stale pre-bundled shell after `npm run package` + HMR, so every
+   component-edit iteration needed a `--force` dev-server restart. The 0.84.0 loop was
+   designed for consumer-site work; an engine-side equivalent (an optimizeDeps exclusion or
+   a design:dev watcher) is filed below as the friction item.
+4. **The blocked-status escalation worked as designed.** The C1 agent reported "blocked" to
+   escalate a shell-owned design decision (the 48px band) rather than improvising in shared
+   infrastructure; the ruling took one paragraph and the resumed pipeline cached everything
+   done. Escalate-don't-improvise held across all nine implementer dispatches.
+
+**Carried out of the arc:** the invisible-craft polish pass (queue item 4) runs against
+this settled system; the component kit (item 5) now carries the two inheritance principles
+as its acceptance bar; the joint Waymark/chassis alignment pass is filed (the harvest rules
+are banked in public-design-system.md); the Fragments brainstorm is pre-baked in ROADMAP
+with Geoff's three-shape seed.

@@ -113,6 +113,12 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 `label` with no warning, so a plural `label` like `'Posts'` reads "New Posts" on the create
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
+The concept key `fragments` reserves reusable content: declare it to include one entry's body
+inside another with [the `::include` directive](./authoring-syntax.md#include-a-fragment). It
+must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
+resolves against a non-routable concept, and an embedded entry publishing its own live page would
+make the same content reachable two ways.
+
 <!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
 ```ts
 posts: defineConcept({
@@ -708,6 +714,13 @@ The manifest is the committed, build-verified link graph. The content index that
 markdown into the query surfaces lives at [`/delivery`](./delivery.md). The write and diff side of
 the manifest is the engine's own save path, so only its serialize and verify operations stay public,
 for a build script or a custom regenerate tool to call.
+
+Each manifest entry also records which fragment ids its body includes, an inclusion edge alongside
+the outbound link and reference edges the same entry already carries. The delete guard reads it to
+refuse deleting a fragment a published entry still includes, the same way it refuses deleting a
+linked entry. This edge carries no build-time integrity check of its own: the fragment resolver
+throws on a dangling `::include` when the build renders the entry, which is the same backstop a
+dangling `cairn:` link relies on.
 
 #### Manifest serialize and verify
 

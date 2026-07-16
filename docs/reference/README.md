@@ -54,4 +54,4 @@ One page here is not export-keyed, since it documents author-facing markdown syn
 package subpath:
 
 - [Content authoring syntax](./authoring-syntax.md): the `cairn:` internal-link and `media:` asset
-  token schemes an author types in markdown.
+  token schemes, and the `::include` fragment directive, an author types in markdown.

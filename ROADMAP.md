@@ -167,28 +167,6 @@ the named human gates only):**
 
 ## Next
 
-- **Reusable content/components pass — NEXT UP, brainstorm-first (Geoff, 2026-07-15; promoted
-  from Considering's Fragments seed, queued as the effort after the design arc's release).**
-  Give cairn a way to author a piece of content once and reuse it across entries: the ASC site
-  is starting to need shared pieces (the production-site trigger the Considering entry was
-  waiting for), and Geoff had planned this direction earlier. **The brainstorm's seed frame
-  (Geoff, 2026-07-15) names three shapes the design must consider, "and maybe other things as
-  well":** (1) unstyled content — author-once markdown reused verbatim across entries; (2)
-  styled repeatable content — a reusable piece that carries its presentation; (3) repeatable
-  components with content — site-declared directive presets a volunteer inserts without
-  re-entering attributes. The open forks beneath them: whether the lean shape is a third
-  content concept (Fragments: markdown included into Posts/Pages via a directive), configured
-  component presets, or both, and where the charter's fixed-concepts boundary draws the line.
-  Premise check before scope: this is cairn's job only insofar as it is managing markdown
-  content; anything domain-shaped stays the site's. Grounding to collect at brainstorm: the
-  concrete ASC reuse cases, and whether the existing component registry + `libraryFields`
-  already carry part of the need. **Execution model (Geoff, 2026-07-15, a deliberate
-  token-economy exception to same-session execution): a Fable-conducted brainstorm settles the
-  design and writes the plan; then Geoff clears context and an Opus-conducted session executes
-  it** (the plan is the handoff artifact — outcomes and acceptance criteria per task, dispatched
-  to cairn-implementer per cairn-pass). Entry point for the brainstorm session: "Run the
-  reusable-content brainstorm: read this entry and the ASC reuse cases first," inside
-  ~/Projects/cairn-cms.
 - **Admin invisible-craft polish pass (phase 2; Geoff, 2026-07-15).** The "correct vs resolved"
   finisher: docs/internal/2026-07-15-admin-resolved-polish-brief.md carries the full rubric
   (spacing/rhythm, depth, motion, feedback, forms, micro-details) plus final look-preserving
@@ -503,9 +481,29 @@ the named human gates only):**
   closed, so the active link is present but hidden. Consider forcing the section open when one of its
   children `isActive`, without overriding a deliberate manual collapse of an inactive section. Review
   finding, 2026-07-14 nav-layout pass.
+- **`CairnAdminShell`'s palette-inset test flakes under full-suite load.** "gives the palette a top
+  inset below sm instead of sitting flush against the viewport" fails intermittently on a full `npm
+  test` and passes in isolation and on a clean re-run; it measures a 1-2px viewport offset while the
+  suite's other browser tests contend for the same runner. It bit twice during the fragments pass and
+  cost a re-run each time. Either pin the measurement so it cannot race (assert the computed style
+  rather than the resolved geometry) or move it to a dedicated project. Surfaced 2026-07-16.
 
 ## Considering
 
+- **Inline includes.** Fragments (shipped) resolve block-only: an `::include` stands on its own line
+  and splices the fragment's blocks in place, so a fragment cannot supply a phrase mid-sentence. The
+  promote trigger is a real production case. Watch ASC's Discord vocabulary, where a recurring inline
+  noun (a channel name, a season label) gets retyped by volunteers and drifts. Take
+  it up when that case is concrete, not before; the block shape covers every reuse case the design
+  brainstorm actually found, and an inline directive is a second grammar to teach and maintain.
+- **Fragment bodies on the manifest row.** `editLoad` reads every published fragment's body on every
+  edit-page open, one `readFile` per fragment, so the picker can list them and the preview can resolve
+  an include the author inserts without a round trip. That is fine at the handful of fragments a small
+  site keeps and is the reason the live preview needs no server call. The cost grows with the fragment
+  count, one read each, against the installation's GitHub rate limit. The trigger is a real site
+  carrying dozens of fragments;
+  the fix is a body column on the manifest's fragments rows, which collapses it to zero extra reads at
+  the cost of a fatter manifest. Surfaced by the fragments pass's own review, 2026-07-16.
 - **Scheduled publishing ("publish at").** Editors expect scheduling from a CMS, and the
   date-vs-publish field redesign note in Later exists precisely because the date field already reads
   as if it schedules. The lean shape, if it lands: a publish-at timestamp on the held per-entry

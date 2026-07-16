@@ -6,7 +6,9 @@
 import type { ConceptDescriptor } from '../content/types.js';
 import type { ContentEntry, ContentIndex, ContentSummary } from './content-index.js';
 import type { LinkResolve } from '../content/links.js';
+import type { FragmentResolve } from '../render/resolve-include.js';
 import { extractReferenceEdges, type ReferenceEdge } from '../content/references.js';
+import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 
 /** One concept's descriptor paired with its built index. */
 export interface ConceptIndex {
@@ -26,6 +28,12 @@ export interface SiteResolver {
   concept(id: string): ContentIndex | undefined;
   /** Every non-draft summary across concepts, for the site-wide sitemap. */
   all(): ContentSummary[];
+  /**
+   * Whether a concept id is publicly routable, so a link resolver can refuse a non-routable target
+   *  (a fragment) instead of pointing at a permalink that never serves. An unknown concept id reads
+   *  true; the downstream `byId` lookup already misses it.
+   */
+  routable(id: string): boolean;
 }
 
 /** Strip a trailing slash from a path, keeping the root "/" intact. */
@@ -61,8 +69,10 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
   }
   const byPath = new Map<string, { index: ContentIndex; id: string }>();
   const byId = new Map<string, ContentIndex>();
+  const routableById = new Map<string, boolean>();
   for (const { descriptor, index } of concepts) {
     byId.set(descriptor.id, index);
+    routableById.set(descriptor.id, descriptor.routing.routable);
     // The routable gate: a non-routable concept (e.g. Fragments' 'embedded' routing) stays
     // reachable through concept() for in-process body reads, but never enters the public
     // union, so it cannot be requested, prerendered, or enumerated.
@@ -95,6 +105,9 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
     },
     all() {
       return concepts.flatMap(({ index }) => index.all());
+    },
+    routable(id) {
+      return routableById.get(id) ?? true;
     },
   };
 }
@@ -164,12 +177,28 @@ export function resolveReferences(
 
 /**
  * A resolver backed by the site resolver, for the build. A miss throws, so a dangling cairn: token
- *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks.
+ *  fails the prerender (the build backstop). The preview uses manifestLinkResolver, which marks. A
+ *  ref whose target concept is non-routable (a fragment) is treated as a miss too: a fragment is
+ *  included, never linked, and its gated permalink would 404.
  */
 export function buildLinkResolver(site: SiteResolver): LinkResolve {
   return (ref) => {
-    const url = site.concept(ref.concept)?.byId(ref.id)?.permalink;
+    const url = site.routable(ref.concept) ? site.concept(ref.concept)?.byId(ref.id)?.permalink : undefined;
     if (!url) throw new Error(`cairn: link target "cairn:${ref.concept}/${ref.id}" not found`);
     return url;
+  };
+}
+
+/**
+ * A fragment-body resolver backed by the site resolver, for the build. A miss (an unknown id, or no
+ *  fragments concept declared) throws, so a dangling `::include` fails the prerender the same way a
+ *  dangling `cairn:` link does. The preview uses a manifest-backed resolver built from the edit
+ *  screen's fragment targets instead.
+ */
+export function buildFragmentResolver(site: SiteResolver): FragmentResolve {
+  return (id) => {
+    const body = site.concept(FRAGMENTS_CONCEPT_ID)?.byId(id)?.body;
+    if (body == null) throw new Error(`cairn: fragment "${id}" not found`);
+    return body;
   };
 }

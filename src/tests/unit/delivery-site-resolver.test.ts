@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSiteResolver, resolveReferences } from '../../lib/delivery/site-resolver.js';
+import { createSiteResolver, resolveReferences, buildFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -174,3 +174,38 @@ describe('createSiteResolver', () => {
     ).toThrow(/dup/);
   });
 });
+
+describe('buildFragmentResolver', () => {
+  const [fragments] = normalizeConcepts({
+    fragments: {
+      dir: 'f',
+      routing: 'embedded',
+      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+    },
+  });
+
+  it('returns the raw markdown body for a published fragment', () => {
+    const s = createSiteResolver([
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(resolve('address')?.trim()).toBe('Fragment body.');
+  });
+
+  it('throws an id-naming message on an unknown fragment id', () => {
+    const s = createSiteResolver([
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(() => resolve('missing')).toThrow(/missing/);
+  });
+
+  it('throws when the site declares no fragments concept', () => {
+    const s = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(() => resolve('address')).toThrow(/address/);
+  });
+});
+

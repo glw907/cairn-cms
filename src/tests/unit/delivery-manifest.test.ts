@@ -74,4 +74,25 @@ describe('buildLinkResolver', () => {
     expect(resolve({ concept: 'pages', id: 'about' })).toBe('/about');
     expect(() => resolve({ concept: 'posts', id: 'missing' })).toThrow(/cairn:posts\/missing/);
   });
+
+  // Fragments Task 3, spec §1 "not a link target": a fragment is included, never linked, and its
+  // gated permalink would 404. The build resolver must treat a cairn: ref to a non-routable
+  // concept's entry as a miss, the same dangling-link backstop as an unknown id.
+  it('treats a cairn: ref to a non-routable concept as a miss (the dangling-link backstop)', () => {
+    const fragmentsAdapter = defineAdapter({
+      content: {
+        pages: { dir: 'src/content/pages', label: 'Pages', permalink: '/:slug', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+        fragments: { dir: 'src/content/fragments', label: 'Fragments', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+      },
+      backend: githubApp({ owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' }),
+      email: { from: 'a@b.c' },
+      rendering: { render: ({ body }) => Promise.resolve(body) },
+    });
+    const { site } = createSiteIndexes(fragmentsAdapter, config, {
+      pages: globs.pages,
+      fragments: { 'src/content/fragments/address.md': '---\ntitle: Address\n---\n\nBody.' },
+    });
+    const resolve = buildLinkResolver(site);
+    expect(() => resolve({ concept: 'fragments', id: 'address' })).toThrow(/cairn:fragments\/address/);
+  });
 });

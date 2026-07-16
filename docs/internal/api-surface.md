@@ -110,6 +110,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/delivery`
 
+- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[] }) => string
@@ -146,11 +147,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
-- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
+- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `unlistedRoutes`: (routeIds: string[], listedPaths: string[]) => string[]
 
 ## `/delivery/data`
 
+- `buildFragmentResolver`: (site: SiteResolver) => FragmentResolve
 - `buildJsonFeed`: (channel: FeedChannel, items: FeedItem[]) => string
 - `buildLinkResolver`: (site: SiteResolver) => LinkResolve
 - `buildRobots`: (opts: { sitemapUrl: string; disallow?: string[] }) => string
@@ -184,7 +186,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `sitemapResponse`: (urls: SitemapUrl[]) => Response
 - `SitemapUrl`: { loc: string; lastmod?: string }
 - `sitemapView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string, extraRoutes?: string[]) => SitemapUrl[]
-- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[] }
+- `SiteResolver`: { byPermalink: (path: string) => ContentEntry<Record<string, unknown>>; adjacent: (entry: ContentSummary) => { newer?: ContentSummary; older?: ContentSummary }; entries: () => { path: string }[]; concept: (id: string) => ContentIndex<Record<string, unknown>>; all: () => ContentSummary[]; routable: (id: string) => boolean }
 - `unlistedRoutes`: (routeIds: string[], listedPaths: string[]) => string[]
 
 ## `/delivery/head`

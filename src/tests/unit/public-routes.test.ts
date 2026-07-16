@@ -244,6 +244,30 @@ describe('createPublicRoutes entryLoad', () => {
 
     await expect(linkRoutes('[gone](cairn:pages/missing)').entryLoad({ url: new URL('https://example.com/home') })).rejects.toThrow(/cairn:pages\/missing|not found/);
   });
+
+  it('passes a build-backed resolveFragment through to the render call', async () => {
+    const [fragments] = normalizeConcepts({
+      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    });
+    const fragmentSite = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nAddress body.' }], fragments) },
+    ]);
+    let recordedResolveFragment: ((id: string) => string | undefined) | undefined;
+    const recordingRoutes = createPublicRoutes({
+      site: fragmentSite,
+      render: ({ body, resolveFragment }) => {
+        recordedResolveFragment = resolveFragment;
+        return Promise.resolve(`<r>${body.trim()}</r>`);
+      },
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    });
+
+    await recordingRoutes.entryLoad({ url: new URL('https://example.com/about') });
+    expect(recordedResolveFragment?.('address')?.trim()).toBe('Address body.');
+  });
 });
 
 describe('createPublicRoutes media.resolver_absent', () => {

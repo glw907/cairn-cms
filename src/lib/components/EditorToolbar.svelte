@@ -192,8 +192,17 @@ stays pinned at the row's right end, reachable at every width.
    *  buttons, so the set is queried, not declared. */
   function rovingControls(): HTMLElement[] {
     if (!toolbarEl) return [];
+    // The visibility filter is load-bearing: below sm the Write/Preview tablist is CSS-hidden
+    // but still in the DOM, and a display:none control in the roving set both dead-ends arrow
+    // traversal (focus() no-ops, so the index sticks) and can take the set's one tabindex="0"
+    // with it, dropping the whole toolbar out of the Tab order. offsetParent is null for
+    // display:none and none of these controls are position:fixed, so it discriminates safely.
     return Array.from(toolbarEl.querySelectorAll<HTMLElement>('button')).filter(
-      (el) => !el.hasAttribute('disabled') && !el.closest('[popover]') && !el.closest('dialog'),
+      (el) =>
+        !el.hasAttribute('disabled') &&
+        !el.closest('[popover]') &&
+        !el.closest('dialog') &&
+        el.offsetParent !== null,
     );
   }
 

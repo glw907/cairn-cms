@@ -2135,7 +2135,7 @@ persistent "?" carries Markdown help, design-arc D2).
     role="region"
     aria-label="Entry details"
     hidden={!detailsOpen}
-    class="fixed right-0 top-16 max-sm:top-12 bottom-0 z-30 w-[19rem] overflow-y-auto border-l border-[var(--cairn-card-border)] bg-base-100 p-4 shadow-[var(--cairn-shadow)]"
+    class="fixed right-0 top-16 max-sm:top-12 bottom-0 z-30 w-[19rem] overflow-y-auto border-l border-[var(--cairn-card-border)] bg-base-100 p-4 max-sm:pb-24 shadow-[var(--cairn-shadow)]"
   >
     <!-- The panel header: the Details eyebrow and the close button. The eyebrow is a plain span
          (not a legend), so the three group legends below still read as the only sidebar legends. -->

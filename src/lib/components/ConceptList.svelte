@@ -418,7 +418,7 @@ the loaded entries in component state.
                   <form method="POST" action="?/delete">
                     <CsrfField />
                     <input type="hidden" name="id" value={entry.id} />
-                    <button type="submit" class="btn btn-ghost btn-sm text-base-content/45 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
+                    <button type="submit" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
                       <Trash2Icon class="h-4 w-4" />
                     </button>
                   </form>

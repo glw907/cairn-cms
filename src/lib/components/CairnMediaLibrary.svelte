@@ -1694,7 +1694,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
               <td class="w-24 text-right text-sm tabular-nums text-muted">{formatAdded(asset.createdAt)}</td>
               <td class="w-12 text-right">
-                <button type="button" class="btn btn-ghost btn-sm text-base-content/45 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
+                <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4" />
                 </button>
               </td>

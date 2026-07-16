@@ -114,6 +114,12 @@ export interface ListData {
   singular: string;
   /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
   dated: boolean;
+  /**
+   * Whether this concept is routable (`concept.routing.routable`), for the create form: a
+   *  non-routable concept (the Fragments concept) has no permalink, so the form asks for a name
+   *  rather than an address, matching the edit screen's own treatment.
+   */
+  routable: boolean;
   entries: EntrySummary[];
   /** A listing failure degrades to an inline message rather than a thrown 500. */
   error: string | null;
@@ -547,7 +553,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
-    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, formError, publishedAll };
+    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, routable: concept.routing.routable, formError, publishedAll };
     const backend = ctx.resolveBackend(event);
     try {
       const [manifestRaw, refs] = await Promise.all([

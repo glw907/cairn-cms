@@ -9,7 +9,11 @@ export default defineConfig({
     sveltekit(),
     cairnManifest({
       configModule: '/src/theme/cairn.config.ts',
-      content: { posts: '/src/content/posts/*.md', pages: '/src/content/pages/*.md' },
+      content: {
+        posts: '/src/content/posts/*.md',
+        pages: '/src/content/pages/*.md',
+        fragments: '/src/content/fragments/*.md',
+      },
       manifestPath: '/src/content/.cairn/index.json',
     }),
   ],

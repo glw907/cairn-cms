@@ -15,8 +15,13 @@ const pagesRaw = import.meta.glob('/src/content/pages/*.md', {
   import: 'default',
   eager: true,
 }) as Record<string, string>;
+const fragmentsRaw = import.meta.glob('/src/content/fragments/*.md', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+}) as Record<string, string>;
 
-const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw });
+const indexes = createSiteIndexes(cairn, siteConfig, { posts: postsRaw, pages: pagesRaw, fragments: fragmentsRaw });
 
 export const site = indexes.site;
 export const posts = indexes.posts;

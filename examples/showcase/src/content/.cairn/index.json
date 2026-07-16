@@ -2,13 +2,25 @@
   "version": 1,
   "entries": [
     {
+      "id": "trail-safety-notice",
+      "concept": "fragments",
+      "title": "Trail safety notice",
+      "permalink": "/fragments/trail-safety-notice",
+      "summary": "Check current avalanche and trail conditions before you set out, and carry the ten essentials above treeline.",
+      "draft": false,
+      "links": []
+    },
+    {
       "id": "about",
       "concept": "pages",
       "title": "About",
       "permalink": "/about",
-      "summary": "The cairn showcase is a minimal site proving the engine surfaces.",
+      "summary": "The cairn showcase is a minimal site proving the engine surfaces. ::include{fragment=\"trail-safety-notice\"}",
       "draft": false,
-      "links": []
+      "links": [],
+      "includes": [
+        "trail-safety-notice"
+      ]
     },
     {
       "id": "2026-01-15-hello",
@@ -66,7 +78,10 @@
       "permalink": "/posts/callout",
       "summary": "Proving the component slot render path in the real build.",
       "draft": false,
-      "links": []
+      "links": [],
+      "includes": [
+        "trail-safety-notice"
+      ]
     },
     {
       "id": "2026-04-05-the-reading-surface",

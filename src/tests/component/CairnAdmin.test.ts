@@ -34,6 +34,7 @@ function listData(pageOver = {}): AdminData {
       label: 'Posts',
       singular: 'Posts',
       dated: true,
+      routable: true,
       entries: [
         { id: '2026-05-01-hello', title: 'Hello', date: '2026-05-01', draft: false, status: 'published' as const, summary: null },
       ],

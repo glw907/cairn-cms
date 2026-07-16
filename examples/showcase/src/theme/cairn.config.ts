@@ -401,6 +401,21 @@ export const cairn = defineAdapter({
         robots: fields.text({ label: 'Robots' }),
       }),
     }),
+    // The Fragments concept (the reusable-content design): keyed right after pages, per the
+    // documented convention, so the flat zero-config nav places it beside the other authored
+    // concepts. routing: 'embedded' is required for this key; the engine's own concept
+    // normalization enforces it, since the include directive resolves a fragment body through
+    // this concept staying non-routable. The fieldset stays minimal: a fragment is a body plus a
+    // name for the picker to show, not a full entry.
+    fragments: defineConcept({
+      dir: 'src/content/fragments',
+      label: 'Fragments',
+      singular: 'fragment',
+      routing: 'embedded',
+      fields: fieldset({
+        title: fields.text({ label: 'Title', required: true }),
+      }),
+    }),
   },
   backend: githubApp({ owner: 'showcase', repo: 'demo', branch: 'main', appId: '1', installationId: '2' }),
   email: { from: 'cms@showcase.test' },
@@ -411,9 +426,11 @@ export const cairn = defineAdapter({
     // Render through the engine so registered components (the callout) produce their markup; the
     // engine's own pipeline already wraps every table in a scrollable, labeled region by default
     // (RendererOptions.tableScroll). The default media resolver backs the public build; the
-    // preview path injects its own resolveMedia.
-    render: ({ body, resolve, resolveMedia }) =>
-      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver }),
+    // preview path injects its own resolveMedia. resolveFragment forwards the same way: the build
+    // passes a site-resolver-backed resolver (createPublicRoutes), the preview a manifest-backed
+    // one (EditPage), and this site's render never needs to vary fragment resolution itself.
+    render: ({ body, resolve, resolveMedia, resolveFragment }) =>
+      renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver, resolveFragment }),
     components: registry,
     icons,
     islands: { banner: Banner },
@@ -435,7 +452,7 @@ export const cairn = defineAdapter({
     navLayout: [
       {
         label: 'Content',
-        children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'media' }],
+        children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'fragments' }, { screen: 'media' }],
       },
       {
         label: 'Site',

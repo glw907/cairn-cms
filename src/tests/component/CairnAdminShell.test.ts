@@ -82,6 +82,11 @@ describe('CairnAdminShell', () => {
     document.cookie = 'cairn-admin-theme=; path=/admin; max-age=0';
   });
 
+  it('zeroes the body margin while mounted (the fixed sidebar and the flowing content misalign under the UA default)', async () => {
+    render(CairnAdminShell, { data: data(true), children: child });
+    expect(getComputedStyle(document.body).margin).toBe('0px');
+  });
+
   it('applies the cairn-admin theme and renders the concept nav and child', async () => {
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     await expect.element(screen.getByText('page body')).toBeInTheDocument();
@@ -455,6 +460,30 @@ describe('CairnAdminShell', () => {
     expect(listToggleWrap.classList.contains('xl:hidden')).toBe(false);
   });
 
+  it('rules the topbar band to 48px below sm on a desk route, staying 64px at sm and up', async () => {
+    // Below sm the sidebar is an overlay drawer, not a visible band to align the navbar against, so
+    // the brand-band alignment argument (h-16/min-h-16) does not bind there: a desk route rules its
+    // band down to max-sm:h-12/min-h-12, matching the C1 phone-desk band (EditPage's own
+    // Details aside offset follows the same ruling).
+    const deskScreen = render(CairnAdminShellDeskHarness, {
+      data: data(true, null, '/admin/posts/2026-05-hello'),
+    });
+    const deskNavbar = deskScreen.container.querySelector('.navbar')!;
+    expect(deskNavbar.classList.contains('h-16')).toBe(true);
+    expect(deskNavbar.classList.contains('min-h-16')).toBe(true);
+    expect(deskNavbar.classList.contains('max-sm:h-12')).toBe(true);
+    expect(deskNavbar.classList.contains('max-sm:min-h-12')).toBe(true);
+
+    // An office route (a concept list) keeps the full 64px band at every width: only the desk band
+    // runs out of room below sm.
+    const listScreen = render(CairnAdminShell, { data: data(true), children: child });
+    const listNavbar = listScreen.container.querySelector('.navbar')!;
+    expect(listNavbar.classList.contains('h-16')).toBe(true);
+    expect(listNavbar.classList.contains('min-h-16')).toBe(true);
+    expect(listNavbar.classList.contains('max-sm:h-12')).toBe(false);
+    expect(listNavbar.classList.contains('max-sm:min-h-12')).toBe(false);
+  });
+
   it('recedes the persistent sidebar under zen at every width, and restores it on exit', async () => {
     // Zen is an explicit, reversible editor choice (plan-locked call 1,
     // docs/superpowers/plans/2026-07-15-admin-reorganization.md): the persistent sidebar joins the
@@ -509,7 +538,10 @@ describe('CairnAdminShell', () => {
     // The overlay drawer covers the editor at every width the shortcut opens it over; a shortcut
     // toggle that left focus behind on the obscured trigger would strand a keyboard user. Opening
     // moves focus to the first focusable element inside the drawer's own nav; closing returns it to
-    // whatever was focused beforehand.
+    // whatever was focused beforehand. The focus-trap effect is keyed on isDrawerOverlay, which is
+    // false at the suite's ambient 1280x720 (the persistent-sidebar breakpoint), so this test drops
+    // below lg itself and restores the ambient default after (the palette-inset block's pattern).
+    await page.viewport(768, 700);
     const screen = render(CairnAdminShell, { data: data(true), children: child });
     const searchTrigger = (await screen.getByRole('button', { name: /search or jump to/i }).element()) as HTMLElement;
     searchTrigger.focus();
@@ -521,6 +553,7 @@ describe('CairnAdminShell', () => {
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true }));
     await expect.poll(() => document.activeElement).toBe(searchTrigger);
+    await page.viewport(1280, 720);
   });
 
   // Task 8: the drawer's deferred APG modal-dialog treatment. It applies only while the drawer is

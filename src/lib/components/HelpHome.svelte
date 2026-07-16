@@ -379,7 +379,6 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     font-family: var(--font-display);
     font-size: 1.875rem;
     font-weight: 700;
-    letter-spacing: -0.025em;
     margin: 5px 0 0;
   }
   .page-lede {
@@ -409,7 +408,6 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     font-family: var(--font-display);
     font-size: 1.25rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
     line-height: 1.12;
     margin: 0;
   }

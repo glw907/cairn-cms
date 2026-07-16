@@ -10,6 +10,15 @@ canonical single mount from [The canonical admin
 mount](../reference/admin-routes.md) is already wired in. Keep `examples/showcase/src/routes/admin/signups` open alongside, since every snippet below is
 that route, close to verbatim.
 
+Two commitments frame everything in this guide. An extended cairn should still feel like one
+visually coherent system: your screen inherits the admin's design grammar through the shell, the
+theme tokens, and the shared component recipes, so it reads as built in from the start rather
+than bolted on, and the [design conventions in the components
+reference](../reference/components.md) name the treatments to reach for. And your screen inherits
+the responsive craft the same way: the shell already composes its chrome at every width, and
+building from the documented recipes keeps a custom screen composed at phone and ultrawide widths
+without extra work on your part.
+
 The rest of this guide grows that one screen into a whole custom *section*, the shape a real site
 proves once it has more than a screen or two of its own admin surface. The worked pattern below is
 drawn from an aksailingclub.org production build: a `/admin/club/**` section (events, classes,

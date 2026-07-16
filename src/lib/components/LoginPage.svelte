@@ -44,7 +44,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 {#snippet brand()}
   <div class="flex items-center gap-2">
     <CairnLogo class="h-8 w-8 text-primary" />
-    <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+    <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
   </div>
 {/snippet}
 

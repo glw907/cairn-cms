@@ -27,6 +27,7 @@ discriminant, not the fields, gates the chrome).
     ADMIN_NAV_FALLBACK_ICON,
     ENGINE_NAV_ICONS,
     ENGINE_NAV_FALLBACK_ICON,
+    ENGINE_CONCEPT_DATED_ICON,
   } from './admin-nav-icons.js';
   import type {
     ResolvedNavEntry,
@@ -85,9 +86,10 @@ discriminant, not the fields, gates the chrome).
     return 'children' in node;
   }
   function layoutChildItem(node: ResolvedLayoutChild): NavItem {
-    return isEngineChild(node)
-      ? { label: node.label, icon: ENGINE_NAV_ICONS[node.screen] ?? ENGINE_NAV_FALLBACK_ICON, href: node.href }
-      : navItemOf(node);
+    if (!isEngineChild(node)) return navItemOf(node);
+    const icon =
+      ENGINE_NAV_ICONS[node.screen] ?? (node.dated ? ENGINE_CONCEPT_DATED_ICON : ENGINE_NAV_FALLBACK_ICON);
+    return { label: node.label, icon, href: node.href };
   }
 
   // One rendered group of the sidebar's scroll area: a named, collapsible section, or a batch of
@@ -447,6 +449,12 @@ discriminant, not the fields, gates the chrome).
 <svelte:head>
   <title>{pageTitle} · {data.siteName}</title>
   <link rel="icon" href={cairnFaviconHref} />
+  <!-- The UA's default 8px body margin misaligns the shell when the host never resets it: the
+       fixed sidebar pins to the true viewport while the flowing content offsets by the margin,
+       which opens a visible seam on both axes and adds 16px of permanent scroll under the
+       min-h-screen drawer. Zeroing it here scopes the reset to the admin's mount lifetime, so
+       the host site's own elements stay untouched (the no-Preflight rule). -->
+  {@html '<style>body { margin: 0; }</style>'}
 </svelte:head>
 
 <svelte:window onkeydown={onKeydown} onkeydowncapture={onDrawerOverlayKeydownCapture} />
@@ -515,10 +523,15 @@ discriminant, not the fields, gates the chrome).
       <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
-           metrics, and the two border-bottoms stop meeting at the seam). -->
+           metrics, and the two border-bottoms stop meeting at the seam). Below sm the sidebar is an
+           overlay drawer, not a visible band to align against, so the alignment argument does not
+           bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
+           C1 phone-desk band. Office routes keep the full 64px band at every width. -->
       <div
         class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
+        class:max-sm:h-12={isDeskRoute}
+        class:max-sm:min-h-12={isDeskRoute}
       >
         <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet
@@ -540,7 +553,7 @@ discriminant, not the fields, gates the chrome).
               </ul>
             </nav>
           {:else}
-            <span class="font-semibold tracking-tight">{data.siteName}</span>
+            <span class="font-semibold">{data.siteName}</span>
           {/if}
         </div>
         {#if isDeskRoute}
@@ -568,7 +581,7 @@ discriminant, not the fields, gates the chrome).
           {#await data.pendingEntries then pending}
             {#if pending && pending.length > 0}
               <div class="flex-none">
-                <button type="button" class="btn btn-primary btn-sm" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
+                <button type="button" class="btn btn-sm border-transparent bg-primary/10 text-primary shadow-none hover:bg-primary/15" aria-haspopup="dialog" onclick={() => publishAllDialog?.showModal()}>
                   Publish site ({pending.length})
                 </button>
               </div>
@@ -704,7 +717,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
-            <span class="text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]">Cairn</span>
+            <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>
         </div>
@@ -716,8 +729,8 @@ discriminant, not the fields, gates the chrome).
                 <a
                   href={item.href}
                   class={isActive(item.href)
-                    ? 'bg-primary/10 font-semibold text-primary'
-                    : 'font-medium text-subtle'}
+                    ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary tracking-small-medium'
+                    : 'text-[0.9375rem] font-medium text-subtle tracking-small-medium'}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   <item.icon class="h-4 w-4" aria-hidden="true" />

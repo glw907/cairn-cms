@@ -15,7 +15,8 @@ and the lifecycle actions: Save, Publish (always present, riding the same form v
 guarded rather than hidden when there is nothing new to publish), and an overflow menu for
 Discard and Delete. One feedback strip under the header carries the
 transient flashes, and the editor card's footer is the writing-environment strip: the word
-count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Markdown help.
+count, the Prose/Wide posture pair, and the focus and typewriter toggles (the toolbar's own
+persistent "?" carries Markdown help, design-arc D2).
 -->
 <script lang="ts">
   import { flushSync, untrack, getContext } from 'svelte';
@@ -27,6 +28,8 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import PanelRightIcon from '@lucide/svelte/icons/panel-right';
   import ImageIcon from '@lucide/svelte/icons/image';
+  import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
+  import EyeOffIcon from '@lucide/svelte/icons/eye-off';
   import { useTopbar } from './topbar-context.js';
   import CsrfField from './CsrfField.svelte';
   import MarkdownEditor from './MarkdownEditor.svelte';
@@ -476,13 +479,17 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
   // shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
   // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
   // shrink a segment until its own label wraps mid-word.
+  // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
+  // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
+  // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
+  // pressed (design arc 2026-07-15).
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -948,10 +955,42 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
     return 'badge-ghost';
   });
 
+  // The below-sm compact band (design-arc C1) has room for exactly one status pill, never the
+  // desktop's separate status badge, Hidden badge, and save-state text side by side (audit
+  // finding 1's 320px triple: Published + Hidden + a dirty edit). The pill's own visible content
+  // carries the eye-off glyph and the dirty dot (see the desk snippet below); this aria-label
+  // spells the same three signals out as one phrase (e.g. "Published, hidden, unsaved changes"),
+  // so the accessible name says everything the two dropped badges used to say on their own.
+  const pillAriaLabel = $derived(
+    [status, data.frontmatter.draft === true ? 'hidden' : null, saveState ? saveState.toLowerCase() : null]
+      .filter((part): part is string => !!part)
+      .join(', '),
+  );
+
   // The band overflow menu's popover element and its open state, mirrored from the toggle
   // event into aria-expanded on the trigger.
   let actionsMenu = $state<HTMLUListElement | null>(null);
   let actionsOpen = $state(false);
+
+  // Tracks the sm breakpoint live (CairnAdminShell's matchesLg/matchesXl pattern): design-arc C1's
+  // phone composition (docs/internal/2026-07-15-design-arc-log.md) needs exclusive rendering, not
+  // a CSS-hidden duplicate, for any control whose accessible name would otherwise exist twice in
+  // the DOM at once (Save, Publish, the status cluster) outside a popover. A popover's own closed
+  // state hides its contents natively (the Details/theme-toggle fold already relies on that), but
+  // a fixed bottom action bar cannot be a popover and still read as always-visible, so its
+  // sibling-in-the-band pair must not also be in the DOM at the same time: role- and text-based
+  // test locators do not themselves filter by computed visibility, so two same-named live
+  // controls are ambiguous to a query regardless of which one CSS would show. Defaults false
+  // (today's desktop-shaped markup, matching SSR); the effect corrects it once mounted.
+  let narrow = $state(false);
+  $effect(() => {
+    if (!window.matchMedia) return;
+    const query = window.matchMedia('(max-width: 639.98px)');
+    narrow = query.matches;
+    const onChange = () => (narrow = query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  });
 
   // The details slide-over. The aside below carries the frontmatter groups; it stays physically
   // inside the edit form (so the uncontrolled fields submit) but presents as a fixed panel under
@@ -1325,38 +1364,63 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
      (Publish, Save). The breadcrumb itself stays in CairnAdminShell, so the duplicate is gone. -->
 {#snippet desk()}
   <div class="ml-2 flex min-w-0 flex-1 items-center gap-3 max-sm:ml-0 max-sm:gap-1">
-    <!-- The document status, fenced off by a hairline on its left. The hairline and its padding
-         are decorative grouping, not content, so they drop below sm along with the wider gaps
-         (the desk band collision fix, audit finding 2): the badge and the actions cluster below
-         both need the room, and without this the badge was the one getting squeezed away behind
-         the actions cluster's own controls. -->
-    <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
-      <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
-      {#if data.frontmatter.draft === true}
-        <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
-      {/if}
-      <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
-           squashes the transition for editors who asked for that. The dot is the quiet unsaved cue,
-           and stays the cue on its own below sm: the label text is the redundant part (the dot
-           already carries the state), so it drops there rather than crowding the band. -->
-      <span
-        class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
-        class:opacity-0={!saveState}
-        aria-live="off"
-      >
-        {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
-        <span class="max-sm:hidden">{saveState}</span>
-      </span>
-      {#if tidyApplied}
-        <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
-             edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
-             chip names it so the author knows the whole tidy is one move back. -->
-        <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-muted" data-testid="tidy-undo-chip">
-          <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
-          <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
+    {#if narrow}
+      <!-- The below-sm compact band (design-arc C1, docs/internal/2026-07-15-design-arc-log.md):
+           the way back to the concept list, the document title as read-only truncating text (not
+           the input, which lives with the manuscript), and one status pill. The pill folds the
+           Hidden signal in as the eye-off glyph and carries the dirty dot beside it, so the rare
+           Published + Hidden + dirty triple that used to need three widgets in the 320px band
+           needs exactly one here; pillAriaLabel spells the same triple out as a full phrase for
+           assistive tech. This replaces the desktop status cluster below outright (an `{#if}`, not
+           a CSS-hidden duplicate): a fixed control living twice in the DOM with the same
+           accessible name is ambiguous to any role- or text-based query regardless of which copy
+           CSS would show, so exactly one of the two renders at a time, driven by the live `narrow`
+           match. -->
+      <div class="flex min-w-0 flex-1 items-center gap-1.5">
+        <a
+          href={`/admin/${data.conceptId}`}
+          class="btn btn-ghost btn-square min-h-11 min-w-11 shrink-0"
+          aria-label={`Back to ${data.label}`}
+          title={`Back to ${data.label}`}
+        >
+          <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
+        </a>
+        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{data.title}</span>
+        <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" aria-label={pillAriaLabel}>
+          {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
+          {status}
         </span>
-      {/if}
-    </div>
+        {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
+      </div>
+    {:else}
+      <!-- The document status, fenced off by a hairline on its left. sm and up only (see the
+           `{#if narrow}` branch above for the below-sm compact pill this replaces). -->
+      <div class="flex min-w-0 items-center gap-2.5 border-l border-[var(--cairn-card-border)] pl-3">
+        <span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>
+        {#if data.frontmatter.draft === true}
+          <span class="badge badge-neutral badge-sm font-medium shrink-0">Hidden</span>
+        {/if}
+        <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
+             squashes the transition for editors who asked for that. -->
+        <span
+          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
+          class:opacity-0={!saveState}
+          aria-live="off"
+        >
+          {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{/if}
+          <span>{saveState}</span>
+        </span>
+        {#if tidyApplied}
+          <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
+               edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
+               chip names it so the author knows the whole tidy is one move back. -->
+          <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-muted" data-testid="tidy-undo-chip">
+            <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
+            <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
+          </span>
+        {/if}
+      </div>
+    {/if}
 
     <div class="ml-auto flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
       <!-- The form's default button, FIRST in the actions cluster (and so first among the form's
@@ -1450,9 +1514,14 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
         </li>
       </ul>
 
-      <!-- The lifecycle pair, fenced off by their own hairline (a decorative divider that drops
-           below sm along with the others, the desk band collision fix, audit finding 2). -->
-      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 max-sm:gap-1 max-sm:border-0 max-sm:pl-0">
+      {#if !narrow}
+      <!-- The lifecycle pair, sm and up only: design-arc C1 moves Save and Publish out of the band
+           below sm, onto the fixed bottom action bar near the end of this component's template
+           (both buttons ride the same form="cairn-edit-form" this pair does, so the guarded-Publish
+           pattern is identical). An `{#if}`, not a CSS-hidden duplicate: two live Save/Publish
+           controls with the same accessible name would be ambiguous regardless of which one CSS
+           hides, so exactly one pair exists in the DOM at a time. -->
+      <div class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3">
         <!-- Publish always renders (the grounding survey favors permanent visibility over hiding
              the control until a draft exists). Outline keeps Save the single solid primary action;
              Publish reads as its peer. With nothing new to publish it guards rather than hides,
@@ -1470,7 +1539,7 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
           type="submit"
           form="cairn-edit-form"
           formaction="?/publish"
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded shrink-0"
+          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
           class:cursor-not-allowed={!publishActionable}
           aria-disabled={publishActionable ? undefined : true}
           aria-label={publishGuardName}
@@ -1482,13 +1551,34 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
         </button>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
-        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm shrink-0" disabled={busy || (!dirty && !data.isNew)}>
+        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm tracking-small-semibold shrink-0" disabled={busy || (!dirty && !data.isNew)}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
       </div>
+      {/if}
     </div>
   </div>
 {/snippet}
+
+<!-- The below-sm fixed bottom action bar (design-arc C1) must stay above an open on-screen
+     keyboard, and the admin owns this route's <svelte:head> even though the surrounding app shell
+     is a consumer's own SvelteKit layout. `interactive-widget=resizes-content` (the CSS Viewport
+     spec's viewport-meta descriptor, shipped in Chromium since ~M108) tells the browser to shrink
+     the LAYOUT viewport itself when the keyboard opens, not only the visual one; without it a
+     `position: fixed; bottom: 0` element's containing block never shrinks, so the bar sits under
+     the keyboard rather than above it (the default, `resizes-visual`, only changes what
+     `visualViewport`/`innerHeight` report, leaving fixed layout untouched). SvelteKit
+     concatenates every ancestor's <svelte:head> into one document head in tree order, with the
+     deepest component's tags landing last; every shipping browser resolves a duplicate
+     `<meta name="viewport">` by taking the last one, so this tag wins over a consumer's own root
+     layout even though cairn does not own that layout. Limits: neither desktop nor iOS Safari
+     implements `interactive-widget` as of this writing, so the fix is Chromium-only there; iOS
+     Safari's own keyboard-resize behavior varies by version and is not separately patched here (a
+     `visualViewport` resize listener would cover it, at the cost of a listener running for the
+     life of every edit session, which this pass judged not worth it for a chrome sliver). -->
+<svelte:head>
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+</svelte:head>
 
 <!-- The whole edit surface remounts when navigation lands on another entry (see the entryKey
      reset above); script-level state and the beforeNavigate registration sit outside the block,
@@ -1594,6 +1684,26 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
     </div>
   {/each}
 {/snippet}
+
+<!-- The toolbar's below-sm More popover items (design-arc C1), shared so every fold-in control keeps
+     one shape. moreCheck is the same active-state glyph ConceptList's check() draws; moreToggle
+     renders one aria-pressed <li>, its `act` closure carrying both the state change and the passed
+     closeMenu; moreDivider is the sm-hidden separator between clusters. -->
+{#snippet moreCheck()}
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+{/snippet}
+{#snippet moreDivider()}
+  <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+{/snippet}
+{#snippet moreToggle(label: string, active: boolean, act: () => void)}
+  <li class="sm:hidden">
+    <button type="button" aria-pressed={active} onclick={act}>
+      {#if active}{@render moreCheck()}{/if}
+      {label}
+    </button>
+  </li>
+{/snippet}
+
 <!-- The role="status" live region renders unconditionally (present and empty at load), so when the
      first notice appears it announces; a region conditionally mounted with its first content may not
      be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
@@ -1644,9 +1754,9 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
            mirrors that geometry (the editor face at the prose size, the measure, auto margins).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
-      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.0625rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+      <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
         <input
-          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold tracking-tight font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
+          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
           value={str(data.frontmatter.title)}
           placeholder={titleField.label}
@@ -1665,7 +1775,14 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
       aria-label="Editor"
     >
       {#if !zen}
-      <EditorToolbar {format} {mode} onMode={setMode} {device} onDevice={setDevice}>
+      <EditorToolbar
+        {format}
+        {mode}
+        onMode={setMode}
+        {device}
+        onDevice={setDevice}
+        onHelp={() => helpDialog?.open()}
+      >
         {#snippet insertControls()}
           <!-- Plain triggers only: the dialogs they open hold their own <form> elements, so the
                dialogs themselves mount outside the edit form at the bottom of this component.
@@ -1777,6 +1894,33 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
             <ImageIcon class="h-4 w-4" aria-hidden="true" />
           </button>
         {/snippet}
+        {#snippet moreExtra(closeMenu: () => void)}
+          <!-- Below sm only (design-arc C1): the toolbar's one overflow is where Write/Preview, the
+               postures, the writing modes, and the word count all land once the card footer stops
+               rendering at this width (see the footer's own sm:flex gate above). Markdown help
+               does NOT fold in here (design-arc D2): the toolbar's own persistent "?" control
+               already reaches it at every width, so this popover would otherwise carry a second,
+               redundant "Markdown help" affordance. Each remaining item mirrors an existing
+               sm-and-up control's handler exactly, so picking one here has the identical effect as
+               its standing counterpart; closeMenu dismisses the popover the way EditorToolbar's
+               own moreItems picks do. sm:hidden on every <li> here keeps them out of the way at sm
+               and up, where the real controls stand on their own. -->
+          {@render moreDivider()}
+          {@render moreToggle('Write', mode === 'write', () => { setMode('write'); closeMenu(); })}
+          {@render moreToggle('Preview', mode === 'preview', () => { setMode('preview'); closeMenu(); })}
+          {@render moreDivider()}
+          {@render moreToggle('Prose', surface === 'prose', () => { setSurface('prose'); closeMenu(); })}
+          {@render moreToggle('Wide', surface === 'markup', () => { setSurface('markup'); closeMenu(); })}
+          {@render moreDivider()}
+          {@render moreToggle('Focus mode', focusMode, () => { setFocusMode(!focusMode); closeMenu(); })}
+          {@render moreToggle('Typewriter', typewriter, () => { setTypewriter(!typewriter); closeMenu(); })}
+          {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
+          {@render moreDivider()}
+          <li class="sm:hidden">
+            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted">{wordLabel}</span>
+          </li>
+        {/snippet}
       </EditorToolbar>
       {/if}
       <!-- The Write pane stays mounted while Preview shows, so CodeMirror keeps its caret, scroll
@@ -1870,13 +2014,21 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
       {/if}
       <!-- The card footer, part of the same instrument frame. It stays up in Preview too, so the
            frame never jumps between tabs and the count keeps reading while proofing. The strip
-           carries the writing environment (the count, the persisted writing modes, help) while
-           the top toolbar acts on the text; the toggles live here visible rather than buried in
-           an overflow menu. Below the phone breakpoint the strip wraps as whole control groups
-           onto their own rows (flex-wrap at every level, each group shrink-0) rather than
-           letting flex squeeze a group until its own label truncates or wraps mid-word; a wide
-           viewport still lays the whole strip out on its usual single row. -->
-      {#if !zen}
+           carries the writing environment (the count, the persisted writing modes) while the top
+           toolbar acts on the text; the toggles live here visible rather than buried in an
+           overflow menu. Markdown help lives in the toolbar's own persistent "?" control now
+           (design-arc D2), not here: a second copy in the footer would just be a width-dependent
+           duplicate of an affordance that already reaches every width from one place. sm and up
+           only: below sm design-arc C1 drops the strip outright (its own toolbar row already
+           scrolls, so wrapping it further was the wrong fix) and moves every one of its remaining
+           controls, word count included, into the toolbar's own More popover (EditorToolbar's
+           moreExtra snippet below), so nothing here is lost, only relocated. Gated on the live
+           `narrow` match rather than a CSS hidden/sm:flex toggle: a plain-text query (getByText)
+           does not consult computed visibility, so a CSS-hidden word count here would read as a
+           second, ambiguous copy of the popover's own moreExtra line even while this strip sits
+           display:none (the same reasoning EditorToolbar's moreExtra mount-gate documents for the
+           More popover). -->
+      {#if !zen && !narrow}
       <div
         data-testid="cairn-editor-footer"
         class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
@@ -1965,18 +2117,6 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
               Zen
             </button>
           </div>
-          <!-- Markdown help is a plain underlined link-styled button (a reference, not a control),
-               no border, no fill. It stays the affordance an icon-confused phone writer needs, so
-               it keeps its own single-line footprint (shrink-0/whitespace-nowrap) and simply
-               wraps to its own row rather than clipping or being pushed off-frame. -->
-          <button
-            type="button"
-            class="ftr-link shrink-0 cursor-pointer whitespace-nowrap text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
-            aria-haspopup="dialog"
-            onclick={() => helpDialog?.open()}
-          >
-            Markdown help
-          </button>
         </div>
       </div>
       {/if}
@@ -1988,12 +2128,14 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
        submit; `hidden` when closed takes it out of the a11y tree and the tab order while its
        display:none fields still post. role="region" with aria-label names it for assistive tech;
        focus moves to the close button on open and back to the trigger on close (the
-       region-with-focus-management pattern). -->
+       region-with-focus-management pattern). Its top offset follows the band: top-16 at sm and up,
+       max-sm:top-12 below sm, matching the desk route's 48px band (EditPage is always a desk
+       route, so the narrower offset applies unconditionally). -->
   <aside
     role="region"
     aria-label="Entry details"
     hidden={!detailsOpen}
-    class="fixed right-0 top-16 bottom-0 z-30 w-[19rem] overflow-y-auto border-l border-[var(--cairn-card-border)] bg-base-100 p-4 shadow-[var(--cairn-shadow)]"
+    class="fixed right-0 top-16 max-sm:top-12 bottom-0 z-30 w-[19rem] overflow-y-auto border-l border-[var(--cairn-card-border)] bg-base-100 p-4 max-sm:pb-24 shadow-[var(--cairn-shadow)]"
   >
     <!-- The panel header: the Details eyebrow and the close button. The eyebrow is a plain span
          (not a legend), so the three group legends below still read as the only sidebar legends. -->
@@ -2062,6 +2204,49 @@ count, the Prose/Wide posture pair, the focus and typewriter toggles, and the Ma
     </div>
   </aside>
 </form>
+
+<!-- The below-sm fixed bottom action bar (design-arc C1): Save and Publish leave the band below sm
+     (audit finding 1: the top-right pair measured 31-32px there, under the 44px floor, and sat in
+     the one-handed dead zone) for a bar fixed to the bottom of the visual viewport, each button at
+     least 44px tall (min-h-11). Both ride form="cairn-edit-form" the way the band's own pair does
+     (see the desk snippet above), including the identical guarded-Publish pattern and reason
+     (publishButton binds here too, so the Ctrl+Shift+S shortcut's requestSubmit finds whichever
+     of the two Publish buttons is actually mounted). Gated on the live `narrow` match, not CSS,
+     the same reasoning as the band's own pair: exactly one of the two Save/Publish pairs exists in
+     the DOM at a time, so a role- or text-based test locator, and a real screen reader, never sees
+     two controls sharing one accessible name. The sr-only default submit in the band always
+     precedes this bar in tree order (the band renders ahead of this form-external bar) and the
+     band's own pair never coexists with this one, so Enter-in-a-field keeps saving rather than
+     publishing either way. The bar's own vertical padding plus env(safe-area-inset-bottom) keeps
+     it off the physical screen edge (Geoff's note on the mockup: "hard-smashed against the
+     bottom"); staying above an open keyboard depends on the interactive-widget viewport hint
+     above. Hidden under zen with the rest of the chrome, the same gate the band and the footer
+     strip use. -->
+{#if !zen && narrow}
+  <div
+    data-testid="cairn-edit-actionbar"
+    class="cairn-edit-actionbar fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+  >
+    <button
+      bind:this={publishButton}
+      type="submit"
+      form="cairn-edit-form"
+      formaction="?/publish"
+      class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
+      class:cursor-not-allowed={!publishActionable}
+      aria-disabled={publishActionable ? undefined : true}
+      aria-label={publishGuardName}
+      title={publishGuardReason}
+      disabled={busy}
+      onclick={onPublishClick}
+    >
+      {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
+    </button>
+    <button type="submit" form="cairn-edit-form" class="btn btn-primary tracking-small-semibold min-h-11 flex-1" disabled={busy || (!dirty && !data.isNew)}>
+      {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
+    </button>
+  </div>
+{/if}
 
 <!-- The floating zen chip (the mockup's .zen-chip): fixed top-right, it carries the two things the
      WordPress/Ghost rule says never disappear under zen, the live save state and the way out. The

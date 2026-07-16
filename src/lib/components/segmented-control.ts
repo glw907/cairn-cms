@@ -7,9 +7,10 @@
 
 /**
  * The active/inactive tint fragment for one segment of a check-and-tint control. `active` true
- * returns the primary tint plus bold weight; false returns the muted, untinted ink. A caller
- * appends this to its own layout classes.
+ * returns a neutral wash plus stronger weight and full ink, so the active state speaks through
+ * weight rather than hue (the accent budget reserves color for act-on states); false returns the
+ * muted, untinted ink. A caller appends this to its own layout classes.
  */
 export function segmentTintClass(active: boolean): string {
-  return active ? 'bg-primary/10 text-primary font-medium' : 'text-muted';
+  return active ? 'bg-base-content/[0.07] text-base-content font-semibold' : 'text-muted';
 }

@@ -36,6 +36,18 @@ presence of flourish.
 
 Calibration (Geoff, 2026-07-15):
 
+- **"An extended cairn should still feel like one visually coherent system."** The idiom's
+  reach includes screens cairn never shipped: a developer's custom admin section inherits the
+  grammars (the emphasis ladder, the accent reservation, the pill family, the type rules)
+  through tokens, shared helpers, the public extension docs, and ultimately the component kit —
+  never by the developer re-deriving them from prose. A ruling that exists only in this internal
+  doc has not finished shipping.
+- **Developers inherit the responsive craft too (Geoff, 2026-07-15).** The shell already grants
+  a custom route its chrome behavior and the office content cap for free; the kit's components
+  must extend that to the component level — responsive by construction, composed at the family
+  five-viewport bar out of the box — so a custom screen built from kit parts recomposes at 320
+  and 2560 without the developer having thought about either.
+
 - **The anchor product, in spirit, is iA Writer**: calm, typography-first, the chrome defers to
   the manuscript, restraint as the aesthetic. Not a visual clone; the spirit.
 - **The archetypal editor is the ASC volunteer**, the less technical writer. When a design choice
@@ -157,6 +169,12 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   the frozen role interface; they resolve to the two vars. A standing test (`admin-css-build.test.ts`)
   keeps them compiled and pointing at their vars, so the admin markup writes the utility, not the token.
 - Radii: `--radius-field: 0.625rem` (inputs, buttons, badges), `--radius-box: 1rem` (cards, modals).
+- **The ink story (design arc, 2026-07-15).** Exactly two dark-fill tones exist on a page:
+  standing dark fills (the ink-opener buttons, the profile avatar) rest on the solid `neutral`
+  token, and hover/press deepens to `--cairn-ink-hover` (set per theme root; light deepens, dark
+  brightens). Never build a dark fill from an opacity blend over the ground (`bg-neutral/85`,
+  `bg-base-content/80`): the blend with the warm surfaces manufactures a third, browner tone and
+  the page loses its one black story.
 - Elevation: `--cairn-shadow` (soft layered shadow) and `--cairn-card-border` (the theme-adaptive
   hairline). Both are set per theme root.
 - The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
@@ -189,11 +207,18 @@ theme roots, with font-smoothing on. The brand pair is variable; the editor face
 
 Recipes:
 
-- Page heading: `text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]`.
+- Page heading: `text-2xl font-bold font-[family-name:var(--font-display)]` — normal tracking, the same
+  K4 reasoning as the brand wordmark below.
 - Eyebrow (sidebar group headers and table column labels):
   `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`.
-- Nav item: `text-sm` (the lists use `menu-sm`), `font-medium` inactive, `font-semibold` active.
-- Brand wordmark: `text-xl font-bold tracking-[-0.01em] font-[family-name:var(--font-display)]`.
+- Nav item: `text-[0.9375rem]` (the lists use `menu-sm` for layout), `font-medium` inactive,
+  `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
+  table cells share it via `table text-[0.9375rem]`.
+- Brand wordmark: `text-[1.375rem] font-semibold font-[family-name:var(--font-display)]` — normal
+  tracking on purpose. The K4 keming fix (design arc, 2026-07-15): at the old
+  `text-xl font-bold tracking-[-0.01em]` the rn pair merged and "Cairn" read "Caim"; larger,
+  lighter, and untracked resolves it. The topbar site name drops `tracking-tight` for the same
+  reason. Do not reintroduce negative tracking on the display face at these sizes.
 
 ## Component recipes
 
@@ -228,18 +253,31 @@ Recipes:
   a pick-one partition (All, Pending edits, Published) and a separate orthogonal Hidden toggle, each
   carrying a live count from the loaded set. The axes are independent, so a published-but-hidden entry
   counts in both Published and Hidden, and the Hidden toggle composes with whichever partition is
-  active. Filtering, counts, and search all run client-side over the already-loaded entries. The rows
-  are an enriched sortable `<table>` (the title with a muted summary line beneath it, then the date,
-  the status badge, and the always-visible delete), so each row describes itself instead of being a
-  bare title. The summary line is `EntrySummary.summary` (from `deriveExcerpt`: the frontmatter
-  description, else a body excerpt), truncated at the column edge and omitted when null. The Edited
-  badge tints primary (`bg-primary/10 text-primary`) as the one state to act on, rhyming with the
-  topbar's "Publish site (N)"; New stays `badge-info`, Published `badge-ghost`. Hidden is a row
-  treatment, not a fourth badge: the row de-emphasizes (~0.62 opacity on title and summary) and carries
-  an eye-off "Hidden" tag by the title, leaving the status cell to one publish-state badge. A quiet
-  trailing "New {concept}" row at the foot of the card opens the create dialog, so a short list always
-  shows its next step. A filter or search that matches nothing keeps the card and offers a Clear action;
-  a concept with no entries at all uses the page-owning empty state above.
+  active. Filtering, counts, and search all run client-side over the already-loaded entries. The whole
+  page composes at the document list's natural measure, one centered `max-w-3xl` column inside the
+  shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list opens a dead band
+  between short titles and the date). The page follows the F3 proximity-grouping scale (the named
+  4/8px steps documented as a comment beside the theme tokens in `cairn-admin.css`; design arc
+  2026-07-15): the header stands apart as the page's one loose element (`mb-10`), the triage bar
+  belongs to the card below it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). The
+  rows are a sortable `<table>` of ONE-LINE rows at the 15px chrome step with `py-2` cells: the title
+  (`font-medium`, truncating; weight stays medium because nothing sits under it to out-rank), the date
+  (muted, tabular), the status pill, and the quiet delete (45% ink, full on hover/focus; red lives only
+  in the confirm dialog). `EntrySummary.summary` stays off the list (the density ruling; it still
+  serves the edit page). The status pills are ONE family: shared geometry (`badge badge-xs sm:badge-sm
+  border-transparent`) and shared base ink (`bg-base-content/[0.06] text-base-content`), each state
+  differing on exactly one attribute: Published `font-medium`, New `font-semibold`, Edited swaps the
+  wash for the act-on tint (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)"
+  pill; all three carry the E3 tracking scale's `tracking-small-semibold` (the letter-spacing steps
+  documented beside `text-muted`/`text-subtle` in `scripts/admin-css.input.css`; design arc
+  2026-07-15). Hidden is a row
+  treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title) and carries an
+  eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. The
+  header's ink New button is the ONE create affordance on a populated list (the old trailing foot row
+  duplicated it and read as a content row; removed 2026-07-15). The card's frame is the column-header
+  band alone (the gentle 0.04 wash), so content rows are the card's only white rows. A filter or search
+  that matches nothing keeps the card and offers a Clear action; a concept with no entries at all uses
+  the page-owning empty state above, which carries its own create CTA.
 - **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
   button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
@@ -336,16 +374,29 @@ Recipes:
   containers, so a half-typed fence never folds; any edit or selection touching a folded range unfolds
   it in the same transaction. Fold state is session-local, never persisted. Driven by
   `@codemirror/language` folding in `editor-folding.ts`.
-- **Editor instrument strip:** one card frame holds the toolbar, the editing surface, and the footer
-  environment strip (word count left; the posture segmented control, the focus/typewriter/zen toggles,
-  and the Markdown help link right). Ghost `btn-sm btn-square` glyph buttons in groups
-  divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines, a More popover menu for the
-  low-frequency formats, the host's insert controls through a snippet, and the Write/Preview capsule
-  pinned right. The `role="tablist"` wrapper holds only the two tabs (ARIA required children), and
-  the capsule is drawn with manual corner rounding (`rounded-r-none`, `rounded-l-none -ml-px`)
-  rather than daisyUI's `.join`, so the device trigger can sit beside the tablist instead of inside
-  it. Roving tabindex carries keyboard traversal. Formatting and insert controls disable while
-  Preview shows.
+- **Editor instrument strip (design-arc D2, "grouped micro-eyebrows"):** one card frame holds the
+  toolbar, the editing surface, and the footer environment strip (word count left, the posture
+  segmented control and the focus/typewriter/zen toggles right; Markdown help no longer lives here,
+  see below). The toolbar clusters its ghost `btn-sm btn-square` glyph buttons into three named
+  groups, Format (bold, italic, strike, inline code), Structure (headings, lists, quote, table,
+  ending in the More popover for the low-frequency formats), and Insert (the host's insert controls
+  through a snippet), divided by `w-px self-stretch bg-[var(--cairn-card-border)]` hairlines. Each
+  cluster wrapper carries `role="group"` with an `aria-label` naming it, and, at `sm` and up, a
+  presentational (`aria-hidden`) eyebrow above the row in the standard eyebrow recipe. "Blocks"
+  never labels a cluster: cairn's own vocabulary already uses block for a component (Insert block /
+  Edit block), so the word appears only inside those two control labels. Below `sm` the eyebrows
+  disappear and the whole strip becomes one horizontally scrolling row (design-arc C1) instead of
+  wrapping; the hairlines still divide the three clusters inside it. The Write/Preview capsule sits
+  inside the scrolling region, pinned right at `sm` and up (hidden below `sm`, folded into the More
+  popover's `moreExtra` instead). A persistent 44px "?" control (a glyph plus a sr-only "Markdown
+  help" label) sits OUTSIDE the scrolling region at the strip's right end at every width, so it is
+  never scrolled out of reach or hidden by the phone fold (audit finding 7); it never disables. The
+  `role="tablist"` wrapper holds only the two tabs (ARIA required children), and the capsule is
+  drawn with manual corner rounding (`rounded-r-none`, `rounded-l-none -ml-px`) rather than
+  daisyUI's `.join`, so the device trigger can sit beside the tablist instead of inside it. Roving
+  tabindex carries keyboard traversal across every control, including the persistent help control.
+  Formatting and insert controls disable while Preview shows; the help control does not, since it is
+  a reference, not an edit action.
 - **Preview frame:** the Preview tabpanel is a recessed ground (`bg-base-200 px-4 py-6 lg:px-8`)
   holding a centered frame column whose width follows the picked device, eased with
   `transition-[width]` under the reduced-motion guard. Inside the column, the standard floating
@@ -357,9 +408,9 @@ Recipes:
   `cairn-editor-preview-device`. While Preview shows, the sidebar hides so the document proofs at
   the full content width.
 - **Document title input:** when the adapter defines a `title` field it renders above the editor
-  card as `cairn-doc-title`: `text-3xl font-bold tracking-tight` in the display face, borderless on
-  the recessed background. This input is the page's visible h1 (the header h1 is `sr-only`), which
-  is why the toolbar offers only H2/H3.
+  card as `cairn-doc-title`: `text-3xl font-bold` in the display face, normal tracking (the K4
+  reasoning above), borderless on the recessed background. This input is the page's visible h1
+  (the header h1 is `sr-only`), which is why the toolbar offers only H2/H3.
 - **Editor: the quiet writing surface (0.52.0).** The manuscript carries the page; everything
   else recedes. The face is self-hosted iA Writer Mono via `--font-editor` at 1rem on a centered
   `70ch` measure. Heading sizes step by level (`tags.heading1/2/3` at 1.5/1.3/1.17em) in
@@ -382,12 +433,14 @@ Recipes:
   recent named opener and disowns fence-shaped lines inside code blocks.
 - **Editor: the surface postures and the footer strip.** The editor card's footer is the
   writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
-  writing): word count left, then the posture pair, the writing-mode toggles, a hairline, and
-  Markdown help, all ghost `btn-xs` with `aria-pressed` and the `bg-primary/10 text-primary`
-  pressed pair. The strip wraps at every nesting level below `sm` (each control `shrink-0` and
-  `whitespace-nowrap`), so a control moves whole to a new row rather than truncating its label or
-  clipping off-frame; the Markdown help link stays reachable at 320. The postures: Prose (default) is the writing instrument, a 72ch measure centered
-  in a 49rem card at a 1.0625rem type step and 1.9 leading; Wide (labeled "Markup" in the
+  writing): word count left, then the posture pair and the writing-mode toggles, all ghost `btn-xs`
+  with `aria-pressed` and the `bg-primary/10 text-primary` pressed pair. Markdown help does not live
+  here (design-arc D2): the toolbar's own persistent "?" control carries it at every width instead,
+  so the footer never needs a width-dependent duplicate. The strip wraps at every nesting level
+  below `sm` (each control `shrink-0` and `whitespace-nowrap`), so a control moves whole to a new
+  row rather than truncating its label or clipping off-frame. The postures: Prose (default) is the writing instrument, a 72ch measure centered
+  in a 49rem card at a 1.125rem type step and 1.85 leading (the T4 manuscript generosity, design
+  arc 2026-07-15); Wide (labeled "Markup" in the
   `cairn-editor-surface` persisted value, since the calibrated voice sweep renamed only the
   visible label) is the working surface, a 56rem card the text fills at 1rem/1.8 for tables,
   attributed directives, and long URLs. The posture persists as `cairn-editor-surface`; the card

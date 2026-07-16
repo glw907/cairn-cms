@@ -80,8 +80,11 @@ dispatcher defines.
   const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
+<!-- The office natural-measure rule (design arc 2026-07-15, propagated from ConceptList): this
+     document list composes at 3xl within the shell's 5xl ceiling. -->
+<div class="mx-auto w-full max-w-3xl">
 <header class="mb-6">
-  <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Editors</h1>
+  <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">Editors</h1>
 </header>
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
@@ -90,15 +93,19 @@ dispatcher defines.
 {/if}
 
 <div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">
-  <table class="table">
-    <thead>
+  <table class="table text-[0.9375rem] [&_:where(td,th):first-child]:pl-6">
+    <!-- Frame zone (design arc 2026-07-15, propagated from ConceptList): the column-header row
+         carries the office band grammar. -->
+    <thead class="bg-base-content/[0.04]">
       <tr><th scope="col" class={col}>Name</th><th scope="col" class={col}>Email</th><th scope="col" class={col}>Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
     </thead>
     <tbody>
       {#each data.editors as editor (editor.email)}
         {@const isSelf = editor.email === data.self}
         <tr>
-          <td>{editor.displayName}</td>
+          <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
+               primary identifying cell, so it reads text-base font-medium over the 15px meta. -->
+          <td class="text-base font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>
             <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'badge-ghost'}">{editor.role}</span>
@@ -164,3 +171,4 @@ dispatcher defines.
   </label>
   <button type="submit" class="btn btn-primary">Add editor</button>
 </form>
+</div>

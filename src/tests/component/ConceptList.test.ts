@@ -45,7 +45,7 @@ describe('ConceptList', () => {
     await expect.element(screen.getByText('Hidden', { exact: true })).toBeInTheDocument();
   });
 
-  it('renders the status vocabulary: New (info), Edited (primary tint), and Published (ghost)', async () => {
+  it('renders the status pills as one family: shared wash and ink, New semibold, Edited the act-on tint', async () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'new' as const, summary: null },
       { id: 'beta', title: 'Beta', date: '2026-05-02', draft: false, status: 'edited' as const, summary: null },
@@ -57,11 +57,32 @@ describe('ConceptList', () => {
         (el) => el.textContent?.trim() === text,
       );
     await expect.element(screen.getByText('New', { exact: true })).toBeInTheDocument();
-    expect(badge('New')?.classList.contains('badge-info')).toBe(true);
-    // Edited is the action signal: it tints primary (the check-and-tint grammar), not amber warning.
-    expect(badge('Edited')?.classList.contains('badge-warning')).toBe(false);
+    // One pill family (the emphasis ladder): New and Published share geometry and the neutral
+    // wash + full ink, and differ on exactly one attribute (weight). Edited alone carries the
+    // violet act-on tint, rhyming with the topbar's Publish pill. No semantic hues remain here.
+    expect(badge('New')?.classList.contains('bg-base-content/[0.06]')).toBe(true);
+    expect(badge('New')?.classList.contains('font-semibold')).toBe(true);
+    expect(badge('Published')?.classList.contains('bg-base-content/[0.06]')).toBe(true);
+    expect(badge('Published')?.classList.contains('font-medium')).toBe(true);
     expect(badge('Edited')?.classList.contains('text-primary')).toBe(true);
-    expect(badge('Published')?.classList.contains('badge-ghost')).toBe(true);
+    expect(badge('Edited')?.classList.contains('bg-primary/10')).toBe(true);
+    // The E3 tracking scale (design arc 2026-07-15): every status pill sits <= 13px semibold, so
+    // all three take the semibold tracking band, never the bare 0.08em eyebrow or plain body ink.
+    expect(badge('New')?.classList.contains('tracking-small-semibold')).toBe(true);
+    expect(badge('Published')?.classList.contains('tracking-small-semibold')).toBe(true);
+    expect(badge('Edited')?.classList.contains('tracking-small-semibold')).toBe(true);
+  });
+
+  it('composes the header and the triage bar on the F3 proximity scale', async () => {
+    // The header is the page's one loose element (mb-10, the page-gap step); the triage bar
+    // belongs to the card below it (mb-3, the belongs-to-its-neighbor step). Design arc
+    // 2026-07-15's F3 ruling; the scale itself is documented in cairn-admin.css.
+    const screen = render(ConceptList, { data: data() });
+    const header = screen.container.querySelector('header')!;
+    expect(header.classList.contains('mb-10')).toBe(true);
+    const triageGroup = screen.container.querySelector('[role="group"][aria-label="Filter by publish state"]')!;
+    const triageBar = triageGroup.parentElement!;
+    expect(triageBar.classList.contains('mb-3')).toBe(true);
   });
 
   it('announces a publish-all flash through a persistent polite region beside the alert', async () => {
@@ -261,13 +282,16 @@ describe('ConceptList', () => {
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
   });
 
-  // Task 7: the self-describing row and the gold-standard dressing.
-  it('a row shows the summary under the title', async () => {
+  // The density ruling (design arc 2026-07-15): rows are one line, so the summary stays off the
+  // office list even when the entry carries one (it still serves the edit page's Details).
+  it('a row stays one line: the summary never renders on the list', async () => {
     const entries = [
       { id: 'alpha', title: 'Alpha', date: '2026-05-03', draft: false, status: 'published' as const, summary: 'A short blurb.' },
     ];
     const screen = render(ConceptList, { data: data({ entries }) });
-    await expect.element(screen.getByText('A short blurb.')).toBeInTheDocument();
+    await expect.element(screen.getByText('Alpha')).toBeInTheDocument();
+    expect(screen.container.querySelector('[data-summary]')).toBeNull();
+    expect(screen.container.textContent).not.toContain('A short blurb.');
   });
 
   it('a row without a summary renders no summary line', async () => {
@@ -475,13 +499,14 @@ describe('ConceptList', () => {
       document.documentElement.setAttribute('data-theme', 'cairn-admin-dark');
       const entries = [{ id: 'pub', title: 'Pub entry', date: '2026-05-01', draft: false, status: 'published' as const, summary: null }];
       const screen = render(ConceptList, { data: data({ entries }) });
-      const badge = screen.container.querySelector('.badge-ghost')!;
+      const badge = screen.container.querySelector('tbody .badge')!;
       const badgeBg = getComputedStyle(badge).backgroundColor;
-      // Pin the exact fill: base-300, the dark counterpart, not merely "differs from the card" (a
-      // weak check base-200, the pre-fix near-invisible fill, would also pass, since base-200 and
-      // base-100 are technically different oklch values despite reading as the same tone).
+      // Pin the exact fill: the pill family's neutral wash (base-content at 6%), not merely
+      // "differs from the card" (a weak check the pre-fix near-invisible fill would also pass).
+      // In dark the wash mixes the light ink over the dark card, so the pill keeps the visible
+      // step the audit's finding 10 fix established.
       const probe = document.createElement('div');
-      probe.style.backgroundColor = 'var(--color-base-300)';
+      probe.style.backgroundColor = 'color-mix(in oklab, var(--color-base-content) 6%, transparent)';
       document.body.appendChild(probe);
       const expectedBg = getComputedStyle(probe).backgroundColor;
       probe.remove();

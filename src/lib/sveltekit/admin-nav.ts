@@ -344,6 +344,12 @@ export interface ResolvedEngineNavEntry {
   screen: EngineScreenId;
   label: string;
   href: string;
+  /**
+   * Present only when the entry is a content concept: whether the concept is dated (posts-like).
+   *  The shell picks the concept's kind glyph from it, so adjacent concepts stop sharing one
+   *  document icon.
+   */
+  dated?: boolean;
 }
 
 /** One resolved leaf in a navLayout tree: a site's own entry, or one of the engine's own screens. */
@@ -375,8 +381,12 @@ export interface ResolveNavLayoutOptions {
   layout: NavLayout | undefined;
   /** The site's normalized legacy adminNav, folded into the default arrangement (locked call 6). */
   adminNav: ResolvedNavItem[];
-  /** The site's concepts, each a navLayout reference target beyond the fixed engine screens. */
-  concepts: { id: string; label: string }[];
+  /**
+   * The site's concepts, each a navLayout reference target beyond the fixed engine screens.
+   *  `routing.dated` feeds the concept's kind glyph; a caller passing normalized concepts always
+   *  carries it.
+   */
+  concepts: { id: string; label: string; routing?: { dated: boolean } }[];
   /** The nav-menu editor's label, or null when the site configures none (gates the `nav` screen). */
   navMenuLabel: string | null;
   /** The signed-in editor's capability, gating every engine screen (row 4 of the design table). */
@@ -420,7 +430,15 @@ function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
 /** Resolve one engine screen into its door, applying a declared relabel when given. */
 function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverride?: string): ResolvedEngineNavEntry {
   const fallback = engineDefault(screen, opts);
-  return { screen, label: labelOverride ?? fallback.label, href: fallback.href };
+  const concept = opts.concepts.find((c) => c.id === screen);
+  // Optional-chained on purpose: normalizeConcepts always supplies routing, but test harnesses
+  // build partial descriptors, and an undated default is the correct read for both.
+  return {
+    screen,
+    label: labelOverride ?? fallback.label,
+    href: fallback.href,
+    ...(concept ? { dated: concept.routing?.dated === true } : {}),
+  };
 }
 
 /** True when a resolved site entry stays visible: `ownerOnly` gates on capability alone. */

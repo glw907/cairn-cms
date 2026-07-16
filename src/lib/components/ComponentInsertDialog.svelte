@@ -338,7 +338,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         <div class="min-w-0 flex-1">
           {#if picked}
             <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
-            <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold tracking-tight">{picked.label}</h2>
+            <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold">{picked.label}</h2>
           {:else}
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
           {/if}

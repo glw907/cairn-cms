@@ -300,10 +300,14 @@ home), diffable and shared across editors.
   const conventionsJson = $derived(JSON.stringify(conv));
 
   // The shared class for a check-and-tint on/off button (the binary-state idiom, no DaisyUI .toggle).
+  // The active state uses the neutral pressed pair (segmentTintClass), never a primary tint: the
+  // accent reservation keeps color for act-on/destructive/needs-attention states, so a mere
+  // on/off toggle speaks through weight and a neutral wash instead (the design arc's accent
+  // reservation, 2026-07-15).
   function onoffClass(on: boolean): string {
     return `inline-flex h-[30px] items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold ${
       on
-        ? 'border-primary/30 bg-primary/10 text-primary'
+        ? `border-base-content/20 ${segmentTintClass(true)}`
         : 'border-[var(--cairn-card-border)] bg-base-100 text-muted hover:border-primary/35 hover:text-base-content'
     }`;
   }
@@ -342,11 +346,11 @@ home), diffable and shared across editors.
         </div>
         <div class="mt-2.5 flex flex-col gap-1.5">
           <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-semibold text-[var(--color-positive-ink)]"><CheckIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Tidy</span>
+            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
             <span>On for this site</span>
           </div>
           <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-semibold text-[var(--color-positive-ink)]"><CheckIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />API key</span>
+            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
             <span>
               {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
               {:else}Set, and kept on the server<span class="text-muted"> &middot; could not verify it just now</span>
@@ -354,7 +358,7 @@ home), diffable and shared across editors.
             </span>
           </div>
           <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-semibold text-[var(--color-positive-ink)]"><CheckIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Model</span>
+            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
             <span>{data.modelLabel} <span class="text-muted">&middot; the careful default for a light copy-edit</span></span>
           </div>
         </div>
@@ -396,19 +400,21 @@ home), diffable and shared across editors.
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
           </div>
         </div>
-        <div class="overflow-hidden rounded-2xl border border-[var(--color-positive-ink)]/[0.22] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <div class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
           <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
             <div class="min-w-0 flex-1">
               <div class="text-[0.9375rem] font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
+              <!-- the colorless diff (the design arc's accent reservation, 2026-07-15): a deletion
+                   is muted strikethrough, an insertion is semibold ink, both on a neutral wash -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug" aria-hidden="true">
                 <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
-                <span class="rounded-sm bg-[color-mix(in_oklab,var(--cairn-error-ink)_18%,transparent)] px-0.5 text-[var(--cairn-error-ink)] line-through">accomodate</span>
+                <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">accomodate</span>
                 <span class="text-[0.6875rem] text-muted">to</span>
-                <span class="rounded-sm bg-[color-mix(in_oklab,var(--color-positive-ink)_20%,transparent)] px-0.5 text-[var(--color-positive-ink)]">accommodate</span>
+                <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">accommodate</span>
               </div>
               <!-- the "kept as written" cue: regional spelling is never normalized, dialect-aware -->
               <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug" aria-hidden="true">
-                <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-[var(--color-positive-ink)]">keeps</span>
+                <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">keeps</span>
                 <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">colour</span>
                 <span class="text-[0.6875rem] text-muted">and</span>
                 <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">organise</span>
@@ -474,9 +480,9 @@ home), diffable and shared across editors.
                 {:else}
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
                     <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
-                    <span class="rounded-sm bg-[color-mix(in_oklab,var(--cairn-error-ink)_18%,transparent)] px-0.5 text-[var(--cairn-error-ink)] line-through">{row.egBefore}</span>
+                    <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
                     <span class="text-[0.6875rem] text-muted">to</span>
-                    <span class="rounded-sm bg-[color-mix(in_oklab,var(--color-positive-ink)_20%,transparent)] px-0.5 text-[var(--color-positive-ink)]">{row.egAfter}</span>
+                    <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 {/if}
               </div>
@@ -513,9 +519,9 @@ home), diffable and shared across editors.
                   <div class="text-[0.9375rem] font-semibold leading-snug">{row.name}</div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
                     <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
-                    <span class="rounded-sm bg-[color-mix(in_oklab,var(--cairn-error-ink)_18%,transparent)] px-0.5 text-[var(--cairn-error-ink)] line-through">{row.egBefore}</span>
+                    <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
                     <span class="text-[0.6875rem] text-muted">to</span>
-                    <span class="rounded-sm bg-[color-mix(in_oklab,var(--color-positive-ink)_20%,transparent)] px-0.5 text-[var(--color-positive-ink)]">{row.egAfter}</span>
+                    <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 </div>
                 <span class="flex-none">
@@ -553,7 +559,10 @@ home), diffable and shared across editors.
          visibility applied to the settings screen, not just the edit-page Tidy button) instead of
          re-showing an unchecked "add a key" checklist for a key that is already there. -->
     <div role="region" aria-label="Tidy's key isn't working" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
-      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-error-ink)_12%,transparent)] text-[var(--cairn-error-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
+      <!-- A broken key needs the developer's attention; it is not a destructive confirmation, so
+           it reads amber (needs-attention), never the reserved destructive red (the design arc's
+           accent reservation, 2026-07-15). -->
+      <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="text-xl font-bold tracking-tight">Tidy's key isn't working</div>
       <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
         Tidy is turned on and a key is set, but Anthropic isn't accepting it. It may have been
@@ -561,11 +570,11 @@ home), diffable and shared across editors.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
-          <span class="flex-none text-[var(--color-positive-ink)]"><CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
+          <span class="flex-none text-muted"><CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
           <span class="text-[0.8125rem] leading-snug">Your developer turned tidy on for the site.</span>
         </div>
-        <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-error-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-error-ink)_6%,var(--color-base-100))] p-3">
-          <span class="flex-none text-[var(--cairn-error-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
+        <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
+          <span class="flex-none text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
           <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn't been revoked or rotated elsewhere.</span></span>
         </div>
       </div>
@@ -588,13 +597,13 @@ home), diffable and shared across editors.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.tidyEnabled ? 'opacity-60' : ''}">
-          <span class="flex-none {data.tidyEnabled ? 'text-[var(--color-positive-ink)]' : 'text-subtle'}">
+          <span class="flex-none {data.tidyEnabled ? 'text-muted' : 'text-subtle'}">
             {#if data.tidyEnabled}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] text-[0.6875rem] font-semibold">1</span>{/if}
           </span>
           <span class="text-[0.8125rem] leading-snug">Your developer turns tidy on for the site.<span class="mt-0.5 block text-muted">It is one setting in the site config.</span></span>
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.keyConfigured ? 'opacity-60' : ''}">
-          <span class="flex-none {data.keyConfigured ? 'text-[var(--color-positive-ink)]' : 'text-subtle'}">
+          <span class="flex-none {data.keyConfigured ? 'text-muted' : 'text-subtle'}">
             {#if data.keyConfigured}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] text-[0.6875rem] font-semibold">2</span>{/if}
           </span>
           <span class="text-[0.8125rem] leading-snug">Your developer adds an Anthropic API key.<span class="mt-0.5 block text-muted">It stays on the server and never reaches the browser.</span></span>
@@ -604,8 +613,8 @@ home), diffable and shared across editors.
         <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
         <div class="mt-1 text-xs leading-relaxed text-muted">Set <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
       </div>
-      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--color-positive-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-positive-ink)_8%,var(--color-base-100))] p-3 text-[0.8125rem] text-muted">
-        <CheckIcon class="h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 text-[0.8125rem] text-muted">
+        <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
         <span><b class="font-semibold text-base-content">Spellcheck is already working.</b> It runs in your browser, so it needs no setup and underlines misspellings as you type.</span>
       </div>
     </div>

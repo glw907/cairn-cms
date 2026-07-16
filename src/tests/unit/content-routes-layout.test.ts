@@ -131,8 +131,8 @@ describe('shellPayload', () => {
     // The flat default arrangement: loose top-level nodes (the concepts, then the engine screens;
     // no `nav` door since no navMenu is configured), Help left unreferenced into fallback.
     expect(shell.nav.items).toEqual([
-      { screen: 'posts', label: 'Posts', href: '/admin/posts' },
-      { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+      { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: true },
+      { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
       { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
       { screen: 'settings', label: 'Settings', href: '/admin/settings' },
@@ -325,7 +325,13 @@ const RESOLVED_NAV_WITH_SECTION: ResolvedNavItem[] = [
   },
 ];
 
-const NAV_WITH_SECTION_CONCEPTS = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
+// Carries the same `routing.dated` values as runtime()'s real concepts (postsConcept() is dated,
+// the inline pages fixture is not), so defaultNav's directly-computed baseline agrees with
+// shellPayload's actual resolved dated field rather than drifting to false for both.
+const NAV_WITH_SECTION_CONCEPTS = [
+  { id: 'posts', label: 'Posts', routing: { dated: true } },
+  { id: 'pages', label: 'Pages', routing: { dated: false } },
+];
 
 /** The default arrangement resolveNavLayout produces for NAV_WITH_SECTION at one capability: the
  *  flat 'Standalone' entry rides as its own loose top-level node beside the concepts and engine

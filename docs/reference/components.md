@@ -16,6 +16,14 @@ Warm Stone admin theme ships as a CSS side effect of the import. The TypeScript 
 `src/lib/components` are the source of truth, and the export-coverage gate checks every name here
 against them.
 
+Two commitments hold for anything you build on this surface. An extended cairn still feels like
+one visually coherent system: the shell and theme carry the admin's design grammar—one emphasis
+ladder for buttons and states, reserved semantic colors, one status-pill family, a documented
+spacing scale—so a custom screen composed from these components and the theme's tokens reads as
+built in. And the responsive craft comes with it: the shell composes its chrome at every width,
+and the components recompose rather than squeeze, so screens built from them stay composed from
+phone to ultrawide without per-screen effort.
+
 ---
 
 ## Page-level components

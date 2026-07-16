@@ -27,3 +27,16 @@
 @utility text-subtle {
   color: var(--color-subtle);
 }
+
+/* The E3 tracking scale (design arc 2026-07-15): letter spacing keyed to a piece of text's
+   measured optical size + weight, never its element role. Small semibold/bold text (<= 13px)
+   reads tight without a little extra spacing, so it takes 0.015em; small medium text (14-15px)
+   needs less, 0.005em. The 11px uppercase eyebrow keeps its own, separately measured 0.08em
+   (unchanged by this scale); body text and meta stay at normal tracking. Each utility is a
+   `@utility` Tailwind tree-shakes, so it only compiles when a scanned component uses the class. */
+@utility tracking-small-semibold {
+  letter-spacing: 0.015em;
+}
+@utility tracking-small-medium {
+  letter-spacing: 0.005em;
+}

@@ -1,3 +1,13 @@
+/* The F3 spacing scale (design arc 2026-07-15): proximity grouping on a named 4/8px scale, so a
+   gap's size itself signals what belongs to what. No CSS custom properties: the office
+   components carry the values as plain Tailwind utilities, and this comment is the scale's one
+   documented vocabulary. 8px (gap-2/mb-2) hugs elements within one group; 12px (gap-3/mb-3)
+   marks an element that belongs to its neighbor (a triage bar to the card below it); 16px
+   (gap-4/mb-4) is a zone's own internal spacing; 32px (mb-8) separates two zones; 40px (mb-10)
+   is the page gap, reserved for the page's one loose element (a header standing apart from its
+   content). ConceptList.svelte is the first surface built to it; propagation to the rest of the
+   office pages happens at the kit. */
+
 /* Cairn's own typefaces, self-hosted so the admin needs no external font request. IBM Plex Sans carries
    the body and UI (friendly, highly legible at small sizes); Bricolage Grotesque gives the brand and
    the page headings a distinct voice; iA Writer Mono is the editor writing surface. The first two are
@@ -92,19 +102,16 @@
   --cairn-error-tint: oklch(96% 0.03 25);
   --cairn-error-border: oklch(85% 0.06 25);
 
-  /* The tidy review diff tints (TidyReview). A deletion row and an insertion row each carry a faint
-     full-row tint, with a stronger run-highlight on the changed span; the changed-run TEXT is drawn in
-     --cairn-error-ink (deletion) or --color-positive-ink (insertion). Those inks were locked only
-     against base-100 and the fixed error/positive tints, never against the run-highlight stacked over
-     the row tint, so a self-mixed highlight pushed the text below 4.5:1 (WCAG 1.4.3). These are explicit
-     locked tones, not an ink-mix, so the stacked background is fixed and measurable. Locked (light):
-     deletion ink on the run tint measures 5.08:1 and on the row tint 5.81:1; insertion ink on the run
-     tint 4.98:1 and on the row tint 5.56:1. Do not lighten an ink or darken a tint without re-checking.
-     The +/- gutter glyph keeps the non-color cue, so hue is never the only signal. */
-  --cairn-tidy-del-row: oklch(96% 0.025 25);
-  --cairn-tidy-del-run: oklch(92% 0.05 25);
-  --cairn-tidy-add-row: oklch(96% 0.03 150);
-  --cairn-tidy-add-run: oklch(92% 0.06 150);
+  /* The tidy review diff tints (TidyReview), colorless since the design arc's accent reservation
+     (2026-07-15, the picked A3 treatment): a proofing surface, not a code review, so no red and no
+     green. Deletion reads as muted strikethrough, insertion as semibold body ink, and the washes
+     are warm neutrals; the +/- gutter glyphs and the strike/weight pair carry the semantics, so
+     hue was never the only signal. Locked (light): muted ink on the run wash 5.32:1, base-content
+     on the run wash 12.27:1 (both AA). Do not lighten an ink or darken a wash without re-checking. */
+  --cairn-tidy-del-row: oklch(97.5% 0.004 75);
+  --cairn-tidy-del-run: oklch(93% 0.008 75);
+  --cairn-tidy-add-row: oklch(97.5% 0.004 75);
+  --cairn-tidy-add-run: oklch(92% 0.01 75);
 
   /* The editor's nested-directive depth scale: fence and content rows share a 2px inset accent
      rail stepped by nesting depth, and a fence line's name and label take a depth-stepped ink
@@ -155,6 +162,9 @@
   /* Soft, layered elevation: a close contact shadow plus a wide, diffuse one, warm-tinted. The cards
      float gently instead of sitting in hard boxes, which reads more current than a flat border. */
   --cairn-shadow: 0 1px 2px oklch(28% 0.02 75 / 0.05), 0 8px 24px -6px oklch(28% 0.02 75 / 0.1);
+  /* The ink story's hover step: standing dark fills rest on the solid neutral token and deepen to
+     this on hover. Solid on purpose; an opacity blend over the warm ground reads brown. */
+  --cairn-ink-hover: oklch(20% 0.012 75);
   /* A faint hairline for the floating cards in light, where the shadow carries the definition. */
   --cairn-card-border: oklch(93% 0.008 75);
 }
@@ -185,7 +195,10 @@
   /* Locked pair: pressed footer-toggle text (text-primary on the bg-primary/10 plate over
      dark base-100) measures 4.66:1, only 0.16 above the AA floor. Do not darken dark
      --color-primary without re-checking that pair. */
-  --color-primary: oklch(68% 0.18 293);
+  /* Chroma sits a step below the light theme's on purpose (the A3 dark compensation, design arc
+     2026-07-15): dark grounds amplify saturation. Measured at this value: 5.44:1 on base-100 and
+     4.71:1 on the /10 tint, both above the 4.5:1 floor (and above the 0.18-chroma values). */
+  --color-primary: oklch(68% 0.15 293);
   --color-primary-content: oklch(20% 0.04 293);
   --color-secondary: oklch(72% 0.02 75);
   --color-secondary-content: oklch(20% 0.008 75);
@@ -233,16 +246,14 @@
   --cairn-error-tint: oklch(28% 0.06 25);
   --cairn-error-border: oklch(40% 0.09 25);
 
-  /* The tidy review diff tints on dark, the counterpart to the light root's. On dark the inks are light,
-     so a self-mixed highlight lightens the row toward the ink and collapses contrast (the run text
-     measured ~2.7:1, well under the 4.5:1 floor); these explicit low-lightness tones keep the row dark
-     and the light ink readable. Locked (dark): deletion ink on the run tint measures 5.89:1 and on the
-     row tint 7.12:1; insertion ink on the run tint 6.48:1 and on the row tint 8.01:1. Do not darken an
-     ink or lighten a tint without re-checking. */
-  --cairn-tidy-del-row: oklch(26% 0.05 25);
-  --cairn-tidy-del-run: oklch(32% 0.07 25);
-  --cairn-tidy-add-row: oklch(26% 0.045 150);
-  --cairn-tidy-add-run: oklch(32% 0.06 150);
+  /* The tidy review diff tints on dark, the counterpart to the light root's colorless treatment
+     (the arc's accent reservation; see the light block). Locked (dark): muted ink on the run wash
+     4.93:1, base-content on the run wash 9.95:1 (both AA). Do not darken an ink or lighten a wash
+     without re-checking. */
+  --cairn-tidy-del-row: oklch(27% 0.008 75);
+  --cairn-tidy-del-run: oklch(33% 0.01 75);
+  --cairn-tidy-add-row: oklch(27% 0.008 75);
+  --cairn-tidy-add-run: oklch(33% 0.01 75);
 
   /* The nested-directive label inks on dark lighten with depth so a deeper fence's name reads
      stronger on base-100 (the tinted bands are gone). Locked pairs (label ink on base-100):
@@ -285,6 +296,8 @@
 
   /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards. */
   --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  /* The ink story's hover step in dark: fills are light here, so hover brightens. */
+  --cairn-ink-hover: oklch(90% 0.008 75);
   /* On dark the shadow does little, so the card keeps a visible border for definition. */
   --cairn-card-border: oklch(30% 0.014 75);
 }

@@ -110,7 +110,7 @@ validates on save.
   const liveError = $derived(data.error ? `${data.error}${nonce()}` : '');
 </script>
 
-<h1 class="mb-6 text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.menu.label}</h1>
+<h1 class="mb-6 text-2xl font-bold font-[family-name:var(--font-display)]">{data.menu.label}</h1>
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if data.saved}

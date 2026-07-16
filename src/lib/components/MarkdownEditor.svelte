@@ -631,7 +631,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
       {
         // Scoped to the content node (not the editor root) so the base theme's root font-size
         // never contests it, and so the 72ch measure resolves against the prose type step.
-        '.cm-content': { fontSize: '1.0625rem', lineHeight: '1.9', maxWidth: '72ch', margin: '0 auto' },
+        '.cm-content': { fontSize: '1.125rem', lineHeight: '1.85', maxWidth: '72ch', margin: '0 auto' },
       },
       { dark: isDark },
     );

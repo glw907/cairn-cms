@@ -1,3 +1,41 @@
+## Unreleased
+
+### Changed
+
+- The admin's visual system, re-expressed end to end by the design-refinement arc (2026-07-15).
+  The office: an emphasis ladder replaces per-element accents (ink-solid standing openers, violet
+  reserved for flow commits and pending act-on states, red only inside destructive confirms, amber
+  only on needs-attention), one status-pill family with a shared wash, one-line list rows composed
+  at a natural reading measure with tinted frame zones, and a documented proximity spacing scale.
+  The type system: the wordmark and every display-face heading drop negative tracking (the rn pair
+  kemmed — "Cairn" could read "Caim"), chrome steps to 15px, the manuscript's prose posture opens
+  to 1.125rem/1.85, and small labels take tracking bands keyed to optical size and weight. The
+  desk: below the `sm` breakpoint the edit route recomposes for the phone — a 48px band, Save and
+  Publish in a thumb-reach bottom action bar padded above the screen edge, one scrollable
+  44px-target toolbar row, and the environment strip folded into the overflow — cutting
+  keyboard-open chrome from 67% of the viewport to 34%. The toolbar gains Format / Structure /
+  Insert group eyebrows and a persistent Markdown-help control at every width. Tidy's review diff
+  and settings examples are colorless (weight and strikethrough carry the semantics), and dark
+  mode compensates saturation with a lower-chroma primary (contrast measured above the 4.5:1 floor
+  throughout). All of this is admin-internal CSS and components; no consumer action.
+- The showcase exemplar moves its custom Signups entry from the Content section to the Site
+  section of its declared `navLayout` (signups are inbound visitor data, not authored content),
+  and the organize-your-admin-nav guide's worked example follows. Exemplar and docs only.
+
+### Added
+
+- A resolved engine nav entry now carries `dated` when it is a content concept, and the admin
+  sidebar gives dated concepts (Posts-like) their own glyph so adjacent concepts stop sharing one
+  document icon. Additive; no consumer action.
+
+### Fixed
+
+- The admin shell zeroes the browser's default body margin while mounted. On a host site that
+  never resets `body`, the fixed sidebar pinned to the true viewport while the page content
+  offset by the UA's 8px margin, opening a visible seam around the brand tile and adding 16px of
+  permanent scroll under the full-height drawer. The reset lives and dies with the admin mount,
+  so the host's own pages are untouched. Automatic; no consumer action.
+
 ## 0.86.1
 
 ### Added

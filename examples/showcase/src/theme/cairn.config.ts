@@ -421,27 +421,28 @@ export const cairn = defineAdapter({
   editor: {
     nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },
     // The site's whole declared sidebar (spec §2, the organize-your-admin-nav guide's own worked
-    // shape): a Content group for what an editor touches day to day (both concepts, plus the custom
-    // Signups screen, data-only with the same allowlisted icon and unclaimed /admin href the legacy
-    // adminNav entry used), then a trailing Site group for configuration and roster, closing on the
-    // relabeled Settings door so the club-shaped naming collision the guide warns about never arises
-    // here either. Help stays unreferenced, so it falls back to the shell's foot slot exactly where
-    // the default arrangement already leaves it.
+    // shape): a Content group for what an editor authors and owns, then a trailing Site group for
+    // site management, inbound data, configuration, and roster. Two taxonomy rulings (design arc
+    // 2026-07-15) place the custom and engine doors by the same razor, what an editor authors
+    // versus what the site operates: Library joins Content, since uploaded, described media is
+    // the editor's own material the same way posts and pages are (the WordPress-era convention of
+    // Media beside Posts/Pages also matches a volunteer editor's muscle memory), while the custom
+    // Signups screen lands in Site, not Content, since signups are inbound visitor data,
+    // operations rather than manuscript. Tags stays in Site: vocabulary management is
+    // configuration, not authoring. Settings and Editors stay trailing as admin config. Help
+    // stays unreferenced, so it falls back to the shell's foot slot exactly where the default
+    // arrangement already leaves it.
     navLayout: [
       {
         label: 'Content',
-        children: [
-          { screen: 'posts' },
-          { screen: 'pages' },
-          { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
-        ],
+        children: [{ screen: 'posts' }, { screen: 'pages' }, { screen: 'media' }],
       },
       {
         label: 'Site',
         children: [
-          { screen: 'media' },
           { screen: 'vocabulary' },
           { screen: 'nav' },
+          { label: 'Signups', icon: 'inbox', href: '/admin/signups' },
           { screen: 'settings', label: 'Site settings' },
           { screen: 'editors' },
         ],

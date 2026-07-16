@@ -27,11 +27,13 @@ describe('resolveNavLayout: arrangement', () => {
       { screen: 'posts' },
     ];
     const resolved = resolveNavLayout(opts({ layout }));
+    // A concept-matched engine entry always carries `dated` (the concept-kind glyph field); the
+    // fixture concepts here declare no `routing`, so it resolves false for both.
     expect(resolved.items).toEqual([
       { screen: 'settings', label: 'Settings', href: '/admin/settings' },
       { label: 'Loose', iconName: 'wrench', href: '/admin/loose', ownerOnly: false },
       { label: 'Sec1', children: [{ screen: 'media', label: 'Library', href: '/admin/media' }] },
-      { screen: 'posts', label: 'Posts', href: '/admin/posts' },
+      { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: false },
     ]);
   });
 });
@@ -49,7 +51,7 @@ describe('resolveNavLayout: omission fallback', () => {
     const layout: NavLayout = [{ screen: 'posts' }];
     const resolved = resolveNavLayout(opts({ layout, navMenuLabel: null }));
     expect(resolved.fallback).toEqual([
-      { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+      { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
       { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },
       { screen: 'settings', label: 'Settings', href: '/admin/settings' },
@@ -103,8 +105,8 @@ describe('resolveNavLayout: default synthesis', () => {
     ];
     const resolved = resolveNavLayout(opts({ layout: undefined, adminNav }));
     expect(resolved.items).toEqual([
-      { screen: 'posts', label: 'Posts', href: '/admin/posts' },
-      { screen: 'pages', label: 'Pages', href: '/admin/pages' },
+      { screen: 'posts', label: 'Posts', href: '/admin/posts', dated: false },
+      { screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false },
       { label: 'Signups', iconName: 'inbox', href: '/admin/signups', ownerOnly: false },
       { screen: 'media', label: 'Library', href: '/admin/media' },
       { screen: 'vocabulary', label: 'Tags', href: '/admin/vocabulary' },

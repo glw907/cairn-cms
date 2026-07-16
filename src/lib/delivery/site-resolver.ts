@@ -63,6 +63,10 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
   const byId = new Map<string, ContentIndex>();
   for (const { descriptor, index } of concepts) {
     byId.set(descriptor.id, index);
+    // The routable gate: a non-routable concept (e.g. Fragments' 'embedded' routing) stays
+    // reachable through concept() for in-process body reads, but never enters the public
+    // union, so it cannot be requested, prerendered, or enumerated.
+    if (!descriptor.routing.routable) continue;
     for (const summary of index.all()) {
       const existing = byPath.get(summary.permalink);
       if (existing) {

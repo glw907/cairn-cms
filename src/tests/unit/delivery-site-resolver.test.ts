@@ -138,6 +138,29 @@ describe('createSiteResolver', () => {
     ]);
   });
 
+  // The routable gate (Fragments Task 1): a non-routable ('embedded') concept's entries stay
+  // readable in-process through site.concept(), but never surface through the public union.
+  it('excludes a non-routable concept from byPermalink and entries(), while concept() still reaches its body', () => {
+    const [fragments] = normalizeConcepts({
+      fragments: {
+        dir: 'f',
+        routing: 'embedded',
+        fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      },
+    });
+    const s = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], pages) },
+      {
+        descriptor: fragments,
+        index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments),
+      },
+    ]);
+
+    expect(s.byPermalink('/fragments/address')).toBeUndefined();
+    expect(s.entries().map((e) => e.path).sort()).toEqual(['about']);
+    expect(s.concept('fragments')?.byId('address')?.body.trim()).toBe('Fragment body.');
+  });
+
   it('throws on a permalink collision across concepts, naming both ids', () => {
     const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: fieldset({}) } });
     const [q2] = normalizeConcepts({

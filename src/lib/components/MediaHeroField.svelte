@@ -394,8 +394,11 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
           <span class="truncate text-[0.8125rem] font-medium">{committedName}</span>
           {#if committedStatus === 'described'}
-            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--color-positive-ink)]">
-              <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+            <!-- The muted done-treatment (design arc 2026-07-15, E3/F3): a completed state reads
+                 as quiet confirmation, not a green accent, matching the Media Library's own
+                 Described chip. -->
+            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-base-content">
+              <svg class="h-[0.6875rem] w-[0.6875rem] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
               <span>Described</span>
             </span>
           {:else if committedStatus === 'needs-alt'}

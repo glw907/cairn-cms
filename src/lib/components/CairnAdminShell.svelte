@@ -729,8 +729,8 @@ discriminant, not the fields, gates the chrome).
                 <a
                   href={item.href}
                   class={isActive(item.href)
-                    ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary'
-                    : 'text-[0.9375rem] font-medium text-subtle'}
+                    ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary tracking-small-medium'
+                    : 'text-[0.9375rem] font-medium text-subtle tracking-small-medium'}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                 >
                   <item.icon class="h-4 w-4" aria-hidden="true" />

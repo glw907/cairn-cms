@@ -248,9 +248,9 @@ the loaded entries in component state.
 <!-- The header carries the page's two anchors only, title left and the one standing action right;
      search lives in the triage row below (the toolbar placement, converging with Media), so the
      header's right side never out-weighs the h1 (the page-balance ruling, design arc 2026-07-15). -->
-<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+<header class="mb-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
   <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{data.label}</h1>
-  <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+  <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
     <PlusIcon class="h-4 w-4" /> New {createNoun}
   </button>
 </header>
@@ -296,7 +296,7 @@ the loaded entries in component state.
        and the active segment tints with a check (the non-color cue, WCAG 1.4.1). The Hidden toggle
        is a separate standalone check-and-tint toggle that composes with the active partition. Each
        count dims to muted when zero, so a sparse list never jumps. -->
-  <div class="mb-4 flex flex-wrap items-center gap-3">
+  <div class="mb-3 flex flex-wrap items-center gap-3">
     <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex max-w-full items-center overflow-x-auto rounded-lg border border-[var(--cairn-card-border)]">
       {#each segments as seg, i (seg.value)}
         <button type="button" class="{segButtonClass(partition === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}" aria-pressed={partition === seg.value} onclick={() => setPartition(seg.value)}>
@@ -328,12 +328,12 @@ the loaded entries in component state.
       <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
       <p class="text-sm text-muted">Stack your first one and it will show up here.</p>
     </div>
-    <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
+    <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
   </div>
 {:else}
-  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 overflow-x-auto shadow-[var(--cairn-shadow)]">
+  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-2 overflow-x-auto shadow-[var(--cairn-shadow)]">
     {#if sorted.length === 0}
       <!-- A filter or a search narrowed the list to zero; the entries exist, none match. Offer the
            way back: a search query clears, a filter is named in the copy. -->
@@ -347,7 +347,7 @@ the loaded entries in component state.
         {/if}
       </div>
     {:else}
-      <table class="table text-[0.9375rem] [&_:where(td)]:py-2.5 [&_:where(td,th):first-child]:pl-6">
+      <table class="table text-[0.9375rem] [&_:where(td)]:py-2 [&_:where(td,th):first-child]:pl-6">
         <!-- Frame zones (the column-header row and the foot action row) carry the sidebar's gentle
              band so content rows are the card's only white rows; borders alone were not separating
              the foot from the titles. -->
@@ -406,9 +406,9 @@ the loaded entries in component state.
                      status stays legible without keeping the desktop-width column. -->
                 <!-- One pill family (design arc 2026-07-15): shared geometry and base ink; each
                      state differs on exactly one attribute (New: weight; Edited: the act-on tint). -->
-                {#if entry.status === 'new'}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-semibold text-base-content sm:badge-sm">New</span>
-                {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary sm:badge-sm">Edited</span>
-                {:else}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-medium text-base-content sm:badge-sm">Published</span>{/if}
+                {#if entry.status === 'new'}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-semibold text-base-content tracking-small-semibold sm:badge-sm">New</span>
+                {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary tracking-small-semibold sm:badge-sm">Edited</span>
+                {:else}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-medium text-base-content tracking-small-semibold sm:badge-sm">Published</span>{/if}
               </td>
               <td class="w-12 px-2 text-right sm:px-4">
                 {#if deleteRefused?.id === entry.id}

@@ -16,6 +16,79 @@ release").
 
 Opening candidates: workflow wf_8358183b-26b → `design-candidates/{a-color,b-type,c-phone,d-affordances}.html`.
 
+## Settle obligations (accumulating; the settle ritual executes these)
+
+- **Extending developers must inherit the polish (Geoff, 2026-07-15: they must not
+  "accidentally violate it when building new admin interfaces").** Three tiers:
+  (1) the PUBLIC extension docs (add-a-custom-admin-screen guide + components reference)
+  teach the ruled grammars in developer terms: the emphasis ladder (ink opener / violet
+  commit / tinted act-on state), the accent reservation, the pill family recipe, the
+  display-face tracking rule; (2) verify each ruling has a token or shared-helper carrier
+  (--cairn-ink-hover, segmentTintClass, the tidy washes), not prose alone; (3) the ROADMAP
+  kit entry gains the acceptance bar: the kit encodes this arc's grammars structurally so
+  violating markup is never the developer's to write, AND its components are responsive by
+  construction (the family five-viewport bar per component), so an extended screen inherits
+  the responsive craft the way it inherits the color grammar (Geoff, 2026-07-15).
+  (4) The PUBLIC developer docs state both principles explicitly (Geoff, 2026-07-15: "both
+  of these principles should be noted in the developer docs"): the coherent-system principle
+  ("an extended cairn should still feel like one visually coherent system") and the
+  inherited-responsive principle, stated as commitments in the extension docs' framing (the
+  add-a-custom-admin-screen guide's intro and the components reference), not only as
+  internal-doc calibration. Both are now also in the design-system charter calibration.
+- Display-face tracking rule: normal tracking at every size (extend K4 beyond the wordmark
+  — the h1 page-heading and doc-title recipes still carry tracking-tight; a concept named
+  "Journal" would kem at 24px bold). Two class strings + the design-doc recipes; queued
+  behind C1 (EditPage contention).
+- CHANGELOG at settle: the body-margin fix (consumer-visible on every host without its own
+  body reset) and the admin restyle window.
+- HARVEST + FAMILY ALIGNMENT (Geoff, 2026-07-15, two escalating notes: "we can probably
+  use all of this work for our scaffold theme as well," then "it would be nice to have our
+  starter theme mirror the admin... general principles can apply to waymark and the
+  chassis"): (a) at settle, the arc's transferable RULES bank into
+  docs/internal/public-design-system.md — the named spacing scale with proximity semantics
+  (F3), the tracking bands keyed to optical size + weight (E3), the display-face keming
+  audit (rn/rm pairs before negative tracking on ANY display face), the accent-budget
+  discipline, and the measured-ruler compare-page method (design-candidates/ pattern);
+  (b) at settle, FILE ONE JOINT PASS into ROADMAP (the template-effort queue; Geoff:
+  "doing those two might be a useful joint pass"): the harvest-banking and the
+  Waymark/chassis alignment run together — writing the transferable rules into
+  public-design-system.md IS the alignment pass's spec-writing step, and applying them to
+  Waymark + the chassis in their own palette and faces is its execution, so the rules land
+  proven against real surfaces rather than as untested prose. Outcome: cairn's own
+  artifacts express ONE design system — an editor moving between admin and scaffolded site
+  feels one hand. Runs AFTER this arc settles (aligns to the resolved system, never chases
+  it). Consumer sites stay design-agnostic; this binds only cairn's own deliverables.
+  Admin-specific values (Warm Stone, the violet, component recipes) stay admin.
+
+## Workstream F (spacing rhythm) — F3 PICKED, hedged (2026-07-15, Geoff: "probably F3,
+just based on gut feel. But that's a hard call.")
+
+F3 = proximity grouping on one 8px grid: header apart at 40px, triage bar card-ward at
+12px, pager hugging at 8px, cell padding 8px, zone gaps 32-40 / within-zone 16 /
+within-group 8. The hedge resolves LIVE: apply F3 to the real posts page in the
+post-workflow batch, Geoff verdicts on localhost; F2 (even 32/16/16) is a three-value
+step back if the grouping reads too opinionated. Implementation note: 32/40px steps are
+NEW spacing vocabulary (not in the compiled sheet today) — author them as named steps,
+which is the token carrier the extending-developer principle wants. Workstream E (letter spacing) — E3 RATIFIED (Geoff "probably E3", asked whether E2 was
+better theory; ruled NO, committed: tracking keys to optical size + weight, the physical
+cause — the metal-type optical-size convention, SF's point-size tracking table — never to
+a role list, which is exactly what mislabeled buttons as exempt (they measure 12px/600,
+inside the band). The rule: <=13px semibold +0.015em; 14-15px medium +0.005em; 11px
+uppercase eyebrows keep 0.08em; body/meta normal. One sentence, kit-inheritable; new
+small-semibold elements fall into the band automatically. Applies with F3 in the
+post-workflow composed pass, confirmed live.
+
+## Dark round — CLOSED (2026-07-15, Geoff: "Dark mode looks good!")
+
+Reviewed live (his tab) + directing-context render read (dark office set banked in session
+scratchpad). Verdict: the dark expression stands — the 0.15-chroma step, colorless diffs,
+neutral pill family, inverted ink buttons all hold. The Settings "Tidy will fix" banner KEEPS
+its violet wash (the screen's one orienting accent; raised as a judgment call, no objection).
+ONE fix queued into the post-workflow batch: the Library tiles' green "Described" chips
+(--color-positive-ink, the closeout's one unswept surface) take the muted done-treatment, so
+amber "Needs alt" becomes the tiles' only colored voice. Same file as the propagation step,
+so it waits for the worktree.
+
 ## Ratified picks awaiting implementation (2026-07-15, Geoff)
 
 - **C1 (phone desk, "zen-derived band") with two modifications:** the bottom action bar

@@ -1405,7 +1405,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
   </div>
-  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
+  <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
   </button>
 </header>
@@ -1447,7 +1447,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </p>
     </div>
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
-      <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
+      <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
       <span class="text-xs">or drop a file anywhere on this page</span>
@@ -1565,9 +1565,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    chip. The category reads "No references found" (renamed from "Unused"): a found
                    reference is not proof of use, and absence of one is not proof of disuse. -->
               {#if used > 0}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-muted">used {used}</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold tracking-small-semibold text-muted">used {used}</span>
               {:else}
-                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold text-[var(--cairn-warning-ink)]">Not referenced</span>
+                <span class="absolute right-2 top-2 inline-flex items-center gap-1 rounded-full border border-[var(--cairn-card-border)] bg-base-100/90 px-2 py-0.5 text-[0.625rem] font-semibold tracking-small-semibold text-[var(--cairn-warning-ink)]">Not referenced</span>
               {/if}
               {#if brokenHashes.has(asset.hash)}
                 <span data-cairn-broken class="flex flex-col items-center gap-1 text-subtle">
@@ -1596,12 +1596,16 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               {#if missing}
                 <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1 text-[var(--cairn-warning-ink)]" role="img" aria-label="Needs alt text">
                   <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" />
-                  <span class="text-[0.625rem] font-medium">Needs alt</span>
+                  <span class="text-[0.625rem] font-medium tracking-small-semibold">Needs alt</span>
                 </span>
               {:else}
-                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1 text-[var(--color-positive-ink)]" role="img" aria-label="Described">
-                  <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" />
-                  <span class="text-[0.625rem] font-medium">Described</span>
+                <!-- The muted done-treatment (design arc 2026-07-15, E3/F3): a completed state reads
+                     as quiet confirmation, not a green accent, so the check and the label take the
+                     same muted/base-content pair CairnTidySettings' setup rows use, keeping this
+                     pill's own geometry. -->
+                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1" role="img" aria-label="Described">
+                  <CheckIcon class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
+                  <span class="text-[0.625rem] font-medium tracking-small-semibold text-base-content">Described</span>
                 </span>
               {/if}
             </div>
@@ -1672,12 +1676,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
               <td class="w-32">
                 {#if missing}
-                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium text-[var(--cairn-warning-ink)]">
+                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium tracking-small-semibold text-[var(--cairn-warning-ink)]">
                     <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" /> Needs alt
                   </span>
                 {:else}
-                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium text-[var(--color-positive-ink)]">
-                    <CheckIcon class="h-3.5 w-3.5" aria-hidden="true" /> Described
+                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium tracking-small-semibold text-base-content">
+                    <CheckIcon class="h-3.5 w-3.5 text-muted" aria-hidden="true" /> Described
                   </span>
                 {/if}
               </td>
@@ -2014,7 +2018,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         {/if}
 
         <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
           <span>Every version stays in git history, so a developer can bring this back later.</span>
         </div>
 
@@ -2159,7 +2163,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-primary tabular-nums">.{newRec.hash}</span>
               </div>
               <div class="col-span-3 flex items-start gap-2 border-t border-[var(--cairn-card-border)] pt-2.5">
-                <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+                <CheckIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
                 <span class="text-[0.8125rem] leading-relaxed">The name <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">{asset.slug}</code> stays the same. Only the content hash changes, so every published entry is repointed to the new file in one commit.</span>
               </div>
             </div>
@@ -2221,7 +2225,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {/if}
 
           <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span>The old file stays in git history. A developer can bring it back. The alt text on each placement is left exactly as it is.</span>
           </div>
 
@@ -2283,7 +2287,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </button>
           </div>
           <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span>Your uploaded file is held and ready. Once the scan completes, the review opens with the full impact.</span>
           </div>
         </div>
@@ -2507,7 +2511,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {/if}
 
           <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span>Every version stays in git history, so any overwrite can be undone.</span>
           </div>
         </div>
@@ -2554,7 +2558,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </button>
           </div>
           <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+            <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
             <span>Nothing was changed. Once the scan completes, the review opens with every placement.</span>
           </div>
         </div>
@@ -2664,7 +2668,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
         <!-- The recoverability reassurance: a git-tracked removal is reversible. -->
         <div class="flex items-start gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] leading-relaxed">
-          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
+          <ClockIcon class="mt-0.5 h-4 w-4 flex-none text-muted" aria-hidden="true" />
           <span><b class="font-semibold">Every removal is one revertible commit you can undo.</b> The deletes are one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">main</code>, so a developer can revert it and the images come back.</span>
         </div>
 
@@ -2704,7 +2708,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
            failed-with-reason. The skipped reason is timing-honest (a reference turned up on the
            recheck). The Done action re-reads the load behind the dialog. -->
       <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--color-positive-tint,var(--cairn-card-border))] text-[var(--color-positive-ink)]" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
           <CheckIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
@@ -2721,7 +2725,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <div class="flex flex-col gap-3">
         <div class="grid grid-cols-3 gap-2 text-center">
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
-            <div class="text-xl font-bold tabular-nums text-[var(--color-positive-ink)]">{res.deleted.length}</div>
+            <div class="text-xl font-bold tabular-nums text-base-content">{res.deleted.length}</div>
             <div class="text-[0.6875rem] uppercase tracking-wide text-muted">Deleted</div>
           </div>
           <div class="rounded-box border border-[var(--cairn-card-border)] p-2.5">
@@ -2872,7 +2876,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       <!-- THE PURGE SUMMARY: the purged count, the keys skipped because their hash was claimed since the
            scan, and any per-object failure. The Done action re-reads the load (the bytes are gone). -->
       <div class="mb-3 flex items-start gap-3">
-        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-[var(--color-positive-tint,var(--cairn-card-border))] text-[var(--color-positive-ink)]" aria-hidden="true">
+        <span class="flex h-9 w-9 flex-none items-center justify-center rounded-box bg-base-content/[0.07] text-muted" aria-hidden="true">
           <CheckIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
@@ -3002,7 +3006,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if orphanBytes.length === 0}
             <!-- The calm empty state: a clean scan, no purge control. -->
             <div class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-200/50 p-3 text-[0.8125rem] text-muted">
-              <CheckIcon class="h-4 w-4 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" /> No orphaned files found. Every stored file has a record.
+              <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" /> No orphaned files found. Every stored file has a record.
             </div>
           {:else}
             <!-- The residual-risk note, named at the point of action. -->

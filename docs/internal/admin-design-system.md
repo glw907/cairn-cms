@@ -256,15 +256,21 @@ Recipes:
   active. Filtering, counts, and search all run client-side over the already-loaded entries. The whole
   page composes at the document list's natural measure, one centered `max-w-3xl` column inside the
   shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list opens a dead band
-  between short titles and the date). The rows are a sortable `<table>` of ONE-LINE rows at the 15px
-  chrome step with `py-2.5` cells: the title (`font-medium`, truncating; weight stays medium because
-  nothing sits under it to out-rank), the date (muted, tabular), the status pill, and the quiet delete
-  (45% ink, full on hover/focus; red lives only in the confirm dialog). `EntrySummary.summary` stays
-  off the list (the density ruling; it still serves the edit page). The status pills are ONE family:
-  shared geometry (`badge badge-xs sm:badge-sm border-transparent`) and shared base ink
-  (`bg-base-content/[0.06] text-base-content`), each state differing on exactly one attribute:
-  Published `font-medium`, New `font-semibold`, Edited swaps the wash for the act-on tint
-  (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)" pill. Hidden is a row
+  between short titles and the date). The page follows the F3 proximity-grouping scale (the named
+  4/8px steps documented as a comment beside the theme tokens in `cairn-admin.css`; design arc
+  2026-07-15): the header stands apart as the page's one loose element (`mb-10`), the triage bar
+  belongs to the card below it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). The
+  rows are a sortable `<table>` of ONE-LINE rows at the 15px chrome step with `py-2` cells: the title
+  (`font-medium`, truncating; weight stays medium because nothing sits under it to out-rank), the date
+  (muted, tabular), the status pill, and the quiet delete (45% ink, full on hover/focus; red lives only
+  in the confirm dialog). `EntrySummary.summary` stays off the list (the density ruling; it still
+  serves the edit page). The status pills are ONE family: shared geometry (`badge badge-xs sm:badge-sm
+  border-transparent`) and shared base ink (`bg-base-content/[0.06] text-base-content`), each state
+  differing on exactly one attribute: Published `font-medium`, New `font-semibold`, Edited swaps the
+  wash for the act-on tint (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)"
+  pill; all three carry the E3 tracking scale's `tracking-small-semibold` (the letter-spacing steps
+  documented beside `text-muted`/`text-subtle` in `scripts/admin-css.input.css`; design arc
+  2026-07-15). Hidden is a row
   treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title) and carries an
   eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. The
   header's ink New button is the ONE create affordance on a populated list (the old trailing foot row

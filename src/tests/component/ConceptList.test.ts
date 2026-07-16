@@ -66,6 +66,23 @@ describe('ConceptList', () => {
     expect(badge('Published')?.classList.contains('font-medium')).toBe(true);
     expect(badge('Edited')?.classList.contains('text-primary')).toBe(true);
     expect(badge('Edited')?.classList.contains('bg-primary/10')).toBe(true);
+    // The E3 tracking scale (design arc 2026-07-15): every status pill sits <= 13px semibold, so
+    // all three take the semibold tracking band, never the bare 0.08em eyebrow or plain body ink.
+    expect(badge('New')?.classList.contains('tracking-small-semibold')).toBe(true);
+    expect(badge('Published')?.classList.contains('tracking-small-semibold')).toBe(true);
+    expect(badge('Edited')?.classList.contains('tracking-small-semibold')).toBe(true);
+  });
+
+  it('composes the header and the triage bar on the F3 proximity scale', async () => {
+    // The header is the page's one loose element (mb-10, the page-gap step); the triage bar
+    // belongs to the card below it (mb-3, the belongs-to-its-neighbor step). Design arc
+    // 2026-07-15's F3 ruling; the scale itself is documented in cairn-admin.css.
+    const screen = render(ConceptList, { data: data() });
+    const header = screen.container.querySelector('header')!;
+    expect(header.classList.contains('mb-10')).toBe(true);
+    const triageGroup = screen.container.querySelector('[role="group"][aria-label="Filter by publish state"]')!;
+    const triageBar = triageGroup.parentElement!;
+    expect(triageBar.classList.contains('mb-3')).toBe(true);
   });
 
   it('announces a publish-all flash through a persistent polite region beside the alert', async () => {

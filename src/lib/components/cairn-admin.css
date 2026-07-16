@@ -1,3 +1,13 @@
+/* The F3 spacing scale (design arc 2026-07-15): proximity grouping on a named 4/8px scale, so a
+   gap's size itself signals what belongs to what. No CSS custom properties: the office
+   components carry the values as plain Tailwind utilities, and this comment is the scale's one
+   documented vocabulary. 8px (gap-2/mb-2) hugs elements within one group; 12px (gap-3/mb-3)
+   marks an element that belongs to its neighbor (a triage bar to the card below it); 16px
+   (gap-4/mb-4) is a zone's own internal spacing; 32px (mb-8) separates two zones; 40px (mb-10)
+   is the page gap, reserved for the page's one loose element (a header standing apart from its
+   content). ConceptList.svelte is the first surface built to it; propagation to the rest of the
+   office pages happens at the kit. */
+
 /* Cairn's own typefaces, self-hosted so the admin needs no external font request. IBM Plex Sans carries
    the body and UI (friendly, highly legible at small sizes); Bricolage Grotesque gives the brand and
    the page headings a distinct voice; iA Writer Mono is the editor writing surface. The first two are

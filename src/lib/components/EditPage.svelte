@@ -479,13 +479,17 @@ persistent "?" carries Markdown help, design-arc D2).
   // shrink-0 and whitespace-nowrap hold each segment to its own single-line footprint: at
   // phone widths the footer wraps whole controls onto new rows (below) rather than letting flex
   // shrink a segment until its own label wraps mid-word.
+  // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
+  // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
+  // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
+  // pressed (design arc 2026-07-15).
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -1535,7 +1539,7 @@ persistent "?" carries Markdown help, design-arc D2).
           type="submit"
           form="cairn-edit-form"
           formaction="?/publish"
-          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded shrink-0"
+          class="btn btn-outline btn-primary btn-sm cairn-btn-guarded tracking-small-semibold shrink-0"
           class:cursor-not-allowed={!publishActionable}
           aria-disabled={publishActionable ? undefined : true}
           aria-label={publishGuardName}
@@ -1547,7 +1551,7 @@ persistent "?" carries Markdown help, design-arc D2).
         </button>
         <!-- Save sleeps while the page is clean, agreeing with the band indicator; a new entry
              stays saveable so it can be created as loaded. -->
-        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm shrink-0" disabled={busy || (!dirty && !data.isNew)}>
+        <button type="submit" form="cairn-edit-form" class="btn btn-primary btn-sm tracking-small-semibold shrink-0" disabled={busy || (!dirty && !data.isNew)}>
           {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
         </button>
       </div>
@@ -2248,7 +2252,7 @@ persistent "?" carries Markdown help, design-arc D2).
       type="submit"
       form="cairn-edit-form"
       formaction="?/publish"
-      class="btn btn-outline btn-primary cairn-btn-guarded min-h-11 flex-1"
+      class="btn btn-outline btn-primary cairn-btn-guarded tracking-small-semibold min-h-11 flex-1"
       class:cursor-not-allowed={!publishActionable}
       aria-disabled={publishActionable ? undefined : true}
       aria-label={publishGuardName}
@@ -2258,7 +2262,7 @@ persistent "?" carries Markdown help, design-arc D2).
     >
       {#if publishing}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Publishing…{:else}Publish{/if}
     </button>
-    <button type="submit" form="cairn-edit-form" class="btn btn-primary min-h-11 flex-1" disabled={busy || (!dirty && !data.isNew)}>
+    <button type="submit" form="cairn-edit-form" class="btn btn-primary tracking-small-semibold min-h-11 flex-1" disabled={busy || (!dirty && !data.isNew)}>
       {#if saving}<span class="loading loading-spinner loading-sm" aria-hidden="true"></span> Saving…{:else}Save{/if}
     </button>
   </div>

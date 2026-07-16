@@ -373,6 +373,13 @@ the named human gates only):**
   generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
 ## Later
 
+- **An engine-side design dev loop (`design:dev` or an optimizeDeps exclusion).** Engine admin
+  work breaks the 0.84.0 minutes-per-turn design loop: after `npm run package`, vite's client dep
+  optimizer serves a stale pre-bundled shell (SSR reloads fire, the client bundle does not), so
+  every component-edit iteration needs a `--force` dev-server restart (~10 rounds of it during the
+  2026-07-15 design arc). Candidates: the showcase's vite config excludes the linked package from
+  optimizeDeps, or a documented `design:dev` script that watches `src/lib` and repackages +
+  restarts. The consumer-site loop is unaffected (site source HMRs directly).
 - **Wire `AuthBranding.replyTo` into `buildMagicLinkMessage`.** The branding config carries it
   (threaded from `SenderConfig`) but the built-in magic-link send never sets the message field —
   surfaced by the 2026-07-08 EMAIL type widening, which added `MagicLinkMessage.replyTo` as a

@@ -68,7 +68,40 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15, latest: PAPERCUTS+DX PASS SHIPPED as 0.86.1; next = the design-refinement ARC with Geoff)
+## Immediate next action (2026-07-15, latest: THE DESIGN ARC SHIPPED as 0.86.2; next = the Fragments brainstorm, Fable-conducted)
+
+**THE ADMIN DESIGN-REFINEMENT ARC IS COMPLETE, MERGED (d92af2cb), AND PUBLISHED AS 0.86.2** (patch:
+look-and-feel, zero Consumers-must; Geoff sized it). The arc record + post-mortem:
+docs/internal/2026-07-15-design-arc-log.md (the settle section carries the four process lessons:
+the round-not-note iteration contract now in the design-refinement skill, the dispatch-time
+watchdog doctrine, the engine-dev-loop friction, escalate-don't-improvise holding across nine
+dispatches). What shipped, all Geoff-ratified live: the emphasis ladder + accent reservation, the
+K4/T4 type system + display-face tracking rule, the composed one-line office list on the F3
+proximity scale, E3 tracking bands, the C1 phone desk (34% keyboard-open chrome vs the 67% audit
+baseline) + D2 toolbar clusters with the persistent help control, colorless Tidy, dark chroma
+compensation, the taxonomy razor (Signups→Site, Library→Content), the two extension-inheritance
+commitments in the public docs, the harvest banked in public-design-system.md, and the
+body-margin engine fix. Evidence at close: 3478 tests exit 0, all named gates, both reviews
+folded (two blockers fixed: roving-tabindex hidden controls, delete-glyph 3:1), CI baselines
+regenerated + render-read, e2e green (run 29463127283), release notes on v0.86.2.
+
+**NEXT (fresh session): the REUSABLE-CONTENT (Fragments) BRAINSTORM, FABLE-CONDUCTED.** Geoff's
+execution model (a deliberate token-economy exception): Fable brainstorms and writes the plan,
+Geoff clears context, an OPUS-conducted session executes it per cairn-pass. The seed frame and
+entry prompt live in the ROADMAP Next entry ("Reusable content/components pass"): three shapes
+(unstyled content, styled repeatable content, repeatable components with content, plus an open
+fourth), the ASC driver, the fixed-concepts boundary question. Resume prompt: "Run the
+reusable-content brainstorm: read the ROADMAP Next entry and the ASC reuse cases first." Launch
+inside ~/Projects/cairn-cms.
+
+**THE DESIGN-ARC QUEUE after Fragments (or interleaved, Geoff's call):** the invisible-craft
+polish pass (runs against the now-settled system; the weight-only pressed-cue advisory is filed
+to its state-variant audit), the component kit (acceptance bar: encodes the arc's grammars
+structurally AND responsive-by-construction per component), and the joint Waymark/chassis
+alignment pass (the harvest rules in public-design-system.md are its spec; application to
+Waymark + chassis in their own palette is its execution).
+
+## Prior next action (2026-07-15, superseded: PAPERCUTS+DX SHIPPED as 0.86.1; next was the design arc)
 
 **THE ADMIN PAPERCUTS + DX PASS IS COMPLETE, MERGED (bdfa6d49), AND PUBLISHED AS 0.86.1.** Plan +
 post-mortem: docs/superpowers/plans/2026-07-15-admin-papercuts-dx.md. The window (patch, rolling the

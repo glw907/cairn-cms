@@ -122,6 +122,8 @@ function editData(): AdminData {
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
+      fragmentTargets: null,
+      routable: true,
       mediaTargets: {},
       mediaLibrary: {},
       inboundLinks: [],

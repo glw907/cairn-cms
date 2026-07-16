@@ -77,6 +77,8 @@ function postProps(over = {}) {
       error: null,
       slug: 'hello',
       linkTargets: [] as LinkTarget[],
+      fragmentTargets: null,
+      routable: true,
       mediaTargets: {},
       mediaLibrary: {},
       inboundLinks: [],
@@ -379,6 +381,35 @@ describe('EditPage', () => {
     await expect
       .poll(() => previewSrcdoc(screen))
       .toContain('src="/media/blue-running-shoes.a1b2c3d4e5f6a7b8.webp"');
+  });
+
+  it('resolves an ::include directive in the preview from fragmentTargets', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: 'Before.\n\n::include{fragment="welcome"}',
+        fragmentTargets: [{ id: 'welcome', title: 'Welcome', body: 'Included fragment content.' }],
+      }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('Included fragment content.');
+  });
+
+  it('shows the missing-fragment notice in the preview for a dangling include', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: '::include{fragment="gone"}',
+        fragmentTargets: [],
+      }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-include-missing');
+    expect(previewSrcdoc(screen)).toContain('Missing fragment: gone');
   });
 
   it('resolves an in-session uploaded image in the preview before the next save commits it', async () => {
@@ -881,6 +912,34 @@ describe('EditPage', () => {
     await screen.getByRole('button', { name: /^delete$/i }).click();
     const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
     expect(dialog.textContent ?? '').toContain('Unpublished edits to this entry are discarded too.');
+  });
+
+  it('threads inboundKind=include to the preemptive DeleteDialog on a fragments-concept screen', async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        conceptId: 'fragments',
+        label: 'Fragment',
+        inboundLinks: [{ concept: 'posts', id: 'hi', title: 'Hi', permalink: '/hi' }],
+      }),
+    );
+    await screen.getByRole('button', { name: 'More actions' }).click();
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.textContent ?? '').toMatch(/included by/i);
+    expect(dialog.textContent ?? '').not.toMatch(/link.*here/i);
+  });
+
+  it('keeps the preemptive DeleteDialog\'s link copy for every other concept', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }] }),
+    );
+    await screen.getByRole('button', { name: 'More actions' }).click();
+    await screen.getByRole('button', { name: /^delete$/i }).click();
+    const dialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]') as HTMLDialogElement;
+    expect(dialog.textContent ?? '').toMatch(/link.*here/i);
+    expect(dialog.textContent ?? '').not.toMatch(/included by/i);
   });
 
   it('flips only the Publish button to its working state and disables both on publish', async () => {
@@ -1729,6 +1788,28 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps());
     const menu = screen.container.querySelector('#cairn-edit-actions-menu')!;
     expect(menu.textContent ?? '').not.toContain('Change URL');
+  });
+
+  it('shows the name treatment for a non-routable concept, keeping the rename affordance', async () => {
+    const screen = render(EditPage, postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false }));
+    const aside = screen.container.querySelector('aside')!;
+    const legends = Array.from(aside.querySelectorAll('legend')).map((l) => l.textContent?.trim());
+    expect(legends).toContain('Name');
+    expect(legends).not.toContain('Address');
+    expect(aside.querySelector('code')?.textContent).toBe('welcome');
+    await screen.getByRole('button', { name: 'Details' }).click();
+    await expect.element(screen.getByRole('button', { name: /^rename$/i })).toBeInTheDocument();
+    expect(aside.textContent ?? '').not.toMatch(/change url/i);
+  });
+
+  it('keeps a routable concept\'s Address block byte-identical', async () => {
+    const screen = render(EditPage, postProps());
+    const aside = screen.container.querySelector('aside')!;
+    const legends = Array.from(aside.querySelectorAll('legend')).map((l) => l.textContent?.trim());
+    expect(legends).toContain('Address');
+    expect(aside.querySelector('code')?.textContent).toBe('/hello');
+    await screen.getByRole('button', { name: 'Details' }).click();
+    await expect.element(screen.getByRole('button', { name: /change url/i })).toBeInTheDocument();
   });
 
   it('flags unsaved changes when the hoisted title receives input', async () => {

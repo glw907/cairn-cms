@@ -5,7 +5,7 @@
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
-import { rewriteIncludeDirective } from '../content/includes.js';
+import { extractIncludes, rewriteIncludeDirective } from '../content/includes.js';
 import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
@@ -123,6 +123,17 @@ export interface ListData {
   publishedAll: number | null;
 }
 
+/**
+ * One published fragment: enough for the picker's listing and the preview's include resolution.
+ *  `body` is the fragment's raw markdown, read from the default branch only, never a pending
+ *  branch's edits.
+ */
+export interface FragmentTarget {
+  id: string;
+  title: string;
+  body: string;
+}
+
 /** The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`). */
 export interface EditData {
   conceptId: string;
@@ -139,8 +150,26 @@ export interface EditData {
   error: string | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
-  /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
+  /**
+   * The site's link targets, for the preview resolver and the link picker; from the committed
+   *  manifest, excluding any non-routable concept's rows (a fragment's gated permalink 404s, so it
+   *  is never offered as a link target; it is included, never linked).
+   */
   linkTargets: LinkTarget[];
+  /**
+   * The published fragments this site's editor can include, for the preview's `resolveFragment`
+   *  and the fragment picker (Task 7): `null` when the site declares no fragments concept, `[]`
+   *  when declared but none published. Each body is read from the default branch only, so a
+   *  pending edit to a fragment never leaks into another entry's preview; a read failure degrades
+   *  the affected fragment out rather than failing the whole load.
+   */
+  fragmentTargets: FragmentTarget[] | null;
+  /**
+   * Whether this entry's concept is routable (`concept.routing.routable`), for the Address
+   *  fieldset: a non-routable concept (the Fragments concept) has no permalink, so the sidebar
+   *  shows a bare name instead of a URL.
+   */
+  routable: boolean;
   /**
    * The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
    *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails.
@@ -659,17 +688,52 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];
+    // A fragment's edit screen shows where it is used (spec §4) through the same inbound surface
+    // every other concept rides for the delete guard, so no new panel is needed: for the fragments
+    // concept the "linkers" are the entries that include it, not link to it.
     let inbound: InboundLink[] = [];
     if (manifest !== null) {
-      linkTargets = manifest.entries.map((e) => ({
-        concept: e.concept,
-        id: e.id,
-        permalink: e.permalink,
-        title: e.title,
-        date: e.date,
-        draft: e.draft,
-      }));
-      inbound = inboundLinks(manifest, concept.id, id);
+      // A non-routable concept's entries (the Fragments concept) are excluded from linkTargets:
+      // their permalink 404s, so the link picker and the preview's resolveLink must never offer
+      // one as a link target (spec §1's not-a-link-target backstop). A manifest row whose concept
+      // is no longer declared keeps today's lenient behavior (no descriptor to gate on).
+      linkTargets = manifest.entries
+        .filter((e) => findConcept(runtime.concepts, e.concept)?.routing.routable ?? true)
+        .map((e) => ({
+          concept: e.concept,
+          id: e.id,
+          permalink: e.permalink,
+          title: e.title,
+          date: e.date,
+          draft: e.draft,
+        }));
+      inbound =
+        concept.id === FRAGMENTS_CONCEPT_ID ? inboundIncludes(manifest, id) : inboundLinks(manifest, concept.id, id);
+    }
+
+    // The published fragments this site's editor can include (Task 6/7): null when the site
+    // declares no fragments concept, so the fragment picker and the preview's resolveFragment both
+    // read the same absence signal. When declared, ids and titles come from the committed
+    // manifest's fragments rows; each body is a SECOND concurrent batch (read only after the
+    // manifest is parsed, since the per-id paths derive from it), from the default branch only, so
+    // a fragment's own pending edits never leak into another entry's preview. A read failure
+    // degrades that one target out rather than failing the whole load (the mediaTargets shape).
+    const fragmentsConcept = findConcept(runtime.concepts, FRAGMENTS_CONCEPT_ID);
+    let fragmentTargets: EditData['fragmentTargets'] = null;
+    if (fragmentsConcept) {
+      const rows = manifest?.entries.filter((e) => e.concept === FRAGMENTS_CONCEPT_ID) ?? [];
+      const bodies = await Promise.all(
+        rows.map(async (row): Promise<FragmentTarget | null> => {
+          try {
+            const raw = await backend.readFile(`${fragmentsConcept.dir}/${filenameFromId(row.id)}`, backend.defaultBranch);
+            if (raw === null) return null;
+            return { id: row.id, title: row.title, body: parseMarkdown(raw).body };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      fragmentTargets = bodies.filter((b): b is FragmentTarget => b !== null);
     }
 
     // The address-collision advisory: warn-and-allow, never a gate. At edit-load it checks the
@@ -741,6 +805,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
+      fragmentTargets,
+      routable: concept.routing.routable,
       mediaTargets,
       mediaLibrary,
       inboundLinks: inbound,
@@ -856,6 +922,18 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
       throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+    }
+
+    // A fragment can never include another fragment (the engine resolves an include only one
+    // pass deep; see resolve-include.ts). Keyed on the concept being the fragments concept, not on
+    // routability in general, since routability describes URL behavior and this is a fragments-only
+    // nesting rule. The check runs extractIncludes, the same extraction the manifest builds its
+    // includes row from, so the bounce and the where-used index agree on what counts as an include.
+    if (concept.id === FRAGMENTS_CONCEPT_ID && extractIncludes(body).length > 0) {
+      throw redirect(
+        303,
+        `/admin/${concept.id}/${id}?error=${encodeURIComponent("A fragment can't include another fragment.")}${suffix}`,
+      );
     }
 
     // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to

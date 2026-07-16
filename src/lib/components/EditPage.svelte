@@ -69,6 +69,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { SiteRender } from '../content/types.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
+  import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -1244,6 +1245,18 @@ persistent "?" carries Markdown help, design-arc D2).
   });
   const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets));
 
+  // The fragment analog: it turns an ::include directive's fragment id into its raw markdown body
+  // in the preview, so an included fragment's content renders in place, the way a native entry's
+  // markdown does. Undefined (no fragments concept declared) leaves every include directive
+  // unresolved, the pipeline's inert literal-prose fallback; a dangling id resolves to undefined
+  // too, which the render step turns into the missing-fragment notice.
+  const resolveFragment = $derived.by(() => {
+    const targets = data.fragmentTargets;
+    if (!targets) return undefined;
+    const byId = new Map(targets.map((t) => [t.id, t.body]));
+    return (id: string) => byId.get(id);
+  });
+
   // The picker's library, the committed projection merged with this session's uploaded records,
   // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same
   // hash is the same bytes, so the override is harmless). This is what the editor decorates with, so
@@ -1323,10 +1336,18 @@ persistent "?" carries Markdown help, design-arc D2).
     const md = body;
     const resolve = resolveLink; // tracked read in the effect body
     const resolveMediaRef = resolveMedia; // tracked read in the effect body
+    const resolveFragmentRef = resolveFragment; // tracked read in the effect body
     const run = previewArbiter.next();
     const handle = setTimeout(async () => {
       try {
-        const html = await render({ body: md, concept: data.conceptId, frontmatter: data.frontmatter, resolve, resolveMedia: resolveMediaRef });
+        const html = await render({
+          body: md,
+          concept: data.conceptId,
+          frontmatter: data.frontmatter,
+          resolve,
+          resolveMedia: resolveMediaRef,
+          resolveFragment: resolveFragmentRef,
+        });
         if (previewArbiter.accept(run)) {
           previewHtml = html;
           previewFailed = false;
@@ -2199,16 +2220,16 @@ persistent "?" carries Markdown help, design-arc D2).
       </fieldset>
       {/if}
       <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
-      <legend class={eyebrowClass}>Address</legend>
+      <legend class={eyebrowClass}>{data.routable ? 'Address' : 'Name'}</legend>
         <div class="flex items-center justify-between gap-2">
-          <code class="min-w-0 break-all text-xs text-muted">/{data.slug}</code>
+          <code class="min-w-0 break-all text-xs text-muted">{data.routable ? `/${data.slug}` : data.slug}</code>
           <button
             type="button"
             class="btn btn-ghost btn-sm shrink-0"
             aria-haspopup="dialog"
             onclick={() => renameDialog?.open()}
           >
-            Change URL
+            {data.routable ? 'Change URL' : 'Rename'}
           </button>
         </div>
       </fieldset>
@@ -2360,6 +2381,7 @@ persistent "?" carries Markdown help, design-arc D2).
   id={data.id}
   label={data.label}
   slug={data.slug}
+  routable={data.routable}
   onsubmitting={() => (leaving = true)}
 />
 <MarkdownHelpDialog bind:this={helpDialog} />
@@ -2444,6 +2466,7 @@ persistent "?" carries Markdown help, design-arc D2).
   id={data.id}
   label={data.label}
   inboundLinks={data.inboundLinks}
+  inboundKind={data.conceptId === FRAGMENTS_CONCEPT_ID ? 'include' : 'link'}
   pending={data.pending}
   onsubmitting={() => (leaving = true)}
 />

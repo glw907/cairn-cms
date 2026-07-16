@@ -15,7 +15,7 @@
       "concept": "pages",
       "title": "About",
       "permalink": "/about",
-      "summary": "The cairn showcase is a minimal site proving the engine surfaces. ::include{fragment=\"trail-safety-notice\"}",
+      "summary": "The cairn showcase is a minimal site proving the engine surfaces.",
       "draft": false,
       "links": [],
       "includes": [

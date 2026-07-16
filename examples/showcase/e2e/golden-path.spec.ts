@@ -596,10 +596,11 @@ test('reference fields round-trip through the editor, commit their edges, and re
 
   // Pick the author: the single reference renders a combobox-style trigger labelled by its field
   // label, opening the EntryPicker scoped to the pages concept. The About page is the one target.
-  // Several EntryPicker dialogs share the same labelledby (the body link picker plus each reference
-  // field's picker), so scope to the one currently open via the [open] attribute the host sets.
+  // The edit page mounts several EntryPickers (the body link picker, the fragment picker, and one
+  // per reference field), so select this one by its accessible name, which is the thing that tells
+  // them apart for an assistive-technology user too.
   await page.getByRole('button', { name: 'Author', exact: true }).click();
-  const authorPicker = page.locator('dialog[aria-labelledby="cairn-entry-picker-title"][open]');
+  const authorPicker = page.getByRole('dialog', { name: 'Choose Author' });
   await expect(authorPicker).toBeVisible();
   await authorPicker.getByRole('button', { name: 'About' }).click();
   // The trigger now shows the resolved target title, so the pick landed in the hidden input.
@@ -608,7 +609,7 @@ test('reference fields round-trip through the editor, commit their edges, and re
   // Add a related post: the array(reference) renders a chip list plus an "Add" trigger; pick a
   // distinct seeded post so the edge is unambiguous.
   await page.getByRole('button', { name: 'Add Related posts' }).click();
-  const relatedPicker = page.locator('dialog[aria-labelledby="cairn-entry-picker-title"][open]');
+  const relatedPicker = page.getByRole('dialog', { name: 'Choose Related posts' });
   await expect(relatedPicker).toBeVisible();
   await relatedPicker.getByRole('button', { name: 'A later pass' }).click();
   // The chip carries the resolved title and its remove control.

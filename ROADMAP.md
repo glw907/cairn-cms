@@ -496,6 +496,15 @@ the named human gates only):**
   noun (a channel name, a season label) gets retyped by volunteers and drifts. Take
   it up when that case is concrete, not before; the block shape covers every reuse case the design
   brainstorm actually found, and an inline directive is a second grammar to teach and maintain.
+- **What `draft` means on a non-routable concept.** `draft` is a routing idea: a draft entry's page
+  404s and stays out of feeds. A fragment has no page, so the flag has nothing to withhold, and today
+  nothing filters it. A site that declares a `draft` field on its fragments concept and sets it would
+  find the fragment still listed in the picker and still spliced into every published page that
+  includes it. No production case has asked for it, and inventing the semantics without one is how a
+  lean concept grows a second meaning. The trigger is a site that declares the field and expects it to
+  bite; the answer is then either filtering drafts out of `fragmentTargets` and refusing them in
+  `buildFragmentResolver`, or rejecting the field on the concept at declaration. Surfaced by two
+  reviewers on the fragments pass, 2026-07-16.
 - **Fragment bodies on the manifest row.** `editLoad` reads every published fragment's body on every
   edit-page open, one `readFile` per fragment, so the picker can list them and the preview can resolve
   an include the author inserts without a round trip. That is fine at the handful of fragments a small

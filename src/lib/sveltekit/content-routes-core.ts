@@ -163,11 +163,12 @@ export interface EditData {
    */
   linkTargets: LinkTarget[];
   /**
-   * The published fragments this site's editor can include, for the preview's `resolveFragment`
-   *  and the fragment picker (Task 7): `null` when the site declares no fragments concept, `[]`
-   *  when declared but none published. Each body is read from the default branch only, so a
-   *  pending edit to a fragment never leaks into another entry's preview; a read failure degrades
-   *  the affected fragment out rather than failing the whole load.
+   * The published fragments this entry can include, for the preview's `resolveFragment` and the
+   *  fragment picker. `null` when nothing here can include one: the site declares no fragments
+   *  concept, or this entry is itself a fragment (a fragment cannot include a fragment). `[]` when
+   *  fragments are includable but none are published. Each body is read from the default branch
+   *  only, so a pending edit to a fragment never leaks into another entry's preview; a read failure
+   *  degrades the affected fragment out rather than failing the whole load.
    */
   fragmentTargets: FragmentTarget[] | null;
   /**
@@ -312,6 +313,16 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
     bodyClass: override?.bodyClass ?? preview.bodyClass,
     containerClass: override?.containerClass ?? preview.containerClass,
   };
+}
+
+/**
+ * The bad-slug refusal, naming what the form asked for. A non-routable concept's create and rename
+ *  forms ask for a Name, so telling its author to fix an "address" names a thing the entry does not
+ *  have and the form never showed them.
+ */
+function invalidIdMessage(concept: ConceptDescriptor): string {
+  const noun = concept.routing.routable ? 'address' : 'name';
+  return `Enter a valid ${noun}: lowercase letters, numbers, and hyphens.`;
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -603,7 +614,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
     };
-    if (!isValidId(slug)) return bounce('Enter a valid address: lowercase letters, numbers, and hyphens.');
+    // The form asked a non-routable concept for a Name, so the bounce names the same thing back.
+    if (!isValidId(slug)) return bounce(invalidIdMessage(concept));
 
     let id = slug;
     if (concept.routing.dated) {
@@ -717,16 +729,21 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         concept.id === FRAGMENTS_CONCEPT_ID ? inboundIncludes(manifest, id) : inboundLinks(manifest, concept.id, id);
     }
 
-    // The published fragments this site's editor can include (Task 6/7): null when the site
-    // declares no fragments concept, so the fragment picker and the preview's resolveFragment both
-    // read the same absence signal. When declared, ids and titles come from the committed
-    // manifest's fragments rows; each body is a SECOND concurrent batch (read only after the
-    // manifest is parsed, since the per-id paths derive from it), from the default branch only, so
-    // a fragment's own pending edits never leak into another entry's preview. A read failure
-    // degrades that one target out rather than failing the whole load (the mediaTargets shape).
+    // The published fragments this entry can include (Task 6/7): null when nothing here can include
+    // one, so the fragment picker and the preview's resolveFragment read the same absence signal.
+    // That covers two cases. A site with no fragments concept has none to offer. A fragment's OWN
+    // edit screen cannot include one either (the save bounces a nested include), and resolving them
+    // here would render a nested include in the preview that Save then refuses, so the preview
+    // instead shows the literal-prose fallback the engine really ships. Skipping the batch there
+    // also spares a fragment's every edit-load one read per published fragment.
+    // When they are offered, ids and titles come from the committed manifest's fragments rows; each
+    // body is a SECOND concurrent batch (read only after the manifest is parsed, since the per-id
+    // paths derive from it), from the default branch only, so a fragment's own pending edits never
+    // leak into another entry's preview. A read failure degrades that one target out rather than
+    // failing the whole load (the mediaTargets shape).
     const fragmentsConcept = findConcept(runtime.concepts, FRAGMENTS_CONCEPT_ID);
     let fragmentTargets: EditData['fragmentTargets'] = null;
-    if (fragmentsConcept) {
+    if (fragmentsConcept && concept.id !== FRAGMENTS_CONCEPT_ID) {
       const rows = manifest?.entries.filter((e) => e.concept === FRAGMENTS_CONCEPT_ID) ?? [];
       const bodies = await Promise.all(
         rows.map(async (row): Promise<FragmentTarget | null> => {
@@ -734,7 +751,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
             const raw = await backend.readFile(`${fragmentsConcept.dir}/${filenameFromId(row.id)}`, backend.defaultBranch);
             if (raw === null) return null;
             return { id: row.id, title: row.title, body: parseMarkdown(raw).body };
-          } catch {
+          } catch (e) {
+            // A transport failure degrades this one target out, and downstream the preview then
+            // renders the missing-fragment notice for a fragment that is committed and fine. Log
+            // it, so an editor reporting "it says the fragment is missing" is diagnosable as a
+            // read failure rather than a content problem.
+            log.warn('include.read_failed', { fragment: row.id, error: e instanceof Error ? e.message : String(e) });
             return null;
           }
         }),
@@ -1399,7 +1421,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const form = await event.request.formData();
     const newSlug = String(form.get('slug') ?? '').trim();
     if (!isValidId(newSlug)) {
-      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies RenameFailure);
+      return fail(400, { error: invalidIdMessage(concept) } satisfies RenameFailure);
     }
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     if (concept.routing.dated && /^\d{4}-/.test(newSlug)) {

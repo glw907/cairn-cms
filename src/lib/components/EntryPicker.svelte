@@ -11,6 +11,12 @@ dialog's a11y conventions.
 <script lang="ts">
   import type { LinkTarget } from '../content/manifest.js';
 
+  // Per-instance, because more than one EntryPicker mounts on a single edit page (the link picker,
+  // the fragment picker, and one per reference field). A constant id here would give every dialog
+  // the same aria-labelledby target, and IDREF resolution takes the first match in tree order, so
+  // each dialog would announce the first picker's heading whatever its own heading says.
+  const titleId = $props.id();
+
   interface Props {
     /** The site's link targets, from the committed manifest (editLoad ships them). */
     targets: LinkTarget[];
@@ -28,8 +34,13 @@ dialog's a11y conventions.
     heading?: string;
     /** The search input's accessible name. Defaults to the link control's wording. */
     searchLabel?: string;
-    /** The empty-state text shown when no target matches. Defaults to the link control's wording. */
+    /**
+     * The empty-state text shown when the host supplies no targets at all. Names the next step
+     *  ("publish a fragment first"), so it must not stand in for a search that matched nothing.
+     */
     emptyText?: string;
+    /** The empty-state text shown when a search filtered every target out. */
+    noMatchText?: string;
   }
 
   let {
@@ -41,6 +52,7 @@ dialog's a11y conventions.
     heading: dialogHeading = 'Link to a page',
     searchLabel = 'Search pages and posts',
     emptyText = 'No pages or posts to link to.',
+    noMatchText = 'Nothing matches that search.',
   }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
@@ -103,10 +115,10 @@ dialog's a11y conventions.
   </button>
 {/if}
 
-<dialog class="modal" aria-labelledby="cairn-entry-picker-title" bind:this={dialog}>
+<dialog class="modal" aria-labelledby={titleId} bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-entry-picker-title" class="text-base font-semibold">{dialogHeading}</h2>
+      <h2 id={titleId} class="text-base font-semibold">{dialogHeading}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
 
@@ -120,7 +132,9 @@ dialog's a11y conventions.
     />
 
     {#if groups.length === 0}
-      <p class="text-sm text-muted">{emptyText}</p>
+      <!-- emptyText names the next step for a host with nothing to offer ("publish a fragment
+           first"), which is wrong advice when a search merely filtered a full list to nothing. -->
+      <p class="text-sm text-muted">{targets.length === 0 ? emptyText : noMatchText}</p>
     {:else}
       {#each groups as group (group.concept)}
         <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>

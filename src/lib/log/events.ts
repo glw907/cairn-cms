@@ -26,6 +26,7 @@ export type CairnLogEvent =
   | 'media.resolve_missing'
   | 'media.resolver_absent'
   | 'include.missing'
+  | 'include.read_failed'
   | 'media.deleted'
   | 'media.delete_blocked'
   | 'media.bulk_deleted'

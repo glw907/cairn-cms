@@ -159,6 +159,9 @@ describe('createSiteResolver', () => {
     expect(s.byPermalink('/fragments/address')).toBeUndefined();
     expect(s.entries().map((e) => e.path).sort()).toEqual(['about']);
     expect(s.concept('fragments')?.byId('address')?.body.trim()).toBe('Fragment body.');
+    // all() feeds the site-wide sitemap, so the gate has to cover enumeration as well as
+    // resolution. A fragment listed here would advertise a permalink byPermalink refuses above.
+    expect(s.all().map((e) => e.permalink).sort()).toEqual(['/about']);
   });
 
   it('throws on a permalink collision across concepts, naming both ids', () => {

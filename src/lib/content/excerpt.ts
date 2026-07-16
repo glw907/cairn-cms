@@ -3,13 +3,19 @@
 // summary-mode feed read one derived excerpt without a full render.
 
 /**
- * Reduce markdown to readable plain text: drop fenced code, images, and markup; unwrap inline
- * code and links to their text; collapse whitespace.
+ * Reduce markdown to readable plain text: drop fenced code, directive markers, images, and markup;
+ * unwrap inline code and links to their text; collapse whitespace.
  */
 function toPlainText(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`([^`]*)`/g, '$1')
+    // Directive marker lines (`::include{fragment="x"}`, a `:::name` container's fences). A leaf
+    // directive carries no prose of its own, and a container's own prose is on the lines between
+    // its fences, so dropping the marker lines keeps the readable text and nothing else. Without
+    // this an ::include in body prose reaches the excerpt verbatim, and an entry with no explicit
+    // description ships the raw directive inside its meta description.
+    .replace(/^\s{0,3}:{2,}[^\n]*$/gm, ' ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
     .replace(/^\s{0,3}[#>]+\s*/gm, ' ')

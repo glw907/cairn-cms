@@ -5,8 +5,9 @@ the chosen target into the exact `::include{fragment="<id>"}` directive text thr
 generic insertAtCursor seam. EntryPicker owns the list and search; this component owns the
 directive-text meaning and the trigger. Each FragmentTarget projects into the LinkTarget shape
 EntryPicker expects: the permalink is empty because a fragment is included, never linked to, and
-draft is always false because fragmentTargets carries only published entries. A null fragmentTargets
-(no fragments concept declared) hides the trigger and mounts no dialog at all.
+draft is false because draft carries no meaning on a non-routable concept, which has no page to
+withhold. A null fragmentTargets (no fragments concept declared) hides the trigger and mounts no
+dialog at all.
 -->
 <script lang="ts">
   import type { FragmentTarget } from '../sveltekit/content-routes-core.js';

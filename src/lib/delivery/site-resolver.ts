@@ -104,7 +104,10 @@ export function createSiteResolver(concepts: ConceptIndex[], opts: { validate?: 
       return byId.get(id);
     },
     all() {
-      return concepts.flatMap(({ index }) => index.all());
+      // The routable gate applies to enumeration too, not just byPath resolution. all() feeds the
+      // site-wide sitemap, so a non-routable concept's entries here would advertise permalinks that
+      // byPermalink refuses and the build never prerenders, handing crawlers a list of 404s.
+      return concepts.filter(({ descriptor }) => descriptor.routing.routable).flatMap(({ index }) => index.all());
     },
     routable(id) {
       return routableById.get(id) ?? true;

@@ -35,6 +35,18 @@ test.describe('fragments: reusable content included across entries', () => {
     expect(response?.status()).toBe(404);
   });
 
+  test('the sitemap does not advertise a fragment URL', async ({ request }) => {
+    // The gate has to cover enumeration, not just resolution. This sitemap is built from
+    // site.all(), the documented pattern a consumer copies, and the test above proves the same URL
+    // 404s: listing it here would hand crawlers a known dead link. The routable gate once covered
+    // byPermalink and entries() but not all(), and the leak reached the prerendered sitemap.
+    const res = await request.get('/sitemap.xml');
+    expect(res.status()).toBe(200);
+    const xml = await res.text();
+    expect(xml).toContain('/about');
+    expect(xml).not.toContain('/fragments/');
+  });
+
   test('an editor authors and publishes a fragment, then includes it in a post through the picker', async ({
     page,
   }) => {
@@ -94,7 +106,11 @@ test.describe('fragments: reusable content included across entries', () => {
     // (insertAtCursor prefixes a blank line automatically, so the second include lands on its own
     // line without the test needing to type one).
     await page.getByRole('button', { name: 'Include a fragment' }).click();
-    const fragmentDialog = page.locator('dialog[aria-labelledby="cairn-entry-picker-title"][open]');
+    // Selected by accessible name, not by a fixed id. The edit page mounts several EntryPickers
+    // (the link picker, this one, one per reference field), so naming the dialog is what proves
+    // this is the fragment picker and not a sibling. An earlier constant id gave every picker the
+    // same aria-labelledby target, and a screen reader announced this dialog as "Link to a page".
+    const fragmentDialog = page.getByRole('dialog', { name: 'Include a fragment' });
     await expect(fragmentDialog).toBeVisible();
     await fragmentDialog.getByRole('button', { name: fragmentTitle }).click();
     await expect(fragmentDialog).not.toBeVisible();

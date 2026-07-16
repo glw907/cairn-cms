@@ -68,7 +68,40 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15, latest: THE DESIGN ARC SHIPPED as 0.86.2; next = the Fragments brainstorm, Fable-conducted)
+## Immediate next action (2026-07-15, latest: the FRAGMENTS SPEC + PLAN are ratified and committed; next = an OPUS-conducted session EXECUTES the plan)
+
+**THE FRAGMENTS (REUSABLE CONTENT) BRAINSTORM IS DONE, Fable-conducted per the ROADMAP entry's
+execution model.** Geoff's three ratified calls: live reference (edit once, every consumer
+updates at publish), fragments-only scope (no component presets; presentation travels as
+directive markup inside markdown, so all three seed shapes collapse into one mechanism), and
+block-level only in v1 (inline deferred to ROADMAP Considering; ASC's Discord vocabulary is the
+trigger). Placement: fragments live near Posts and Pages (key order in `content:`; declared
+navLayouts add `{ screen: 'fragments' }`). Artifacts, both committed:
+**docs/superpowers/specs/2026-07-15-fragments-design.md** (the contract, amended with the
+grounding workflow's findings) and **docs/superpowers/plans/2026-07-15-fragments.md** (ten
+tasks, T1 routable gate through T10 close ritual). The planning ran as two workflows per
+Geoff's opt-in: a six-reader grounding fan-out (555k tokens) whose load-bearing finds are in
+the spec's "Grounded facts" section (the public path never checks `routing.routable` today;
+the directive stamp annihilates leaf directives; the manifest carries no bodies so the preview
+resolver needs real backend reads; public render is build-time so the build resolver throws as
+the backstop), then a three-Opus-lens adversarial plan review (9 findings, all folded,
+including the fold-discovered link-picker leak: linkTargets must exclude non-routable
+concepts).
+
+**NEXT (fresh session, OPUS-CONDUCTED — Geoff's deliberate token-economy call): execute the
+plan per cairn-pass on a `fragments` worktree off main**, one cairn-implementer dispatch per
+task, test-first, full gate per task, conductor reviews each diff. Resume prompt: "Execute the
+fragments plan: read docs/superpowers/plans/2026-07-15-fragments.md in full (it names the spec
+as the contract), then run per cairn-pass on a fragments worktree off main." Launch inside
+~/Projects/cairn-cms. NO version bump at pass end; the window holds under `## Unreleased`
+(Task 9 creates the heading — none exists today). The likely release trigger is ASC's
+consolidation (its docs/fragment-candidates.md holds nine ready cases); ASC's own navLayout
+addition + content migration run in ASC's session after a release.
+
+**THE DESIGN-ARC QUEUE (unchanged, after or interleaved with Fragments, Geoff's call):** the
+invisible-craft polish pass, the component kit, the joint Waymark/chassis alignment pass.
+
+## Prior next action (2026-07-15, superseded: THE DESIGN ARC SHIPPED as 0.86.2; next was the Fragments brainstorm, Fable-conducted)
 
 **THE ADMIN DESIGN-REFINEMENT ARC IS COMPLETE, MERGED (d92af2cb), AND PUBLISHED AS 0.86.2** (patch:
 look-and-feel, zero Consumers-must; Geoff sized it). The arc record + post-mortem:

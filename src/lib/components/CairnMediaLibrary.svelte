@@ -1400,7 +1400,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
   <div class="flex flex-col gap-0.5">
     <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Media</span>
-    <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">Media library</h1>
+    <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">Media library</h1>
     <p class="text-sm text-muted">
       {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
     </p>
@@ -1617,8 +1617,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          keyboard navigation (arrow cell moves, roving tabindex) the table never implemented, so it
          is dropped: a plain table with a checkbox column is honest and fully usable. -->
     <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
-      <table class="table text-[0.9375rem]">
-        <thead>
+      <table class="table text-[0.9375rem] [&_:where(td,th):first-child]:pl-6">
+        <!-- Frame zone (the column-header row) carries the office band grammar (design arc
+             2026-07-15, propagated from ConceptList), and the first column insets to the card's
+             rounded edge. -->
+        <thead class="bg-base-content/[0.04]">
           <tr class="border-base-300">
             <th class="w-10"><span class="sr-only">Select</span></th>
             <th class={headerLabel}>Asset</th>
@@ -1658,7 +1661,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                     {/if}
                   </span>
                   <span class="flex min-w-0 flex-col">
-                    <span class="cairn-ml-name truncate text-sm font-semibold">{asset.displayName}</span>
+                    <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): the
+                         primary cell reads text-base font-medium over the row's 15px meta. -->
+                    <span class="cairn-ml-name truncate text-base font-medium">{asset.displayName}</span>
                     <span class="truncate text-[0.75rem] text-muted tabular-nums">
                       {#if dimensions(asset)}{dimensions(asset)}<span class="px-1" aria-hidden="true">&middot;</span>{/if}{formatBytes(asset.bytes)}<span class="px-1" aria-hidden="true">&middot;</span>{typeLabel(asset)}
                     </span>
@@ -1969,7 +1974,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if deleteInUse}<TriangleAlertIcon class="h-5 w-5" />{:else}<Trash2Icon class="h-5 w-5" />{/if}
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-delete-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>
+          <h2 id="cairn-ml-delete-title" class="text-lg font-bold font-[family-name:var(--font-display)]">Delete {asset.displayName}?</h2>
           <p id="cairn-ml-delete-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {#if deleteInUse}
               Deleting this breaks the image in {breakingRows.length} {breakingRows.length === 1 ? 'entry' : 'entries'}. Type the name to delete it anyway.
@@ -2059,7 +2064,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if replaceStep === 'blocked'}<TriangleAlertIcon class="h-5 w-5" />{:else}<RefreshCwIcon class="h-5 w-5" />{/if}
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-replace-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+          <h2 id="cairn-ml-replace-title" class="text-lg font-bold font-[family-name:var(--font-display)]">
             {#if replaceStep === 'review'}
               Replace {asset.slug} in {replaceAffected} published {replaceAffected === 1 ? 'entry' : 'entries'}
             {:else if replaceStep === 'blocked'}
@@ -2314,7 +2319,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <MegaphoneIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-alt-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+          <h2 id="cairn-ml-alt-title" class="text-lg font-bold font-[family-name:var(--font-display)]">
             {#if altStep === 'blocked'}
               Push alt is on hold
             {:else}
@@ -2589,7 +2594,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <Trash2Icon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Delete {bulkHashes.length} selected {bulkHashes.length === 1 ? 'image' : 'images'}?</h2>
+          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold font-[family-name:var(--font-display)]">Delete {bulkHashes.length} selected {bulkHashes.length === 1 ? 'image' : 'images'}?</h2>
           <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'has' : 'have'} no references and will be deleted.
             {#if bulkWillSkip.length > 0}{bulkWillSkip.length} {bulkWillSkip.length === 1 ? 'is' : 'are'} still used and will be skipped. {/if}Each one is checked again at delete time, so nothing in use is removed.
@@ -2683,7 +2688,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <Trash2Icon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">Deleting images</h2>
+          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold font-[family-name:var(--font-display)]">Deleting images</h2>
           <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Checking each one against a fresh read and removing the ones with no references. This can take a moment across branches.</p>
         </div>
       </div>
@@ -2703,7 +2708,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <CheckIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
+          <h2 bind:this={bulkSummaryTitle} tabindex="-1" id="cairn-ml-bulk-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Done. {res.deleted.length} deleted{res.skipped.length > 0 ? `, ${res.skipped.length} skipped` : ''}</h2>
           <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
           </p>
@@ -2777,7 +2782,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <TriangleAlertIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">The delete did not run</h2>
+          <h2 id="cairn-ml-bulk-title" class="text-lg font-bold font-[family-name:var(--font-display)]">The delete did not run</h2>
           <p id="cairn-ml-bulk-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Nothing was deleted. You can close this and try again.</p>
         </div>
       </div>
@@ -2817,7 +2822,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Scanning storage</h2>
+          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Scanning storage</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">Listing every stored file and checking it against the library across the site and every open edit. This can take a moment.</p>
         </div>
       </div>
@@ -2837,7 +2842,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">The scan could not finish</h2>
+          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">The scan could not finish</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeOrphanScan}>
@@ -2871,7 +2876,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <CheckIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Done. {res.purged.length} purged{res.skippedClaimed.length > 0 ? `, ${res.skippedClaimed.length} kept` : ''}</h2>
+          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Done. {res.purged.length} purged{res.skippedClaimed.length > 0 ? `, ${res.skippedClaimed.length} kept` : ''}</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             The {res.purged.length} {res.purged.length === 1 ? 'file is' : 'files are'} gone for good.{#if res.skippedClaimed.length > 0} {res.skippedClaimed.length} {res.skippedClaimed.length === 1 ? 'was' : 'were'} kept because the file was claimed by a record since the scan.{/if}
           </p>
@@ -2915,7 +2920,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <TriangleAlertIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
+          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
         </div>
         <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={cancelOrphanPurge}>
@@ -2977,7 +2982,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <DatabaseIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold tracking-tight outline-hidden font-[family-name:var(--font-display)]">Orphaned files and broken references</h2>
+          <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Orphaned files and broken references</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">
             A scan of stored files against the library across every tracked branch. It found {orphanBytes.length} stored {orphanBytes.length === 1 ? 'file' : 'files'} with no record, and {orphanBroken.length} {orphanBroken.length === 1 ? 'record whose file is' : 'records whose files are'} gone.
           </p>
@@ -3116,7 +3121,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <UploadIcon class="h-5 w-5" />
         </span>
         <div class="flex-1">
-          <h2 id="cairn-ml-upload-title" class="text-lg font-bold tracking-tight font-[family-name:var(--font-display)]">
+          <h2 id="cairn-ml-upload-title" class="text-lg font-bold font-[family-name:var(--font-display)]">
             Upload an image
           </h2>
           <p id="cairn-ml-upload-sub" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">

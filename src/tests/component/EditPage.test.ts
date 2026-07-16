@@ -231,28 +231,26 @@ describe('EditPage', () => {
       await expect.element(toggle).toHaveAttribute('aria-pressed', 'false');
       expect(el.closest('[role="group"][aria-label="Editing surface"]')).toBeNull();
       expect(el.querySelector('svg')).toBeNull();
-      // Idle wears no tint; pressed picks up the primary tint.
-      expect(el.className).not.toContain('text-primary');
+      // Idle wears no tint; pressed picks up the accent-reservation grammar's neutral pressed
+      // pair (bg-base-content/[0.07] text-base-content font-semibold), never a color tint.
+      expect(el.className).not.toContain('bg-base-content/[0.07]');
       await toggle.click();
       await expect.element(toggle).toHaveAttribute('aria-pressed', 'true');
       expect(el.querySelector('svg')).not.toBeNull();
-      expect(el.className).toContain('text-primary');
+      expect(el.className).toContain('bg-base-content/[0.07]');
     }
   });
 
-  it('dresses Markdown help as a borderless underlined link button', async () => {
+  it('wires Markdown help through the toolbar strip\'s own persistent "?" control (design-arc D2)', async () => {
+    // The footer no longer carries its own copy: the toolbar's strip-level "?" is the one
+    // Markdown-help affordance, reachable at every width, so EditPage need only wire it to the
+    // same dialog the strip itself opens (EditorToolbar.test.ts pins the control's own shape).
     const screen = render(EditPage, postProps());
     const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
-    const el = Array.from(screen.container.querySelectorAll<HTMLButtonElement>('button')).find(
-      (b) => b.textContent?.trim() === 'Markdown help',
-    )!;
-    // A link-styled reference: underlined, no border, no button fill, never aria-pressed (it
-    // opens a dialog, it is not a state toggle).
-    expect(el.className).toContain('underline');
-    expect(el.className).not.toContain('border');
-    expect(el.className).not.toContain('btn');
-    expect(el.hasAttribute('aria-pressed')).toBe(false);
-    expect(el.getAttribute('aria-haspopup')).toBe('dialog');
+    await expect.element(help).toBeInTheDocument();
+    expect(help.element().closest('[role="toolbar"]')).not.toBeNull();
+    expect(help.element().hasAttribute('aria-pressed')).toBe(false);
+    expect(help.element().getAttribute('aria-haspopup')).toBe('dialog');
   });
 
   it('keeps the editor mounted but hidden in preview and restores it intact on Write', async () => {
@@ -1805,7 +1803,7 @@ describe('EditPage', () => {
     expect(card.contains(count()!)).toBe(true);
   });
 
-  it('opens the Markdown help dialog from the editor footer and lists the cheat rows', async () => {
+  it('opens the Markdown help dialog from the toolbar strip and lists the cheat rows', async () => {
     const screen = render(EditPage, postProps());
     await screen.getByRole('button', { name: 'Markdown help' }).click();
     const dialog = screen.container.querySelector<HTMLDialogElement>(
@@ -2174,8 +2172,8 @@ describe('EditPage', () => {
     it('moves focus into the editor when entering zen hides the focused control', async () => {
       const screen = render(EditPage, postProps());
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-      // Focus the footer Markdown help link (a control that hides under zen), then enter zen via
-      // the keyboard so focus is on a hiding control at the moment of entry.
+      // Focus the footer's Zen toggle (a control that hides under zen), then enter zen via the
+      // keyboard so focus is on a hiding control at the moment of entry.
       const zen = screen.getByRole('button', { name: 'Zen', exact: true });
       (await zen.element() as HTMLElement).focus();
       window.dispatchEvent(new KeyboardEvent('keydown', { key: '.', ctrlKey: true, shiftKey: true, cancelable: true }));
@@ -2672,7 +2670,10 @@ describe('EditPage', () => {
       }
     }
 
-    for (const width of [320, 390, 768]) {
+    // sm and up only: below sm the band's composition is exactly what design-arc C1 replaced (see
+    // the "phone-desk composition" suite below), so this loop pins the desktop shape stays
+    // untouched rather than covering every width the way it once did.
+    for (const width of [768]) {
       it(`keeps every desk-band control unobstructed at ${width}px on a published entry`, async () => {
         await page.viewport(width, 700);
         const screen = render(EditPage, postProps());
@@ -2706,9 +2707,9 @@ describe('EditPage', () => {
     }
   });
 
-  describe('editor footer overflow at phone widths (audit finding 1)', () => {
-    // Same rationale as the desk-band suite above: the compiled sheet carries the real .btn
-    // sizing the footer's ghost buttons render at, so a width-driven squeeze reproduces here.
+  describe('phone-desk composition (design-arc C1, docs/internal/2026-07-15-design-arc-log.md)', () => {
+    // Same rationale as the desk-band suite above: the compiled sheet carries daisyUI's real sizing,
+    // so the 44px-floor and layout assertions below reflect production control footprints.
     let sheet: HTMLStyleElement;
 
     beforeAll(() => {
@@ -2724,37 +2725,122 @@ describe('EditPage', () => {
       await page.viewport(1280, 720);
     });
 
-    const footerLabels = ['Prose', 'Wide', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen', 'Markdown help'];
-
     for (const width of [320, 390]) {
-      it(`renders every footer control unclipped and unwrapped at ${width}px`, async () => {
+      it(`renders the bottom action bar with Save and Publish at a 44px floor at ${width}px, and drops the band's own pair`, async () => {
         await page.viewport(width, 700);
         const screen = render(EditPage, postProps());
         await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-        const card = screen.container.querySelector<HTMLElement>('[aria-label="Editor"]')!;
-        const cardRect = card.getBoundingClientRect();
-        const footer = screen.container.querySelector<HTMLElement>('[data-testid="cairn-editor-footer"]')!;
-        const buttons = Array.from(footer.querySelectorAll<HTMLElement>('button'));
-        // Every labeled footer control renders, at its full un-truncated text, and none is silently
-        // dropped by a squeeze (a dropped control would be absent from this list entirely).
-        expect(buttons.map((b) => b.textContent?.trim())).toEqual(footerLabels);
-        for (const button of buttons) {
-          const rect = button.getBoundingClientRect();
-          // A nonzero footprint: nothing collapsed away (the reported "Typewriter dropped
-          // entirely at 320" defect).
-          expect(rect.width, `${button.textContent} has zero width`).toBeGreaterThan(0);
-          // A single text line's worth of height: a button whose own label wrapped to two lines
-          // (the reported "Focus mode wraps to two lines" defect) roughly doubles this.
-          expect(rect.height, `${button.textContent} wrapped to more than one line`).toBeLessThanOrEqual(28);
-          // Fully inside the editor card's own frame: neither clipped by its overflow-hidden
-          // ancestor (the reported "Markup" mid-word truncation) nor pushed off past its right
-          // edge (the reported Markdown help link going off-frame).
-          expect(rect.left, `${button.textContent} clipped on the left`).toBeGreaterThanOrEqual(cardRect.left - 1);
-          expect(rect.right, `${button.textContent} clipped on the right`).toBeLessThanOrEqual(cardRect.right + 1);
+        const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]');
+        await expect.poll(() => bar).not.toBeNull();
+        const publish = Array.from(bar!.querySelectorAll<HTMLButtonElement>('button')).find((b) =>
+          b.textContent?.trim().startsWith('Publish'),
+        )!;
+        const save = Array.from(bar!.querySelectorAll<HTMLButtonElement>('button')).find(
+          (b) => b.textContent?.trim() === 'Save',
+        )!;
+        expect(publish).toBeTruthy();
+        expect(save).toBeTruthy();
+        for (const button of [publish, save]) {
+          expect(button.getBoundingClientRect().height, `${button.textContent} under the 44px floor`).toBeGreaterThanOrEqual(44);
         }
-        // The Markdown help link stays reachable and clickable at every phone width.
+        // The band's own lifecycle pair is gone outright (not merely hidden): exactly one
+        // Save/Publish pair exists in the DOM at this width, the bottom bar's. The band's sr-only
+        // default submit also reads "Save" (it is the fallback for implicit Enter submission, always
+        // present regardless of width), so it is excluded here rather than mistaken for the band's
+        // own visible Save button.
+        const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+        expect(band.querySelector('button[formaction="?/publish"]')).toBeNull();
+        expect(
+          Array.from(band.querySelectorAll('button')).some(
+            (b) => !b.classList.contains('sr-only') && b.textContent?.trim() === 'Save',
+          ),
+        ).toBe(false);
+      });
+    }
+
+    it('rules the band to a 48px measured height below sm, and 64px at sm and up', async () => {
+      // Below sm the sidebar is an overlay drawer, not a visible band to align the navbar against,
+      // so the desk route's band rules down to 48px there (max-sm:h-12/min-h-12 on the real
+      // CairnAdminShell navbar, mirrored by the harness). At sm and up it stays the full 64px.
+      await page.viewport(390, 700);
+      const narrowScreen = render(EditPage, postProps());
+      await expect.poll(() => narrowScreen.container.querySelector('.cm-content')).not.toBeNull();
+      const narrowBand = narrowScreen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+      expect(narrowBand.getBoundingClientRect().height).toBeCloseTo(48, 0);
+
+      await page.viewport(768, 700);
+      const wideScreen = render(EditPage, postProps());
+      await expect.poll(() => wideScreen.container.querySelector('.cm-content')).not.toBeNull();
+      const wideBand = wideScreen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+      expect(wideBand.getBoundingClientRect().height).toBeCloseTo(64, 0);
+    });
+
+    it('keeps the sr-only default submit first among the form\'s submit buttons in tree order, ahead of the bottom action bar', async () => {
+      await page.viewport(390, 700);
+      const screen = render(EditPage, postProps({ pending: true }));
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      await expect.poll(() => screen.container.querySelector('[data-testid="cairn-edit-actionbar"]')).not.toBeNull();
+      const owned = Array.from(
+        screen.container.querySelectorAll<HTMLButtonElement>(
+          'button[type="submit"][form="cairn-edit-form"], #cairn-edit-form button[type="submit"]',
+        ),
+      );
+      // Two lifecycle submitters (Publish, Save) live in the bottom action bar at this width, so
+      // three total: the sr-only fallback plus that pair.
+      expect(owned.length).toBe(3);
+      const fallback = owned[0];
+      expect(fallback.hasAttribute('formaction')).toBe(false);
+      expect(fallback.getAttribute('aria-hidden')).toBe('true');
+      expect(fallback.classList.contains('sr-only')).toBe(true);
+      // The other two are the action bar's own Publish and Save, confirming the sr-only default
+      // precedes them in tree order (the actionbar sits after the form in the template; the band
+      // that carries the sr-only default renders ahead of the whole page body).
+      const bar = screen.container.querySelector<HTMLElement>('[data-testid="cairn-edit-actionbar"]')!;
+      expect(bar.contains(owned[1])).toBe(true);
+      expect(bar.contains(owned[2])).toBe(true);
+    });
+
+    it('carries one status pill whose aria-label spells out the Published + Hidden + dirty triple', async () => {
+      await page.viewport(320, 700);
+      const screen = render(
+        EditPage,
+        postProps({ frontmatter: { title: 'Hello', date: '2026-05-01', draft: true } }),
+      );
+      await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+      const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
+      content.focus();
+      await userEvent.keyboard('x');
+      const band = screen.container.querySelector<HTMLElement>('[data-testid="cairn-band"]')!;
+      // One pill total: a single .badge in the band, not the desktop's separate status-plus-Hidden
+      // pair, and the eye-off glyph rides inside it rather than a second badge.
+      await expect.poll(() => band.querySelectorAll('.badge').length).toBe(1);
+      const pill = band.querySelector<HTMLElement>('.badge')!;
+      expect(pill.querySelector('svg')).not.toBeNull();
+      expect(pill.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
+    });
+
+    for (const width of [320, 390]) {
+      it(`does not render the editor footer strip at ${width}px; its controls stay reachable through the toolbar overflow, and Markdown help stays reachable from the strip itself`, async () => {
+        await page.viewport(width, 700);
+        const screen = render(EditPage, postProps());
+        await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
+        // Not merely hidden: the strip leaves the DOM outright at this width, so a plain-text
+        // query for its word count can never resolve two ambiguous copies against the popover's
+        // own moreExtra line below.
+        expect(screen.container.querySelector('[data-testid="cairn-editor-footer"]')).toBeNull();
+        // Every control the footer would otherwise carry (the postures, the writing modes, the
+        // word count) is reachable through the toolbar's one overflow instead. Markdown help is
+        // NOT among them (design-arc D2): it moved to the toolbar's own persistent "?" control,
+        // which never depends on the overflow menu at any width (audit finding 7).
+        const more = screen.getByRole('button', { name: 'More formatting' });
+        await expect.element(more).toBeInTheDocument();
+        await more.click();
+        for (const label of ['Write', 'Preview', 'Prose', 'Wide', 'Focus mode', 'Typewriter', 'Spellcheck', 'Zen']) {
+          await expect.element(screen.getByRole('button', { name: label, exact: true })).toBeInTheDocument();
+        }
+        // postProps()'s default body ("The body.") counts as two words.
+        await expect.element(screen.getByText('2 words')).toBeInTheDocument();
         const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
-        await expect.element(help).toBeInTheDocument();
         await help.click();
         const dialog = screen.container.querySelector<HTMLDialogElement>(
           'dialog[aria-labelledby="cairn-markdown-help-title"]',

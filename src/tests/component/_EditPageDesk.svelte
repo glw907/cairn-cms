@@ -8,7 +8,9 @@ does. The band is a plain wrapper, not the shell's full chrome, to keep the comp
 and focused on EditPage's own behavior. The drawer-toggle and theme-toggle stand-ins on either side
 of the desk snippet mirror CairnAdminShell's real desk-route navbar siblings (same classes, so the
 compiled admin sheet gives them production width) so a width-driven collision between the desk
-snippet's own content and its real neighbors reproduces here, not just in the running shell.
+snippet's own content and its real neighbors reproduces here, not just in the running shell. Below
+sm the band mirrors CairnAdminShell's desk-route ruling to 48px (max-sm:h-12/min-h-12); EditPage is
+always a desk route, so the harness applies it unconditionally rather than gating on isDeskRoute.
 -->
 <script lang="ts">
   import type { ComponentProps } from 'svelte';
@@ -35,7 +37,7 @@ snippet's own content and its real neighbors reproduces here, not just in the ru
 {#if !holder.zen}
 <div
   data-testid="cairn-band"
-  class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] h-16 min-h-16 gap-2 px-4 py-0 lg:px-8 max-sm:px-2"
+  class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] h-16 min-h-16 gap-2 px-4 py-0 lg:px-8 max-sm:px-2 max-sm:h-12 max-sm:min-h-12"
 >
   <span data-testid="drawer-toggle-stub" class="btn btn-square btn-ghost flex-none xl:hidden" aria-hidden="true"></span>
   {@render holder.desk?.()}

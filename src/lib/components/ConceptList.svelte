@@ -249,7 +249,7 @@ the loaded entries in component state.
      search lives in the triage row below (the toolbar placement, converging with Media), so the
      header's right side never out-weighs the h1 (the page-balance ruling, design arc 2026-07-15). -->
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-  <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{data.label}</h1>
+  <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{data.label}</h1>
   <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
     <PlusIcon class="h-4 w-4" /> New {createNoun}
   </button>

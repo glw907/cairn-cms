@@ -32,7 +32,7 @@ supplies its own `<table>` (or any content) inside.
     {#if eyebrow}
       <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="text-2xl font-bold tracking-tight font-[family-name:var(--font-display)]">{title}</h1>
+    <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
     {#if subtitle}<p class="text-sm text-muted">{subtitle}</p>{/if}
   </div>
   {#if action}{@render action()}{/if}

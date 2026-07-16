@@ -523,10 +523,15 @@ discriminant, not the fields, gates the chrome).
       <!-- The topbar is a flat, opaque continuation of the sidebar's brand band: same surface and the
            same hairline, no shadow, so the two form one clean header strip across the sidebar seam.
            The height is pinned to the brand band's h-16 (a content-driven navbar drifts with font
-           metrics, and the two border-bottoms stop meeting at the seam). -->
+           metrics, and the two border-bottoms stop meeting at the seam). Below sm the sidebar is an
+           overlay drawer, not a visible band to align against, so the alignment argument does not
+           bind there: a desk route's band ruled down to 48px (max-sm:h-12/min-h-12), matching the
+           C1 phone-desk band. Office routes keep the full 64px band at every width. -->
       <div
         class="navbar bg-base-100 border-b border-[var(--cairn-card-border)] sticky top-0 z-30 h-16 min-h-16 gap-2 px-4 py-0 lg:px-8"
         class:max-sm:px-2={isDeskRoute}
+        class:max-sm:h-12={isDeskRoute}
+        class:max-sm:min-h-12={isDeskRoute}
       >
         <!-- The drawer toggle hides once the persistent sidebar stands in for it: at lg on the office
              routes, at xl on a desk route (which keeps the toggle visible through the lg-xl tablet

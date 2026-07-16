@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import { userEvent } from 'vitest/browser';
+import { createRawSnippet } from 'svelte';
 import EditorToolbar from '../../lib/components/EditorToolbar.svelte';
 // The source admin sheet (the variables partial plus the scoped component rules), so the
 // unlayered menu focus override is present for the focus-visibility tests below.
@@ -20,6 +21,12 @@ function controls(container: HTMLElement): HTMLElement[] {
     (el) => !el.closest('[popover]'),
   );
 }
+
+// A single insert control, for the tests that need the Insert group's aria-label wrapper to
+// actually render (it is conditional on `insertControls` being supplied).
+const oneInsertControl = createRawSnippet(() => ({
+  render: () => '<button type="button" aria-label="Insert block">Insert block</button>',
+}));
 
 describe('EditorToolbar', () => {
   it('renders the primary controls with accessible names', async () => {
@@ -42,18 +49,48 @@ describe('EditorToolbar', () => {
     }
   });
 
-  it('promotes inline code, strikethrough, and table onto the strip after Quote and before More', async () => {
+  it('groups the strip into Format, then Structure, then the persistent help control, keeping every control (design-arc D2)', async () => {
     const screen = render(EditorToolbar, baseProps());
-    const labels = controls(screen.container)
-      .map((el) => el.getAttribute('aria-label') ?? '')
-      .filter((l) => ['Quote (Ctrl+Shift+9)', 'Inline code (Ctrl+E)', 'Strikethrough', 'Table', 'More formatting'].includes(l));
+    // Every control the strip carried before D2's regrouping is still here, none dropped, just
+    // clustered: Format (bold, italic, strike, inline code), Structure (headings, lists, quote,
+    // table, More), the Write/Preview tablist, and the persistent "?" help control at the row's
+    // right end.
+    const labels = controls(screen.container).map((el) => el.getAttribute('aria-label') ?? el.textContent?.trim());
     expect(labels).toEqual([
-      'Quote (Ctrl+Shift+9)',
-      'Inline code (Ctrl+E)',
+      'Bold (Ctrl+B)',
+      'Italic (Ctrl+I)',
       'Strikethrough',
+      'Inline code (Ctrl+E)',
+      'Heading (Ctrl+Alt+2)',
+      'Smaller heading (Ctrl+Alt+3)',
+      'Bulleted list (Ctrl+Shift+8)',
+      'Numbered list (Ctrl+Shift+7)',
+      'Quote (Ctrl+Shift+9)',
       'Table',
       'More formatting',
+      'Write',
+      'Preview',
+      '? Markdown help', // the "?" help control: aria-hidden glyph plus a sr-only label
     ]);
+  });
+
+  it('never labels a cluster "Blocks": the word appears only inside Insert block and Edit block', async () => {
+    const screen = render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
+    for (const name of ['Format', 'Structure', 'Insert']) {
+      await expect.element(screen.getByRole('group', { name })).toBeInTheDocument();
+    }
+    expect(screen.container.querySelector('[role="group"][aria-label="Blocks"]')).toBeNull();
+    await expect.element(screen.getByText('Blocks')).not.toBeInTheDocument();
+  });
+
+  it('names each cluster with an aria group whose presentational eyebrow matches it', async () => {
+    const screen = render(EditorToolbar, baseProps({ insertControls: oneInsertControl }));
+    for (const name of ['Format', 'Structure', 'Insert']) {
+      const group = screen.getByRole('group', { name });
+      await expect.element(group).toBeInTheDocument();
+      const eyebrow = group.element().querySelector('[aria-hidden="true"]');
+      expect(eyebrow?.textContent?.trim()).toBe(name);
+    }
   });
 
   it('keeps code block, horizontal rule, and task list behind the ellipsis', async () => {
@@ -110,6 +147,30 @@ describe('EditorToolbar', () => {
     await screen.getByRole('button', { name: 'Inline code (Ctrl+E)' }).click();
     await screen.getByRole('button', { name: 'Strikethrough', exact: true }).click();
     expect(format.mock.calls).toEqual([['table'], ['code'], ['strike']]);
+  });
+
+  describe('the persistent "?" help control (design-arc D2)', () => {
+    it('is present and reachable by its accessible name, and calls the host on click', async () => {
+      const onHelp = vi.fn();
+      const screen = render(EditorToolbar, baseProps({ onHelp }));
+      const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
+      await expect.element(help).toBeInTheDocument();
+      await help.click();
+      expect(onHelp).toHaveBeenCalledOnce();
+    });
+
+    it('stays enabled in Preview, unlike the formatting controls beside it', async () => {
+      const screen = render(EditorToolbar, baseProps({ mode: 'preview' }));
+      const help = screen.container.querySelector<HTMLButtonElement>('button[title="Markdown help"]')!;
+      expect(help.disabled).toBe(false);
+    });
+
+    it('is a no-op without a host onHelp handler', async () => {
+      const screen = render(EditorToolbar, baseProps());
+      const help = screen.getByRole('button', { name: 'Markdown help', exact: true });
+      // No onHelp supplied; the click must not throw.
+      await help.click();
+    });
   });
 
   describe('strip fit at the posture caps', () => {
@@ -180,21 +241,24 @@ describe('EditorToolbar', () => {
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
     const items = controls(screen.container);
     items[0].focus();
-    // ArrowLeft wraps the stop to the last control.
+    // ArrowLeft wraps the stop to the last control (the persistent "?" help control, design-arc D2).
     await userEvent.keyboard('{ArrowLeft}');
     await expect.poll(() => document.activeElement).toBe(items[items.length - 1]);
-    // Preview disables the format controls, shrinking the roving set to the two tabs; the
-    // clamped stop writes back, so Write resumes from the clamped position instead of jumping.
+    // Preview disables the format and structure controls, shrinking the roving set to the two
+    // tabs plus the ever-enabled help control; the clamped stop writes back, so Write resumes
+    // from the clamped position instead of jumping.
     await screen.rerender(baseProps({ mode: 'preview' }));
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
     await screen.rerender(baseProps({ mode: 'write' }));
     await expect.poll(() => controls(screen.container).filter((el) => el.tabIndex === 0).length).toBe(1);
     const after = controls(screen.container);
-    expect(after[1].tabIndex).toBe(0);
+    const stopIndex = after.findIndex((el) => el.tabIndex === 0);
+    expect(stopIndex).toBeGreaterThanOrEqual(0);
     // Arrow keys move from the displayed stop, not a stale pre-Preview index.
-    after[1].focus();
+    after[stopIndex].focus();
     await userEvent.keyboard('{ArrowRight}');
-    await expect.poll(() => document.activeElement).toBe(controls(screen.container)[2]);
+    const nextIndex = (stopIndex + 1) % after.length;
+    await expect.poll(() => document.activeElement).toBe(controls(screen.container)[nextIndex]);
   });
 
   it('shows the device trigger only while Preview is active with a handler', async () => {

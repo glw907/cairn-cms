@@ -650,8 +650,9 @@ describe('MarkdownEditor', () => {
     const content = screen.container.querySelector<HTMLElement>('.cm-content')!;
     const style = getComputedStyle(content);
     expect(style.maxWidth).not.toBe('none');
-    expect(parseFloat(style.fontSize)).toBeCloseTo(17, 0);
-    expect(parseFloat(style.lineHeight) / parseFloat(style.fontSize)).toBeCloseTo(1.9, 1);
+    // T4 (design arc, 2026-07-15): the manuscript prose posture is 1.125rem (18px) at 1.85 leading.
+    expect(parseFloat(style.fontSize)).toBeCloseTo(18, 0);
+    expect(parseFloat(style.lineHeight) / parseFloat(style.fontSize)).toBeCloseTo(1.85, 1);
   });
 
   it('markup posture fills its pane with no inner measure cap', async () => {

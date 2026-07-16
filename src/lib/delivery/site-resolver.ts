@@ -26,7 +26,11 @@ export interface SiteResolver {
   entries(): { path: string }[];
   /** One concept's index, for its archive and feed loaders. */
   concept(id: string): ContentIndex | undefined;
-  /** Every non-draft summary across concepts, for the site-wide sitemap. */
+  /**
+   * Every non-draft summary across ROUTABLE concepts, for the site-wide sitemap. Non-routable is
+   *  excluded here for the same reason it is excluded from `byPermalink`: listing an entry that
+   *  refuses to resolve hands a crawler a 404. Reach a non-routable concept through `concept(id)`.
+   */
   all(): ContentSummary[];
   /**
    * Whether a concept id is publicly routable, so a link resolver can refuse a non-routable target

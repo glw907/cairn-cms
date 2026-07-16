@@ -75,6 +75,31 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     expect(data.fragmentTargets).toBeNull();
   });
 
+  // The null covers two cases, and this is the second: a fragment cannot include a fragment, so
+  // its own edit screen offers none. Resolving them here would render a nested include in the
+  // preview that the save then refuses, and the batch of reads would be pure waste besides.
+  it("is null on a fragment's own edit screen, even with fragments published", async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    await redirectedTo(
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+    );
+    await redirectedTo(
+      routes.publishAction(saveEvent('fragments', 'address', { title: 'Address', body: 'Somewhere.' }) as never),
+    );
+    await redirectedTo(
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+    );
+
+    // A post sees both, so the corpus really is there to offer.
+    const post = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    expect(post.fragmentTargets).toHaveLength(2);
+
+    const fragment = await routes.editLoad(editEvent('fragments', 'welcome') as never);
+    expect(fragment.fragmentTargets).toBeNull();
+  });
+
   it('is empty when fragments are declared but none are published', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
@@ -106,7 +131,7 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     expect(data.fragmentTargets).toContainEqual({ id: 'welcome', title: 'Welcome', body: 'Hi there.\n' });
   });
 
-  it('degrades a fragment target out on a read failure rather than failing the whole load', async () => {
+  it('degrades a fragment target out when its file is absent rather than failing the whole load', async () => {
     const gh = new GithubDouble({ main: {} });
     gh.install();
     const routes = createContentRoutes(runtime());
@@ -116,11 +141,50 @@ describe('editLoad: fragmentTargets (Task 6)', () => {
     await redirectedTo(
       routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
     );
-    // Simulate the fragment file vanishing out of band while the manifest still lists it.
+    // The fragment file vanishes out of band while the manifest still lists it. A 404 reads as a
+    // genuine absence (readFile returns null), which is a different branch from a transport failure.
     delete gh.branches.get('main')!['src/content/fragments/welcome.md'];
 
     const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
     expect(data.fragmentTargets).toEqual([]);
+  });
+
+  // A transport failure and a genuine absence both drop the target, and downstream the preview
+  // reports it missing either way. Only the log tells them apart, so an editor saying "it says the
+  // fragment is missing" is diagnosable as a blip rather than a content problem they should fix by
+  // deleting the include.
+  it('logs include.read_failed when a fragment read throws, and still serves the load', async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    await redirectedTo(
+      routes.publishAction(saveEvent('fragments', 'welcome', { title: 'Welcome', body: 'Hi there.' }) as never),
+    );
+    await redirectedTo(
+      routes.publishAction(saveEvent('posts', '2026-05-hi', { title: 'Hi', date: '2026-05-01', body: 'See.' }) as never),
+    );
+
+    // A 500 on the fragment's own path only: readRaw throws, unlike the 404 above. Everything else
+    // (the manifest, the entry) still resolves, so the load has to survive the one bad read.
+    const real = globalThis.fetch as typeof fetch;
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (String(input).includes('src/content/fragments/welcome.md')) {
+          return new Response('boom', { status: 500 });
+        }
+        return real(input, init);
+      }),
+    );
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    const data = await routes.editLoad(editEvent('posts', '2026-05-hi') as never);
+    expect(data.fragmentTargets).toEqual([]);
+    // The sink takes the record object, not a string.
+    const records = warn.mock.calls.map((c) => c[0] as { event?: string; fragment?: string });
+    const record = records.find((r) => r?.event === 'include.read_failed');
+    expect(record).toBeDefined();
+    expect(record?.fragment).toBe('welcome');
   });
 });
 

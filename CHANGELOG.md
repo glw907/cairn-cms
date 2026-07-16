@@ -1,5 +1,18 @@
 ## Unreleased
 
+### Changed
+
+- A `routing: 'embedded'` concept is now genuinely non-routable: its entries no longer resolve
+  through `byPermalink`, prerender through `entries()`, or appear in `site.all()`. The shorthand has
+  been declarable on any concept since well before this window, but nothing enforced it, so an
+  embedded concept's entries were served, prerendered, and listed in the sitemap exactly like a
+  routable one. [Add authors to your site](docs/guides/add-authors.md) has always told developers
+  that "marking `authors` embedded keeps it off the sitemap and out of feeds"; that promise is true
+  now and was not before. **Consumers must:** check any concept declared `routing: 'embedded'`. If
+  its entries are meant to have public URLs, declare `routing: 'page'` instead; if they were only
+  ever meant to be referenced or included, no action is needed and the stray URLs stop being served.
+  Neither ecxc.ski nor 907.life declares an embedded concept, so neither is affected.
+
 ### Added
 
 - Fragments, a way to author one piece of markdown and reuse it across entries. A site declares

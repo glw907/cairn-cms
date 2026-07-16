@@ -496,6 +496,17 @@ the named human gates only):**
   noun (a channel name, a season label) gets retyped by volunteers and drifts. Take
   it up when that case is concrete, not before; the block shape covers every reuse case the design
   brainstorm actually found, and an inline directive is a second grammar to teach and maintain.
+- **`FieldInput`'s hint id collides across repeated rows (the next instance of a fixed bug class).**
+  The field hint builds its id from `f.name`, the leaf's local name, while the component's unique
+  identity is its path-scoped `name` prop. `RepeatableField` mounts one `FieldInput` per row with
+  `name: '_value'`, and `ObjectGroupField` does the same per leaf key, so every row renders the same
+  hint id and each row's `aria-describedby` resolves to row zero's. Latent today: no showcase leaf
+  inside an `array(object)` declares `help`, so nothing fires. It fires on a consumer schema, the
+  same way `EntryPicker`'s constant dialog id stayed latent until a schema declared reference fields
+  and the fragments pass made it unconditional. The fix is to key the hint off the already-unique
+  `name` prop rather than `f.name`; the existing form-renderer assertions mount top-level fields
+  where the two coincide, so they are unaffected. The trigger is a schema that puts `help` on a leaf
+  inside a repeatable or an object group. Surfaced by the fragments fix-commit review, 2026-07-16.
 - **What `draft` means on a non-routable concept.** `draft` is a routing idea: a draft entry's page
   404s and stays out of feeds. A fragment has no page, so the flag has nothing to withhold, and today
   nothing filters it. A site that declares a `draft` field on its fragments concept and sets it would

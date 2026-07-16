@@ -6,7 +6,7 @@ generic insertAtCursor seam. EntryPicker owns the list and search; this componen
 directive-text meaning and the trigger. Each FragmentTarget projects into the LinkTarget shape
 EntryPicker expects: the permalink is empty because a fragment is included, never linked to, and
 draft is false because draft carries no meaning on a non-routable concept, which has no page to
-withhold. A null fragmentTargets (no fragments concept declared) hides the trigger and mounts no
+withhold. A null fragmentTargets (nothing here can include one) hides the trigger and mounts no
 dialog at all.
 -->
 <script lang="ts">
@@ -17,7 +17,8 @@ dialog at all.
 
   interface Props {
     /** The site's published fragments, from `EditData.fragmentTargets`. Null hides the trigger and
-     *  the dialog (no fragments concept declared); an empty array shows the honest empty state. */
+     *  the dialog, and covers both a site with no fragments concept and a fragment's own edit
+     *  screen; an empty array shows the honest empty state. */
     fragmentTargets: FragmentTarget[] | null;
     /** Insert the directive text at the editor cursor (the generic insertAtCursor seam). */
     insert: (text: string) => void;

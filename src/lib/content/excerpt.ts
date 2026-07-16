@@ -3,22 +3,32 @@
 // summary-mode feed read one derived excerpt without a full render.
 
 /**
- * Reduce markdown to readable plain text: drop fenced code, directive markers, images, and markup;
- * unwrap inline code and links to their text; collapse whitespace.
+ * A directive's marker line: the colon fence, its optional name, its optional `[label]`, and any
+ *  trailing attributes. The label is captured, because a directive's authored prose rides there:
+ *  cairn serializes a component's `title` slot to `[label]`, and a component whose only slot is a
+ *  title (the showcase's `pull-quote`) carries its entire text on this line. Everything outside the
+ *  label is machine markup. The `\s{0,3}` bound is deliberate: at four spaces the line is an
+ *  indented code block, not a directive, and its text stays literal.
+ */
+const DIRECTIVE_LINE = /^\s{0,3}:{2,}[^\s[{]*(?:\[([^\]]*)\])?[^\n]*$/gm;
+
+/**
+ * Reduce markdown to readable plain text: drop fenced code, directive markup, images, and markers;
+ * unwrap inline code, links, and directive labels to their text; collapse whitespace.
+ *
+ * Order carries meaning here. The blockquote strip runs before the directive strip, because a
+ * directive nested in a blockquote is still a real directive and would otherwise survive its own
+ * rule only to be exposed by the blockquote's. The directive strip runs before the link strip, so a
+ * label holding a link is unwrapped as a label rather than smeared into the fence name.
  */
 function toPlainText(md: string): string {
   return md
     .replace(/```[\s\S]*?```/g, ' ')
     .replace(/`([^`]*)`/g, '$1')
-    // Directive marker lines (`::include{fragment="x"}`, a `:::name` container's fences). A leaf
-    // directive carries no prose of its own, and a container's own prose is on the lines between
-    // its fences, so dropping the marker lines keeps the readable text and nothing else. Without
-    // this an ::include in body prose reaches the excerpt verbatim, and an entry with no explicit
-    // description ships the raw directive inside its meta description.
-    .replace(/^\s{0,3}:{2,}[^\n]*$/gm, ' ')
+    .replace(/^\s{0,3}[#>]+\s*/gm, ' ')
+    .replace(DIRECTIVE_LINE, ' $1 ')
     .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
     .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/^\s{0,3}[#>]+\s*/gm, ' ')
     .replace(/^\s{0,3}[-*+]\s+/gm, ' ')
     .replace(/[*_~]/g, '')
     .replace(/\s+/g, ' ')

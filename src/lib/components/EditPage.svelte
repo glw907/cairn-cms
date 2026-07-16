@@ -1256,9 +1256,11 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // The fragment analog: it turns an ::include directive's fragment id into its raw markdown body
   // in the preview, so an included fragment's content renders in place, the way a native entry's
-  // markdown does. Undefined (no fragments concept declared) leaves every include directive
-  // unresolved, the pipeline's inert literal-prose fallback; a dangling id resolves to undefined
-  // too, which the render step turns into the missing-fragment notice.
+  // markdown does. Undefined whenever nothing here can include one (no fragments concept declared,
+  // or this entry is itself a fragment) leaves every include directive unresolved, the pipeline's
+  // inert literal-prose fallback, which is exactly what the build ships for those bodies; a
+  // dangling id resolves to undefined too, which the render step turns into the missing-fragment
+  // notice.
   const resolveFragment = $derived.by(() => {
     const targets = data.fragmentTargets;
     if (!targets) return undefined;

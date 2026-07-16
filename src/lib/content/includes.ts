@@ -31,3 +31,45 @@ export function extractIncludes(body: string): string[] {
   });
   return ids;
 }
+
+/**
+ * The `fragment` attribute's source run, in any form the directive grammar accepts:
+ *  double-quoted, single-quoted, or bare. The value is not matched against the target id here,
+ *  since the caller has already confirmed the parsed node's attribute IS the target; this only
+ *  has to find the run's extent within one directive's source span.
+ */
+const FRAGMENT_ATTR = /\bfragment\s*=\s*(?:"[^"]*"|'[^']*'|[^\s}]+)/;
+
+/**
+ * Rewrite every `::include{fragment="<oldId>"}` directive so its `fragment` attribute becomes
+ * `newId`, keeping the rest of the directive (any other attribute, its spacing) byte-for-byte.
+ * Rename calls this to repoint an inbound include when its target fragment moves, mirroring
+ * rewriteCairnLink for body `cairn:` links. Parsed with the same directive-aware pipeline as
+ * extractIncludes, so a token inside a code span is never a directive node and is never touched.
+ * Each matching node's source span is rewritten from last to first, replacing only the `fragment`
+ * attribute run so any other attribute stays exact.
+ *
+ * The rewrite normalizes the attribute to the double-quoted form, since matching only that form
+ * would silently no-op on a hand-typed bare or single-quoted attribute that extractIncludes
+ * accepts. A silent no-op here strands the body on the old id while the manifest row re-derives
+ * from that same body, so the rename would land a dangling include and break the next build.
+ */
+export function rewriteIncludeDirective(doc: string, oldId: string, newId: string): string {
+  const tree = unified().use(remarkParse).use(remarkGfm).use(remarkDirective).parse(doc) as Root;
+  const spans: { start: number; end: number }[] = [];
+  visit(tree, 'leafDirective', (node: LeafDirective) => {
+    if (node.name !== 'include' || node.attributes?.fragment !== oldId) return;
+    const start = node.position?.start?.offset;
+    const end = node.position?.end?.offset;
+    if (start == null || end == null) return;
+    spans.push({ start, end });
+  });
+  spans.sort((a, b) => b.start - a.start);
+  let out = doc;
+  for (const span of spans) {
+    const src = out.slice(span.start, span.end);
+    const rewritten = src.replace(FRAGMENT_ATTR, `fragment="${newId}"`);
+    out = out.slice(0, span.start) + rewritten + out.slice(span.end);
+  }
+  return out;
+}

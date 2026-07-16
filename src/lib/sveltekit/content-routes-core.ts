@@ -5,6 +5,7 @@
 import { redirect, error, fail } from '@sveltejs/kit';
 import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
+import { rewriteIncludeDirective } from '../content/includes.js';
 import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
@@ -1400,22 +1401,23 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       concept: string;
       id: string;
       hasLink: boolean;
+      hasInclude: boolean;
       fields: string[];
     }
     const repoints = new Map<string, InboundRepoint>();
     const linkerPathFor = (linkerConcept: ConceptDescriptor, linkerId: string): string =>
       `${linkerConcept.dir}/${filenameFromId(linkerId)}`;
-    // The two loops below look like a jscpd near-dupe (same lookup-and-guard shape), but their
-    // merge semantics diverge: a link sets a boolean flag, a reference unions a field-name set.
-    // Parameterizing the difference would need a callback per loop, which is not simpler than
-    // the two short loops it would replace; left as is.
+    // The three loops below look like a jscpd near-dupe (same lookup-and-guard shape), but their
+    // merge semantics diverge: a link or an include sets a boolean flag, a reference unions a
+    // field-name set. Parameterizing the difference would need a callback per loop, which is not
+    // simpler than the three short loops it would replace; left as is.
     for (const linker of inboundLinks(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
       if (!linkerConcept) continue;
       const path = linkerPathFor(linkerConcept, linker.id);
       const existing = repoints.get(path);
       if (existing) existing.hasLink = true;
-      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: true, fields: [] });
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: true, hasInclude: false, fields: [] });
     }
     for (const linker of inboundReferences(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
@@ -1423,7 +1425,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       const path = linkerPathFor(linkerConcept, linker.id);
       const existing = repoints.get(path);
       if (existing) existing.fields = [...new Set([...existing.fields, ...linker.fields])];
-      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, fields: linker.fields });
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, hasInclude: false, fields: linker.fields });
+    }
+    // A fragment id is unique across the site, so inboundIncludes only matters when the renamed
+    // entry IS a fragment; gated the same way the delete guard gates its own inboundIncludes call.
+    if (concept.id === FRAGMENTS_CONCEPT_ID) {
+      for (const includer of inboundIncludes(manifest, id)) {
+        const includerConcept = findConcept(runtime.concepts, includer.concept);
+        if (!includerConcept) continue;
+        const path = linkerPathFor(includerConcept, includer.id);
+        const existing = repoints.get(path);
+        if (existing) existing.hasInclude = true;
+        else repoints.set(path, { concept: includer.concept, id: includer.id, hasLink: false, hasInclude: true, fields: [] });
+      }
     }
     for (const [linkerPath, repoint] of repoints) {
       const linkerConcept = findConcept(runtime.concepts, repoint.concept);
@@ -1431,6 +1445,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       let linkerRaw = await backend.readFile(linkerPath, backend.defaultBranch);
       if (linkerRaw === null) continue;
       if (repoint.hasLink) linkerRaw = rewriteCairnLink(linkerRaw, oldHref, newHref);
+      if (repoint.hasInclude) linkerRaw = rewriteIncludeDirective(linkerRaw, id, newId);
       for (const field of repoint.fields) {
         linkerRaw = rewriteFrontmatterReference(linkerRaw, field, id, newId);
       }

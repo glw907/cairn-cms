@@ -1,3 +1,25 @@
+## Unreleased
+
+### Added
+
+- Fragments, a way to author one piece of markdown and reuse it across entries. A site declares
+  the reserved `fragments` concept key (which requires `routing: 'embedded'`), and an editor
+  includes a published fragment in any post or page with a `::include{fragment="<id>"}` directive,
+  inserted by the editor's own "Include a fragment" picker. Editing the fragment updates every
+  entry that includes it. The include is a block: the fragment's own markdown splices in place, so
+  its headings, links, media, and registered components render exactly as they would in a native
+  entry. A fragment has no public URL of its own, and its computed permalink 404s, so it reaches a
+  reader only through a consuming entry. Renaming a fragment rewrites every inbound include in the
+  rename's own commit. Deleting one that is still included is refused, with its consumers named,
+  and a fragment's edit screen lists the same consumers.
+  A fragment can't include another fragment, and saving one that tries is refused. A dangling
+  include shows a notice in the editor's preview and logs `include.missing`; a build fails on it,
+  the same way it fails on a dangling `cairn:` link. New guide:
+  [Reuse content across entries](docs/guides/reuse-content-across-entries.md). Additive; no
+  consumer action beyond opting in. A site that adopts it declares the concept, globs its
+  directory into `createSiteIndexes` and the manifest plugin, adds `{ screen: 'fragments' }` to a
+  declared `navLayout`, and forwards `resolveFragment` in its render wrapper.
+
 ## 0.86.2
 
 ### Changed

@@ -165,6 +165,26 @@ describe('defineRegistry icon guard', () => {
     expect(build).toThrow(/remove it/);
     expect(build).toThrow(/rename it/);
   });
+  it('rejects a component that takes the reserved "include" name', () => {
+    const build = () =>
+      defineRegistry({
+        components: [
+          {
+            name: 'include',
+            label: 'x',
+            description: 'x',
+            build: () => ({ type: 'element', tagName: 'div', properties: {}, children: [] }),
+          },
+        ],
+      });
+    // Keeps the core substring so any consumer matching it still passes.
+    expect(build).toThrow('reserved directive name handled by the engine render step');
+    // Names the colliding component so the developer can find it.
+    expect(build).toThrow('component "include"');
+    // Points at the fix: remove it (engine now covers it) or rename it.
+    expect(build).toThrow(/remove it/);
+    expect(build).toThrow(/rename it/);
+  });
   it('accepts a component that declares both defaultIconByRole and an icon attribute', () => {
     expect(() =>
       defineRegistry({

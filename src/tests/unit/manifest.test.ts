@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, deriveTagUsage } from '../../lib/content/manifest.js';
+import { manifestEntryFromFile, serializeManifest, parseManifest, emptyManifest, verifyManifest, verifyReferences, upsertEntry, removeEntry, manifestLinkResolver, inboundLinks, inboundReferences, inboundIncludes, deriveTagUsage } from '../../lib/content/manifest.js';
 import type { ManifestEntry } from '../../lib/content/manifest.js';
 import type { ConceptDescriptor } from '../../lib/content/types.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -86,6 +86,17 @@ describe('manifestEntryFromFile', () => {
     const noRefs = manifestEntryFromFile(posts, file);
     expect(noRefs.references).toBeUndefined();
     expect(serializeManifest({ version: 1, entries: [noRefs] })).not.toContain('references');
+  });
+  it('records the fragment ids an entry includes, omitting the key when none', () => {
+    const withIncludes = manifestEntryFromFile(posts, {
+      path: 'src/content/posts/2026-01-17-includer.md',
+      raw: '---\ntitle: Includer\ndate: 2026-01-17\n---\n\n::include{fragment="callout"}\n',
+    });
+    expect(withIncludes.includes).toEqual(['callout']);
+
+    const noIncludes = manifestEntryFromFile(posts, file);
+    expect(noIncludes.includes).toBeUndefined();
+    expect(serializeManifest({ version: 1, entries: [noIncludes] })).not.toContain('includes');
   });
   it('projects tags from the marked taxonomy field, coercing a lone scalar', () => {
     const taxPosts: ConceptDescriptor = {
@@ -207,6 +218,19 @@ describe('serializeManifest / parseManifest', () => {
     ] });
     expect(empty).not.toContain('tags');
   });
+  it('emits a sorted includes block only when non-empty', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['zebra', 'apple'] },
+    ] });
+    expect(out).toContain('includes');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].includes).toEqual(['apple', 'zebra']);
+
+    const empty = serializeManifest({ version: 1, entries: [
+      { id: 'b', concept: 'posts', title: 'B', permalink: '/b', draft: false, links: [], includes: [] },
+    ] });
+    expect(empty).not.toContain('includes');
+  });
   it('omits an empty summary (no churn) and round-trips a present one', () => {
     const present = parseManifest(serializeManifest({ version: 1, entries: [
       { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], summary: 'Blurb.' },
@@ -322,6 +346,28 @@ describe('parseManifest hardening', () => {
   it('rejects a tags that is not an array', () => {
     const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], tags: 'svelte' }] });
     expect(() => parseManifest(raw)).toThrow(/entry|tags/i);
+  });
+  it('leniently accepts an entry with no includes key (a manifest predating the field)', () => {
+    const old = parseManifest(JSON.stringify({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] }));
+    expect(old.entries[0].includes).toBeUndefined();
+  });
+  it('round-trips a present includes and serializes it sorted', () => {
+    const out = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout', 'address'] },
+    ] });
+    expect(out).toContain('includes');
+    const parsed = parseManifest(out);
+    expect(parsed.entries[0].includes).toEqual(['address', 'callout']);
+  });
+  it('rejects an includes element that is not a string', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: [123] }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|includes/i);
+  });
+  it('rejects an includes that is not an array', () => {
+    const raw = JSON.stringify({ version: 1, entries: [{ id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: 'callout' }] });
+    expect(() => parseManifest(raw)).toThrow(/entry|includes/i);
   });
 });
 
@@ -441,6 +487,36 @@ describe('verifyManifest', () => {
     ] });
     expect(() => verifyManifest(built, committedWithStaleTags)).toThrow(/stale/);
   });
+  it('i.1: does NOT red when the built manifest carries includes but the committed one omits them', () => {
+    // Back-compat: a site whose committed manifest predates includes must build even when its
+    // content carries include directives. The built side carries includes; the committed side has
+    // no includes key.
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout'] },
+    ] };
+    const committedNoIncludes = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoIncludes)).not.toThrow();
+  });
+  it('i.2: still reds on real other-field drift even with the includes leniency in place', () => {
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A renamed', permalink: '/a', draft: false, links: [], includes: ['callout'] },
+    ] };
+    const committedNoIncludes = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [] },
+    ] });
+    expect(() => verifyManifest(built, committedNoIncludes)).toThrow(/stale/);
+  });
+  it('i.3: reds when a regenerated committed manifest drifts in includes', () => {
+    const built = { version: 1 as const, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['callout'] },
+    ] };
+    const committedWithStaleIncludes = serializeManifest({ version: 1, entries: [
+      { id: 'a', concept: 'posts', title: 'A', permalink: '/a', draft: false, links: [], includes: ['other'] },
+    ] });
+    expect(() => verifyManifest(built, committedWithStaleIncludes)).toThrow(/stale/);
+  });
 });
 
 describe('upsertEntry / removeEntry', () => {
@@ -553,6 +629,28 @@ describe('inboundReferences', () => {
   });
   it('returns an empty list when nothing references the target', () => {
     expect(inboundReferences(manifest, 'posts', 'nobody')).toEqual([]);
+  });
+});
+
+describe('inboundIncludes', () => {
+  const manifest = {
+    version: 1 as const,
+    entries: [
+      { id: 'my-post', concept: 'posts', title: 'My Post', permalink: '/my-post', draft: false, links: [], includes: ['callout'] },
+      { id: 'about', concept: 'pages', title: 'About', permalink: '/about', draft: false, links: [], includes: ['callout', 'address'] },
+      { id: 'other', concept: 'posts', title: 'Other', permalink: '/other', draft: false, links: [] },
+    ],
+  };
+  it('returns the entries that include the target fragment', () => {
+    expect(inboundIncludes(manifest, 'callout').map((e) => e.id).sort()).toEqual(['about', 'my-post']);
+  });
+  it('carries each includer concept, id, title, and permalink', () => {
+    expect(inboundIncludes(manifest, 'address')).toEqual([
+      { concept: 'pages', id: 'about', title: 'About', permalink: '/about' },
+    ]);
+  });
+  it('returns an empty list when nothing includes the target', () => {
+    expect(inboundIncludes(manifest, 'nobody')).toEqual([]);
   });
 });
 

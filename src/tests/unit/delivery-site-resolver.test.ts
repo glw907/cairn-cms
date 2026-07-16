@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createSiteResolver, resolveReferences } from '../../lib/delivery/site-resolver.js';
+import { createSiteResolver, resolveReferences, buildFragmentResolver } from '../../lib/delivery/site-resolver.js';
 import { createContentIndex } from '../../lib/delivery/content-index.js';
 import { normalizeConcepts } from '../../lib/content/concepts.js';
 import { fieldset } from '../../lib/content/fieldset.js';
@@ -138,6 +138,32 @@ describe('createSiteResolver', () => {
     ]);
   });
 
+  // The routable gate (Fragments Task 1): a non-routable ('embedded') concept's entries stay
+  // readable in-process through site.concept(), but never surface through the public union.
+  it('excludes a non-routable concept from byPermalink and entries(), while concept() still reaches its body', () => {
+    const [fragments] = normalizeConcepts({
+      fragments: {
+        dir: 'f',
+        routing: 'embedded',
+        fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+      },
+    });
+    const s = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nPage body.' }], pages) },
+      {
+        descriptor: fragments,
+        index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments),
+      },
+    ]);
+
+    expect(s.byPermalink('/fragments/address')).toBeUndefined();
+    expect(s.entries().map((e) => e.path).sort()).toEqual(['about']);
+    expect(s.concept('fragments')?.byId('address')?.body.trim()).toBe('Fragment body.');
+    // all() feeds the site-wide sitemap, so the gate has to cover enumeration as well as
+    // resolution. A fragment listed here would advertise a permalink byPermalink refuses above.
+    expect(s.all().map((e) => e.permalink).sort()).toEqual(['/about']);
+  });
+
   it('throws on a permalink collision across concepts, naming both ids', () => {
     const [p2] = normalizeConcepts({ pages: { dir: 'g', permalink: '/dup', fields: fieldset({}) } });
     const [q2] = normalizeConcepts({
@@ -151,3 +177,38 @@ describe('createSiteResolver', () => {
     ).toThrow(/dup/);
   });
 });
+
+describe('buildFragmentResolver', () => {
+  const [fragments] = normalizeConcepts({
+    fragments: {
+      dir: 'f',
+      routing: 'embedded',
+      fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+    },
+  });
+
+  it('returns the raw markdown body for a published fragment', () => {
+    const s = createSiteResolver([
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(resolve('address')?.trim()).toBe('Fragment body.');
+  });
+
+  it('throws an id-naming message on an unknown fragment id', () => {
+    const s = createSiteResolver([
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nFragment body.' }], fragments) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(() => resolve('missing')).toThrow(/missing/);
+  });
+
+  it('throws when the site declares no fragments concept', () => {
+    const s = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([{ path: '/g/about.md', raw: '---\ntitle: About\n---\n\nAbout body.' }], pages) },
+    ]);
+    const resolve = buildFragmentResolver(s);
+    expect(() => resolve('address')).toThrow(/address/);
+  });
+});
+

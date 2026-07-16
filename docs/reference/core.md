@@ -113,6 +113,12 @@ declaration on a missing or wrong-typed one, and both normalize the declared fie
 `label` with no warning, so a plural `label` like `'Posts'` reads "New Posts" on the create
 affordances until you declare `singular: 'post'`. Declare `singular` on every concept.
 
+The concept key `fragments` reserves reusable content: declare it to include one entry's body
+inside another with [the `::include` directive](./authoring-syntax.md#include-a-fragment). It
+must use `routing: 'embedded'`, and `normalizeConcepts` throws otherwise. The include directive
+resolves against a non-routable concept, and an embedded entry publishing its own live page would
+make the same content reachable two ways.
+
 <!-- snippet-check-skip: illustrates one concept's url-policy fields inside the adapter's content object opened above -->
 ```ts
 posts: defineConcept({
@@ -468,7 +474,7 @@ declare function createRenderer(
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
-  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve }) => Promise<string>;
+  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>;
 };
 ```
 
@@ -529,6 +535,7 @@ type SiteRender = (input: {
   frontmatter?: Record<string, unknown>;
   resolve?: LinkResolve;
   resolveMedia?: MediaResolve;
+  resolveFragment?: FragmentResolve;
 }) => Promise<string>;
 ```
 
@@ -536,9 +543,11 @@ The type of the adapter's `rendering.render` member: the one renderer the editor
 public page call. It takes a single object and returns a `Promise<string>`. `body` is the markdown
 to render. `resolve` rewrites `cairn:` links to live permalinks; the build passes a
 site-resolver-backed resolver and the preview passes a manifest-backed one. `resolveMedia` resolves
-`media:` references the same way. `concept` and `frontmatter` carry the entry's context, so a custom
-renderer can vary its output per concept or per frontmatter field. Both are optional: an entry render
-supplies them, and the standalone component-insert preview omits them.
+`media:` references the same way. `resolveFragment` resolves an `::include` directive's fragment id
+to its raw markdown body, the same way; a custom renderer need not read it unless it wants to vary
+fragment resolution. `concept` and `frontmatter` carry the entry's context, so a custom renderer can
+vary its output per concept or per frontmatter field. Both are optional: an entry render supplies
+them, and the standalone component-insert preview omits them.
 
 #### `rendering.islands` (adapter member)
 
@@ -706,6 +715,13 @@ markdown into the query surfaces lives at [`/delivery`](./delivery.md). The writ
 the manifest is the engine's own save path, so only its serialize and verify operations stay public,
 for a build script or a custom regenerate tool to call.
 
+Each manifest entry also records which fragment ids its body includes, an inclusion edge alongside
+the outbound link and reference edges the same entry already carries. The delete guard reads it to
+refuse deleting a fragment a published entry still includes, the same way it refuses deleting a
+linked entry. This edge carries no build-time integrity check of its own: the fragment resolver
+throws on a dangling `::include` when the build renders the entry, which is the same backstop a
+dangling `cairn:` link relies on.
+
 #### Manifest serialize and verify
 
 Stability tier: Extension API.
@@ -865,12 +881,13 @@ function signatures above reference these.
 | `StandardSchemaV1` | Extension API | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
 | `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
 | `LinkResolve` | Extension API | `type LinkResolve` | Resolve a `CairnRef` to its live permalink, or undefined when missing. |
+| `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `Manifest` | Extension API | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
 | `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
-| `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia? }): Promise<string>` the editor preview and every public page call. |
+| `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
 | `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |

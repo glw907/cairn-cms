@@ -33,6 +33,8 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `media.orphan_reconcile` | info | The reconcile read finishes, comparing stored R2 keys against the manifest hashes. | `orphaned`, `missing` |
 | `media.resolve_missing` | warn | A `media:` reference resolves against the manifest and finds no entry for its hash. | `hash` |
 | `media.resolver_absent` | warn | A public route factory is built with media configured on but no `resolveMedia` wired, so public images would render as bare `media:` tokens. Fires once at construction. | `enabled` (always `true`) |
+| `include.missing` | warn | An `::include` directive's fragment id has no resolved body: a missing or empty `fragment` attribute, or a resolver miss. The directive renders as a calm notice instead of the fragment's content. | `fragment` |
+| `include.read_failed` | warn | The editor's load could not read one published fragment's body, so that fragment drops out of the picker and the preview reports it missing. Distinguishes a transport failure from a fragment that is genuinely absent: pair it with an `include.missing` naming the same id. | `fragment`, `error` |
 | `media.deleted` | info | An asset's bytes and manifest row are removed. | `editor`, `hash` |
 | `media.delete_blocked` | warn | A delete is refused because the asset is still referenced. | `editor`, `hash`, `foundIn` (the count of referencing entries) |
 | `media.replaced` | info | A replace-in-place rewrites every referencing entry to the new asset and adds its manifest row. | `editor`, `oldHash`, `newHash`, `affected` (the count of rewritten entries) |

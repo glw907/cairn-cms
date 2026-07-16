@@ -1,10 +1,11 @@
 # Content authoring syntax
 
-cairn content is plain markdown, with two token schemes an author types that the engine resolves at
-render and delivery: `cairn:` internal links and `media:` asset references. Both are engine-internal
-codecs rather than public exports, so neither has an export-keyed reference page. This page is their
-author-facing home. The editor inserts both for you (the link picker writes a `cairn:` href, the image
-flow writes a `media:` src), and you can hand-type either in the markdown source.
+cairn content is plain markdown, with three things an author types that the engine resolves at
+render and delivery: `cairn:` internal links, `media:` asset references, and the `::include` fragment
+directive. All three are engine-internal, rather than public exports, so none has an export-keyed
+reference page. This page is their author-facing home. The editor inserts each for you (the link
+picker writes a `cairn:` href, the image flow writes a `media:` src, the fragment picker writes an
+`::include` directive), and you can hand-type any of them in the markdown source.
 
 ## `cairn:` internal links
 
@@ -40,9 +41,38 @@ unresolved token degrades to no image rather than shipping the raw `media:` stri
 `parseMediaToken` and `mediaToken` on the `/media` subpath, documented under
 [the `media:` reference codec](./media.md#the-media-reference-codec).
 
+## Include a fragment
+
+You can splice a published Fragments entry into another entry's body:
+
+```markdown
+::include{fragment="address"}
+```
+
+`::include` is a leaf directive: written with a double colon and no closing pair, it stands on its
+own line and never wraps other content, so a fragment supplies whole blocks, never a phrase inside a
+sentence. The `fragment` attribute names the included entry's id. The directive grammar accepts it
+double-quoted, single-quoted, or bare (`fragment=address`). The "Include a fragment" picker always
+writes the double-quoted form, and all three forms are equally valid to hand-type.
+
+At render, the engine replaces the directive with the fragment's own parsed content, so a component, a
+`cairn:` link, or a `media:` reference inside the fragment's body resolves exactly as it would in the
+including entry. Resolution runs one level deep: the engine renders an `::include` inside a fragment's
+own body as literal text rather than resolving it, so a fragment can't nest another fragment.
+
+An id the resolver can't find, or a missing or empty `fragment` attribute, replaces the directive with
+a calm notice reading "Missing fragment: `<id>`" rather than failing the render. The production build
+resolves fragments against the published content and throws on a miss, so a dangling include fails
+the build the same way a dangling `cairn:` link does. Only a preview shows the notice.
+
+`include` is a reserved directive name, alongside `figure`. The engine's own render step owns it, and
+declaring a site component under either name throws at construction.
+
 ## See also
 
 - [Add an image](../guides/add-an-image.md) for the author's view of inserting media in the editor.
+- [Reuse content across entries](../guides/reuse-content-across-entries.md) for declaring a Fragments
+  concept and authoring one.
 - [The content model](../explanation/content-model.md) for how an id becomes a permalink.
 - [Media storage](../explanation/media-storage.md) for the content-addressed storage behind a `media:`
   reference.

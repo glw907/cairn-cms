@@ -469,7 +469,7 @@ the loaded entries in component state.
         <input class="input w-full" name="title" bind:value={title} required />
       </label>
       <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">Address</span>
+        <span class="text-sm font-medium">{data.routable ? 'Address' : 'Name'}</span>
         <input
           class="input w-full"
           name="slug"

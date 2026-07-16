@@ -36,6 +36,8 @@ later, or the upkeep of a running site.
   screen your site built
 - **[Link content with references](./link-content-with-references.md)**: connect one concept's
   entries to another's with a typed reference field
+- **[Reuse content across entries](./reuse-content-across-entries.md)**: declare the Fragments
+  concept and include one piece of markdown in as many posts and pages as you like
 - **[Declare structured fields](./structured-fields.md)**: the rest of the field vocabulary,
   every type, its editor widget, and what validation checks on save
 - **[Add authors to your site](./add-authors.md)**: declare your own concept and connect it to

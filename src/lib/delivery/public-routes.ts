@@ -10,7 +10,7 @@ import type { SiteResolver } from './site-resolver.js';
 import { buildSeoMeta } from './seo.js';
 import type { SeoMeta } from './seo.js';
 import { readSeoFields, resolveImageUrl } from './seo-fields.js';
-import { buildLinkResolver } from './site-resolver.js';
+import { buildLinkResolver, buildFragmentResolver } from './site-resolver.js';
 import type { SiteRender } from '../content/types.js';
 import type { MediaResolve } from '../render/resolve-media.js';
 import { parseMediaToken } from '../media/reference.js';
@@ -150,6 +150,7 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
         concept: entry.concept,
         frontmatter: entry.frontmatter,
         resolve: buildLinkResolver(site),
+        resolveFragment: buildFragmentResolver(site),
       }),
       canonicalUrl,
       seo,

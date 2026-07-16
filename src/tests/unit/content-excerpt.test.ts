@@ -10,6 +10,17 @@ describe('deriveExcerpt', () => {
     expect(deriveExcerpt('## Title\n\nA [link](/x) and `code`.')).toBe('Title A link and code.');
   });
 
+  // An entry with no frontmatter description ships its excerpt as the meta description, so a
+  // directive marker reaching the excerpt would put raw markup in the page's head. A leaf
+  // directive carries no prose of its own; a container's prose is between its fences and stays.
+  it('drops an include directive rather than carrying its markup into the excerpt', () => {
+    expect(deriveExcerpt('Before.\n\n::include{fragment="notice"}\n\nAfter.')).toBe('Before. After.');
+  });
+
+  it('keeps a container directive\'s own prose while dropping its fences', () => {
+    expect(deriveExcerpt(':::callout\n\nInner prose.\n\n:::')).toBe('Inner prose.');
+  });
+
   it('cuts a long body at a word boundary with an ellipsis, never mid-word', () => {
     const body = 'one two three four five';
     expect(deriveExcerpt(body, { maxChars: 12 })).toBe('one two…');

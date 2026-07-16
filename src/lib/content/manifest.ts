@@ -9,6 +9,7 @@ import { entryIdentity, asString } from './identity.js';
 import { extractCairnLinks, type CairnRef, type LinkResolve } from './links.js';
 import { extractMediaRefs } from './media-refs.js';
 import { extractReferenceEdges, type ReferenceEdge } from './references.js';
+import { extractIncludes } from './includes.js';
 import { resolveTaxonomyField, coerceTags } from './taxonomy.js';
 import type { ConceptDescriptor } from './types.js';
 
@@ -41,6 +42,13 @@ export interface ManifestEntry {
    *  key, and a manifest committed before this field still parses (absent reads as no tags).
    */
   tags?: string[];
+  /**
+   * The fragment ids this entry's body includes via `::include{fragment="<id>"}`, the main side of
+   *  the fragments where-used index `inboundIncludes` reads. Additive and optional: an entry with no
+   *  include directives omits the key, and a manifest committed before this field still parses
+   *  (absent reads as no includes).
+   */
+  includes?: string[];
 }
 
 /** The whole corpus as one committed file. `version` guards a future shape migration. */
@@ -77,6 +85,9 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
   // projects ['svelte']. A concept with no taxonomy field carries no tags key.
   const taxField = resolveTaxonomyField(descriptor.fields);
   const tags = taxField ? coerceTags(frontmatter[taxField]) : [];
+  // Set includes only when non-empty, mirroring mediaRefs/references/tags, so a body with no
+  // ::include directive stays byte-identical to a manifest committed before this field.
+  const includes = extractIncludes(body);
   return {
     id,
     concept: descriptor.id,
@@ -91,6 +102,7 @@ export function manifestEntryFromFile(descriptor: ConceptDescriptor, file: { pat
     ...(mediaRefs.length ? { mediaRefs } : {}),
     ...(references.length ? { references } : {}),
     ...(tags.length ? { tags } : {}),
+    ...(includes.length ? { includes } : {}),
   };
 }
 
@@ -126,6 +138,7 @@ export function serializeManifest(manifest: Manifest): string {
       ? { references: [...e.references].sort(compareEdge).map((r) => ({ field: r.field, concept: r.concept, id: r.id })) }
       : {}),
     ...(e.tags && e.tags.length ? { tags: [...e.tags].sort() } : {}),
+    ...(e.includes && e.includes.length ? { includes: [...e.includes].sort() } : {}),
   }));
   return `${JSON.stringify({ version: 1, entries }, null, 2)}\n`;
 }
@@ -162,6 +175,7 @@ export function parseManifest(raw: string): Manifest {
       (e.mediaRefs === undefined || Array.isArray(e.mediaRefs)) &&
       (e.references === undefined || Array.isArray(e.references)) &&
       (e.tags === undefined || Array.isArray(e.tags)) &&
+      (e.includes === undefined || Array.isArray(e.includes)) &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`cairn: content manifest entry ${JSON.stringify(e)} is malformed`);
@@ -195,6 +209,16 @@ export function parseManifest(raw: string): Manifest {
       for (const tag of e.tags as unknown[]) {
         if (typeof tag !== 'string') {
           throw new Error(`cairn: content manifest tags element ${JSON.stringify(tag)} in entry ${JSON.stringify(e)} is malformed`);
+        }
+      }
+    }
+    // includes is additive and optional: an entry without it parses (the field reads as absent), so
+    // a manifest committed before this field still builds. When present, validate each element is a
+    // string, mirroring the tags-element validation, so a hand-edited file fails loudly.
+    if (e.includes !== undefined) {
+      for (const id of e.includes as unknown[]) {
+        if (typeof id !== 'string') {
+          throw new Error(`cairn: content manifest includes element ${JSON.stringify(id)} in entry ${JSON.stringify(e)} is malformed`);
         }
       }
     }
@@ -304,6 +328,14 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
         const { tags: _dropped, ...rest } = entry;
         entry = rest;
       }
+      // includes is additive: a site whose committed manifest predates the field must still build,
+      // even when its content carries include directives. Drop the built entry's includes only when
+      // the committed counterpart omits the key, so an un-regenerated site matches while a
+      // regenerated one (committed carries includes) still detects real drift in that field.
+      if (entry.includes && c && c.includes === undefined) {
+        const { includes: _dropped, ...rest } = entry;
+        entry = rest;
+      }
       return entry;
     }),
   };
@@ -375,6 +407,19 @@ export function inboundLinks(manifest: Manifest, concept: string, id: string): I
   return manifest.entries
     .filter((e) => !(e.concept === concept && e.id === id))
     .filter((e) => e.links.some((l) => l.concept === concept && l.id === id))
+    .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
+}
+
+/**
+ * Every entry whose body includes the fragment. A fragment id is unique within the fragments
+ *  concept (the only concept an `::include` directive can ever target), so unlike `inboundLinks`
+ *  the query takes no concept argument. The delete guard reads this to refuse deleting a fragment
+ *  still in use; the fragment's own edit screen reads it for usage visibility. Pure over the
+ *  manifest, so the request-time delete path and a unit test call it the same way.
+ */
+export function inboundIncludes(manifest: Manifest, id: string): InboundLink[] {
+  return manifest.entries
+    .filter((e) => e.includes?.includes(id))
     .map((e) => ({ concept: e.concept, id: e.id, title: e.title, permalink: e.permalink }));
 }
 

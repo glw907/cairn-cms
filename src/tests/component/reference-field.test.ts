@@ -35,6 +35,8 @@ function props(frontmatter: Record<string, unknown>) {
       error: null,
       slug: 'hello',
       linkTargets,
+      fragmentTargets: null,
+      routable: true,
       mediaTargets: {},
       mediaLibrary: {},
       inboundLinks: [],

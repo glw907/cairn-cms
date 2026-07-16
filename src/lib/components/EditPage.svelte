@@ -27,6 +27,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import LinkIcon from '@lucide/svelte/icons/link';
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import PanelRightIcon from '@lucide/svelte/icons/panel-right';
+  import PuzzleIcon from '@lucide/svelte/icons/puzzle';
   import ImageIcon from '@lucide/svelte/icons/image';
   import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
@@ -36,6 +37,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
+  import FragmentPicker from './FragmentPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
   import FieldInput from './FieldInput.svelte';
@@ -69,6 +71,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { SiteRender } from '../content/types.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
+  import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
   import { CSRF_CONTEXT_KEY } from './csrf-context.js';
@@ -743,6 +746,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // breaks SSR and hydration); the toolbar snippet renders plain triggers that open them here.
   let webLinkDialog = $state<DialogHandle | null>(null);
   let linkPicker = $state<DialogHandle | null>(null);
+  let fragmentPicker = $state<DialogHandle | null>(null);
   // The insert dialog binds the full instance, not the bare DialogHandle: the Edit-block control
   // drives editComponent(def, values, range) on it, beyond the shared open().
   let insertDialog = $state<ComponentInsertDialog | null>(null);
@@ -757,6 +761,12 @@ persistent "?" carries Markdown help, design-arc D2).
   // Whether the registry offers anything insertable, the same condition the insert dialog lists
   // by, so the toolbar trigger and the dialog appear and disappear together.
   const hasComponents = $derived(insertableDefs(registry).length > 0);
+
+  // The fragment picker's toolbar trigger appears only when the site declares a fragments concept
+  // (fragmentTargets is not null) and this entry is not itself a fragment. A fragment cannot
+  // include another fragment, which the save action already refuses; hiding the affordance mirrors
+  // that rule rather than offering a control the save would bounce.
+  const fragmentPickerAvailable = $derived(data.fragmentTargets !== null && data.conceptId !== FRAGMENTS_CONCEPT_ID);
 
   // The directive container at the editor caret, reported by MarkdownEditor whenever it changes
   // (null outside any container). The Edit-block control resolves it against the registry and the
@@ -1096,6 +1106,10 @@ persistent "?" carries Markdown help, design-arc D2).
   // The delete guard's inbound linkers, from a refused delete (fail 409). Empty when the delete was
   // not refused. When set, a delete was blocked by a link that appeared since the page loaded.
   const deleteRefusedLinks = $derived(form?.inboundLinks ?? []);
+  // Which gate refused, read straight from the refusal. Deriving this from the concept would
+  // misreport a fragment the links gate blocked (that gate runs first, and a fragment can itself be
+  // a link target), naming an include the author would search for and never find.
+  const deleteRefusedByInclusion = $derived(form?.inboundKind === 'include');
 
   // The shared failure summary, rendered only when no richer banner claims the failure: the save
   // and delete guards get their own banners from brokenLinks and inboundLinks below, so this
@@ -1174,7 +1188,10 @@ persistent "?" carries Markdown help, design-arc D2).
     if (formError) return formError;
     if (deleteRefusedLinks.length) {
       const count = deleteRefusedLinks.length;
-      return `This ${data.label.toLowerCase()} could not be deleted. ${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+      const detail = deleteRefusedByInclusion
+        ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
+        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+      return `This ${data.label.toLowerCase()} could not be deleted. ${detail}`;
     }
     if (visibleBrokenLinks.length) {
       const count = visibleBrokenLinks.length;
@@ -1236,6 +1253,18 @@ persistent "?" carries Markdown help, design-arc D2).
     ),
   });
   const resolveMedia = $derived(manifestMediaResolver(resolveMediaTargets));
+
+  // The fragment analog: it turns an ::include directive's fragment id into its raw markdown body
+  // in the preview, so an included fragment's content renders in place, the way a native entry's
+  // markdown does. Undefined (no fragments concept declared) leaves every include directive
+  // unresolved, the pipeline's inert literal-prose fallback; a dangling id resolves to undefined
+  // too, which the render step turns into the missing-fragment notice.
+  const resolveFragment = $derived.by(() => {
+    const targets = data.fragmentTargets;
+    if (!targets) return undefined;
+    const byId = new Map(targets.map((t) => [t.id, t.body]));
+    return (id: string) => byId.get(id);
+  });
 
   // The picker's library, the committed projection merged with this session's uploaded records,
   // keyed by content hash. An uploaded record overrides a committed entry on a hash match (the same
@@ -1316,10 +1345,18 @@ persistent "?" carries Markdown help, design-arc D2).
     const md = body;
     const resolve = resolveLink; // tracked read in the effect body
     const resolveMediaRef = resolveMedia; // tracked read in the effect body
+    const resolveFragmentRef = resolveFragment; // tracked read in the effect body
     const run = previewArbiter.next();
     const handle = setTimeout(async () => {
       try {
-        const html = await render({ body: md, concept: data.conceptId, frontmatter: data.frontmatter, resolve, resolveMedia: resolveMediaRef });
+        const html = await render({
+          body: md,
+          concept: data.conceptId,
+          frontmatter: data.frontmatter,
+          resolve,
+          resolveMedia: resolveMediaRef,
+          resolveFragment: resolveFragmentRef,
+        });
         if (previewArbiter.accept(run)) {
           previewHtml = html;
           previewFailed = false;
@@ -1613,7 +1650,11 @@ persistent "?" carries Markdown help, design-arc D2).
 {#if deleteRefusedLinks.length}
   <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
-    <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {#if deleteRefusedByInclusion}
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
+    {:else}
+      <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefusedLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefusedLinks as link (link.concept + '/' + link.id)}
         <li>
@@ -1841,6 +1882,19 @@ persistent "?" carries Markdown help, design-arc D2).
           >
             <FileSymlinkIcon class="h-4 w-4" aria-hidden="true" />
           </button>
+          {#if fragmentPickerAvailable}
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square"
+              aria-haspopup="dialog"
+              aria-label="Include a fragment"
+              title="Include a fragment"
+              disabled={insertDisabled}
+              onclick={() => fragmentPicker?.open()}
+            >
+              <PuzzleIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
+          {/if}
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
@@ -2188,16 +2242,16 @@ persistent "?" carries Markdown help, design-arc D2).
       </fieldset>
       {/if}
       <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
-      <legend class={eyebrowClass}>Address</legend>
+      <legend class={eyebrowClass}>{data.routable ? 'Address' : 'Name'}</legend>
         <div class="flex items-center justify-between gap-2">
-          <code class="min-w-0 break-all text-xs text-muted">/{data.slug}</code>
+          <code class="min-w-0 break-all text-xs text-muted">{data.routable ? `/${data.slug}` : data.slug}</code>
           <button
             type="button"
             class="btn btn-ghost btn-sm shrink-0"
             aria-haspopup="dialog"
             onclick={() => renameDialog?.open()}
           >
-            Change URL
+            {data.routable ? 'Change URL' : 'Rename'}
           </button>
         </div>
       </fieldset>
@@ -2288,6 +2342,12 @@ persistent "?" carries Markdown help, design-arc D2).
 />
 <WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
 <LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
+<FragmentPicker
+  bind:this={fragmentPicker}
+  trigger={false}
+  fragmentTargets={fragmentPickerAvailable ? data.fragmentTargets : null}
+  {insert}
+/>
 
 <!-- The media insert popover, mounted headless: the toolbar control, a paste, or a drop drives it
      through its exported open(). On a successful upload it hands the server-owned record up; the
@@ -2349,6 +2409,7 @@ persistent "?" carries Markdown help, design-arc D2).
   id={data.id}
   label={data.label}
   slug={data.slug}
+  routable={data.routable}
   onsubmitting={() => (leaving = true)}
 />
 <MarkdownHelpDialog bind:this={helpDialog} />
@@ -2433,6 +2494,7 @@ persistent "?" carries Markdown help, design-arc D2).
   id={data.id}
   label={data.label}
   inboundLinks={data.inboundLinks}
+  inboundKind={data.conceptId === FRAGMENTS_CONCEPT_ID ? 'include' : 'link'}
   pending={data.pending}
   onsubmitting={() => (leaving = true)}
 />

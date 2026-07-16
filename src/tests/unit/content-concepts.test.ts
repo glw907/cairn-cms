@@ -75,6 +75,27 @@ describe('normalizeConcepts', () => {
     expect(descriptors.find((c) => c.id === 'posts')?.routing.dated).toBe(true);
   });
 
+  // The fragments key is reserved: its body is resolved in-process by the include directive
+  // (Task 3), never served as a public page, so any routing shorthand other than 'embedded'
+  // (including the 'page' default) is a construction-time mistake, not a valid site.
+  it.each([
+    ['feed', { routing: 'feed' as const }],
+    ['page', { routing: 'page' as const }],
+    ['omitted', {}],
+  ])('throws when the fragments key declares routing %s instead of embedded', (_label, extra) => {
+    expect(() =>
+      normalizeConcepts({
+        fragments: {
+          dir: 'src/content/fragments',
+          fields: fieldset({ title: fields.text({ label: 'Title' }) }),
+          ...extra,
+        },
+      }),
+    ).toThrow(
+      'cairn: concept "fragments" requires routing: \'embedded\' (the include directive resolves against it)',
+    );
+  });
+
   // Surface-pruning Task 5: RoutingRule left ConceptConfig's public surface, so an object-form
   // routing value is a compile-time error even though the same shape still normalizes internally
   // (ConceptDescriptor.routing stays a RoutingRule).

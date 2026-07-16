@@ -20,6 +20,14 @@ const ROUTING_SHORTHANDS: Readonly<Record<'feed' | 'page' | 'embedded', RoutingR
 };
 
 /**
+ * The reserved concept key for the site-declared Fragments concept (engine-internal; not a
+ *  package export). The include directive (later tasks) resolves a fragment body through
+ *  `site.concept(FRAGMENTS_CONCEPT_ID)`, which requires the concept's entries to stay
+ *  non-routable, so `normalizeConcepts` enforces `routing: 'embedded'` on this key alone.
+ */
+export const FRAGMENTS_CONCEPT_ID = 'fragments';
+
+/**
  * Expand a concept's routing shorthand to a concrete rule. The single resolution point, reached
  *  from both `defineConcept` (declaration time) and `normalizeConcepts` (compose time): omitted is
  *  `page`. Throws on a defined-but-unrecognized value, so a typo'd shorthand (from an untyped
@@ -158,6 +166,11 @@ export function normalizeConcepts(
           `cairn: concept "${id}" reference field "${name}" names concept "${targetConcept}", which is not declared under content`,
         );
       }
+    }
+    if (id === FRAGMENTS_CONCEPT_ID && config.routing !== 'embedded') {
+      throw new Error(
+        `cairn: concept "${FRAGMENTS_CONCEPT_ID}" requires routing: 'embedded' (the include directive resolves against it)`,
+      );
     }
     const conceptRouting = resolveRouting(config.routing, id);
     const policy: ConceptUrlPolicy = {

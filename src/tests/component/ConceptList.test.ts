@@ -18,7 +18,7 @@ function data(over = {}) {
     status: 'published' as const,
     summary: null,
   }));
-  const base = { conceptId: 'posts', label: 'Posts', dated: true, entries, error: null, formError: null, publishedAll: null };
+  const base = { conceptId: 'posts', label: 'Posts', dated: true, routable: true, entries, error: null, formError: null, publishedAll: null };
   const merged = { ...base, ...over };
   // The descriptor defaults `singular` to the label; mirror that here so an override of `label`
   // alone (e.g. Pages) carries through to the create affordances, unless a test sets `singular`.
@@ -186,6 +186,19 @@ describe('ConceptList', () => {
     const screen = render(ConceptList, { data: data({ entries: [] }) });
     await screen.getByRole('button', { name: /new posts/i }).first().click();
     await expect.element(screen.getByLabelText('Address')).toHaveAttribute('placeholder', 'my-entry');
+  });
+
+  // A non-routable concept has no address to give, so the create form asks for a name, matching
+  // the edit screen's own Address-versus-Name treatment. Asking for an "Address" here would
+  // promise the fragment a URL that the routable gate then 404s.
+  it('asks for a name, not an address, when creating a non-routable entry', async () => {
+    const screen = render(
+      ConceptList,
+      { data: data({ conceptId: 'fragments', label: 'Fragments', singular: 'fragment', dated: false, routable: false, entries: [] }) },
+    );
+    await screen.getByRole('button', { name: /new fragment/i }).first().click();
+    await expect.element(screen.getByLabelText('Name')).toBeInTheDocument();
+    expect(screen.container.querySelector('dialog')!.textContent ?? '').not.toMatch(/address/i);
   });
 
   it('offers a delete action per row', async () => {

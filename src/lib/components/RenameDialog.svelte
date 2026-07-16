@@ -2,8 +2,9 @@
 @component
 The Change URL control and its modal. The author edits the URL slug; on submit the ?/rename action
 moves the entry and rewrites every inbound cairn link in one commit, so no internal link breaks. A
-dated post keeps its date; only the slug changes. Built on a native <dialog>, following the
-DeleteDialog a11y conventions.
+dated post keeps its date; only the slug changes. A non-routable concept (routable={false}) renames
+a name rather than a URL, and its inbound edges are includes rather than links. Built on a native
+<dialog>, following the DeleteDialog a11y conventions.
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
@@ -17,6 +18,12 @@ DeleteDialog a11y conventions.
     label: string;
     /** The current slug, prefilled into the input. */
     slug: string;
+    /**
+     * Whether the entry has a public URL. True (the default) keeps today's URL copy on every
+     *  existing call site. False selects the name copy: a non-routable entry has no address to
+     *  change, and what repoints on rename is the includes that consume it, not links.
+     */
+    routable?: boolean;
     /** Render the built-in Change URL trigger. False mounts only the dialog, for a host that
      *  supplies its own trigger and opens the dialog through the exported open(). */
     trigger?: boolean;
@@ -25,7 +32,7 @@ DeleteDialog a11y conventions.
     onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, slug, trigger = true, onsubmitting }: Props = $props();
+  let { conceptId, id, label, slug, routable = true, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   let slugInput = $state<HTMLInputElement | null>(null);
@@ -51,13 +58,17 @@ DeleteDialog a11y conventions.
 </script>
 
 {#if trigger}
-  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>Change URL</button>
+  <button type="button" class="btn btn-sm btn-ghost" aria-haspopup="dialog" onclick={open}>
+    {routable ? 'Change URL' : 'Rename'}
+  </button>
 {/if}
 
 <dialog class="modal" aria-labelledby="cairn-rename-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-rename-dialog-title" class="text-base font-semibold">Change this {label.toLowerCase()} URL</h2>
+      <h2 id="cairn-rename-dialog-title" class="text-base font-semibold">
+        {routable ? `Change this ${label.toLowerCase()} URL` : `Rename this ${label.toLowerCase()}`}
+      </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <form method="POST" action="?/rename" class="flex flex-col gap-3" onsubmit={() => onsubmitting?.()}>
@@ -65,16 +76,21 @@ DeleteDialog a11y conventions.
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
       <label class="flex flex-col gap-1">
-        <span class="text-sm font-medium">Address</span>
+        <span class="text-sm font-medium">{routable ? 'Address' : 'Name'}</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
       <p class="text-xs text-muted">
-        Links from other pages update automatically, so nothing breaks. The new address will be
-        <code class="text-xs">{nextSlug}</code>.
+        {#if routable}
+          Links from other pages update automatically, so nothing breaks. The new address will be
+          <code class="text-xs">{nextSlug}</code>.
+        {:else}
+          Entries that include this {label.toLowerCase()} update automatically, so nothing breaks. The
+          new name will be <code class="text-xs">{nextSlug}</code>.
+        {/if}
       </p>
       <div class="flex justify-end gap-2">
         <button type="button" class="btn btn-sm" onclick={close}>Cancel</button>
-        <button type="submit" class="btn btn-sm btn-primary">Change URL</button>
+        <button type="submit" class="btn btn-sm btn-primary">{routable ? 'Change URL' : 'Rename'}</button>
       </div>
     </form>
   </div>

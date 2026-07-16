@@ -2,7 +2,7 @@
 // projections a SvelteKit site or a plain-Node tool reads, with no @sveltejs/kit and no .svelte in
 // the graph. The full ./delivery barrel re-exports this and adds the route loaders.
 export type { ContentSummary, ContentEntry, ContentIndex, ContentProblem } from './content-index.js';
-export { buildLinkResolver, resolveReferences } from './site-resolver.js';
+export { buildLinkResolver, buildFragmentResolver, resolveReferences } from './site-resolver.js';
 export type { SiteResolver, ResolvedReference } from './site-resolver.js';
 export { createSiteIndexes } from './site-indexes.js';
 export type { SiteIndexes, SiteGlobs } from './site-indexes.js';

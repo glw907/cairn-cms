@@ -483,3 +483,97 @@ decision belongs to the release moment, via `cairn-release`).
 - ASC's own `navLayout` edit and content consolidation (ASC session, after a release).
 - Any `libraryFields` work (it does not exist in code; the ROADMAP mention was a forward
   reference).
+
+## Post-mortem (2026-07-16)
+
+Shipped, all on `fragments`, ten tasks in ten commits: the routable gate (8204d0de), the
+`::include` resolver and resolution seam (771c7fe6), the build-time resolver and public
+wiring (34c71d37), the manifest `includes` edge with `inboundIncludes` and the delete guard
+(a6b04389), the rename repoint (6c8fff88), the edit-load bodies, preview resolver, and the
+non-routable treatments (4270afc2), the picker (1d88283b), the showcase exemplar and its
+e2e (c10f8435), the docs window (8ac56692), and the review fixes (10619010).
+
+This pass resumed a crashed session. Tasks 1 through 3 were committed; Task 4 was half
+applied in the worktree and already green. Nothing was corrupted, and no executor was live.
+The recovery cost one diagnostic pass and finished Task 4 as its own boundary.
+
+### The plan was wrong seven times, and the code caught every one
+
+The plan was ratified before any of it met the code, and its every wrong claim surfaced the
+same way: an implementer or a reviewer checked it against the source rather than trusting
+the prose. Its line numbers went stale as soon as Task 4 landed. It claimed `saveAction`
+writes the manifest, which only `publishAction` does. It prescribed deriving the delete
+refusal's copy from the entry's concept, which produces the wrong copy whenever the
+links gate refuses a fragment first. It scoped the non-routable copy change to the Address
+fieldset, leaving the rename dialog offering to "Change this fragment URL." It called
+`FragmentTarget` an exported interface, which it is not. Its Task 4 round-trip assertion
+described a file the action never writes. Reading the plan as a draft, and the code as the
+authority, was the single highest-leverage instruction carried into each dispatch; it went
+into every one after the second miss and paid every time.
+
+### The pass-end reviewers earned their seat
+
+Three defects reached the review gate with a green suite, and all three shipped wrong bytes
+to a public surface. The routable gate covered `byPermalink` and `entries()` but not
+`all()`, so the showcase's prerendered `sitemap.xml` advertised the exact URL the pass's own
+e2e asserts is a 404, and the documented consumer sitemap pattern would have done the same
+on both production sites. `toPlainText` had no directive rule, so an `::include` in body
+prose reached the derived excerpt, and the committed manifest carried the proof: the about
+page's summary ended in raw directive markup, bound for its `<meta name="description">`.
+`EntryPicker` hardcoded one dialog title id, and mounting the link picker beside the new
+fragment picker made a screen reader announce the fragment dialog as "Link to a page."
+
+Two of the three were found independently by two reviewers each, and the third was a latent
+bug this pass promoted from conditional to unconditional. All three were invisible to 3,561
+passing tests, because each sat exactly where no assertion looked: the gate's test asserted
+resolution but never enumeration; no test read a summary for markup; the picker's test
+rendered one dialog in isolation, where a duplicate id cannot collide. Two e2e selectors
+even keyed on the constant id, and one documented the collision as a workaround. The lesson
+is narrow and repeatable: a test that asserts the mechanism it was written beside will not
+notice the surface it never renders.
+
+### The bug class that ran through the whole pass
+
+Six of the defects fixed here are one shape: an assumption about surface form that raw
+markdown does not guarantee, or copy keyed on the wrong fact. `rewriteIncludeDirective`
+matched only the double-quoted attribute the picker emits, so a hand-typed
+`fragment=welcome` would have silently survived a rename and stranded the body on the old
+id. The delete copy keyed on concept rather than on the gate that refused. The rename
+dialog, and then the create form, and then the create and rename bounces, each promised an
+address to an entry that has none. cairn's editor is raw markdown and its concepts are
+declared, so the picker's output is never the only input, and the concept is never the only
+fact. Each fix was small; noticing the shape was the work.
+
+### Deliberately not done
+
+Draft semantics on a non-routable concept: two reviewers flagged that nothing filters a
+draft fragment, and no production case has asked for it, so the false invariant in the
+picker's comment was corrected and the question filed with its trigger rather than inventing
+the meaning. The `editLoad` N-read fan-out stands as designed (it is what lets the live
+preview resolve an inserted include with no round trip), cheapened only where it was pure
+waste, on a fragment's own edit screen, and filed with the manifest-body fix as its answer.
+The serial rename repoint loop stands; fragments make a wide fan-out ordinary rather than
+pathological, but no case has hit it.
+
+### Verified
+
+Full gate per task (`check` 0/0, `npm test` exit 0, `check:comments`, `check:prose`), the
+six doc gates, Vale 0 errors on every published page touched, the showcase build clean, and
+104 e2e green against the rebuilt showcase. code-simplifier ran over Tasks 4, 6, and 7; its
+one flagged concern (the concept-derived refusal copy) was a real bug and was fixed. The
+main loop render-read the fragments list, a fragment's edit screen (confirming the picker
+affordance is correctly absent there), the open picker, and two of the fourteen regenerated
+admin baselines. The `CairnAdminShell` palette-inset test flaked twice under full-suite load
+and passed in isolation and on clean re-runs both times; it is filed in ROADMAP's Later tier.
+
+Held unpublished under `## Unreleased`, per the release policy. The ASC consolidation is the
+likely consumer-needs-it trigger, and that decision belongs to the release moment via
+`cairn-release`.
+
+### Budgets
+
+Orchestrate-and-verify: six Sonnet implementer dispatches, three Opus simplifier runs, three
+Opus reviewers, one Opus prose reviewer (~1.5M subagent tokens). One implementer dispatch
+stalled in a report-without-finishing loop and was taken over by the main loop rather than
+resumed a third time. Interaction points: two, both of them Geoff's own instructions
+("recover" and "finish the rest of the plan"). No question was asked, and none was needed.

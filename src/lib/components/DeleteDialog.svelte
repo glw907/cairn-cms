@@ -1,9 +1,9 @@
 <!--
 @component
 The Delete control and its modal. With no inbound links it is a plain confirm that posts to the
-?/delete action. With inbound links it blocks: it names how many entries link here and lists them,
-each linking to its edit page, so the author repoints or removes those links first. Built on a native
-<dialog>, following the LinkPicker a11y conventions.
+?/delete action. With inbound links it blocks: it names how many entries link to (or include) this
+one and lists them, each linking to its edit page, so the author clears those references first.
+Built on a native <dialog>, following the LinkPicker a11y conventions.
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
@@ -16,8 +16,11 @@ each linking to its edit page, so the author repoints or removes those links fir
     id: string;
     /** A human label for the concept, e.g. "Post", used in the prompts. */
     label: string;
-    /** The entries that link to this one; non-empty blocks the delete. */
+    /** The entries that link to (or include) this one; non-empty blocks the delete. */
     inboundLinks: InboundLink[];
+    /** Which copy family the blocked view renders: "link" for an entry other entries link to,
+     *  "include" for a fragment the listed entries include. */
+    inboundKind?: 'link' | 'include';
     /** True when the entry has unpublished edits, which the delete discards along with it. */
     pending?: boolean;
     /** Render the built-in Delete trigger. False mounts only the dialog, for a host that supplies
@@ -28,7 +31,7 @@ each linking to its edit page, so the author repoints or removes those links fir
     onsubmitting?: () => void;
   }
 
-  let { conceptId, id, label, inboundLinks, pending = false, trigger = true, onsubmitting }: Props = $props();
+  let { conceptId, id, label, inboundLinks, inboundKind = 'link', pending = false, trigger = true, onsubmitting }: Props = $props();
 
   let dialog = $state<HTMLDialogElement | null>(null);
   const blocked = $derived(inboundLinks.length > 0);
@@ -39,6 +42,10 @@ each linking to its edit page, so the author repoints or removes those links fir
   const nouns = $derived(single ? noun : `${noun}s`);
   const verb = $derived(single ? 'links' : 'link');
   const pronoun = $derived(single ? 'it' : 'them');
+  // The inclusion copy names an anonymous "entry"/"entries" count rather than the deleted entry's
+  // own label, since the includers are never fragments themselves (a fragment cannot include
+  // another fragment); "entry"/"entries" stays accurate no matter what concept includes it.
+  const entryNoun = $derived(single ? 'entry' : 'entries');
 
   /** Open the confirm. Exported so a trigger={false} host can drive the dialog itself. */
   export function open() {
@@ -64,8 +71,13 @@ each linking to its edit page, so the author repoints or removes those links fir
 
     {#if blocked}
       <p class="mb-2 text-sm">
-        {inboundLinks.length} {nouns} {verb} here. Remove or repoint {pronoun} before deleting, so no link is left
-        broken.
+        {#if inboundKind === 'include'}
+          This {noun} is included by {inboundLinks.length} {entryNoun}. Remove the include first, then delete
+          again.
+        {:else}
+          {inboundLinks.length} {nouns} {verb} here. Remove or repoint {pronoun} before deleting, so no link is left
+          broken.
+        {/if}
       </p>
       <ul class="menu w-full">
         {#each inboundLinks as link (link.concept + '/' + link.id)}

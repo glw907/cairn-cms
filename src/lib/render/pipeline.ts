@@ -16,6 +16,7 @@ import { remarkDirectiveStamp } from './remark-directives.js';
 import { remarkFigure } from './remark-figure.js';
 import { remarkResolveCairnLinks, CAIRN_RESOLVE } from './resolve-links.js';
 import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-media.js';
+import { remarkResolveIncludes, FRAGMENT_RESOLVE, type FragmentResolve } from './resolve-include.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
 import { defineRegistry, type ComponentRegistry } from './registry.js';
 import type { LinkResolve } from '../content/links.js';
@@ -75,6 +76,9 @@ export function createRenderer(
 ) {
   const remarkPlugins: PluggableList = [
     remarkDirective,
+    // Must run before remarkDirectiveStamp, which unconditionally restores every leaf/text
+    // directive to literal prose: this is the only step that ever sees ::include as a real node.
+    remarkResolveIncludes,
     [remarkDirectiveStamp, registry],
     remarkResolveCairnLinks,
     remarkFigure,
@@ -126,11 +130,15 @@ export function createRenderer(
     rehypePlugins,
     renderMarkdown: async (
       content: string,
-      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve } = {},
+      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve } = {},
     ): Promise<string> => {
       const file = new VFile({
         value: content,
-        data: { [CAIRN_RESOLVE]: opts.resolve, [MEDIA_RESOLVE]: opts.resolveMedia },
+        data: {
+          [CAIRN_RESOLVE]: opts.resolve,
+          [MEDIA_RESOLVE]: opts.resolveMedia,
+          [FRAGMENT_RESOLVE]: opts.resolveFragment,
+        },
       });
       return String(await processor.process(file));
     },

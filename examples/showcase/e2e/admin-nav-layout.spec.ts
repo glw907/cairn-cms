@@ -16,9 +16,10 @@ test('the sidebar renders the declared navLayout: two named sections, the relabe
   // Section order and each section's arranged, in-declaration-order links (spec §2, §7). Two
   // taxonomy rulings (design arc 2026-07-15) place doors by what an editor authors versus what
   // the site operates: Library joins Content (an editor's own uploaded material), while Signups
-  // sits in Site (inbound visitor data is operations, not manuscript).
+  // sits in Site (inbound visitor data is operations, not manuscript). Fragments (the
+  // reusable-content design) is keyed right after Pages, the documented placement convention.
   await expect(sections.nth(0).locator('summary')).toHaveText('Content');
-  await expect(sections.nth(0).locator('a')).toHaveText(['Posts', 'Pages', 'Library']);
+  await expect(sections.nth(0).locator('a')).toHaveText(['Posts', 'Pages', 'Fragments', 'Library']);
 
   await expect(sections.nth(1).locator('summary')).toHaveText('Site');
   await expect(sections.nth(1).locator('a')).toHaveText([

@@ -153,15 +153,18 @@ const DEFAULT_ICON_BY_ROLE: Record<string, string> = {
   danger: 'flame',
 };
 
+/** Directive names the engine's own render step handles; a site cannot register a component under one. */
+const RESERVED_DIRECTIVE_NAMES = new Set(['figure', 'include']);
+
 /**
  * Build a registry from a site's component definitions. The single source the render
  * pipeline (directive stamp plus rehype dispatch) and the editor palette both read.
  */
 export function defineRegistry({ components }: { components: ComponentDef[] }): ComponentRegistry {
   for (const c of components) {
-    if (c.name === 'figure') {
+    if (RESERVED_DIRECTIVE_NAMES.has(c.name)) {
       throw new Error(
-        `cairn: component "${c.name}" uses "figure", a reserved directive name handled by the engine render step: remove it if the engine's built-in figure now covers your use, or rename it otherwise`,
+        `cairn: component "${c.name}" uses "${c.name}", a reserved directive name handled by the engine render step: remove it if the engine's built-in ${c.name} now covers your use, or rename it otherwise`,
       );
     }
     if (c.defaultIconByRole && Object.keys(c.defaultIconByRole).length > 0 && !findIconField(c)) {

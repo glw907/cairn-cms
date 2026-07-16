@@ -3,8 +3,9 @@
 // createCoreActions closes over the shared ContentRoutesContext (content-routes-context.ts) built
 // once by createContentRoutes, so a shim stays one line: `export const load = routes.editLoad`.
 import { redirect, error, fail } from '@sveltejs/kit';
-import { findConcept } from '../content/concepts.js';
+import { findConcept, FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
 import { extractCairnLinks, formatCairnToken, rewriteCairnLink } from '../content/links.js';
+import { extractIncludes, rewriteIncludeDirective } from '../content/includes.js';
 import { extractReferenceEdges, rewriteFrontmatterReference } from '../content/references.js';
 import { buildReferenceIndex } from '../content/reference-index.js';
 import { frontmatterFromForm, formValues, parseMarkdown, dateInputValue, serializeMarkdown } from '../content/frontmatter.js';
@@ -19,7 +20,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
@@ -113,6 +114,12 @@ export interface ListData {
   singular: string;
   /** Posts carry a date in the new-entry form; pages do not (concept routing, spec §7.2). */
   dated: boolean;
+  /**
+   * Whether this concept is routable (`concept.routing.routable`), for the create form: a
+   *  non-routable concept (the Fragments concept) has no permalink, so the form asks for a name
+   *  rather than an address, matching the edit screen's own treatment.
+   */
+  routable: boolean;
   entries: EntrySummary[];
   /** A listing failure degrades to an inline message rather than a thrown 500. */
   error: string | null;
@@ -120,6 +127,17 @@ export interface ListData {
   formError: string | null;
   /** The entry count from a publish-all redirect (`?publishedAll=`), for the list page's flash. */
   publishedAll: number | null;
+}
+
+/**
+ * One published fragment: enough for the picker's listing and the preview's include resolution.
+ *  `body` is the fragment's raw markdown, read from the default branch only, never a pending
+ *  branch's edits.
+ */
+export interface FragmentTarget {
+  id: string;
+  title: string;
+  body: string;
 }
 
 /** The editor's data. `frontmatter` holds form-ready values (dates already `YYYY-MM-DD`). */
@@ -138,8 +156,27 @@ export interface EditData {
   error: string | null;
   /** The current URL slug (the date-stripped id for a dated concept), for the rename dialog prefill. */
   slug: string;
-  /** The site's link targets, for the preview resolver and the link picker; from the committed manifest. */
+  /**
+   * The site's link targets, for the preview resolver and the link picker; from the committed
+   *  manifest, excluding any non-routable concept's rows (a fragment's gated permalink 404s, so it
+   *  is never offered as a link target; it is included, never linked).
+   */
   linkTargets: LinkTarget[];
+  /**
+   * The published fragments this entry can include, for the preview's `resolveFragment` and the
+   *  fragment picker. `null` when nothing here can include one: the site declares no fragments
+   *  concept, or this entry is itself a fragment (a fragment cannot include a fragment). `[]` when
+   *  fragments are includable but none are published. Each body is read from the default branch
+   *  only, so a pending edit to a fragment never leaks into another entry's preview; a read failure
+   *  degrades the affected fragment out rather than failing the whole load.
+   */
+  fragmentTargets: FragmentTarget[] | null;
+  /**
+   * Whether this entry's concept is routable (`concept.routing.routable`), for the Address
+   *  fieldset: a non-routable concept (the Fragments concept) has no permalink, so the sidebar
+   *  shows a bare name instead of a URL.
+   */
+  routable: boolean;
   /**
    * The minimal media-resolver input the edit page builds its preview `resolveMedia` from, keyed by
    *  the 16-hex content hash and parallel to `linkTargets`. Empty when media is off or the read fails.
@@ -241,12 +278,18 @@ export interface SaveFailure {
   body: string;
 }
 
-/** A refused delete: `fail(409)` while other entries still link to this one. */
+/** A refused delete: `fail(409)` while other entries still link to (or include) this one. */
 export interface DeleteRefusal {
   /** The one-line human summary every content action failure carries. */
   error: string;
-  /** The entries whose bodies link to the refused one, for the blockers list. */
+  /** The entries whose bodies link to (or include) the refused one, for the blockers list. */
   inboundLinks: InboundLink[];
+  /**
+   * Which gate refused, so the admin copy names the real blocker. Absent reads as `'link'`. A
+   *  fragment can be blocked by either gate, and the links gate runs first, so the concept alone
+   *  does not identify the cause: only the refusing gate knows.
+   */
+  inboundKind?: 'link' | 'include';
   /** The refused entry's id, so a list view marks the right row. */
   id: string;
 }
@@ -270,6 +313,16 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
     bodyClass: override?.bodyClass ?? preview.bodyClass,
     containerClass: override?.containerClass ?? preview.containerClass,
   };
+}
+
+/**
+ * The bad-slug refusal, naming what the form asked for. A non-routable concept's create and rename
+ *  forms ask for a Name, so telling its author to fix an "address" names a thing the entry does not
+ *  have and the form never showed them.
+ */
+function invalidIdMessage(concept: ConceptDescriptor): string {
+  const noun = concept.routing.routable ? 'address' : 'name';
+  return `Enter a valid ${noun}: lowercase letters, numbers, and hyphens.`;
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -511,7 +564,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
-    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, formError, publishedAll };
+    const base = { conceptId: concept.id, label: concept.label, singular: concept.singular, dated: concept.routing.dated, routable: concept.routing.routable, formError, publishedAll };
     const backend = ctx.resolveBackend(event);
     try {
       const [manifestRaw, refs] = await Promise.all([
@@ -561,7 +614,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const bounce = (msg: string): never => {
       throw redirect(303, `/admin/${concept.id}?error=${encodeURIComponent(msg)}`);
     };
-    if (!isValidId(slug)) return bounce('Enter a valid address: lowercase letters, numbers, and hyphens.');
+    // The form asked a non-routable concept for a Name, so the bounce names the same thing back.
+    if (!isValidId(slug)) return bounce(invalidIdMessage(concept));
 
     let id = slug;
     if (concept.routing.dated) {
@@ -652,17 +706,62 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
     const manifest = manifestRaw !== null ? parseManifest(manifestRaw) : null;
     let linkTargets: LinkTarget[] = [];
+    // A fragment's edit screen shows where it is used (spec §4) through the same inbound surface
+    // every other concept rides for the delete guard, so no new panel is needed: for the fragments
+    // concept the "linkers" are the entries that include it, not link to it.
     let inbound: InboundLink[] = [];
     if (manifest !== null) {
-      linkTargets = manifest.entries.map((e) => ({
-        concept: e.concept,
-        id: e.id,
-        permalink: e.permalink,
-        title: e.title,
-        date: e.date,
-        draft: e.draft,
-      }));
-      inbound = inboundLinks(manifest, concept.id, id);
+      // A non-routable concept's entries (the Fragments concept) are excluded from linkTargets:
+      // their permalink 404s, so the link picker and the preview's resolveLink must never offer
+      // one as a link target (spec §1's not-a-link-target backstop). A manifest row whose concept
+      // is no longer declared keeps today's lenient behavior (no descriptor to gate on).
+      linkTargets = manifest.entries
+        .filter((e) => findConcept(runtime.concepts, e.concept)?.routing.routable ?? true)
+        .map((e) => ({
+          concept: e.concept,
+          id: e.id,
+          permalink: e.permalink,
+          title: e.title,
+          date: e.date,
+          draft: e.draft,
+        }));
+      inbound =
+        concept.id === FRAGMENTS_CONCEPT_ID ? inboundIncludes(manifest, id) : inboundLinks(manifest, concept.id, id);
+    }
+
+    // The published fragments this entry can include (Task 6/7): null when nothing here can include
+    // one, so the fragment picker and the preview's resolveFragment read the same absence signal.
+    // That covers two cases. A site with no fragments concept has none to offer. A fragment's OWN
+    // edit screen cannot include one either (the save bounces a nested include), and resolving them
+    // here would render a nested include in the preview that Save then refuses, so the preview
+    // instead shows the literal-prose fallback the engine really ships. Skipping the batch there
+    // also spares a fragment's every edit-load one read per published fragment.
+    // When they are offered, ids and titles come from the committed manifest's fragments rows; each
+    // body is a SECOND concurrent batch (read only after the manifest is parsed, since the per-id
+    // paths derive from it), from the default branch only, so a fragment's own pending edits never
+    // leak into another entry's preview. A read failure degrades that one target out rather than
+    // failing the whole load (the mediaTargets shape).
+    const fragmentsConcept = findConcept(runtime.concepts, FRAGMENTS_CONCEPT_ID);
+    let fragmentTargets: EditData['fragmentTargets'] = null;
+    if (fragmentsConcept && concept.id !== FRAGMENTS_CONCEPT_ID) {
+      const rows = manifest?.entries.filter((e) => e.concept === FRAGMENTS_CONCEPT_ID) ?? [];
+      const bodies = await Promise.all(
+        rows.map(async (row): Promise<FragmentTarget | null> => {
+          try {
+            const raw = await backend.readFile(`${fragmentsConcept.dir}/${filenameFromId(row.id)}`, backend.defaultBranch);
+            if (raw === null) return null;
+            return { id: row.id, title: row.title, body: parseMarkdown(raw).body };
+          } catch (e) {
+            // A transport failure degrades this one target out, and downstream the preview then
+            // renders the missing-fragment notice for a fragment that is committed and fine. Log
+            // it, so an editor reporting "it says the fragment is missing" is diagnosable as a
+            // read failure rather than a content problem.
+            log.warn('include.read_failed', { fragment: row.id, error: e instanceof Error ? e.message : String(e) });
+            return null;
+          }
+        }),
+      );
+      fragmentTargets = bodies.filter((b): b is FragmentTarget => b !== null);
     }
 
     // The address-collision advisory: warn-and-allow, never a gate. At edit-load it checks the
@@ -734,6 +833,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       error: event.url.searchParams.get('error'),
       slug: slugFromId(id, datePrefix),
       linkTargets,
+      fragmentTargets,
+      routable: concept.routing.routable,
       mediaTargets,
       mediaLibrary,
       inboundLinks: inbound,
@@ -849,6 +950,18 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     if (!result.ok) {
       const message = Object.values(result.errors)[0] ?? 'Invalid frontmatter';
       throw redirect(303, `/admin/${concept.id}/${id}?error=${encodeURIComponent(message)}${suffix}`);
+    }
+
+    // A fragment can never include another fragment (the engine resolves an include only one
+    // pass deep; see resolve-include.ts). Keyed on the concept being the fragments concept, not on
+    // routability in general, since routability describes URL behavior and this is a fragments-only
+    // nesting rule. The check runs extractIncludes, the same extraction the manifest builds its
+    // includes row from, so the bounce and the where-used index agree on what counts as an include.
+    if (concept.id === FRAGMENTS_CONCEPT_ID && extractIncludes(body).length > 0) {
+      throw redirect(
+        303,
+        `/admin/${concept.id}/${id}?error=${encodeURIComponent("A fragment can't include another fragment.")}${suffix}`,
+      );
     }
 
     // Belt and braces: normalizeConcepts already forces a date-token concept's `date` field to
@@ -1185,6 +1298,22 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       } satisfies DeleteRefusal);
     }
 
+    // The fragments-concept delete guard: a fragment id is unique within the fragments concept (the
+    // only concept an ::include directive can target), so only this concept's entries need the check.
+    // Same degrade-to-allow posture as the links gate above; a dangling include is the build's
+    // include-resolver backstop, not this request-time gate.
+    if (concept.id === FRAGMENTS_CONCEPT_ID) {
+      const includers = inboundIncludes(manifest, id);
+      if (includers.length) {
+        return fail(409, {
+          error: `Cannot delete ${id}: ${includers.length} ${includers.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first.`,
+          inboundLinks: includers,
+          inboundKind: 'include',
+          id,
+        } satisfies DeleteRefusal);
+      }
+    }
+
     // Cross-branch reference gate (fail-closed). A strict reference index unions main's published edges
     // and every open cairn/* branch; unlike the main-only body-link gate above, it does NOT degrade to
     // allow when it cannot read, because the build's verifyReferences backstop only sees main. A
@@ -1292,7 +1421,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const form = await event.request.formData();
     const newSlug = String(form.get('slug') ?? '').trim();
     if (!isValidId(newSlug)) {
-      return fail(400, { error: 'Enter a valid address: lowercase letters, numbers, and hyphens.' } satisfies RenameFailure);
+      return fail(400, { error: invalidIdMessage(concept) } satisfies RenameFailure);
     }
     const datePrefix = concept.routing.dated ? concept.datePrefix : null;
     if (concept.routing.dated && /^\d{4}-/.test(newSlug)) {
@@ -1378,22 +1507,23 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       concept: string;
       id: string;
       hasLink: boolean;
+      hasInclude: boolean;
       fields: string[];
     }
     const repoints = new Map<string, InboundRepoint>();
     const linkerPathFor = (linkerConcept: ConceptDescriptor, linkerId: string): string =>
       `${linkerConcept.dir}/${filenameFromId(linkerId)}`;
-    // The two loops below look like a jscpd near-dupe (same lookup-and-guard shape), but their
-    // merge semantics diverge: a link sets a boolean flag, a reference unions a field-name set.
-    // Parameterizing the difference would need a callback per loop, which is not simpler than
-    // the two short loops it would replace; left as is.
+    // The three loops below look like a jscpd near-dupe (same lookup-and-guard shape), but their
+    // merge semantics diverge: a link or an include sets a boolean flag, a reference unions a
+    // field-name set. Parameterizing the difference would need a callback per loop, which is not
+    // simpler than the three short loops it would replace; left as is.
     for (const linker of inboundLinks(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
       if (!linkerConcept) continue;
       const path = linkerPathFor(linkerConcept, linker.id);
       const existing = repoints.get(path);
       if (existing) existing.hasLink = true;
-      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: true, fields: [] });
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: true, hasInclude: false, fields: [] });
     }
     for (const linker of inboundReferences(manifest, concept.id, id)) {
       const linkerConcept = findConcept(runtime.concepts, linker.concept);
@@ -1401,7 +1531,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       const path = linkerPathFor(linkerConcept, linker.id);
       const existing = repoints.get(path);
       if (existing) existing.fields = [...new Set([...existing.fields, ...linker.fields])];
-      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, fields: linker.fields });
+      else repoints.set(path, { concept: linker.concept, id: linker.id, hasLink: false, hasInclude: false, fields: linker.fields });
+    }
+    // A fragment id is unique across the site, so inboundIncludes only matters when the renamed
+    // entry IS a fragment; gated the same way the delete guard gates its own inboundIncludes call.
+    if (concept.id === FRAGMENTS_CONCEPT_ID) {
+      for (const includer of inboundIncludes(manifest, id)) {
+        const includerConcept = findConcept(runtime.concepts, includer.concept);
+        if (!includerConcept) continue;
+        const path = linkerPathFor(includerConcept, includer.id);
+        const existing = repoints.get(path);
+        if (existing) existing.hasInclude = true;
+        else repoints.set(path, { concept: includer.concept, id: includer.id, hasLink: false, hasInclude: true, fields: [] });
+      }
     }
     for (const [linkerPath, repoint] of repoints) {
       const linkerConcept = findConcept(runtime.concepts, repoint.concept);
@@ -1409,6 +1551,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       let linkerRaw = await backend.readFile(linkerPath, backend.defaultBranch);
       if (linkerRaw === null) continue;
       if (repoint.hasLink) linkerRaw = rewriteCairnLink(linkerRaw, oldHref, newHref);
+      if (repoint.hasInclude) linkerRaw = rewriteIncludeDirective(linkerRaw, id, newId);
       for (const field of repoint.fields) {
         linkerRaw = rewriteFrontmatterReference(linkerRaw, field, id, newId);
       }

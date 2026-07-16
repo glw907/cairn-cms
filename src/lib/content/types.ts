@@ -191,8 +191,10 @@ export interface AssetConfig {
  *  Entry-aware so a custom renderer can vary output by concept or frontmatter; the default reads only
  *  `body` plus the resolvers. `resolve` rewrites cairn: links to live permalinks (the build passes a
  *  site-resolver-backed resolver, the preview a manifest-backed one); `resolveMedia` resolves media:
- *  references the same way. `concept` and `frontmatter` carry the entry's context for an entry render
- *  and are absent for the standalone component-insert preview.
+ *  references the same way. `resolveFragment` resolves an `::include` directive's fragment id to its
+ *  raw markdown body, the same way; a site's own render need not read it unless it wants to vary
+ *  fragment resolution. `concept` and `frontmatter` carry the entry's context for an entry render and
+ *  are absent for the standalone component-insert preview.
  */
 export type SiteRender = (input: {
   body: string;
@@ -200,6 +202,7 @@ export type SiteRender = (input: {
   frontmatter?: Record<string, unknown>;
   resolve?: LinkResolve;
   resolveMedia?: import('../render/resolve-media.js').MediaResolve;
+  resolveFragment?: import('../render/resolve-include.js').FragmentResolve;
 }) => Promise<string>;
 
 /**

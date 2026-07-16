@@ -356,6 +356,19 @@ Build a `cairn:` link resolver backed by the site resolver, for the build. A mis
 dangling `cairn:` token fails the prerender. The feed routes above use it to turn an internal link
 into an absolute URL.
 
+### `buildFragmentResolver`
+
+Stability tier: Extension API.
+
+```ts
+function buildFragmentResolver(site: SiteResolver): FragmentResolve;
+```
+
+Build a fragment-body resolver backed by the site resolver, for the build. A miss (an unknown
+fragment id, or a site with no `fragments` concept declared) throws, so a dangling `::include`
+fails the prerender the same way a dangling `cairn:` link does. `createPublicRoutes` wires this
+into every entry render as `resolveFragment`.
+
 ### `resolveReferences`
 
 Stability tier: Extension API.
@@ -464,7 +477,7 @@ Build the per-concept descriptors for a site from its adapter content and its pa
 | `ContentEntry` | Extension API | `interface ContentEntry<F = Record<string, unknown>> extends ContentSummary { frontmatter: F; body: string }` | The detail view: a summary plus the typed frontmatter and the body to render. |
 | `ContentProblem` | Extension API | `interface ContentProblem { id: string; draft: boolean; errors: Record<string, string> }` | One entry's validation failure, recorded at build for the site aggregator's gate. |
 | `ContentIndex` | Extension API | `interface ContentIndex<F = Record<string, unknown>> { all; byId; byTag; allTags; adjacent; problems }` | The per-concept query surface `createSiteIndexes` builds one of per concept. |
-| `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; adjacent; entries; concept; all }` | The cross-concept query surface a catch-all route and the sitemap read. `byPermalink` resolves one entry by request path. |
+| `SiteResolver` | Extension API | `interface SiteResolver { byPermalink; adjacent; entries; concept; all; routable }` | The cross-concept query surface a catch-all route and the sitemap read. `byPermalink` resolves one entry by request path; `routable` reports whether a concept id is publicly reachable. |
 | `SiteGlobs` | Extension API | `type SiteGlobs<A extends CairnAdapter> = { [K in keyof A['content']]?: Record<string, string> }` | A per-concept raw glob record keyed by concept id, from `import.meta.glob`. |
 | `SiteIndexes` | Extension API | `type SiteIndexes<A> = { [K in keyof A['content']]: ContentIndex<...> } & { readonly site: SiteResolver }` | The typed per-concept indexes plus the cross-concept `site` resolver, the return of `createSiteIndexes`. |
 | `FeedChannel` | Extension API | `interface FeedChannel { title; description; siteUrl; feedUrl; language?; author? }` | Feed channel metadata, with absolute URLs. |

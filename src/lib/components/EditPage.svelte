@@ -1684,6 +1684,26 @@ persistent "?" carries Markdown help, design-arc D2).
     </div>
   {/each}
 {/snippet}
+
+<!-- The toolbar's below-sm More popover items (design-arc C1), shared so every fold-in control keeps
+     one shape. moreCheck is the same active-state glyph ConceptList's check() draws; moreToggle
+     renders one aria-pressed <li>, its `act` closure carrying both the state change and the passed
+     closeMenu; moreDivider is the sm-hidden separator between clusters. -->
+{#snippet moreCheck()}
+  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
+{/snippet}
+{#snippet moreDivider()}
+  <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+{/snippet}
+{#snippet moreToggle(label: string, active: boolean, act: () => void)}
+  <li class="sm:hidden">
+    <button type="button" aria-pressed={active} onclick={act}>
+      {#if active}{@render moreCheck()}{/if}
+      {label}
+    </button>
+  </li>
+{/snippet}
+
 <!-- The role="status" live region renders unconditionally (present and empty at load), so when the
      first notice appears it announces; a region conditionally mounted with its first content may not
      be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
@@ -1885,58 +1905,18 @@ persistent "?" carries Markdown help, design-arc D2).
                its standing counterpart; closeMenu dismisses the popover the way EditorToolbar's
                own moreItems picks do. sm:hidden on every <li> here keeps them out of the way at sm
                and up, where the real controls stand on their own. -->
-          <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={mode === 'write'} onclick={() => { setMode('write'); closeMenu(); }}>
-              {#if mode === 'write'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Write
-            </button>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={mode === 'preview'} onclick={() => { setMode('preview'); closeMenu(); }}>
-              {#if mode === 'preview'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Preview
-            </button>
-          </li>
-          <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={surface === 'prose'} onclick={() => { setSurface('prose'); closeMenu(); }}>
-              {#if surface === 'prose'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Prose
-            </button>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={surface === 'markup'} onclick={() => { setSurface('markup'); closeMenu(); }}>
-              {#if surface === 'markup'}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Wide
-            </button>
-          </li>
-          <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={focusMode} onclick={() => { setFocusMode(!focusMode); closeMenu(); }}>
-              {#if focusMode}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Focus mode
-            </button>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={typewriter} onclick={() => { setTypewriter(!typewriter); closeMenu(); }}>
-              {#if typewriter}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Typewriter
-            </button>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={spellcheck} onclick={() => { setSpellcheck(!spellcheck); closeMenu(); }}>
-              {#if spellcheck}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Spellcheck
-            </button>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" aria-pressed={zen} onclick={() => { setZen(!zen); closeMenu(); }}>
-              {#if zen}<svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>{/if}
-              Zen
-            </button>
-          </li>
-          <li class="menu-divider sm:hidden my-1 h-px bg-[var(--cairn-card-border)]" role="separator" aria-hidden="true"></li>
+          {@render moreDivider()}
+          {@render moreToggle('Write', mode === 'write', () => { setMode('write'); closeMenu(); })}
+          {@render moreToggle('Preview', mode === 'preview', () => { setMode('preview'); closeMenu(); })}
+          {@render moreDivider()}
+          {@render moreToggle('Prose', surface === 'prose', () => { setSurface('prose'); closeMenu(); })}
+          {@render moreToggle('Wide', surface === 'markup', () => { setSurface('markup'); closeMenu(); })}
+          {@render moreDivider()}
+          {@render moreToggle('Focus mode', focusMode, () => { setFocusMode(!focusMode); closeMenu(); })}
+          {@render moreToggle('Typewriter', typewriter, () => { setTypewriter(!typewriter); closeMenu(); })}
+          {@render moreToggle('Spellcheck', spellcheck, () => { setSpellcheck(!spellcheck); closeMenu(); })}
+          {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
+          {@render moreDivider()}
           <li class="sm:hidden">
             <span class="pointer-events-none px-3 py-1.5 text-xs text-muted">{wordLabel}</span>
           </li>

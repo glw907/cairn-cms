@@ -220,6 +220,36 @@ gates prove it: `check:public-tokens` (no literals, dual-gamut AA, token resolut
   sticky header. The skip link plus `<main tabindex="-1">`.
 - All motion is gated behind `prefers-reduced-motion`. The default fonts are the first paint, CLS-safe.
 
+## Transferable rules from the admin design arc (2026-07-15)
+
+The admin refinement arc ruled several grammars that are METHOD, not admin values, and Geoff
+ratified the family direction: cairn's own artifacts (Waymark, the chassis, the admin) express one
+design system — an editor moving between admin and a scaffolded site should feel one hand. These
+rules apply here in the theme's own palette and faces; the admin's values (Warm Stone, the violet,
+its component recipes) never cross over. The Waymark/chassis alignment pass in ROADMAP executes the
+application; until it runs, these are the standard new theme work is held to:
+
+- **The proximity spacing scale.** Vertical gaps come from one named 4/8px scale where the SIZE
+  carries the structure: a small step (8px) hugs elements within a group, a medium step (12px)
+  marks an element that belongs to its neighbor, larger steps (16/32/40px) separate zones and set
+  the page's one loose element apart. Uniform gaps at every boundary read as strict but say
+  nothing; the scale's steps should do grouping work borders would otherwise do. (Admin reference:
+  the scale comment in `src/lib/components/cairn-admin.css`.)
+- **Tracking keys to optical size and weight, never element role.** Small semibold text closes its
+  counters and takes a small positive tracking step; mid-size medium labels a smaller one; body
+  and meta stay normal. Measure the real rendered size before assigning a band (the admin's
+  buttons measured 12px/600 despite reading as "medium buttons").
+- **The display-face keming audit.** Before shipping negative tracking on ANY display face at any
+  size, check the rn/rm letter pairs ("Cairn" read "Caim" at bold+tight). Waymark's own display
+  faces owe this audit at the alignment pass.
+- **The accent budget.** Count the attention-demanding moments at rest per surface, not only the
+  accent's intensity; reserve semantic hues (red destructive-confirm-only, amber
+  needs-attention-only) and let weight and ink carry secondary emphasis.
+- **The taste-fork method.** Design forks render as throwaway static-HTML compare pages carrying
+  the REAL compiled styles and real markup, candidates annotated with measured values (the
+  measured-ruler device), never adjectives; the owner picks from rendered evidence. Pattern:
+  the arc's `design-candidates/` pages.
+
 ## Pointers
 
 - The theme and the re-skin recipe: `examples/showcase/src/lib/theme.css`. The reading surface:

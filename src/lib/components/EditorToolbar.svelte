@@ -146,6 +146,10 @@ stays pinned at the row's right end, reachable at every width.
 
   // The eyebrow recipe (docs/internal/admin-design-system.md), shared by the three cluster labels.
   const eyebrowClass = 'hidden text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted sm:block';
+  // The eyebrow-topped cluster wrapper (Format, Structure, Insert): the eyebrow floats above its
+  // button row, and the whole cluster holds its width below sm so the scrolling region never
+  // squeezes it.
+  const clusterClass = 'flex flex-col items-start gap-1 max-sm:shrink-0';
 
   // The More menu's popover element and its open state, mirrored from the toggle event into
   // aria-expanded on the trigger.
@@ -283,7 +287,7 @@ stays pinned at the row's right end, reachable at every width.
        normally and shows the clusters' eyebrows. The persistent help control below sits OUTSIDE
        this region on purpose, so it is never scrolled out of reach. -->
   <div class="flex min-w-0 flex-1 flex-wrap items-end gap-1 sm:gap-3 max-sm:flex-nowrap max-sm:overflow-x-auto">
-    <div class="flex flex-col items-start gap-1 max-sm:shrink-0" role="group" aria-label="Format">
+    <div class={clusterClass} role="group" aria-label="Format">
       <span class={eyebrowClass} aria-hidden="true">Format</span>
       <div class="flex items-center gap-1">
         {#each formatButtons as button (button.kind)}
@@ -294,7 +298,7 @@ stays pinned at the row's right end, reachable at every width.
 
     <div class="w-px self-stretch bg-[var(--cairn-card-border)] max-sm:shrink-0" aria-hidden="true"></div>
 
-    <div class="flex flex-col items-start gap-1 max-sm:shrink-0" role="group" aria-label="Structure">
+    <div class={clusterClass} role="group" aria-label="Structure">
       <span class={eyebrowClass} aria-hidden="true">Structure</span>
       <div class="flex items-center gap-1">
         {#each structureButtons as button (button.kind)}
@@ -351,7 +355,7 @@ stays pinned at the row's right end, reachable at every width.
 
     {#if insertControls}
       <div class="w-px self-stretch bg-[var(--cairn-card-border)] max-sm:shrink-0" aria-hidden="true"></div>
-      <div class="flex flex-col items-start gap-1 max-sm:shrink-0" role="group" aria-label="Insert">
+      <div class={clusterClass} role="group" aria-label="Insert">
         <span class={eyebrowClass} aria-hidden="true">Insert</span>
         <!-- The host's controls carry their own disabled state in Preview; this wrapper just keeps
              any stray pointer target in the snippet inert while the pane is read-only. Below sm

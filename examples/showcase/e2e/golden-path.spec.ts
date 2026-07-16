@@ -255,12 +255,12 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   await expect(publishedFilter).toHaveText(/Published\s*\d+/);
   await expect(allFilter).toHaveAttribute('aria-pressed', 'true');
 
-  // The seeded post's row carries a summary line under its title (deriveExcerpt over its body).
-  // A prior test may have re-saved its body, so assert the line is present and non-empty rather
-  // than pinning the exact text.
+  // The list's rows are one line (the density ruling, design arc 2026-07-15): the summary stays
+  // off the office list even for an entry that carries one, so the seeded row renders its title
+  // with no [data-summary] node at all.
   const seedRow = page.locator('tr', { has: page.locator('a[href="/admin/posts/2026-06-hello"]') });
-  await expect(seedRow.locator('[data-summary]')).toBeVisible();
-  await expect(seedRow.locator('[data-summary]')).not.toBeEmpty();
+  await expect(seedRow.locator('a[href="/admin/posts/2026-06-hello"]')).toBeVisible();
+  await expect(seedRow.locator('[data-summary]')).toHaveCount(0);
 
   // Create a fresh, never-published entry so the pending partition has a stable member to assert.
   const slug = `triage-draft-${Date.now()}`;
@@ -289,7 +289,8 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   await page.getByRole('button', { name: /^Pending edits/ }).click();
   await expect(draftRow).toBeVisible();
   await expect(draftRow.getByText('New', { exact: true })).toBeVisible();
-  await expect(draftRow.locator('[data-summary]')).toHaveText('A pending draft body for the triage.');
+  // One-line rows (the density ruling): no summary node renders on the list.
+  await expect(draftRow.locator('[data-summary]')).toHaveCount(0);
 
   // Switching to Published drops the never-published draft (it is not on main), proving the
   // partition narrows rather than just toggling chrome.

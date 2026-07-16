@@ -27,6 +27,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import LinkIcon from '@lucide/svelte/icons/link';
   import FileSymlinkIcon from '@lucide/svelte/icons/file-symlink';
   import PanelRightIcon from '@lucide/svelte/icons/panel-right';
+  import PuzzleIcon from '@lucide/svelte/icons/puzzle';
   import ImageIcon from '@lucide/svelte/icons/image';
   import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
@@ -36,6 +37,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import EditorToolbar from './EditorToolbar.svelte';
   import ComponentInsertDialog, { insertableDefs, hasSchema } from './ComponentInsertDialog.svelte';
   import LinkPicker from './LinkPicker.svelte';
+  import FragmentPicker from './FragmentPicker.svelte';
   import WebLinkDialog from './WebLinkDialog.svelte';
   import MediaInsertPopover from './MediaInsertPopover.svelte';
   import FieldInput from './FieldInput.svelte';
@@ -744,6 +746,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // breaks SSR and hydration); the toolbar snippet renders plain triggers that open them here.
   let webLinkDialog = $state<DialogHandle | null>(null);
   let linkPicker = $state<DialogHandle | null>(null);
+  let fragmentPicker = $state<DialogHandle | null>(null);
   // The insert dialog binds the full instance, not the bare DialogHandle: the Edit-block control
   // drives editComponent(def, values, range) on it, beyond the shared open().
   let insertDialog = $state<ComponentInsertDialog | null>(null);
@@ -758,6 +761,12 @@ persistent "?" carries Markdown help, design-arc D2).
   // Whether the registry offers anything insertable, the same condition the insert dialog lists
   // by, so the toolbar trigger and the dialog appear and disappear together.
   const hasComponents = $derived(insertableDefs(registry).length > 0);
+
+  // The fragment picker's toolbar trigger appears only when the site declares a fragments concept
+  // (fragmentTargets is not null) and this entry is not itself a fragment. A fragment cannot
+  // include another fragment, which the save action already refuses; hiding the affordance mirrors
+  // that rule rather than offering a control the save would bounce.
+  const fragmentPickerAvailable = $derived(data.fragmentTargets !== null && data.conceptId !== FRAGMENTS_CONCEPT_ID);
 
   // The directive container at the editor caret, reported by MarkdownEditor whenever it changes
   // (null outside any container). The Edit-block control resolves it against the registry and the
@@ -1873,6 +1882,19 @@ persistent "?" carries Markdown help, design-arc D2).
           >
             <FileSymlinkIcon class="h-4 w-4" aria-hidden="true" />
           </button>
+          {#if fragmentPickerAvailable}
+            <button
+              type="button"
+              class="btn btn-sm btn-ghost btn-square"
+              aria-haspopup="dialog"
+              aria-label="Include a fragment"
+              title="Include a fragment"
+              disabled={insertDisabled}
+              onclick={() => fragmentPicker?.open()}
+            >
+              <PuzzleIcon class="h-4 w-4" aria-hidden="true" />
+            </button>
+          {/if}
           <button
             type="button"
             class="btn btn-ghost btn-sm btn-square"
@@ -2320,6 +2342,12 @@ persistent "?" carries Markdown help, design-arc D2).
 />
 <WebLinkDialog bind:this={webLinkDialog} trigger={false} insert={insertLink} selection={getSelection} />
 <LinkPicker bind:this={linkPicker} trigger={false} linkTargets={data.linkTargets} insert={insertLink} />
+<FragmentPicker
+  bind:this={fragmentPicker}
+  trigger={false}
+  fragmentTargets={fragmentPickerAvailable ? data.fragmentTargets : null}
+  {insert}
+/>
 
 <!-- The media insert popover, mounted headless: the toolbar control, a paste, or a drop drives it
      through its exported open(). On a successful upload it hands the server-owned record up; the

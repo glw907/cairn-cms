@@ -588,6 +588,47 @@ describe('EditPage', () => {
       .toContain('[About Us](cairn:pages/about)');
   });
 
+  it('inserts an include directive from the Include a fragment picker', async () => {
+    const props = postProps({
+      fragmentTargets: [{ id: 'welcome', title: 'Welcome banner', body: 'Welcome body.' }],
+    });
+    const screen = render(EditPage, props);
+    await screen.getByRole('button', { name: /include a fragment/i }).click();
+    await screen.getByRole('button', { name: /Welcome banner/ }).click();
+    await expect
+      .poll(() => screen.container.querySelector<HTMLInputElement>('input[name="body"]')?.value ?? '')
+      .toContain('::include{fragment="welcome"}');
+  });
+
+  it('hides the fragment picker trigger when no fragments concept is declared', async () => {
+    const screen = render(EditPage, postProps({ fragmentTargets: null }));
+    await expect
+      .element(screen.getByRole('button', { name: /include a fragment/i }))
+      .not.toBeInTheDocument();
+  });
+
+  it('shows the fragment picker trigger with an honest empty state when none are published', async () => {
+    const screen = render(EditPage, postProps({ fragmentTargets: [] }));
+    await screen.getByRole('button', { name: /include a fragment/i }).click();
+    // EditPage mounts several headless dialogs; querySelector('dialog') would grab whichever one
+    // is first in DOM order (the Web link dialog), not the one this test just opened.
+    const dialog = screen.container.querySelector('dialog[open]')!;
+    expect(dialog.textContent ?? '').toMatch(/publish a fragment first/i);
+  });
+
+  it('hides the fragment picker trigger on a fragment\'s own edit screen', async () => {
+    const props = postProps({
+      conceptId: 'fragments',
+      id: 'welcome',
+      label: 'Fragment',
+      fragmentTargets: [{ id: 'other', title: 'Other fragment', body: 'Other body.' }],
+    });
+    const screen = render(EditPage, props);
+    await expect
+      .element(screen.getByRole('button', { name: /include a fragment/i }))
+      .not.toBeInTheDocument();
+  });
+
   it('renders the delete control', async () => {
     const screen = render(EditPage, postProps());
     await screen.getByRole('button', { name: 'More actions' }).click();

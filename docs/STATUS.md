@@ -68,7 +68,49 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-15, latest: the FRAGMENTS SPEC + PLAN are ratified and committed; next = an OPUS-conducted session EXECUTES the plan)
+## Immediate next action (2026-07-16, latest: FRAGMENTS SHIPPED and merged, held unpublished; next = the design-arc queue, or a release when ASC needs it)
+
+**FRAGMENTS IS DONE AND MERGED TO `main`, HELD UNPUBLISHED under `## Unreleased`.** All ten plan
+tasks landed on the `fragments` worktree and merged; the post-mortem is appended to
+`docs/superpowers/plans/2026-07-15-fragments.md`. What shipped: the reserved `fragments` concept
+key (requiring `routing: 'embedded'`), the `::include` block directive with its picker, live
+reference (edit once, every consumer updates at publish), the manifest `includes` edge feeding a
+delete guard and the fragment's own where-used list, rename repointing every inbound include in
+the rename's own commit, the non-routable treatments (Name rather than Address across the edit
+sidebar, the rename dialog, the create form, and both bounces), and the showcase exemplar with
+its e2e. Docs: the new [Reuse content across entries](guides/reuse-content-across-entries.md)
+guide, the `::include` reference section, and the `include.missing`/`include.read_failed` events.
+
+**This pass resumed a crashed session** (Tasks 1-3 committed, Task 4 half-applied and green,
+nothing corrupted). Two process facts worth carrying: **the plan was wrong seven times** on
+details that only surfaced against real code, so every dispatch after the second miss carried
+"the plan is a draft; the code is the authority," and it paid every time. And **the pass-end
+reviewer fan-out caught three defects that a 3,561-test green suite did not**, all three shipping
+wrong bytes to a public surface: the routable gate missed `all()` so the sitemap advertised a
+known 404, `toPlainText` had no directive rule so raw `::include` markup reached a page's meta
+description, and `EntryPicker`'s constant dialog id made a screen reader announce the fragment
+picker as "Link to a page." Each sat where no assertion looked; each now has one.
+
+**NEXT, Geoff's call between two:**
+1. **The design-arc queue** (unchanged, the standing next): the invisible-craft polish pass, the
+   component kit, the joint Waymark/chassis alignment pass.
+2. **A release**, if ASC needs fragments now. ASC's `docs/fragment-candidates.md` holds nine ready
+   cases, and the consolidation is the likely consumer-needs-it trigger. The window under
+   `## Unreleased` is additive with zero `Consumers must:` lines. Cut it via `cairn-release`, then
+   ASC's own navLayout addition and content migration run in ASC's session.
+
+**Carry-forwards filed, not floating:** three ROADMAP entries came out of this pass, each with its
+trigger, under Considering (inline includes, awaiting ASC's Discord vocabulary; fragment bodies on
+the manifest row, awaiting a site with dozens of fragments; `draft` semantics on a non-routable
+concept, awaiting a site that declares the field) and one under Later (the `CairnAdminShell`
+palette-inset test flakes under full-suite load; it cost a re-run twice this pass).
+
+**A STATUS hygiene note:** this doc's own preamble says a superseded entry moves to the archive and
+never accumulates here, but eight prior entries are stacked below and the file is ~900 lines. The
+rule and the practice have drifted apart. Worth one cheap pass to either archive the stack or amend
+the rule to match what everyone actually does.
+
+## Prior next action (2026-07-15, superseded: the FRAGMENTS SPEC + PLAN are ratified and committed; next was an OPUS-conducted session EXECUTING the plan)
 
 **THE FRAGMENTS (REUSABLE CONTENT) BRAINSTORM IS DONE, Fable-conducted per the ROADMAP entry's
 execution model.** Geoff's three ratified calls: live reference (edit once, every consumer

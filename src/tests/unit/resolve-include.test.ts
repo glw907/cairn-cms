@@ -98,14 +98,18 @@ describe('include fragment resolution', () => {
     warn.mockRestore();
   });
 
-  it('(g) treats a missing or empty fragment attribute as a miss, not a crash', async () => {
+  it('(g) treats a missing or empty fragment attribute as a miss, not a crash, with its own no-id copy', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const warn = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const resolveFragment: FragmentResolve = () => 'should not be reached';
     const noAttr = await renderMarkdown('::include\n', { resolveFragment });
     expect(noAttr).toContain('cairn-include-missing');
+    // The no-id case gets its own copy rather than "Missing fragment: " trailing off into nothing.
+    expect(noAttr).toContain("This include doesn't name a fragment.");
+    expect(noAttr).not.toContain('Missing fragment:');
     const emptyAttr = await renderMarkdown('::include{fragment=""}\n', { resolveFragment });
     expect(emptyAttr).toContain('cairn-include-missing');
+    expect(emptyAttr).toContain("This include doesn't name a fragment.");
     expect(warn).toHaveBeenCalledWith('include.missing', { fragment: '' });
     warn.mockRestore();
   });

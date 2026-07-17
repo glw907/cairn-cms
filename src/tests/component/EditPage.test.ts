@@ -613,7 +613,7 @@ describe('EditPage', () => {
     // EditPage mounts several headless dialogs; querySelector('dialog') would grab whichever one
     // is first in DOM order (the Web link dialog), not the one this test just opened.
     const dialog = screen.container.querySelector('dialog[open]')!;
-    expect(dialog.textContent ?? '').toMatch(/publish a fragment first/i);
+    expect(dialog.textContent ?? '').toMatch(/create one on the fragments screen/i);
   });
 
   it('hides the fragment picker trigger on a fragment\'s own edit screen', async () => {
@@ -1796,6 +1796,51 @@ describe('EditPage', () => {
       l.textContent?.trim(),
     );
     expect(legends).toEqual(['Address']);
+  });
+
+  it("shows the fragment's own Included in group, listing the same consumers the delete guard names", async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        conceptId: 'fragments',
+        label: 'Fragment',
+        slug: 'welcome',
+        routable: false,
+        inboundLinks: [
+          { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' },
+          { concept: 'pages', id: 'b', title: 'Page B', permalink: '/b' },
+        ],
+      }),
+    );
+    const aside = screen.container.querySelector('aside')!;
+    const legends = Array.from(aside.querySelectorAll('legend')).map((l) => l.textContent?.trim());
+    expect(legends).toContain('Included in');
+    const includedIn = Array.from(aside.querySelectorAll('fieldset')).find((f) =>
+      f.querySelector('legend')?.textContent?.trim() === 'Included in',
+    )!;
+    expect(includedIn.textContent ?? '').toMatch(/included in 2 entries/i);
+    expect(includedIn.querySelector('a[href="/admin/posts/a"]')?.textContent).toBe('Post A');
+    expect(includedIn.querySelector('a[href="/admin/pages/b"]')?.textContent).toBe('Page B');
+  });
+
+  it('shows an honest empty state in the Included in group when nothing includes the fragment yet', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false, inboundLinks: [] }),
+    );
+    const aside = screen.container.querySelector('aside')!;
+    const includedIn = Array.from(aside.querySelectorAll('fieldset')).find((f) =>
+      f.querySelector('legend')?.textContent?.trim() === 'Included in',
+    )!;
+    expect(includedIn.textContent ?? '').toMatch(/not included anywhere yet/i);
+  });
+
+  it('omits the Included in group on a non-fragments concept', async () => {
+    const screen = render(EditPage, postProps());
+    const legends = Array.from(screen.container.querySelectorAll('aside legend')).map((l) =>
+      l.textContent?.trim(),
+    );
+    expect(legends).not.toContain('Included in');
   });
 
   it('renders the draft boolean as the Hidden toggle with its hint', async () => {

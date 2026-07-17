@@ -42,10 +42,12 @@ describe('FragmentPicker', () => {
     await expect.poll(() => screen.container.querySelector('dialog')!.open).toBe(false);
   });
 
-  it('shows an honest empty state naming the next step when none are published', async () => {
+  it('shows an honest empty state naming the next step, including where, when none are published', async () => {
     const { screen } = open([]);
     await screen.getByRole('button', { name: /include a fragment/i }).click();
-    expect(screen.container.querySelector('dialog')!.textContent ?? '').toMatch(/publish a fragment first/i);
+    const text = screen.container.querySelector('dialog')!.textContent ?? '';
+    expect(text).toMatch(/create one on the fragments screen/i);
+    expect(text).toMatch(/publish it/i);
   });
 
   it('hides the trigger and mounts no dialog when no fragments concept is declared', async () => {

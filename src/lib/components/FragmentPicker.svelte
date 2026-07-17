@@ -68,6 +68,6 @@ dialog at all.
     trigger={false}
     heading="Include a fragment"
     searchLabel="Search fragments"
-    emptyText="No fragments published yet. Publish a fragment first to include it here."
+    emptyText="No fragments published yet. Create one on the Fragments screen and publish it, then include it here."
   />
 {/if}

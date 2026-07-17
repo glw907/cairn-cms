@@ -29,10 +29,15 @@ the loaded entries in component state.
 
   let { data, form = null }: Props = $props();
 
-  // The entry a `?/delete` refused, and its inbound links, keyed by the posted id. Null when the
-  // last submit succeeded, refused nothing, or none ran.
+  // The entry a `?/delete` refused, its inbound links, and which gate refused it, keyed by the
+  // posted id. Null when the last submit succeeded, refused nothing, or none ran. `inboundKind`
+  // defaults to `'link'`, mirroring the shared `DeleteRefusal` type's own default, so a fragment
+  // the fragments gate blocked renders the include copy family and a fragment the links gate
+  // blocked (a fragment can itself be a link target) still renders the link family.
   const deleteRefused = $derived(
-    form?.inboundLinks?.length ? { id: form.id, inboundLinks: form.inboundLinks } : null,
+    form?.inboundLinks?.length
+      ? { id: form.id, inboundLinks: form.inboundLinks, inboundKind: form.inboundKind ?? 'link' }
+      : null,
   );
 
   type SortKey = 'title' | 'date';
@@ -209,7 +214,11 @@ the loaded entries in component state.
   // screen reader hears the magnitude (matching the visible banner) before navigating to the list.
   const lifecycleError = $derived(
     deleteRefused
-      ? `This ${data.label.toLowerCase()} could not be deleted. ${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it.`
+      ? `This ${data.label.toLowerCase()} could not be deleted. ${
+          deleteRefused.inboundKind === 'include'
+            ? `${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it.`
+            : `${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it.`
+        }`
       : (data.formError ?? data.error ?? ''),
   );
 
@@ -279,7 +288,11 @@ the loaded entries in component state.
        the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
   <div class="alert alert-error mb-4 flex-col items-start text-sm">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
-    <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {#if deleteRefused.inboundKind === 'include'}
+      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
+    {:else}
+      <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'page' : 'pages'} now link to it. Remove or repoint the {deleteRefused.inboundLinks.length === 1 ? 'link' : 'links'} listed below, then delete again.</p>
+    {/if}
     <ul class="mt-1 w-full">
       {#each deleteRefused.inboundLinks as link (link.concept + '/' + link.id)}
         <li>
@@ -413,7 +426,7 @@ the loaded entries in component state.
               <td class="w-12 px-2 text-right sm:px-4">
                 {#if deleteRefused?.id === entry.id}
                   <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                  <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} pending={entry.status !== 'published'} />
+                  <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
                 {:else}
                   <form method="POST" action="?/delete">
                     <CsrfField />

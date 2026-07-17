@@ -59,6 +59,19 @@ function missingFragmentNode(id: string): Paragraph {
 }
 
 /**
+ * The notice for an `::include` with no `fragment` attribute at all, distinct from
+ *  {@link missingFragmentNode}: there is no id to name, so the copy says so directly rather than
+ *  trailing "Missing fragment: " off into nothing.
+ */
+function noFragmentNamedNode(): Paragraph {
+  return {
+    type: 'paragraph',
+    data: { hName: 'p', hProperties: { className: [MISSING_CLASS] } },
+    children: [{ type: 'text', value: "This include doesn't name a fragment." }],
+  };
+}
+
+/**
  * Resolve `::include{fragment="<id>"}` leaf directives against the VFile's resolver, splicing the
  *  fragment's parsed body in place of the directive. With no resolver supplied every include
  *  directive is left untouched for the stamp step's literal-prose restore. A missing or empty
@@ -75,7 +88,7 @@ export function remarkResolveIncludes() {
       const id = node.attributes?.fragment || undefined;
       if (!id) {
         log.warn('include.missing', { fragment: '' });
-        parent.children.splice(index, 1, missingFragmentNode(''));
+        parent.children.splice(index, 1, noFragmentNamedNode());
         return [SKIP, index + 1];
       }
       const body = resolve(id); // may throw (build backstop); propagates out of render

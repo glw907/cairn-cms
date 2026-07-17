@@ -295,6 +295,37 @@ describe('ConceptList', () => {
     expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
   });
 
+  it('surfaces a refused fragment delete from the list with the include copy family, not the link family', async () => {
+    const form = {
+      error: 'Cannot delete welcome: 1 entry includes it. Remove the include first.',
+      id: 'welcome',
+      inboundLinks: [
+        { concept: 'posts', id: '2026-05-03-post-3', title: 'Post 03', permalink: '/posts/post-3' },
+      ],
+      inboundKind: 'include' as const,
+    };
+    const entries = [
+      { id: 'welcome', title: 'Welcome', date: null, draft: false, status: 'published' as const, summary: null },
+    ];
+    const screen = render(ConceptList, {
+      data: data({ conceptId: 'fragments', label: 'Fragment', dated: false, entries }),
+      form,
+    });
+    const banner = screen.container.querySelector('.alert-error');
+    expect(banner?.textContent ?? '').toMatch(/could not be deleted/i);
+    expect(banner?.textContent ?? '').toMatch(/1 entry includes it/i);
+    expect(banner?.textContent ?? '').toMatch(/remove the include first/i);
+    expect(banner?.textContent ?? '').not.toMatch(/link to it/i);
+    expect(banner?.textContent ?? '').not.toMatch(/repoint/i);
+    expect(banner?.querySelector('a')?.textContent ?? '').toContain('Post 03');
+    // The row's own DeleteDialog mount also threads the include kind, so its blocked-view copy
+    // (rendered into the DOM even while the dialog is unopened) matches the banner rather than the
+    // link family's "repoint" wording.
+    const rowDialog = screen.container.querySelector('dialog[aria-labelledby="cairn-delete-dialog-title"]');
+    expect(rowDialog?.textContent ?? '').toMatch(/included by 1 entry/i);
+    expect(rowDialog?.textContent ?? '').not.toMatch(/repoint/i);
+  });
+
   // The density ruling (design arc 2026-07-15): rows are one line, so the summary stays off the
   // office list even when the entry carries one (it still serves the edit page's Details).
   it('a row stays one line: the summary never renders on the list', async () => {

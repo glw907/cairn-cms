@@ -2257,6 +2257,29 @@ persistent "?" carries Markdown help, design-arc D2).
           </button>
         </div>
       </fieldset>
+      {#if data.conceptId === FRAGMENTS_CONCEPT_ID}
+        <!-- The where-used surface (spec section on reuse): a fragment's own edit screen names its
+             consumers, the same data.inboundLinks the delete guard blocks on, so an author sees the
+             blast radius before publishing rather than only when a delete refuses. Read-only, no new
+             colors or badges, following the group idiom above. -->
+        <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+          <legend class={eyebrowClass}>Included in</legend>
+          {#if data.inboundLinks.length}
+            <p class="text-xs text-muted">
+              Included in {data.inboundLinks.length} {data.inboundLinks.length === 1 ? 'entry' : 'entries'}.
+            </p>
+            <ul class="flex flex-col gap-1">
+              {#each data.inboundLinks as link (link.concept + '/' + link.id)}
+                <li>
+                  <a class="link text-xs" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
+                </li>
+              {/each}
+            </ul>
+          {:else}
+            <p class="text-xs text-muted">Not included anywhere yet.</p>
+          {/if}
+        </fieldset>
+      {/if}
     </div>
   </aside>
 </form>

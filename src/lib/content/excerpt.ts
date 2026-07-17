@@ -3,14 +3,18 @@
 // summary-mode feed read one derived excerpt without a full render.
 
 /**
- * A directive's marker line: the colon fence, its optional name, its optional `[label]`, and any
- *  trailing attributes. The label is captured, because a directive's authored prose rides there:
- *  cairn serializes a component's `title` slot to `[label]`, and a component whose only slot is a
- *  title (the showcase's `pull-quote`) carries its entire text on this line. Everything outside the
- *  label is machine markup. The `\s{0,3}` bound is deliberate: at four spaces the line is an
- *  indented code block, not a directive, and its text stays literal.
+ * A directive's marker line: the colon fence, then either a directive name or nothing at all (a
+ *  container's closing fence), plus an optional `[label]` and any trailing attributes. The label is
+ *  captured, because a directive's authored prose rides there: cairn serializes a component's
+ *  `title` slot to `[label]`, and a component whose only slot is a title (the showcase's
+ *  `pull-quote`) carries its entire text on this line. Everything outside the label is markup.
+ *
+ * The name-or-nothing requirement is what keeps this off ordinary prose. Colons followed by a
+ *  space are not a directive, so a heading or a quote whose text merely opens with `::` keeps its
+ *  words. The `\s{0,3}` bound is deliberate for the same reason: at four spaces the line is an
+ *  indented code block, and its text stays literal.
  */
-const DIRECTIVE_LINE = /^\s{0,3}:{2,}[^\s[{]*(?:\[([^\]]*)\])?[^\n]*$/gm;
+const DIRECTIVE_LINE = /^\s{0,3}:{2,}(?:[A-Za-z0-9_-]+(?:\[([^\]]*)\])?[^\n]*)?$/gm;
 
 /**
  * Reduce markdown to readable plain text: drop fenced code, directive markup, images, and markers;

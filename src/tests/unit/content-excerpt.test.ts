@@ -50,6 +50,17 @@ describe('deriveExcerpt', () => {
     expect(deriveExcerpt('Before.\n\n    ::include{fragment="notice"}')).toContain('::include');
   });
 
+  // Colons followed by a space are prose, not a directive. The blockquote rule runs first, so
+  // without a name-or-nothing requirement the directive rule would swallow any heading or quote
+  // whose text merely opens with two colons.
+  it('keeps a heading whose text merely begins with colons', () => {
+    expect(deriveExcerpt('## :: A note on colons\n\nBody text here.')).toBe(':: A note on colons Body text here.');
+  });
+
+  it('keeps a blockquote whose text merely begins with colons', () => {
+    expect(deriveExcerpt('> :: quoted colons\n\nBody text here.')).toBe(':: quoted colons Body text here.');
+  });
+
   it('cuts a long body at a word boundary with an ellipsis, never mid-word', () => {
     const body = 'one two three four five';
     expect(deriveExcerpt(body, { maxChars: 12 })).toBe('one two…');

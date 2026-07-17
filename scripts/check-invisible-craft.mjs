@@ -1,15 +1,17 @@
 // cairn-cms: the invisible-craft gate. Banks three mechanical rules from the 2026-07-15 admin
 // polish rubric (docs/internal/2026-07-15-admin-resolved-polish-brief.md) as standing floors over
-// src/lib/components: (1) TRANSITION-DURATION BAND, every transition/animation duration (a Tailwind
-// `duration-<n>`/`duration-[<n>ms]` utility, or a literal `<n>ms` inside a `transition`/`animation`
-// CSS declaration, including the EditorView.theme object syntax the CodeMirror modules use) sits in
-// [150, 250]ms unless allowlisted; (2) SPACING-BRACKET ALLOWLIST, an arbitrary-value Tailwind spacing
-// bracket in component markup (padding, margin, gap, or inset utilities) is allowlisted by exact
-// file+token, everything else free-floating off the 4/8px scale is a finding; (3) NO ACHROMATIC
-// COLORS, no pure-achromatic `oklch(n% 0 0)`, no `#000`/`#fff` hex, no bare `black`/`white` keyword in
-// a style value (`transparent` and `currentColor` are fine). Each rule's exceptions live by exact
-// file+token+reason in scripts/invisible-craft-budget.json beside this file, the same allowlist idiom
-// check-custom-surface.mjs uses for its own budget. Wired as `npm run check:invisible-craft`.
+// src/lib/components and the showcase's own template tree (SCAN_DIRS below): (1)
+// TRANSITION-DURATION BAND, every transition/animation duration (a Tailwind `duration-<n>`/
+// `duration-[<n>ms]`/`duration-[<n>s]` utility, or a literal `<n>ms`/`<n>s` inside a
+// `transition`/`animation` CSS declaration, including the EditorView.theme object syntax the
+// CodeMirror modules use) sits in [150, 250]ms unless allowlisted; (2) SPACING-BRACKET ALLOWLIST,
+// an arbitrary-value Tailwind spacing bracket in component markup (padding, margin, gap, or inset
+// utilities) is allowlisted by exact file+token, everything else free-floating off the 4/8px scale
+// is a finding; (3) NO ACHROMATIC COLORS, no pure-achromatic `oklch(n% 0 0)`, no `#000`/`#fff` hex,
+// no bare `black`/`white` keyword in a style value (`transparent` and `currentColor` are fine).
+// Each rule's exceptions live by exact file+token+reason in scripts/invisible-craft-budget.json
+// beside this file, the same allowlist idiom check-custom-surface.mjs uses for its own budget.
+// Wired as `npm run check:invisible-craft`.
 import { readFileSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,7 +19,15 @@ import { walk } from './walk-files.mjs';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const COMPONENTS_DIR = 'src/lib/components';
+// The admin components plus the showcase's own template tree (its public-facing chrome, the
+// chassis it composes from, and the theme layer a site re-skins): every surface a reader or an
+// editor actually sees, and so every surface the rubric's three rules apply to.
+const SCAN_DIRS = [
+  'src/lib/components',
+  'examples/showcase/src/chassis',
+  'examples/showcase/src/theme',
+  'examples/showcase/src/routes',
+];
 const DURATION_MIN = 150;
 const DURATION_MAX = 250;
 
@@ -45,18 +55,33 @@ function lineOf(source, index) {
   return source.slice(0, index).split('\n').length;
 }
 
-const DURATION_BRACKET = /duration-\[(\d+(?:\.\d+)?)ms\]/g;
+// The bracket form admits either CSS time unit; the template tree (examples/showcase's chassis,
+// theme, and route components) writes every duration in `s`, never `ms`.
+const DURATION_BRACKET = /duration-\[(\d+(?:\.\d+)?)(ms|s)\]/g;
 const DURATION_NUMERIC = /duration-(\d+)\b(?!\.)/g;
 // A plain CSS declaration on one line, ending in `;` (the `.css` file and `<style>` block form).
 const DURATION_DECL_UNQUOTED = /\b(?:transition|animation)(?:-duration)?\s*:\s*([^;{}\n]*);/g;
 // The CodeMirror `EditorView.theme` object form: a quoted string value (the `.ts`/`.svelte` form).
 const DURATION_DECL_QUOTED = /\b(?:transition|animation)(?:-duration)?\s*:\s*(['"])((?:(?!\1)[^\n])*)\1/g;
-const MS_TOKEN = /(\d+(?:\.\d+)?)ms/g;
+// A CSS time literal inside a declaration value: digits followed by `ms` or the bare `s` unit.
+// `ms` is tried first in the alternation so a `200ms` literal is read whole rather than as a
+// wandering `s`; toMs converts a matched `s` literal to milliseconds for the band check.
+const DURATION_TOKEN = /(\d+(?:\.\d+)?)(ms|s)\b/g;
+
+/**
+ * A CSS time value in milliseconds, converting a bare `s` literal.
+ * @param {number} value
+ * @param {string} unit `'ms'` or `'s'`
+ * @returns {number}
+ */
+function toMs(value, unit) {
+  return unit === 's' ? value * 1000 : value;
+}
 
 /**
  * Every transition/animation duration in a (comment-stripped) source, in or out of the
  * [150, 250]ms band. Each hit carries a `token`, the exact allowlist key: the matched Tailwind
- * utility text for a `duration-*` class, or the trimmed declaration text for a literal `<n>ms`.
+ * utility text for a `duration-*` class, or the trimmed declaration text for a literal duration.
  * @param {string} source
  * @returns {{ line: number, ms: number, token: string }[]}
  */
@@ -64,7 +89,7 @@ export function durationHits(source) {
   /** @type {{ line: number, ms: number, token: string }[]} */
   const hits = [];
   for (const m of source.matchAll(DURATION_BRACKET)) {
-    hits.push({ line: lineOf(source, m.index), ms: Number(m[1]), token: m[0] });
+    hits.push({ line: lineOf(source, m.index), ms: toMs(Number(m[1]), m[2]), token: m[0] });
   }
   for (const m of source.matchAll(DURATION_NUMERIC)) {
     hits.push({ line: lineOf(source, m.index), ms: Number(m[1]), token: m[0] });
@@ -72,12 +97,12 @@ export function durationHits(source) {
   for (const m of source.matchAll(DURATION_DECL_UNQUOTED)) {
     const token = m[0].trim();
     const line = lineOf(source, m.index);
-    for (const msm of m[1].matchAll(MS_TOKEN)) hits.push({ line, ms: Number(msm[1]), token });
+    for (const dm of m[1].matchAll(DURATION_TOKEN)) hits.push({ line, ms: toMs(Number(dm[1]), dm[2]), token });
   }
   for (const m of source.matchAll(DURATION_DECL_QUOTED)) {
     const token = m[0].trim();
     const line = lineOf(source, m.index);
-    for (const msm of m[2].matchAll(MS_TOKEN)) hits.push({ line, ms: Number(msm[1]), token });
+    for (const dm of m[2].matchAll(DURATION_TOKEN)) hits.push({ line, ms: toMs(Number(dm[1]), dm[2]), token });
   }
   return hits;
 }
@@ -119,16 +144,18 @@ export function achromaticColorHits(source) {
 }
 
 /**
- * Every `src/lib/components` file matching the given extensions, as `{ path, source }` pairs
- * (`path` relative to the repo root, forward-slashed).
+ * Every file matching the given extensions across the scanned tree (SCAN_DIRS), as
+ * `{ path, source }` pairs (`path` relative to the repo root, forward-slashed).
  * @param {(name: string) => boolean} keep
  * @returns {{ path: string, source: string }[]}
  */
 function componentFiles(keep) {
-  return walk(resolve(ROOT, COMPONENTS_DIR), keep).map((file) => ({
-    path: relative(ROOT, file).split('\\').join('/'),
-    source: readFileSync(file, 'utf8'),
-  }));
+  return SCAN_DIRS.flatMap((dir) =>
+    walk(resolve(ROOT, dir), keep).map((file) => ({
+      path: relative(ROOT, file).split('\\').join('/'),
+      source: readFileSync(file, 'utf8'),
+    })),
+  );
 }
 
 /**

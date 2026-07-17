@@ -86,3 +86,49 @@ test('reading-surface article — light — 1920px (mid, active clamp slope)', a
 	await waitForImagesToLoad(page);
 	await expect(page).toHaveScreenshot('site-article-light-1920.png', { fullPage: true, timeout: 20000 });
 });
+
+// Two Waymark-audit findings asserted as computed-style/geometry checks rather than screenshots,
+// since neither is a pixel-identity question: the footer's PIN (a layout invariant that must hold
+// across every short page's varying content length, not just one snapshot) and the focus ring's
+// PRESENCE (a style-computation question a screenshot cannot assert on directly, since it hinges on
+// `:focus-visible`, not paint).
+
+// About is a short page (a static content page with no long-running archive below it), so its
+// document height is well under the viewport; the (site) layout's chrome wrapper must therefore
+// grow to fill the remaining space and pin the footer at the viewport bottom instead of leaving its
+// own background exposed below the footer as a seam.
+test('a short page pins the footer with no background seam below it', async ({ page }) => {
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.goto('/about');
+	const footer = page.locator('footer.site-footer');
+	await expect(footer).toBeVisible();
+	const { footerBottom, documentBottom } = await page.evaluate(() => {
+		const rect = document.querySelector('footer.site-footer')!.getBoundingClientRect();
+		return {
+			footerBottom: window.scrollY + rect.bottom,
+			documentBottom: document.documentElement.scrollHeight,
+		};
+	});
+	// A one-pixel tolerance covers sub-pixel layout rounding; anything more is a real gap.
+	expect(Math.abs(documentBottom - footerBottom)).toBeLessThanOrEqual(1);
+});
+
+// The home lead entry's title link must carry its own designed focus-visible treatment, not
+// whatever outline the browser draws by default; `.focus()` reliably triggers `:focus-visible` on
+// an anchor in Chromium (unlike a button or input, an anchor is not on the UA's mouse-focus
+// suppression list), so this needs no simulated Tab traversal.
+test('the home lead title gets a styled focus-visible ring, not the browser default', async ({ page }) => {
+	await page.emulateMedia({ colorScheme: 'light' });
+	await page.goto('/');
+	const leadTitleLink = page.locator('.lead__title a').first();
+	await expect(leadTitleLink).toBeVisible();
+	await leadTitleLink.focus();
+	const { hasOutline, hasBoxShadow } = await leadTitleLink.evaluate((el) => {
+		const style = getComputedStyle(el);
+		return {
+			hasOutline: style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0,
+			hasBoxShadow: style.boxShadow !== 'none',
+		};
+	});
+	expect(hasOutline || hasBoxShadow).toBe(true);
+});

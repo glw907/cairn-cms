@@ -12,7 +12,9 @@
 //       BOTH sRGB and display-p3; if either gamut drops below the threshold the pair fails. This is
 //       strictly more than DaisyUI's sRGB-only check and proves a re-skin stays legible on wide-gamut
 //       screens. The contrast core and the theme parser are exported so the re-skin fixture
-//       (reskin-fixture.mjs) measures AA exactly the same way.
+//       (reskin-fixture.mjs) measures AA exactly the same way. The same check re-runs against
+//       theme.css's tokens with the cairn-theme identity overlay's base-ladder override merged on
+//       top (CAIRN_THEME_CSS), so an overlay retone is held to the identical floor.
 //
 // Wired as `npm run check:public-tokens`. Exits non-zero on any literal violation or any failing pair.
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -24,6 +26,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SHOWCASE_SRC = resolve(ROOT, 'examples/showcase/src');
 const THEME_CSS = resolve(ROOT, 'examples/showcase/src/theme/theme.css');
 const PROSE_CSS = resolve(ROOT, 'examples/showcase/src/chassis/prose.css');
+// The cairn-theme identity overlay: a documented opt-in layer (docs/guides/make-waymark-your-own.md)
+// imported directly after theme.css, retoning only the base ladder. Part (b) also checks its merged
+// contrast, so a retone that quietly drops below AA fails here instead of shipping unnoticed.
+const CAIRN_THEME_CSS = resolve(ROOT, 'examples/cairn-theme/cairn.css');
 // The chassis token system: the code-ramp bindings (once in theme.css, now here) and the
 // composition primitives both live in this file's import graph. Its own generic defaults are
 // unconditionally overridden by theme.css's later declarations, so it is a definitions layer the
@@ -329,14 +335,14 @@ export function themePairs(t) {
 }
 
 /**
- * Run the dual-gamut contrast check over both themes parsed from a theme.css string. One row per
- * pair (theme, label, the two ratios, the threshold, pass). Pure: no I/O, never exits, so the re-skin
- * fixture reuses it on a rewritten theme.
- * @param {string} css the contents of theme.css
+ * Run the dual-gamut contrast check over an already-parsed pair of theme token maps. One row per
+ * pair (theme, label, the two ratios, the threshold, pass). Pure: no I/O, never exits. Split out
+ * from {@link checkThemeContrast} so a caller that has merged an overlay's tokens onto theme.css's
+ * own (applyThemeOverlay) can run the identical check without re-serializing to CSS first.
+ * @param {{ light: Record<string, string>, dark: Record<string, string> }} themes
  * @returns {{ theme: string, label: string, srgb: number, p3: number, threshold: number, pass: boolean }[]}
  */
-export function checkThemeContrast(css) {
-  const themes = parseThemeTokens(css);
+export function checkThemeContrastTokens(themes) {
   /** @type {{ theme: string, label: string, srgb: number, p3: number, threshold: number, pass: boolean }[]} */
   const rows = [];
   /** @type {[string, Record<string, string>][]} */
@@ -358,6 +364,80 @@ export function checkThemeContrast(css) {
     }
   }
   return rows;
+}
+
+/**
+ * Run the dual-gamut contrast check over both themes parsed from a theme.css string. Pure: no I/O,
+ * never exits, so the re-skin fixture reuses it on a rewritten theme.
+ * @param {string} css the contents of theme.css
+ * @returns {{ theme: string, label: string, srgb: number, p3: number, threshold: number, pass: boolean }[]}
+ */
+export function checkThemeContrast(css) {
+  return checkThemeContrastTokens(parseThemeTokens(css));
+}
+
+// ============================================================================
+// (b.1) A theme-identity overlay's base-ladder override (examples/cairn-theme/cairn.css is the
+// standing example: docs/guides/make-waymark-your-own.md documents it as an opt-in layer imported
+// directly after theme.css, retoning only the base ladder with a plain, unlayered `:root` rule).
+// ============================================================================
+
+const OVERLAY_BASE_TOKENS = ['color-base-100', 'color-base-200', 'color-base-300', 'color-base-content'];
+
+/**
+ * Every plain `:root { ... }` block body in a CSS string, in file order: not `:root:not(...)`, not
+ * `:root[...]`, the media-guarded or attribute-guarded forms a dark override uses. An overlay file
+ * may split unrelated declarations across more than one plain `:root` block (a font-face block, say,
+ * ahead of the color-ladder block), so a caller reads every one, not just the first.
+ * @param {string} css
+ * @returns {string[]}
+ */
+function plainRootBlocks(css) {
+  /** @type {string[]} */
+  const out = [];
+  const re = /:root\s*\{([\s\S]*?)\n\}/g;
+  let m;
+  while ((m = re.exec(css))) out.push(m[1]);
+  return out;
+}
+
+/**
+ * The base-ladder override a theme-identity overlay file writes on top of theme.css: the four
+ * `--color-base-*` tokens, read from its light (every plain `:root` block, concatenated) and dark
+ * (the `prefers-color-scheme: dark` block, {@link darkMediaRoot}'s same pattern) sources. A token
+ * the overlay does not touch is simply absent from the returned map, so {@link applyThemeOverlay}
+ * leaves theme.css's own value in place for it.
+ * @param {string} css the contents of the overlay file
+ * @returns {{ light: Record<string, string>, dark: Record<string, string> }}
+ */
+export function readThemeOverlayBaseTokens(css) {
+  const lightBlock = plainRootBlocks(css).join('\n');
+  const darkBlock = darkMediaRoot(css);
+  /** @param {string} block */
+  const collect = (block) => {
+    /** @type {Record<string, string>} */
+    const out = {};
+    for (const name of OVERLAY_BASE_TOKENS) {
+      const v = readOklch(block, name);
+      if (v) out[name] = v;
+    }
+    return out;
+  };
+  return { light: collect(lightBlock), dark: collect(darkBlock) };
+}
+
+/**
+ * theme.css's own parsed tokens with an overlay's override applied on top, per theme. A token the
+ * overlay does not carry keeps theme.css's value.
+ * @param {{ light: Record<string, string>, dark: Record<string, string> }} themeTokens from {@link parseThemeTokens}
+ * @param {{ light: Record<string, string>, dark: Record<string, string> }} overlayTokens from {@link readThemeOverlayBaseTokens}
+ * @returns {{ light: Record<string, string>, dark: Record<string, string> }}
+ */
+export function applyThemeOverlay(themeTokens, overlayTokens) {
+  return {
+    light: { ...themeTokens.light, ...overlayTokens.light },
+    dark: { ...themeTokens.dark, ...overlayTokens.dark },
+  };
 }
 
 /**
@@ -546,6 +626,17 @@ function main() {
     (n) => `Contrast check: FAIL (${n} pair(s) below AA in at least one gamut)`,
   );
   if (!contrastPassed) failed = true;
+
+  // (b.1) The cairn-theme identity overlay, merged onto theme.css's tokens, held to the same floor.
+  const cairnOverlayRows = checkThemeContrastTokens(
+    applyThemeOverlay(parseThemeTokens(css), readThemeOverlayBaseTokens(readFileSync(CAIRN_THEME_CSS, 'utf8'))),
+  );
+  const cairnContrastPassed = reportContrast(
+    cairnOverlayRows,
+    (n) => `Contrast check (cairn-theme overlay): PASS (${n} pairs clear AA in both sRGB and P3)`,
+    (n) => `Contrast check (cairn-theme overlay): FAIL (${n} pair(s) below AA in at least one gamut)`,
+  );
+  if (!cairnContrastPassed) failed = true;
 
   // (c) Token resolution.
   const dangling = checkTokenResolution(

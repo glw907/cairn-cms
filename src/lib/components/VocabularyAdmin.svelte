@@ -227,18 +227,21 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
             : ''}.
         </div>
       {:else}
+        <!-- Below sm the ledger stacks (each row's slug and count move under its input), so the
+             header keeps only Name; the meta line labels itself. At sm+ the four-track grid and
+             its full header return. -->
         <div
-          class="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted"
+          class="grid grid-cols-[1fr_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted sm:grid-cols-[1fr_auto_auto_auto]"
         >
           <span>Name</span>
-          <span>Stored as</span>
-          <span>In use</span>
+          <span class="hidden sm:block">Stored as</span>
+          <span class="hidden sm:block">In use</span>
           <span class="sr-only">Remove</span>
         </div>
         {#each working as entry, i (entry.value)}
           {@const count = data.usage[entry.value] ?? 0}
           <div
-            class="grid grid-cols-[1fr_auto_auto_auto] items-center gap-x-4 px-4 py-2.5 {i > 0
+            class="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-0.5 px-4 py-2.5 sm:grid-cols-[1fr_auto_auto_auto] {i > 0
               ? 'border-t border-[var(--cairn-card-border)]'
               : ''}"
           >
@@ -246,15 +249,26 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
               aria-label="Tag name ({entry.value})"
               type="text"
               bind:value={entry.label}
-              class="input input-sm min-w-0"
+              class="input input-sm col-start-1 row-start-1 min-w-0"
             />
-            <code class="font-mono text-[0.8125rem] text-muted">{entry.value}</code>
+            <!-- The stacked row's meta line, below sm only: the slug and count sit under the
+                 input, indented to the typed text (pl-3 matches input-sm's text inset). -->
+            <div class="col-start-1 row-start-2 flex items-baseline gap-1.5 pl-3 text-[0.8125rem] sm:hidden">
+              <code class="font-mono text-muted">{entry.value}</code>
+              <span aria-hidden="true" class="text-muted">·</span>
+              {#if count > 0}
+                <span class="whitespace-nowrap tabular-nums text-subtle">{count} {count === 1 ? 'post' : 'posts'}</span>
+              {:else}
+                <span class="whitespace-nowrap text-subtle">Unused</span>
+              {/if}
+            </div>
+            <code class="hidden font-mono text-[0.8125rem] text-muted sm:block">{entry.value}</code>
             {#if count > 0}
-              <span class="whitespace-nowrap text-[0.8125rem] tabular-nums text-subtle"
+              <span class="hidden whitespace-nowrap text-[0.8125rem] tabular-nums text-subtle sm:inline"
                 >{count} {count === 1 ? 'post' : 'posts'}</span
               >
             {:else}
-              <span class="whitespace-nowrap text-[0.8125rem] text-subtle">Unused</span>
+              <span class="hidden whitespace-nowrap text-[0.8125rem] text-subtle sm:inline">Unused</span>
             {/if}
             {#if count > 0}
               <!-- GUARDED delete: aria-disabled, never native disabled, with a stateful name and
@@ -268,7 +282,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
                   : 'posts'}. Remove it from those posts first."
                 title="Used on {count} {count === 1 ? 'post' : 'posts'}. Remove it from those posts first."
                 onclick={() => remove(entry.value)}
-                class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-subtle opacity-50"
+                class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-subtle opacity-50 sm:col-start-4 sm:row-span-1"
               >
                 <Trash2Icon class="h-4 w-4" aria-hidden="true" />
               </button>
@@ -279,7 +293,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
                 aria-label="Remove {entry.label}"
                 title="Remove {entry.label}"
                 onclick={() => remove(entry.value)}
-                class="inline-flex h-8 w-8 flex-none items-center justify-center rounded-lg text-error hover:bg-error/10"
+                class="col-start-2 row-start-1 row-span-2 inline-flex h-8 w-8 flex-none items-center justify-center self-center rounded-lg text-error hover:bg-error/10 sm:col-start-4 sm:row-span-1"
               >
                 <Trash2Icon class="h-4 w-4" aria-hidden="true" />
               </button>

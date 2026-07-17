@@ -30,6 +30,39 @@ function diagnosticAtCaret(
 }
 
 /**
+ * Render a diagnostic message into `host`, splitting on backtick-quoted spans (the message-string
+ * contract both spellcheck.ts and objective-errors.ts use to quote a single flagged word or token) so
+ * each quoted span becomes a `<code>` child instead of showing its backticks. Builds DOM nodes only,
+ * never innerHTML: a diagnostic message can embed an author-typed word, and parsing it as markup would
+ * let that word's own characters reach the DOM as elements. A message with no backticks, an unbalanced
+ * backtick, or an empty quoted span renders as a single plain text node, unchanged from before.
+ */
+export function renderDiagnosticMessage(host: HTMLElement, message: string): void {
+  host.textContent = '';
+  const quoted = /`([^`]+)`/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let sawSpan = false;
+  while ((match = quoted.exec(message)) !== null) {
+    sawSpan = true;
+    if (match.index > lastIndex) {
+      host.appendChild(document.createTextNode(message.slice(lastIndex, match.index)));
+    }
+    const code = document.createElement('code');
+    code.textContent = match[1] ?? '';
+    host.appendChild(code);
+    lastIndex = quoted.lastIndex;
+  }
+  if (!sawSpan) {
+    host.textContent = message;
+    return;
+  }
+  if (lastIndex < message.length) {
+    host.appendChild(document.createTextNode(message.slice(lastIndex)));
+  }
+}
+
+/**
  * Build the recipe popover DOM for one diagnostic. `role="group"` (non-modal, labeled): shown without
  * taking focus; Alt-Enter moves focus into these native buttons; Escape returns focus here.
  */
@@ -41,7 +74,7 @@ function buildPopoverDom(view: EditorView, diagnostic: Diagnostic, from: number,
 
   const message = document.createElement('p');
   message.className = 'cairn-cm-suggest__msg';
-  message.textContent = diagnostic.message;
+  renderDiagnosticMessage(message, diagnostic.message);
   dom.appendChild(message);
 
   const actions = document.createElement('div');

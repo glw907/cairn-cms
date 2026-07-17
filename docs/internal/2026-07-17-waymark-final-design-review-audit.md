@@ -187,6 +187,28 @@ the verdicts where a fork needs seen-not-described candidates.
    the public template gets a ~200ms cross-fade on scheme change or inherits the same calm is
    a one-line verdict.
 
+## Verdicts (Geoff, 2026-07-17, all seven forks settled)
+
+1. **Wordmark**: neutral placeholder slot; cairn's identity moves off the template chrome. The
+   display-face counters and pull-quote stay as Waymark's signature flourish.
+2. **Archive**: year-grouped segmentation plus pagination.
+3. **Article meta**: one meta line under the h1 (date, byline when present), the "9 Jul 2026"
+   vocabulary everywhere.
+4. **Calendar**: cut from the template nav (settled by the calendar exchange; the seam proof
+   lives in the e2e suite and the admin Signups screen; the ROADMAP's pre-B3 slot already
+   files the route's removal).
+5. **Mobile header**: two-row lockup (brand + toggle above, nav below); probe candidates at
+   320/390 before implementation.
+6. **Punctuation**: smarten at render in the chassis pipeline; markdown source stays as typed.
+7. **Theme toggle and navigation motion**: a ~200ms token-level color cross-fade on toggle,
+   applied via a temporary class during the flip only, instant under prefers-reduced-motion
+   and in older browsers. Researched 2026-07-17: the cross-fade is the current fundamental;
+   the View Transitions circular reveal fails the trendy lens (name-the-year). Extended by
+   Geoff in the same sitting to internal navigation: a subtle root cross-fade (~150-200ms) on
+   page-to-page moves via SvelteKit onNavigate + the View Transitions API, progressive
+   enhancement, reduced-motion-gated; a plain cross-fade only, since slides and
+   shared-element morphs are where a blog template starts to date itself.
+
 ## Standing-gate candidates
 
 - Extend `check:invisible-craft` to the template tree with the seconds-regex fix and the

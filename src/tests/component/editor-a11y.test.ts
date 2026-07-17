@@ -4,6 +4,7 @@ import { userEvent } from 'vitest/browser';
 import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { COLD_START, makeFakeWorker } from './_fake-spell-worker.js';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
+import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
 
 describe('editor accessible name', () => {
@@ -107,6 +108,55 @@ describe('folded pill name stays in sync with an in-place directive rename', () 
     await expect
       .poll(() => container.querySelector('.cm-cairn-fold-pill')?.getAttribute('aria-label'), COLD_START)
       .toBe(before.replace('note section,', 'warning section,'));
+  });
+});
+
+describe("folded pill tooltip stays in sync with an in-place rename between same-label components", () => {
+  it("updates the pill's title when the directive renames to a same-label component with a different use line", async () => {
+    // Two registered components sharing a label but carrying different `use` lines, so the refresh
+    // gate cannot ride blockName's resolved label alone: the raw directive name must participate too,
+    // or a rename from one to the other looks like no change at all and the pill's tooltip strands.
+    const registry = defineRegistry({
+      components: [
+        {
+          name: 'note',
+          label: 'Callout',
+          description: 'x',
+          use: 'Use for a supporting aside.',
+          build: (n: unknown) => n,
+        } as unknown as ComponentDef,
+        {
+          name: 'warning',
+          label: 'Callout',
+          description: 'x',
+          use: 'Use for a safety-critical caution.',
+          build: (n: unknown) => n,
+        } as unknown as ComponentDef,
+      ],
+    });
+    const doc = ':::note\nbody line one\nbody line two\n:::\n';
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const { container } = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      registry,
+      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
+        replace = fn;
+      },
+    });
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
+    await userEvent.click(container.querySelector<HTMLButtonElement>('.cm-cairn-fold-btn')!);
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeTruthy();
+    const before = container.querySelector('.cm-cairn-fold-pill')!.getAttribute('title');
+    expect(before).toBe('Use for a supporting aside.');
+    await expect.poll(() => typeof replace).toBe('function');
+    // Rename note -> warning while folded; both resolve to the same "Callout" label, so the pill's
+    // visible text and aria-label are unchanged, but the tooltip must still update.
+    const from = doc.indexOf('note');
+    replace!(from, from + 'note'.length, 'warning');
+    await expect
+      .poll(() => container.querySelector('.cm-cairn-fold-pill')?.getAttribute('title'), COLD_START)
+      .toBe('Use for a safety-critical caution.');
   });
 });
 

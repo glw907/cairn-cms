@@ -1,7 +1,7 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error, fail } from '@sveltejs/kit';
+import { redirect, error } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -91,15 +91,6 @@ export interface VocabularyLoadData {
   unlisted: { value: string; count: number }[];
   /** A redirected save's validation error, or an unexpected action failure's bounce, read from `?error=`. */
   error: string | null;
-}
-
-/**
- * A save refused because the committed site config fails to parse: `fail(400)` carrying the
- *  parser's own actionable boundary message. Module-internal: the settings and vocabulary screens
- *  read the envelope's `error` string loosely, so no other module names this type.
- */
-interface SiteConfigSaveFailure {
-  error: string;
 }
 
 /**
@@ -207,7 +198,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSave(event: ContentEvent): Promise<ReturnType<typeof fail>> {
+  async function settingsSave(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
     // surface to commit), the server half of the truthful gate.
@@ -233,8 +224,10 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
     // A SiteConfigError here is an operator fault (a misplaced or unrecognized key), not an editor
-    // mistake, so it gets the parser's own actionable fail(400) rather than the generic 500 an
-    // uncaught throw would produce; vocabularyLoad meets the same fault the same way.
+    // mistake, so it gets the parser's own actionable message redirected back to the form (the
+    // screen's own validation-error idiom, since CairnTidySettings renders no `form` prop and posts a
+    // plain, non-enhanced form: a fail(400) would re-render with no visible error); vocabularyLoad
+    // meets the same fault the same way.
     try {
       parseSiteConfig(raw);
     } catch (err) {
@@ -243,7 +236,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         conditionId: 'config.site-config-invalid',
         error: String(err),
       });
-      return fail(400, { error: err.message } satisfies SiteConfigSaveFailure);
+      throw redirect(303, `/admin/settings?error=${encodeURIComponent(err.message)}`);
     }
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
@@ -336,7 +329,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySave(event: ContentEvent): Promise<ReturnType<typeof fail>> {
+  async function vocabularySave(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
 
     const form = await event.request.formData();
@@ -361,8 +354,9 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
     // A SiteConfigError here is an operator fault, not an editor mistake, so it gets the parser's own
-    // actionable fail(400) rather than the generic 500 an uncaught throw would produce; vocabularyLoad
-    // meets the same fault the same way.
+    // actionable message redirected back to the form (the screen's own validation-error idiom, since
+    // VocabularyAdmin renders no `form` prop and posts a plain, non-enhanced form: a fail(400) would
+    // re-render with no visible error); vocabularyLoad meets the same fault the same way.
     let current: VocabularyEntry[];
     try {
       current = extractVocabulary(parseSiteConfig(raw));
@@ -372,7 +366,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
         conditionId: 'config.site-config-invalid',
         error: String(err),
       });
-      return fail(400, { error: err.message } satisfies SiteConfigSaveFailure);
+      throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(err.message)}`);
     }
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);

@@ -348,9 +348,9 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   listLoad: (event: ContentEvent) => Promise<ListData>;
   mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
   settingsLoad: (event: ContentEvent) => Promise<SettingsData>;
-  settingsSave: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  settingsSave: (event: ContentEvent) => Promise<never>;
   vocabularyLoad: (event: ContentEvent) => Promise<VocabularyLoadData>;
-  vocabularySave: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
+  vocabularySave: (event: ContentEvent) => Promise<never>;
   createAction: (event: ContentEvent) => Promise<never>;
   editLoad: (event: ContentEvent) => Promise<EditData>;
   saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;

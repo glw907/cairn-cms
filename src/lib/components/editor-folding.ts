@@ -330,21 +330,33 @@ function safetyExtender(): Extension {
   });
 }
 
-// The folded pill's name is frozen at fold time: codeFolding calls preparePlaceholder only when a
-// fold is (re)created, never on a later, unrelated edit that just maps the fold's position forward.
-// A directive renamed in place on its still-visible opener line (":::note" -> ":::warning") while the
-// block stays folded would otherwise strand the pill on the old name, since nothing else re-derives
-// it. This transactionExtender re-derives each folded range's name on every doc change and, when it
-// drifted from what the fold was created with, forces a refold (unfold, then fold, in the SAME
-// transaction) so codeFolding recomputes preparePlaceholder against the post-edit text. The identity
-// fix (making the name part of what invalidates the widget) has to be this active, since codeFolding
-// exposes no other hook to recompute a placeholder already on screen.
+// The refresh identity for a folded opener line: the resolved block name (what blockName renders)
+// plus the raw directive name, joined so two different lines can never collide by string
+// concatenation alone. The raw name has to ride along because a rename between two registered
+// components that share a label (same blockName) still changes the pill's `use` tooltip
+// (preparePlaceholder derives it from labels.useFor(rawName)); comparing blockName alone would read
+// that as no change at all and leave the tooltip stranded on the old component.
+function foldIdentity(openerLineText: string, labelFor?: (name: string) => string | undefined): string {
+  return `${directiveOpenerName(openerLineText) ?? ''} ${blockName(openerLineText, labelFor)}`;
+}
+
+// The folded pill's name and tooltip are frozen at fold time: codeFolding calls preparePlaceholder
+// only when a fold is (re)created, never on a later, unrelated edit that just maps the fold's
+// position forward. A directive renamed in place on its still-visible opener line
+// (":::note" -> ":::warning") while the block stays folded would otherwise strand the pill on the
+// old name (and, when the two share a registry label, on the old `use` tooltip too), since nothing
+// else re-derives it. This transactionExtender re-derives each folded range's identity on every doc
+// change and, when it drifted from what the fold was created with, forces a refold (unfold, then
+// fold, in the SAME transaction) so codeFolding recomputes preparePlaceholder against the post-edit
+// text. The identity fix (making the raw name and the resolved block name part of what invalidates
+// the widget) has to be this active, since codeFolding exposes no other hook to recompute a
+// placeholder already on screen.
 function placeholderRefreshExtender(labels: FoldLabelSource): Extension {
   return EditorState.transactionExtender.of((tr) => {
     if (!tr.docChanged) return null;
     const effects = foldEffectsFor(tr, (from, to, mappedFrom, mappedTo, push) => {
-      const before = blockName(tr.startState.doc.lineAt(from).text, labels.labelFor);
-      const after = blockName(tr.state.doc.lineAt(mappedFrom).text, labels.labelFor);
+      const before = foldIdentity(tr.startState.doc.lineAt(from).text, labels.labelFor);
+      const after = foldIdentity(tr.state.doc.lineAt(mappedFrom).text, labels.labelFor);
       if (before !== after) {
         const span = { from: mappedFrom, to: mappedTo };
         push(unfoldEffect.of(span));

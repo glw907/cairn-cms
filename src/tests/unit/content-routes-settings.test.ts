@@ -144,17 +144,24 @@ describe('settingsSave', () => {
     await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
 
-  it('fails 400 with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+  it('redirects with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
     // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
-    // file fails to parse before the write, so the action must return a fail(400) envelope, not the
-    // generic 500 an uncaught throw would produce.
+    // file fails to parse before the write, so the action must bounce to the settings screen's own
+    // ?error= redirect (the screen renders no `form` prop, so a fail(400) would re-render silently)
+    // rather than the generic 500 an uncaught throw would produce.
     const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
     gh.install();
     const routes = createContentRoutes(runtime());
-    const result = await routes.settingsSave(saveEvent('{"fixes":true}') as never);
-    expect(result).toMatchObject({ status: 400 });
-    expect((result as unknown as { data: { error: string } }).data.error).toMatch(/unrecognized key "weird"/);
+    const { status, location } = await expectRedirect(() => routes.settingsSave(saveEvent('{"fixes":true}') as never));
+    expect(status).toBe(303);
+    expect(location).toMatch(/\/admin\/settings\?error=/);
+    expect(decodeURIComponent(location)).toMatch(/unrecognized key "weird"/);
     expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
+    // The load reads the same ?error= param back as data.error.
+    const data = await routes.settingsLoad(
+      contentEvent({ url: `https://t.example${location}` }) as never,
+    );
+    expect(data.error).toMatch(/unrecognized key "weird"/);
   });
 });
 

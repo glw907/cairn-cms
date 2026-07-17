@@ -50,6 +50,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.87.1: the admin polish window (non-breaking at runtime)
+
+The invisible-craft polish pass: about thirty look-preserving refinements across the admin,
+the include line rendered as an atomic chip naming its fragment, the folded-container chip,
+a preview-only boundary cue on spliced fragment content, the publish blast-radius line, and
+a real fix—the login and confirm pages now honor the theme cookie, so a dark-mode editor
+no longer gets a light login card. No consumer action at runtime. The one type-level note:
+`AdminShellData`'s public variant now carries a required `theme` member. The engine produces
+that value itself, so only a site constructing the public variant by hand in TypeScript
+needs to add it; neither production site does.
+
 ## 0.87.0: fragments, and the embedded-routing promise enforced
 
 A site can now declare the reserved `fragments` concept and reuse one piece of markdown across

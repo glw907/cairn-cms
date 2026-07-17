@@ -5,6 +5,7 @@ import MarkdownEditor from '../../lib/components/MarkdownEditor.svelte';
 import { cairnLinkCompletionSource } from '../../lib/components/link-completion.js';
 import type { FormatKind } from '../../lib/components/markdown-format.js';
 import type { LinkTarget } from '../../lib/content/manifest.js';
+import { defineRegistry, type ComponentDef } from '../../lib/render/registry.js';
 
 // Reads the hidden form mirror so a test asserts what the form would submit.
 const hiddenValue = (container: Element) =>
@@ -923,7 +924,9 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
     // ArrowDown from the opener row lands on the row after the closer (the next intro-level line is
     // absent here, so it lands at document end), never inside the hidden range, and the fold holds.
-    await userEvent.click(lineWith(screen.container, ':::panel')!);
+    // Clicking the directive-name span (not the whole line) keeps the click off the fold pill,
+    // which now carries a label and so can occupy more of the row than the bare count once did.
+    await userEvent.click(spanWith(lineWith(screen.container, ':::panel'), 'panel')!);
     await userEvent.keyboard('{ArrowDown}');
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
   });
@@ -1013,6 +1016,82 @@ describe('MarkdownEditor', () => {
     // The safety invariant governs a mount-time fold the same as a manual one: the pill unfolds it.
     await userEvent.click(pill);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+  });
+
+  it('labels the fold pill and the gutter control with the registry component label', async () => {
+    const registry = defineRegistry({
+      components: [
+        {
+          name: 'panel',
+          label: 'Info Panel',
+          description: 'A panel.',
+          use: 'Use to set supporting details apart from the main flow.',
+          build: (n: unknown) => n,
+        } as unknown as ComponentDef,
+      ],
+    });
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
+    await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
+    // The gutter's open-state name is registry-labeled too, the same resolution the pill uses.
+    expect(foldBtn(screen.container)!.getAttribute('aria-label')).toBe('Info Panel section');
+    await userEvent.click(foldBtn(screen.container)!);
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    const pill = foldPill(screen.container)!;
+    expect(pill.textContent).toBe('Info Panel · 3 lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, 3 hidden lines');
+    // The registry's `use` line rides the pill's native tooltip; the opener's own {title="..."}
+    // attribute stays on the opener line and is never repeated here.
+    expect(pill.title).toBe('Use to set supporting details apart from the main flow.');
+  });
+
+  it('falls back to the raw directive name in the pill when the registry has no matching entry', async () => {
+    const registry = defineRegistry({
+      components: [
+        { name: 'callout', label: 'Callout', description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      ],
+    });
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry });
+    await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
+    await userEvent.click(foldBtn(screen.container)!);
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    const pill = foldPill(screen.container)!;
+    expect(pill.textContent).toBe('panel · 3 lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
+    expect(pill.hasAttribute('title')).toBe(false);
+  });
+
+  it('truncates a long registry label with a span the hidden-line count sits outside of', async () => {
+    const longLabel = 'A Genuinely Very Long Component Label';
+    const registry = defineRegistry({
+      components: [
+        { name: 'panel', label: longLabel, description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      ],
+    });
+    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body', registry, foldOnMount: true });
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    const pill = foldPill(screen.container)!;
+    const labelSpan = pill.querySelector<HTMLElement>('.cm-cairn-fold-pill-label')!;
+    expect(labelSpan).toBeTruthy();
+    // The full label rides the DOM (truncation is a CSS ellipsis, never a lossy render), and the
+    // hidden-line count sits outside the truncating span so it can never be clipped.
+    expect(labelSpan.textContent).toBe(longLabel);
+    expect(pill.textContent).toBe(`${longLabel} · 3 lines`);
+    const style = getComputedStyle(labelSpan);
+    expect(style.overflow).toBe('hidden');
+    expect(style.textOverflow).toBe('ellipsis');
+  });
+
+  it("emphasizes an include directive's fragment id while dimming the surrounding attrs machinery", async () => {
+    const screen = render(MarkdownEditor, { value: '::include{fragment="winter-hours"}', name: 'body' });
+    await expect.poll(() => lineWith(screen.container, '::include')).toBeTruthy();
+    const line = lineWith(screen.container, '::include')!;
+    const idSpan = spanWith(line, 'winter-hours');
+    expect(idSpan).toBeTruthy();
+    expect(idSpan!.className).toContain('cm-cairn-directive-label');
+    const braceSpan = spanWith(line, '{fragment="');
+    expect(braceSpan).toBeTruthy();
+    expect(braceSpan!.className).toContain('cm-cairn-directive-mark');
+    expect(braceSpan!.className).not.toContain('cm-cairn-directive-label');
   });
 
   it('reports the component container at the caret and dedupes within a block', async () => {

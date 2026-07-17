@@ -59,40 +59,90 @@ function chevronSvg(): SVGSVGElement {
   return svg;
 }
 
-// The disclosure name for a fold control: the directive name from its opener line, or the
-// generic 'section' when the opener carries none. State-neutral by construction, so
-// aria-expanded stays the sole state signal rather than double-signaling against a verb label.
-function blockName(openerLineText: string): string {
+/**
+ * How the fold system resolves a directive name to the component's human identity. The site's
+ * component registry carries a palette `label` and an optional `use` line per component; a site
+ * passes both lookups through {@link cairnFolding} so the folded pill and the gutter control name
+ * a block by what it is, not its raw directive slug. Both default to returning undefined (the raw
+ * name stands in), so a caller that passes nothing keeps today's unlabeled behavior.
+ */
+export interface FoldLabelSource {
+  /**
+   * The registry label for a directive name, or undefined when it carries no registry entry
+   *  (an engine-native directive like `include`, or a site directive the registry does not know).
+   */
+  labelFor?: (name: string) => string | undefined;
+  /** The registry `use` line for a directive name, or undefined when it carries none. */
+  useFor?: (name: string) => string | undefined;
+}
+
+// The display label for a directive name: the registry's label when one resolves, otherwise the
+// raw directive name itself, so an engine-native or unregistered directive still reads as
+// something rather than nothing.
+function resolvedLabel(name: string, labelFor?: (name: string) => string | undefined): string {
+  return labelFor?.(name) ?? name;
+}
+
+// The disclosure name for a fold control: the resolved label from its opener line, or the
+// generic 'section' when the opener carries no directive name at all. State-neutral by
+// construction, so aria-expanded stays the sole state signal rather than double-signaling
+// against a verb label.
+function blockName(openerLineText: string, labelFor?: (name: string) => string | undefined): string {
   const name = directiveOpenerName(openerLineText);
-  return name ? `${name} section` : 'section';
+  return name ? `${resolvedLabel(name, labelFor)} section` : 'section';
+}
+
+// What preparePlaceholder derives once per fold so placeholderDOM renders it without
+// re-deriving: the hidden line count, the resolved display label (null when the opener carries
+// no directive name), and the registry `use` line for the pill's tooltip (undefined when the
+// directive carries none).
+interface PreparedFold {
+  lines: number;
+  label: string | null;
+  use: string | undefined;
 }
 
 // The pill placeholder: a real focusable button counting the hidden lines, the screen-reader story
-// for a fold. preparePlaceholder computes the count and the block name off the folded char range
-// so placeholderDOM renders both without re-deriving. Clicking unfolds through CodeMirror's own
-// onclick handler.
+// for a fold. preparePlaceholder computes the count, the resolved label, and the tooltip off the
+// folded char range so placeholderDOM renders all three without re-deriving. Clicking unfolds
+// through CodeMirror's own onclick handler.
 function preparePlaceholder(
   state: EditorState,
   range: { from: number; to: number },
-): { lines: number; name: string } {
+  labels: FoldLabelSource,
+): PreparedFold {
   const lines = state.doc.lineAt(range.to).number - state.doc.lineAt(range.from).number;
-  const name = blockName(state.doc.lineAt(range.from).text);
-  return { lines, name };
+  const openerText = state.doc.lineAt(range.from).text;
+  const rawName = directiveOpenerName(openerText);
+  const label = rawName ? resolvedLabel(rawName, labels.labelFor) : null;
+  const use = rawName ? labels.useFor?.(rawName) : undefined;
+  return { lines, label, use };
 }
 
-function placeholderDOM(
-  view: EditorView,
-  onclick: (event: Event) => void,
-  prepared: { lines: number; name: string },
-): HTMLElement {
+function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepared: PreparedFold): HTMLElement {
   const pill = document.createElement('button');
   pill.type = 'button';
   pill.className = 'cm-cairn-fold-pill';
-  pill.textContent = `${prepared.lines} lines`;
+  if (prepared.label) {
+    // The label carries its own truncating span (CSS ellipsis past ~24 characters, see
+    // cairn-admin's fold-pill rule) so a long component label never crowds out the count; the
+    // count itself sits outside the span, as a bare text node, so it can never truncate.
+    const labelSpan = document.createElement('span');
+    labelSpan.className = 'cm-cairn-fold-pill-label';
+    labelSpan.textContent = prepared.label;
+    pill.appendChild(labelSpan);
+    pill.appendChild(document.createTextNode(` · ${prepared.lines} lines`));
+  } else {
+    pill.textContent = `${prepared.lines} lines`;
+  }
   // A folded row is only ever rendered while folded, so aria-expanded is always false here; the
   // redundancy with the gutter chevron's own aria-expanded is intended (spec 2026-06-30).
   pill.setAttribute('aria-expanded', 'false');
-  pill.setAttribute('aria-label', `${prepared.name}, ${prepared.lines} hidden lines`);
+  const ariaName = prepared.label ? `${prepared.label} section` : 'section';
+  pill.setAttribute('aria-label', `${ariaName}, ${prepared.lines} hidden lines`);
+  // The opener's own [title]/{attrs} text stays on the opener line; the pill's tooltip carries
+  // only the registry's one-line "when to reach for this" copy, when the directive has one.
+  if (prepared.use) pill.title = prepared.use;
   pill.addEventListener('click', onclick);
   return pill;
 }
@@ -289,12 +339,12 @@ function safetyExtender(): Extension {
 // transaction) so codeFolding recomputes preparePlaceholder against the post-edit text. The identity
 // fix (making the name part of what invalidates the widget) has to be this active, since codeFolding
 // exposes no other hook to recompute a placeholder already on screen.
-function placeholderRefreshExtender(): Extension {
+function placeholderRefreshExtender(labels: FoldLabelSource): Extension {
   return EditorState.transactionExtender.of((tr) => {
     if (!tr.docChanged) return null;
     const effects = foldEffectsFor(tr, (from, to, mappedFrom, mappedTo, push) => {
-      const before = blockName(tr.startState.doc.lineAt(from).text);
-      const after = blockName(tr.state.doc.lineAt(mappedFrom).text);
+      const before = blockName(tr.startState.doc.lineAt(from).text, labels.labelFor);
+      const after = blockName(tr.state.doc.lineAt(mappedFrom).text, labels.labelFor);
       if (before !== after) {
         const span = { from: mappedFrom, to: mappedTo };
         push(unfoldEffect.of(span));
@@ -424,7 +474,7 @@ class FoldMarker extends GutterMarker {
 // opener. lineMarker returns null for every other row, so the column is empty whitespace down the
 // rest of the surface. lineMarkerChange recomputes the markers on a doc change, a selection change
 // (the caret-inside state follows the cursor), and any fold effect (a fold flips the chevron).
-function foldGutterColumn(): Extension {
+function foldGutterColumn(labels: FoldLabelSource): Extension {
   return gutter({
     class: 'cm-cairn-fold-gutter',
     lineMarker(view, line) {
@@ -433,7 +483,7 @@ function foldGutterColumn(): Extension {
       const span = foldCharRange(view.state, range);
       if (!span) return null;
       const folded = foldExists(view.state, span.from, span.to);
-      const name = blockName(view.state.doc.line(range.fromLine + 1).text);
+      const name = blockName(view.state.doc.line(range.fromLine + 1).text, labels.labelFor);
       return new FoldMarker(range, folded, caretInside(view.state, range), name);
     },
     lineMarkerChange(update) {
@@ -474,16 +524,21 @@ export function foldContainersOnLoad(view: EditorView): void {
  * The cairn fold extension: the CodeMirror fold system with the pill placeholder, the gutter chevron
  * and folded-row wash affordance, the safety invariant, and the Ctrl+Shift+[ / ] keymap.
  * Session-local and never persisted: the fold state lives in CodeMirror's foldState field, which
- * this never serializes.
+ * this never serializes. `labels` resolves a folded block's directive name against the site's
+ * component registry, so the pill and the gutter control read the component's human identity
+ * rather than its raw directive slug; absent, both fall back to the raw name.
  */
-export function cairnFolding(): Extension {
+export function cairnFolding(labels: FoldLabelSource = {}): Extension {
   return [
-    codeFolding({ preparePlaceholder, placeholderDOM }),
+    codeFolding({
+      preparePlaceholder: (state, range) => preparePlaceholder(state, range, labels),
+      placeholderDOM,
+    }),
     flashField,
     safetyExtender(),
-    placeholderRefreshExtender(),
+    placeholderRefreshExtender(labels),
     foldPlugin(),
-    foldGutterColumn(),
+    foldGutterColumn(labels),
     foldKeymap,
   ];
 }

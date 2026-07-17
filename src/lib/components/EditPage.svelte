@@ -2013,6 +2013,7 @@ persistent "?" carries Markdown help, design-arc D2).
           siteDictionary={data.siteDictionary}
           {pendingAdditions}
           foldOnMount
+          {registry}
         />
         <!-- The accumulated uploaded records ride the save form alongside the body. The save action
              reads `media` and merges these records into media.json (publish submits the same form). -->

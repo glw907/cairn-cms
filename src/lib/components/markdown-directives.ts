@@ -310,3 +310,38 @@ export function findInlineDirectives(text: string): { from: number; to: number }
   }
   return out;
 }
+
+// A leaf directive's name: `::name{...}` -> 'name'. A leaf directive opens with exactly two
+// colons, one fewer than FENCE requires, so this reads the leaf form on its own rather than
+// widening FENCE (which would also change what a container opener or closer matches).
+const LEAF_NAME = /^\s{0,3}::([\w-]+)/;
+
+// The `fragment="id"` attribute value on an include leaf directive line, captured with its
+// indices so includeFragmentTokens can carve the value out of the surrounding {attrs} span.
+const INCLUDE_FRAGMENT_VALUE = /fragment\s*=\s*"([^"]*)"/d;
+
+/**
+ * The `::include{fragment="id"}` leaf directive's one identifying token: the fragment id renders
+ *  at label strength (`kind: 'label'`) while the braces, the attribute name, and the quotes around
+ *  it stay machinery (`kind: 'mark'`), matching the meaning-over-machinery split
+ *  {@link fenceTokens} draws on a container opener. Empty for any other leaf directive (its
+ *  attributes carry no single obvious identity token, so brightening every attribute value would
+ *  over-light the line) and for a line that is not an `include` leaf directive at all.
+ */
+export function includeFragmentTokens(line: string): FenceToken[] {
+  if (LEAF_NAME.exec(line)?.[1] !== 'include') return [];
+  const brace = ATTR_BRACE.exec(line);
+  if (!brace) return [];
+  const braceFrom = brace.index;
+  const braceTo = braceFrom + brace[0].length;
+  const value = INCLUDE_FRAGMENT_VALUE.exec(line);
+  if (!value?.indices) return [];
+  const [valueFrom, valueTo] = value.indices[1]!;
+  // Trust only a fragment attribute that actually sits inside this line's {attrs} group.
+  if (valueFrom < braceFrom || valueTo > braceTo) return [];
+  const out: FenceToken[] = [];
+  if (valueFrom > braceFrom) out.push({ from: braceFrom, to: valueFrom, kind: 'mark' });
+  out.push({ from: valueFrom, to: valueTo, kind: 'label' });
+  if (valueTo < braceTo) out.push({ from: valueTo, to: braceTo, kind: 'mark' });
+  return out;
+}

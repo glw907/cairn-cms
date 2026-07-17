@@ -9,6 +9,7 @@ import {
   fenceTokens,
   figureRoleAtLine,
   findInlineDirectives,
+  includeFragmentTokens,
   markerPrefix,
 } from '../../lib/components/markdown-directives.js';
 
@@ -155,6 +156,27 @@ describe('fenceTokens', () => {
   it('returns nothing for a non-fence line', () => {
     expect(fenceTokens('plain prose')).toEqual([]);
     expect(fenceTokens('::leaf[Label]')).toEqual([]);
+  });
+});
+
+describe('includeFragmentTokens', () => {
+  it('marks the fragment id at label strength and the braces, name, and quotes as machinery', () => {
+    const line = '::include{fragment="winter-hours"}';
+    const tokens = includeFragmentTokens(line);
+    expect(tokens.map((t) => [line.slice(t.from, t.to), t.kind])).toEqual([
+      ['{fragment="', 'mark'],
+      ['winter-hours', 'label'],
+      ['"}', 'mark'],
+    ]);
+  });
+  it('returns nothing for a leaf directive that is not include', () => {
+    expect(includeFragmentTokens('::video{fragment="winter-hours"}')).toEqual([]);
+  });
+  it('returns nothing for an include directive with no fragment attribute', () => {
+    expect(includeFragmentTokens('::include')).toEqual([]);
+  });
+  it('returns nothing for a container fence, even one that happens to be named include', () => {
+    expect(includeFragmentTokens(':::include{fragment="winter-hours"}')).toEqual([]);
   });
 });
 

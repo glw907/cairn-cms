@@ -11,6 +11,7 @@ import {
   fenceScan,
   fenceTokens,
   findInlineDirectives,
+  includeFragmentTokens,
   markerPrefix,
   type FenceScan,
 } from './markdown-directives.js';
@@ -68,6 +69,9 @@ const inlineMark = Decoration.mark({ class: 'cm-cairn-directive-inline' });
 // directive name and label keep a depth-stepped ink: meaning over machinery.
 const fenceMark = Decoration.mark({ class: 'cm-cairn-directive-mark' });
 const fenceLabels = DEPTH_STEPS.map((d) => Decoration.mark({ class: `cm-cairn-directive-label cm-cairn-depth-${d}` }));
+// An include leaf directive's fragment id, the line's one identifying token: readable at the same
+// base label ink as a fence opener's name, undepth-stepped since a leaf line carries no rail.
+const leafFragmentLabel = Decoration.mark({ class: 'cm-cairn-directive-label' });
 // Cursor-aware emphasis: every row of the container the caret sits inside, fence and content
 // alike, carries this class on top of its depth classes; the theme steps that block's rail and
 // label ink up one notch while the other containers sit quieter.
@@ -141,6 +145,16 @@ function buildDirectiveDecorations(view: EditorView, scan: FenceScan): Decoratio
             line.from + token.from,
             line.from + token.to,
             token.kind === 'mark' ? fenceMark : fenceLabels[depth - 1],
+          );
+        }
+      } else if (kind === 'leaf') {
+        // The include directive's fragment id is the one span that should read at label strength;
+        // every other leaf directive gets nothing here and reads at the leaf line's uniform ink.
+        for (const token of includeFragmentTokens(line.text)) {
+          builder.add(
+            line.from + token.from,
+            line.from + token.to,
+            token.kind === 'mark' ? fenceMark : leafFragmentLabel,
           );
         }
       } else if (kind === null) {

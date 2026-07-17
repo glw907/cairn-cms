@@ -14,6 +14,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
   import { firstImageFile, guardDropTarget } from './client-ingest.js';
   import { htmlToMarkdown } from './paste-html-to-markdown.js';
   import type { MediaLibrary } from '../media/library-entry.js';
+  import type { ComponentRegistry } from '../render/registry.js';
 
   /** The directive container at the caret: the opener's name, the block's markdown, and the
    *  document character offsets of its inclusive line range. */
@@ -136,6 +137,12 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  turns this on for the real entry-editing surface. The safety invariant governs a fold this
      *  creates exactly as it governs a manual one: a touch or an edit reaching it springs it open. */
     foldOnMount?: boolean;
+    /** The site's component registry. The fold pill and the gutter fold control resolve a folded
+     *  block's directive name through it, so a block reads its human `label` (falling back to the
+     *  raw directive name for an engine-native directive like `include`, or one the registry does
+     *  not carry); the pill's tooltip also carries the matched component's `use` line, when it has
+     *  one. Absent, both fall back to the raw directive name with no tooltip, today's behavior. */
+    registry?: ComponentRegistry;
   }
 
   let {
@@ -170,6 +177,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     tidyMode = false,
     onDiagnosticsCounts,
     foldOnMount = false,
+    registry,
   }: Props = $props();
 
   let host = $state<HTMLDivElement | null>(null);
@@ -548,6 +556,17 @@ through the adapter's render. Swapping the editor stays a one-file change.
         '.cm-cairn-fold-pill:hover': {
           borderColor: 'color-mix(in oklab, var(--color-accent) 60%, transparent)',
         },
+        // The pill's registry label truncates past ~24 characters (a long component label should
+        // not crowd the pill); the count sits outside this span as a bare text node, so it is
+        // never subject to the ellipsis.
+        '.cm-cairn-fold-pill-label': {
+          display: 'inline-block',
+          maxWidth: '24ch',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+          verticalAlign: 'bottom',
+        },
         // The one-time unfold flash: a low-alpha accent background on the revealed lines, removed
         // after the animation. The transition runs as the field clears the class.
         '.cm-cairn-fold-flash': {
@@ -690,8 +709,13 @@ through the adapter's render. Swapping the editor stays a one-file change.
           highlightMod.cairnDirectivePlugin(),
           // Container folding: the fold system, the chevron and wash affordance, and the safety
           // invariant. Placed after the directive plugin so its chevron widget on an opener row
-          // composes with the row's rail and gutter; its keymap is internal to the extension.
-          foldingMod.cairnFolding(),
+          // composes with the row's rail and gutter; its keymap is internal to the extension. The
+          // label lookups resolve a folded block's directive name through the site's registry,
+          // baked in at mount since the registry is a static, per-site configuration.
+          foldingMod.cairnFolding({
+            labelFor: (name) => registry?.get(name)?.label,
+            useFor: (name) => registry?.get(name)?.use,
+          }),
           // The optimistic image placeholder field: a widget-only decoration the insert popover
           // drives through the registerImagePlaceholders api. It never writes doc text, so a failed
           // upload leaves the source untouched (open risk 2). Placed after folding so a placeholder

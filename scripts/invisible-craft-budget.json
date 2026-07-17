@@ -26,31 +26,6 @@
       "file": "src/lib/components/EditPage.svelte",
       "token": "pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
       "reason": "safe-area inset for the fixed action bar, not expressible on the plain scale"
-    },
-    {
-      "file": "examples/showcase/src/theme/components/SiteFooter.svelte",
-      "token": "gap-[0.55rem]",
-      "reason": "owed to T2 (2026-07-17 waymark-final-review-fixes plan): the gap becomes a named utility in both chrome components; remove at pass close"
-    },
-    {
-      "file": "examples/showcase/src/theme/components/SiteHeader.svelte",
-      "token": "gap-[0.55rem]",
-      "reason": "owed to T2 (2026-07-17 waymark-final-review-fixes plan): the gap becomes a named utility in both chrome components; remove at pass close"
-    },
-    {
-      "file": "examples/showcase/src/routes/(site)/+layout.svelte",
-      "token": "top-[-3rem]",
-      "reason": "owed to T2 (2026-07-17 waymark-final-review-fixes plan): the skip link's three arbitrary brackets land on tokens; remove at pass close"
-    },
-    {
-      "file": "examples/showcase/src/routes/(site)/+layout.svelte",
-      "token": "px-[0.9rem]",
-      "reason": "owed to T2 (2026-07-17 waymark-final-review-fixes plan): the skip link's three arbitrary brackets land on tokens; remove at pass close"
-    },
-    {
-      "file": "examples/showcase/src/routes/(site)/+layout.svelte",
-      "token": "py-[0.5rem]",
-      "reason": "owed to T2 (2026-07-17 waymark-final-review-fixes plan): the skip link's three arbitrary brackets land on tokens; remove at pass close"
     }
   ],
   "achromaticColors": [

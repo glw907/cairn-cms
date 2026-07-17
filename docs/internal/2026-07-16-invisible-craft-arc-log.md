@@ -23,7 +23,15 @@ removed when the arc closes. Rubric: `2026-07-15-admin-resolved-polish-brief.md`
 5. Vocabulary 320: probe slate (current / stacked / column-drop) — KEPT A, the stacked row (Geoff:
    "stacked row (A) looks good"). Verified at 320 live: no collision, meta line self-labels.
    Commit 0991b8a9.
-6. Final probe sitting, six verdicts, ALL RECOMMENDATIONS RATIFIED (Geoff: "Your recommendations
+6. Verdicts 6 and 7B landed and verified live (commit 8719b115): the folded chip reads
+   "Callout · “Trail alert” · 3 lines" (the em dash from the probe mock corrected to the pill
+   grammar's middle dot, since the admin voice bans the em dash in UI strings and check:prose
+   cannot see a .ts-built string); the include chip is content-width, atomic, and falls back to
+   the id. TWO MORE DEV-BACKEND FRICTIONS (file at settle with the thumbnails one): the fake
+   backend ships `fragmentTargets: []`, so local dev cannot exercise the picker or title
+   resolution at all (the on-disk showcase fragment never reaches the fake manifest), and the
+   band snippet can appear empty to an automation script that types before hydration settles.
+7. Final probe sitting, six verdicts, ALL RECOMMENDATIONS RATIFIED (Geoff: "Your recommendations
    are all on point"): 1B settings card stacks below sm (badge under the grid, label-over-value);
    2C pressed cue = the 10% wash plus a 35% primary inset hairline on every check-and-tint pressed
    control (closes the weight-only advisory); 3 nested radius corrected in the picker preview

@@ -25,6 +25,16 @@ describe('buildPreviewDoc', () => {
     expect(link).toBeGreaterThan(reset);
   });
 
+  it('carries the preview-only fragment boundary cue stylesheet before the site links', () => {
+    const doc = buildPreviewDoc('<p>hi</p>', preview);
+    const boundary = doc.indexOf('.cairn-fragment-boundary{');
+    const eyebrow = doc.indexOf('.cairn-fragment-boundary-eyebrow{');
+    const link = doc.indexOf('<link rel="stylesheet"');
+    expect(boundary).toBeGreaterThan(-1);
+    expect(eyebrow).toBeGreaterThan(boundary);
+    expect(link).toBeGreaterThan(eyebrow);
+  });
+
   it('carries the charset and viewport metas under a doctype', () => {
     const doc = buildPreviewDoc('', preview);
     expect(doc.startsWith('<!doctype html>')).toBe(true);

@@ -71,6 +71,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { SiteRender } from '../content/types.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
+  import type { PreviewFragmentResolve } from '../render/resolve-include.js';
   import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
@@ -769,6 +770,25 @@ persistent "?" carries Markdown help, design-arc D2).
   // that rule rather than offering a control the save would bounce.
   const fragmentPickerAvailable = $derived(data.fragmentTargets !== null && data.conceptId !== FRAGMENTS_CONCEPT_ID);
 
+  // The publish blast-radius line (ratified verdict 5): only a fragment being published carries a
+  // count, since publishing any other concept never ripples into another entry's rendered output.
+  // data.inboundLinks already holds this fragment's includers (content-routes-core.ts's editLoad
+  // reads inboundIncludes for the Fragments concept, the same data the sidebar's own Included in
+  // group renders), so this reuses that load rather than a new fetch. It renders in the role="status"
+  // notice region below, the same publish-adjacent-awareness recipe the needs-alt notice uses: an
+  // always-present live region, non-blocking, muted rather than alert-warning since this is not a
+  // problem to fix, just information the author should have before they click Publish. Composing it
+  // there (not the header band) keeps it clear at every width, including 320, where the band itself
+  // has no room for a sentence.
+  const fragmentIncludeCount = $derived(
+    data.conceptId === FRAGMENTS_CONCEPT_ID ? data.inboundLinks.length : 0,
+  );
+  const fragmentBlastRadiusLine = $derived(
+    fragmentIncludeCount > 0
+      ? `Publishing updates ${fragmentIncludeCount} ${fragmentIncludeCount === 1 ? 'entry that includes' : 'entries that include'} this fragment.`
+      : null,
+  );
+
   // The directive container at the editor caret, reported by MarkdownEditor whenever it changes
   // (null outside any container). The Edit-block control resolves it against the registry and the
   // round-trip safety gate below; its identity is the key the async gate guards against a stale
@@ -1261,12 +1281,18 @@ persistent "?" carries Markdown help, design-arc D2).
   // or this entry is itself a fragment) leaves every include directive unresolved, the pipeline's
   // inert literal-prose fallback, which is exactly what the build ships for those bodies; a
   // dangling id resolves to undefined too, which the render step turns into the missing-fragment
-  // notice.
+  // notice. previewTitle rides alongside the same lookup: it is the marker resolve-include.ts reads
+  // to know this is the preview's own resolver (never the build's), so the spliced blocks gain the
+  // preview-only boundary cue (ratified 4B). A resolver-not-found title falls back to the id inside
+  // resolve-include.ts, not here, so both paths share the same fallback rule.
   const resolveFragment = $derived.by(() => {
     const targets = data.fragmentTargets;
     if (!targets) return undefined;
     const byId = new Map(targets.map((t) => [t.id, t.body]));
-    return (id: string) => byId.get(id);
+    const titleById = new Map(targets.map((t) => [t.id, t.title]));
+    const resolve: PreviewFragmentResolve = (id: string) => byId.get(id);
+    resolve.previewTitle = (id: string) => titleById.get(id);
+    return resolve;
   });
 
   // The picker's library, the committed projection merged with this session's uploaded records,
@@ -1759,9 +1785,14 @@ persistent "?" carries Markdown help, design-arc D2).
      first notice appears it announces; a region conditionally mounted with its first content may not
      be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
      region shows nothing. A plain wrapper (not display:contents) carries the role, since some
-     assistive tech drops a role off a display:contents box. -->
+     assistive tech drops a role off a display:contents box. The fragment blast-radius line (ratified
+     verdict 5) shares this region rather than getting its own: a plain muted line, not an
+     alert-warning box, since it names a fact rather than a problem to fix. -->
 <div role="status">
   {@render advisoryNotices(renderNotices)}
+  {#if fragmentBlastRadiusLine}
+    <p class="mb-4 text-sm text-muted">{fragmentBlastRadiusLine}</p>
+  {/if}
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">

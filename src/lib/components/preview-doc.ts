@@ -7,6 +7,18 @@
 import { escapeHtml } from '../escape.js';
 import type { ResolvedPreview } from '../content/types.js';
 
+// The preview-only fragment boundary cue's own stylesheet (the invisible-craft design's ratified
+// 4B): a spliced ::include's rendered blocks otherwise look indistinguishable from the entry's own
+// prose, so an editor cannot tell which paragraphs live elsewhere. resolve-include.ts wraps a
+// splice in these classes only when EditPage's client-side resolver is the one in play (never the
+// build-time resolver), so this stylesheet's presence here is inert chrome on the public path: the
+// classes it targets never appear in a build. The accent value is cairn-admin.css's light
+// --color-accent, hard-coded because the preview document links only the site's own stylesheets,
+// never the admin's.
+const FRAGMENT_BOUNDARY_STYLE =
+  '<style>.cairn-fragment-boundary{border-left:2px solid color-mix(in oklab, oklch(54% 0.16 300) 35%, transparent);padding-left:.75rem}' +
+  '.cairn-fragment-boundary-eyebrow{margin:0 0 .25rem;font-size:.625rem;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:oklch(54% 0.16 300)}</style>';
+
 /** One width the preview frame can take. */
 export interface PreviewDevice {
   id: 'desktop' | 'tablet' | 'phone' | 'small';
@@ -76,6 +88,7 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     '<base target="_blank">',
     '<style>body{margin:0;background:#fff}</style>',
+    FRAGMENT_BOUNDARY_STYLE,
     links,
     '</head>',
     `<body${bodyAttrs}>`,

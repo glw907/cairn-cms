@@ -48,11 +48,24 @@ comments/reference/signatures/docs/package all OK, branch CI e2e green (run 2955
 findings (both fixed: the fail(400) silent no-op regression — its own catch was this pass's — and
 the stale fold tooltip) and refuted 2.
 
-**NEXT:** (1) ASC's consolidation consumes fragments in ASC's own session (its
+**NEXT (fresh session, GEOFF-IN-THE-LOOP): the INVISIBLE-CRAFT POLISH PASS** (design-arc queue
+item 4; Geoff chose it 2026-07-17). Not to be confused with the 0.86.2 design-refinement arc,
+which absorbed only the brief's Typography and Color sections and explicitly carried this pass
+forward in its settle section. The rubric is
+docs/internal/2026-07-15-admin-resolved-polish-brief.md (spacing/rhythm, depth, motion, feedback,
+forms, micro-details); the pass also owns the weight-only pressed-cue advisory and the 2026-07-16
+fragments riders on the ROADMAP Next entry (preview boundary cue on included content, the publish
+blast-radius line, include-line atomic delete, the folded-chip question). Iterate fully local
+against the showcase admin with Geoff's eyes per round (notes are probes; ceremony once at
+settle). Resume prompt: "Start the admin invisible-craft polish pass with me: read
+docs/internal/2026-07-15-admin-resolved-polish-brief.md, docs/internal/admin-design-system.md,
+the ROADMAP Next polish entry (it carries the fragments riders), and the
+cairn-admin-design-arc-queue + design-iteration-economics memories; iterate locally against the
+showcase admin." Launch inside ~/Projects/cairn-cms.
+
+**PARALLEL, in ASC's own session:** the ASC consolidation consumes fragments (its
 docs/fragment-candidates.md holds nine ready cases; navLayout addition + content migration there).
-(2) The design-arc queue (unchanged): the invisible-craft polish pass — now carrying the
-fragments-review riders (preview boundary cue, publish blast-radius line, include atomic-delete,
-the folded-chip question) — then the component kit, then the Waymark/chassis alignment pass.
-(3) The STATUS archive rule is enforced again as of 2026-07-17: the accumulated entries moved to
-`docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md`, and this file holds only the
-current entry.
+
+**Also this pass-close:** the STATUS archive rule is enforced again as of 2026-07-17 (the
+accumulated entries moved to `docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md`),
+and the friction log is CLEAR with a standing complete-or-move rule.

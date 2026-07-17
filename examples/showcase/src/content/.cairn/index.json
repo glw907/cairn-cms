@@ -23,6 +23,15 @@
       ]
     },
     {
+      "id": "the-trail-crew",
+      "concept": "pages",
+      "title": "The Trail Crew",
+      "permalink": "/the-trail-crew",
+      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking.",
+      "draft": false,
+      "links": []
+    },
+    {
       "id": "2024-03-24-what-changed-on-the-switchback-section-this-season-2",
       "concept": "posts",
       "title": "What Changed on the Switchback Section This Season",
@@ -2519,7 +2528,7 @@
         {
           "field": "author",
           "concept": "pages",
-          "id": "about"
+          "id": "the-trail-crew"
         }
       ]
     },

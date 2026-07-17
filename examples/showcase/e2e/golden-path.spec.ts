@@ -680,8 +680,8 @@ test('reference fields round-trip through the editor, commit their edges, and re
   await expect(relatedNav.getByRole('link', { name: 'A second post' })).toHaveAttribute('href', '/posts/second');
 });
 
-test('a non-cairn feature coexists with the admin (Mode 1)', async ({ page }) => {
-  await page.goto('/calendar');
-  await expect(page.getByRole('heading', { name: 'Calendar' })).toBeVisible();
-  await expect(page.getByRole('list', { name: 'Events' })).toContainText('Season opener');
-});
+// The Mode 1 coexistence proof this spec used to run against the template's own /calendar stub
+// (cut per the Waymark final design review's verdict 4: the calendar route existed only to prove
+// a non-cairn feature survives alongside the admin, and it undercut every page that linked it) now
+// lives in custom-screen.spec.ts's Signups test, which proves the stronger case: a custom admin
+// screen reading identity and writing its own D1 binding, registered through the same adminNav seam.

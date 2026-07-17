@@ -31,7 +31,7 @@
       <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
       <p class="mt-s text-step-1 text-muted">
         {page.status === 404
-          ? "The page you're looking for doesn't exist."
+          ? 'This page doesn’t exist. It may have moved, or the link took a wrong turn.'
           : (page.error?.message ?? 'Something went wrong.')}
       </p>
       <a

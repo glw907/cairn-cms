@@ -981,8 +981,11 @@ describe('CairnAdminShell', () => {
       const box = screen.container.ownerDocument.querySelector<HTMLElement>(
         'dialog[aria-label="Search or jump to"] .modal-box',
       )!;
-      // A modest margin off the top edge, not the near-zero gap the bare self-start produced.
-      expect(box.getBoundingClientRect().top).toBeGreaterThanOrEqual(24);
+      // A modest margin off the top edge (mt-4, 1rem), not the near-zero gap the bare self-start
+      // produced. Assert the computed style that PRODUCES the inset rather than the measured
+      // boundingClientRect: the latter also carries the browser-runner's own layout contention, a
+      // couple of px under full-suite load that flaked this assertion (it passes in isolation).
+      expect(getComputedStyle(box).marginTop).toBe('16px');
     });
 
     it('gives the palette input the admin brand-violet focus ring, not a bare UA outline', async () => {

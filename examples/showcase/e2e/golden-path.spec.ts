@@ -47,10 +47,10 @@ test('an editor opens a post from the list, edits, saves, and the commit carries
 });
 
 test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, sticky save', async ({ page }) => {
-  // Open the seeded entry from the list, the same path the golden-path test takes.
-  await page.goto('/admin');
-  await expect(page).toHaveURL(/\/admin\/posts$/);
-  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // The hoisted document title sits on the editor card and still submits as name="title".
@@ -124,8 +124,10 @@ test('the redesigned editor: hoisted title, toolbar bold, preview round-trip, st
 });
 
 test('a link inside the preview frame never navigates the admin away from the edits', async ({ page }) => {
-  await page.goto('/admin/posts');
-  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // Replace the body with prose carrying a root-relative link, the kind that would resolve
@@ -299,9 +301,10 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
 });
 
 test('zen round trip: the footer toggle hides the band, the chip carries the way out, Escape restores', async ({ page }) => {
-  // Open the seeded entry from the list, the same path the golden-path test takes.
-  await page.goto('/admin/posts');
-  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // The band is present before zen, with its Save control. The persistent sidebar is also up: this
@@ -370,9 +373,10 @@ test('the editors view runs against the dev AUTH_DB double: list the seeds, add 
 });
 
 test('the component picker groups the catalog, opens the callout two-pane with its live preview, and inserts the directive', async ({ page }) => {
-  // Open the seeded entry from the list, the same path the golden-path test takes.
-  await page.goto('/admin/posts');
-  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // Open the Insert-component picker from the editor toolbar.
@@ -409,9 +413,10 @@ test('the component picker groups the catalog, opens the callout two-pane with i
 });
 
 test('the component round-trips: place a callout, the caret enables Edit block, Update rewrites the same block in place', async ({ page }) => {
-  // Open the seeded entry from the list, the same path the picker case takes.
-  await page.goto('/admin/posts');
-  await page.locator('a[href="/admin/posts/2026-06-hello"]').click();
+  // Open the seed entry directly. The list paginates at ten rows newest-first, and prior specs in
+  // the run accumulate enough newer entries to push the June seed off page one, so a page-one link
+  // click races the entry count. Navigating straight to the edit URL is order-independent.
+  await page.goto('/admin/posts/2026-06-hello');
   await expect(page).toHaveURL(/\/admin\/posts\/2026-06-hello$/);
 
   // Author a deterministic body: a known prose line followed by a blank line, so a later click can
@@ -497,12 +502,16 @@ test('an entry opens with its component blocks folded, and the safety invariant 
   await page.locator('.navbar').getByRole('button', { name: 'Save', exact: true }).click();
   await expect(page).toHaveURL(/saved=1/, { timeout: 10_000 });
 
-  // Reload the editor from scratch: a fresh mount, the moment EditPage turns foldOnMount on.
+  // Reload the editor from scratch: a fresh mount, the moment EditPage turns foldOnMount on. The
+  // CodeMirror bundle mounts through a chain of dynamic imports (MarkdownEditor's onMount), which
+  // can run past Playwright's default 5s expect timeout under system load; the fold pill and the
+  // hidden-text assertion get the same generous, explicit timeout the rest of this file gives a
+  // slow round trip, so the wait polls the real fold state instead of assuming a fixed budget.
   await page.goto(`/admin/posts/${id}`);
-  await expect(editor).toBeVisible();
+  await expect(editor).toBeVisible({ timeout: 10_000 });
   const pill = editor.locator('.cm-cairn-fold-pill');
-  await expect(pill).toBeVisible();
-  await expect(editor).not.toContainText('Hidden detail one.');
+  await expect(pill).toBeVisible({ timeout: 10_000 });
+  await expect(editor).not.toContainText('Hidden detail one.', { timeout: 10_000 });
   // The block's own hidden text never left the doc; only the view collapses it.
   await expect(page.locator('input[name="body"]')).toHaveValue(/Hidden detail two\./);
 

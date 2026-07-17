@@ -52,7 +52,7 @@ export function buildMagicLinkMessage(input: {
   // `link` is engine-built and url-safe; `siteName` is site config, so escape it for HTML.
   const name = escapeHtml(branding.siteName);
   const html = `<p>Open this link to sign in to ${name}:</p><p><a href="${link}">Sign in</a></p><p>The link expires in 10 minutes. If you did not request it, ignore this email.</p>`;
-  return { to, from: branding.from, subject, html, text };
+  return { to, from: branding.from, subject, html, text, replyTo: branding.replyTo };
 }
 
 /** The production send: Cloudflare Email Sending through the EMAIL binding. */

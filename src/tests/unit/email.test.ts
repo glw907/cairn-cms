@@ -32,6 +32,24 @@ describe('buildMagicLinkMessage', () => {
     expect(msg.html).toContain('A &amp; B &lt;script&gt;');
     expect(msg.html).not.toContain('<script>');
   });
+
+  it('carries a configured branding replyTo onto the built message', () => {
+    const msg = buildMagicLinkMessage({
+      to: 'ed@x.dev',
+      branding: { siteName: 'EC Nordic', from: 'noreply@ecnordic.ski', replyTo: 'editors@ecnordic.ski' },
+      link: 'https://ecnordic.ski/admin/auth/confirm?token=abc',
+    });
+    expect(msg.replyTo).toBe('editors@ecnordic.ski');
+  });
+
+  it('leaves replyTo undefined when the branding does not configure one', () => {
+    const msg = buildMagicLinkMessage({
+      to: 'ed@x.dev',
+      branding: { siteName: 'EC Nordic', from: 'noreply@ecnordic.ski' },
+      link: 'https://ecnordic.ski/admin/auth/confirm?token=abc',
+    });
+    expect(msg.replyTo).toBeUndefined();
+  });
 });
 
 describe('cloudflareSend', () => {

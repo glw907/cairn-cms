@@ -50,15 +50,6 @@ homes for shipped history. The append-only prose that accumulated through 2026-0
   string, so the in-admin help hand-off cannot greet the author by the owner's name or offer a named
   button. Candidate: a richer shape (a name plus a contact), weighed against the one-string simplicity
   that needs no schema. LOW.
-- **editor** (the suggestion popover shows a literal backtick): the popover's message line renders
-  `Diagnostic.message` as `textContent`, so a message like `` `teh` may be misspelled. `` shows the
-  backticks verbatim instead of styling the flagged word. The built-in `@codemirror/lint` tooltip this
-  popover replaced had the same behavior, so it is not a regression, but it is a rough edge worth
-  closing. Candidate: parse the backtick-quoted span in `spellcheck.ts`'s message string into a
-  `<code>` or emphasis span; this belongs to the message string, not the generic popover renderer that
-  serves both diagnostic kinds, so it was left out of this pass's scope. LOW. The a11y hardening pass's
-  1.4.13 audit (Task 6) re-checked the popover end to end and confirmed this is still the only rough edge
-  in its message rendering; still open, still LOW.
 - **editor** (the Library upload capture card says "Insert image"): the direct-upload flow reuses
   `MediaCaptureCard` verbatim, and its submit button is labeled "Insert image", the wording the editor
   insert popover needs. In the Library upload dialog there is no post to insert into: the author is

@@ -43,7 +43,6 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
   /** The showcase's real nav targets. A scaffolded site owner edits this list. */
   const nav: NavItem[] = [
     { label: 'Writing', href: '/' },
-    { label: 'Calendar', href: '/calendar' },
     { label: 'Styleguide', href: '/styleguide' },
     { label: 'Admin', href: '/admin' },
   ];

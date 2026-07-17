@@ -14,7 +14,6 @@ this file; the look re-skins from `theme.css`.
   /** The footer's nav targets. A scaffolded site owner edits this list. */
   const nav: NavItem[] = [
     { label: 'Writing', href: '/' },
-    { label: 'Calendar', href: '/calendar' },
     { label: 'Admin', href: '/admin' },
     { label: 'Feed', href: '/feed.xml' },
   ];

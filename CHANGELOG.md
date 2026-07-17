@@ -24,7 +24,8 @@
   entry. A fragment has no public URL of its own, and its computed permalink 404s, so it reaches a
   reader only through a consuming entry. Renaming a fragment rewrites every inbound include in the
   rename's own commit. Deleting one that is still included is refused, with its consumers named,
-  and a fragment's edit screen lists the same consumers.
+  and a fragment's edit screen carries a standing "Included in" list of the same consumers in its
+  Details panel, so the blast radius of a fragment edit is visible before Publish.
   A fragment can't include another fragment, and saving one that tries is refused. A dangling
   include shows a notice in the editor's preview and logs `include.missing`; a build fails on it,
   the same way it fails on a dangling `cairn:` link. New guide:
@@ -32,6 +33,39 @@
   consumer action beyond opting in. A site that adopts it declares the concept, globs its
   directory into `createSiteIndexes` and the manifest plugin, adds `{ screen: 'fragments' }` to a
   declared `navLayout`, and forwards `resolveFragment` in its render wrapper.
+
+- A folded directive block now names itself. The fold pill reads "Callout · 12 lines" using the
+  component registry's human label (falling back to the directive name), and carries the
+  component's registered `use` line as its tooltip, so a stack of folded blocks reads as content
+  rather than counts. An `::include` line renders its fragment id at label strength instead of
+  dimming it with the braces, so two includes are tellable apart at reading distance. Additive; no
+  consumer action.
+- `SettingsData` and `VocabularyLoadData` are now exported from `@glw907/cairn-cms/sveltekit`,
+  matching their facade-returned siblings `ListData` and `EditData`. Additive.
+- A site that sets `AuthBranding.replyTo` now gets it on the built-in magic-link email; the field
+  existed on the config and the message type but the built-in send never set it. Additive; no
+  consumer action beyond configuring it.
+
+### Fixed
+
+- Saving Tidy settings or the tag vocabulary over a malformed committed site config (an
+  unrecognized or misplaced top-level key) no longer surfaces SvelteKit's generic 500: both saves
+  now refuse with the parser's own actionable message, the same way the corresponding loads
+  already report the fault.
+- A required closed multiselect (a checkbox tag set) tells the editor "Choose at least one."
+  through the browser's own validation, revealing and focusing the field like every other required
+  arm, instead of failing only at the save bounce. Native `required` on the boxes would have meant
+  "check every box," so the signal is set and cleared on the group as a whole.
+- The editor's suggestion popover styles a backtick-quoted word as code instead of showing the
+  backticks verbatim.
+- Help hints inside repeated rows and object groups get distinct ids, so each row's
+  `aria-describedby` resolves to its own hint rather than row zero's. Latent until a consumer
+  schema declared `help` on a leaf inside a container.
+- Fragments papercuts from an adversarial UX review: deleting a still-included fragment from the
+  list explains the includes (the dialog and banner no longer suggest "repointing links" that do
+  not exist), the fragment picker's empty state points at the Fragments screen instead of only
+  naming the precondition, and an include that names no fragment gets its own preview notice
+  instead of "Missing fragment:" trailing into nothing.
 
 ## 0.86.2
 

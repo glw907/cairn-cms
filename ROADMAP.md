@@ -94,11 +94,6 @@ The original decision framing, for the record:
   200 + Content-Type), so the serialization class fails in CI rather than on a consumer's
   first `vite dev`.
 
-- **Harden the fold-on-mount e2e against load flake (from the design-review bug pass,
-  2026-07-04).** The test fails under system load and passes quiet (verified pre-existing on
-  main); fix its waiting discipline (poll the fold state, not a timing assumption) before it
-  starts costing CI reruns.
-
 - **Docs-effectiveness infrastructure from the Superforms study (2026-07-03), Topo-era:**
   Pagefind-class Ctrl+K search on the docs site (the single biggest perceived-quality lever
   at zero infra), a FAQ/help top-nav page, a task-tagged examples gallery, an /llms
@@ -173,7 +168,17 @@ the named human gates only):**
   color and typography refinements (Geoff's calibration: small changes there are high-leverage;
   the constraint bounds direction, not importance). Runs AFTER the design-refinement arc settles
   the material system; mechanical rubric items become standing gates where the trigger is
-  machine-detectable.
+  machine-detectable. RIDERS from the 2026-07-16 fragments UX review and folded-identity design
+  brief, all taste calls needing Geoff's eyes: (1) a preview-only boundary cue on included
+  fragment content (today the splice is invisible, so an editor cannot tell which paragraphs live
+  elsewhere) plus a publish-confirm blast-radius line ("Publishing updates 3 entries that include
+  this fragment") now that the Included-in list exists; (2) whether the include line deserves
+  atomic-delete behavior (its text is pure machinery; half-deleting it leaves junk that publishes,
+  unlike a container whose prose is salvageable); (3) the folded-chip question: absorbing a folded
+  block's opener line into a friendly chip (never showing raw `:::callout{...}`), body-snippet
+  previews, a phone-reachable what-it's-for affordance, and rendering an include's human fragment
+  title rather than its id — each weighed against the not-WYSIWYG source-primary principle and the
+  touched-range safety invariant.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
@@ -257,11 +262,6 @@ the named human gates only):**
   document (and where needed, harden) the hand-off that lets a site bring its own login and
   issue cairn sessions — the seam only, not built-in auth options. The claim must be true
   before the repo goes public.
-- **Components fold by default in the editor (pre-beta; Geoff, 2026-07-03).** Directive
-  blocks open folded so long drafts read clean; the shipped safety invariant (a folded range
-  auto-unfolds when a change or the cursor touches it) already covers editing, so this is a
-  small change to the fold module's initial state. Editor-welcome's folding sentence updates
-  to "folded by default" when it ships.
 - **Component-system gaps surfaced by the starter set (2026-07-02, batch A evidence).**
   **DEFERRED PAST LAUNCH (Geoff, 2026-07-03): the gallery** — complex, highly taste-related,
   and gated on a real engine enabler (component attributes reject `image`/`array` types;
@@ -348,7 +348,18 @@ the named human gates only):**
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
   warts a dogfood found), then Part B3 (defaults) and B4 (options plus first-run), then the Part C
-  generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`.
+  generator. Plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`. Carried from the
+  friction log at its 2026-07-16 clearing, each re-verified at plan time: (1) starter/seed content —
+  the strongest empty-state activator is an editable, labeled starter post, but the engine has no
+  mechanism to commit labeled starter `.md` entries on a fresh site or distinguish them from authored
+  content; the scaffolder seeds concept-differentiated starters (a Post and a Page) and the
+  empty-state recipe gains a starter slot. (2) Project-setup emission — a fresh site needs
+  `@types/node` declared, the skeleton's default `static/robots.txt` removed (it silently collides
+  with the engine's robots route; the engine should detect and warn), and the
+  `prerender.handleHttpError: 'warn'` policy for the uncrawled feed and robots routes; Part B (the
+  showcase as the deployable template) fixes most of this by construction. (3) The docs on-ramp gap —
+  an "after scaffolding: what you got and what to change" orientation page, gated on the scaffolder
+  landing so it describes real generated output.
 ## Later
 
 - **An engine-side design dev loop (`design:dev` or an optimizeDeps exclusion).** Engine admin
@@ -358,10 +369,6 @@ the named human gates only):**
   2026-07-15 design arc). Candidates: the showcase's vite config excludes the linked package from
   optimizeDeps, or a documented `design:dev` script that watches `src/lib` and repackages +
   restarts. The consumer-site loop is unaffected (site source HMRs directly).
-- **Wire `AuthBranding.replyTo` into `buildMagicLinkMessage`.** The branding config carries it
-  (threaded from `SenderConfig`) but the built-in magic-link send never sets the message field —
-  surfaced by the 2026-07-08 EMAIL type widening, which added `MagicLinkMessage.replyTo` as a
-  real-but-unset field for the built-in flow. One-line wire plus a test.
 
 
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
@@ -447,8 +454,7 @@ the named human gates only):**
 - **Small DX debt.** Give the component picker dialog a `sm:`-breakpoint bottom-sheet so it is not an
   unconditional `85vh` on a short viewport, and resolve the worktree dual vite/kit install collision
   (the showcase typecheck throws ~12 dependency-`.d.ts` errors under a symlinked-`node_modules` worktree,
-  so the local consumer-build proof currently leans on the e2e build; CI's real checkout is clean). The
-  bottom-sheet item is in `docs/internal/docs-friction-log.md`.
+  so the local consumer-build proof currently leans on the e2e build; CI's real checkout is clean).
 - **Engine-provided `inFeeds`/`routable` feed and sitemap views.** Phase 3b makes `routing.inFeeds`,
   `routable`, and `dated` concept-declared but keeps `inFeeds` a consumer-read hint: no engine code filters
   on it, so a site's feed and sitemap routes still hand-pick their concepts. Lands in the render/delivery
@@ -481,12 +487,28 @@ the named human gates only):**
   closed, so the active link is present but hidden. Consider forcing the section open when one of its
   children `isActive`, without overriding a deliberate manual collapse of an inactive section. Review
   finding, 2026-07-14 nav-layout pass.
-- **`CairnAdminShell`'s palette-inset test flakes under full-suite load.** "gives the palette a top
-  inset below sm instead of sitting flush against the viewport" fails intermittently on a full `npm
-  test` and passes in isolation and on a clean re-run; it measures a 1-2px viewport offset while the
-  suite's other browser tests contend for the same runner. It bit twice during the fragments pass and
-  cost a re-run each time. Either pin the measurement so it cannot race (assert the computed style
-  rather than the resolved geometry) or move it to a dedicated project. Surfaced 2026-07-16.
+- **Preserve the editor's draft on a save conflict.** The conflict refusal itself is right (never
+  merge by guesswork), but recovery today is a manual copy-reload-reapply the editor guide has to
+  teach: copy your whole draft somewhere safe, reload for your colleague's version, re-apply by
+  hand. The editor's own text could be preserved for them instead — shown side by side, or held in
+  a recoverable buffer. A docs section that procedural is a UX gap wearing a hat. From the friction
+  log, 2026-07-03; triaged here at the 2026-07-16 clearing.
+- **Make required image and reference fields visible to constraint validation.** Both arms submit
+  through hidden inputs, which the browser's constraint API ignores regardless of `required`, so a
+  required hero image or author reference never trips the capture-phase invalid handler that
+  reveals the Details panel; the failure surfaces only server-side. Needs an aria-invalid plus
+  focus-target pattern threaded into `MediaHeroField`/`ReferenceField`, not a native attribute.
+  (The closed multiselect's honest at-least-one signal, the sibling gap, shipped 2026-07-16.)
+- **Give URL identity a single home.** One public URL is assembled from the frontmatter date, the
+  per-concept `datePrefix`, and the URL policy the catch-all `byPermalink` route reads; the
+  content-model explanation documents it, but the concept cannot be stated without pointing at
+  three places, which is a complexity signal. Candidate: a consolidating helper so a reader and a
+  developer have one home for slug shaping. From the friction log, triaged 2026-07-16.
+- **Remove the e2e suite's cross-spec pagination coupling.** The 2026-07-16 pass converted the
+  seed-post convenience clicks to direct navigation, but the underlying class remains: specs
+  accumulate entries against a paginated newest-first list, so any future list-click assumption
+  re-inherits the fragility. A per-spec content reset, or a seed post dated in the future so it
+  stays on page one, removes the whole class.
 
 ## Considering
 
@@ -496,17 +518,17 @@ the named human gates only):**
   noun (a channel name, a season label) gets retyped by volunteers and drifts. Take
   it up when that case is concrete, not before; the block shape covers every reuse case the design
   brainstorm actually found, and an inline directive is a second grammar to teach and maintain.
-- **`FieldInput`'s hint id collides across repeated rows (the next instance of a fixed bug class).**
-  The field hint builds its id from `f.name`, the leaf's local name, while the component's unique
-  identity is its path-scoped `name` prop. `RepeatableField` mounts one `FieldInput` per row with
-  `name: '_value'`, and `ObjectGroupField` does the same per leaf key, so every row renders the same
-  hint id and each row's `aria-describedby` resolves to row zero's. Latent today: no showcase leaf
-  inside an `array(object)` declares `help`, so nothing fires. It fires on a consumer schema, the
-  same way `EntryPicker`'s constant dialog id stayed latent until a schema declared reference fields
-  and the fragments pass made it unconditional. The fix is to key the hint off the already-unique
-  `name` prop rather than `f.name`; the existing form-renderer assertions mount top-level fields
-  where the two coincide, so they are unaffected. The trigger is a schema that puts `help` on a leaf
-  inside a repeatable or an object group. Surfaced by the fragments fix-commit review, 2026-07-16.
+- **Narrow `EngineScreenId` so a misspelled built-in screen squiggles in the editor.** The type
+  widens to `(string & {})` so a dynamic concept id stays assignable, which means
+  `{ screen: 'setings' }` shows no red squiggle and surfaces only when `validateNavLayout` throws
+  at server start. The construction throw is loud and names the bad value, so the miss costs a dev
+  restart, not a wrong render; a tighter net (a template-literal union over the adapter's own
+  concept ids) needs type-level access to the adapter this module does not have today. Take it up
+  if that access ever falls out of other type work. From the friction log, triaged 2026-07-16.
+- **Admit editor-tooling keys to the site-config allowlist when a real tool asks.** The
+  unknown-top-level-key parse error means a YAML-LSP `$schema:` key would fail the parse. Conscious
+  strictness, per the loud-boundary posture; add a key to `KNOWN_TOP_LEVEL_KEYS` only when a real
+  tool wants it, not preemptively. From the friction log, triaged 2026-07-16.
 - **What `draft` means on a non-routable concept.** `draft` is a routing idea: a draft entry's page
   404s and stays out of feeds. A fragment has no page, so the flag has nothing to withhold, and today
   nothing filters it. A site that declares a `draft` field on its fragments concept and sets it would

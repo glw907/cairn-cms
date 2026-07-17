@@ -147,25 +147,15 @@ memory.
 
 ## The extending-developer lens (subordinate to the charter)
 
-The charter is the governing lens: the premise check, "is this cairn's job, and is it the leanest form?",
-runs before the correctness checks on every spec. The extending-developer persona sits under it as a
-forward diagnostic for the lean extensibility redesign (shipped `0.77.0`: the `CairnAdminShell` custom-route
-seam plus data-only `adminNav`, admin-scoped `locals.editor`, and the `check:surface`-enforced boundary),
-not a co-equal standing dimension and not a license to build a platform. The persona: a developer who
-launches a content-managed site fast on cairn, then builds their own functionality on top, and keeps
-pulling cairn updates without rework. Per the charter, cairn serves that developer with thin seams,
-owner/editor identity they read through a defined hand-off, an admin skeleton they extend in the DaisyUI +
-Tailwind idiom, while they bring their own auth, data, and domain logic. The redesign answered four
-diagnostic questions against that boundary: can a developer (1) extend the admin skeleton through a thin
-supported seam, (2) read the owner/editor identity on their own routes without reaching into engine
-internals, (3) depend on a narrow enforced (not merely documented) public boundary, and (4) upgrade across
-versions without hand-applied steps or silent failures? The persona, the questions, and the pre-redesign
-inputs are in
-[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md) (a point-in-time
-brief predating the shipped seams; verify its baseline against the code before acting on it); read the
-charter first. The earlier register-components scaffolding (`CairnExtension`/`AdminPanel`/`FieldTypeDef`)
-was removed in the principle-adherence pass, so the redesign built its seams onto a clean engine. The
-seams' cross-initiative stability is now tracked as `1.0` readiness in [`ROADMAP.md`](ROADMAP.md).
+The charter governs: the premise check, "is this cairn's job, and is it the leanest form?", runs
+before correctness checks on every spec. The persona beneath it: a developer who launches a
+content-managed site fast on cairn, builds their own functionality on top, and keeps pulling engine
+updates without rework. The lean extensibility redesign (shipped `0.77.0`) answered that: the
+`CairnAdminShell` custom-route seam, data-only `adminNav`, admin-scoped `locals.editor`, and the
+`check:surface`-enforced boundary. The diagnostic questions and pre-redesign inputs live in
+[`docs/internal/extending-developer-lens.md`](docs/internal/extending-developer-lens.md), a
+point-in-time brief; verify its baseline before acting on it. Seam stability is tracked as `1.0`
+readiness in [`ROADMAP.md`](ROADMAP.md).
 
 ## Watch items (conditional follow-ups)
 
@@ -262,6 +252,16 @@ an unverified destination, which is how the ecxc outage hid. The `cloudflare:ema
 `EmailMessage`/mimetext MIME form is Email *Routing*'s forward call and reaches only **verified**
 destinations; do not confuse the two. Email Sending also needs Workers Paid plus dashboard
 onboarding.
+
+## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
+
+In a feature worktree, `examples/showcase/node_modules` symlinks back to the main checkout, so the
+showcase resolves `@glw907/cairn-cms` and `@glw907/cairn-cms-dev` to MAIN's build, not the worktree's.
+A showcase e2e run in a worktree therefore silently proves the wrong engine until a from-scratch
+`npm install` in the worktree's showcase repoints both `file:` deps. The adjacent stale-`dist` trap
+(editing `src/lib` after the worktree's first `npm run package`, then testing old bytes) is closed
+structurally: the showcase's `pretest:e2e` hook repackages the library before every `test:e2e` run.
+The symlink half is not: reinstall before trusting a worktree e2e, or rely on CI's real checkout.
 
 ## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
 

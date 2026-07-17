@@ -425,11 +425,11 @@ rule). The CSRF token is read from the admin context.
     overflow: auto;
     border-radius: var(--radius-box, 0.75rem);
     border: 1px solid var(--cairn-card-border, oklch(90% 0.01 75));
-    background: var(--color-base-100, white);
+    background: var(--color-base-100, oklch(99% 0.004 75));
     padding: 0.875rem;
     /* The theme-adaptive elevation var, not a fixed shadow: in light the soft shadow carries the
        lift, in dark the hairline border defines the panel where a shadow barely shows. */
-    box-shadow: var(--cairn-shadow, 0 12px 32px -8px oklch(0% 0 0 / 0.25));
+    box-shadow: var(--cairn-shadow, 0 12px 32px -8px oklch(28% 0.02 75 / 0.25));
   }
   /* Below the narrow breakpoint the popover becomes a full-height bottom sheet (the design system's
      modal-sizing rule: filling the height is correct only on a small viewport). */

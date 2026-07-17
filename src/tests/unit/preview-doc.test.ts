@@ -25,6 +25,30 @@ describe('buildPreviewDoc', () => {
     expect(link).toBeGreaterThan(reset);
   });
 
+  it('carries the preview-only fragment boundary cue stylesheet before the site links', () => {
+    const doc = buildPreviewDoc('<p>hi</p>', preview);
+    const boundary = doc.indexOf('.cairn-fragment-boundary{');
+    const eyebrow = doc.indexOf('.cairn-fragment-boundary-eyebrow{');
+    const link = doc.indexOf('<link rel="stylesheet"');
+    expect(boundary).toBeGreaterThan(-1);
+    expect(eyebrow).toBeGreaterThan(boundary);
+    expect(link).toBeGreaterThan(eyebrow);
+  });
+
+  it('pairs the light accent with a prefers-color-scheme: dark override in the admin dark accent, since the preview ground can be dark on a site’s own stylesheet', () => {
+    const doc = buildPreviewDoc('<p>hi</p>', preview);
+    // The base rule carries cairn-admin.css's light --color-accent (unconditional, the default
+    // read on a light or unstyled preview ground).
+    expect(doc).toContain('color:oklch(54% 0.16 300)');
+    // The dark override lives inside its own prefers-color-scheme block and carries the light
+    // theme's dark --color-accent counterpart, never the light value.
+    const dark = doc.indexOf('@media (prefers-color-scheme: dark)');
+    expect(dark).toBeGreaterThan(-1);
+    const afterDark = doc.slice(dark);
+    expect(afterDark).toContain('oklch(70% 0.14 300)');
+    expect(afterDark).not.toContain('oklch(54% 0.16 300)');
+  });
+
   it('carries the charset and viewport metas under a doctype', () => {
     const doc = buildPreviewDoc('', preview);
     expect(doc.startsWith('<!doctype html>')).toBe(true);

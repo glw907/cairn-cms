@@ -331,7 +331,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
            design system's dialog-sizing recipe. -->
       <div class="mb-3 flex flex-none items-center gap-3">
         {#if picked && !editing}
-          <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Back to components" onclick={back}>
+          <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Back to components" onclick={back}>
             <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
           </button>
         {/if}
@@ -343,7 +343,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
           {/if}
         </div>
-        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Close" onclick={close}>✕</button>
+        <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={close}>✕</button>
       </div>
 
       {#if picked}
@@ -381,7 +381,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                 {#if formIncomplete}
                   <!-- The skeleton: never a fabricated finished block. The empty required regions are
                        called out by name so the editor knows exactly what the preview still needs. -->
-                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
+                  <!-- rounded not rounded-box: nested at this panel's p-3 (12px) inset inside the
+                       outer rounded-box (1rem) panel, so the inner radius is 1rem minus 12px. -->
+                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
                     <p class="text-sm font-medium">Fill the required fields to preview this.</p>
                     <p class="flex flex-wrap justify-center gap-1.5 text-xs">
                       {#each emptyRequired as label (label)}
@@ -391,12 +393,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   </div>
                 {:else if previewState === 'failed'}
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
-                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-box border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
+                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
                     <p class="text-sm font-semibold">Preview could not render</p>
                     <p class="text-xs text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
-                  <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+                  <div class="flex min-h-64 flex-1 overflow-hidden rounded border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
                     <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
                   </div>
                 {/if}
@@ -413,7 +415,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
-              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-muted"
+              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
               placeholder="Search components"
               aria-label="Search components"
               bind:value={query}
@@ -429,7 +431,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {#if filtered.length === 0}
           <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">"{query.trim()}"</span>.</p>
+            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
             <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}

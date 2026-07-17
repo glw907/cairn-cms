@@ -19,7 +19,7 @@ action since there is nothing here to create.
   <CairnLogo class="h-12 w-12 text-primary opacity-30" />
   <div class="space-y-1">
     <p class="font-semibold text-base-content">Welcome, {data.displayName}</p>
-    <p class="text-sm text-muted">
+    <p class="text-sm text-balance text-muted">
       There's no content here for this account to manage. If that's unexpected, check with whoever
       administers {data.siteName}.
     </p>

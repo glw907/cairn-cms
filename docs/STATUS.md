@@ -15,57 +15,57 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-16, latest: 0.87.0 PUBLISHED — fragments plus the friction-triage window; the friction log is CLEARED; next = ASC consumes fragments in its own session, or the design-arc queue)
+## Immediate next action (2026-07-17, latest: the invisible-craft polish pass SHIPPED as 0.87.1; next = the Waymark FINAL design review, fresh session)
 
-**0.87.0 IS PUBLISHED (release v0.87.0, publish run 29552392697 green, OIDC verified; `npm view`
-serves 0.87.0 on latest).** The cut rolled the fragments window plus a same-day friction-triage
-pass on the `friction-triage` branch (Geoff's directive: the release includes every valid
-friction-log item, and the log ends the pass CLEAR). One `Consumers must:` line rides the window
-(the embedded-routing enforcement; neither production site is affected).
+**0.87.1 [set at cut; verify against the release] rolls the invisible-craft polish pass**, the
+admin design-arc queue's item 4, run Geoff-in-the-loop as a design arc (the full record and
+post-mortem: `docs/internal/2026-07-16-invisible-craft-arc-log.md`). The window: a two-track
+audit (nine mechanical scan agents + three optical lenses over 80 renders) yielding ~30
+look-preserving fixes; six ratified verdicts (settings-card stacking, the pressed-cue inset
+hairline closing the weight-only advisory, nested radii, the preview-only fragment boundary cue,
+the publish blast-radius line, the include atomic chip + folded-container chip); the fragments
+nav glyph (layers); the auth-page theme fix (the cookie resolves before sign-in;
+`AdminShellData`'s public variant carries `theme` — the one public-surface tick, type-level
+only); and the `check:invisible-craft` standing gate (transition band, spacing brackets,
+no-achromatic colors, budgeted exceptions). The pass-end 44-agent review workflow (five lenses,
+three refuters per finding) confirmed 11 findings, all folded in the same window, including two
+majors (the include chip's grammar over-match, the preview cue's dark-ground contrast).
 
-**The friction-log triage, in numbers:** ~25 open findings verified against the code by a
-three-agent read fan-out. Eleven were already resolved (shipped by earlier passes but never
-pruned), ten shipped in this pass, and the rest moved to ROADMAP with their triggers (conflict-
-draft preservation, image/reference required-visibility, URL-identity home, EngineScreenId
-narrowing, `$schema` carve-in, the scaffolder trio folded onto the scaffolder entry). The log now
-holds only tombstones. GitHub private vulnerability reporting is ENABLED (the repo went public
-2026-07-03; the SECURITY.md finding's own prescribed action).
+**Gates at close:** check 0/0 (1385 files), 3646 tests exit 0, every check:* green, PR #3 CI
+green after the canonical baseline regen (the arc's intended visual drift), consumer build
+proven by the CI e2e's real checkout.
 
-**What shipped beyond fragments:** the fold-pill identity ("Callout · 12 lines" from the registry
-label, `use`-line tooltip, include ids at label strength — from a Fable design brief on Geoff's
-folded-components question; the chip/WYSIWYG-adjacent treatments filed to the polish arc), the
-save-path SiteConfigError redirect (visible parser message, not a raw 500), the closed-multiselect
-"Choose at least one." client signal, hint-id scoping, the suggestion-popover backtick styling,
-`SettingsData`/`VocabularyLoadData` barrel exports, the `replyTo` wire, four test-hygiene fixes
-(golden-path direct nav, `pretest:e2e` repackage hook, fold-on-mount timeouts, palette-inset
-computed-style pin), the media-smoke curl appendix, and four fragments UX fixes from a Fable
-adversarial review (the list delete-refusal copy family, the standing "Included in" Details group,
-the picker empty state, the nameless-include notice).
-
-**Gates at close:** check 0/0 (1381 files), 3600 tests exit 0, custom-surface PASS both trees,
-comments/reference/signatures/docs/package all OK, branch CI e2e green (run 29552074341), and a
-17-agent review workflow (four lenses, three adversarial refuters per finding) that confirmed 2
-findings (both fixed: the fail(400) silent no-op regression — its own catch was this pass's — and
-the stale fold tooltip) and refuted 2.
-
-**NEXT (fresh session, GEOFF-IN-THE-LOOP): the INVISIBLE-CRAFT POLISH PASS** (design-arc queue
-item 4; Geoff chose it 2026-07-17). Not to be confused with the 0.86.2 design-refinement arc,
-which absorbed only the brief's Typography and Color sections and explicitly carried this pass
-forward in its settle section. The rubric is
-docs/internal/2026-07-15-admin-resolved-polish-brief.md (spacing/rhythm, depth, motion, feedback,
-forms, micro-details); the pass also owns the weight-only pressed-cue advisory and the 2026-07-16
-fragments riders on the ROADMAP Next entry (preview boundary cue on included content, the publish
-blast-radius line, include-line atomic delete, the folded-chip question). Iterate fully local
-against the showcase admin with Geoff's eyes per round (notes are probes; ceremony once at
-settle). Resume prompt: "Start the admin invisible-craft polish pass with me: read
-docs/internal/2026-07-15-admin-resolved-polish-brief.md, docs/internal/admin-design-system.md,
-the ROADMAP Next polish entry (it carries the fragments riders), and the
-cairn-admin-design-arc-queue + design-iteration-economics memories; iterate locally against the
-showcase admin." Launch inside ~/Projects/cairn-cms.
+**NEXT (fresh session): the WAYMARK FINAL DESIGN REVIEW.** The pre-beta ladder's step 4, now
+unblocked: both production rebuilds are live (907.life "no pending work"; ecxc.ski deployed with
+its six locked picks), so the review grades TODAY'S post-chassis, post-harvest Waymark, then
+cairn.pub (step 5) becomes a short deploy. Calibration (Geoff, 2026-07-16): the same rigor as
+the admin polish sessions — a two-track opening audit as a workflow (mechanical scans + optical
+lenses over real renders at the five-viewport bar), adversarial verify, probe pages for taste
+forks, Geoff-in-the-loop verdicts, settle-once ceremony. The DESIGN-DNA RIDER (Geoff,
+2026-07-16): re-run the polish rubric's universal dimensions over the template tree (chassis +
+cairn theme + prose.css) and weigh extending `check:invisible-craft`'s scan family-wide. The
+five lenses and their briefs live in the ROADMAP's "Waymark final design review" entry; the
+CTA-contrast lesson (computed color-vs-background equality as a standard numeric check) rides
+the mechanical track. Full prep: the `cairn-template-effort` memory's NEXT block. Resume
+prompt: "Run the Waymark final design review: read the ROADMAP's 'Waymark final design review'
+entry, the cairn-template-effort memory's NEXT block, and
+docs/internal/2026-07-15-admin-resolved-polish-brief.md (the rubric whose universal dimensions
+the mechanical track re-runs over the template tree); open with the two-track audit as a
+workflow against the live-rendered showcase at the five-viewport bar, both color modes, with
+the stress fixtures." Launch inside ~/Projects/cairn-cms.
 
 **PARALLEL, in ASC's own session:** the ASC consolidation consumes fragments (its
-docs/fragment-candidates.md holds nine ready cases; navLayout addition + content migration there).
+docs/fragment-candidates.md holds nine ready cases).
 
-**Also this pass-close:** the STATUS archive rule is enforced again as of 2026-07-17 (the
-accumulated entries moved to `docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md`),
-and the friction log is CLEAR with a standing complete-or-move rule.
+**Carry-forwards (this pass's watches):** the dev backend cannot exercise fragments
+(`fragmentTargets: []`) and renders every media tile as "Image missing" — both filed in the
+friction log and ROADMAP Now (the seed item); the media chip and `figureRoleAtLine` share the
+fence/brace gaps the include chip was cured of (friction log; fix when the media decorations
+open); `check:custom-surface`/`check:chassis-boundary` are CI-dark (friction log); the
+folded-chip snippet-preview and phone affordance are deferred by ruling (ROADMAP Next).
+
+## The archived 0.87.0 entry (superseded 2026-07-17)
+
+Moved to `docs/internal/history/STATUS-archive-2026-07-02-to-2026-07-16.md` per the archive
+rule.
+

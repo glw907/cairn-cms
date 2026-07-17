@@ -397,6 +397,38 @@ describe('EditPage', () => {
     await expect.poll(() => previewSrcdoc(screen)).toContain('Included fragment content.');
   });
 
+  it('marks a spliced include with the preview-only boundary cue, naming the fragment title', async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: 'Before.\n\n::include{fragment="welcome"}',
+        fragmentTargets: [{ id: 'welcome', title: 'Welcome banner', body: 'Included fragment content.' }],
+      }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-fragment-boundary');
+    const doc = previewSrcdoc(screen);
+    expect(doc).toContain('class="cairn-fragment-boundary-eyebrow"');
+    expect(doc).toContain('From “Welcome banner”');
+  });
+
+  it("falls back to the fragment id in the boundary cue's eyebrow when no title resolves", async () => {
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const props = {
+      ...postProps({
+        body: '::include{fragment="welcome"}',
+        fragmentTargets: [{ id: 'welcome', title: '', body: 'Included fragment content.' }],
+      }),
+      render: ({ body, resolveFragment }: Parameters<SiteRender>[0]) => renderMarkdown(body, { resolveFragment }),
+    };
+    const screen = render(EditPage, props);
+    await screen.getByRole('tab', { name: 'Preview' }).click();
+    await expect.poll(() => previewSrcdoc(screen)).toContain('cairn-fragment-boundary');
+    expect(previewSrcdoc(screen)).toContain('From “welcome”');
+  });
+
   it('shows the missing-fragment notice in the preview for a dangling include', async () => {
     const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
     const props = {
@@ -1843,6 +1875,58 @@ describe('EditPage', () => {
     expect(legends).not.toContain('Included in');
   });
 
+  it('names the publish blast radius in the status notice region for a fragment with includers, pluralized', async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        conceptId: 'fragments',
+        label: 'Fragment',
+        slug: 'welcome',
+        routable: false,
+        inboundLinks: [
+          { concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' },
+          { concept: 'pages', id: 'b', title: 'Page B', permalink: '/b' },
+          { concept: 'pages', id: 'c', title: 'Page C', permalink: '/c' },
+        ],
+      }),
+    );
+    const status = screen.container.querySelector('[role="status"]')!;
+    expect(status.textContent ?? '').toContain('Publishing updates 3 entries that include this fragment.');
+  });
+
+  it('uses the singular form for exactly one includer', async () => {
+    const screen = render(
+      EditPage,
+      postProps({
+        conceptId: 'fragments',
+        label: 'Fragment',
+        slug: 'welcome',
+        routable: false,
+        inboundLinks: [{ concept: 'posts', id: 'a', title: 'Post A', permalink: '/a' }],
+      }),
+    );
+    const status = screen.container.querySelector('[role="status"]')!;
+    expect(status.textContent ?? '').toContain('Publishing updates 1 entry that includes this fragment.');
+  });
+
+  it('omits the publish blast-radius line for a fragment with no includers', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ conceptId: 'fragments', label: 'Fragment', slug: 'welcome', routable: false, inboundLinks: [] }),
+    );
+    const status = screen.container.querySelector('[role="status"]')!;
+    expect(status.textContent ?? '').not.toContain('Publishing updates');
+  });
+
+  it('omits the publish blast-radius line on a normal post, even with inboundLinks set', async () => {
+    const screen = render(
+      EditPage,
+      postProps({ inboundLinks: [{ concept: 'posts', id: 'b', title: 'Post B', permalink: '/b' }] }),
+    );
+    const status = screen.container.querySelector('[role="status"]')!;
+    expect(status.textContent ?? '').not.toContain('Publishing updates');
+  });
+
   it('renders the draft boolean as the Hidden toggle with its hint', async () => {
     const screen = render(
       EditPage,
@@ -2479,8 +2563,16 @@ describe('EditPage', () => {
     }
 
     async function clickLine(screen: { container: HTMLElement }, text: string) {
-      const line = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
-        (l.textContent ?? '').includes(text),
+      // EditPage always folds every component on mount (foldOnMount), and a folded opener's own
+      // fence machinery is now absorbed into the chip too (ratified 7B), so the target text is not
+      // rendered until the fold pill is unfolded first: an author reaching a precise caret position
+      // inside a folded block unfolds it the same way, by activating the pill.
+      const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+      if (pill) await userEvent.click(pill);
+      const line = await vi.waitFor(() =>
+        Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+          (l.textContent ?? '').includes(text),
+        ),
       );
       await userEvent.click(line!);
     }
@@ -2528,7 +2620,7 @@ describe('EditPage', () => {
       // unavailable (aria-disabled) and the tooltip points the editor at markdown.
       await expect
         .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can't be edited in the form. Edit it as markdown.");
+        .toBe("This block can’t be edited in the form. Edit it as markdown.");
       expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
       expect(editControl(screen)!.disabled).toBe(false);
     });
@@ -2563,10 +2655,10 @@ describe('EditPage', () => {
       resolvers[1]({ safe: false, reason: 'unknown-attribute' });
       await expect
         .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can't be edited in the form. Edit it as markdown.");
+        .toBe("This block can’t be edited in the form. Edit it as markdown.");
       resolvers[0]({ safe: true });
       expect(editControl(screen)?.getAttribute('aria-label')).toBe(
-        "This block can't be edited in the form. Edit it as markdown.",
+        "This block can’t be edited in the form. Edit it as markdown.",
       );
     });
 

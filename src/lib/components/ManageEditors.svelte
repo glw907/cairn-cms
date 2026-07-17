@@ -155,7 +155,7 @@ dispatcher defines.
   <CsrfField />
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Name</span>
-    <input class="input" name="name" aria-label="Name" required />
+    <input class="input" name="name" aria-label="Name" autocomplete="off" required />
   </label>
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">Email</span>

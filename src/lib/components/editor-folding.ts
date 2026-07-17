@@ -29,7 +29,6 @@ import {
   StateEffect,
   StateField,
   type Extension,
-  type Transaction,
 } from '@codemirror/state';
 import { codeFolding, foldEffect, foldedRanges, unfoldEffect } from '@codemirror/language';
 import {
@@ -37,6 +36,7 @@ import {
   containerRanges,
   directiveOpenerName,
   fenceScan,
+  openerTitleAttr,
   type ContainerRange,
 } from './markdown-directives.js';
 
@@ -94,18 +94,19 @@ function blockName(openerLineText: string, labelFor?: (name: string) => string |
 
 // What preparePlaceholder derives once per fold so placeholderDOM renders it without
 // re-deriving: the hidden line count, the resolved display label (null when the opener carries
-// no directive name), and the registry `use` line for the pill's tooltip (undefined when the
-// directive carries none).
+// no directive name), the opener's title attribute (null when it carries none), and the registry
+// `use` line for the pill's tooltip (undefined when the directive carries none).
 interface PreparedFold {
   lines: number;
   label: string | null;
+  title: string | null;
   use: string | undefined;
 }
 
 // The pill placeholder: a real focusable button counting the hidden lines, the screen-reader story
-// for a fold. preparePlaceholder computes the count, the resolved label, and the tooltip off the
-// folded char range so placeholderDOM renders all three without re-deriving. Clicking unfolds
-// through CodeMirror's own onclick handler.
+// for a fold. preparePlaceholder computes the count, the resolved label, the opener's title
+// attribute, and the tooltip off the folded char range so placeholderDOM renders all four without
+// re-deriving. Clicking unfolds through CodeMirror's own onclick handler.
 function preparePlaceholder(
   state: EditorState,
   range: { from: number; to: number },
@@ -115,8 +116,19 @@ function preparePlaceholder(
   const openerText = state.doc.lineAt(range.from).text;
   const rawName = directiveOpenerName(openerText);
   const label = rawName ? resolvedLabel(rawName, labels.labelFor) : null;
+  const title = rawName ? openerTitleAttr(openerText) : null;
   const use = rawName ? labels.useFor?.(rawName) : undefined;
-  return { lines, label, use };
+  return { lines, label, title, use };
+}
+
+// The chip's combined text after the (truncatable) label span: the title segment only when the
+// opener carries a title attribute, otherwise the plain hidden-line count, today's pill text.
+// The middle dot is the pill grammar's one separator (the admin voice keeps the em dash out of
+// UI strings), so the title joins the same way the count does.
+function pillSuffix(prepared: PreparedFold): string {
+  return prepared.title
+    ? ` · “${prepared.title}” · ${prepared.lines} lines`
+    : ` · ${prepared.lines} lines`;
 }
 
 function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepared: PreparedFold): HTMLElement {
@@ -125,13 +137,13 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   pill.className = 'cm-cairn-fold-pill';
   if (prepared.label) {
     // The label carries its own truncating span (CSS ellipsis past ~24 characters, see
-    // cairn-admin's fold-pill rule) so a long component label never crowds out the count; the
-    // count itself sits outside the span, as a bare text node, so it can never truncate.
+    // cairn-admin's fold-pill rule) so a long component label never crowds out the title or the
+    // count; both sit outside the span, as a bare text node, so neither can ever truncate.
     const labelSpan = document.createElement('span');
     labelSpan.className = 'cm-cairn-fold-pill-label';
     labelSpan.textContent = prepared.label;
     pill.appendChild(labelSpan);
-    pill.appendChild(document.createTextNode(` · ${prepared.lines} lines`));
+    pill.appendChild(document.createTextNode(pillSuffix(prepared)));
   } else {
     pill.textContent = `${prepared.lines} lines`;
   }
@@ -139,22 +151,31 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   // redundancy with the gutter chevron's own aria-expanded is intended (spec 2026-06-30).
   pill.setAttribute('aria-expanded', 'false');
   const ariaName = prepared.label ? `${prepared.label} section` : 'section';
-  pill.setAttribute('aria-label', `${ariaName}, ${prepared.lines} hidden lines`);
-  // The opener's own [title]/{attrs} text stays on the opener line; the pill's tooltip carries
-  // only the registry's one-line "when to reach for this" copy, when the directive has one.
+  // The title rides the aria-label too (not just the visible text), so the chip carries the same
+  // information for assistive tech that it now carries for sighted authors: with the opener's
+  // fence machinery absorbed into the chip, an author using a screen reader has no other way to
+  // learn the container's title while it stays folded.
+  const ariaTitle = prepared.title ? `, “${prepared.title}”` : '';
+  pill.setAttribute('aria-label', `${ariaName}${ariaTitle}, ${prepared.lines} hidden lines`);
+  // The registry's `use` line carries the pill's native tooltip; the opener's own {title="..."}
+  // attribute now rides the visible chip text and the aria-label above instead.
   if (prepared.use) pill.title = prepared.use;
   pill.addEventListener('click', onclick);
   return pill;
 }
 
-// The char range a container folds: end-of-opener-line to end-of-closer-line, so the bare closer
-// never dangles. Null when the opener and closer share a line (nothing to hide). The one place
-// that turns a line range into the fold range, shared by the toggle, the keymap, and the gutter.
+// The char range a container folds: start-of-opener-line to end-of-closer-line, so the whole
+// opener row (its fence machinery, name, and attrs) folds away with the body and the closer,
+// absorbed into the one placeholder chip. Null when the opener and closer share a line (nothing
+// to hide). The one place that turns a line range into the fold range, shared by the toggle, the
+// keymap, and the gutter; widening it to the opener's line start (rather than its line end) is
+// what lets the touched-range safety invariant below cover an edit landing on the now-hidden
+// opener text too, with no separate mechanism.
 function foldCharRange(state: EditorState, range: ContainerRange): { from: number; to: number } | null {
   const opener = state.doc.line(range.fromLine + 1);
   const closer = state.doc.line(range.toLine + 1);
   if (closer.to <= opener.to) return null;
-  return { from: opener.to, to: closer.to };
+  return { from: opener.from, to: closer.to };
 }
 
 // Fold one container, or unfold it if already folded. The range comes from containerRanges, so a
@@ -284,35 +305,35 @@ const flashField = StateField.define<DecorationSet>({
 
 const FLASH_MS = 400;
 
-// The walk both transactionExtenders below share: every folded range in `tr.startState`, with its
-// boundary mapped forward through the transaction's changes, handed to `visit` alongside a `push`
-// for the effects `visit` decides to emit. Only what each extender does with a hit differs (the
-// safety invariant unfolds a touched range; the placeholder refresh also re-folds a renamed one).
-function foldEffectsFor(
-  tr: Transaction,
-  visit: (from: number, to: number, mappedFrom: number, mappedTo: number, push: (effect: StateEffect<unknown>) => void) => void,
-): StateEffect<unknown>[] {
-  const effects: StateEffect<unknown>[] = [];
-  const startFolds = foldedRanges(tr.startState);
-  if (startFolds.size === 0) return effects;
-  startFolds.between(0, tr.startState.doc.length, (from, to) => {
-    const mappedFrom = tr.changes.mapPos(from, 1);
-    const mappedTo = tr.changes.mapPos(to, -1);
-    visit(from, to, mappedFrom, mappedTo, (effect) => effects.push(effect));
-  });
-  return effects;
-}
-
 // The safety invariant, in one transactionExtender. CodeMirror's own fold field already clears a
 // fold the selection head sits inside and a fold a delete touches; this covers the rest: an insert
 // touching a fold boundary, a paste across it, an undo/redo landing inside, and a selection range
-// (not just its head) extending into hidden text. It reads the start state's folds, maps them
-// forward, and appends an unfold effect for any the change or new selection touches. A replace
-// inside a fold leaves it open afterward, which falls out of the same rule.
+// (not just its head) extending into hidden text. It walks the start state's folds, maps each
+// boundary forward through the transaction's changes (the +1/-1 bias keeps a boundary insert on the
+// fold's outside), and appends an unfold effect for any the change or new selection touches. A
+// replace inside a fold leaves it open afterward, which falls out of the same rule.
+//
+// foldCharRange now starts the fold at the opener line's own start, so the opener's fence
+// machinery folds away into the chip along with the body and the closer (the absorbed-opener
+// chip). That widening is what makes this one invariant cover an edit landing on the (now-hidden)
+// opener line too, with no separate mechanism: a rename dispatched while a container is folded
+// reads as touching this same range and unfolds, revealing exact source, rather than silently
+// refreshing a placeholder still on screen. An earlier version of this file also carried a
+// placeholder-refresh extender that re-derived a folded opener's identity and forced a refold when
+// it drifted, so a directive renamed in place could stay folded with an updated pill. That case can
+// no longer occur: since the opener line now folds away with everything else, the only way a
+// folded range's identity could change is by editing the opener text, which is now always a
+// touched edit and always unfolds here first. A later manual refold calls preparePlaceholder fresh
+// against the current text regardless.
 function safetyExtender(): Extension {
   return EditorState.transactionExtender.of((tr) => {
     if (!tr.docChanged && !tr.selection) return null;
-    const effects = foldEffectsFor(tr, (from, to, mappedFrom, mappedTo, push) => {
+    const startFolds = foldedRanges(tr.startState);
+    if (startFolds.size === 0) return null;
+    const effects: StateEffect<unknown>[] = [];
+    startFolds.between(0, tr.startState.doc.length, (from, to) => {
+      const mappedFrom = tr.changes.mapPos(from, 1);
+      const mappedTo = tr.changes.mapPos(to, -1);
       let touched = false;
       if (tr.docChanged) {
         tr.changes.iterChangedRanges((fromA, toA) => {
@@ -324,44 +345,7 @@ function safetyExtender(): Extension {
           if (range.from < mappedTo && range.to > mappedFrom) touched = true;
         }
       }
-      if (touched) push(unfoldEffect.of({ from, to }));
-    });
-    return effects.length ? { effects } : null;
-  });
-}
-
-// The refresh identity for a folded opener line: the resolved block name (what blockName renders)
-// plus the raw directive name, joined so two different lines can never collide by string
-// concatenation alone. The raw name has to ride along because a rename between two registered
-// components that share a label (same blockName) still changes the pill's `use` tooltip
-// (preparePlaceholder derives it from labels.useFor(rawName)); comparing blockName alone would read
-// that as no change at all and leave the tooltip stranded on the old component.
-function foldIdentity(openerLineText: string, labelFor?: (name: string) => string | undefined): string {
-  return `${directiveOpenerName(openerLineText) ?? ''} ${blockName(openerLineText, labelFor)}`;
-}
-
-// The folded pill's name and tooltip are frozen at fold time: codeFolding calls preparePlaceholder
-// only when a fold is (re)created, never on a later, unrelated edit that just maps the fold's
-// position forward. A directive renamed in place on its still-visible opener line
-// (":::note" -> ":::warning") while the block stays folded would otherwise strand the pill on the
-// old name (and, when the two share a registry label, on the old `use` tooltip too), since nothing
-// else re-derives it. This transactionExtender re-derives each folded range's identity on every doc
-// change and, when it drifted from what the fold was created with, forces a refold (unfold, then
-// fold, in the SAME transaction) so codeFolding recomputes preparePlaceholder against the post-edit
-// text. The identity fix (making the raw name and the resolved block name part of what invalidates
-// the widget) has to be this active, since codeFolding exposes no other hook to recompute a
-// placeholder already on screen.
-function placeholderRefreshExtender(labels: FoldLabelSource): Extension {
-  return EditorState.transactionExtender.of((tr) => {
-    if (!tr.docChanged) return null;
-    const effects = foldEffectsFor(tr, (from, to, mappedFrom, mappedTo, push) => {
-      const before = foldIdentity(tr.startState.doc.lineAt(from).text, labels.labelFor);
-      const after = foldIdentity(tr.state.doc.lineAt(mappedFrom).text, labels.labelFor);
-      if (before !== after) {
-        const span = { from: mappedFrom, to: mappedTo };
-        push(unfoldEffect.of(span));
-        push(foldEffect.of(span));
-      }
+      if (touched) effects.push(unfoldEffect.of({ from, to }));
     });
     return effects.length ? { effects } : null;
   });
@@ -548,7 +532,6 @@ export function cairnFolding(labels: FoldLabelSource = {}): Extension {
     }),
     flashField,
     safetyExtender(),
-    placeholderRefreshExtender(labels),
     foldPlugin(),
     foldGutterColumn(labels),
     foldKeymap,

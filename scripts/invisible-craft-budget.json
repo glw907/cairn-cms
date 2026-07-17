@@ -1,0 +1,38 @@
+{
+  "durations": [
+    {
+      "file": "src/lib/components/cairn-admin.css",
+      "token": "animation-duration: 0.01ms !important;",
+      "reason": "reduced-motion accessibility override, deliberately near-zero to disable animation under prefers-reduced-motion"
+    },
+    {
+      "file": "src/lib/components/cairn-admin.css",
+      "token": "transition-duration: 0.01ms !important;",
+      "reason": "reduced-motion accessibility override, deliberately near-zero to disable transitions under prefers-reduced-motion"
+    }
+  ],
+  "spacingBrackets": [
+    {
+      "file": "src/lib/components/MediaHeroField.svelte",
+      "token": "pl-[3.875rem]",
+      "reason": "thumbnail width plus gap alignment, not on the 4/8px scale by construction"
+    },
+    {
+      "file": "src/lib/components/CairnAdminShell.svelte",
+      "token": "mt-[12vh]",
+      "reason": "viewport-relative command-palette offset, not a spacing-scale value"
+    },
+    {
+      "file": "src/lib/components/EditPage.svelte",
+      "token": "pb-[calc(0.5rem+env(safe-area-inset-bottom))]",
+      "reason": "safe-area inset for the fixed action bar, not expressible on the plain scale"
+    }
+  ],
+  "achromaticColors": [
+    {
+      "file": "src/lib/components/preview-doc.ts",
+      "token": "#fff",
+      "reason": "PRE-EXISTING: pure-white fallback ground for the preview iframe body, ahead of the site's own CSS loading; review at next polish round"
+    }
+  ]
+}

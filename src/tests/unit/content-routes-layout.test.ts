@@ -240,9 +240,27 @@ describe('shellPayload', () => {
     expect(shell.public).toBe(true);
     if (!shell.public) throw new Error('expected public shell');
     expect(shell.siteName).toBe('Test Site');
+    // No theme cookie: the light default, same as an authed request.
+    expect(shell.theme).toBe('cairn-admin');
     // The login page pays no GitHub round-trip.
     await Promise.resolve();
     expect(spy).not.toHaveBeenCalled();
+  });
+
+  it('reads the theme cookie on a public path too, since it carries no auth', async () => {
+    const routes = createContentRoutes(runtime());
+    const { shell } = await routes.shellPayload(
+      contentEvent({
+        url: 'https://test.example/admin/login',
+        editor: null,
+        eventBackend: backend,
+        env: {},
+        cookies: { get: (name) => (name === 'cairn-admin-theme' ? 'cairn-admin-dark' : undefined), set: () => {}, delete: () => {} },
+      }) as never,
+    );
+    expect(shell.public).toBe(true);
+    if (!shell.public) throw new Error('expected public shell');
+    expect(shell.theme).toBe('cairn-admin-dark');
   });
 
   it('streams the pending entries parsed from the cairn refs (not awaited up front)', async () => {

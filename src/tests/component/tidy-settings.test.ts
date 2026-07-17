@@ -55,7 +55,10 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
 describe('CairnTidySettings: the editor tier (enabled with key)', () => {
   it('renders the read-only developer facts including the model', async () => {
     const screen = render(CairnTidySettings, { data: data() });
-    await expect.element(screen.getByText(/set by your developer/i)).toBeInTheDocument();
+    // Two copies of the pill exist (one per breakpoint, only one visible at a time via
+    // hidden/sm:hidden), so assert on raw text content rather than a role/text query that
+    // would find both.
+    expect(screen.container.textContent).toMatch(/set by your developer/i);
     await expect.element(screen.getByText(/Claude Sonnet/)).toBeInTheDocument();
     // The form exists, so the editor tier is present.
     expect(screen.container.querySelector('form[action="?/saveSettings"]')).not.toBeNull();

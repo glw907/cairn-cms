@@ -380,6 +380,9 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     font-size: 1.875rem;
     font-weight: 700;
     margin: 5px 0 0;
+    /* Even line rags rather than a lone last word, at the phone widths where this full-sentence
+       heading wraps. */
+    text-wrap: balance;
   }
   .page-lede {
     font-size: 0.9375rem;
@@ -571,7 +574,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     font: 600 0.78125rem/1 var(--font-body);
     cursor: pointer;
     text-decoration: none;
-    transition: border-color 120ms ease, background-color 120ms ease;
+    transition: border-color 150ms ease, background-color 150ms ease;
   }
   .step-act:hover {
     border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border));
@@ -790,7 +793,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     cursor: pointer;
     text-decoration: none;
     white-space: nowrap;
-    transition: border-color 120ms ease, color 120ms ease;
+    transition: border-color 150ms ease, color 150ms ease;
   }
   .btn-quiet:hover {
     border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));

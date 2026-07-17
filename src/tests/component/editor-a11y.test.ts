@@ -85,37 +85,14 @@ describe('fold-control name stays in sync with an in-place directive rename', ()
   });
 });
 
-describe('folded pill name stays in sync with an in-place directive rename', () => {
-  it('updates the folded pill aria-label when the opener directive is renamed while folded', async () => {
-    const doc = ':::note\nbody line one\nbody line two\n:::\n';
-    let replace: ((from: number, to: number, text: string) => void) | undefined;
-    const { container } = render(MarkdownEditor, {
-      value: doc,
-      name: 'body',
-      registerReplaceRange: (fn: (from: number, to: number, text: string) => void) => {
-        replace = fn;
-      },
-    });
-    await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
-    await userEvent.click(container.querySelector<HTMLButtonElement>('.cm-cairn-fold-btn')!);
-    await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeTruthy();
-    const before = container.querySelector('.cm-cairn-fold-pill')!.getAttribute('aria-label') ?? '';
-    expect(before.startsWith('note section,')).toBe(true);
-    await expect.poll(() => typeof replace).toBe('function');
-    // Rename the opener while the block stays folded; the opener line is always visible.
-    const from = doc.indexOf('note');
-    replace!(from, from + 'note'.length, 'warning');
-    await expect
-      .poll(() => container.querySelector('.cm-cairn-fold-pill')?.getAttribute('aria-label'), COLD_START)
-      .toBe(before.replace('note section,', 'warning section,'));
-  });
-});
-
-describe("folded pill tooltip stays in sync with an in-place rename between same-label components", () => {
-  it("updates the pill's title when the directive renames to a same-label component with a different use line", async () => {
-    // Two registered components sharing a label but carrying different `use` lines, so the refresh
-    // gate cannot ride blockName's resolved label alone: the raw directive name must participate too,
-    // or a rename from one to the other looks like no change at all and the pill's tooltip strands.
+describe('a folded container unfolds on an in-place directive rename, revealing exact source', () => {
+  it('unfolds instead of silently refreshing the pill, and a later refold resolves the renamed identity fresh', async () => {
+    // Ratified 7B: while folded, the opener's own fence machinery is absorbed into the chip along
+    // with the body and the closer, so a rename landing on the opener now reads as touching the
+    // folded range and unfolds it (source-primary: the author never sees a stale name over hidden,
+    // already-renamed text). Two components sharing a label but carrying different `use` lines
+    // prove a later refold resolves preparePlaceholder fresh against the CURRENT text, not a
+    // carried-over identity from before the rename.
     const registry = defineRegistry({
       components: [
         {
@@ -147,16 +124,24 @@ describe("folded pill tooltip stays in sync with an in-place rename between same
     await expect.poll(() => container.querySelector('.cm-cairn-fold-btn'), COLD_START).toBeTruthy();
     await userEvent.click(container.querySelector<HTMLButtonElement>('.cm-cairn-fold-btn')!);
     await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeTruthy();
-    const before = container.querySelector('.cm-cairn-fold-pill')!.getAttribute('title');
-    expect(before).toBe('Use for a supporting aside.');
+    expect(container.querySelector('.cm-cairn-fold-pill')!.getAttribute('title')).toBe(
+      'Use for a supporting aside.',
+    );
     await expect.poll(() => typeof replace).toBe('function');
-    // Rename note -> warning while folded; both resolve to the same "Callout" label, so the pill's
-    // visible text and aria-label are unchanged, but the tooltip must still update.
+    // Rename note -> warning while folded: the edit lands on the absorbed opener and unfolds.
     const from = doc.indexOf('note');
     replace!(from, from + 'note'.length, 'warning');
-    await expect
-      .poll(() => container.querySelector('.cm-cairn-fold-pill')?.getAttribute('title'), COLD_START)
-      .toBe('Use for a safety-critical caution.');
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeNull();
+    expect(
+      Array.from(container.querySelectorAll('.cm-line')).some((l) => l.textContent?.includes(':::warning')),
+    ).toBe(true);
+    // Refold: the pill resolves fresh against the renamed text, picking up warning's own tooltip
+    // rather than stranding note's.
+    await userEvent.click(container.querySelector<HTMLButtonElement>('.cm-cairn-fold-btn')!);
+    await expect.poll(() => container.querySelector('.cm-cairn-fold-pill'), COLD_START).toBeTruthy();
+    expect(container.querySelector('.cm-cairn-fold-pill')!.getAttribute('title')).toBe(
+      'Use for a safety-critical caution.',
+    );
   });
 });
 

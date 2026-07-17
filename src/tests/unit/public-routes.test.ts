@@ -268,6 +268,34 @@ describe('createPublicRoutes entryLoad', () => {
     await recordingRoutes.entryLoad({ url: new URL('https://example.com/about') });
     expect(recordedResolveFragment?.('address')?.trim()).toBe('Address body.');
   });
+
+  it('renders a spliced ::include with no trace of the preview-only boundary cue (ratified 4B)', async () => {
+    // buildFragmentResolver never sets previewTitle (only EditPage's client-side resolver does), so
+    // the same entry through the real render pipeline must come back byte-identical to a splice
+    // with no boundary wrapper: this is the provable public-path half of the preview-only cue.
+    const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+    const [fragments] = normalizeConcepts({
+      fragments: { dir: 'f', routing: 'embedded', fields: fieldset({ title: fields.text({ label: 'Title' }) }) },
+    });
+    const fragmentSite = createSiteResolver([
+      { descriptor: pages, index: createContentIndex([
+        { path: '/g/about.md', raw: '---\ntitle: About\n---\n\n::include{fragment="address"}' },
+      ], pages) },
+      { descriptor: fragments, index: createContentIndex([{ path: '/f/address.md', raw: '---\ntitle: Address\n---\n\nOur address is 12 Harbor Way.' }], fragments) },
+    ]);
+    const fragmentRoutes = createPublicRoutes({
+      site: fragmentSite,
+      render: ({ body, resolveFragment }) => renderMarkdown(body, { resolveFragment }),
+      origin: 'https://example.com',
+      siteName: 'Test',
+      description: 'Test description.',
+    });
+
+    const data = await fragmentRoutes.entryLoad({ url: new URL('https://example.com/about') });
+    expect(data.html).toContain('Our address is 12 Harbor Way.');
+    expect(data.html).not.toContain('cairn-fragment-boundary');
+    expect(data.html).not.toContain('From “');
+  });
 });
 
 describe('createPublicRoutes media.resolver_absent', () => {

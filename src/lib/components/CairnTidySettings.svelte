@@ -312,7 +312,7 @@ home), diffable and shared across editors.
     }`;
   }
   function segClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${segmentTintClass(on)}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${on ? segmentTintClass(on) : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
 </script>
 
@@ -335,7 +335,7 @@ home), diffable and shared across editors.
   <!-- DEVELOPER TIER, read-only: the three deploy-time facts the editor depends on, model included as
        a stated fact (never an editable control). Shown in both the enabled and gate states. -->
   {#if data.enabled}
-    <div class="mt-6 flex items-start gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-200 p-4">
+    <div class="mt-6 flex items-start gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-4">
       <span class="mt-0.5 inline-flex h-9 w-9 flex-none items-center justify-center rounded-xl bg-base-content/[0.07] text-muted">
         <CodeIcon class="h-5 w-5" aria-hidden="true" />
       </span>
@@ -344,23 +344,30 @@ home), diffable and shared across editors.
         <div class="mt-0.5 text-xs leading-relaxed text-muted">
           Your developer turned tidy on and chose how it runs. You cannot change these here.
         </div>
+        <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
+             inline before the value at a fixed column width, today's composition. -->
         <div class="mt-2.5 flex flex-col gap-1.5">
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
             <span>On for this site</span>
           </div>
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
             <span>
               {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
               {:else}Set, and kept on the server<span class="text-muted"> &middot; could not verify it just now</span>
               {/if}
             </span>
           </div>
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
             <span>{data.modelLabel} <span class="text-muted">&middot; the careful default for a light copy-edit</span></span>
           </div>
+        </div>
+        <!-- Below sm the "Set by your developer" pill drops out of the head row (its sm+ copy
+             just below is hidden here) and renders on its own line under the grid above. -->
+        <div class="mt-2 sm:hidden">
+          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
         </div>
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
@@ -369,12 +376,13 @@ home), diffable and shared across editors.
           </div>
         </div>
       </div>
-      <span class="mt-0.5 inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+      <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead. -->
+      <span class="mt-0.5 hidden flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted sm:inline-flex"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
     </div>
 
     <!-- THE GENERATED SUMMARY LINE, inside the live region. Rendered unconditionally so it can
          announce when it changes. -->
-    <div role="status" aria-live="polite" class="mb-6 mt-6 flex items-start gap-3 rounded-2xl border border-primary/[0.16] bg-primary/[0.05] p-3.5">
+    <div role="status" aria-live="polite" class="mb-6 mt-6 flex items-start gap-3 rounded-box border border-primary/[0.16] bg-primary/[0.05] p-3.5">
       <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-primary/[0.12] text-primary" aria-hidden="true"><ListIcon class="h-4 w-4" /></span>
       <div class="min-w-0 flex-1 text-[0.8125rem] leading-relaxed">
         <span class="font-semibold">Tidy will fix</span> {summaryFixes}.
@@ -400,7 +408,7 @@ home), diffable and shared across editors.
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
           </div>
         </div>
-        <div class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
           <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
             <div class="min-w-0 flex-1">
               <div class="text-[0.9375rem] font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
@@ -448,7 +456,7 @@ home), diffable and shared across editors.
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={resetSafeDefault}>Reset to typos only</button>
           </div>
         </div>
-        <div class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
           {#each styleRows as row, ri (row.key)}
             {@const on = rowOn(row.key)}
             <div class="flex gap-4 p-3.5 {ri > 0 ? 'border-t border-[var(--cairn-card-border)]' : ''} {on && row.variants ? 'items-start' : 'items-center'}">
@@ -498,7 +506,7 @@ home), diffable and shared across editors.
 
       <!-- ADVANCED (default off, gated behind a disclosure, with a short risk note) -->
       <section class="mb-6">
-        <details class="overflow-hidden rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <details class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
             <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
@@ -536,9 +544,9 @@ home), diffable and shared across editors.
       </section>
 
       <!-- THE "NOT HERE YET" NOTE: honest, non-interactive -->
-      <div class="mb-2 rounded-2xl border border-dashed border-[var(--cairn-card-border)] bg-base-content/[0.015] p-4">
+      <div class="mb-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-content/[0.015] p-4">
         <div class="flex items-center gap-2 text-[0.8125rem] font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
-        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren't offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they're reliable enough to trust.</div>
+        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren’t offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they’re reliable enough to trust.</div>
         <ul class="mt-2 flex flex-col gap-1.5">
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
@@ -558,15 +566,15 @@ home), diffable and shared across editors.
          below: both deploy-time steps are done, so this names the actual problem (truthful
          visibility applied to the settings screen, not just the edit-page Tidy button) instead of
          re-showing an unchecked "add a key" checklist for a key that is already there. -->
-    <div role="region" aria-label="Tidy's key isn't working" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+    <div role="region" aria-label="Tidy’s key isn’t working" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <!-- A broken key needs the developer's attention; it is not a destructive confirmation, so
            it reads amber (needs-attention), never the reserved destructive red (the design arc's
            accent reservation, 2026-07-15). -->
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
-      <div class="text-xl font-bold tracking-tight">Tidy's key isn't working</div>
+      <div class="text-xl font-bold tracking-tight">Tidy’s key isn’t working</div>
       <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
-        Tidy is turned on and a key is set, but Anthropic isn't accepting it. It may have been
-        revoked or was never valid. Until it's fixed, editors won't see the Tidy control at all.
+        Tidy is turned on and a key is set, but Anthropic isn’t accepting it. It may have been
+        revoked or was never valid. Until it’s fixed, editors won’t see the Tidy control at all.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
@@ -575,7 +583,7 @@ home), diffable and shared across editors.
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
           <span class="flex-none text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
-          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn't been revoked or rotated elsewhere.</span></span>
+          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">
@@ -587,7 +595,7 @@ home), diffable and shared across editors.
     <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer, or no key present yet. The
          convention list is absent, not disabled. One honest labelled region names the
          deploy-time task and who does it, with no disabled controls in the tab order. -->
-    <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+    <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-base-content/[0.06] text-muted"><SparklesIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="text-xl font-bold tracking-tight">Tidy is not set up yet</div>
       <div class="max-w-[50ch] text-sm leading-relaxed text-muted">

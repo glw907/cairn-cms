@@ -42,6 +42,43 @@ export type FragmentResolve = (id: string) => string | undefined;
 const MISSING_CLASS = 'cairn-include-missing';
 
 /**
+ * A `FragmentResolve` that also carries the preview-only boundary cue's title lookup (the
+ *  invisible-craft design's ratified 4B). EditPage's client-side resolver is the only caller that
+ *  ever sets `previewTitle`; the build-time resolver (`buildFragmentResolver`, the public delivery
+ *  path) is a plain `FragmentResolve` with no such property, so `remarkResolveIncludes` below wraps
+ *  a splice only when the resolver it was handed carries this marker. A site's own render forwards
+ *  whichever resolver it received unchanged, so the property survives the passthrough by reference.
+ */
+export interface PreviewFragmentResolve extends FragmentResolve {
+  /** Looks up a fragment id's title for the boundary eyebrow. `undefined` falls back to the id. */
+  previewTitle?: (id: string) => string | undefined;
+}
+
+/** The classes the preview-only boundary cue carries; `preview-doc.ts` supplies their CSS. */
+const BOUNDARY_CLASS = 'cairn-fragment-boundary';
+const BOUNDARY_EYEBROW_CLASS = 'cairn-fragment-boundary-eyebrow';
+
+/**
+ * Wrap a resolved fragment's spliced blocks in the preview-only boundary cue: a quiet left
+ *  hairline and a `From "<title>"` eyebrow, so an editor can tell which paragraphs an `::include`
+ *  actually pulled in from elsewhere. Built only when the resolver carries `previewTitle`; the
+ *  return type is cast because hast conversion runs off `data.hName`/`hProperties` alone; the
+ *  literal `type` field only needs to satisfy `RootContent`'s discriminant, not a real node shape.
+ */
+function fragmentBoundaryNode(title: string, children: RootContent[]): RootContent {
+  const eyebrow = {
+    type: 'paragraph',
+    data: { hName: 'p', hProperties: { className: [BOUNDARY_EYEBROW_CLASS] } },
+    children: [{ type: 'text', value: `From “${title}”` }],
+  };
+  return {
+    type: 'paragraph',
+    data: { hName: 'div', hProperties: { className: [BOUNDARY_CLASS] } },
+    children: [eyebrow, ...children],
+  } as unknown as RootContent;
+}
+
+/**
  * Parse a fragment body with the directive extension, so its own directive markup survives as real
  *  nodes rather than literal text. Mirrors parseFigureDoc in media-rewrite.ts.
  */
@@ -81,7 +118,7 @@ function noFragmentNamedNode(): Paragraph {
  */
 export function remarkResolveIncludes() {
   return (tree: Root, file: VFile): void => {
-    const resolve = file.data[FRAGMENT_RESOLVE] as FragmentResolve | undefined;
+    const resolve = file.data[FRAGMENT_RESOLVE] as PreviewFragmentResolve | undefined;
     if (!resolve) return;
     visit(tree, 'leafDirective', (node: LeafDirective, index, parent) => {
       if (node.name !== 'include' || !parent || index == null) return;
@@ -98,8 +135,14 @@ export function remarkResolveIncludes() {
         return [SKIP, index + 1];
       }
       const spliced = parseFragmentBody(body).children as RootContent[];
-      parent.children.splice(index, 1, ...spliced);
-      return [SKIP, index + spliced.length];
+      // resolve.previewTitle only exists on EditPage's client-side resolver, never on the
+      // build-time buildFragmentResolver, so this wrap is provably preview-only.
+      const previewTitle = resolve.previewTitle;
+      const wrapped = previewTitle
+        ? [fragmentBoundaryNode(previewTitle(id) || id, spliced)]
+        : spliced;
+      parent.children.splice(index, 1, ...wrapped);
+      return [SKIP, index + wrapped.length];
     });
   };
 }

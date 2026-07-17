@@ -1364,9 +1364,11 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     return Number.isNaN(parsed.getTime()) ? iso : dateFmt.format(parsed);
   }
   function formatBytes(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    // A non-breaking space between the number and its unit, so a narrow metadata line never
+    // wraps "482" onto one line and "KB" onto the next.
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
   /** The total stored bytes, for the count line. */
   const totalBytes = $derived(data.assets.reduce((sum, a) => sum + a.bytes, 0));
@@ -1384,7 +1386,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   // The selected-cue check glyph for the triage radiogroup (WCAG 1.4.1): hue never carries the
   // chosen state alone, the same non-color cue the ConceptList triage uses.
   function segButtonClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(on)}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${on ? segmentTintClass(on) : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   function densityButtonClass(on: boolean): string {
     return `inline-flex items-center justify-center rounded-md p-1.5 hover:bg-base-content/[0.06] ${segmentTintClass(on)}`;
@@ -1584,8 +1586,12 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                 />
               {/if}
             </div>
-            <div class="flex items-center justify-between gap-2 border-t border-[var(--cairn-card-border)] px-2.5 py-2">
-              <span class="cairn-ml-name min-w-0 flex-1 truncate text-[0.8125rem] font-medium">{asset.displayName}</span>
+            <!-- flex-wrap plus the name's own min-width floor give the name priority at the
+                 narrowest card widths: the fixed-width badge wraps to its own row underneath
+                 rather than squeezing the name down to one letter (audit finding, the optical
+                 ledger's 320/390 media-library entry). -->
+            <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 border-t border-[var(--cairn-card-border)] px-2.5 py-2">
+              <span class="cairn-ml-name min-w-[5rem] flex-1 truncate text-[0.8125rem] font-medium">{asset.displayName}</span>
               <!-- The alt-status marker reserves a fixed width, comfortably past either label's own
                    natural width ("Needs alt" vs "Described", each with its glyph), and never
                    shrinks, so the title's flex-1 truncation reads the same available width
@@ -1719,7 +1725,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <div
       role="region"
       aria-label="Selection actions"
-      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 px-4 py-3 shadow-[var(--cairn-shadow)]"
+      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-4 py-3 shadow-[var(--cairn-shadow)]"
     >
       <span class="shrink-0 text-[0.9375rem] font-bold tabular-nums">{selectedCount}</span>
       <span class="min-w-0 text-xs leading-snug text-muted">
@@ -1775,7 +1781,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   >
     <div class="flex items-center justify-between border-b border-[var(--cairn-card-border)] px-4 py-3.5">
       <h2 class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Asset</h2>
-      <button bind:this={closeButton} type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close details" onclick={closePanel}>
+      <button bind:this={closeButton} type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close details" onclick={closePanel}>
         <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
       </button>
     </div>
@@ -1798,7 +1804,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
         <span class="text-[1.0625rem] font-semibold leading-tight break-words">{asset.displayName}</span>
         <span class="flex items-center gap-1.5">
           <code class="min-w-0 break-all font-[family-name:var(--font-editor)] text-[0.6875rem] text-muted">{reference}</code>
-          <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Copy reference" onclick={() => copyReference(reference)}>
+          <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Copy reference" onclick={() => copyReference(reference)}>
             <CopyIcon class="h-3.5 w-3.5" aria-hidden="true" />
           </button>
         </span>
@@ -2028,7 +2034,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {#if deleteInUse}
             <input type="hidden" name="confirmSlug" value={confirmSlugInput} />
             <div class="flex flex-col gap-1.5">
-              <label class="text-[0.875rem]" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to delete it anyway.</label>
+              <label class="text-[0.875rem]" for="cairn-ml-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-bold">{asset.slug}</code> to delete it anyway.</label>
               <input id="cairn-ml-confirm" class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={confirmSlugInput} />
             </div>
           {/if}
@@ -2087,7 +2093,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {/if}
           </p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeReplaceDialog}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={closeReplaceDialog}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2123,7 +2129,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           {:else if replaceUpload.kind === 'working'}
             <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
               <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-              <span class="text-[0.8125rem]">Preparing the new file...</span>
+              <span class="text-[0.8125rem]">Preparing the new file…</span>
             </div>
           {:else}
             <div class="flex flex-col items-center gap-1.5 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
@@ -2230,7 +2236,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           </div>
 
           <div class="flex flex-col gap-1.5">
-            <label class="text-[0.875rem]" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-semibold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
+            <label class="text-[0.875rem]" for="cairn-ml-replace-confirm">Type <code class="rounded bg-[var(--cairn-code-chip)] px-1.5 py-0.5 font-[family-name:var(--font-editor)] text-[0.8125rem] font-bold">{asset.slug}</code> to replace the file in all {replaceAffected} {replaceAffected === 1 ? 'entry' : 'entries'}.</label>
             <input id="cairn-ml-replace-confirm" data-cairn-replace-confirm class="input input-sm border-[var(--cairn-error-border)] font-[family-name:var(--font-editor)]" autocomplete="off" placeholder="Type the asset's address" bind:value={replaceConfirmInput} />
           </div>
         </div>
@@ -2338,7 +2344,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {/if}
           </p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeAltDialog}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={closeAltDialog}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2378,7 +2384,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                           <span class="flex-none rounded-full bg-base-content/[0.06] px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-wide text-muted">{row.kind}</span>
                         </div>
                         <div class="flex flex-wrap items-baseline gap-1.5 text-[0.75rem] leading-snug">
-                          <span class="italic text-muted">(no alt)</span>
+                          <span class="text-muted">(no alt)</span>
                           <ArrowRightIcon class="h-3 w-3 flex-none text-muted opacity-65" aria-hidden="true" />
                           <span class="font-medium text-primary">{row.after}</span>
                         </div>
@@ -2604,7 +2610,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             {#if bulkWillSkip.length > 0}{bulkWillSkip.length} {bulkWillSkip.length === 1 ? 'is' : 'are'} still used and will be skipped. {/if}Each one is checked again at delete time, so nothing in use is removed.
           </p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeBulkDialog}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={closeBulkDialog}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2698,10 +2704,10 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
       <div class="flex flex-col items-center gap-3 py-4">
         <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
-        <span class="text-[0.8125rem] text-muted">Checking and deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'image' : 'images'}...</span>
+        <span class="text-[0.8125rem] text-muted">Checking and deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'image' : 'images'}…</span>
       </div>
       <div class="mt-2 border-t border-[var(--cairn-card-border)] pt-3.5 text-[0.75rem] text-muted">Please keep this open until it finishes.</div>
-      <div class="sr-only" role="status" aria-live="polite">Deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'asset' : 'assets'}...</div>
+      <div class="sr-only" role="status" aria-live="polite">Deleting {bulkWillDelete.length} {bulkWillDelete.length === 1 ? 'asset' : 'assets'}…</div>
     {:else if bulkPhase === 'done' && bulkResult}
       {@const res = bulkResult}
       <!-- THE ITEMIZED SUMMARY (the 207-Multi-Status shape): succeeded / skipped-with-reason /
@@ -2717,7 +2723,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             The {res.deleted.length} {res.deleted.length === 1 ? 'delete is' : 'deletes are'} one commit to <code class="rounded bg-[var(--cairn-code-chip)] px-1 py-0.5 font-[family-name:var(--font-editor)] text-[0.75rem]">main</code>.{#if res.skipped.length > 0} The {res.skipped.length} skipped had a reference turn up on the recheck and {res.skipped.length === 1 ? 'was' : 'were'} left as {res.skipped.length === 1 ? 'it is' : 'they are'}.{/if}
           </p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={() => void finishBulkDelete()}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={() => void finishBulkDelete()}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2832,9 +2838,9 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       </div>
       <div class="flex flex-col items-center gap-3 py-6">
         <RefreshCwIcon class="h-6 w-6 animate-spin text-muted" aria-hidden="true" />
-        <span class="text-[0.8125rem] text-muted">Scanning storage for orphaned files...</span>
+        <span class="text-[0.8125rem] text-muted">Scanning storage for orphaned files…</span>
       </div>
-      <div class="sr-only" role="status" aria-live="polite">Scanning storage for orphaned files...</div>
+      <div class="sr-only" role="status" aria-live="polite">Scanning storage for orphaned files…</div>
     {:else if orphanPhase === 'blocked'}
       <!-- DETECTION-TIME FAIL CLOSED: the scan did not run because an open edit branch could not be
            read, so cairn cannot be sure which files are truly orphaned. There is NO collect or purge
@@ -2849,7 +2855,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">The scan could not finish</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">cairn could not read one of your open edits, so it cannot tell which files are truly orphaned. No file was changed.</p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeOrphanScan}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeOrphanScan}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2927,7 +2933,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <h2 bind:this={orphanTitle} tabindex="-1" id="cairn-ml-orphan-title" class="text-lg font-bold outline-hidden font-[family-name:var(--font-display)]">Purge {orphanSelectedCount} orphaned {orphanSelectedCount === 1 ? 'file' : 'files'}?</h2>
           <p id="cairn-ml-orphan-desc" class="mt-1 text-[0.8125rem] leading-relaxed text-muted">This removes the stored bytes for good. It is not a library delete, and it cannot be undone.</p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={cancelOrphanPurge}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={cancelOrphanPurge}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -2991,7 +2997,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             A scan of stored files against the library across every tracked branch. It found {orphanBytes.length} stored {orphanBytes.length === 1 ? 'file' : 'files'} with no record, and {orphanBroken.length} {orphanBroken.length === 1 ? 'record whose file is' : 'records whose files are'} gone.
           </p>
         </div>
-        <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeOrphanScan}>
+        <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeOrphanScan}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -3132,7 +3138,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             Name it and, if you like, describe it. You can add the description later.
           </p>
         </div>
-        <button bind:this={uploadCancelButton} type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Cancel" onclick={closeLibraryUpload}>
+        <button bind:this={uploadCancelButton} type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel" onclick={closeLibraryUpload}>
           <XIcon class="h-3.5 w-3.5" aria-hidden="true" />
         </button>
       </div>
@@ -3148,7 +3154,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
       {:else if uploadStatus.kind === 'working'}
         <div role="status" class="flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100 p-5 text-center text-muted">
           <span class="loading loading-spinner loading-sm" aria-hidden="true"></span>
-          <span class="text-[0.8125rem]">Uploading...</span>
+          <span class="text-[0.8125rem]">Uploading…</span>
         </div>
       {:else}
         <MediaCaptureCard file={uploadCaptureFile} oncapture={runLibraryUpload} submitLabel="Upload image" />

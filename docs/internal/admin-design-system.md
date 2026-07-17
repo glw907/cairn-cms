@@ -161,7 +161,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
 
 - Surfaces: `base-100` is the panel surface (sidebar, topbar, cards); `base-200` is the app background
   (the content area, recessed); `base-300` is for incidental borders and chips. `base-content` is text.
-- Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.18 293)`). Use it for
+- Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.15 293)`). Use it for
   the active state, the primary action, links-on-hover, the brand. `primary-content` reverses out on it.
 - Secondary text: `--color-muted` (labels, dates, hints) and `--color-subtle` (nav item text). Subtle is
   the stronger of the two. Reference them through the named role utilities `text-muted` / `text-subtle`,
@@ -176,7 +176,23 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   `bg-base-content/80`): the blend with the warm surfaces manufactures a third, browner tone and
   the page loses its one black story.
 - Elevation: `--cairn-shadow` (soft layered shadow) and `--cairn-card-border` (the theme-adaptive
-  hairline). Both are set per theme root.
+  hairline). Both are set per theme root. Both themes' shadows are warm-tinted at hue 75, never
+  achromatic (the dark value was pure black until the invisible-craft pass; the
+  `check:invisible-craft` gate now holds the no-achromatic rule). `.modal-box` carries the same
+  pair through a scoped rule, so the highest-elevation surface speaks the one elevation
+  vocabulary.
+- Quiet-surface defaults on both theme roots (invisible-craft pass, 2026-07-17):
+  `font-synthesis: none` (every requested weight and style has a real face; nothing may faux-bold
+  or faux-italic), `scrollbar-width: thin` with a `scrollbar-color` thumb of
+  `color-mix(in oklab, var(--color-base-content) 55%, transparent)` (a flat `--color-base-300`
+  thumb measured only ~1.3:1 against its surface once the UA default is overridden; this mix
+  measures 3.59:1 light / 4.98:1 dark against base-100, both above the 3:1 non-text floor), and a
+  faint `-webkit-tap-highlight-color` press wash,
+  `color-mix(in oklab, var(--color-base-content) 10%, transparent)` (not a bare removal: a
+  segmented-control segment or a plain text-link button carries no styled `:active` state, so the
+  tap still needs its own acknowledgment). A checkbox-in-label row gets hit-slop from one scoped
+  `:has()` rule (padding grown, margin refunded), so its touch target clears ~44px with zero flow
+  change.
 - The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
   lower dark `--color-primary` lightness or the `/10` opacity without re-checking contrast.
 - `--cairn-warning-ink` is the on-surface warning TEXT ink, distinct from `--color-warning`, which is
@@ -262,7 +278,7 @@ Recipes:
   belongs to the card below it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). The
   rows are a sortable `<table>` of ONE-LINE rows at the 15px chrome step with `py-2` cells: the title
   (`font-medium`, truncating; weight stays medium because nothing sits under it to out-rank), the date
-  (muted, tabular), the status pill, and the quiet delete (45% ink, full on hover/focus; red lives only
+  (muted, tabular), the status pill, and the quiet delete (60% ink, full on hover/focus; red lives only
   in the confirm dialog). `EntrySummary.summary` stays off the list (the density ruling; it still
   serves the edit page). The status pills are ONE family: shared geometry (`badge badge-xs sm:badge-sm
   border-transparent`) and shared base ink (`bg-base-content/[0.06] text-base-content`), each state
@@ -365,15 +381,25 @@ Recipes:
   1.4.1). A standalone on/off toggle (focus mode, typewriter, zen) is borderless and transparent until
   hover, tinting and check-marking when `aria-pressed`. A reference link (Markdown help) is a borderless
   underlined button, not a control. The editor footer uses all three; no group labels (the segmented
-  border carries pick-one).
+  border carries pick-one). **Every active/pressed state also carries a 1px inset hairline in its
+  family's own ink** (invisible-craft pass, 2026-07-17; closes the weight-only pressed-cue advisory):
+  the neutral pick-one family adds `ring-1 ring-inset ring-base-content/20` (through
+  `segmentTintClass` in `segmented-control.ts`), and the primary pressed family adds
+  `ring-1 ring-inset ring-primary/35`. The hairline is the non-color, non-weight cue that also covers
+  icon-only controls; never give a neutral segment a primary edge (the accent budget).
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
-  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target;
-  the opener text never folds. A folded row carries a square full-row accent wash (~7%) and a focusable
-  `N lines` pill (`aria-label="Show N hidden lines"`). Ranges come only from `fenceScan`'s paired
-  containers, so a half-typed fence never folds; any edit or selection touching a folded range unfolds
-  it in the same transaction. Fold state is session-local, never persisted. Driven by
-  `@codemirror/language` folding in `editor-folding.ts`.
+  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.
+  While folded (ratified 7B), the opener's own fence machinery is absorbed into the placeholder chip
+  too, not just the body and the closer: the chip reads "`<label> · “<title>” · N lines`" when the
+  opener carries a `title`/`[label]` attribute (the middle dot is the pill grammar's one separator;
+  the admin voice keeps the em dash out of UI strings), otherwise the plain "`<label> · N lines`" (or a bare
+  `N lines` for an unnamed container). A folded row carries a square full-row accent wash (~7%) and the
+  chip is a focusable button (`aria-label` naming the section, the title when present, and the hidden
+  line count). Ranges come only from `fenceScan`'s paired containers, so a half-typed fence never
+  folds; any edit or selection touching a folded range, including the now-absorbed opener line, unfolds
+  it in the same transaction, revealing exact source. Fold state is session-local, never persisted.
+  Driven by `@codemirror/language` folding in `editor-folding.ts`.
 - **Editor instrument strip (design-arc D2, "grouped micro-eyebrows"):** one card frame holds the
   toolbar, the editing surface, and the footer environment strip (word count left, the posture
   segmented control and the focus/typewriter/zen toggles right; Markdown help no longer lives here,
@@ -431,6 +457,15 @@ Recipes:
   a plain-language `title` tooltip and a constant left gutter. Depth and roles come from one
   cached scan in `markdown-directives.ts` (`fenceScan`), which pairs a bare closer with the most
   recent named opener and disowns fence-shaped lines inside code blocks.
+- **Editor: the include chip (`editor-include.ts`).** A resolved `::include{fragment="id"}` leaf
+  directive line renders as one atomic accent chip ("Include: Office contact"), the whole opener
+  line's fence machinery absorbed the way the media chip absorbs a `media:` reference token, in the
+  same directive accent language. The chip names the fragment's published title, falling back to the
+  raw id when the title is unavailable (never a hidden state). Deletion is atomic (the whole line in
+  one transaction, one undo step restores it), mirroring the media chip's own atomic-token mechanism
+  but scoped to the whole line, since a leaf directive's grammar already confines it there. The title
+  lookup (`fragmentTitles`, `EditData.fragmentTargets` projected to id -> title) is reactive, the same
+  compartment wiring as `mediaLibrary`.
 - **Editor: the surface postures and the footer strip.** The editor card's footer is the
   writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
   writing): word count left, then the posture pair and the writing-mode toggles, all ghost `btn-xs`
@@ -521,6 +556,23 @@ Recipes:
   jump-to-each control. It is modeled on the broken-link banner but is a warning, never a block: it
   never stops a save or a Publish. It tells the editor about the gap and helps them close it, and
   leaves the decision with them.
+- **Fragments: the preview boundary cue and the blast-radius line (ratified 4B and 5,
+  2026-07-16).** The edit-page preview wraps each spliced fragment's rendered blocks in a quiet
+  boundary: a 2px directive-accent hairline (35% alpha) with a `From “<fragment title>”` eyebrow
+  (the eyebrow recipe in the accent ink; the id when no title resolves). Preview only, always
+  visible (an editor deciding what to edit needs it before hover): the cue marker rides the
+  preview's own resolver (`previewTitle` on the resolver function, `resolve-include.ts`), which
+  the public delivery resolver never sets, and a byte-level test pins that separation. The
+  publish blast radius rides the same notice region as the needs-alt notice (`role="status"`,
+  non-blocking, muted ink): a fragment with includers reads "Publishing updates 3 entries that
+  include this fragment." above the actions; it never sits in the desk band (the band composes
+  at 320 and holds three quiet clusters).
+- **Office ledgers stack below `sm` (vocabulary and tidy settings, 2026-07-17).** A multi-column
+  ledger row never squeezes into a phone width: below `sm` the row recomposes into two lines,
+  the primary control full-width on line one and the metadata as a self-labeling muted line
+  under it (slug `·` count in the vocabulary ledger; label-over-value in the settings card,
+  with the developer pill dropping under the grid). The header band keeps only the primary
+  column's label, since the meta line labels itself. The `sm`+ grid stays exactly as designed.
 - **Media: the figure control (`MediaFigureControl`).** The form that gives an inline image a caption
   and a placement. It is the persistent Edit-block pattern: a toolbar Figure button, always rendered,
   enabled only when the caret sits on a media image (bare or already in a `:::figure`), opening a
@@ -726,8 +778,10 @@ Recipes:
 
 Lucide via `@lucide/svelte` (per-icon imports). `admin-icons.ts` is the chrome glyph set; import nav and
 content glyphs directly. Conventions in use: signpost = the nav-menu editor (kept distinct from the
-Settings gear), gear = Settings, users = Editors, file-text = a content concept, puzzle/blocks =
-developer extensions.
+Settings gear), gear = Settings, users = Editors, file-text = an undated content concept, newspaper = a
+dated concept, layers = Fragments (the reserved concept id keys `ENGINE_NAV_ICONS` directly; "one thing
+present in many places", ratified 2026-07-16 over puzzle, which stays reserved for component blocks),
+puzzle/blocks = developer extensions and the editor's component-block controls.
 
 ## Voice
 

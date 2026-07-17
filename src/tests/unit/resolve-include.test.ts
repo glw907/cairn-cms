@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
 import { log } from '../../lib/log/index.js';
-import type { FragmentResolve } from '../../lib/render/resolve-include.js';
+import type { FragmentResolve, PreviewFragmentResolve } from '../../lib/render/resolve-include.js';
 
 describe('include fragment resolution', () => {
   it('(a) splices a resolved fragment body in place of the include directive', async () => {
@@ -129,5 +129,35 @@ describe('include fragment resolution', () => {
     const html = await renderMarkdown('::include{fragment="x"}', { resolveFragment });
     expect(html).not.toContain('alert');
     expect(html).not.toContain('<script>');
+  });
+
+  describe('the preview-only boundary cue (ratified 4B)', () => {
+    it('wraps a splice in the boundary cue only when the resolver carries previewTitle', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+      const resolveFragment: PreviewFragmentResolve = (id) =>
+        id === 'address' ? 'Our address is 12 Harbor Way.' : undefined;
+      resolveFragment.previewTitle = (id) => (id === 'address' ? 'Contact us' : undefined);
+      const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
+      expect(html).toContain('class="cairn-fragment-boundary"');
+      expect(html).toContain('class="cairn-fragment-boundary-eyebrow"');
+      expect(html).toContain('From “Contact us”');
+      expect(html).toContain('Our address is 12 Harbor Way.');
+    });
+
+    it('falls back to the fragment id when previewTitle resolves nothing for it', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+      const resolveFragment: PreviewFragmentResolve = () => 'Body text.';
+      resolveFragment.previewTitle = () => undefined;
+      const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
+      expect(html).toContain('From “address”');
+    });
+
+    it('never wraps a splice when the resolver carries no previewTitle (the build path)', async () => {
+      const { renderMarkdown } = createRenderer(defineRegistry({ components: [] }));
+      const resolveFragment: FragmentResolve = () => 'Our address is 12 Harbor Way.';
+      const html = await renderMarkdown('::include{fragment="address"}', { resolveFragment });
+      expect(html).not.toContain('cairn-fragment-boundary');
+      expect(html).not.toContain('From “');
+    });
   });
 });

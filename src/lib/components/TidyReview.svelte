@@ -34,6 +34,7 @@ must never make, so no such count exists.
     type TidyCategory,
   } from './tidy-categorize.js';
   import type { TidyConventions } from '../nav/site-config.js';
+  import { segmentTintClass } from './segmented-control.js';
 
   interface Props {
     /** The validated change set (Task 13 output), the unit the surface accepts and rejects. */
@@ -267,6 +268,13 @@ must never make, so no such count exists.
   function actsLabel(h: Hunk): string {
     return h.objective ? 'Accept or reject this fix' : 'Accept or reject this change';
   }
+
+  // The Accept/Reject pair's pressed tint composes the shared segmentTintClass grammar
+  // (segmented-control.ts) with this control's own hover class, rather than restating the tint
+  // literally, so a future tune of the tint reaches this dialog too.
+  function actClass(pressed: boolean): string {
+    return pressed ? segmentTintClass(pressed) : 'text-muted hover:bg-base-content/[0.06]';
+  }
 </script>
 
 <dialog
@@ -294,7 +302,7 @@ must never make, so no such count exists.
         <kbd class="kbd kbd-xs">j</kbd><kbd class="kbd kbd-xs">k</kbd> move
         <kbd class="kbd kbd-xs">a</kbd><kbd class="kbd kbd-xs">r</kbd> accept / reject
       </span>
-      <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Cancel review" onclick={cancel}>
+      <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel review" onclick={cancel}>
         <XIcon class="size-4" aria-hidden="true" />
       </button>
     </div>
@@ -370,10 +378,9 @@ must never make, so no such count exists.
             <span class="inline-flex flex-none items-center overflow-hidden rounded-md border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
               <button
                 type="button"
-                class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
-                'kept'
-                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
-                  : 'text-muted'}"
+                class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {actClass(
+                  decided === 'kept',
+                )}"
                 aria-pressed={decided === 'kept'}
                 onclick={() => acceptHunk(h)}
               >
@@ -381,10 +388,9 @@ must never make, so no such count exists.
               </button>
               <button
                 type="button"
-                class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
-                'rejected'
-                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
-                  : 'text-muted'}"
+                class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {actClass(
+                  decided === 'rejected',
+                )}"
                 aria-pressed={decided === 'rejected'}
                 onclick={() => rejectHunk(h)}
               >

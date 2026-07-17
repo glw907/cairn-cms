@@ -9,8 +9,10 @@ import {
   fenceTokens,
   figureRoleAtLine,
   findInlineDirectives,
+  includeFragmentId,
   includeFragmentTokens,
   markerPrefix,
+  openerTitleAttr,
 } from '../../lib/components/markdown-directives.js';
 
 // The field-report regression document, verbatim: a labeled four-colon container holding two
@@ -128,6 +130,14 @@ describe('fenceScan', () => {
     // roles come back null along with the code fences and any content line.
     expect(roles).toEqual(['opener', null, null, null, null, 'closer']);
   });
+  it('marks only the lines strictly between a code fence pair as inCode, never the delimiters', () => {
+    const { inCode } = fenceScan(['prose', '```', '::include{fragment="x"}', '```', 'prose']);
+    expect(inCode).toEqual([false, false, true, false, false]);
+  });
+  it('closes inCode on the matching marker only, so a tilde block tolerates literal backticks', () => {
+    const { inCode } = fenceScan(['~~~', '```', 'still inside', '~~~', 'outside']);
+    expect(inCode).toEqual([false, true, true, false, false]);
+  });
 });
 
 describe('fenceTokens', () => {
@@ -177,6 +187,75 @@ describe('includeFragmentTokens', () => {
   });
   it('returns nothing for a container fence, even one that happens to be named include', () => {
     expect(includeFragmentTokens(':::include{fragment="winter-hours"}')).toEqual([]);
+  });
+  // Grammar-alignment regression: remark-directive parses a leaf directive only when nothing but
+  // whitespace follows the closing brace, and only when the {attrs} group lands immediately after
+  // the name with no intervening space (verified against remark-directive directly). A line that
+  // fails either requirement is plain prose at render time, so it must never chip.
+  it('returns nothing when trailing text follows the closing brace', () => {
+    expect(includeFragmentTokens('::include{fragment="winter-hours"}Outro line.')).toEqual([]);
+    expect(includeFragmentTokens('::include{fragment="winter-hours"} Outro line.')).toEqual([]);
+  });
+  it('returns nothing when a space separates the name from the {attrs} group', () => {
+    expect(includeFragmentTokens('::include {fragment="winter-hours"}')).toEqual([]);
+  });
+  it('still marks tokens when only whitespace follows the closing brace', () => {
+    const line = '::include{fragment="winter-hours"}   ';
+    expect(includeFragmentTokens(line).map((t) => [line.slice(t.from, t.to), t.kind])).toEqual([
+      ['{fragment="', 'mark'],
+      ['winter-hours', 'label'],
+      ['"}', 'mark'],
+    ]);
+  });
+});
+
+describe('includeFragmentId', () => {
+  it('reads the fragment id off an include leaf directive', () => {
+    expect(includeFragmentId('::include{fragment="winter-hours"}')).toBe('winter-hours');
+  });
+  // Grammar-alignment regression (major finding, invisible-craft pass verdict 6): remark-directive
+  // rejects both of these shapes (verified directly against remark-directive: neither produces a
+  // leafDirective node, both fall back to a plain paragraph), so the chip's own notion of
+  // "resolvable" must reject them too, matching exactly what the renderer will do.
+  it('returns null when trailing text follows the closing brace', () => {
+    expect(includeFragmentId('::include{fragment="winter-hours"}Outro line.')).toBeNull();
+    expect(includeFragmentId('::include{fragment="winter-hours"} Outro line.')).toBeNull();
+  });
+  it('returns null when a space separates the name from the {attrs} group', () => {
+    expect(includeFragmentId('::include {fragment="winter-hours"}')).toBeNull();
+  });
+  it('reads the id when only trailing whitespace follows the closing brace', () => {
+    expect(includeFragmentId('::include{fragment="winter-hours"}   ')).toBe('winter-hours');
+  });
+  it('returns null for a leaf directive that is not include', () => {
+    expect(includeFragmentId('::video{fragment="winter-hours"}')).toBeNull();
+  });
+  it('returns null for an include directive with no fragment attribute', () => {
+    expect(includeFragmentId('::include')).toBeNull();
+  });
+  it('returns null for a container fence, even one that happens to be named include', () => {
+    expect(includeFragmentId(':::include{fragment="winter-hours"}')).toBeNull();
+  });
+});
+
+describe('openerTitleAttr', () => {
+  it('reads the title attribute off a container opener', () => {
+    expect(openerTitleAttr(':::panel{title="Day pass"}')).toBe('Day pass');
+  });
+  it('returns null when the opener carries no title attribute', () => {
+    expect(openerTitleAttr(':::panel{icon="hand-coins"}')).toBeNull();
+    expect(openerTitleAttr(':::panel')).toBeNull();
+  });
+  it('does not match an attribute that merely ends in "title"', () => {
+    expect(openerTitleAttr(':::panel{subtitle="Not this"}')).toBeNull();
+  });
+  // Regression: a label containing braces used to defeat the unanchored first-{...} lookup both
+  // ways. Reading the attrs group off FENCE's own opener match fixes both.
+  it('reads the real title attribute past a bracketed label containing braces', () => {
+    expect(openerTitleAttr(':::callout[Read {this} first]{title="Trail alert"}')).toBe('Trail alert');
+  });
+  it('never mistakes label prose that looks like a title attribute for the real thing', () => {
+    expect(openerTitleAttr(':::callout[see {title="fake"} note]{icon="x"}')).toBeNull();
   });
 });
 

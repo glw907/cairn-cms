@@ -11,6 +11,7 @@ import InboxIcon from '@lucide/svelte/icons/inbox';
 import TableIcon from '@lucide/svelte/icons/table';
 import WrenchIcon from '@lucide/svelte/icons/wrench';
 import FileTextIcon from '@lucide/svelte/icons/file-text';
+import LayersIcon from '@lucide/svelte/icons/layers';
 import NewspaperIcon from '@lucide/svelte/icons/newspaper';
 import SignpostIcon from '@lucide/svelte/icons/signpost';
 import SettingsIcon from '@lucide/svelte/icons/settings';
@@ -38,9 +39,12 @@ export const ADMIN_NAV_FALLBACK_ICON = ListIcon;
 
 /**
  * Maps each of the engine's fixed utility screen ids to its Lucide icon; a content concept's id is
- *  never a key here. A concept's glyph follows its kind instead: dated concepts take
- *  {@link ENGINE_CONCEPT_DATED_ICON} and undated ones {@link ENGINE_NAV_FALLBACK_ICON}, so adjacent
- *  concepts (Posts beside Pages) stop sharing one document silhouette.
+ *  never a key here, with one exception: `fragments` is the engine-reserved concept id
+ *  ({@link FRAGMENTS_CONCEPT_ID} in content/concepts.ts), so it carries its own glyph (layers,
+ *  "one thing present in many places"; puzzle stays reserved for component blocks). Every other
+ *  concept's glyph follows its kind instead: dated concepts take {@link ENGINE_CONCEPT_DATED_ICON}
+ *  and undated ones {@link ENGINE_NAV_FALLBACK_ICON}, so adjacent concepts (Posts beside Pages)
+ *  stop sharing one document silhouette.
  */
 export const ENGINE_NAV_ICONS: Record<string, Component> = {
   media: ImageIcon,
@@ -49,6 +53,7 @@ export const ENGINE_NAV_ICONS: Record<string, Component> = {
   settings: SettingsIcon,
   editors: UsersIcon,
   help: HelpCircleIcon,
+  fragments: LayersIcon,
 };
 
 /** The glyph for a dated concept's door (posts-like: feed entries with dates). */

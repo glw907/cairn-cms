@@ -64,6 +64,7 @@ persistent "?" carries Markdown help, design-arc D2).
   } from './markdown-format.js';
   import { buildPreviewDoc, deviceLabel, previewDevice, previewDevices, type PreviewDeviceId } from './preview-doc.js';
   import { directiveLineKind, findInlineDirectives } from './markdown-directives.js';
+  import { segmentTintClass } from './segmented-control.js';
   import type { ComponentRegistry, ComponentDef } from '../render/registry.js';
   import { parseComponent, componentRoundTripSafety } from '../render/component-grammar.js';
   import type { IconSet } from '../render/glyph.js';
@@ -71,6 +72,7 @@ persistent "?" carries Markdown help, design-arc D2).
   import type { SiteRender } from '../content/types.js';
   import { manifestLinkResolver } from '../content/manifest.js';
   import { manifestMediaResolver } from '../render/resolve-media.js';
+  import type { PreviewFragmentResolve } from '../render/resolve-include.js';
   import { FRAGMENTS_CONCEPT_ID } from '../content/concepts.js';
   import type { MediaEntry } from '../media/manifest.js';
   import { mediaLibraryEntry } from '../media/library-entry.js';
@@ -485,14 +487,17 @@ persistent "?" carries Markdown help, design-arc D2).
   // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
   // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
   // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
-  // pressed (design arc 2026-07-15).
+  // pressed (design arc 2026-07-15). The pressed wash and hairline itself is the shared
+  // segmentTintClass grammar (segmented-control.ts); each helper composes it with its own layout
+  // and hover classes rather than restating the tint literally, so a future tune of the tint
+  // reaches this footer too.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -768,6 +773,25 @@ persistent "?" carries Markdown help, design-arc D2).
   // that rule rather than offering a control the save would bounce.
   const fragmentPickerAvailable = $derived(data.fragmentTargets !== null && data.conceptId !== FRAGMENTS_CONCEPT_ID);
 
+  // The publish blast-radius line (ratified verdict 5): only a fragment being published carries a
+  // count, since publishing any other concept never ripples into another entry's rendered output.
+  // data.inboundLinks already holds this fragment's includers (content-routes-core.ts's editLoad
+  // reads inboundIncludes for the Fragments concept, the same data the sidebar's own Included in
+  // group renders), so this reuses that load rather than a new fetch. It renders in the role="status"
+  // notice region below, the same publish-adjacent-awareness recipe the needs-alt notice uses: an
+  // always-present live region, non-blocking, muted rather than alert-warning since this is not a
+  // problem to fix, just information the author should have before they click Publish. Composing it
+  // there (not the header band) keeps it clear at every width, including 320, where the band itself
+  // has no room for a sentence.
+  const fragmentIncludeCount = $derived(
+    data.conceptId === FRAGMENTS_CONCEPT_ID ? data.inboundLinks.length : 0,
+  );
+  const fragmentBlastRadiusLine = $derived(
+    fragmentIncludeCount > 0
+      ? `Publishing updates ${fragmentIncludeCount} ${fragmentIncludeCount === 1 ? 'entry that includes' : 'entries that include'} this fragment.`
+      : null,
+  );
+
   // The directive container at the editor caret, reported by MarkdownEditor whenever it changes
   // (null outside any container). The Edit-block control resolves it against the registry and the
   // round-trip safety gate below; its identity is the key the async gate guards against a stale
@@ -871,7 +895,7 @@ persistent "?" carries Markdown help, design-arc D2).
     editable
       ? 'Edit the component at the cursor'
       : editReason === 'unsafe'
-        ? "This block can't be edited in the form. Edit it as markdown."
+        ? 'This block can’t be edited in the form. Edit it as markdown.'
         : 'Place the cursor in a component to edit it',
   );
   // Whether the Edit-block control is unavailable: either Preview hides the Write surface, or the
@@ -1260,12 +1284,18 @@ persistent "?" carries Markdown help, design-arc D2).
   // or this entry is itself a fragment) leaves every include directive unresolved, the pipeline's
   // inert literal-prose fallback, which is exactly what the build ships for those bodies; a
   // dangling id resolves to undefined too, which the render step turns into the missing-fragment
-  // notice.
+  // notice. previewTitle rides alongside the same lookup: it is the marker resolve-include.ts reads
+  // to know this is the preview's own resolver (never the build's), so the spliced blocks gain the
+  // preview-only boundary cue (ratified 4B). A resolver-not-found title falls back to the id inside
+  // resolve-include.ts, not here, so both paths share the same fallback rule.
   const resolveFragment = $derived.by(() => {
     const targets = data.fragmentTargets;
     if (!targets) return undefined;
     const byId = new Map(targets.map((t) => [t.id, t.body]));
-    return (id: string) => byId.get(id);
+    const titleById = new Map(targets.map((t) => [t.id, t.title]));
+    const resolve: PreviewFragmentResolve = (id: string) => byId.get(id);
+    resolve.previewTitle = (id: string) => titleById.get(id);
+    return resolve;
   });
 
   // The picker's library, the committed projection merged with this session's uploaded records,
@@ -1276,6 +1306,13 @@ persistent "?" carries Markdown help, design-arc D2).
     ...data.mediaLibrary,
     ...Object.fromEntries(uploadedRecords.map((r) => [r.hash, mediaLibraryEntry(r)])),
   });
+
+  // The published fragment titles the editor's include: source decoration resolves a chip's label
+  // against, projected from the same fragmentTargets the picker lists (id -> title). Empty when
+  // nothing here can include a fragment (fragmentTargets is null), the same as an empty library.
+  const fragmentTitles = $derived(
+    Object.fromEntries((data.fragmentTargets ?? []).map((f) => [f.id, f.title])),
+  );
 
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
   const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
@@ -1442,7 +1479,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->
         <span
-          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
+          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-[250ms]"
           class:opacity-0={!saveState}
           aria-live="off"
         >
@@ -1488,7 +1525,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <button
         bind:this={detailsTrigger}
         type="button"
-        class="btn btn-ghost btn-sm btn-square max-sm:hidden"
+        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 max-sm:hidden"
         aria-label="Details"
         title="Details"
         aria-expanded={detailsOpen}
@@ -1501,7 +1538,7 @@ persistent "?" carries Markdown help, design-arc D2).
            position-anchor placement). -->
       <button
         type="button"
-        class="btn btn-ghost btn-sm btn-square shrink-0"
+        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 shrink-0"
         aria-label="More actions"
         title="More actions"
         aria-expanded={actionsOpen}
@@ -1629,7 +1666,7 @@ persistent "?" carries Markdown help, design-arc D2).
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
-  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-300 starting:-translate-y-2 starting:opacity-0">
+  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
     {flash}
   </div>
 {/if}
@@ -1751,9 +1788,14 @@ persistent "?" carries Markdown help, design-arc D2).
      first notice appears it announces; a region conditionally mounted with its first content may not
      be observed by assistive tech (WCAG 4.1.3). The notices gate on their own presence, so an empty
      region shows nothing. A plain wrapper (not display:contents) carries the role, since some
-     assistive tech drops a role off a display:contents box. -->
+     assistive tech drops a role off a display:contents box. The fragment blast-radius line (ratified
+     verdict 5) shares this region rather than getting its own: a plain muted line, not an
+     alert-warning box, since it names a fact rather than a problem to fix. -->
 <div role="status">
   {@render advisoryNotices(renderNotices)}
+  {#if fragmentBlastRadiusLine}
+    <p class="mb-4 text-sm text-muted">{fragmentBlastRadiusLine}</p>
+  {/if}
 </div>
 {#if draftWarning}
   <div class="alert alert-warning mb-4 text-sm">
@@ -1899,7 +1941,7 @@ persistent "?" carries Markdown help, design-arc D2).
           {/if}
           <button
             type="button"
-            class="btn btn-ghost btn-sm btn-square"
+            class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
             disabled={insertDisabled}
             aria-label="Insert image"
             title="Insert image"
@@ -1974,7 +2016,7 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
-            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted">{wordLabel}</span>
+            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted tabular-nums">{wordLabel}</span>
           </li>
         {/snippet}
       </EditorToolbar>
@@ -2006,6 +2048,7 @@ persistent "?" carries Markdown help, design-arc D2).
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}
           {mediaLibrary}
+          {fragmentTitles}
           {focusMode}
           {typewriter}
           {spellcheck}
@@ -2034,7 +2077,7 @@ persistent "?" carries Markdown help, design-arc D2).
           <!-- The frame column: centered, sized by the picked device (capped at the pane), with
                the width eased; the admin sheet's prefers-reduced-motion rule squashes the move. -->
           <div
-            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-300"
+            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-[250ms]"
             style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
           >
             {#if activeDevice.width !== null}
@@ -2049,9 +2092,9 @@ persistent "?" carries Markdown help, design-arc D2).
             {/if}
             <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
               {#if previewFailed}
-                <p class="p-4 text-sm text-muted">The preview could not render this content.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}
-                <p class="p-4 text-sm text-muted">Nothing to preview yet.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
                      scripts and handlers); the empty sandbox is belt and braces on top. The
@@ -2091,7 +2134,7 @@ persistent "?" carries Markdown help, design-arc D2).
         class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
       >
         <span class="flex shrink-0 items-center gap-1.5">
-          <span>{wordLabel}</span>
+          <span class="tabular-nums">{wordLabel}</span>
           <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
                already speaks this settled count in its own polite live region, so exposing this
                span too would announce the same information twice (WCAG 4.1.3 speaks to exactly
@@ -2201,7 +2244,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <button
         bind:this={detailsClose}
         type="button"
-        class="btn btn-ghost btn-xs btn-square"
+        class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11"
         aria-label="Close details"
         onclick={closeDetails}
       >
@@ -2333,7 +2376,7 @@ persistent "?" carries Markdown help, design-arc D2).
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
 {#if zen}
-  <div class="cairn-zen-chip fixed right-[1.125rem] top-[0.875rem] z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-[5px] text-xs text-muted shadow-[var(--cairn-shadow)]">
+  <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 text-xs text-muted shadow-[var(--cairn-shadow)]">
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
       {dirty ? 'Unsaved changes' : 'Saved'}

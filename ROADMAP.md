@@ -162,23 +162,15 @@ the named human gates only):**
 
 ## Next
 
-- **Admin invisible-craft polish pass (phase 2; Geoff, 2026-07-15).** The "correct vs resolved"
-  finisher: docs/internal/2026-07-15-admin-resolved-polish-brief.md carries the full rubric
-  (spacing/rhythm, depth, motion, feedback, forms, micro-details) plus final look-preserving
-  color and typography refinements (Geoff's calibration: small changes there are high-leverage;
-  the constraint bounds direction, not importance). Runs AFTER the design-refinement arc settles
-  the material system; mechanical rubric items become standing gates where the trigger is
-  machine-detectable. RIDERS from the 2026-07-16 fragments UX review and folded-identity design
-  brief, all taste calls needing Geoff's eyes: (1) a preview-only boundary cue on included
-  fragment content (today the splice is invisible, so an editor cannot tell which paragraphs live
-  elsewhere) plus a publish-confirm blast-radius line ("Publishing updates 3 entries that include
-  this fragment") now that the Included-in list exists; (2) whether the include line deserves
-  atomic-delete behavior (its text is pure machinery; half-deleting it leaves junk that publishes,
-  unlike a container whose prose is salvageable); (3) the folded-chip question: absorbing a folded
-  block's opener line into a friendly chip (never showing raw `:::callout{...}`), body-snippet
-  previews, a phone-reachable what-it's-for affordance, and rendering an include's human fragment
-  title rather than its id — each weighed against the not-WYSIWYG source-primary principle and the
-  touched-range safety invariant.
+- **Deferred from the folded-chip verdict (invisible-craft pass, 2026-07-17):** body-snippet
+  previews on the folded chip and a phone-reachable what-it's-for affordance. The chip itself
+  shipped (label, title, count; includes show their fragment's human title); these two riders
+  were explicitly cut from that verdict and wait for a real editor asking.
+- **Seed fragments into the dev backend** (from the friction log, 2026-07-17). The fake GitHub
+  store ships `fragmentTargets: []`, so `vite dev` cannot exercise the picker, the include
+  chip's title resolution, or any fragments surface; the media-tile thumbnails are similarly
+  unresolvable locally. Both belong in `packages/cairn-cms-dev`'s seed. Small, unblocks local
+  design iteration on fragments.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the

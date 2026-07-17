@@ -833,8 +833,12 @@ describe('MarkdownEditor', () => {
     const pill = foldPill(screen.container)!;
     expect(pill.tagName).toBe('BUTTON');
     expect(pill.getAttribute('aria-expanded')).toBe('false');
-    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
-    expect(pill.textContent).toContain('3 lines');
+    // FOLD_DOC's opener carries a title attribute, so the chip absorbs it too (ratified 7B): the
+    // opener's fence machinery is gone, replaced by the one chip naming the raw directive, the
+    // title, and the hidden-line count. aria-label carries the title too, for parity with sighted
+    // authors who now read it only on the chip.
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
+    expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
     await expect.poll(() => foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
     expect(foldBtn(screen.container)?.getAttribute('aria-label')).toBe('panel section');
     // Clicking the pill restores the hidden lines and the body text still mirrors to the form.
@@ -876,16 +880,29 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => lineWith(screen.container, 'body two')).toBeTruthy();
   });
 
-  it('unfolds in the same transaction when an edit touches the folded range', async () => {
-    const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
+  it('unfolds in the same transaction when an edit lands on the absorbed opener line', async () => {
+    // Ratified 7B: the opener's own fence machinery now folds away into the chip along with the
+    // body and the closer, so an edit reaching the opener text (not just the body) must unfold too,
+    // revealing exact source rather than editing hidden text blind. registerReplaceRange mirrors
+    // how an in-place rename actually lands (the same seam the dialog's Update and the fold-name
+    // sync tests use), landing the change inside the still-folded opener's directive name.
+    let replace: ((from: number, to: number, text: string) => void) | undefined;
+    const screen = render(MarkdownEditor, {
+      value: FOLD_DOC,
+      name: 'body',
+      registerReplaceRange: (fn) => {
+        replace = fn;
+      },
+    });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
-    // Type at the end of the opener row (the fold's left boundary). The safety invariant unfolds
-    // the range in the same transaction, so the author never edits hidden text blind.
-    await userEvent.click(lineWith(screen.container, ':::panel')!);
-    await userEvent.keyboard('{End} ');
+    await expect.poll(() => typeof replace).toBe('function');
+    const from = FOLD_DOC.indexOf('panel');
+    replace!(from, from + 'panel'.length, 'callout');
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeTruthy();
+    // The exact source is back, opener included, with the rename applied.
+    expect(lineWith(screen.container, ':::callout{title="Day pass"}')).toBeTruthy();
   });
 
   it('unfolds when a selection extends across the folded range', async () => {
@@ -917,18 +934,20 @@ describe('MarkdownEditor', () => {
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
   });
 
-  it('skips a fold atomically when an arrow steps down from the opener', async () => {
+  it('skips a fold atomically when an arrow steps down onto it', async () => {
+    // The opener's own text is absorbed into the chip while folded (ratified 7B), so there is no
+    // longer a separately-clickable span on that row; the caret reaches its edge only by keyboard
+    // navigation from the line above. ArrowDown from the end of 'intro line' lands beside the
+    // folded row (its left edge, immediately before the chip) rather than skipping past it, and
+    // landing there is not itself a touch: the fold holds and the hidden lines stay hidden.
     const screen = render(MarkdownEditor, { value: FOLD_DOC, name: 'body' });
     await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => lineWith(screen.container, 'body one')).toBeFalsy();
-    // ArrowDown from the opener row lands on the row after the closer (the next intro-level line is
-    // absent here, so it lands at document end), never inside the hidden range, and the fold holds.
-    // Clicking the directive-name span (not the whole line) keeps the click off the fold pill,
-    // which now carries a label and so can occupy more of the row than the bare count once did.
-    await userEvent.click(spanWith(lineWith(screen.container, ':::panel'), 'panel')!);
-    await userEvent.keyboard('{ArrowDown}');
+    await userEvent.click(lineWith(screen.container, 'intro line')!);
+    await userEvent.keyboard('{End}{ArrowDown}');
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
+    expect(foldPill(screen.container)).toBeTruthy();
   });
 
   it('keeps the opener row full rail now the chevron is in the gutter', async () => {
@@ -975,7 +994,9 @@ describe('MarkdownEditor', () => {
       await expect.poll(() => screen.container.querySelectorAll('.cm-cairn-fold-btn').length).toBe(2);
       await userEvent.click(screen.container.querySelectorAll<HTMLButtonElement>('.cm-cairn-fold-btn')[1]);
       await expect.poll(() => foldPill(screen.container)).toBeTruthy();
-      const folded = lineWith(screen.container, ':::panel')!;
+      // The opener's own text folds away with the body now (ratified 7B), so the folded row is
+      // found through the pill's own line, not by matching the (no longer rendered) fence text.
+      const folded = foldPill(screen.container)!.closest<HTMLElement>('.cm-line')!;
       const style = getComputedStyle(folded);
       // The wash is a real accent-tinted background, not transparent, and square (no radius).
       expect(style.backgroundColor).not.toBe('rgba(0, 0, 0, 0)');
@@ -1009,7 +1030,7 @@ describe('MarkdownEditor', () => {
     // The body never rendered open; the pill and the gutter button already read collapsed.
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
     const pill = foldPill(screen.container)!;
-    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
     expect(foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
     // The fold is view-only: the hidden field still mirrors the full, untouched source.
     expect(hiddenValue(screen.container)).toBe(FOLD_DOC);
@@ -1037,10 +1058,10 @@ describe('MarkdownEditor', () => {
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
-    expect(pill.textContent).toBe('Info Panel · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, 3 hidden lines');
-    // The registry's `use` line rides the pill's native tooltip; the opener's own {title="..."}
-    // attribute stays on the opener line and is never repeated here.
+    expect(pill.textContent).toBe('Info Panel · “Day pass” · 3 lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, “Day pass”, 3 hidden lines');
+    // The registry's `use` line still rides the pill's native tooltip; the opener's own
+    // {title="..."} attribute now rides the visible chip text and the aria-label instead.
     expect(pill.title).toBe('Use to set supporting details apart from the main flow.');
   });
 
@@ -1055,12 +1076,30 @@ describe('MarkdownEditor', () => {
     await userEvent.click(foldBtn(screen.container)!);
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
-    expect(pill.textContent).toBe('panel · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('panel section, 3 hidden lines');
+    expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
     expect(pill.hasAttribute('title')).toBe(false);
   });
 
-  it('truncates a long registry label with a span the hidden-line count sits outside of', async () => {
+  it('shows the plain hidden-line count with no title segment when the opener carries no title attribute', async () => {
+    // A container with a registry label but no {title="..."} attribute keeps today's plain pill
+    // text; the title segment is additive, never assumed.
+    const registry = defineRegistry({
+      components: [
+        { name: 'panel', label: 'Info Panel', description: 'x', build: (n: unknown) => n } as unknown as ComponentDef,
+      ],
+    });
+    const doc = ['intro', ':::panel', 'body one', ':::'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', registry });
+    await expect.poll(() => foldBtn(screen.container)).toBeTruthy();
+    await userEvent.click(foldBtn(screen.container)!);
+    await expect.poll(() => foldPill(screen.container)).toBeTruthy();
+    const pill = foldPill(screen.container)!;
+    expect(pill.textContent).toBe('Info Panel · 2 lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, 2 hidden lines');
+  });
+
+  it('truncates a long registry label with a span the title and the hidden-line count sit outside of', async () => {
     const longLabel = 'A Genuinely Very Long Component Label';
     const registry = defineRegistry({
       components: [
@@ -1073,25 +1112,133 @@ describe('MarkdownEditor', () => {
     const labelSpan = pill.querySelector<HTMLElement>('.cm-cairn-fold-pill-label')!;
     expect(labelSpan).toBeTruthy();
     // The full label rides the DOM (truncation is a CSS ellipsis, never a lossy render), and the
-    // hidden-line count sits outside the truncating span so it can never be clipped.
+    // title and the hidden-line count sit outside the truncating span so neither can ever be clipped.
     expect(labelSpan.textContent).toBe(longLabel);
-    expect(pill.textContent).toBe(`${longLabel} · 3 lines`);
+    expect(pill.textContent).toBe(`${longLabel} · “Day pass” · 3 lines`);
     const style = getComputedStyle(labelSpan);
     expect(style.overflow).toBe('hidden');
     expect(style.textOverflow).toBe('ellipsis');
   });
 
-  it("emphasizes an include directive's fragment id while dimming the surrounding attrs machinery", async () => {
+  it('renders a resolved include line as an atomic chip naming the fragment title', async () => {
+    const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      fragmentTitles: { 'winter-hours': 'Winter hours' },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    const chip = screen.container.querySelector<HTMLElement>('.cm-cairn-include-chip')!;
+    expect(chip.textContent).toBe('Include: Winter hours');
+    // A decoration only: the fence machinery never renders once the chip decorates the line, and
+    // the document text underneath is byte-identical to the source.
+    expect(lineWith(screen.container, 'fragment=')).toBeUndefined();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  it('falls back to the raw fragment id when no title resolves for it', async () => {
     const screen = render(MarkdownEditor, { value: '::include{fragment="winter-hours"}', name: 'body' });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe('Include: winter-hours');
+  });
+
+  it('leaves an include directive with no fragment attribute as plain source', async () => {
+    const screen = render(MarkdownEditor, { value: '::include', name: 'body' });
     await expect.poll(() => lineWith(screen.container, '::include')).toBeTruthy();
-    const line = lineWith(screen.container, '::include')!;
-    const idSpan = spanWith(line, 'winter-hours');
-    expect(idSpan).toBeTruthy();
-    expect(idSpan!.className).toContain('cm-cairn-directive-label');
-    const braceSpan = spanWith(line, '{fragment="');
-    expect(braceSpan).toBeTruthy();
-    expect(braceSpan!.className).toContain('cm-cairn-directive-mark');
-    expect(braceSpan!.className).not.toContain('cm-cairn-directive-label');
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+  });
+
+  // Grammar-alignment regression (major finding, invisible-craft pass): a line the real
+  // directive grammar rejects (trailing text after the closing brace) must never chip; the
+  // preview/build pipeline renders it as literal prose, so the editor's chip would otherwise
+  // silently swallow text the author can no longer see.
+  it('leaves a line with trailing text after the closing brace as plain source', async () => {
+    const doc = '::include{fragment="winter-hours"}Outro line.';
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Fence-awareness regression: a documented ::include example inside a fenced code block is the
+  // block's own literal text (remark never resolves a directive inside a code fence), so it must
+  // read as plain source, matching every sibling decoration in this editor.
+  it('leaves an include directive inside a fenced code block as plain source', async () => {
+    const doc = ['before', '```', '::include{fragment="winter-hours"}', '```', 'after'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Object.prototype guard regression: an author-typed fragment id absent from the published
+  // lookup must fall back to the raw id, never resolve a JS internal off the inherited chain.
+  it('falls back to the raw id for a fragment id that collides with an inherited Object.prototype key', async () => {
+    const screen = render(MarkdownEditor, { value: '::include{fragment="constructor"}', name: 'body', fragmentTitles: {} });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe('Include: constructor');
+  });
+
+  it('relabels the chip when fragmentTitles changes reactively', async () => {
+    const screen = render(MarkdownEditor, {
+      value: '::include{fragment="winter-hours"}',
+      name: 'body',
+      fragmentTitles: {},
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe(
+      'Include: winter-hours',
+    );
+    await screen.rerender({
+      value: '::include{fragment="winter-hours"}',
+      name: 'body',
+      fragmentTitles: { 'winter-hours': 'Winter hours' },
+    });
+    await expect
+      .poll(() => screen.container.querySelector('.cm-cairn-include-chip')?.textContent)
+      .toBe('Include: Winter hours');
+  });
+
+  it('deletes the whole include line atomically, with one undo step to restore it', async () => {
+    const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      fragmentTitles: { 'winter-hours': 'Winter hours' },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    // Click the chip, then land the caret at the atomic range's own far edge (End of the include
+    // line): a single backspace from there removes the whole atomic unit in one transaction,
+    // restoring an empty line where the include stood.
+    await userEvent.click(screen.container.querySelector<HTMLElement>('.cm-cairn-include-chip')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    await userEvent.keyboard('{End}{Backspace}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('Intro line.\n\nOutro line.');
+    await userEvent.keyboard('{Control>}z{/Control}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Grammar-alignment regression (major finding, invisible-craft pass): the OLD unanchored
+  // grammar let a Backspace at the joined boundary below the chip silently swallow the joined
+  // text (the grown line still "resolved" without an end-of-line check, so the chip re-covered
+  // it and the paragraph vanished from view while remaining in the document). With the grammar
+  // fixed, the same edit correctly de-atomicizes the instant the line is no longer well-formed,
+  // so nothing is ever hidden: the chip drops away and the joined text stays visible.
+  it('de-atomicizes the instant a join makes the line no longer a resolvable directive, never swallowing text', async () => {
+    const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      fragmentTitles: { 'winter-hours': 'Winter hours' },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    await userEvent.click(lineWith(screen.container, 'Outro line.')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    await userEvent.keyboard('{Home}{Backspace}');
+    await expect
+      .poll(() => hiddenValue(screen.container))
+      .toBe('Intro line.\n::include{fragment="winter-hours"}Outro line.');
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(lineWith(screen.container, 'Outro line.')).toBeTruthy();
   });
 
   it('reports the component container at the caret and dedupes within a block', async () => {

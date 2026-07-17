@@ -176,7 +176,9 @@ own name.
           tabindex={index === activeIndex ? 0 : -1}
           class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal {index > 0
             ? 'border-l border-[var(--cairn-card-border)]'
-            : ''} {pressed ? 'bg-primary/10 text-primary font-medium' : 'text-muted'}"
+            : ''} {pressed
+            ? 'bg-primary/10 text-primary font-medium ring-1 ring-inset ring-primary/35'
+            : 'text-muted hover:bg-base-content/[0.06]'}"
           onclick={() => pickRole(option.value)}
           onkeydown={(e) => onSegmentKeydown(e, index)}
         >

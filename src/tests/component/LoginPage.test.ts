@@ -63,4 +63,17 @@ describe('LoginPage', () => {
     await expect.element(screen.getByText(/requested a link recently/i)).toBeInTheDocument();
     await expect.element(screen.getByRole('textbox', { name: /email/i })).toBeInTheDocument();
   });
+
+  it('applies the SSR-resolved dark theme to its data-theme wrapper (the cookie carries no auth)', async () => {
+    const screen = render(LoginPage, {
+      data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok', theme: 'cairn-admin-dark' },
+      form: null,
+    });
+    expect(screen.container.querySelector('[data-theme="cairn-admin-dark"]')).toBeTruthy();
+  });
+
+  it('falls back to the light theme when no theme is given', async () => {
+    const screen = render(LoginPage, { data: { siteName: 'Test Site', error: null, csrf: 'csrf-tok' }, form: null });
+    expect(screen.container.querySelector('[data-theme="cairn-admin"]')).toBeTruthy();
+  });
 });

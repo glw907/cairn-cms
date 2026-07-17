@@ -543,12 +543,22 @@ discriminant, not the fields, gates the chrome).
         </div>
         <!-- Context on the left: the breadcrumb trail inside an entry, the site name on a bare list.
              Hidden on small screens to leave room for the palette trigger. -->
-        <div class="hidden min-w-0 max-w-[30%] flex-none truncate sm:block">
+        <div class="hidden min-w-0 max-w-[30%] flex-none sm:block">
           {#if crumbs.length > 1}
-            <nav aria-label="Breadcrumb" class="breadcrumbs text-sm">
-              <ul>
+            <!-- Each crumb's own label truncates to an ellipsis: the wrapping nav is block-level
+                 (not the wrapper's own inline content), so a text-overflow rule on the wrapper
+                 alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
+                 past its content size so truncate can take effect. -->
+            <nav aria-label="Breadcrumb" class="breadcrumbs min-w-0 max-w-full p-0 text-sm">
+              <ul class="min-w-0">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
-                  <li>{#if crumb.href}<a href={crumb.href}>{crumb.label}</a>{:else}{crumb.label}{/if}</li>
+                  <li class="min-w-0">
+                    {#if crumb.href}
+                      <a href={crumb.href} class="min-w-0"><span class="min-w-0 max-w-[9rem] truncate">{crumb.label}</span></a>
+                    {:else}
+                      <span class="min-w-0 max-w-[9rem] truncate" title={crumb.label}>{crumb.label}</span>
+                    {/if}
+                  </li>
                 {/each}
               </ul>
             </nav>
@@ -713,7 +723,7 @@ discriminant, not the fields, gates the chrome).
              anchors the corner as a deliberate brand object rather than a washed box. The logo and
              wordmark link to the admin home. -->
         <div class="flex h-16 flex-none items-center border-b border-[var(--cairn-card-border)] px-3">
-          <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2.5 rounded-field px-2 py-1.5 transition-colors hover:bg-base-content/[0.05]">
+          <a href="/admin" aria-label="Cairn admin home" class="flex items-center gap-2.5 rounded-field px-2 py-1.5 transition-colors hover:bg-base-content/[0.06]">
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
@@ -743,7 +753,7 @@ discriminant, not the fields, gates the chrome).
 
         {#snippet navSection(label: string, items: NavItem[])}
           <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-            <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-5 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
+            <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
               <span class="truncate">{label}</span>
               <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
             </summary>

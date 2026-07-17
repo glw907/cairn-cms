@@ -212,15 +212,15 @@ the loaded entries in component state.
   // delete leads, then a form error, then a load error, since the refusal is the most recent and most
   // actionable outcome of the last submit. The refusal announcement carries the blocker count, so a
   // screen reader hears the magnitude (matching the visible banner) before navigating to the list.
-  const lifecycleError = $derived(
-    deleteRefused
-      ? `This ${data.label.toLowerCase()} could not be deleted. ${
-          deleteRefused.inboundKind === 'include'
-            ? `${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it.`
-            : `${deleteRefused.inboundLinks.length} ${deleteRefused.inboundLinks.length === 1 ? 'page links' : 'pages link'} to it.`
-        }`
-      : (data.formError ?? data.error ?? ''),
-  );
+  const lifecycleError = $derived.by(() => {
+    if (!deleteRefused) return data.formError ?? data.error ?? '';
+    const count = deleteRefused.inboundLinks.length;
+    const blocker =
+      deleteRefused.inboundKind === 'include'
+        ? `${count} ${count === 1 ? 'entry includes' : 'entries include'} it.`
+        : `${count} ${count === 1 ? 'page links' : 'pages link'} to it.`;
+    return `This ${data.label.toLowerCase()} could not be deleted. ${blocker}`;
+  });
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second submit failing the same way) would go silent. An invisible nonce flips on every fresh

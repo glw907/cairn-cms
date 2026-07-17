@@ -103,7 +103,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   // browser's own invalid report (and EditPage's capture-phase reveal) fires exactly like every
   // other required arm. It runs on every group change, not just a check, so unchecking the only
   // checked box re-arms the message instead of leaving a valid group that has none checked.
-  function updateMultiselectValidity() {
+  function updateMultiselectValidity(): void {
     if (!multiselectFieldset) return;
     const boxes = Array.from(multiselectFieldset.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
     const first = boxes[0];

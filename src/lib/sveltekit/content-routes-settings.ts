@@ -15,7 +15,7 @@ import {
   validateVocabulary,
   SiteConfigError,
 } from '../nav/site-config.js';
-import type { TidyConventions, VocabularyEntry } from '../nav/site-config.js';
+import type { SiteConfig, TidyConventions, VocabularyEntry } from '../nav/site-config.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireEditor } from './guard.js';
@@ -112,6 +112,27 @@ const TIDY_MODEL_LABELS: Record<string, string> = {
 /** The display label for a tidy model id, falling back to the raw id for an unknown model. */
 function tidyModelLabel(model: string): string {
   return TIDY_MODEL_LABELS[model] ?? model;
+}
+
+/**
+ * Parse the committed site-config YAML, redirecting a {@link SiteConfigError} back to `errorPath`
+ *  with the parser's own actionable message. A malformed config is an operator fault (a misplaced or
+ *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
+ *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
+ *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
+ *  other error propagates unchanged.
+ */
+function parseSiteConfigOrRedirect(raw: string, errorPath: string): SiteConfig {
+  try {
+    return parseSiteConfig(raw);
+  } catch (err) {
+    if (!(err instanceof SiteConfigError)) throw err;
+    log.error('config.invalid', {
+      conditionId: 'config.site-config-invalid',
+      error: String(err),
+    });
+    throw redirect(303, `${errorPath}?error=${encodeURIComponent(err.message)}`);
+  }
 }
 
 /** Build the tidy settings and tag-vocabulary loads and saves, closed over the shared context. */
@@ -223,21 +244,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    // A SiteConfigError here is an operator fault (a misplaced or unrecognized key), not an editor
-    // mistake, so it gets the parser's own actionable message redirected back to the form (the
-    // screen's own validation-error idiom, since CairnTidySettings renders no `form` prop and posts a
-    // plain, non-enhanced form: a fail(400) would re-render with no visible error); vocabularyLoad
-    // meets the same fault the same way.
-    try {
-      parseSiteConfig(raw);
-    } catch (err) {
-      if (!(err instanceof SiteConfigError)) throw err;
-      log.error('config.invalid', {
-        conditionId: 'config.site-config-invalid',
-        error: String(err),
-      });
-      throw redirect(303, `/admin/settings?error=${encodeURIComponent(err.message)}`);
-    }
+    parseSiteConfigOrRedirect(raw, '/admin/settings');
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -353,21 +360,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    // A SiteConfigError here is an operator fault, not an editor mistake, so it gets the parser's own
-    // actionable message redirected back to the form (the screen's own validation-error idiom, since
-    // VocabularyAdmin renders no `form` prop and posts a plain, non-enhanced form: a fail(400) would
-    // re-render with no visible error); vocabularyLoad meets the same fault the same way.
-    let current: VocabularyEntry[];
-    try {
-      current = extractVocabulary(parseSiteConfig(raw));
-    } catch (err) {
-      if (!(err instanceof SiteConfigError)) throw err;
-      log.error('config.invalid', {
-        conditionId: 'config.site-config-invalid',
-        error: String(err),
-      });
-      throw redirect(303, `/admin/vocabulary?error=${encodeURIComponent(err.message)}`);
-    }
+    const current = extractVocabulary(parseSiteConfigOrRedirect(raw, '/admin/vocabulary'));
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {

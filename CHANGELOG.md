@@ -1,3 +1,48 @@
+## Unreleased
+
+### Added
+
+- The editor renders an `::include` line as one atomic chip naming the fragment by its human
+  title ("Include: Office contact"), falling back to the id when the title cannot resolve. The
+  chip deletes whole—backspace or a selection touching it removes the entire line in one
+  undoable step—so a half-deleted include can no longer leave stray directive text that
+  publishes as prose. The mechanism is the media source chip's, applied to the include leaf.
+- A folded directive container now absorbs its opener line into the fold pill. While folded,
+  the raw fence machinery (`:::callout{title="Trail alert"}`) no longer shows; the pill reads
+  "Callout · “Trail alert” · 3 lines" (label, the block's own title when it carries one, count),
+  and the title also reaches the pill's accessible name. Any edit or caret entry still unfolds
+  to the exact source; the touched-range safety invariant is unchanged.
+- The edit-page preview marks spliced fragment content with a quiet boundary: an accent hairline
+  and a "From “Office contact”" eyebrow over the included blocks, so an editor can tell which
+  paragraphs live elsewhere before editing them. Preview only; a test proves the public delivery
+  path renders byte-identically to before.
+- A fragment with includers states its blast radius beside the publish action ("Publishing
+  updates 3 entries that include this fragment."), reusing the standing Included-in data.
+- Fragments carries its own sidebar glyph (layers), so it no longer shares the undated-concept
+  document silhouette with Pages.
+- A standing `check:invisible-craft` gate holds the polish pass's mechanical rules over the
+  admin components: transition durations in the 150-250ms band, spacing brackets by allowlist,
+  and no achromatic color values, each exception budgeted with a reason.
+
+### Changed
+
+- The login and confirm pages honor the admin theme cookie before sign-in, so a dark-mode
+  editor no longer gets a light login card. `AdminShellData`'s public variant now carries the
+  resolved `theme`. **Consumers must:** nothing at runtime; only a site constructing that
+  public variant by hand in TypeScript must add the new member (neither production site does).
+- The invisible-craft polish batch, roughly thirty look-preserving refinements from a
+  two-track audit of the admin: real typographic characters and tabular numerals on numeric
+  surfaces, the dark theme's shadow warm-tinted instead of pure black, modals brought into the
+  theme-adaptive elevation vocabulary, transition durations herded into the 150-250ms band,
+  restored focus rings on two search inputs, 44px touch targets on icon-only controls and
+  checkboxes, deliberate truncation on the topbar breadcrumb and picker rows, quieted
+  scrollbars and tap highlights, a `font-synthesis` guard against faux italics, and a 1px
+  inset hairline on every check-and-tint pressed state so a pressed control no longer signals
+  through font weight alone.
+- The vocabulary ledger and the tidy settings status card recompose below the small
+  breakpoint (each row stacks its metadata under its primary line) instead of squeezing four
+  columns into a phone width, where the tag table's columns previously collided.
+
 ## 0.87.0
 
 <!-- release-size: minor -->

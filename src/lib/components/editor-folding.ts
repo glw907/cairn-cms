@@ -29,7 +29,6 @@ import {
   StateEffect,
   StateField,
   type Extension,
-  type Transaction,
 } from '@codemirror/state';
 import { codeFolding, foldEffect, foldedRanges, unfoldEffect } from '@codemirror/language';
 import {
@@ -306,30 +305,13 @@ const flashField = StateField.define<DecorationSet>({
 
 const FLASH_MS = 400;
 
-// The walk the safety invariant below shares with itself across folded ranges: every folded range
-// in `tr.startState`, with its boundary mapped forward through the transaction's changes, handed to
-// `visit` alongside a `push` for the effects `visit` decides to emit.
-function foldEffectsFor(
-  tr: Transaction,
-  visit: (from: number, to: number, mappedFrom: number, mappedTo: number, push: (effect: StateEffect<unknown>) => void) => void,
-): StateEffect<unknown>[] {
-  const effects: StateEffect<unknown>[] = [];
-  const startFolds = foldedRanges(tr.startState);
-  if (startFolds.size === 0) return effects;
-  startFolds.between(0, tr.startState.doc.length, (from, to) => {
-    const mappedFrom = tr.changes.mapPos(from, 1);
-    const mappedTo = tr.changes.mapPos(to, -1);
-    visit(from, to, mappedFrom, mappedTo, (effect) => effects.push(effect));
-  });
-  return effects;
-}
-
 // The safety invariant, in one transactionExtender. CodeMirror's own fold field already clears a
 // fold the selection head sits inside and a fold a delete touches; this covers the rest: an insert
 // touching a fold boundary, a paste across it, an undo/redo landing inside, and a selection range
-// (not just its head) extending into hidden text. It reads the start state's folds, maps them
-// forward, and appends an unfold effect for any the change or new selection touches. A replace
-// inside a fold leaves it open afterward, which falls out of the same rule.
+// (not just its head) extending into hidden text. It walks the start state's folds, maps each
+// boundary forward through the transaction's changes (the +1/-1 bias keeps a boundary insert on the
+// fold's outside), and appends an unfold effect for any the change or new selection touches. A
+// replace inside a fold leaves it open afterward, which falls out of the same rule.
 //
 // foldCharRange now starts the fold at the opener line's own start, so the opener's fence
 // machinery folds away into the chip along with the body and the closer (the absorbed-opener
@@ -346,7 +328,12 @@ function foldEffectsFor(
 function safetyExtender(): Extension {
   return EditorState.transactionExtender.of((tr) => {
     if (!tr.docChanged && !tr.selection) return null;
-    const effects = foldEffectsFor(tr, (from, to, mappedFrom, mappedTo, push) => {
+    const startFolds = foldedRanges(tr.startState);
+    if (startFolds.size === 0) return null;
+    const effects: StateEffect<unknown>[] = [];
+    startFolds.between(0, tr.startState.doc.length, (from, to) => {
+      const mappedFrom = tr.changes.mapPos(from, 1);
+      const mappedTo = tr.changes.mapPos(to, -1);
       let touched = false;
       if (tr.docChanged) {
         tr.changes.iterChangedRanges((fromA, toA) => {
@@ -358,7 +345,7 @@ function safetyExtender(): Extension {
           if (range.from < mappedTo && range.to > mappedFrom) touched = true;
         }
       }
-      if (touched) push(unfoldEffect.of({ from, to }));
+      if (touched) effects.push(unfoldEffect.of({ from, to }));
     });
     return effects.length ? { effects } : null;
   });

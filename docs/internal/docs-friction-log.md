@@ -29,4 +29,20 @@ clearings.
 
 ## Open findings
 
-None. The log was cleared 2026-07-16; new findings start fresh below this line.
+The log was cleared 2026-07-16; new findings start fresh below this line.
+
+- **The dev backend cannot exercise fragments at all** (developer; invisible-craft pass,
+  2026-07-17). The fake GitHub store ships `fragmentTargets: []`, so on `vite dev` the fragment
+  picker is empty and the include chip's title resolution can only fall back to the id; the
+  on-disk showcase fragment (`src/content/fragments/trail-safety-notice.md`) never reaches the
+  fake manifest. Local design iteration on any fragments surface is blind. Fix belongs in
+  `packages/cairn-cms-dev`'s seed (a fragments row wired like the media seed).
+- **Every media-library tile renders the "Image missing" state on `vite dev`** (developer;
+  invisible-craft pass, 2026-07-17). The dev backend seeds R2 bytes per `SEED_MEDIA_KEYS`, yet
+  no thumbnail resolves in the browser, so optical review of real thumbnails is impossible
+  locally. Pre-existing (visible in renders before the pass's first change); likely a key or
+  route mismatch between the seeded objects and the thumbnail URLs the tiles request.
+- **`check:custom-surface` and `check:chassis-boundary` are CI-dark** (developer; found while
+  wiring `check:invisible-craft`, 2026-07-17). Both exist as npm scripts but no workflow runs
+  them, so their budgets only hold when someone runs them by hand. Decide whether each joins
+  `test.yml` the way `check:cm-internals` and the new gate do.

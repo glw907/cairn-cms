@@ -48,20 +48,20 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
   }
 
   let { data, form = null, render, registry, icons }: Props = $props();
+
+  // The SSR-resolved admin theme the auth views (login, confirm) render under. It rides the shell
+  // payload (page.data.shell), a public member on every auth route: the theme cookie carries no
+  // auth, so it resolves before sign-in the same way EditPage's siteName resolves after.
+  // Optional-chained, since a test render may leave page.data bare.
+  const publicTheme = $derived(
+    (page.data.shell as (AdminShellData & { public: true }) | undefined)?.theme,
+  );
 </script>
 
 {#if data.view === 'login'}
-  <!-- theme rides the shell payload (page.data.shell), a public member on every auth route: the
-       theme cookie carries no auth, so it resolves before sign-in the same way EditPage's
-       siteName resolves after. Optional-chained: a test render may leave page.data bare. -->
-  <LoginPage
-    data={{ ...data.page, theme: (page.data.shell as (AdminShellData & { public: true }) | undefined)?.theme }}
-    {form}
-  />
+  <LoginPage data={{ ...data.page, theme: publicTheme }} {form} />
 {:else if data.view === 'confirm'}
-  <ConfirmPage
-    data={{ ...data.page, theme: (page.data.shell as (AdminShellData & { public: true }) | undefined)?.theme }}
-  />
+  <ConfirmPage data={{ ...data.page, theme: publicTheme }} />
 {:else if data.view === 'list'}
   <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
        concept id keys the list: crossing concepts remounts it and drops the old query,

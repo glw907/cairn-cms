@@ -99,28 +99,22 @@ function visibleMatches(view: EditorView, titles: FragmentTitles): IncludeMatch[
 }
 
 /**
- * Replace decorations for each visible resolved include line: the chip widget over the whole
- *  line's content. The same spans seed the atomic-range set.
+ * The chip decorations and the atomic ranges for the visible resolved include lines, from one scan
+ *  of the same matches so the two sets can never disagree. `decorations` is the chip widget over
+ *  each whole line's content; `atomic` marks each of those lines as one unit, so a caret or
+ *  selection edit removes the whole directive rather than corrupting its fence machinery.
  */
-function buildIncludeDecorations(view: EditorView, titles: FragmentTitles): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>();
+function buildIncludeSets(
+  view: EditorView,
+  titles: FragmentTitles,
+): { decorations: DecorationSet; atomic: DecorationSet } {
+  const chips = new RangeSetBuilder<Decoration>();
+  const atomicRanges: Range<Decoration>[] = [];
   for (const match of visibleMatches(view, titles)) {
-    builder.add(match.from, match.to, Decoration.replace({ widget: new IncludeChipWidget(match) }));
+    chips.add(match.from, match.to, Decoration.replace({ widget: new IncludeChipWidget(match) }));
+    atomicRanges.push(Decoration.replace({}).range(match.from, match.to));
   }
-  return builder.finish();
-}
-
-/**
- * The atomic ranges for the visible resolved include lines: a caret or selection edit treats the
- *  whole line as one unit, so a stray keystroke removes the whole directive rather than corrupting
- *  its fence machinery. Built from the same matches the decorations use, so the two never disagree.
- */
-function buildAtomicRanges(view: EditorView, titles: FragmentTitles): DecorationSet {
-  const ranges: Range<Decoration>[] = [];
-  for (const match of visibleMatches(view, titles)) {
-    ranges.push(Decoration.replace({}).range(match.from, match.to));
-  }
-  return Decoration.set(ranges, true);
+  return { decorations: chips.finish(), atomic: Decoration.set(atomicRanges, true) };
 }
 
 /**
@@ -137,13 +131,15 @@ export function cairnIncludeDecorations(titles: FragmentTitles): Extension {
       decorations: DecorationSet;
       atomic: DecorationSet;
       constructor(view: EditorView) {
-        this.decorations = buildIncludeDecorations(view, titles);
-        this.atomic = buildAtomicRanges(view, titles);
+        const sets = buildIncludeSets(view, titles);
+        this.decorations = sets.decorations;
+        this.atomic = sets.atomic;
       }
       update(update: ViewUpdate) {
         if (update.docChanged || update.viewportChanged) {
-          this.decorations = buildIncludeDecorations(update.view, titles);
-          this.atomic = buildAtomicRanges(update.view, titles);
+          const sets = buildIncludeSets(update.view, titles);
+          this.decorations = sets.decorations;
+          this.atomic = sets.atomic;
         }
       }
     },

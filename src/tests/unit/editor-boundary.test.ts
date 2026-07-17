@@ -67,6 +67,7 @@ describe('CodeMirror stays off the server', () => {
     'editor-modes.ts',
     'editor-folding.ts',
     'editor-media.ts',
+    'editor-include.ts',
     'editor-placeholder.ts',
     'editor-tidy.ts',
   ];

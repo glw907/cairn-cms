@@ -2479,8 +2479,16 @@ describe('EditPage', () => {
     }
 
     async function clickLine(screen: { container: HTMLElement }, text: string) {
-      const line = Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
-        (l.textContent ?? '').includes(text),
+      // EditPage always folds every component on mount (foldOnMount), and a folded opener's own
+      // fence machinery is now absorbed into the chip too (ratified 7B), so the target text is not
+      // rendered until the fold pill is unfolded first: an author reaching a precise caret position
+      // inside a folded block unfolds it the same way, by activating the pill.
+      const pill = screen.container.querySelector<HTMLButtonElement>('.cm-cairn-fold-pill');
+      if (pill) await userEvent.click(pill);
+      const line = await vi.waitFor(() =>
+        Array.from(screen.container.querySelectorAll<HTMLElement>('.cm-line')).find((l) =>
+          (l.textContent ?? '').includes(text),
+        ),
       );
       await userEvent.click(line!);
     }

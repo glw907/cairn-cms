@@ -9,8 +9,10 @@ import {
   fenceTokens,
   figureRoleAtLine,
   findInlineDirectives,
+  includeFragmentId,
   includeFragmentTokens,
   markerPrefix,
+  openerTitleAttr,
 } from '../../lib/components/markdown-directives.js';
 
 // The field-report regression document, verbatim: a labeled four-colon container holding two
@@ -177,6 +179,34 @@ describe('includeFragmentTokens', () => {
   });
   it('returns nothing for a container fence, even one that happens to be named include', () => {
     expect(includeFragmentTokens(':::include{fragment="winter-hours"}')).toEqual([]);
+  });
+});
+
+describe('includeFragmentId', () => {
+  it('reads the fragment id off an include leaf directive', () => {
+    expect(includeFragmentId('::include{fragment="winter-hours"}')).toBe('winter-hours');
+  });
+  it('returns null for a leaf directive that is not include', () => {
+    expect(includeFragmentId('::video{fragment="winter-hours"}')).toBeNull();
+  });
+  it('returns null for an include directive with no fragment attribute', () => {
+    expect(includeFragmentId('::include')).toBeNull();
+  });
+  it('returns null for a container fence, even one that happens to be named include', () => {
+    expect(includeFragmentId(':::include{fragment="winter-hours"}')).toBeNull();
+  });
+});
+
+describe('openerTitleAttr', () => {
+  it('reads the title attribute off a container opener', () => {
+    expect(openerTitleAttr(':::panel{title="Day pass"}')).toBe('Day pass');
+  });
+  it('returns null when the opener carries no title attribute', () => {
+    expect(openerTitleAttr(':::panel{icon="hand-coins"}')).toBeNull();
+    expect(openerTitleAttr(':::panel')).toBeNull();
+  });
+  it('does not match an attribute that merely ends in "title"', () => {
+    expect(openerTitleAttr(':::panel{subtitle="Not this"}')).toBeNull();
   });
 });
 

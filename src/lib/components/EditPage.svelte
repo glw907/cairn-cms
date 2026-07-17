@@ -1278,6 +1278,13 @@ persistent "?" carries Markdown help, design-arc D2).
     ...Object.fromEntries(uploadedRecords.map((r) => [r.hash, mediaLibraryEntry(r)])),
   });
 
+  // The published fragment titles the editor's include: source decoration resolves a chip's label
+  // against, projected from the same fragmentTargets the picker lists (id -> title). Empty when
+  // nothing here can include a fragment (fragmentTargets is null), the same as an empty library.
+  const fragmentTitles = $derived(
+    Object.fromEntries((data.fragmentTargets ?? []).map((f) => [f.id, f.title])),
+  );
+
   // The [[ autocomplete source over the same link targets, handed to the editor's generic seam.
   const completionSources = $derived([cairnLinkCompletionSource(data.linkTargets)]);
 
@@ -2007,6 +2014,7 @@ persistent "?" carries Markdown help, design-arc D2).
           onDiagnosticsCounts={(counts) => (diagnosticsCounts = counts)}
           {completionSources}
           {mediaLibrary}
+          {fragmentTitles}
           {focusMode}
           {typewriter}
           {spellcheck}

@@ -44,6 +44,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
      *  `mediaLibrary`). The source decoration reads it to render a `media:` token as a thumbnail chip;
      *  reactive, so a just-uploaded image decorates once it joins the library. Empty by default. */
     mediaLibrary?: MediaLibrary;
+    /** The published fragment titles the include: source decoration resolves a
+     *  `::include{fragment="id"}` chip's label against, keyed by fragment id (EditData's
+     *  `fragmentTargets`, projected to id -> title). A resolved include line always chips; an id
+     *  absent from this map falls back to naming the chip from the raw id. Empty by default. */
+    fragmentTitles?: import('./editor-include.js').FragmentTitles;
     /** Receives a `() => { left; right; top; bottom } | null` returning the caret's viewport
      *  coordinates; the insert popover anchors itself to the cursor from this. Null before mount or
      *  when the caret has no measurable position. */
@@ -153,6 +158,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     registerInsertImage,
     onImageIngest,
     mediaLibrary = {},
+    fragmentTitles = {},
     registerCaretCoords,
     registerFocusEditor,
     registerImagePlaceholders,
@@ -198,6 +204,11 @@ through the adapter's render. Swapping the editor stays a one-file change.
   // module loads with the other dynamic editor modules in onMount.
   let mediaCompartment: import('@codemirror/state').Compartment | null = null;
   let mediaMod: typeof import('./editor-media.js') | null = null;
+  // The include: source decoration lives in its own compartment, reconfigured when the
+  // fragmentTitles prop changes, mirroring the media compartment above. The include module loads
+  // with the other dynamic editor modules in onMount.
+  let includeCompartment: import('@codemirror/state').Compartment | null = null;
+  let includeMod: typeof import('./editor-include.js') | null = null;
   // The spellcheck lint source (and the objective-error layer it bundles) live in their own
   // compartment, reconfigured to empty when the footer toggle turns spellcheck off. Both surfaces ride
   // the one extension cairnSpellcheck returns, so one compartment gates both. The extension is built
@@ -233,6 +244,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const placeholderMod = await import('./editor-placeholder.js');
     const announcerMod = await import('./editor-diagnostics-announcer.js');
     mediaMod = await import('./editor-media.js');
+    includeMod = await import('./editor-include.js');
     tidyMod = await import('./editor-tidy.js');
     const spellcheckMod = await import('./spellcheck.js');
 
@@ -471,6 +483,24 @@ through the adapter's render. Swapping the editor stays a one-file change.
           backgroundColor: 'var(--color-accent)',
           borderRadius: '0.15em',
         },
+        // The include: source chip: the atomic widget that stands in for a resolved
+        // `::include{fragment="id"}` leaf directive line, in the directive accent language (the same
+        // 8% accent chip the media and leaf/inline directives use). It replaces the whole line, so
+        // there is no separate "role pill" the way the media chip carries one; the label and the
+        // resolved title are its entire content.
+        '.cm-cairn-include-chip': {
+          display: 'inline-flex',
+          alignItems: 'center',
+          padding: '0.05em 0.5em',
+          borderRadius: '0.375rem',
+          backgroundColor: 'color-mix(in oklab, var(--color-accent) 8%, transparent)',
+          color: 'var(--color-accent)',
+          fontFamily: 'var(--font-body, ui-sans-serif, sans-serif)',
+          fontSize: '0.8125rem',
+          lineHeight: '1.4',
+        },
+        '.cm-cairn-include-label': { fontWeight: '600' },
+        '.cm-cairn-include-name': { fontWeight: '500' },
         // Container folding lives in a real gutter column now, not an in-text band. The gutter is a
         // fixed-x column left of the content; the chevron is empty at rest and reveals on hovering
         // the gutter cell (the VS Code / Zed / Obsidian standard), forced on when folded or when the
@@ -661,6 +691,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
     typewriterCompartment = new stateMod.Compartment();
     surfaceCompartment = new stateMod.Compartment();
     mediaCompartment = new stateMod.Compartment();
+    includeCompartment = new stateMod.Compartment();
     spellcheckCompartment = new stateMod.Compartment();
     tidyCompartment = new stateMod.Compartment();
     tidyReadonlyCompartment = new stateMod.Compartment();
@@ -725,6 +756,10 @@ through the adapter's render. Swapping the editor stays a one-file change.
           // reconfigures it without rebuilding the editor. The chip and the atomic ranges read the
           // library; an empty library decorates nothing.
           mediaCompartment.of(mediaMod.cairnMediaDecorations(mediaLibrary)),
+          // The include: source decoration, in its own compartment so a fragmentTitles prop change
+          // reconfigures it without rebuilding the editor. A resolved include line always chips,
+          // named by its title when the lookup has one and by its raw id otherwise.
+          includeCompartment.of(includeMod.cairnIncludeDecorations(fragmentTitles)),
           // The spellcheck and objective-error lint sources plus the locked amber underline theme, in
           // their own compartment so the footer toggle gates both surfaces at once. Empty when off.
           spellcheckCompartment.of(spellcheck ? spellcheckExt : []),
@@ -880,6 +915,15 @@ through the adapter's render. Swapping the editor stays a one-file change.
     const library = mediaLibrary;
     if (!mounted || !view || !mediaMod || !mediaCompartment) return;
     view.dispatch({ effects: mediaCompartment.reconfigure(mediaMod.cairnMediaDecorations(library)) });
+  });
+
+  // Reconfigure the include decoration when the fragmentTitles prop changes, so a fragment renamed
+  // (or newly published) after mount relabels its chip without rebuilding the editor. Reading the
+  // prop tracks it; the guard waits for the mounted editor and its include module.
+  $effect(() => {
+    const titles = fragmentTitles;
+    if (!mounted || !view || !includeMod || !includeCompartment) return;
+    view.dispatch({ effects: includeCompartment.reconfigure(includeMod.cairnIncludeDecorations(titles)) });
   });
 
   // Reconfigure the spellcheck compartment when the footer toggle flips. On restores the bundled

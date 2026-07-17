@@ -368,12 +368,16 @@ Recipes:
   border carries pick-one).
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
-  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target;
-  the opener text never folds. A folded row carries a square full-row accent wash (~7%) and a focusable
-  `N lines` pill (`aria-label="Show N hidden lines"`). Ranges come only from `fenceScan`'s paired
-  containers, so a half-typed fence never folds; any edit or selection touching a folded range unfolds
-  it in the same transaction. Fold state is session-local, never persisted. Driven by
-  `@codemirror/language` folding in `editor-folding.ts`.
+  folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.
+  While folded (ratified 7B), the opener's own fence machinery is absorbed into the placeholder chip
+  too, not just the body and the closer: the chip reads "`<label> — "<title>" · N lines`" when the
+  opener carries a `title`/`[label]` attribute, otherwise the plain "`<label> · N lines`" (or a bare
+  `N lines` for an unnamed container). A folded row carries a square full-row accent wash (~7%) and the
+  chip is a focusable button (`aria-label` naming the section, the title when present, and the hidden
+  line count). Ranges come only from `fenceScan`'s paired containers, so a half-typed fence never
+  folds; any edit or selection touching a folded range, including the now-absorbed opener line, unfolds
+  it in the same transaction, revealing exact source. Fold state is session-local, never persisted.
+  Driven by `@codemirror/language` folding in `editor-folding.ts`.
 - **Editor instrument strip (design-arc D2, "grouped micro-eyebrows"):** one card frame holds the
   toolbar, the editing surface, and the footer environment strip (word count left, the posture
   segmented control and the focus/typewriter/zen toggles right; Markdown help no longer lives here,
@@ -431,6 +435,15 @@ Recipes:
   a plain-language `title` tooltip and a constant left gutter. Depth and roles come from one
   cached scan in `markdown-directives.ts` (`fenceScan`), which pairs a bare closer with the most
   recent named opener and disowns fence-shaped lines inside code blocks.
+- **Editor: the include chip (`editor-include.ts`).** A resolved `::include{fragment="id"}` leaf
+  directive line renders as one atomic accent chip ("Include: Office contact"), the whole opener
+  line's fence machinery absorbed the way the media chip absorbs a `media:` reference token, in the
+  same directive accent language. The chip names the fragment's published title, falling back to the
+  raw id when the title is unavailable (never a hidden state). Deletion is atomic (the whole line in
+  one transaction, one undo step restores it), mirroring the media chip's own atomic-token mechanism
+  but scoped to the whole line, since a leaf directive's grammar already confines it there. The title
+  lookup (`fragmentTitles`, `EditData.fragmentTargets` projected to id -> title) is reactive, the same
+  compartment wiring as `mediaLibrary`.
 - **Editor: the surface postures and the footer strip.** The editor card's footer is the
   writing-environment strip (the top toolbar acts on the text; the bottom carries how you are
   writing): word count left, then the posture pair and the writing-mode toggles, all ghost `btn-xs`

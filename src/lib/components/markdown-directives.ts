@@ -345,3 +345,40 @@ export function includeFragmentTokens(line: string): FenceToken[] {
   if (valueTo < braceTo) out.push({ from: valueTo, to: braceTo, kind: 'mark' });
   return out;
 }
+
+/**
+ * The `fragment="id"` value on an `::include{fragment="id"}` leaf directive line, or null when the
+ *  line is not an include leaf, carries no fragment attribute, or the attribute sits outside the
+ *  line's `{attrs}` group. The one source of the id the include chip decoration resolves against
+ *  the site's published fragments; mirrors {@link includeFragmentTokens}'s own guard so the two
+ *  never disagree on what counts as a resolvable include line.
+ */
+export function includeFragmentId(line: string): string | null {
+  if (LEAF_NAME.exec(line)?.[1] !== 'include') return null;
+  const brace = ATTR_BRACE.exec(line);
+  if (!brace) return null;
+  const braceFrom = brace.index;
+  const braceTo = braceFrom + brace[0].length;
+  const value = INCLUDE_FRAGMENT_VALUE.exec(line);
+  if (!value?.indices) return null;
+  const [valueFrom, valueTo] = value.indices[1]!;
+  if (valueFrom < braceFrom || valueTo > braceTo) return null;
+  return value[1] ?? null;
+}
+
+// A `title="..."` attribute value inside a directive's `{attrs}` group. Anchored to a preceding
+// whitespace or the group start so a differently-named attribute ending in "title" (there are
+// none today, but the anchor is cheap insurance) can never match.
+const TITLE_ATTR_VALUE = /(?:^|\s)title\s*=\s*"([^"]*)"/;
+
+/**
+ * The `title="..."` attribute on a container opener line (`:::callout{title="Trail alert"}` gives
+ *  `"Trail alert"`), or null when the opener carries no title attribute at all. The folded
+ *  container chip reads this to add the title segment to its combined label; a container with no
+ *  title attribute keeps the plain registry-label chip.
+ */
+export function openerTitleAttr(line: string): string | null {
+  const brace = ATTR_BRACE.exec(line)?.[1];
+  if (!brace) return null;
+  return TITLE_ATTR_VALUE.exec(brace)?.[1] ?? null;
+}

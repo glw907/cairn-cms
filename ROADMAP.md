@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.78.0`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.87.0`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,

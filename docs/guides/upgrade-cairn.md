@@ -50,6 +50,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.87.0: fragments, and the embedded-routing promise enforced
+
+A site can now declare the reserved `fragments` concept and reuse one piece of markdown across
+entries with the editor's "Include a fragment" picker. See [Reuse content across
+entries](./reuse-content-across-entries.md). Opting in is additive. One thing to check before
+bumping: a concept declared `routing: 'embedded'` is now genuinely non-routable, so its entries
+stop resolving through `byPermalink`, prerendering through `entries()`, and appearing in
+`site.all()`. If an embedded concept's entries should have public URLs, declare
+`routing: 'page'` instead. If they only ever served as references or includes, you have nothing
+to change, and cairn stops serving the stray URLs.
+
 ## 0.86.0: `navLayout`, the whole-sidebar seam, and the widened `navFilter`
 
 Sites now declare `navLayout` on the adapter's `editor` group to arrange the whole admin sidebar

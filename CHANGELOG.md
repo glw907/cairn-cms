@@ -1,4 +1,6 @@
-## Unreleased
+## 0.87.0
+
+<!-- release-size: minor -->
 
 ### Changed
 

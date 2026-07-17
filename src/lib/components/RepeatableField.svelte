@@ -230,7 +230,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
             </button>
             <button
               type="button"
-              class="btn btn-ghost btn-sm btn-square"
+              class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
               data-cairn-row-up
               aria-label={`Move ${rowSummary} up`}
               disabled={i === 0}
@@ -240,7 +240,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
             </button>
             <button
               type="button"
-              class="btn btn-ghost btn-sm btn-square"
+              class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
               data-cairn-row-down
               aria-label={`Move ${rowSummary} down`}
               disabled={i === rows.length - 1}
@@ -250,7 +250,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
             </button>
             <button
               type="button"
-              class="btn btn-ghost btn-sm btn-square"
+              class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
               data-cairn-row-remove
               aria-label={`Remove ${rowSummary}`}
               onclick={() => remove(i)}

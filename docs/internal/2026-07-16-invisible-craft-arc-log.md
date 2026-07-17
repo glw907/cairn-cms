@@ -9,3 +9,6 @@ removed when the arc closes. Rubric: `2026-07-15-admin-resolved-polish-brief.md`
    block collision; layers reads "one thing present in many places" and is the one distinct
    silhouette at 16px. Landed as `ENGINE_NAV_ICONS.fragments` (the reserved concept id), the
    dated/undated kind-glyph precedent extended.
+2. Entrance stagger (audit motion finding: no entrance treatment exists to stagger) — SKIPPED by
+   ruling (Geoff: "calm is right"). No entrance motion enters the admin; the finding closes as
+   deliberate restraint, not debt.

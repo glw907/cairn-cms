@@ -116,7 +116,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
 
   // The card recipe shared by the add and list cards.
   const cardClass =
-    'rounded-2xl border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]';
+    'rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]';
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
@@ -228,7 +228,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
         </div>
       {:else}
         <div
-          class="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted"
+          class="grid grid-cols-[1fr_auto_auto_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted"
         >
           <span>Name</span>
           <span>Stored as</span>
@@ -301,7 +301,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
           picking.
         </p>
       </div>
-      <div class="overflow-hidden rounded-2xl border border-dashed border-[var(--cairn-card-border)] bg-base-100">
+      <div class="overflow-hidden rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-100">
         {#each seedCandidates as candidate, i (candidate.value)}
           <div
             class="flex items-center gap-3 px-4 py-2.5 {i > 0

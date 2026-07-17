@@ -423,7 +423,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </button>
       </div>
       {#if committedCaption.trim() !== ''}
-        <p class="pl-[3.875rem] text-xs italic text-muted">{committedCaption}</p>
+        <p class="pl-[3.875rem] text-xs text-muted">{committedCaption}</p>
       {:else}
         <p class="pl-[3.875rem] text-xs text-muted opacity-80">No caption</p>
       {/if}
@@ -480,7 +480,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
       <h2 id={titleId} class="text-[0.9375rem] font-semibold">
         {view === 'chooser' ? `Add ${field.label.toLowerCase()}` : field.label}
       </h2>
-      <button type="button" class="btn btn-ghost btn-xs btn-square" aria-label="Close" onclick={closeDialog}>
+      <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeDialog}>
         <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
       </button>
     </div>
@@ -488,7 +488,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     {#if upload.kind === 'uploading'}
       <div class="flex flex-col items-center gap-3 py-8" role="status">
         <span class="loading loading-spinner loading-md text-[var(--color-primary)]"></span>
-        <p class="text-sm text-muted">Adding your image...</p>
+        <p class="text-sm text-muted">Adding your image…</p>
       </div>
     {:else if upload.kind === 'failed'}
       <div class="flex flex-col gap-2" role="alert">

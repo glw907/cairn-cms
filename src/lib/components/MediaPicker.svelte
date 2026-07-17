@@ -184,7 +184,7 @@ while a site stores images only.
       onkeydown={onKeydown}
       type="text"
       role="combobox"
-      class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-muted"
+      class="w-full border-0 bg-transparent p-0 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
       placeholder="Search the media library"
       aria-label="Search the media library"
       aria-expanded={filtered.length > 0}
@@ -214,7 +214,7 @@ while a site stores images only.
           {#if entries.length === 0}
             No images in the library yet.
           {:else}
-            Nothing matches <span class="font-medium text-base-content">"{query.trim()}"</span>.
+            Nothing matches <span class="font-medium text-base-content">“{query.trim()}”</span>.
           {/if}
         </p>
       </li>

@@ -796,7 +796,7 @@ describe('CairnAdminShell', () => {
 
   it('renders only the children bare for a public payload, with no chrome', async () => {
     const screen = render(CairnAdminShell, {
-      data: { public: true as const, siteName: 'Test Site' },
+      data: { public: true as const, siteName: 'Test Site', theme: 'cairn-admin' as const },
       children: child,
     });
     await expect.element(screen.getByText('page body')).toBeInTheDocument();

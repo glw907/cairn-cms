@@ -294,7 +294,7 @@ must never make, so no such count exists.
         <kbd class="kbd kbd-xs">j</kbd><kbd class="kbd kbd-xs">k</kbd> move
         <kbd class="kbd kbd-xs">a</kbd><kbd class="kbd kbd-xs">r</kbd> accept / reject
       </span>
-      <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Cancel review" onclick={cancel}>
+      <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Cancel review" onclick={cancel}>
         <XIcon class="size-4" aria-hidden="true" />
       </button>
     </div>
@@ -373,7 +373,7 @@ must never make, so no such count exists.
                 class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'kept'
                   ? 'bg-base-content/[0.07] text-base-content font-semibold'
-                  : 'text-muted'}"
+                  : 'text-muted hover:bg-base-content/[0.06]'}"
                 aria-pressed={decided === 'kept'}
                 onclick={() => acceptHunk(h)}
               >
@@ -384,7 +384,7 @@ must never make, so no such count exists.
                 class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'rejected'
                   ? 'bg-base-content/[0.07] text-base-content font-semibold'
-                  : 'text-muted'}"
+                  : 'text-muted hover:bg-base-content/[0.06]'}"
                 aria-pressed={decided === 'rejected'}
                 onclick={() => rejectHunk(h)}
               >

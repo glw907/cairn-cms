@@ -15,8 +15,11 @@ the allowlist, so the page never leaks membership (spec §7.1).
   import { warnIfChromeWrapped } from './chrome-guard.js';
 
   interface Props {
-    /** The login load's data: the site name, an optional error, and the CSRF token. */
-    data: { siteName: string; error: string | null; csrf: string };
+    /** The login load's data: the site name, an optional error, the CSRF token, and the SSR-resolved
+     * admin theme (the persisted cookie choice, or the light default; the cookie carries no auth,
+     * so it applies before sign-in too). Optional so a test render need not supply it; the real
+     * shell payload always does. */
+    data: { siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' };
     /** The action result. `sent` is true once a request was accepted; `status` discriminates the
      * neutral, send-error, and throttled outcomes. */
     form: { sent?: boolean; status?: 'sent' | 'send_error' | 'throttled' } | null;
@@ -50,7 +53,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
-<div data-theme="cairn-admin" bind:this={rootEl}>
+<div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
     {#if (form?.status === 'sent' || form?.sent) && !dismissed}
@@ -86,7 +89,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
       <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
-      <p class="mt-1 mb-5 text-center text-sm text-muted">Enter your email. We'll send a one-time sign-in link.</p>
+      <p class="mt-1 mb-5 text-center text-sm text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       {#if form?.status === 'send_error'}
         <div role="alert" class="alert alert-warning mb-3 text-sm">
           We're having trouble sending sign-in links right now. Please contact the site owner.

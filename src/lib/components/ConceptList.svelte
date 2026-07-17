@@ -126,7 +126,7 @@ the loaded entries in component state.
   // A segment of the bordered publish-state control: the shared group border carries the pick-one
   // semantics, so a segment stays borderless; the active one tints and bolds.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1 text-[0.8125rem] font-normal ${segmentTintClass(pressed)}`;
+    return `inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1 text-[0.8125rem] font-normal ${pressed ? segmentTintClass(pressed) : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
   function hiddenToggleClass(pressed: boolean): string {
@@ -353,7 +353,7 @@ the loaded entries in component state.
       <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
         <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
         {#if query.trim()}
-          <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">"{query}"</span>.</p>
+          <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
           <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
         {:else}
           <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
@@ -446,8 +446,8 @@ the loaded entries in component state.
 {/if}
 
 {#if data.entries.length > 0}
-  <div class="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm">
-    <span role="status" class="text-muted">{sorted.length} of {data.entries.length}</span>
+  <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
+    <span role="status" class="text-muted tabular-nums">{sorted.length} of {data.entries.length}</span>
     <div class="flex items-center gap-2">
       <label class="flex items-center gap-1">
         <span class="sr-only">Rows per page</span>
@@ -460,7 +460,7 @@ the loaded entries in component state.
       <button type="button" class="btn btn-sm btn-ghost" aria-label="Previous page" disabled={page <= 1} onclick={() => (page -= 1)}>
         <ChevronLeftIcon class="h-4 w-4" />
       </button>
-      <span>Page {page} of {pageCount}</span>
+      <span class="tabular-nums">Page {page} of {pageCount}</span>
       <button type="button" class="btn btn-sm btn-ghost" aria-label="Next page" disabled={page >= pageCount} onclick={() => (page += 1)}>
         <ChevronRightIcon class="h-4 w-4" />
       </button>

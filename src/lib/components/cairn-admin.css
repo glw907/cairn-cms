@@ -38,6 +38,16 @@
   /* Crisper, lighter glyph rendering for the variable fonts. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* The body and display faces are real variable fonts (100-700 and 400-800) and the editor face
+     ships real static italics, so every weight or style the admin requests has a real matching
+     face. Nothing should ever need the browser's synthesized (faux) bold or oblique slant. */
+  font-synthesis: none;
+  /* A quiet, theme-toned scrollbar instead of the OS default, on every scrollable admin surface. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-base-300) transparent;
+  /* No translucent gray flash on tap; the styled :active/pressed states already acknowledge the
+     touch. */
+  -webkit-tap-highlight-color: transparent;
 
   /* Tier 1: the DaisyUI theme variables (surfaces, brand, status fills, radii). */
   --color-base-100: oklch(99% 0.004 75);
@@ -182,6 +192,15 @@
   /* Crisper, lighter glyph rendering for the variable fonts. */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* See the light root: every requested weight or style has a real face, so nothing should ever
+     synthesize. */
+  font-synthesis: none;
+  /* A quiet, theme-toned scrollbar instead of the OS default, on every scrollable admin surface. */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-base-300) transparent;
+  /* No translucent gray flash on tap; the styled :active/pressed states already acknowledge the
+     touch. */
+  -webkit-tap-highlight-color: transparent;
 
   /* Tier 1: the DaisyUI theme variables, dark.
      Dark surface layering: the panels (sidebar, topbar, cards = base-100) lift clearly above the app
@@ -294,8 +313,11 @@
   --color-muted: oklch(72% 0.01 75);
   --color-subtle: oklch(80% 0.008 75);
 
-  /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards. */
-  --cairn-shadow: 0 1px 2px oklch(0% 0 0 / 0.35), 0 8px 24px -6px oklch(0% 0 0 / 0.5);
+  /* On dark, a soft shadow barely registers, so it is deeper and darker to still lift the cards.
+     Warm-tinted at the same hue 75 as the light theme's shadow (and as --cairn-card-border's dark
+     value) rather than pure black, so both themes share one tinting philosophy; the alpha steps
+     are unchanged from the previous achromatic values. */
+  --cairn-shadow: 0 1px 2px oklch(10% 0.02 75 / 0.35), 0 8px 24px -6px oklch(10% 0.02 75 / 0.5);
   /* The ink story's hover step in dark: fills are light here, so hover brightens. */
   --cairn-ink-hover: oklch(90% 0.008 75);
   /* On dark the shadow does little, so the card keeps a visible border for definition. */
@@ -425,6 +447,25 @@
      fragment scroll clear of the sticky band, with a little slack. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :is(a, button, input, textarea, select, summary, [tabindex]) {
     scroll-margin-top: 5.5rem;
+  }
+
+  /* DaisyUI ships .modal-box with a single flat, theme-invariant shadow and no border, so the
+     admin's highest-elevation surface is the one floating surface that ignores the theme-adaptive
+     elevation pair every other card, dropdown, and slide-over carries (the floating-card recipe).
+     This brings it into that same vocabulary. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .modal-box {
+    border: 1px solid var(--cairn-card-border);
+    box-shadow: var(--cairn-shadow);
+  }
+
+  /* Hit-slop for the checkbox-in-label pattern (boolean fields, closed-taxonomy tag pickers): a
+     bare checkbox-sm plus its label has no min-height, so its effective touch target sits near
+     20-24px. Padding grows the label's own border box (what the browser hit-tests) while the
+     equal, opposite margin keeps its contribution to the surrounding flow unchanged, so the
+     visible checkbox size and the row-to-row spacing both stay exactly as authored. */
+  :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) label.label:has(> input.checkbox) {
+    margin-block: -0.25rem;
+    padding-block: 0.25rem;
   }
 }
 

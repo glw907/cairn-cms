@@ -54,13 +54,15 @@ export interface NavConcept {
 /**
  * The shared admin shell's data, produced by `shellPayload` and consumed by the CairnAdminShell
  *  component through `/admin/+layout.svelte`. A discriminated union: a public (login/auth) path
- *  carries only the site name and renders bare; an authed path carries the full admin payload, the
- *  site identity, the signed-in editor, the one resolved nav tree, the active path, the CSRF
- *  token, and the streamed pending entries, and streams the pending-publish set as a deferred
- *  promise so a custom route and the login page never block on a GitHub round-trip up front.
+ *  carries only the site name and the resolved theme (the cookie is not auth-bearing, so a
+ *  signed-out visitor's theme choice still applies) and renders bare; an authed path carries the
+ *  full admin payload, the site identity, the signed-in editor, the one resolved nav tree, the
+ *  active path, the CSRF token, and the streamed pending entries, and streams the pending-publish
+ *  set as a deferred promise so a custom route and the login page never block on a GitHub
+ *  round-trip up front.
  */
 export type AdminShellData =
-  | { public: true; siteName: string }
+  | { public: true; siteName: string; theme: 'cairn-admin' | 'cairn-admin-dark' }
   | {
       public: false;
       siteName: string;
@@ -383,12 +385,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  that already-gated `items` set, fresh every request.
    */
   async function shellPayload(event: ContentEvent): Promise<{ shell: AdminShellData }> {
-    if (isPublicAdminPath(event.url.pathname)) {
-      return { shell: { public: true, siteName: runtime.siteName } };
-    }
-    const editor = requireSession(event);
+    // The theme cookie carries no auth, so a public (login/auth) path reads and honors it too:
+    // a signed-out visitor's dark-mode pick should not revert to light the moment they sign out.
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
     const theme = cookieTheme === 'cairn-admin-dark' ? 'cairn-admin-dark' : 'cairn-admin';
+    if (isPublicAdminPath(event.url.pathname)) {
+      return { shell: { public: true, siteName: runtime.siteName, theme } };
+    }
+    const editor = requireSession(event);
     const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
     const collapsedNav = cookieCollapsed
       ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)

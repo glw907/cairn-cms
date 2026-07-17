@@ -16,7 +16,7 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin-dark']) .badge-ghost"
         ],
-        "componentsLayerCap": 14,
+        "componentsLayerCap": 16,
         "retiredTokenBudget": 0
       }
     },

@@ -331,7 +331,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
            design system's dialog-sizing recipe. -->
       <div class="mb-3 flex flex-none items-center gap-3">
         {#if picked && !editing}
-          <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Back to components" onclick={back}>
+          <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Back to components" onclick={back}>
             <svg class="h-4 w-4" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M165.7 202.3a8 8 0 0 1-11.4 11.4l-80-80a8 8 0 0 1 0-11.4l80-80a8 8 0 0 1 11.4 11.4L91.3 128Z" /></svg>
           </button>
         {/if}
@@ -343,7 +343,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
           {/if}
         </div>
-        <button type="button" class="btn btn-ghost btn-sm btn-square" aria-label="Close" onclick={close}>✕</button>
+        <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={close}>✕</button>
       </div>
 
       {#if picked}
@@ -413,7 +413,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
-              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden placeholder:text-muted"
+              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
               placeholder="Search components"
               aria-label="Search components"
               bind:value={query}
@@ -429,7 +429,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {#if filtered.length === 0}
           <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">"{query.trim()}"</span>.</p>
+            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
             <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}

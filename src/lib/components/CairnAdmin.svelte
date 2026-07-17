@@ -51,9 +51,17 @@ its `siteName` from the shell payload on `page.data.shell`. No styling or wrappe
 </script>
 
 {#if data.view === 'login'}
-  <LoginPage data={data.page} {form} />
+  <!-- theme rides the shell payload (page.data.shell), a public member on every auth route: the
+       theme cookie carries no auth, so it resolves before sign-in the same way EditPage's
+       siteName resolves after. Optional-chained: a test render may leave page.data bare. -->
+  <LoginPage
+    data={{ ...data.page, theme: (page.data.shell as (AdminShellData & { public: true }) | undefined)?.theme }}
+    {form}
+  />
 {:else if data.view === 'confirm'}
-  <ConfirmPage data={data.page} />
+  <ConfirmPage
+    data={{ ...data.page, theme: (page.data.shell as (AdminShellData & { public: true }) | undefined)?.theme }}
+  />
 {:else if data.view === 'list'}
   <!-- The single mount reuses this component across /admin/posts -> /admin/pages, so the
        concept id keys the list: crossing concepts remounts it and drops the old query,

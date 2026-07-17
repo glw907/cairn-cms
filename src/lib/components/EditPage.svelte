@@ -487,7 +487,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
   // pressed (design arc 2026-07-15).
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
@@ -1442,7 +1442,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->
         <span
-          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-300"
+          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-[250ms]"
           class:opacity-0={!saveState}
           aria-live="off"
         >
@@ -1488,7 +1488,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <button
         bind:this={detailsTrigger}
         type="button"
-        class="btn btn-ghost btn-sm btn-square max-sm:hidden"
+        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 max-sm:hidden"
         aria-label="Details"
         title="Details"
         aria-expanded={detailsOpen}
@@ -1501,7 +1501,7 @@ persistent "?" carries Markdown help, design-arc D2).
            position-anchor placement). -->
       <button
         type="button"
-        class="btn btn-ghost btn-sm btn-square shrink-0"
+        class="btn btn-ghost btn-sm btn-square min-h-11 min-w-11 shrink-0"
         aria-label="More actions"
         title="More actions"
         aria-expanded={actionsOpen}
@@ -1629,7 +1629,7 @@ persistent "?" carries Markdown help, design-arc D2).
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
-  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-300 starting:-translate-y-2 starting:opacity-0">
+  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
     {flash}
   </div>
 {/if}
@@ -1899,7 +1899,7 @@ persistent "?" carries Markdown help, design-arc D2).
           {/if}
           <button
             type="button"
-            class="btn btn-ghost btn-sm btn-square"
+            class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11"
             disabled={insertDisabled}
             aria-label="Insert image"
             title="Insert image"
@@ -1974,7 +1974,7 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
-            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted">{wordLabel}</span>
+            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted tabular-nums">{wordLabel}</span>
           </li>
         {/snippet}
       </EditorToolbar>
@@ -2034,7 +2034,7 @@ persistent "?" carries Markdown help, design-arc D2).
           <!-- The frame column: centered, sized by the picked device (capped at the pane), with
                the width eased; the admin sheet's prefers-reduced-motion rule squashes the move. -->
           <div
-            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-300"
+            class="cairn-preview-frame mx-auto max-w-full transition-[width] duration-[250ms]"
             style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
           >
             {#if activeDevice.width !== null}
@@ -2049,9 +2049,9 @@ persistent "?" carries Markdown help, design-arc D2).
             {/if}
             <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
               {#if previewFailed}
-                <p class="p-4 text-sm text-muted">The preview could not render this content.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}
-                <p class="p-4 text-sm text-muted">Nothing to preview yet.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
                      scripts and handlers); the empty sandbox is belt and braces on top. The
@@ -2091,7 +2091,7 @@ persistent "?" carries Markdown help, design-arc D2).
         class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
       >
         <span class="flex shrink-0 items-center gap-1.5">
-          <span>{wordLabel}</span>
+          <span class="tabular-nums">{wordLabel}</span>
           <!-- Visually shown but not screen-reader announced: the diagnostics-summary announcer
                already speaks this settled count in its own polite live region, so exposing this
                span too would announce the same information twice (WCAG 4.1.3 speaks to exactly
@@ -2201,7 +2201,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <button
         bind:this={detailsClose}
         type="button"
-        class="btn btn-ghost btn-xs btn-square"
+        class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11"
         aria-label="Close details"
         onclick={closeDetails}
       >
@@ -2333,7 +2333,7 @@ persistent "?" carries Markdown help, design-arc D2).
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
 {#if zen}
-  <div class="cairn-zen-chip fixed right-[1.125rem] top-[0.875rem] z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-[5px] text-xs text-muted shadow-[var(--cairn-shadow)]">
+  <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 text-xs text-muted shadow-[var(--cairn-shadow)]">
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
       {dirty ? 'Unsaved changes' : 'Saved'}

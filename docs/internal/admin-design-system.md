@@ -161,7 +161,7 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
 
 - Surfaces: `base-100` is the panel surface (sidebar, topbar, cards); `base-200` is the app background
   (the content area, recessed); `base-300` is for incidental borders and chips. `base-content` is text.
-- Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.18 293)`). Use it for
+- Accent: `primary` is the violet (light `oklch(52% 0.2 293)`, dark `oklch(68% 0.15 293)`). Use it for
   the active state, the primary action, links-on-hover, the brand. `primary-content` reverses out on it.
 - Secondary text: `--color-muted` (labels, dates, hints) and `--color-subtle` (nav item text). Subtle is
   the stronger of the two. Reference them through the named role utilities `text-muted` / `text-subtle`,
@@ -262,7 +262,7 @@ Recipes:
   belongs to the card below it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). The
   rows are a sortable `<table>` of ONE-LINE rows at the 15px chrome step with `py-2` cells: the title
   (`font-medium`, truncating; weight stays medium because nothing sits under it to out-rank), the date
-  (muted, tabular), the status pill, and the quiet delete (45% ink, full on hover/focus; red lives only
+  (muted, tabular), the status pill, and the quiet delete (60% ink, full on hover/focus; red lives only
   in the confirm dialog). `EntrySummary.summary` stays off the list (the density ruling; it still
   serves the edit page). The status pills are ONE family: shared geometry (`badge badge-xs sm:badge-sm
   border-transparent`) and shared base ink (`bg-base-content/[0.06] text-base-content`), each state

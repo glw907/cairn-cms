@@ -140,15 +140,16 @@ dialog's a11y conventions.
         <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>
         <ul class="menu w-full">
           {#each group.items as target (`${target.concept}/${target.id}`)}
-            <li>
+            <li class:disabled={isSelected(target)}>
               <button
                 type="button"
+                class:cursor-default={isSelected(target)}
                 aria-disabled={isSelected(target)}
                 aria-label={isSelected(target) ? `${target.title} (already selected)` : target.title}
                 onclick={() => pick(target)}
               >
-                <span class="flex flex-col items-start">
-                  <span class="font-medium">{target.title}</span>
+                <span class="flex min-w-0 flex-col items-start">
+                  <span class="w-full truncate font-medium">{target.title}</span>
                   <span class="text-xs text-muted">
                     {#if isSelected(target)}<span class="badge badge-ghost badge-sm mr-1">Selected</span>{/if}
                     {#if target.draft}<span class="badge badge-ghost badge-sm mr-1">Draft</span>{/if}

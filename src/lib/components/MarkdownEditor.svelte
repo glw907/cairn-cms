@@ -499,9 +499,9 @@ through the adapter's render. Swapping the editor stays a one-file change.
           width: '11px',
           height: '11px',
           // Empty at rest; the gutter-cell hover, the folded state, and the caret-active state each
-          // force it on. A 120ms fade in and out, and a 120ms rotate for the folded turn.
+          // force it on. A 150ms fade in and out, and a 150ms rotate for the folded turn.
           opacity: '0',
-          transition: 'opacity 120ms ease, transform 120ms ease',
+          transition: 'opacity 150ms ease, transform 150ms ease',
         },
         // Reveal on gutter-cell hover, on the folded and caret-active states, and on keyboard focus
         // so a focused control shows its glyph, not just the ring.
@@ -571,7 +571,7 @@ through the adapter's render. Swapping the editor stays a one-file change.
         // after the animation. The transition runs as the field clears the class.
         '.cm-cairn-fold-flash': {
           backgroundColor: 'color-mix(in oklab, var(--color-accent) 12%, transparent)',
-          transition: 'background-color 400ms ease',
+          transition: 'background-color 250ms ease',
         },
         // Focus mode's dim ink, on the lines editor-modes marks outside the caret's paragraph.
         // Last on purpose: a dimmed line's spans (markers, tokens, directive labels) all drop to

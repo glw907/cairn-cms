@@ -10,8 +10,11 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   import { cairnFaviconHref } from './cairn-favicon.js';
 
   interface Props {
-    /** The confirm load's data: the token to submit, the site name, an optional error, the CSRF token. */
-    data: { token: string; siteName: string; error: string | null; csrf: string };
+    /** The confirm load's data: the token to submit, the site name, an optional error, the CSRF
+     * token, and the SSR-resolved admin theme (the persisted cookie choice, or the light default;
+     * the cookie carries no auth, so it applies before sign-in too). Optional so a test render
+     * need not supply it; the real shell payload always does. */
+    data: { token: string; siteName: string; error: string | null; csrf: string; theme?: 'cairn-admin' | 'cairn-admin-dark' };
   }
 
   let { data }: Props = $props();
@@ -25,7 +28,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
 
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
-<div data-theme="cairn-admin">
+<div data-theme={data.theme ?? 'cairn-admin'}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 text-center shadow-[var(--cairn-shadow)]">
     <div class="mb-6 flex items-center justify-center gap-2">
@@ -34,7 +37,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
     </div>
 
     {#if data.error || !data.token}
-      <h1 class="mb-2 text-lg font-semibold">This link didn't work</h1>
+      <h1 class="mb-2 text-lg font-semibold">This link didn’t work</h1>
       <div role="alert" class="alert alert-error text-sm">This sign-in link is invalid or expired.</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
     {:else}

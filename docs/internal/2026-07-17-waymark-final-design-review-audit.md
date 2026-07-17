@@ -1,9 +1,9 @@
 # Waymark final design review: the two-track opening audit (2026-07-17)
 
-The pre-beta ladder's step 4, run at the invisible-craft rigor calibration. This document is the
-audit record: method, the state of the template, the verified findings by cluster, the taste forks
-held for Geoff, and the standing-gate candidates. The fix list and verdicts come after Geoff's
-sitting; nothing here has been applied.
+This is step 4 of the pre-beta ladder, run at the invisible-craft rigor calibration. Below: the
+method, the template's state, the findings by cluster, the taste forks held for Geoff, and the
+standing-gate candidates. The fix list and verdicts come after Geoff's sitting; nothing here has
+been applied.
 
 ## Method
 
@@ -29,8 +29,9 @@ routes + `examples/cairn-theme/cairn.css`) re-running the polish rubric's univer
 plus the extensibility-seam pricing and the measured floor; five optical lens agents (Fable, the
 ROADMAP's five lenses) over the labeled renders; adversarial verification per finding (Sonnet
 re-derived mechanical evidence; Fable refuted optical majors). 85 agents, ~5.9M subagent tokens.
-Main-loop eyes-on read of every PLAUSIBLE-verdict major before this record was written; each one
-checked was confirmed.
+Before this record was written, the main loop read the load-bearing PLAUSIBLE-verdict majors with
+its own eyes (the mobile header, the unpinned footer, the calendar stub, the flush caption, the
+icon smudge, the title rag, and the missing hero); each was confirmed.
 
 Tally: 90 findings, 8 refuted in verification, 82 surviving (27 major, 40 minor, 15 polish),
 against ~110 confirmed-right claims. One verifier died on an API server error
@@ -38,21 +39,21 @@ against ~110 confirmed-right claims. One verifier died on an API server error
 
 ## The state of the template
 
-The foundation is genuinely resolved. The confirmed-right column is long and consistent across
+The foundation is resolved. The confirmed-right column is long and consistent across
 all fifteen agents: the chassis spacing scale is a coherent 4/8 ladder and composition.css draws
 every value from it; the fluid type and space scales interpolate real clamps; contrast passes the
 WCAG floor everywhere in both schemes with zero invisible interactive elements; focus rings exist
 on every tab stop; the reading surface's core typography (measure, leading ramp, heading
-hierarchy) holds at all five viewports; the token seam genuinely carries a re-skin (the cairn
+hierarchy) holds at all five viewports; the token seam carries a re-skin (the cairn
 theme and the three retheme-lab redirections all price token-only); the component set renders
 composed in both schemes.
 
-The failures are not scattered polish. They cluster in four structural places, and the review's
-five lenses agree with the mechanical track about where they are.
+The failures cluster in four structural places, and the review's five lenses agree with the
+mechanical track about where they are.
 
 ## Cluster A: unfinished-scaffolding pockets (the too-neutral lens's real hits)
 
-The too-neutral failure mode was never "quiet design"; it is surfaces where design is absent.
+The too-neutral findings all point at surfaces where design is absent, not at quiet design.
 Four independent lenses converged on the same list:
 
 1. **The mobile header is uncomposed.** At 320/390 the chrome wraps into four sparse rows
@@ -79,9 +80,8 @@ Four independent lenses converged on the same list:
 
 ## Cluster B: the measured floor fails
 
-Compelling-by-default must not mean heavy-by-default, and today it does. Against a defensible
-static-blog budget (~150-250KB decoded for a text page), every Waymark page ships ~1MB decoded.
-Root causes, each mechanical and none look-changing:
+Against a defensible static-blog budget (~150-250KB decoded for a text page), every Waymark page
+ships ~1MB decoded. The root causes are each mechanical and none look-changing:
 
 1. **The root layout imports the whole site adapter client-side to read one flag**, pulling the
    full engine + hastscript + the committed media manifest into a 745KB client chunk served on
@@ -124,7 +124,7 @@ the template's static composition is far ahead of its interaction craft.
 
 ## Cluster D: token-seam leaks (the extensibility lens, mechanical arm)
 
-The seam holds overall — the three redirections price token-only — but the audit found the
+The seam holds overall (the three redirections price token-only), but the audit found the
 leaks that would erode it:
 
 - The flagship home route hardcodes a cluster of spacing/typography literals in its scoped
@@ -147,14 +147,14 @@ recognizes `ms`-suffixed literals; every template transition uses `s`-suffixed v
 rule silently misses the whole tree until the regex admits seconds. (2) The achromatic rule
 would flag 12 deliberate hue-free ladder values in theme.css — those need allowlist entries (or
 a scoped exemption for the base ladder), and the spacing rule as written catches 5 of the 8
-real brackets. With the regex fix and a small budget file, the gate holds the family floor.
+real brackets. With the regex fix and a small budget file, the gate can extend to the template
+tree.
 
 ## Refuted in verification (working as intended)
 
 Eight findings died in adversarial verify — among them three color-system claims (the
 verifiers re-derived the token math and the claims overstated), one depth claim, one
-type-characters claim, and three touch/fonts claims. The two-track-plus-refuters shape earned
-its cost again.
+type-characters claim, and three touch/fonts claims.
 
 ## Held for Geoff: the taste forks
 
@@ -187,7 +187,7 @@ the verdicts where a fork needs seen-not-described candidates.
    the public template gets a ~200ms cross-fade on scheme change or inherits the same calm is
    a one-line verdict.
 
-## Standing-gate candidates (bank the durable wins)
+## Standing-gate candidates
 
 - Extend `check:invisible-craft` to the template tree with the seconds-regex fix and the
   allowlist (above).
@@ -204,5 +204,5 @@ the verdicts where a fork needs seen-not-described candidates.
   harness (the standing dev-backend carry-forward); the flagship post's missing hero is NOT
   this (raw external URL, confirmed live).
 - The fixture corpus was committed directly to git, bypassing the editor's tidy pass — the
-  typewriter-punctuation observations in body prose are an honest portrait of migrated
+  typewriter-punctuation observations in body prose are an accurate portrait of migrated
   content, and fork 6 above is the product question they raise.

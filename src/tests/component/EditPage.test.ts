@@ -2620,7 +2620,7 @@ describe('EditPage', () => {
       // unavailable (aria-disabled) and the tooltip points the editor at markdown.
       await expect
         .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can't be edited in the form. Edit it as markdown.");
+        .toBe("This block can’t be edited in the form. Edit it as markdown.");
       expect(editControl(screen)!.getAttribute('aria-disabled')).toBe('true');
       expect(editControl(screen)!.disabled).toBe(false);
     });
@@ -2655,10 +2655,10 @@ describe('EditPage', () => {
       resolvers[1]({ safe: false, reason: 'unknown-attribute' });
       await expect
         .poll(() => editControl(screen)?.getAttribute('aria-label'))
-        .toBe("This block can't be edited in the form. Edit it as markdown.");
+        .toBe("This block can’t be edited in the form. Edit it as markdown.");
       resolvers[0]({ safe: true });
       expect(editControl(screen)?.getAttribute('aria-label')).toBe(
-        "This block can't be edited in the form. Edit it as markdown.",
+        "This block can’t be edited in the form. Edit it as markdown.",
       );
     });
 

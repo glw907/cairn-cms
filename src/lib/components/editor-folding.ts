@@ -155,7 +155,7 @@ function placeholderDOM(view: EditorView, onclick: (event: Event) => void, prepa
   // information for assistive tech that it now carries for sighted authors: with the opener's
   // fence machinery absorbed into the chip, an author using a screen reader has no other way to
   // learn the container's title while it stays folded.
-  const ariaTitle = prepared.title ? `, "${prepared.title}"` : '';
+  const ariaTitle = prepared.title ? `, “${prepared.title}”` : '';
   pill.setAttribute('aria-label', `${ariaName}${ariaTitle}, ${prepared.lines} hidden lines`);
   // The registry's `use` line carries the pill's native tooltip; the opener's own {title="..."}
   // attribute now rides the visible chip text and the aria-label above instead.

@@ -45,6 +45,14 @@ export interface FenceScan {
    *  truth for pairing and no caller re-parses a line the scan already judged.
    */
   roles: ('opener' | 'closer' | null)[];
+  /**
+   * Whether a line sits strictly between a fenced code block's own delimiters (the delimiter
+   *  lines themselves read false). A directive-shaped line in here is a documented example, not
+   *  live machinery: the include and folded-container decorations read this to leave such a line
+   *  as plain source, matching what the real renderer resolves (remark never descends into a code
+   *  block's literal text).
+   */
+  inCode: boolean[];
 }
 
 /**
@@ -59,6 +67,7 @@ export interface FenceScan {
 export function fenceScan(lines: string[]): FenceScan {
   const depths: (number | null)[] = [];
   const roles: ('opener' | 'closer' | null)[] = [];
+  const inCode: boolean[] = [];
   let open = 0;
   // The marker character that opened the current code block, or null outside one. Only a line
   // opening with the same character closes it, so tildes inside a backtick block stay literal.
@@ -66,32 +75,41 @@ export function fenceScan(lines: string[]): FenceScan {
   for (const line of lines) {
     const code = CODE_FENCE.exec(line);
     if (code) {
+      // A line matching the fence pattern with a DIFFERENT marker than the one already open (a
+      // stray ``` written inside a ~~~ block) never toggles codeMarker, so it is literal content,
+      // not a delimiter; only a real open or close event reads inCode false.
+      const realDelimiter = codeMarker === null || code[1][0] === codeMarker;
       if (codeMarker === null) codeMarker = code[1][0];
       else if (code[1][0] === codeMarker) codeMarker = null;
       depths.push(open > 0 ? open : null);
       roles.push(null);
+      inCode.push(!realDelimiter);
       continue;
     }
     if (codeMarker !== null) {
       depths.push(open > 0 ? open : null);
       roles.push(null);
+      inCode.push(true);
       continue;
     }
     const fence = FENCE.exec(line);
     if (!fence) {
       depths.push(open > 0 ? open : null);
       roles.push(null);
+      inCode.push(false);
     } else if (fence[2]) {
       open += 1;
       depths.push(open);
       roles.push('opener');
+      inCode.push(false);
     } else {
       depths.push(Math.max(open, 1));
       roles.push('closer');
       if (open > 0) open -= 1;
+      inCode.push(false);
     }
   }
-  return { depths, roles };
+  return { depths, roles, inCode };
 }
 
 /** The depth half of {@link fenceScan}, for callers that need no roles. */
@@ -311,10 +329,14 @@ export function findInlineDirectives(text: string): { from: number; to: number }
   return out;
 }
 
-// A leaf directive's name: `::name{...}` -> 'name'. A leaf directive opens with exactly two
-// colons, one fewer than FENCE requires, so this reads the leaf form on its own rather than
-// widening FENCE (which would also change what a container opener or closer matches).
-const LEAF_NAME = /^\s{0,3}::([\w-]+)/;
+// A leaf directive, matched the way remark-directive itself requires: two colons, the name, an
+// optional [label] and an optional {attrs} group each landing immediately after the one before
+// (no intervening space, verified against remark-directive: a space before the {attrs} brace
+// defeats the parse), and nothing but trailing whitespace after the last group. This is the same
+// shape LEAF classifies a whole line with, captured (with indices) so a caller can read out the
+// name and the attrs span the grammar actually assigns, rather than the first `{...}` anywhere on
+// the line, which can belong to a bracketed label instead.
+const LEAF_FULL = /^\s{0,3}::([\w-]+)(\[[^\]]*\])?(\{[^}]*\})?\s*$/d;
 
 // The `fragment="id"` attribute value on an include leaf directive line, captured with its
 // indices so includeFragmentTokens can carve the value out of the surrounding {attrs} span.
@@ -326,14 +348,15 @@ const INCLUDE_FRAGMENT_VALUE = /fragment\s*=\s*"([^"]*)"/d;
  *  it stay machinery (`kind: 'mark'`), matching the meaning-over-machinery split
  *  {@link fenceTokens} draws on a container opener. Empty for any other leaf directive (its
  *  attributes carry no single obvious identity token, so brightening every attribute value would
- *  over-light the line) and for a line that is not an `include` leaf directive at all.
+ *  over-light the line) and for a line that is not a well-formed `include` leaf directive: one
+ *  matching {@link LEAF_FULL}'s whole-line shape, the same grammar remark-directive itself
+ *  requires, so a line carrying trailing prose after the closing brace (which remark-directive
+ *  parses as a plain paragraph, never a directive) never chips either.
  */
 export function includeFragmentTokens(line: string): FenceToken[] {
-  if (LEAF_NAME.exec(line)?.[1] !== 'include') return [];
-  const brace = ATTR_BRACE.exec(line);
-  if (!brace) return [];
-  const braceFrom = brace.index;
-  const braceTo = braceFrom + brace[0].length;
+  const leaf = LEAF_FULL.exec(line);
+  if (!leaf?.indices || leaf[1] !== 'include' || !leaf[3]) return [];
+  const [braceFrom, braceTo] = leaf.indices[3]!;
   const value = INCLUDE_FRAGMENT_VALUE.exec(line);
   if (!value?.indices) return [];
   const [valueFrom, valueTo] = value.indices[1]!;
@@ -348,17 +371,17 @@ export function includeFragmentTokens(line: string): FenceToken[] {
 
 /**
  * The `fragment="id"` value on an `::include{fragment="id"}` leaf directive line, or null when the
- *  line is not an include leaf, carries no fragment attribute, or the attribute sits outside the
- *  line's `{attrs}` group. The one source of the id the include chip decoration resolves against
- *  the site's published fragments; mirrors {@link includeFragmentTokens}'s own guard so the two
- *  never disagree on what counts as a resolvable include line.
+ *  line is not a well-formed include leaf (per {@link LEAF_FULL}, the same whole-line shape
+ *  remark-directive itself requires), carries no fragment attribute, or the attribute sits outside
+ *  the line's `{attrs}` group. The one source of the id the include chip decoration resolves
+ *  against the site's published fragments; mirrors {@link includeFragmentTokens}'s own guard so
+ *  the two never disagree on what counts as a resolvable include line, and only ever returns an id
+ *  for a line the real renderer will actually resolve as a directive.
  */
 export function includeFragmentId(line: string): string | null {
-  if (LEAF_NAME.exec(line)?.[1] !== 'include') return null;
-  const brace = ATTR_BRACE.exec(line);
-  if (!brace) return null;
-  const braceFrom = brace.index;
-  const braceTo = braceFrom + brace[0].length;
+  const leaf = LEAF_FULL.exec(line);
+  if (!leaf?.indices || leaf[1] !== 'include' || !leaf[3]) return null;
+  const [braceFrom, braceTo] = leaf.indices[3]!;
   const value = INCLUDE_FRAGMENT_VALUE.exec(line);
   if (!value?.indices) return null;
   const [valueFrom, valueTo] = value.indices[1]!;
@@ -373,12 +396,15 @@ const TITLE_ATTR_VALUE = /(?:^|\s)title\s*=\s*"([^"]*)"/;
 
 /**
  * The `title="..."` attribute on a container opener line (`:::callout{title="Trail alert"}` gives
- *  `"Trail alert"`), or null when the opener carries no title attribute at all. The folded
- *  container chip reads this to add the title segment to its combined label; a container with no
- *  title attribute keeps the plain registry-label chip.
+ *  `"Trail alert"`), or null when the opener carries no title attribute at all. Reads the attrs
+ *  group off {@link FENCE}'s own opener match (group 4) rather than the first `{...}` anywhere on
+ *  the line, so a bracketed `[label]` that happens to contain braces (`[Read {this} first]`) can
+ *  never be mistaken for the attrs group, either dropping a real title or fabricating one from
+ *  label prose. The folded container chip reads this to add the title segment to its combined
+ *  label; a container with no title attribute keeps the plain registry-label chip.
  */
 export function openerTitleAttr(line: string): string | null {
-  const brace = ATTR_BRACE.exec(line)?.[1];
-  if (!brace) return null;
-  return TITLE_ATTR_VALUE.exec(brace)?.[1] ?? null;
+  const m = FENCE.exec(line);
+  if (!m || !m[2] || !m[4]) return null; // an opener only; group 4 is the whole {attrs} brace
+  return TITLE_ATTR_VALUE.exec(m[4].slice(1, -1))?.[1] ?? null;
 }

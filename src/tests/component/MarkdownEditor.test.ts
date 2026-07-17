@@ -837,7 +837,7 @@ describe('MarkdownEditor', () => {
     // opener's fence machinery is gone, replaced by the one chip naming the raw directive, the
     // title, and the hidden-line count. aria-label carries the title too, for parity with sighted
     // authors who now read it only on the chip.
-    expect(pill.getAttribute('aria-label')).toBe('panel section, "Day pass", 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
     expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
     await expect.poll(() => foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
     expect(foldBtn(screen.container)?.getAttribute('aria-label')).toBe('panel section');
@@ -1030,7 +1030,7 @@ describe('MarkdownEditor', () => {
     // The body never rendered open; the pill and the gutter button already read collapsed.
     expect(lineWith(screen.container, 'body one')).toBeFalsy();
     const pill = foldPill(screen.container)!;
-    expect(pill.getAttribute('aria-label')).toBe('panel section, "Day pass", 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
     expect(foldBtn(screen.container)?.getAttribute('aria-expanded')).toBe('false');
     // The fold is view-only: the hidden field still mirrors the full, untouched source.
     expect(hiddenValue(screen.container)).toBe(FOLD_DOC);
@@ -1059,7 +1059,7 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.textContent).toBe('Info Panel · “Day pass” · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, "Day pass", 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('Info Panel section, “Day pass”, 3 hidden lines');
     // The registry's `use` line still rides the pill's native tooltip; the opener's own
     // {title="..."} attribute now rides the visible chip text and the aria-label instead.
     expect(pill.title).toBe('Use to set supporting details apart from the main flow.');
@@ -1077,7 +1077,7 @@ describe('MarkdownEditor', () => {
     await expect.poll(() => foldPill(screen.container)).toBeTruthy();
     const pill = foldPill(screen.container)!;
     expect(pill.textContent).toBe('panel · “Day pass” · 3 lines');
-    expect(pill.getAttribute('aria-label')).toBe('panel section, "Day pass", 3 hidden lines');
+    expect(pill.getAttribute('aria-label')).toBe('panel section, “Day pass”, 3 hidden lines');
     expect(pill.hasAttribute('title')).toBe(false);
   });
 
@@ -1148,6 +1148,37 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
   });
 
+  // Grammar-alignment regression (major finding, invisible-craft pass): a line the real
+  // directive grammar rejects (trailing text after the closing brace) must never chip; the
+  // preview/build pipeline renders it as literal prose, so the editor's chip would otherwise
+  // silently swallow text the author can no longer see.
+  it('leaves a line with trailing text after the closing brace as plain source', async () => {
+    const doc = '::include{fragment="winter-hours"}Outro line.';
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Fence-awareness regression: a documented ::include example inside a fenced code block is the
+  // block's own literal text (remark never resolves a directive inside a code fence), so it must
+  // read as plain source, matching every sibling decoration in this editor.
+  it('leaves an include directive inside a fenced code block as plain source', async () => {
+    const doc = ['before', '```', '::include{fragment="winter-hours"}', '```', 'after'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', fragmentTitles: { 'winter-hours': 'Winter hours' } });
+    await expect.poll(() => lineWith(screen.container, 'fragment=')).toBeTruthy();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Object.prototype guard regression: an author-typed fragment id absent from the published
+  // lookup must fall back to the raw id, never resolve a JS internal off the inherited chain.
+  it('falls back to the raw id for a fragment id that collides with an inherited Object.prototype key', async () => {
+    const screen = render(MarkdownEditor, { value: '::include{fragment="constructor"}', name: 'body', fragmentTitles: {} });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    expect(screen.container.querySelector('.cm-cairn-include-chip')?.textContent).toBe('Include: constructor');
+  });
+
   it('relabels the chip when fragmentTitles changes reactively', async () => {
     const screen = render(MarkdownEditor, {
       value: '::include{fragment="winter-hours"}',
@@ -1175,14 +1206,39 @@ describe('MarkdownEditor', () => {
       fragmentTitles: { 'winter-hours': 'Winter hours' },
     });
     await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
-    // Land the caret at the start of the line after the chip, then step back onto its far edge:
-    // one more backspace from there removes the whole atomic line in a single transaction.
-    await userEvent.click(lineWith(screen.container, 'Outro line.')!);
+    // Click the chip, then land the caret at the atomic range's own far edge (End of the include
+    // line): a single backspace from there removes the whole atomic unit in one transaction,
+    // restoring an empty line where the include stood.
+    await userEvent.click(screen.container.querySelector<HTMLElement>('.cm-cairn-include-chip')!);
     await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
-    await userEvent.keyboard('{Home}{Backspace}{Backspace}');
-    await expect.poll(() => hiddenValue(screen.container)).toBe('Intro line.\nOutro line.');
+    await userEvent.keyboard('{End}{Backspace}');
+    await expect.poll(() => hiddenValue(screen.container)).toBe('Intro line.\n\nOutro line.');
     await userEvent.keyboard('{Control>}z{/Control}');
     await expect.poll(() => hiddenValue(screen.container)).toBe(doc);
+  });
+
+  // Grammar-alignment regression (major finding, invisible-craft pass): the OLD unanchored
+  // grammar let a Backspace at the joined boundary below the chip silently swallow the joined
+  // text (the grown line still "resolved" without an end-of-line check, so the chip re-covered
+  // it and the paragraph vanished from view while remaining in the document). With the grammar
+  // fixed, the same edit correctly de-atomicizes the instant the line is no longer well-formed,
+  // so nothing is ever hidden: the chip drops away and the joined text stays visible.
+  it('de-atomicizes the instant a join makes the line no longer a resolvable directive, never swallowing text', async () => {
+    const doc = 'Intro line.\n::include{fragment="winter-hours"}\nOutro line.';
+    const screen = render(MarkdownEditor, {
+      value: doc,
+      name: 'body',
+      fragmentTitles: { 'winter-hours': 'Winter hours' },
+    });
+    await expect.poll(() => screen.container.querySelector('.cm-cairn-include-chip')).not.toBeNull();
+    await userEvent.click(lineWith(screen.container, 'Outro line.')!);
+    await expect.poll(() => document.activeElement).toBe(screen.container.querySelector('.cm-content'));
+    await userEvent.keyboard('{Home}{Backspace}');
+    await expect
+      .poll(() => hiddenValue(screen.container))
+      .toBe('Intro line.\n::include{fragment="winter-hours"}Outro line.');
+    expect(screen.container.querySelector('.cm-cairn-include-chip')).toBeNull();
+    expect(lineWith(screen.container, 'Outro line.')).toBeTruthy();
   });
 
   it('reports the component container at the caret and dedupes within a block', async () => {

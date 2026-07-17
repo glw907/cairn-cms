@@ -183,10 +183,16 @@ Defined per theme root in `cairn-admin.css`: `[data-theme='cairn-admin']` (light
   vocabulary.
 - Quiet-surface defaults on both theme roots (invisible-craft pass, 2026-07-17):
   `font-synthesis: none` (every requested weight and style has a real face; nothing may faux-bold
-  or faux-italic), `scrollbar-width: thin` with `scrollbar-color` from the neutrals, and a
-  transparent `-webkit-tap-highlight-color` (the styled active states carry the touch
-  acknowledgment). A checkbox-in-label row gets hit-slop from one scoped `:has()` rule
-  (padding grown, margin refunded), so its touch target clears ~44px with zero flow change.
+  or faux-italic), `scrollbar-width: thin` with a `scrollbar-color` thumb of
+  `color-mix(in oklab, var(--color-base-content) 55%, transparent)` (a flat `--color-base-300`
+  thumb measured only ~1.3:1 against its surface once the UA default is overridden; this mix
+  measures 3.59:1 light / 4.98:1 dark against base-100, both above the 3:1 non-text floor), and a
+  faint `-webkit-tap-highlight-color` press wash,
+  `color-mix(in oklab, var(--color-base-content) 10%, transparent)` (not a bare removal: a
+  segmented-control segment or a plain text-link button carries no styled `:active` state, so the
+  tap still needs its own acknowledgment). A checkbox-in-label row gets hit-slop from one scoped
+  `:has()` rule (padding grown, margin refunded), so its touch target clears ~44px with zero flow
+  change.
 - The dark active-nav pair (`text-primary` on `bg-primary/10`) sits at ~4.5:1, near the floor. Do not
   lower dark `--color-primary` lightness or the `/10` opacity without re-checking contrast.
 - `--cairn-warning-ink` is the on-surface warning TEXT ink, distinct from `--color-warning`, which is

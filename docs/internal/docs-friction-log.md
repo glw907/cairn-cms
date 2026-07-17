@@ -46,3 +46,10 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   wiring `check:invisible-craft`, 2026-07-17). Both exist as npm scripts but no workflow runs
   them, so their budgets only hold when someone runs them by hand. Decide whether each joins
   `test.yml` the way `check:cm-internals` and the new gate do.
+- **The media chip shares the fence gap the include chip just closed** (developer; the pass-end
+  review, 2026-07-17). `editor-media.ts` chips a `media:` token written inside a fenced code
+  block (a documented example) the same way `editor-include.ts` did before its fix; `fenceScan`
+  now carries `inCode` per line, so the gate is one condition away. `figureRoleAtLine` in
+  `markdown-directives.ts` also still reads the first `{...}` group anywhere on the line, the
+  unanchored-brace bug `openerTitleAttr` was cured of. Both untouched by the fold-in on scope
+  discipline; fix together next time the media decorations are open.

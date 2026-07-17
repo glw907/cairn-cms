@@ -74,7 +74,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
           <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" />
           <p class="text-[0.8125rem] leading-relaxed text-subtle">
-            No link after a minute or two? Check your spam folder first. If it still hasn't arrived, the
+            No link after a minute or two? Check your spam folder first. If it still hasn’t arrived, the
             address may not match the one your site owner added.
           </p>
         </div>
@@ -92,7 +92,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       <p class="mt-1 mb-5 text-center text-sm text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       {#if form?.status === 'send_error'}
         <div role="alert" class="alert alert-warning mb-3 text-sm">
-          We're having trouble sending sign-in links right now. Please contact the site owner.
+          We’re having trouble sending sign-in links right now. Please contact the site owner.
         </div>
       {:else if form?.status === 'throttled'}
         <div role="status" class="alert mb-3 text-sm">

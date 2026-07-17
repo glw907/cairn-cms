@@ -546,7 +546,7 @@ home), diffable and shared across editors.
       <!-- THE "NOT HERE YET" NOTE: honest, non-interactive -->
       <div class="mb-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-content/[0.015] p-4">
         <div class="flex items-center gap-2 text-[0.8125rem] font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
-        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren't offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they're reliable enough to trust.</div>
+        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren’t offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they’re reliable enough to trust.</div>
         <ul class="mt-2 flex flex-col gap-1.5">
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
           <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
@@ -566,15 +566,15 @@ home), diffable and shared across editors.
          below: both deploy-time steps are done, so this names the actual problem (truthful
          visibility applied to the settings screen, not just the edit-page Tidy button) instead of
          re-showing an unchecked "add a key" checklist for a key that is already there. -->
-    <div role="region" aria-label="Tidy's key isn't working" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+    <div role="region" aria-label="Tidy’s key isn’t working" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <!-- A broken key needs the developer's attention; it is not a destructive confirmation, so
            it reads amber (needs-attention), never the reserved destructive red (the design arc's
            accent reservation, 2026-07-15). -->
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
-      <div class="text-xl font-bold tracking-tight">Tidy's key isn't working</div>
+      <div class="text-xl font-bold tracking-tight">Tidy’s key isn’t working</div>
       <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
-        Tidy is turned on and a key is set, but Anthropic isn't accepting it. It may have been
-        revoked or was never valid. Until it's fixed, editors won't see the Tidy control at all.
+        Tidy is turned on and a key is set, but Anthropic isn’t accepting it. It may have been
+        revoked or was never valid. Until it’s fixed, editors won’t see the Tidy control at all.
       </div>
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
@@ -583,7 +583,7 @@ home), diffable and shared across editors.
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
           <span class="flex-none text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
-          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn't been revoked or rotated elsewhere.</span></span>
+          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">

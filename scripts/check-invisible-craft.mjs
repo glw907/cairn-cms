@@ -88,7 +88,9 @@ const SPACING_BRACKET =
   /\b(?:gap-x|gap-y|gap|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|top|bottom|left|right|inset)-\[[^\]]*\]/g;
 
 /**
- * Every arbitrary-value spacing bracket in a `.svelte` markup source.
+ * Every arbitrary-value spacing bracket in a (comment-stripped) `.svelte` markup source. A
+ * comment naming a retired or example bracket (documenting why it was removed, say) must never
+ * itself count as a hit, the same posture durationHits and achromaticColorHits already take.
  * @param {string} source
  * @returns {{ line: number, token: string }[]}
  */
@@ -163,7 +165,7 @@ export function evaluate(budget) {
 
   let spacingChecked = 0;
   for (const { path, source } of componentFiles((n) => n.endsWith('.svelte'))) {
-    for (const hit of spacingBracketHits(source)) {
+    for (const hit of spacingBracketHits(stripComments(source))) {
       spacingChecked++;
       if (isAllowed(budget.spacingBrackets, path, hit.token)) continue;
       failures.push(`unallowlisted spacing bracket: ${hit.token} in ${path}:${hit.line}`);

@@ -22,7 +22,8 @@ import {
   type ViewUpdate,
 } from '@codemirror/view';
 import { RangeSetBuilder, type Extension, type Range } from '@codemirror/state';
-import { includeFragmentId } from './markdown-directives.js';
+import { fenceScan, includeFragmentId } from './markdown-directives.js';
+import { docLines } from './editor-doc-lines.js';
 
 /** The published fragment titles an include chip resolves against, keyed by fragment id. */
 export type FragmentTitles = Record<string, string>;
@@ -78,19 +79,39 @@ class IncludeChipWidget extends WidgetType {
 }
 
 /**
+ * The published title for a fragment id, or null when the lookup carries no entry for it. Reads
+ *  only the lookup's own keys ({@link Object.hasOwn}), never the inherited `Object.prototype`
+ *  chain: `titles` is a plain object built from author-typed fragment ids, so an id like
+ *  `"constructor"` or `"toString"` must fall back to the raw id rather than resolving a JS
+ *  internal the bracket lookup would otherwise hit.
+ */
+function resolveTitle(titles: FragmentTitles, fragmentId: string): string | null {
+  if (!Object.hasOwn(titles, fragmentId)) return null;
+  const title = titles[fragmentId];
+  return typeof title === 'string' ? title : null;
+}
+
+/**
  * Every resolved include line across the editor's visible ranges, in document order. A line
- *  resolves when it carries a `fragment="id"` value {@link includeFragmentId} can read; an include
- *  leaf directive with no fragment attribute (or a malformed one) is left as plain source, matching
- *  the media decoration's own "malformed token stays plain source" precedent.
+ *  resolves when it carries a `fragment="id"` value {@link includeFragmentId} can read AND sits
+ *  outside a fenced code block: a documented `::include{...}` example inside a code fence is the
+ *  block's own literal text, never a live directive the renderer resolves, so it stays plain
+ *  source like every sibling decoration in this editor. An include leaf directive with no fragment
+ *  attribute (or a malformed one) is likewise left as plain source, matching the media decoration's
+ *  own "malformed token stays plain source" precedent.
  */
 function visibleMatches(view: EditorView, titles: FragmentTitles): IncludeMatch[] {
+  const lines = docLines(view);
+  const scan = fenceScan(lines);
   const out: IncludeMatch[] = [];
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
-      const fragmentId = includeFragmentId(line.text);
-      if (fragmentId) {
-        out.push({ from: line.from, to: line.to, fragmentId, title: titles[fragmentId] ?? null });
+      if (!scan.inCode[line.number - 1]) {
+        const fragmentId = includeFragmentId(line.text);
+        if (fragmentId) {
+          out.push({ from: line.from, to: line.to, fragmentId, title: resolveTitle(titles, fragmentId) });
+        }
       }
       pos = line.to + 1;
     }

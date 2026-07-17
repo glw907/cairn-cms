@@ -372,7 +372,7 @@ must never make, so no such count exists.
                 type="button"
                 class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'kept'
-                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
+                  ? 'bg-base-content/[0.07] text-base-content font-semibold ring-1 ring-inset ring-base-content/20'
                   : 'text-muted hover:bg-base-content/[0.06]'}"
                 aria-pressed={decided === 'kept'}
                 onclick={() => acceptHunk(h)}
@@ -383,7 +383,7 @@ must never make, so no such count exists.
                 type="button"
                 class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {decided ===
                 'rejected'
-                  ? 'bg-base-content/[0.07] text-base-content font-semibold'
+                  ? 'bg-base-content/[0.07] text-base-content font-semibold ring-1 ring-inset ring-base-content/20'
                   : 'text-muted hover:bg-base-content/[0.06]'}"
                 aria-pressed={decided === 'rejected'}
                 onclick={() => rejectHunk(h)}

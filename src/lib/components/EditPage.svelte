@@ -485,14 +485,15 @@ persistent "?" carries Markdown help, design-arc D2).
   // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
   // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
   // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
-  // pressed (design arc 2026-07-15).
+  // pressed (design arc 2026-07-15). They also carry a 1px inset hairline in the same neutral
+  // ink as the wash, the non-color, non-weight pressed cue that matches segmentTintClass.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted hover:bg-base-content/[0.06]'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold ring-1 ring-inset ring-base-content/20' : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold' : 'text-muted'}`;
+    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? 'bg-base-content/[0.07] text-base-content font-semibold tracking-small-semibold ring-1 ring-inset ring-base-content/20' : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's

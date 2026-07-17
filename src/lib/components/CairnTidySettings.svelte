@@ -344,23 +344,30 @@ home), diffable and shared across editors.
         <div class="mt-0.5 text-xs leading-relaxed text-muted">
           Your developer turned tidy on and chose how it runs. You cannot change these here.
         </div>
+        <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
+             inline before the value at a fixed column width, today's composition. -->
         <div class="mt-2.5 flex flex-col gap-1.5">
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
             <span>On for this site</span>
           </div>
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
             <span>
               {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
               {:else}Set, and kept on the server<span class="text-muted"> &middot; could not verify it just now</span>
               {/if}
             </span>
           </div>
-          <div class="flex items-baseline gap-2 text-[0.8125rem]">
-            <span class="inline-flex min-w-[8.5rem] flex-none items-center gap-1.5 font-medium text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
+          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+            <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
             <span>{data.modelLabel} <span class="text-muted">&middot; the careful default for a light copy-edit</span></span>
           </div>
+        </div>
+        <!-- Below sm the "Set by your developer" pill drops out of the head row (its sm+ copy
+             just below is hidden here) and renders on its own line under the grid above. -->
+        <div class="mt-2 sm:hidden">
+          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
         </div>
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
@@ -369,7 +376,8 @@ home), diffable and shared across editors.
           </div>
         </div>
       </div>
-      <span class="mt-0.5 inline-flex flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+      <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead. -->
+      <span class="mt-0.5 hidden flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted sm:inline-flex"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
     </div>
 
     <!-- THE GENERATED SUMMARY LINE, inside the live region. Rendered unconditionally so it can

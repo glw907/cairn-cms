@@ -381,7 +381,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                 {#if formIncomplete}
                   <!-- The skeleton: never a fabricated finished block. The empty required regions are
                        called out by name so the editor knows exactly what the preview still needs. -->
-                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
+                  <!-- rounded not rounded-box: nested at this panel's p-3 (12px) inset inside the
+                       outer rounded-box (1rem) panel, so the inner radius is 1rem minus 12px. -->
+                  <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
                     <p class="text-sm font-medium">Fill the required fields to preview this.</p>
                     <p class="flex flex-wrap justify-center gap-1.5 text-xs">
                       {#each emptyRequired as label (label)}
@@ -391,12 +393,12 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   </div>
                 {:else if previewState === 'failed'}
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
-                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded-box border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
+                  <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
                     <p class="text-sm font-semibold">Preview could not render</p>
                     <p class="text-xs text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
-                  <div class="flex min-h-64 flex-1 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+                  <div class="flex min-h-64 flex-1 overflow-hidden rounded border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
                     <iframe sandbox="" title="Component preview" srcdoc={previewDoc} class="block w-full flex-1"></iframe>
                   </div>
                 {/if}

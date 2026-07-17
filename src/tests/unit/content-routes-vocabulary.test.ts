@@ -218,6 +218,20 @@ describe('vocabularySave', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('fails 400 with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+    // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
+    // file fails to parse before the delete-gate check, so the action must return a fail(400)
+    // envelope, not the generic 500 an uncaught throw would produce.
+    const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n', [MANIFEST_PATH]: SEED_MANIFEST } });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const posted = JSON.stringify([{ value: 'rust', label: 'Rust' }]);
+    const result = await routes.vocabularySave(saveEvent(posted) as never);
+    expect(result).toMatchObject({ status: 400 });
+    expect((result as unknown as { data: { error: string } }).data.error).toMatch(/unrecognized key "weird"/);
+    expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
+  });
+
   it('reports a head-moved conflict as a reload prompt without overwriting', async () => {
     // Serve the YAML and the manifest on raw reads, an empty branch list, but flip the ref head on the
     // second read so the head-guarded commit raises a conflict the save maps to the reload prompt.

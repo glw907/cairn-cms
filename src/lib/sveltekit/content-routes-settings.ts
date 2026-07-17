@@ -1,7 +1,7 @@
 // cairn-cms: the tidy settings screen and the tag-vocabulary admin screen, both of which
 // read-modify-commit the same committed site-config YAML. createSettingsActions closes over the
 // shared ContentRoutesContext (content-routes-context.ts) built once by createContentRoutes.
-import { redirect, error } from '@sveltejs/kit';
+import { redirect, error, fail } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import {
   DEFAULT_TIDY_MODEL,
@@ -13,6 +13,7 @@ import {
   extractVocabulary,
   setVocabulary,
   validateVocabulary,
+  SiteConfigError,
 } from '../nav/site-config.js';
 import type { TidyConventions, VocabularyEntry } from '../nav/site-config.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
@@ -90,6 +91,15 @@ export interface VocabularyLoadData {
   unlisted: { value: string; count: number }[];
   /** A redirected save's validation error, or an unexpected action failure's bounce, read from `?error=`. */
   error: string | null;
+}
+
+/**
+ * A save refused because the committed site config fails to parse: `fail(400)` carrying the
+ *  parser's own actionable boundary message. Module-internal: the settings and vocabulary screens
+ *  read the envelope's `error` string loosely, so no other module names this type.
+ */
+interface SiteConfigSaveFailure {
+  error: string;
 }
 
 /**
@@ -197,7 +207,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSave(event: ContentEvent): Promise<never> {
+  async function settingsSave(event: ContentEvent): Promise<ReturnType<typeof fail>> {
     const editor = requireEditor(event);
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
     // surface to commit), the server half of the truthful gate.
@@ -222,7 +232,19 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
     const raw = await backend.readFile(path, backend.defaultBranch);
     if (raw === null) throw error(404, 'Site config not found');
     // Parse first so a malformed file fails before the write rather than committing onto a broken base.
-    parseSiteConfig(raw);
+    // A SiteConfigError here is an operator fault (a misplaced or unrecognized key), not an editor
+    // mistake, so it gets the parser's own actionable fail(400) rather than the generic 500 an
+    // uncaught throw would produce; vocabularyLoad meets the same fault the same way.
+    try {
+      parseSiteConfig(raw);
+    } catch (err) {
+      if (!(err instanceof SiteConfigError)) throw err;
+      log.error('config.invalid', {
+        conditionId: 'config.site-config-invalid',
+        error: String(err),
+      });
+      return fail(400, { error: err.message } satisfies SiteConfigSaveFailure);
+    }
 
     const commitFields = { concept: 'settings', id: 'tidy', editor: editor.email };
     try {
@@ -314,7 +336,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySave(event: ContentEvent): Promise<never> {
+  async function vocabularySave(event: ContentEvent): Promise<ReturnType<typeof fail>> {
     const editor = requireEditor(event);
 
     const form = await event.request.formData();
@@ -338,7 +360,20 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
 
     // The delete gate: any value in the current vocabulary but absent from the posted one is being
     // removed, and a removed value still in use anywhere the strict index reads must block the save.
-    const current = extractVocabulary(parseSiteConfig(raw));
+    // A SiteConfigError here is an operator fault, not an editor mistake, so it gets the parser's own
+    // actionable fail(400) rather than the generic 500 an uncaught throw would produce; vocabularyLoad
+    // meets the same fault the same way.
+    let current: VocabularyEntry[];
+    try {
+      current = extractVocabulary(parseSiteConfig(raw));
+    } catch (err) {
+      if (!(err instanceof SiteConfigError)) throw err;
+      log.error('config.invalid', {
+        conditionId: 'config.site-config-invalid',
+        error: String(err),
+      });
+      return fail(400, { error: err.message } satisfies SiteConfigSaveFailure);
+    }
     const postedValues = new Set(posted.map((entry) => entry.value));
     const removed = current.filter((entry) => !postedValues.has(entry.value)).map((entry) => entry.value);
     if (removed.length > 0) {

@@ -143,6 +143,19 @@ describe('settingsSave', () => {
     const routes = createContentRoutes(runtime());
     await expect(routes.settingsSave(saveEvent('{"fixes":true}') as never)).rejects.toMatchObject({ status: 404 });
   });
+
+  it('fails 400 with the parser\'s own message on a malformed committed config, rather than throwing', async () => {
+    // An unrecognized top-level key is the documented way to trigger SiteConfigError. The committed
+    // file fails to parse before the write, so the action must return a fail(400) envelope, not the
+    // generic 500 an uncaught throw would produce.
+    const gh = new GithubDouble({ main: { [CONFIG_PATH]: 'siteName: S\nweird: true\n' } });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const result = await routes.settingsSave(saveEvent('{"fixes":true}') as never);
+    expect(result).toMatchObject({ status: 400 });
+    expect((result as unknown as { data: { error: string } }).data.error).toMatch(/unrecognized key "weird"/);
+    expect(gh.calls.some((c) => c.method === 'POST' && c.url.endsWith('/git/commits'))).toBe(false);
+  });
 });
 
 describe('settingsLoad', () => {

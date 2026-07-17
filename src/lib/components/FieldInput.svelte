@@ -82,6 +82,46 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     return v == null ? '' : String(v);
   }
 
+  // Turn the form name into a safe id token. A container caller passes a dotted path
+  // (`${parent}.${index}`, `${parent}.${leafKey}`), and a dot survives fine in the id attribute
+  // itself but this keeps the id free of anything but letters, digits, underscore, and hyphen.
+  function hintId(rawName: string): string {
+    return rawName.replace(/[^A-Za-z0-9_-]+/g, '-');
+  }
+  const hintBase = $derived(hintId(name));
+
+  // The closed taxonomy picker's checkboxes, for the required group's honest validity signal.
+  let multiselectFieldset = $state<HTMLFieldSetElement | null>(null);
+  const closedMultiselectRequired = $derived(
+    field.type === 'multiselect' && isClosedMultiselect(field)
+      ? ((field as NamedField & MultiselectField).required ?? false)
+      : false,
+  );
+
+  // Native `required` on every checkbox in a closed multiselect would lie ("check every box").
+  // This sets a custom validity message on the group's first checkbox by hand instead, so the
+  // browser's own invalid report (and EditPage's capture-phase reveal) fires exactly like every
+  // other required arm. It runs on every group change, not just a check, so unchecking the only
+  // checked box re-arms the message instead of leaving a valid group that has none checked.
+  function updateMultiselectValidity() {
+    if (!multiselectFieldset) return;
+    const boxes = Array.from(multiselectFieldset.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    const first = boxes[0];
+    if (!first) return;
+    if (!closedMultiselectRequired) {
+      first.setCustomValidity('');
+      return;
+    }
+    const anyChecked = boxes.some((box) => box.checked);
+    first.setCustomValidity(anyChecked ? '' : 'Choose at least one.');
+  }
+
+  // Set the initial validity once the fieldset mounts, so a required group with nothing checked
+  // is already invalid before the author touches it, not only after a first change.
+  $effect(() => {
+    if (multiselectFieldset) updateMultiselectValidity();
+  });
+
   // The HTML input type for a plain single-line text input arm (url, email, datetime, and the text
   // fallback). datetime maps to the datetime-local control; everything else carries no type attribute
   // so the browser defaults to a text input.
@@ -114,9 +154,9 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const f = field as NamedField & TextareaField}
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{f.label}</span>
-    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
+    <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
-      {@render fieldHint(f.name, f.help)}
+      {@render fieldHint(hintBase, f.help)}
     {/if}
   </label>
 {:else if field.type === 'number'}
@@ -128,7 +168,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       type="number"
       {name}
       aria-label={f.label}
-      aria-describedby={f.help ? `${f.name}-hint` : undefined}
+      aria-describedby={f.help ? `${hintBase}-hint` : undefined}
       min={f.min}
       max={f.max}
       step={f.integer ? 1 : undefined}
@@ -136,14 +176,14 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       required={f.required}
     />
     {#if f.help}
-      {@render fieldHint(f.name, f.help)}
+      {@render fieldHint(hintBase, f.help)}
     {/if}
   </label>
 {:else if field.type === 'select'}
   {@const f = field as NamedField & SelectField}
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{f.label}</span>
-    <select class="select select-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${f.name}-hint` : undefined} required={f.required}>
+    <select class="select select-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} required={f.required}>
       <!-- A leading empty option submits '' (the key is dropped on save); a required select
            leaves it unselected so an unset value fails the required check with a clear message. -->
       <option value="">&mdash; none &mdash;</option>
@@ -152,7 +192,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       {/each}
     </select>
     {#if f.help}
-      {@render fieldHint(f.name, f.help)}
+      {@render fieldHint(hintBase, f.help)}
     {/if}
   </label>
 {:else if field.type === 'date'}
@@ -160,26 +200,31 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     <span class="text-sm font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
-    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${field.name}-hint`} value={str(frontmatter[field.name])} required={field.required} />
-    {@render fieldHint(field.name, field.help || DATE_PUBLISH_HINT)}
+    <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} />
+    {@render fieldHint(hintBase, field.help || DATE_PUBLISH_HINT)}
   </label>
 {:else if field.type === 'boolean'}
   <div class="flex flex-col gap-1">
     <label class="label cursor-pointer justify-start gap-2">
-      <input class="checkbox checkbox-sm" type="checkbox" {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} checked={frontmatter[field.name] === true} />
+      <input class="checkbox checkbox-sm" type="checkbox" {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} checked={frontmatter[field.name] === true} />
       <span class="text-sm">{field.label}</span>
     </label>
     {#if field.help}
-      {@render fieldHint(field.name, field.help)}
+      {@render fieldHint(hintBase, field.help)}
     {/if}
   </div>
 {:else if field.type === 'multiselect' && isClosedMultiselect(field)}
   {@const f = field as NamedField & MultiselectField & { options: readonly string[] }}
   {@const selected = (frontmatter[f.name] ?? []) as string[]}
-  <fieldset class="fieldset" aria-describedby={f.help ? `${f.name}-hint` : undefined}>
+  <fieldset
+    bind:this={multiselectFieldset}
+    class="fieldset"
+    aria-describedby={f.help ? `${hintBase}-hint` : undefined}
+    onchange={updateMultiselectValidity}
+  >
     <legend class="fieldset-legend">{f.label}</legend>
     {#if f.help}
-      {@render fieldHint(f.name, f.help)}
+      {@render fieldHint(hintBase, f.help)}
     {/if}
     <div class="flex flex-wrap gap-2">
       {#each f.options as option (option)}
@@ -212,13 +257,13 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       class="input input-sm"
       {name}
       aria-label={f.label}
-      aria-describedby={f.help ? `${f.name}-hint` : undefined}
+      aria-describedby={f.help ? `${hintBase}-hint` : undefined}
       placeholder={f.placeholder ?? (f.help ? undefined : 'Separate values with commas')}
       value={tagValue}
       required={f.required}
     />
     {#if f.help}
-      {@render fieldHint(f.name, f.help)}
+      {@render fieldHint(hintBase, f.help)}
     {/if}
   </label>
 {:else if field.type === 'image'}
@@ -252,7 +297,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     <IconPicker
       {icons}
       label={field.label}
-      describedby={field.help ? `${field.name}-hint` : undefined}
+      describedby={field.help ? `${hintBase}-hint` : undefined}
       value={typeof frontmatter[field.name] === 'string' ? (frontmatter[field.name] as string) : ''}
       required={field.required ?? false}
       onChange={(glyph) => {
@@ -261,7 +306,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
       }}
     />
     {#if field.help}
-      {@render fieldHint(field.name, field.help)}
+      {@render fieldHint(hintBase, field.help)}
     {/if}
   </div>
 {:else}
@@ -269,9 +314,9 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
        one shape and differ only in the input type inputType() resolves. -->
   <label class="flex flex-col gap-1">
     <span class="text-sm font-medium">{field.label}</span>
-    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${field.name}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
+    <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
     {#if field.help}
-      {@render fieldHint(field.name, field.help)}
+      {@render fieldHint(hintBase, field.help)}
     {/if}
   </label>
 {/if}

@@ -36,6 +36,26 @@ describe('FieldInput name-prefix contract', () => {
   });
 });
 
+describe('FieldInput hint id uniqueness across a shared local name', () => {
+  it('keys the hint id off the prefixed name, not the leaf field name, so two rows never collide', async () => {
+    const field: NamedField = { type: 'text', name: '_value', label: 'Value', help: 'A hint.' };
+    const rowOne = render(FieldInput, { field, name: 'gallery.0', frontmatter: { _value: 'a' }, ...shared() });
+    const rowTwo = render(FieldInput, { field, name: 'gallery.1', frontmatter: { _value: 'b' }, ...shared() });
+
+    const inputOne = document.querySelector<HTMLInputElement>('input[name="gallery.0"]')!;
+    const inputTwo = document.querySelector<HTMLInputElement>('input[name="gallery.1"]')!;
+    const describedByOne = inputOne.getAttribute('aria-describedby')!;
+    const describedByTwo = inputTwo.getAttribute('aria-describedby')!;
+
+    expect(describedByOne).not.toBe(describedByTwo);
+    expect(document.getElementById(describedByOne)?.textContent?.trim()).toBe('A hint.');
+    expect(document.getElementById(describedByTwo)?.textContent?.trim()).toBe('A hint.');
+
+    await rowOne.unmount();
+    await rowTwo.unmount();
+  });
+});
+
 describe('FieldInput required attribute', () => {
   it('renders required on a required textarea', async () => {
     const field: NamedField = { type: 'textarea', name: 'summary', label: 'Summary', required: true };
@@ -70,6 +90,54 @@ describe('FieldInput required attribute', () => {
     render(FieldInput, { field, frontmatter: {}, ...shared() });
     const input = document.querySelector<HTMLInputElement>('input[name="tags"]');
     expect(input?.required).toBe(true);
+  });
+});
+
+describe('FieldInput closed-multiselect required signal', () => {
+  // A closed taxonomy picker offers no honest native `required`: checking every box would lie.
+  // The arm sets a custom validity message by hand instead, so the browser's own invalid report
+  // still fires, the same as every other required arm.
+  const field: NamedField = {
+    type: 'multiselect',
+    name: 'tags',
+    label: 'Tags',
+    options: ['a', 'b'],
+    creatable: false,
+    required: true,
+  } as NamedField;
+
+  it('is invalid with a custom message when the required group has no box checked', async () => {
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
+    expect(boxes.length).toBe(2);
+    let invalidFired = false;
+    boxes[0].addEventListener('invalid', () => {
+      invalidFired = true;
+    });
+    expect(boxes[0].checkValidity()).toBe(false);
+    expect(boxes[0].validationMessage).not.toBe('');
+    expect(invalidFired).toBe(true);
+  });
+
+  it('clears the custom validity the instant a box is checked, and re-sets it when unchecked', async () => {
+    render(FieldInput, { field, frontmatter: {}, ...shared() });
+    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
+    boxes[1].checked = true;
+    boxes[1].dispatchEvent(new Event('change', { bubbles: true }));
+    expect(boxes[0].validationMessage).toBe('');
+    expect(boxes[0].checkValidity()).toBe(true);
+    // A stale message would block submit forever; unchecking must re-arm it, not leave it clear.
+    boxes[1].checked = false;
+    boxes[1].dispatchEvent(new Event('change', { bubbles: true }));
+    expect(boxes[0].validationMessage).not.toBe('');
+    expect(boxes[0].checkValidity()).toBe(false);
+  });
+
+  it('never sets a custom validity message on an optional closed multiselect', async () => {
+    const optional: NamedField = { ...field, required: false } as NamedField;
+    render(FieldInput, { field: optional, frontmatter: {}, ...shared() });
+    const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"][name="tags"]');
+    expect(boxes[0].checkValidity()).toBe(true);
   });
 });
 

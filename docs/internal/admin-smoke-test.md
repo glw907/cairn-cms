@@ -121,3 +121,119 @@ header is `Cookie: cairn_session=<id>`. Use the form that matches the Worker you
 - This smokes the package behavior through the site shims. Because the two sites' `admin/**`
   routes are byte-identical shims (the F2 invariant), a clean run on one site plus a build and
   type-check on the other is strong; running the checklist on both is the thorough form.
+
+## Appendix: Media actions
+
+The Media Library's orphan scan, purge, and bulk delete
+(`src/lib/sveltekit/content-routes-media.ts`: `mediaOrphanScanAction`, `mediaPurgeOrphansAction`,
+`mediaBulkDeleteAction`) are SvelteKit form actions mounted on `/admin/media`, not plain GET
+pages, so smoking them needs the CSRF double-submit pairing on top of the session cookie minted
+above. Run these against throwaway assets: a raw R2 object seeded directly (bypassing the app)
+for the scan and purge, and a disposable test image uploaded through the admin UI for the bulk
+delete. Never point the purge at a real asset.
+
+1. **Mint the CSRF pairing.** Every unsafe (POST) admin request checks a cookie/header (or
+   cookie/field) pair, the cairn-owned double-submit the guard enforces
+   (`src/lib/sveltekit/guard.ts`, Rule 1). The cookie is minted lazily the first time an authed
+   admin page loads (`issueCsrfToken` in `src/lib/sveltekit/csrf.ts`), named `cairn_csrf` on
+   local http and `__Host-cairn_csrf` on the deployed https Worker, the same scheme rule as the
+   session cookie. A GET to `/admin/media` with the session cookie from the procedure above sets
+   it if it is not already set from an earlier check in this run:
+   ```bash
+   curl -s -D - -H "$CK" http://localhost:8787/admin/media -o /dev/null | grep -i 'set-cookie: cairn_csrf'
+   ```
+   Take the token from the `Set-Cookie` line (everything between `cairn_csrf=` and the next
+   `;`), and build a combined cookie header for the POSTs below:
+   ```bash
+   CSRF="<paste the token>"
+   CSRF_CK="Cookie: cairn_session=smoke-owner; cairn_csrf=$CSRF"
+   ```
+   The guard checks the token two ways (`validateCsrfHeader` then, only if that misses,
+   `validateCsrfToken`): a `X-Cairn-CSRF` request header compared straight against the cookie, or
+   (with no valid header) a cloned form body's `csrf` field. The Media Library component itself
+   always uses the header (`src/lib/components/CairnMediaLibrary.svelte`'s `applyBulkDelete`,
+   `runOrphanScan`, and `applyOrphanPurge` each set `'X-Cairn-CSRF': csrf?.() ?? ''` and post a
+   plain `FormData` with no `csrf` field), so the recipes below match that transport, not the
+   field fallback.
+
+2. **Seed a throwaway orphan, for the scan and purge.** Put an object straight into R2, bypassing
+   the app, at a key with no matching `media.json` row: exactly what `reconcileMedia`
+   (`src/lib/media/reconcile.ts`) calls an orphan. The key grammar is
+   `media/<first 2 hex of the hash>/<16-hex hash>.<1-5 lowercase alphanumeric ext>`
+   (`MEDIA_KEY_RE`); nothing else validates it, since this skips the upload pipeline entirely.
+   Find the bucket's resource name (not its Worker binding) under `r2_buckets` in the site's
+   `wrangler.jsonc` (for example `{ "binding": "MEDIA_BUCKET", "bucket_name":
+   "cairn-showcase-media" }`; `wrangler r2 object put` takes the `bucket_name`):
+   ```bash
+   echo -n 'throwaway' > /tmp/orphan.bin
+   npx wrangler r2 object put <bucket-name>/media/de/deadbeef00000001.bin \
+     --local --file /tmp/orphan.bin
+   ```
+   Use `--remote` against the deployed bucket instead of `--local` on `wrangler dev`'s simulator.
+
+3. **Run the scan** (`?/mediaOrphanScan`). The action reads no form fields at all, but SvelteKit
+   still needs a recognized form body on the POST or it 415s, so send a `FormData` with a dummy
+   field (the component itself posts an empty `FormData`, which curl cannot construct directly):
+   ```bash
+   curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanScan" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -F "x=1"
+   ```
+   Decode the response (see the next step) and confirm `orphanedBytes` lists
+   `media/de/deadbeef00000001.bin`.
+
+4. **Decode the `ActionResult` envelope.** A no-`Accept` POST answers with SvelteKit's serialized
+   action JSON, `{"type":...,"status":...,"data":...}`, where `data` is itself a devalue-encoded
+   string, not plain JSON (the browser client runs `$app/forms`'s `deserialize` on it; see
+   `src/lib/components/client-action.ts`'s `postFormAction`). Decode the same way from a shell
+   with the `devalue` package (a `package.json` devDependency here, and a transitive dependency
+   of `@sveltejs/kit` in any site, so it resolves even unlisted):
+   ```bash
+   curl -s -X POST "http://localhost:8787/admin/media?/mediaOrphanScan" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" -F "x=1" | node -e '
+   const { parse } = require("devalue");
+   const envelope = JSON.parse(require("fs").readFileSync(0, "utf8"));
+   console.log(envelope.type, envelope.status, JSON.stringify(parse(envelope.data), null, 2));
+   '
+   ```
+
+5. **Purge the orphan** (`?/mediaPurge`), **irreversible.** Raw R2 bytes have no git history to
+   revert. Select each key (the repeated `key` field, from the scan's `orphanedBytes`) and type
+   the exact selected count as `confirm`; `mediaPurgeOrphansAction` refuses and deletes nothing
+   on any mismatch or empty selection (`confirm !== String(keys.length)`):
+   ```bash
+   curl -s -X POST "http://localhost:8787/admin/media?/mediaPurge" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -F "key=media/de/deadbeef00000001.bin" \
+     -F "confirm=1"
+   ```
+   A successful purge answers `{ purged, skippedClaimed, failed }`; `purged` should list the
+   seeded key.
+
+   > **R2 delete propagation lag.** After a purge, verify with the Worker's own orphan scan
+   > (rerun step 3 and confirm the key is gone from `orphanedBytes`), not `wrangler r2 object get`
+   > by the exact key: a direct get can still return the byte for a short window after the
+   > delete, R2's own propagation lag, not a failed purge.
+
+6. **Bulk delete** (`?/mediaBulkDelete`). This targets committed, unreferenced `media.json` rows,
+   not raw R2 orphans, so the seeded object above has nothing to delete here (it has no manifest
+   row). Upload one disposable test image through the admin UI in a browser instead, copy its
+   content hash from the Library screen, then:
+   ```bash
+   curl -s -X POST "http://localhost:8787/admin/media?/mediaBulkDelete" \
+     -H "$CSRF_CK" -H "X-Cairn-CSRF: $CSRF" \
+     -F "hash=<16-hex content hash>"
+   ```
+   Repeat `-F "hash=..."` once per asset for a real multi-select. A successful call answers
+   `{ deleted, skipped, failed }`; a `skipped` row with reason `still-referenced` means the
+   server's fresh recheck found a use the client's stale count missed, the authoritative gate
+   `mediaBulkDeleteAction`'s own docstring describes, not a bug.
+
+7. **Clean up.** Remove `/tmp/orphan.bin`. If the bulk delete above did not already remove the
+   disposable test image's row, delete it through the Library UI, then rerun the scan once more
+   to confirm nothing but the deliberately-seeded key was ever touched.
+
+> **`wrangler ... --json` prepends a non-JSON notice line.** `wrangler d1 list --json` (and other
+> `--json` subcommands) write a "Cloudflare agent skills are available..." line to stdout ahead of
+> the JSON, confirmed against this machine's wrangler 4.97.0. Any script parsing piped wrangler
+> `--json` output needs a slice-from-the-first-`[`-or-`{` guard, or it breaks a plain `JSON.parse`.

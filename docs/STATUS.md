@@ -17,7 +17,8 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-07-17, latest: the invisible-craft polish pass SHIPPED as 0.87.1; next = the Waymark FINAL design review, fresh session)
 
-**0.87.1 [set at cut; verify against the release] rolls the invisible-craft polish pass**, the
+**0.87.1 IS PUBLISHED (release v0.87.1, OIDC publish green, `npm view` serves 0.87.1 on
+latest). It rolls the invisible-craft polish pass**, the
 admin design-arc queue's item 4, run Geoff-in-the-loop as a design arc (the full record and
 post-mortem: `docs/internal/2026-07-16-invisible-craft-arc-log.md`). The window: a two-track
 audit (nine mechanical scan agents + three optical lenses over 80 renders) yielding ~30

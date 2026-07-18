@@ -213,9 +213,10 @@
 
   /* --------------------------------------------------------------------------
      Code. Inline code is a tinted bordered chip (base-200 ground, base-300
-     border). The fenced block reads its colors from theme.css's pre.shiki +
+     border). The fenced block reads its ink colors from theme.css's pre.shiki +
      .cairn-tok-* bindings; this only sets the block's measure, spacing, leading,
-     and horizontal overflow. The :not(pre) guard keeps the chip off block code.
+     horizontal overflow, and the scroll-edge affordance below. The :not(pre)
+     guard keeps the chip off block code.
      -------------------------------------------------------------------------- */
   .prose :not(pre) > code {
     font-family: var(--font-mono);
@@ -225,6 +226,15 @@
     border-radius: var(--radius-selector);
     padding: 0.1em 0.36em;
   }
+  /* A long unwrapped line (whitespace: pre) can run past the block's own edge with nothing to
+     signal there is more to scroll: at a narrow viewport the block simply looks clipped mid-word.
+     Two layered gradients read the scroll position with no JS: the near-transparent-to-opaque
+     "cover" travels WITH the scrolled content (attachment: local) and, painted at the true end of
+     the content, only comes into view once scrolled all the way right, where it seamlessly matches
+     the block's own ground; the radial "shadow" beneath stays fixed to the viewport edge
+     (attachment: scroll) and so is visible whenever there is more content to the right, reading as
+     a soft edge cue. Both colors are token-derived (the block's own ground, the body ink at low
+     opacity), so the cue stays correct in both color schemes with no literal color. */
   .prose pre {
     font-family: var(--font-mono);
     border-radius: var(--radius-box);
@@ -233,6 +243,17 @@
     font-size: var(--text-step--1);
     line-height: var(--leading-body);
     --flow-space: var(--spacing-m);
+    background-image:
+      linear-gradient(to right, transparent, var(--cairn-code-bg) 85%),
+      radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      );
+    background-repeat: no-repeat, no-repeat;
+    background-position: 100% 0, 100% 0;
+    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-attachment: local, scroll;
   }
   .prose pre code {
     font-family: inherit;
@@ -321,21 +342,36 @@
      Table: a bordered head rule and zebra body rows, at the caption size. The
      table itself stays `display: table`, a real table in the accessibility
      tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
-     in every current engine). The scroll container is a wrapper the
-     showcase's own render step emits around every table (table-scroll.ts,
-     called from cairn.config.ts's rendering.render): `.table-scroll` carries
-     `display: block; overflow-x: auto`, `role="region"`, a `tabindex` and an
-     `aria-label` naming the table, so a keyboard user can tab to the region
-     and scroll it. Cells stay `nowrap` so a narrow viewport cannot satisfy
-     the table's own `width: 100%` by wrapping words inside a cell; the auto
-     table-layout algorithm then grows the table past its specified width to
-     fit the unbroken content, and the wrapper's `overflow-x: auto` turns
-     that into a horizontal scroll instead of a squeezed, word-broken column.
-     -------------------------------------------------------------------------- */
+     in every current engine). The scroll container is a wrapper the engine's
+     own render pipeline emits around every table by default (`RendererOptions.
+     tableScroll`, src/lib/render/table-scroll.ts, not a showcase-side step):
+     `.table-scroll` carries `display: block; overflow-x: auto`, `role="region"`,
+     a `tabindex` and an `aria-label` naming the table, so a keyboard user can
+     tab to the region and scroll it. Cells stay `nowrap` so a narrow viewport
+     cannot satisfy the table's own `width: 100%` by wrapping words inside a
+     cell; the auto table-layout algorithm then grows the table past its
+     specified width to fit the unbroken content, and the wrapper's
+     `overflow-x: auto` turns that into a horizontal scroll instead of a
+     squeezed, word-broken column. A wide table (many columns, like the gear
+     checklist's) still clips its last visible column mid-word at a generous
+     viewport with nothing to signal there is more; the same token-derived
+     scroll-edge affordance as `.prose pre` (see its own comment) reads the
+     scroll position with no JS. */
   .prose .table-scroll {
     display: block;
     overflow-x: auto;
     --flow-space: var(--spacing-m);
+    background-image:
+      linear-gradient(to right, transparent, var(--color-base-100) 85%),
+      radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      );
+    background-repeat: no-repeat, no-repeat;
+    background-position: 100% 0, 100% 0;
+    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-attachment: local, scroll;
   }
   .prose .table-scroll:focus-visible {
     outline: 2px solid var(--color-primary);

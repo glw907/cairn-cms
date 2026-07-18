@@ -48,6 +48,21 @@ html {
    of centering independently at a wider band; this is the container the editor preview frame
    reproduces. */
 .site-main {
+  /* `width: 100%` is load-bearing, not decorative: `.site-main` is `flex-1` (a flex item on the
+     CROSS axis of the (site) layout's column-direction shell), and a flex item's width defaults to
+     auto, which does not stretch to the flex line the way a plain block's width does. Auto-width
+     cross-axis sizing instead shrinks-to-fit the item's own content, with two visible symptoms
+     depending on what that content is: a descendant intrinsically wider than the column (a code
+     block or table with its own `overflow-x: auto`) grows the shrink-wrapped box past the column,
+     and that growth bubbles up through every auto-sized ancestor, pushing the document past the
+     viewport at a narrow width; a page with no such descendant (a short post with a short h1 and
+     little body text) instead shrink-wraps NARROWER than the measure, and `margin-inline: auto`
+     then centers that undersized box, reading as the whole reading column drifted off the shared
+     gutter relative to every other page. `min-width: 0` alone fixes neither; only an explicit
+     width does. Chassis's own `.cairn-site-main` recipe (composition.css) documents and bakes in
+     this exact fix; this hand-rolled shell needs the same explicit width. */
+  width: 100%;
+  min-width: 0;
   /* margin-inline, not the margin: 0 auto shorthand: the shorthand also zeroes the block
      (top/bottom) margins, which would silently beat a future sibling's own Tailwind `mt-*`/`mb-*`
      utility (an unlayered plain CSS rule always wins over a layered one; see the chassis README's

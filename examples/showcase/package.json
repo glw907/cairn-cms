@@ -13,7 +13,8 @@
     "design:probe": "node scripts/design-probe.mjs"
   },
   "dependencies": {
-    "@glw907/cairn-cms": "file:../.."
+    "@glw907/cairn-cms": "file:../..",
+    "remark-smartypants": "^3.0.2"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",

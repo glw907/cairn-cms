@@ -27,7 +27,9 @@ the mechanism.
 | `feed.ts` | Maps the site's posts index into `cairn-cms/delivery`'s `FeedItem` shape, shared by the RSS and JSON Feed routes. |
 | `cairn.server.ts` | The one server-side runtime composition point (`composeRuntime`, `createCairnAdmin`); every server route that needs the runtime imports it from here. |
 | `dev-gate.ts` | The build-foldable dev-backend feature flag, read by hooks and the runtime composition. |
-| `render.ts` | The component-grammar wiring: turns a theme's own icon set into the engine's glyph-rendering helpers. |
+| `render.ts` | The component-grammar wiring (a theme's icon set into the engine's glyph-rendering helpers) and the prose-typography remark plugin seam. |
+| `archive.ts` | The archive shape: year-grouped, paginated segments over the posts index, shared by the home page (page one) and the `/archive/[page]` route so the slicing rule never drifts between them. |
+| `date.ts` | The site's one date vocabulary: every date-bearing surface formats through the single `formatDate` helper. |
 | `theme-toggle.ts` | The light/dark toggle mechanism: resolve the active theme, apply a choice, persist it to a cookie. |
 | `tokens.css` | The token SYSTEM: Tailwind and the DaisyUI plugin activation, the design-scale keys with generic defaults, and the semantic (code-highlight, ink, elevation, CTA) bindings. |
 | `prose.css` | The reading-surface foundation: every prose element bound to tokens, with the signature flourish gestures behind `[data-flourish]`. |
@@ -100,6 +102,14 @@ default; a theme opts in by adding one `data-flourish` attribute to its `.prose`
 into the engine's `iconSpan`/`glyph` helpers; a theme's `defineComponent()` build functions call
 the returned function and never import `iconSpan`/`glyph` directly. Swapping the icon set (the
 `icons: IconSet` object in `cairn.config.ts`) never touches a component's `build()`.
+
+**The prose-typography seam (`render.ts`).** `proseTypography` is a `createRenderer`
+`remarkPlugins` entry (`remark-smartypants`, configured `dashes: 'oldschool'`) that smartens
+straight quotes into curly ones, `--`/`---` into en/em dashes, and `...` into a real ellipsis. It
+runs over the mdast tree, so it only ever visits text nodes; inline code, fenced code blocks, and
+link URLs stay untouched structurally, with no allowlist or escaping needed. `cairn.config.ts`
+wires it once, at its one `createRenderer(registry, { remarkPlugins: proseTypography })` call, so
+both the public render and the editor's live preview inherit it.
 
 **The theme-toggle mechanism (`theme-toggle.ts`).** `resolveTheme`/`applyTheme`/`toggleTheme` know
 nothing about which two DaisyUI theme names or which cookie name a theme uses; every call site
@@ -175,8 +185,10 @@ a build it silently breaks) fails this file's own promise.
 | `feed.ts` | `feed.xml/+server.ts`, `feed.json/+server.ts`. | Delete the file and the two feed route files (or replace their bodies with a theme's own mapping); nothing else references it. |
 | `cairn.server.ts` | `admin/+layout.server.ts`, `admin/[...path]/+page.server.ts`, `media/[...path]/+server.ts`, `healthz/+server.ts`. | Only removable by dropping the `/admin` mount and `/media` serving entirely, that is, a site with no editor-facing CMS surface at all. Most themes keep it. |
 | `dev-gate.ts` | `hooks.server.ts`, the three `test/*` diagnostic probe routes. | Delete the file, the three `test/*` probe routes (dev-only, never shipped), and the one branch in `hooks.server.ts` that reads the flag; the flag defaults closed everywhere else, so nothing else changes behavior. |
-| `render.ts` | `cairn.config.ts` (the one `makeIconRenderer` call). | Delete the file and that one import; a theme with no icon set in its component grammar, or one that calls the engine's `iconSpan`/`glyph` helpers directly, needs nothing else. |
+| `render.ts` | `cairn.config.ts` (the one `makeIconRenderer` call and the one `createRenderer` call passing `proseTypography`). | Delete the file, the icon import, and the `remarkPlugins: proseTypography` option; a theme with no icon set in its component grammar, or one that wants no quote/dash/ellipsis smartening (or its own remark plugin instead), needs nothing else. |
 | `theme-toggle.ts` | `SiteHeader.svelte` (the one worked example). | Delete the file, `SiteHeader.svelte`'s one import line, its `themeConfig` constant, `theme` state, and `toggleTheme` function, and the toggle button markup plus its `.theme-toggle` style block. A theme with no light/dark switch, or its own switch built from scratch, needs nothing else. |
+| `archive.ts` | `(site)/+page.server.ts`, `(site)/archive/[page]/+page.server.ts`. | Not a bare deletion while the paginated archive exists: a theme wanting a different archive shape (a flat list, an infinite scroll, no pagination) replaces both server routes' imports with its own slicing in the same change, and may delete the `/archive/[page]` route directory with it. |
+| `date.ts` | `(site)/+page.svelte`, `(site)/[...path]/+page.svelte`, `(site)/archive/[page]/+page.svelte`. | Delete the file and format dates at the three call sites with the theme's own vocabulary; nothing else references it. It exists so the archive and the article can never disagree about what a date looks like. |
 | `tokens.css` | `theme.css`'s one `@import`; internally imports `prose.css` and `composition.css`. | The foundation the Tailwind and DaisyUI activation depend on; not a bare deletion. A theme drops only the two inner `@import`s it does not want (see the next two rows), never the whole file. |
 | `prose.css` | `tokens.css`'s `@import './prose.css'` (its only inclusion point). | Delete the file and that one `@import` line; a theme rendering no markdown prose (a fully component-composed site) needs nothing else. Waymark itself uses this for every body of copy, so removing it is a demonstration of the seam, not a change Waymark would make. |
 | `composition.css` | `tokens.css`'s `@import './composition.css'` (its only inclusion point). | Delete the file and that one `@import` line; nothing else references it today, since no theme markup in this showcase currently uses `.cairn-card`/`.cairn-band`/`.cairn-section`/`.cairn-hero`/`.cairn-sidebar-layout`/`.cairn-site-shell`/`.cairn-site-main` (the AstroPaper port's own theme is the first adopter of the site-shell pair, in its own tree). |

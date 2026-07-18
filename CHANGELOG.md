@@ -1,3 +1,20 @@
+## Unreleased
+
+### Added
+
+- A rendered managed image (`media:` token) now carries its intrinsic `width`/`height` when the
+  media manifest records them, so the layout reserves the box before the bytes arrive. When the
+  site's `AssetConfig` declares `transformations: true`, the image also gains a `srcset` over a
+  400/800/1200/1600 width ladder (honest candidates only, capped at the asset's own width)
+  through the existing variant URLs, with a `sizes` hint derived from the enclosing figure role.
+  The sanitize floor admits the two new attributes. Raw external URLs are untouched. No consumer
+  action; a site that post-processes rendered `<img>` HTML should expect the new attributes.
+- The `check:invisible-craft` gate now recognizes seconds-suffixed CSS durations (previously
+  only `ms` literals were checked) and scans the showcase's template tree (chassis, theme, site
+  routes) alongside the admin components. The dual-gamut contrast gate also checks the cairn
+  theme's full-identity override (`examples/cairn-theme/cairn.css`). Two live numeric probes
+  land as `check:interactive-contrast` and `check:touch-targets`, run against a preview server.
+
 ## 0.87.1
 
 ### Added

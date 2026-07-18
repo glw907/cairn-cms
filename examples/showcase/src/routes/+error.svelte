@@ -23,15 +23,15 @@
   <title>{page.status} | Cairn Showcase</title>
 </svelte:head>
 
-<div class="min-h-screen bg-base-100 font-body text-base-content">
+<div class="site-shell flex min-h-screen flex-col bg-base-100 font-body text-base-content">
   <SiteHeader />
 
-  <main id="main" class="site-main">
+  <main id="main" class="site-main flex-1">
     <div class="mx-auto max-w-measure px-m py-2xl text-center">
       <h1 class="text-step-5 font-bold text-base-content">{page.status}</h1>
       <p class="mt-s text-step-1 text-muted">
         {page.status === 404
-          ? "The page you're looking for doesn't exist."
+          ? 'This page doesn’t exist. It may have moved, or the link took a wrong turn.'
           : (page.error?.message ?? 'Something went wrong.')}
       </p>
       <a

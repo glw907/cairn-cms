@@ -66,6 +66,7 @@
      (0,1,0) with the owl rule below, source order decides, so this reset must stay ABOVE it. */
   .prose :where(p) {
     margin-block: 0;
+    text-wrap: pretty;
   }
   .prose > * + * {
     margin-top: var(--flow-space);
@@ -80,6 +81,7 @@
     line-height: var(--leading-tight);
     letter-spacing: var(--tracking-tight);
     margin: 0;
+    text-wrap: balance;
   }
   .prose > h1 + * {
     margin-top: var(--spacing-m);
@@ -103,6 +105,7 @@
     letter-spacing: var(--tracking-tight);
     --flow-space: var(--spacing-xl);
     margin-bottom: 0;
+    text-wrap: balance;
   }
   .prose h2 + * {
     margin-top: var(--spacing-xs);
@@ -113,6 +116,7 @@
     font-size: var(--text-step-2);
     line-height: var(--leading-snug);
     --flow-space: var(--spacing-l);
+    text-wrap: balance;
   }
   .prose h3 + * {
     margin-top: var(--spacing-xs);
@@ -120,8 +124,23 @@
   .prose strong {
     font-weight: 650;
   }
+  /* Rest identity: the accent ink plus an underline a shade lighter than the ink itself, so a link
+     reads as a link even before it is touched (previously indistinguishable from surrounding text).
+     Hover deepens the underline to the full accent; active (the pressed instant) recedes toward the
+     body ink, the same "receding" cue every other pressed control in this sheet uses. */
   .prose a {
     font-weight: 500;
+    color: var(--color-primary);
+    text-decoration-line: underline;
+    text-decoration-color: color-mix(in oklab, var(--color-primary) 40%, transparent);
+    text-underline-offset: 0.15em;
+    transition: color 0.2s ease-out, text-decoration-color 0.2s ease-out;
+  }
+  .prose a:hover {
+    text-decoration-color: var(--color-primary);
+  }
+  .prose a:active {
+    color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
   }
   /* The reading-surface focus ring, matching the chrome and the styleguide (2px primary, 2px offset).
      A tinted callout ground shares the primary hue, so the same-hue ring can wash out against it; a
@@ -151,7 +170,7 @@
   }
   .prose blockquote cite {
     display: block;
-    margin-top: 0.6rem;
+    margin-top: var(--spacing-2xs);
     font-style: normal;
     font-size: var(--text-step--1);
     color: var(--color-muted);
@@ -163,6 +182,12 @@
      quote into the left margin past 64rem, is an opt-in layer scoped under
      `[data-flourish]` on the `.prose` root: the hook a theme uses to bring the
      identity back with no markup change. */
+  /* The opening quote mark hangs into the space before the text rather than sitting inline with it:
+     padding-left opens a gutter the width of the mark, and the matching negative text-indent pulls
+     ONLY the first line back into it (text-indent affects the first line alone), so the mark occupies
+     the gutter while every line, the first included, starts its actual words at the same left edge. A
+     plain inline ::before with no indent would push the first line's words in by the mark's width
+     while a wrapped second line started flush left, misaligning the two. */
   .prose .pullquote {
     font-family: var(--font-display);
     font-weight: 500;
@@ -171,6 +196,8 @@
     letter-spacing: var(--tracking-tight);
     color: var(--color-base-content);
     --flow-space: var(--spacing-xl);
+    padding-left: 0.6em;
+    text-indent: -0.6em;
   }
   .prose .pullquote::before {
     content: '\201C';
@@ -186,9 +213,10 @@
 
   /* --------------------------------------------------------------------------
      Code. Inline code is a tinted bordered chip (base-200 ground, base-300
-     border). The fenced block reads its colors from theme.css's pre.shiki +
+     border). The fenced block reads its ink colors from theme.css's pre.shiki +
      .cairn-tok-* bindings; this only sets the block's measure, spacing, leading,
-     and horizontal overflow. The :not(pre) guard keeps the chip off block code.
+     horizontal overflow, and the scroll-edge affordance below. The :not(pre)
+     guard keeps the chip off block code.
      -------------------------------------------------------------------------- */
   .prose :not(pre) > code {
     font-family: var(--font-mono);
@@ -198,14 +226,34 @@
     border-radius: var(--radius-selector);
     padding: 0.1em 0.36em;
   }
+  /* A long unwrapped line (whitespace: pre) can run past the block's own edge with nothing to
+     signal there is more to scroll: at a narrow viewport the block simply looks clipped mid-word.
+     Two layered gradients read the scroll position with no JS: the near-transparent-to-opaque
+     "cover" travels WITH the scrolled content (attachment: local) and, painted at the true end of
+     the content, only comes into view once scrolled all the way right, where it seamlessly matches
+     the block's own ground; the radial "shadow" beneath stays fixed to the viewport edge
+     (attachment: scroll) and so is visible whenever there is more content to the right, reading as
+     a soft edge cue. Both colors are token-derived (the block's own ground, the body ink at low
+     opacity), so the cue stays correct in both color schemes with no literal color. */
   .prose pre {
     font-family: var(--font-mono);
     border-radius: var(--radius-box);
     padding: var(--spacing-s) var(--spacing-m);
     overflow-x: auto;
     font-size: var(--text-step--1);
-    line-height: 1.6;
+    line-height: var(--leading-body);
     --flow-space: var(--spacing-m);
+    background-image:
+      linear-gradient(to right, transparent, var(--cairn-code-bg) 85%),
+      radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      );
+    background-repeat: no-repeat, no-repeat;
+    background-position: 100% 0, 100% 0;
+    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-attachment: local, scroll;
   }
   .prose pre code {
     font-family: inherit;
@@ -224,7 +272,7 @@
     padding-left: 1.3em;
   }
   .prose li + li {
-    margin-top: 0.4rem;
+    margin-top: var(--spacing-2xs);
   }
   .prose ul {
     /* Tailwind's preflight resets every `ul` to `list-style: none`; restore the
@@ -283,7 +331,7 @@
     content: none;
   }
   .prose .task-list-item input[type='checkbox'] {
-    margin-right: 0.55rem;
+    margin-right: var(--spacing-2xs);
     width: 1.05em;
     height: 1.05em;
     accent-color: var(--color-primary);
@@ -294,21 +342,36 @@
      Table: a bordered head rule and zebra body rows, at the caption size. The
      table itself stays `display: table`, a real table in the accessibility
      tree (WCAG 1.3.1: `display: block` on a table strips its row/cell roles
-     in every current engine). The scroll container is a wrapper the
-     showcase's own render step emits around every table (table-scroll.ts,
-     called from cairn.config.ts's rendering.render): `.table-scroll` carries
-     `display: block; overflow-x: auto`, `role="region"`, a `tabindex` and an
-     `aria-label` naming the table, so a keyboard user can tab to the region
-     and scroll it. Cells stay `nowrap` so a narrow viewport cannot satisfy
-     the table's own `width: 100%` by wrapping words inside a cell; the auto
-     table-layout algorithm then grows the table past its specified width to
-     fit the unbroken content, and the wrapper's `overflow-x: auto` turns
-     that into a horizontal scroll instead of a squeezed, word-broken column.
-     -------------------------------------------------------------------------- */
+     in every current engine). The scroll container is a wrapper the engine's
+     own render pipeline emits around every table by default (`RendererOptions.
+     tableScroll`, src/lib/render/table-scroll.ts, not a showcase-side step):
+     `.table-scroll` carries `display: block; overflow-x: auto`, `role="region"`,
+     a `tabindex` and an `aria-label` naming the table, so a keyboard user can
+     tab to the region and scroll it. Cells stay `nowrap` so a narrow viewport
+     cannot satisfy the table's own `width: 100%` by wrapping words inside a
+     cell; the auto table-layout algorithm then grows the table past its
+     specified width to fit the unbroken content, and the wrapper's
+     `overflow-x: auto` turns that into a horizontal scroll instead of a
+     squeezed, word-broken column. A wide table (many columns, like the gear
+     checklist's) still clips its last visible column mid-word at a generous
+     viewport with nothing to signal there is more; the same token-derived
+     scroll-edge affordance as `.prose pre` (see its own comment) reads the
+     scroll position with no JS. */
   .prose .table-scroll {
     display: block;
     overflow-x: auto;
     --flow-space: var(--spacing-m);
+    background-image:
+      linear-gradient(to right, transparent, var(--color-base-100) 85%),
+      radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in oklab, var(--color-base-content) 22%, transparent),
+        transparent
+      );
+    background-repeat: no-repeat, no-repeat;
+    background-position: 100% 0, 100% 0;
+    background-size: 1.75rem 100%, 0.75rem 100%;
+    background-attachment: local, scroll;
   }
   .prose .table-scroll:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -319,17 +382,18 @@
     width: 100%;
     border-collapse: collapse;
     font-size: var(--text-step--1);
+    font-variant-numeric: tabular-nums;
   }
   .prose thead th {
     text-align: left;
     font-family: var(--font-body);
     font-weight: 600;
     border-bottom: 2px solid var(--color-base-300);
-    padding: 0.55rem 0.7rem;
+    padding: var(--spacing-2xs) var(--spacing-xs);
     white-space: nowrap;
   }
   .prose tbody td {
-    padding: 0.55rem 0.7rem;
+    padding: var(--spacing-2xs) var(--spacing-xs);
     border-bottom: var(--border) solid var(--color-card-border);
     white-space: nowrap;
   }
@@ -407,7 +471,7 @@
   }
   .prose .callout-title {
     font-weight: 650;
-    margin: 0 0 0.3rem;
+    margin: 0 0 var(--spacing-3xs);
   }
   .prose .callout-note .callout-title {
     color: var(--cairn-info-ink);
@@ -460,7 +524,7 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.3rem;
+    margin-bottom: var(--spacing-3xs);
   }
   .prose .alert .card-title {
     font-family: var(--font-body);
@@ -496,13 +560,28 @@
      rule to exactly that standalone case, so it never fights the more specific nested rules. With no
      sizing rule at all the bare SVG falls back to the browser's default replaced-element box, reading
      as an oversized glyph instead of a modest inline marker; text-height scale keeps it reading like a
-     large character, the same restraint as the rest of the directive set. */
+     large character, the same restraint as the rest of the directive set.
+
+     The glyph set (glyph.ts) draws every icon as a fill-only path with no stroke, currentColor as the
+     fill. A "line" glyph like the flag pennant's pole (a bare moveto/lineto with no closing segment) is
+     geometrically a zero-area subpath: a fill paints nothing for it, only the closed pennant shape
+     paints, so the rendered mark reads as a small, off-center fragment of the full glyph rather than a
+     designed 1.75em marker (measured at ~14x8px of visible ink inside the 28px box, not the full
+     square). Adding a stroke here, scoped to the standalone case only, paints those degenerate
+     subpaths too, so the whole glyph reads as one deliberate mark at the size this rule already sets;
+     the nested `.ec-glyph` sizings elsewhere in this sheet size icons drawn only inside a filled
+     shape (a card head, a thumb, a chevron) that never hit this problem, so they keep the plain
+     fill-only treatment. */
   .prose > .ec-icon {
     display: inline-flex;
   }
   .prose > .ec-icon > .ec-glyph {
     width: 1.75em;
     height: 1.75em;
+    stroke: currentColor;
+    stroke-width: 14;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   /* Video facade: a bordered 16:9 panel with a centered play glyph and the platform name, the whole
@@ -523,6 +602,14 @@
     background: var(--color-base-200);
     color: inherit;
     text-decoration: none;
+    transition: border-color 0.2s ease-out, background-color 0.2s ease-out;
+  }
+  .prose .video-facade-link:hover {
+    border-color: var(--color-primary);
+    background: color-mix(in oklab, var(--color-primary) 6%, var(--color-base-200));
+  }
+  .prose .video-facade-link:active {
+    background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-200));
   }
   .prose .video-facade-link:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -550,7 +637,7 @@
     color: var(--color-muted);
   }
   .prose .video-facade-caption {
-    margin-top: 0.4rem;
+    margin-top: var(--spacing-2xs);
     font-size: var(--text-step--1);
     color: var(--color-muted);
     text-align: center;
@@ -588,20 +675,35 @@
   .prose .cta-link {
     display: inline-flex;
     align-items: center;
+    /* The 44px floor: the visual padding stays, the box grows invisibly to the touch minimum. */
+    min-height: 2.75rem;
     gap: var(--spacing-2xs);
     padding: var(--spacing-2xs) var(--spacing-m);
     border-radius: var(--radius-field);
     font-weight: 600;
     text-decoration: none;
+    transition: background-color 0.2s ease-out, border-color 0.2s ease-out;
   }
   .prose .cta-primary {
     background: var(--color-primary);
     color: var(--color-primary-content);
   }
+  .prose .cta-primary:hover {
+    background: color-mix(in oklab, var(--color-primary) 88%, var(--color-base-content));
+  }
+  .prose .cta-primary:active {
+    background: color-mix(in oklab, var(--color-primary) 76%, var(--color-base-content));
+  }
   .prose .cta-secondary {
     background: transparent;
     color: var(--color-base-content);
     border: var(--border) solid var(--color-card-border);
+  }
+  .prose .cta-secondary:hover {
+    background: color-mix(in oklab, var(--color-card-border) 40%, transparent);
+  }
+  .prose .cta-secondary:active {
+    background: color-mix(in oklab, var(--color-card-border) 65%, transparent);
   }
   .prose .cta-link .ec-glyph {
     width: 0.9em;
@@ -636,9 +738,16 @@
     cursor: pointer;
     font-weight: 650;
     list-style: none;
+    transition: color 0.2s ease-out;
   }
   .prose .faq-question::-webkit-details-marker {
     display: none;
+  }
+  .prose .faq-question:hover {
+    color: var(--color-primary);
+  }
+  .prose .faq-question:active {
+    color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
   }
   .prose .faq-question:focus-visible {
     outline: 2px solid var(--color-primary);
@@ -648,7 +757,7 @@
     display: inline-flex;
     flex-shrink: 0;
     color: var(--color-muted);
-    transition: transform 0.15s ease;
+    transition: transform 0.2s ease-out;
   }
   .prose .faq-marker .ec-glyph {
     width: 0.85em;
@@ -679,6 +788,7 @@
     line-height: var(--leading-snug);
     letter-spacing: normal;
     margin: 0;
+    text-wrap: balance;
   }
   .prose .callout-body img,
   .prose .alert-body img,
@@ -686,5 +796,18 @@
     max-width: 100%;
     height: auto;
     border-radius: var(--radius-selector);
+  }
+
+  /* Reduced motion: every hover/state transition and the FAQ chevron's rotation this sheet adds go
+     instant, the same posture SiteHeader and SiteFooter already take on their own transitions. The
+     rotation itself still flips the marker on open/close; only the animated tween is removed. */
+  @media (prefers-reduced-motion: reduce) {
+    .prose a,
+    .prose .video-facade-link,
+    .prose .cta-link,
+    .prose .faq-question,
+    .prose .faq-marker {
+      transition: none;
+    }
   }
 }

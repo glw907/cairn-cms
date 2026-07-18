@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.87.0`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.87.1`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
@@ -116,8 +116,10 @@ the named human gates only):**
    front-door drafts) **and the Waymark starter component set** (human gate: one batched
    taste question settles the final component list at its plan's start; no file contention
    between the two).
-4. **The Waymark design review** (five lenses; the fixture harness and retheme-lab evidence
-   are already banked; findings to Geoff).
+4. ~~The Waymark design review~~ — DONE 2026-07-17: the two-track audit (90 findings, 82
+   surviving adversarial verify), seven ratified verdicts, and the full fix plan executed on
+   the `waymark-final-design-review` branch. Record:
+   `docs/internal/2026-07-17-waymark-final-design-review-audit.md`.
 5. **Deploy the finished Waymark example to cairn.pub** — the intro site IS the reviewed
    example, live (Geoff, 2026-07-02), with its positioning content drawn from the docs pass's
    front-door work; the template's permanent living demo. Audience-per-surface (Geoff,
@@ -267,39 +269,6 @@ the named human gates only):**
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
   directives (a design question, not a task). Figure needs no component at all: the engine owns
   `:::figure` natively, and the name is reserved — the docs pass records this.
-- **Waymark final design review (adversarial, Fable-conducted, before Waymark goes live).**
-  Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
-  enough that a developer or designer could take it many different directions," and simultaneously
-  "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
-  delicate balance, and the review's job is to attack both failure directions: too neutral (reads as
-  unfinished scaffolding, compels no one) and too designed (reads as a look to undo before you can
-  make it yours). A third named lens, contemporary-but-not-trendy (Geoff, 2026-07-02): contemporary
-  means current fundamentals — type scale, spacing rhythm, contrast handling, the craft that reads as
-  made-now without announcing a year — while trendy means identifiable-era effects (the glow, glass,
-  gradient, or layout gimmick of the season) that let a viewer date the template from styling alone.
-  The test per element: could you name the year from this choice? If yes, it fails, however good it
-  looks today. (The "strong CTA with DaisyUI Aura glow" item under Considering is exactly the kind of
-  call this lens adjudicates.) A fourth lens, structural extensibility (Geoff, 2026-07-02): the
-  developer must not be locked into the look-and-feel. Where the first three lenses judge how the
-  design reads, this one judges how it is built: look-and-feel decisions must concentrate in the
-  swappable layer (the Tailwind 4 `@theme` design-scale tokens and named utilities the
-  starter-template pass established), never scattered through component markup. The test: pick three
-  deliberately different redirections (say, an editorial serif look, a dense corporate look, a
-  playful rounded one) and price each — if any requires broad markup surgery rather than token and
-  theme edits, the design is structurally locked regardless of how neutral it reads. This lens also
-  owns accessibility-under-retheming: the contrast floors must be encoded in the token
-  relationships so a redirect inherits them, not achieved accidentally by the default palette. A
-  fifth lens, content robustness (2026-07-02): the template must survive its actual users'
-  content, not the showcase's curated demos — the review renders a hostile-but-realistic fixture
-  set (a 140-character title, a post with no hero image, two entries and two hundred, unbroken
-  text walls, deep list nesting, a directive component mid-prose, an over-wide table) and judges
-  what breaks. The review's method also carries one measured floor, not a lens: default page
-  weight and a Lighthouse-class check on the rendered pages, since compelling-by-default must not
-  mean heavy-by-default. Conducted by
-  the main loop as design critic over the live rendered output (both color modes, the stress
-  fixtures, the component set) plus the template's token and utility architecture, with findings
-  ranked by which lens they fall under. Runs after the Waymark starter component set lands and
-  before the cairn.pub intro site or the beta ships the template.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness

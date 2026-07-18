@@ -40,3 +40,34 @@ export function toggleTheme<T extends string>(config: ThemeToggleConfig<T>, curr
   applyTheme(config, next);
   return next;
 }
+
+/**
+ * The class `theme.css` transitions its color-bearing chrome rules under. Applied to `<html>` only
+ * for the duration of one flip (below), never left on, so a scheme change from the OS or from first
+ * paint never animates, only an explicit toggle click does.
+ */
+const FLIP_TRANSITION_CLASS = 'theme-flip-transition';
+
+/**
+ * How long (ms) the transition class stays applied before a safety-net removal, a little past
+ * theme.css's own ~200ms cross-fade so a `transitionend` race never clears it early.
+ */
+const FLIP_TRANSITION_TIMEOUT_MS = 300;
+
+/**
+ * Flips `current` the same way {@link toggleTheme} does, wrapped in a short color cross-fade: a
+ * transition class lands on `<html>` just before the theme attribute changes and lifts again on the
+ * root's `transitionend` (with a timeout fallback, in case no matched property actually transitions
+ * on a given page). Instant, no class at all, under `prefers-reduced-motion`.
+ */
+export function toggleThemeWithTransition<T extends string>(config: ThemeToggleConfig<T>, current: T): T {
+  if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    return toggleTheme(config, current);
+  }
+  const root = document.documentElement;
+  const clear = () => root.classList.remove(FLIP_TRANSITION_CLASS);
+  root.addEventListener('transitionend', clear, { once: true });
+  setTimeout(clear, FLIP_TRANSITION_TIMEOUT_MS);
+  root.classList.add(FLIP_TRANSITION_CLASS);
+  return toggleTheme(config, current);
+}

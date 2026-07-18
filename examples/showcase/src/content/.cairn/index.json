@@ -23,6 +23,15 @@
       ]
     },
     {
+      "id": "the-trail-crew",
+      "concept": "pages",
+      "title": "The Trail Crew",
+      "permalink": "/the-trail-crew",
+      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking.",
+      "draft": false,
+      "links": []
+    },
+    {
       "id": "2026-01-15-hello",
       "concept": "posts",
       "title": "Hello, cairn",
@@ -101,7 +110,7 @@
         {
           "field": "author",
           "concept": "pages",
-          "id": "about"
+          "id": "the-trail-crew"
         }
       ]
     },

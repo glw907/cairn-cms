@@ -1,0 +1,22 @@
+[
+  {
+    "page": "/styleguide",
+    "selector": "button.btn.btn-primary",
+    "reason": "The styleguide's button row demonstrates DaisyUI's stock classes at their stock 40px; the template's own CTA recipes carry the 44px floor, and resizing the demo would misrepresent what the stock class gives."
+  },
+  {
+    "page": "/styleguide",
+    "selector": "button.btn.btn-outline",
+    "reason": "Stock DaisyUI demo; see btn-primary."
+  },
+  {
+    "page": "/styleguide",
+    "selector": "button.btn.btn-ghost",
+    "reason": "Stock DaisyUI demo; see btn-primary."
+  },
+  {
+    "page": "/styleguide",
+    "selector": "button.btn.btn-primary.btn-sm",
+    "reason": "Stock DaisyUI btn-sm demo at its stock 32px; see btn-primary."
+  }
+]

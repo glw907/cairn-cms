@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createRenderer } from '../../lib/render/pipeline.js';
 import { defineRegistry } from '../../lib/render/registry.js';
-import { manifestMediaResolver } from '../../lib/render/resolve-media.js';
+import { makeMediaResolver, manifestMediaResolver } from '../../lib/render/resolve-media.js';
+import { normalizeAssets } from '../../lib/media/config.js';
+import type { MediaManifest } from '../../lib/media/manifest.js';
 
 // One fixture asset whose hash matches the token the figures author below.
 const resolveMedia = manifestMediaResolver({
@@ -88,5 +90,56 @@ describe('remarkFigure', () => {
       resolveMedia,
     });
     expect(html).toContain('<figure');
+  });
+});
+
+describe('remarkFigure: the sizes attribute derives from the figure placement role', () => {
+  const manifest: MediaManifest = {
+    a1b2c3d4e5f6a7b8: {
+      hash: 'a1b2c3d4e5f6a7b8',
+      sha256: 'a1b2c3d4e5f6a7b8a1b2c3d4e5f6a7b8a1b2c3d4e5f6a7b8a1b2c3d4e5f6a7b8',
+      slug: 'blue-running-shoes',
+      displayName: 'Blue running shoes',
+      originalFilename: 'IMG_4821.HEIC',
+      alt: 'A pair of blue running shoes',
+      ext: 'webp',
+      contentType: 'image/webp',
+      bytes: 184320,
+      width: 1600,
+      height: 1200,
+      createdAt: '2026-06-15T00:00:00.000Z',
+    },
+  };
+  const resolved = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET', transformations: true });
+  const resolveDetailedMedia = makeMediaResolver(manifest, resolved);
+  const { renderMarkdown: renderWithSanitize } = createRenderer(defineRegistry({ components: [] }));
+
+  it('a center-placed figure gets the center sizes hint', async () => {
+    const html = await renderWithSanitize(
+      `:::figure{.center}\n![shoes](${token})\n\nCap\n:::`,
+      { resolveMedia: resolveDetailedMedia },
+    );
+    expect(html).toContain('sizes="(min-width: 800px) 800px, 100vw"');
+  });
+
+  it('a wide-placed figure gets the wide sizes hint', async () => {
+    const html = await renderWithSanitize(`:::figure{.wide}\n![shoes](${token})\n\nCap\n:::`, {
+      resolveMedia: resolveDetailedMedia,
+    });
+    expect(html).toContain('sizes="(min-width: 1200px) 1200px, 100vw"');
+  });
+
+  it('a full-placed figure gets the full-viewport sizes hint', async () => {
+    const html = await renderWithSanitize(`:::figure{.full}\n![shoes](${token})\n\nCap\n:::`, {
+      resolveMedia: resolveDetailedMedia,
+    });
+    expect(html).toContain('sizes="100vw"');
+  });
+
+  it('a bare :::figure with no class falls back to the safe full-viewport hint', async () => {
+    const html = await renderWithSanitize(`:::figure\n![shoes](${token})\n\nCap\n:::`, {
+      resolveMedia: resolveDetailedMedia,
+    });
+    expect(html).toContain('sizes="100vw"');
   });
 });

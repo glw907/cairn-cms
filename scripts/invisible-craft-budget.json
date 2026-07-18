@@ -33,6 +33,51 @@
       "file": "src/lib/components/preview-doc.ts",
       "token": "#fff",
       "reason": "PRE-EXISTING: pure-white fallback ground for the preview iframe body, ahead of the site's own CSS loading; review at next polish round"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(98.4% 0 0",
+      "reason": "Waymark's neutral base-100 (light): the template ships a hue-free paper-and-ink ladder by design, with the warm cairn identity as an opt-in overlay (examples/cairn-theme/cairn.css); see this file's own top-of-file comment"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(96.4% 0 0",
+      "reason": "Waymark's neutral base-200 (light): same hue-free ladder as base-100 above"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(90.8% 0 0",
+      "reason": "Waymark's neutral base-300 (light): same hue-free ladder as base-100 above"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(25% 0 0",
+      "reason": "Waymark's neutral base-content (light): same hue-free ladder as base-100 above"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(24% 0 0",
+      "reason": "Waymark's neutral base-100 (dark): same hue-free ladder as its light sibling"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(20% 0 0",
+      "reason": "Waymark's neutral base-200 (dark): same hue-free ladder as its light sibling"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(32% 0 0",
+      "reason": "Waymark's neutral base-300 (dark): same hue-free ladder as its light sibling"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "oklch(92% 0 0",
+      "reason": "Waymark's neutral base-content (dark): same hue-free ladder as its light sibling"
+    },
+    {
+      "file": "examples/showcase/src/theme/theme.css",
+      "token": "black",
+      "reason": "dark-theme --cairn-shadow tint, color-mix(in oklab, black NN%, transparent): the standard low-opacity elevation technique, not a content or ink color"
     }
   ]
 }

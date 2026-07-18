@@ -48,7 +48,9 @@ two new live probes (`check:interactive-contrast`, `check:touch-targets`, BASE_U
 RELEASE CUT (the `cairn-release` skill; derive the number at the cut): the site repo
 (`~/Projects/cairn-pub`, currently pinned `^0.79.0`) consumes from the registry, and the
 reviewed template depends on this window's unpublished engine changes (the srcset/dimensions
-emission, the render seam behavior), which is the cadence's trigger 1. Then the Phase-1
+emission, the render seam behavior), which is the cadence's trigger 1. **The cut is DONE:
+v0.87.2 published 2026-07-18 (patch; the srcset/dimensions window), publish.yml green, the
+registry serves it.** Then the Phase-1
 finalization per the approved architecture (the `cairn-template-effort` memory's queue: nav
 WAYMARK/Docs/Help/Blog + GitHub icon, the template page with the one-CSS-file reveal, the
 home narrative's Waymark section, /help in site chrome, docs links interim, blog dogfoods

@@ -53,3 +53,29 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   `markdown-directives.ts` also still reads the first `{...}` group anywhere on the line, the
   unanchored-brace bug `openerTitleAttr` was cured of. Both untouched by the fold-in on scope
   discipline; fix together next time the media decorations are open.
+- **`remark-figure` promotes a caption only for `media:` tokens** (developer; Waymark final
+  review T1, 2026-07-17). A figure over a raw external URL renders its trailing text as a plain
+  sibling `<p>`, not a `<figcaption>`, so caption styling silently forks by source type; the
+  showcase's prose.css now matches both shapes, but every other theme would hit the same fork.
+  Candidate: promote uniformly in the engine's figure step.
+- **`glyph.ts` icons are fill-only; a line-shaped subpath paints nothing** (developer; Waymark
+  final review T1, 2026-07-17). The flag glyph's pole is a bare line with no closed area, so a
+  fill-only renderer drops it and the standalone icon read as an ~14x8px smudge. The showcase
+  scopes a `stroke: currentColor` fix to the standalone case; the engine icon set should either
+  close its subpaths or paint stroke+fill.
+- **`site.config.yaml`'s `menus:` key is dead config** (developer; Waymark final review T3,
+  2026-07-17). The chrome components hardcode their nav arrays; the parsed `menus` reaches
+  nothing. Wire it or remove the key from the schema, since a config key that silently does
+  nothing is the loud-boundary posture's opposite.
+- **The engine's `heroImage` projection resolves `media:` tokens only** (developer; Waymark
+  final review T3, 2026-07-17). A frontmatter hero with a raw external `image.src` renders
+  nothing without a template-level fallback (the showcase now carries one). Decide whether the
+  projection should hand raw URLs through.
+- **The admin editor's preview iframe dynamically loads the public theme.css** (developer;
+  Waymark final review T4d, 2026-07-17). The public stylesheet has a second, separately-hashed
+  consumer inside the admin; anyone pruning or splitting the public CSS needs to know the
+  preview inherits it (the one-renderer contract's CSS shadow).
+- **The `sizes` breakpoints the engine emits are generic constants** (developer; Waymark final
+  review T4b, 2026-07-17). 800px/1200px match the built-in preset magnitudes, not any theme's
+  actual measure; a mismatch costs only srcset-candidate efficiency, but a theme with a very
+  different measure may eventually want a seam.

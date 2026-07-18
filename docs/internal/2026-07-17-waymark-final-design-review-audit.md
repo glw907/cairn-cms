@@ -228,3 +228,39 @@ the verdicts where a fork needs seen-not-described candidates.
 - The fixture corpus was committed directly to git, bypassing the editor's tidy pass — the
   typewriter-punctuation observations in body prose are an accurate portrait of migrated
   content, and fork 6 above is the product question they raise.
+
+## Appendix: the original review brief (verbatim from the ROADMAP entry, retired at this pass)
+
+- **Waymark final design review (adversarial, Fable-conducted, before Waymark goes live).**
+  Geoff's brief, verbatim as the rubric: the template must be "visually and structurally neutral
+  enough that a developer or designer could take it many different directions," and simultaneously
+  "professional and current-but-not-trendy enough to be compelling on its own" — a deliberately
+  delicate balance, and the review's job is to attack both failure directions: too neutral (reads as
+  unfinished scaffolding, compels no one) and too designed (reads as a look to undo before you can
+  make it yours). A third named lens, contemporary-but-not-trendy (Geoff, 2026-07-02): contemporary
+  means current fundamentals — type scale, spacing rhythm, contrast handling, the craft that reads as
+  made-now without announcing a year — while trendy means identifiable-era effects (the glow, glass,
+  gradient, or layout gimmick of the season) that let a viewer date the template from styling alone.
+  The test per element: could you name the year from this choice? If yes, it fails, however good it
+  looks today. (The "strong CTA with DaisyUI Aura glow" item under Considering is exactly the kind of
+  call this lens adjudicates.) A fourth lens, structural extensibility (Geoff, 2026-07-02): the
+  developer must not be locked into the look-and-feel. Where the first three lenses judge how the
+  design reads, this one judges how it is built: look-and-feel decisions must concentrate in the
+  swappable layer (the Tailwind 4 `@theme` design-scale tokens and named utilities the
+  starter-template pass established), never scattered through component markup. The test: pick three
+  deliberately different redirections (say, an editorial serif look, a dense corporate look, a
+  playful rounded one) and price each — if any requires broad markup surgery rather than token and
+  theme edits, the design is structurally locked regardless of how neutral it reads. This lens also
+  owns accessibility-under-retheming: the contrast floors must be encoded in the token
+  relationships so a redirect inherits them, not achieved accidentally by the default palette. A
+  fifth lens, content robustness (2026-07-02): the template must survive its actual users'
+  content, not the showcase's curated demos — the review renders a hostile-but-realistic fixture
+  set (a 140-character title, a post with no hero image, two entries and two hundred, unbroken
+  text walls, deep list nesting, a directive component mid-prose, an over-wide table) and judges
+  what breaks. The review's method also carries one measured floor, not a lens: default page
+  weight and a Lighthouse-class check on the rendered pages, since compelling-by-default must not
+  mean heavy-by-default. Conducted by
+  the main loop as design critic over the live rendered output (both color modes, the stress
+  fixtures, the component set) plus the template's token and utility architecture, with findings
+  ranked by which lens they fall under. Runs after the Waymark starter component set lands and
+  before the cairn.pub intro site or the beta ships the template.

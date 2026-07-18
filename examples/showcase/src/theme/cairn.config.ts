@@ -6,7 +6,7 @@ import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw9
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
-import Banner from '$theme/islands/Banner.svelte';
+import { siteIslands } from '$theme/islands/registry.js';
 import { isBannerExpired } from '$theme/islands/banner-expiry.js';
 import { makeIconRenderer } from '$chassis/render.js';
 import siteYaml from './site.config.yaml?raw';
@@ -433,7 +433,7 @@ export const cairn = defineAdapter({
       renderMarkdown(body, { resolve, resolveMedia: resolveMedia ?? publicMediaResolver, resolveFragment }),
     components: registry,
     icons,
-    islands: { banner: Banner },
+    islands: siteIslands,
   },
   editor: {
     nav: { configPath: 'src/theme/site.config.yaml', menuName: 'primary', label: 'Navigation', maxDepth: 2 },

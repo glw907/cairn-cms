@@ -79,3 +79,10 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   review T4b, 2026-07-17). 800px/1200px match the built-in preset magnitudes, not any theme's
   actual measure; a mismatch costs only srcset-candidate efficiency, but a theme with a very
   different measure may eventually want a seam.
+- **The cairn-theme application docs describe a wrapper import that no real site uses**
+  (developer; cairn.pub Phase 1, 2026-07-18). The theme README and `make-waymark-your-own.md`
+  say "add one import line directly after your theme.css import," implying a wrapper sheet
+  that imports both; every real application (the ecxc/907 ports, cairn-pub's reset) appends
+  `@import './cairn.css';` at `theme.css`'s tail instead, and a literal trailing `@import`
+  is spec-invalid CSS that only works because Vite inlines it at build time. Pick one
+  documented form and make it the one the ports actually use.

@@ -2,11 +2,11 @@
 
 Waymark, the starter template your site ships with, is neutral by default: a humanist sans display
 face over a clean, hue-free paper. You re-skin it from one file,
-`src/lib/theme.css`, with no engine change and no fork. Rotate the brand accent and retune the
+`src/theme/theme.css`, with no engine change and no fork. Rotate the brand accent and retune the
 paper:
 
 ```css
-/* src/lib/theme.css, inside the light @plugin "daisyui/theme" block */
+/* src/theme/theme.css, inside the light @plugin "daisyui/theme" block */
 --color-primary: oklch(45% 0.15 30); /* was 248: a warm terracotta instead of ink-blue */
 --color-base-100: oklch(98% 0.01 60); /* a warm paper instead of neutral white */
 ```

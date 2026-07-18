@@ -32,6 +32,10 @@ export function buildSanitizeSchema(
   const anchorAttrs = (attributes.a ?? []).filter(
     (entry) => !(Array.isArray(entry) && entry[0] === 'className'),
   );
+  // defaultSchema's `img` entry carries only aria attrs, longDesc, and src (its `*` wildcard already
+  // admits alt/title/width/height). srcSet and sizes are the render step's new responsive-delivery
+  // attributes and are not in the wildcard, so img needs its own explicit admission.
+  const imgAttrs = [...(attributes.img ?? []), 'srcSet', 'sizes'];
   // Admit the inert `cairn:` href scheme on top of the default protocol allowlist. The render
   // resolver rewrites a `cairn:` link to a live permalink before delivery; an unresolved one
   // survives the floor in its inert token form (a visible unresolved-link signal), never as an
@@ -44,6 +48,7 @@ export function buildSanitizeSchema(
       ...attributes,
       '*': [...(attributes['*'] ?? []), 'className', ...markers],
       a: [...anchorAttrs, 'className', 'target', 'rel'],
+      img: imgAttrs,
     },
     protocols: {
       ...protocols,

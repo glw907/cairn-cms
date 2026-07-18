@@ -8,7 +8,7 @@ import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
 import { siteIslands } from '$theme/islands/registry.js';
 import { isBannerExpired } from '$theme/islands/banner-expiry.js';
-import { makeIconRenderer } from '$chassis/render.js';
+import { makeIconRenderer, proseTypography } from '$chassis/render.js';
 import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
@@ -320,8 +320,11 @@ const banner = defineComponent({
 
 const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, faq, banner] });
 
-// The real render path: parse markdown through the engine so registered components render.
-const { renderMarkdown } = createRenderer(registry);
+// The real render path: parse markdown through the engine so registered components render. The
+// chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;
+// wiring it here, at the one createRenderer call, means both the public render and the editor's
+// live preview inherit it, since both read the renderMarkdown this composes.
+const { renderMarkdown } = createRenderer(registry, { remarkPlugins: proseTypography });
 
 // The committed media manifest the public render resolver reads. A bare {} until an editor uploads.
 // Read through import.meta.glob so a fresh site with no committed media.json degrades to {} rather

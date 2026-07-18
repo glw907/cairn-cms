@@ -44,11 +44,22 @@ two new live probes (`check:interactive-contrast`, `check:touch-targets`, BASE_U
 (the 220-post fixture corpus + its own green baselines); `wayfinder-review-fixtures` and
 `wayfinder-retheme-lab` remain banked.
 
-**NEXT (fresh session): cairn.pub, the pre-beta ladder's step 5** — deploy the reviewed
-Waymark as the intro site per the approved Phase-1 architecture (the `cairn-template-effort`
-memory's queue: nav WAYMARK/Docs/Help/Blog + GitHub icon, the template page, the home
-narrative section, /help in site chrome, docs links interim, blog dogfoods Posts), wearing
-the cairn theme. The template it deploys is now post-review.
+**NEXT (fresh session): cairn.pub, the pre-beta ladder's step 5.** The pass OPENS WITH A
+RELEASE CUT (the `cairn-release` skill; derive the number at the cut): the site repo
+(`~/Projects/cairn-pub`, currently pinned `^0.79.0`) consumes from the registry, and the
+reviewed template depends on this window's unpublished engine changes (the srcset/dimensions
+emission, the render seam behavior), which is the cadence's trigger 1. Then the Phase-1
+finalization per the approved architecture (the `cairn-template-effort` memory's queue: nav
+WAYMARK/Docs/Help/Blog + GitHub icon, the template page with the one-CSS-file reveal, the
+home narrative's Waymark section, /help in site chrome, docs links interim, blog dogfoods
+Posts), wearing the cairn theme; the self-documenting placeholder content's full treatment
+rides here by ruling (ROADMAP, the step-5 rider), and the front door writes to the
+broad-audience framing (audience-per-surface, Geoff 2026-07-02). Deploy gates: the one-check
+rule plus Geoff's before/after (public face). Resume prompt: "Run the cairn.pub pass, the
+pre-beta ladder's step 5: read cairn-cms docs/STATUS.md's next-action entry, the
+cairn-template-effort memory's queue, and ~/Projects/cairn-pub's own docs; open with the
+release cut, then the Phase-1 finalization." Launch inside ~/Projects/cairn-pub (a site-pass
+in its own repo; the release cut runs in ~/Projects/cairn-cms first).
 
 **Carry-forwards:** the dev backend still cannot exercise fragments and renders media tiles
 as "Image missing" (ROADMAP Now seed item); the friction log gained six entries at this pass

@@ -15,7 +15,7 @@
       "concept": "pages",
       "title": "About",
       "permalink": "/about",
-      "summary": "The cairn showcase is a minimal site proving the engine surfaces.",
+      "summary": "This is Waymark, cairn's starter template, running here as the engine's own development showcase. Every post and page on this site is deliberate placeholder content that a real site replaces. Each…",
       "draft": false,
       "links": [],
       "includes": [
@@ -27,7 +27,7 @@
       "concept": "pages",
       "title": "The Trail Crew",
       "permalink": "/the-trail-crew",
-      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking.",
+      "summary": "The small crew who write the trail notes on this showcase: three people who split the season between guidebook research, gear testing, and the actual walking. Like the rest of this showcase, this…",
       "draft": false,
       "links": []
     },
@@ -37,7 +37,7 @@
       "title": "Hello, cairn",
       "date": "2026-01-15",
       "permalink": "/posts/hello",
-      "summary": "The first showcase post.",
+      "summary": "The first showcase post, and a placeholder demonstrating the hero image, gallery, FAQ, and related-post fields together.",
       "draft": false,
       "links": [
         {
@@ -71,7 +71,7 @@
       "title": "A second post",
       "date": "2026-02-20",
       "permalink": "/posts/second",
-      "summary": "Proving the archive and feed list more than one entry.",
+      "summary": "A placeholder proving the archive and feed list more than one entry.",
       "draft": false,
       "links": [],
       "tags": [
@@ -85,7 +85,7 @@
       "title": "A post with a callout",
       "date": "2026-03-10",
       "permalink": "/posts/callout",
-      "summary": "Proving the component slot render path in the real build.",
+      "summary": "A placeholder exercising the callout directive and the shared trail-safety fragment.",
       "draft": false,
       "links": [],
       "includes": [
@@ -120,7 +120,7 @@
       "title": "Spring thaw on the lower loop",
       "date": "2026-05-01",
       "permalink": "/posts/spring-thaw",
-      "summary": "Snowmelt opens the lower loop early this year.",
+      "summary": "Snowmelt opens the lower loop early this year — placeholder trail notes exercising the topics filter's Trail Reports and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -134,7 +134,7 @@
       "title": "Getting your boot fit right",
       "date": "2026-05-08",
       "permalink": "/posts/boot-fit",
-      "summary": "A quick checklist for dialing in a comfortable boot.",
+      "summary": "A quick checklist for dialing in a comfortable boot, one of several placeholder posts that pad the archive past its first page.",
       "draft": false,
       "links": [],
       "tags": [
@@ -147,7 +147,7 @@
       "title": "The ridge route, end to end",
       "date": "2026-05-15",
       "permalink": "/posts/ridge-route",
-      "summary": "A full traverse of the ridge with notes on the cruxes.",
+      "summary": "A full traverse of the ridge with notes on the cruxes, placeholder trail notes carrying the Routes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -161,7 +161,7 @@
       "title": "Layering for shoulder season",
       "date": "2026-05-22",
       "permalink": "/posts/layering",
-      "summary": "What to wear when the mornings bite and the afternoons bake.",
+      "summary": "What to wear when the mornings bite and the afternoons bake — placeholder trail notes pairing the Gear and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -175,7 +175,7 @@
       "title": "Reading the first frost",
       "date": "2026-05-29",
       "permalink": "/posts/first-frost",
-      "summary": "Early-season frost and what it tells you about the snowpack.",
+      "summary": "Early-season frost and what it tells you about the snowpack, placeholder trail notes carrying the Season Notes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -189,7 +189,7 @@
       "title": "The valley loop in a morning",
       "date": "2026-06-05",
       "permalink": "/posts/valley-loop",
-      "summary": "A relaxed loop you can finish before lunch.",
+      "summary": "A relaxed loop you can finish before lunch — another placeholder entry filling out the archive's second page.",
       "draft": false,
       "links": [],
       "tags": [
@@ -202,7 +202,7 @@
       "title": "A pack list that travels light",
       "date": "2026-06-12",
       "permalink": "/posts/pack-list",
-      "summary": "Trimming the kit down to what actually earns its weight.",
+      "summary": "Trimming the kit down to what actually earns its weight, placeholder trail notes rounding out the Gear tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -216,7 +216,7 @@
       "title": "Catching the storm window",
       "date": "2026-06-19",
       "permalink": "/posts/storm-window",
-      "summary": "Timing a route around an incoming weather window.",
+      "summary": "Timing a route around an incoming weather window — placeholder trail notes pairing the Routes and Weather tags.",
       "draft": false,
       "links": [],
       "tags": [
@@ -230,7 +230,7 @@
       "title": "Late-season notes from the high col",
       "date": "2026-06-26",
       "permalink": "/posts/late-season",
-      "summary": "What changes up high as the season turns over.",
+      "summary": "What changes up high as the season turns over, placeholder trail notes rounding out the Season Notes tag.",
       "draft": false,
       "links": [],
       "tags": [
@@ -244,7 +244,7 @@
       "title": "On trail mix and small comforts",
       "date": "2026-07-03",
       "permalink": "/posts/trail-mix",
-      "summary": "The little rituals that keep a long day pleasant.",
+      "summary": "The little rituals that keep a long day pleasant — the last of the placeholder trail notes filling out the topics-filter fixtures.",
       "draft": false,
       "links": [],
       "tags": [

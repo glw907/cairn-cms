@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-// The 320px masthead defect: the wordmark ("Cairn Showcase") wrapped to two lines because the flex
+// The 320px masthead defect: the wordmark ("Waymark") wrapped to two lines because the flex
 // row let it shrink below its content width, and the primary nav clipped off the right edge of the
 // viewport mid-item, leaving the tail of the nav (Styleguide, Admin) unreachable by a real tap. The
 // fix is no-JS-first CSS: the wordmark carries `white-space: nowrap` so it can only ever wrap the
@@ -17,6 +17,10 @@ for (const width of [320, 360, 390]) {
 
 		const wordmark = page.locator('.site-header a[href="/"] span');
 		await expect(wordmark).toBeVisible();
+		// The showcase is Waymark's own dev home; the masthead names the template, not a stale
+		// "Cairn Showcase" placeholder (docs/ROADMAP.md, "Scaffold content is self-documenting
+		// placeholder").
+		await expect(wordmark).toHaveText('Waymark');
 		expect(await wordmark.evaluate((el) => getComputedStyle(el).whiteSpace)).toBe('nowrap');
 
 		// nowrap only forbids letter-wrapping; the real proof it did not just overflow off-screen is

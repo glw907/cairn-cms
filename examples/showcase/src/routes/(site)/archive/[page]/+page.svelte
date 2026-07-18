@@ -14,7 +14,7 @@
 </script>
 
 <svelte:head>
-  <title>Archive, page {data.archive.page} · Cairn Showcase</title>
+  <title>Archive, page {data.archive.page} · Waymark</title>
   <meta name="robots" content="noindex" />
 </svelte:head>
 

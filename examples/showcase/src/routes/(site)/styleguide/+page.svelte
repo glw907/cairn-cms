@@ -104,7 +104,7 @@ or extend it; nothing here is a literal a re-skin would miss.
 </script>
 
 <svelte:head>
-  <title>Styleguide · Cairn Showcase</title>
+  <title>Styleguide · Waymark</title>
   <meta
     name="description"
     content="The cairn public theme: color tokens, the type scale, the reading surface, and the component set."

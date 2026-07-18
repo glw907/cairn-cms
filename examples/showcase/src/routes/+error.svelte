@@ -20,7 +20,7 @@
 <svelte:head>
   <link rel="stylesheet" href={themeCss} />
   <link rel="stylesheet" href={siteCss} />
-  <title>{page.status} | Cairn Showcase</title>
+  <title>{page.status} | Waymark</title>
 </svelte:head>
 
 <div class="site-shell flex min-h-screen flex-col bg-base-100 font-body text-base-content">

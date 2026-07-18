@@ -31,7 +31,7 @@ this file; the look re-skins from `theme.css`.
     >
       <span
         class="font-display text-step-1 font-semibold tracking-tight"
-        >Cairn Showcase</span
+        >Waymark</span
       >
     </a>
 

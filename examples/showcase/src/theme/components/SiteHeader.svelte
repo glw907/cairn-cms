@@ -101,7 +101,7 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
            makes the row give way, dropping the nav below rather than squeezing the wordmark's letters. -->
       <span
         class="whitespace-nowrap font-display text-step-1 font-semibold tracking-tight"
-        >Cairn Showcase</span
+        >Waymark</span
       >
     </a>
 

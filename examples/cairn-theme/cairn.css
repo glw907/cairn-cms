@@ -110,7 +110,11 @@
 /* The cairn-glyph hr, a centered mark in base-300 in place of the line. An inline data-URI mask, so
    no JS and no extra asset are needed. */
 .prose hr {
+  /* Tailwind's preflight gives hr height 0 and overflow hidden, which clips the ::after mark
+     to nothing; both need overriding or the stone never renders. */
   border-top: 0;
+  height: auto;
+  overflow: visible;
   text-align: center;
 }
 .prose hr::after {

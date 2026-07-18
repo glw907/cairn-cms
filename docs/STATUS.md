@@ -15,7 +15,30 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-18, latest: the WAYMARK FINAL DESIGN REVIEW SHIPPED and merged; next = cairn.pub, step 5, fresh session)
+## Immediate next action (2026-07-18, latest: CAIRN.PUB IS LIVE — step 5 SHIPPED; next = step 6, the scaffolder, fresh session under Opus)
+
+**CAIRN.PUB SHIPPED 2026-07-18.** The pre-beta ladder's step 5 is live at https://cairn.pub:
+v0.87.2 cut and published at pass open; the repo reset onto the post-review template wearing
+the cairn theme; Geoff-led content brainstorm produced the ratified five-point identity, the
+`IntroLedger` hero (probe-designed, fresh-context visual-verified), the frozen-outline front
+page, and the charter paragraph (now also the docs README opener, replacing "writing room");
+three R2-backed figures on /waymark; the full register machinery on all prose (the banked
+rules: `cairn-pub-front-page-voice` memory — encyclopedic register, never marketing, no
+em-dash rhythm). The `IntroLedger` component is banked in the showcase. Deploys are manual
+`wrangler deploy` until GitHub Actions private-repo billing is fixed (or go-public); the
+live admin smoke (Geoff's magic link + publish round-trip) is owed; Geoff refines content
+post-launch. Site-side record: cairn-pub `docs/STATUS.md`.
+
+**NEXT (fresh session; the Fable window closed 2026-07-19, so OPUS CONDUCTS per
+`~/.claude/docs/fable-post-cutoff-system.md`): the pre-beta ladder's step 6, the
+scaffolder** (`create-cairn-site`: the pre-B3 DX slot first, then B3/B4, then the Part C
+generator; plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`, re-verify
+their baselines). Resume prompt: "Run the scaffolder effort, the pre-beta ladder's step 6:
+read cairn-cms docs/STATUS.md's next-action entry and the existing scaffolder plans, verify
+their baselines against main, then plan and execute the pre-B3 DX slot." Launch in
+~/Projects/cairn-cms.
+
+## The archived step-5 launch entry (superseded content below)
 
 **THE WAYMARK FINAL DESIGN REVIEW IS DONE AND MERGED (PR #4, all CI green).** The pre-beta
 ladder's step 4, run at the invisible-craft rigor: a two-track opening audit as a workflow (ten

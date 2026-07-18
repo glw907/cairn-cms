@@ -18,11 +18,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { repoRoot } from './repo-root.mjs';
-import { chromium, resolveBaseUrl, resolvePages, isAllowed } from './live-probe-support.mjs';
+import { resolveBaseUrl, resolvePages, isAllowed, collectFindings } from './live-probe-support.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const ALLOWLIST_PATH = resolve(ROOT, 'scripts/interactive-contrast-allowlist.json');
-const VIEWPORT = { width: 1440, height: 900 };
 const RATIO_FLOOR = 1.5;
 
 /**
@@ -123,32 +122,25 @@ async function main() {
   const allowlist = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8'));
   const pages = await resolvePages(baseUrl, ['/about', '/styleguide']);
 
-  const browser = await chromium.launch();
+  // Both schemes, since a control camouflaged against its own ground can differ light vs dark.
+  const results = await collectFindings({
+    baseUrl,
+    pages,
+    contexts: [
+      { label: 'light', options: { colorScheme: 'light' } },
+      { label: 'dark', options: { colorScheme: 'dark' } },
+    ],
+    evaluate: findInvisibleInteractiveText,
+  });
+
   const failures = [];
-  try {
-    for (const colorScheme of /** @type {const} */ (['light', 'dark'])) {
-      const context = await browser.newContext({ colorScheme });
-      for (const path of pages) {
-        const page = await context.newPage();
-        const response = await page.goto(baseUrl + path, { waitUntil: 'load', timeout: 45_000 });
-        if (!response || response.status() >= 400) {
-          await page.close();
-          continue;
-        }
-        await page.waitForTimeout(300);
-        const findings = await page.evaluate(findInvisibleInteractiveText);
-        for (const finding of findings) {
-          if (isAllowed(allowlist, path, finding.selector)) continue;
-          failures.push(
-            `${colorScheme} ${path}: ${finding.selector} ratio ${finding.ratio} (color ${finding.color} on ${finding.background}) "${finding.text}"`,
-          );
-        }
-        await page.close();
-      }
-      await context.close();
+  for (const { label, path, findings } of results) {
+    for (const finding of findings) {
+      if (isAllowed(allowlist, path, finding.selector)) continue;
+      failures.push(
+        `${label} ${path}: ${finding.selector} ratio ${finding.ratio} (color ${finding.color} on ${finding.background}) "${finding.text}"`,
+      );
     }
-  } finally {
-    await browser.close();
   }
 
   if (failures.length) {

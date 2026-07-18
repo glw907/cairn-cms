@@ -16,7 +16,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { repoRoot } from './repo-root.mjs';
-import { chromium, resolveBaseUrl, resolvePages, isAllowed } from './live-probe-support.mjs';
+import { resolveBaseUrl, resolvePages, isAllowed, collectFindings } from './live-probe-support.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const ALLOWLIST_PATH = resolve(ROOT, 'scripts/touch-target-allowlist.json');
@@ -65,28 +65,20 @@ async function main() {
   const allowlist = JSON.parse(readFileSync(ALLOWLIST_PATH, 'utf8'));
   const pages = await resolvePages(baseUrl, ['/about', '/styleguide']);
 
-  const browser = await chromium.launch();
+  // One 390px-phone context; the target-size floor is a mobile-layout concern.
+  const results = await collectFindings({
+    baseUrl,
+    pages,
+    contexts: [{ label: '', options: { viewport: VIEWPORT } }],
+    evaluate: findSmallTouchTargets,
+  });
+
   const failures = [];
-  try {
-    const context = await browser.newContext({ viewport: VIEWPORT });
-    for (const path of pages) {
-      const page = await context.newPage();
-      const response = await page.goto(baseUrl + path, { waitUntil: 'load', timeout: 45_000 });
-      if (!response || response.status() >= 400) {
-        await page.close();
-        continue;
-      }
-      await page.waitForTimeout(300);
-      const findings = await page.evaluate(findSmallTouchTargets);
-      for (const finding of findings) {
-        if (isAllowed(allowlist, path, finding.selector)) continue;
-        failures.push(`${path}: ${finding.selector} is ${finding.width}x${finding.height}px (need ${TARGET_MIN}x${TARGET_MIN}) "${finding.text}"`);
-      }
-      await page.close();
+  for (const { path, findings } of results) {
+    for (const finding of findings) {
+      if (isAllowed(allowlist, path, finding.selector)) continue;
+      failures.push(`${path}: ${finding.selector} is ${finding.width}x${finding.height}px (need ${TARGET_MIN}x${TARGET_MIN}) "${finding.text}"`);
     }
-    await context.close();
-  } finally {
-    await browser.close();
   }
 
   if (failures.length) {

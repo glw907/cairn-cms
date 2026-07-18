@@ -7,8 +7,6 @@
 // (docs/internal/2026-07-17-waymark-final-design-review-audit.md).
 import { chromium } from 'playwright';
 
-export { chromium };
-
 /** The preview server address a probe targets absent `BASE_URL`: examples/showcase's own
  *  `npm run preview` default port. */
 export const DEFAULT_BASE_URL = 'http://localhost:4173';
@@ -68,4 +66,45 @@ export async function resolvePages(baseUrl, extra = []) {
  */
 export function isAllowed(allowlist, page, selector) {
   return allowlist.some((entry) => entry.page === page && entry.selector === selector);
+}
+
+/**
+ * Drive every `path` in every browser context and collect each page's in-page findings. Owns the
+ * shared probe mechanics both live checks need: one browser, one context per `contexts` entry, a
+ * fresh page per path that a non-2xx/3xx response skips, a short settle before evaluating, and
+ * teardown of every page, context, and the browser. Results preserve context-then-path order, so a
+ * caller renders its failures in a stable sequence.
+ * @template T
+ * @param {object} args
+ * @param {string} args.baseUrl the reachable server the pages load from
+ * @param {string[]} args.pages the paths to visit under each context
+ * @param {{ label: string, options: import('playwright').BrowserContextOptions }[]} args.contexts one browser context per entry; `label` tags that context's results
+ * @param {() => T[]} args.evaluate the in-page probe run per page (Playwright serializes it, so it must be self-contained)
+ * @returns {Promise<{ label: string, path: string, findings: T[] }[]>}
+ */
+export async function collectFindings({ baseUrl, pages, contexts, evaluate }) {
+  const browser = await chromium.launch();
+  /** @type {{ label: string, path: string, findings: T[] }[]} */
+  const results = [];
+  try {
+    for (const { label, options } of contexts) {
+      const context = await browser.newContext(options);
+      for (const path of pages) {
+        const page = await context.newPage();
+        const response = await page.goto(baseUrl + path, { waitUntil: 'load', timeout: 45_000 });
+        if (!response || response.status() >= 400) {
+          await page.close();
+          continue;
+        }
+        await page.waitForTimeout(300);
+        const findings = await page.evaluate(evaluate);
+        results.push({ label, path, findings });
+        await page.close();
+      }
+      await context.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return results;
 }

@@ -15,55 +15,47 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-17, latest: the invisible-craft polish pass SHIPPED as 0.87.1; next = the Waymark FINAL design review, fresh session)
+## Immediate next action (2026-07-18, latest: the WAYMARK FINAL DESIGN REVIEW SHIPPED and merged; next = cairn.pub, step 5, fresh session)
 
-**0.87.1 IS PUBLISHED (release v0.87.1, OIDC publish green, `npm view` serves 0.87.1 on
-latest). It rolls the invisible-craft polish pass**, the
-admin design-arc queue's item 4, run Geoff-in-the-loop as a design arc (the full record and
-post-mortem: `docs/internal/2026-07-16-invisible-craft-arc-log.md`). The window: a two-track
-audit (nine mechanical scan agents + three optical lenses over 80 renders) yielding ~30
-look-preserving fixes; six ratified verdicts (settings-card stacking, the pressed-cue inset
-hairline closing the weight-only advisory, nested radii, the preview-only fragment boundary cue,
-the publish blast-radius line, the include atomic chip + folded-container chip); the fragments
-nav glyph (layers); the auth-page theme fix (the cookie resolves before sign-in;
-`AdminShellData`'s public variant carries `theme` — the one public-surface tick, type-level
-only); and the `check:invisible-craft` standing gate (transition band, spacing brackets,
-no-achromatic colors, budgeted exceptions). The pass-end 44-agent review workflow (five lenses,
-three refuters per finding) confirmed 11 findings, all folded in the same window, including two
-majors (the include chip's grammar over-match, the preview cue's dark-ground contrast).
+**THE WAYMARK FINAL DESIGN REVIEW IS DONE AND MERGED (PR #4, all CI green).** The pre-beta
+ladder's step 4, run at the invisible-craft rigor: a two-track opening audit as a workflow (ten
+mechanical scans + five Fable optical lenses over 130 renders of the 220-post fixture corpus at
+the five-viewport bar, both schemes; 90 findings, 82 surviving adversarial verify, ~110
+confirmed-right claims), seven verdicts ratified in one sitting, tasks T1-T7 plus the standing
+gates executed, a verifier-gate reopen (the fresh-context grader caught a pass-introduced
+overflow regression; all four reopen items fixed and re-verified PASS). The record:
+`docs/internal/2026-07-17-waymark-final-design-review-audit.md` (findings, verdicts, the
+verbatim review brief); the plan and post-mortem:
+`docs/superpowers/plans/2026-07-17-waymark-final-review-fixes.md`.
 
-**Gates at close:** check 0/0 (1385 files), 3646 tests exit 0, every check:* green, PR #3 CI
-green after the canonical baseline regen (the arc's intended visual drift), consumer build
-proven by the CI e2e's real checkout.
+**What shipped:** the year-grouped paginated archive + article meta line (one date
+vocabulary); the neutral wordmark (cairn's brand off the template chrome); the two-row
+tracked-eyebrow header; the motion verdicts (toggle cross-fade + navigation view transitions,
+reduced-motion-gated); the calendar cut; per-page decoded JS ~856KB to ~112KB (the adapter
+left the public client graph); ENGINE: managed images emit intrinsic dimensions + honest
+srcset/sizes (zero surface drift; in the changelog under Unreleased); render-time typographic
+punctuation via the new `proseTypography` chassis seam; public CSS 116KB to 61KB (DaisyUI
+pruned; a `.hero` class-collision bug fixed by it); `check:invisible-craft` extended
+family-wide (seconds durations); the dual-gamut contrast gate covers cairn.css (30/30 AA);
+two new live probes (`check:interactive-contrast`, `check:touch-targets`, BASE_URL-driven).
+**Held unpublished** per the release cadence; the window sits under `## Unreleased`.
 
-**NEXT (fresh session): the WAYMARK FINAL DESIGN REVIEW.** The pre-beta ladder's step 4, now
-unblocked: both production rebuilds are live (907.life "no pending work"; ecxc.ski deployed with
-its six locked picks), so the review grades TODAY'S post-chassis, post-harvest Waymark, then
-cairn.pub (step 5) becomes a short deploy. Calibration (Geoff, 2026-07-16): the same rigor as
-the admin polish sessions — a two-track opening audit as a workflow (mechanical scans + optical
-lenses over real renders at the five-viewport bar), adversarial verify, probe pages for taste
-forks, Geoff-in-the-loop verdicts, settle-once ceremony. The DESIGN-DNA RIDER (Geoff,
-2026-07-16): re-run the polish rubric's universal dimensions over the template tree (chassis +
-cairn theme + prose.css) and weigh extending `check:invisible-craft`'s scan family-wide. The
-five lenses and their briefs live in the ROADMAP's "Waymark final design review" entry; the
-CTA-contrast lesson (computed color-vs-background equality as a standard numeric check) rides
-the mechanical track. Full prep: the `cairn-template-effort` memory's NEXT block. Resume
-prompt: "Run the Waymark final design review: read the ROADMAP's 'Waymark final design review'
-entry, the cairn-template-effort memory's NEXT block, and
-docs/internal/2026-07-15-admin-resolved-polish-brief.md (the rubric whose universal dimensions
-the mechanical track re-runs over the template tree); open with the two-track audit as a
-workflow against the live-rendered showcase at the five-viewport bar, both color modes, with
-the stress fixtures." Launch inside ~/Projects/cairn-cms.
+**Standing artifacts:** the review branch `waymark-final-design-review` stays as the harness
+(the 220-post fixture corpus + its own green baselines); `wayfinder-review-fixtures` and
+`wayfinder-retheme-lab` remain banked.
 
-**PARALLEL, in ASC's own session:** the ASC consolidation consumes fragments (its
-docs/fragment-candidates.md holds nine ready cases).
+**NEXT (fresh session): cairn.pub, the pre-beta ladder's step 5** — deploy the reviewed
+Waymark as the intro site per the approved Phase-1 architecture (the `cairn-template-effort`
+memory's queue: nav WAYMARK/Docs/Help/Blog + GitHub icon, the template page, the home
+narrative section, /help in site chrome, docs links interim, blog dogfoods Posts), wearing
+the cairn theme. The template it deploys is now post-review.
 
-**Carry-forwards (this pass's watches):** the dev backend cannot exercise fragments
-(`fragmentTargets: []`) and renders every media tile as "Image missing" — both filed in the
-friction log and ROADMAP Now (the seed item); the media chip and `figureRoleAtLine` share the
-fence/brace gaps the include chip was cured of (friction log; fix when the media decorations
-open); `check:custom-surface`/`check:chassis-boundary` are CI-dark (friction log); the
-folded-chip snippet-preview and phone affordance are deferred by ruling (ROADMAP Next).
+**Carry-forwards:** the dev backend still cannot exercise fragments and renders media tiles
+as "Image missing" (ROADMAP Now seed item); the friction log gained six entries at this pass
+(remark-figure caption promotion is media-token-only; glyph.ts fill-only paths; the dead
+`menus:` config key; heroImage projection resolves media: only; the admin preview iframe
+consumes public theme.css; the engine-owned `sizes` constants) — triage at the next
+friction-log clearing; `check:custom-surface`/`check:chassis-boundary` remain CI-dark.
 
 ## The archived 0.87.0 entry (superseded 2026-07-17)
 

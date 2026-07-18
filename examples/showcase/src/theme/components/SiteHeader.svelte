@@ -22,11 +22,22 @@ construction, guarded by `$app/environment`'s `browser` so the SSR pass (which c
 never runs the browser branch; that read lands after the head script has already set the attribute,
 so the button's icon matches the painted page with no separate correction step.
 
-The layout is no-JS-first responsive: the wordmark carries `white-space: nowrap` so it can only wrap
-the row, not its letters, and both the outer row and the nav itself carry `flex-wrap`, so a nav that
-outgrows the space beside the wordmark drops to its own full-width line below it, and a nav that
-outgrows even that line wraps again, rather than clipping past the viewport edge. Nav links also
-carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not just visible.
+The layout is no-JS-first responsive, pure CSS, with a deliberate two-row lockup below the `md`
+breakpoint (~48rem) rather than an unplanned wrap. The wordmark carries `white-space: nowrap` so it
+can only wrap the row, not its letters. Below `md`, the nav and the theme toggle change places: the
+toggle's `order` pulls it up beside the wordmark on row one (a `justify-between` pair), while the nav
+(`w-full`) drops to its own row two, left-aligned. The wrapping div around the nav and toggle is
+`display: contents` at that width, so its two children rejoin the header's own flex flow and the
+`order` utilities can freely interleave them with the wordmark; at `md` and up the div becomes a real
+flex box again (`md:flex`) and `order-none` restores source order (nav, then toggle), which is the
+original single-row composition: wordmark left, nav and toggle grouped tight on the right. Nav links
+keep a 44px-class touch target at every width, so the two-row lockup stays tappable, not just visible.
+
+The primary nav reads as a tracked eyebrow at every width, not only on the phone lockup: uppercase,
+`text-step--2` (a size under the caption step), `font-medium` at rest and `font-semibold` plus
+`text-primary` on the current item, with the letter-spacing itself in `--cairn-caption-tracking`
+(scoped to `.site-nav a` below), the header's own tracking value, narrower than the wider
+`--tracking-eyebrow` label device used elsewhere on the site.
 -->
 <script lang="ts">
   import { page } from '$app/state';
@@ -80,7 +91,7 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
 
 <header class="site-header sticky top-0 z-20 border-b border-card-border">
   <div
-    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-m px-m py-xs"
+    class="mx-auto flex max-w-measure flex-wrap items-center justify-between gap-x-m gap-y-2xs px-m py-xs"
   >
     <a
       href="/"
@@ -94,15 +105,15 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
       >
     </a>
 
-    <!-- The nav and the toggle share one wrapping flex group, so the outer row still has exactly the
-         two children (the wordmark, this group) its own justify-between balance was designed for; a
-         nav plus a top-level toggle wraps the toggle onto its own line before the group runs out of
-         room, since three top-level flex children distribute space-between differently from two. Once
-         the group has its own full-width row below the wordmark, the nav and the toggle wrap onto
-         further lines like before, rather than clipping past the viewport edge. -->
-    <div class="flex flex-wrap items-center gap-s">
+    <!-- Below md this group is `contents`: it disappears from the box model, so the nav and the
+         toggle rejoin the outer row's own flex flow as flat siblings of the wordmark, where `order`
+         puts the toggle on row one beside the wordmark and the full-width nav on row two beneath it.
+         At md and up the group becomes a real flex box again, and `order-none` restores the source
+         order (nav, then toggle) as one unit, which is the original single-row composition: wordmark
+         left, nav and toggle grouped tight on the right. -->
+    <div class="contents md:flex md:flex-wrap md:items-center md:gap-s">
       <nav
-        class="site-nav flex flex-wrap items-center gap-s text-step--1"
+        class="site-nav order-2 flex w-full flex-wrap items-center gap-s uppercase text-step--2 md:order-none md:w-auto"
         aria-label="Primary"
       >
         {#each nav as item (item.href)}
@@ -123,7 +134,7 @@ carry a 44px-class touch target so a wrapped nav stays tappable on a phone, not 
         type="button"
         onclick={toggleTheme}
         aria-label={theme === 'cairn-dark' ? 'Switch to light mode' : 'Switch to dark mode'}
-        class="theme-toggle inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content"
+        class="theme-toggle order-1 inline-flex h-11 w-11 shrink-0 cursor-pointer items-center justify-center rounded-field text-muted hover:text-base-content md:order-none"
       >
         {#if theme === 'cairn-dark'}
           <!-- Sun: shown while dark is active, click to switch to light. -->

@@ -218,7 +218,12 @@
      floor (0.84rem) is larger than its own rescaled ceiling (0.80rem), because captions were
      already comfortably sized and never had an overshoot to fix; a CSS `clamp()` whose minimum
      exceeds its maximum resolves to the minimum unconditionally, so this step is deliberately
-     pinned at 0.84rem below 1440px width and grows only with the root clamp above it. */
+     pinned at 0.84rem below 1440px width and grows only with the root clamp above it.
+
+     Step--2 is a later addition, outside the rescale above: the header's tracked eyebrow nav wants
+     a size a notch under the caption step, so this is its own small, mostly-flat clamp rather than
+     a derived term in the Utopia ladder. */
+  --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem);   /* tracked nav eyebrow (SiteHeader) */
   --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; pinned, see above */
   --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem);          /* body, effectively 17px */
   --text-step-1: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* lead, h4 */
@@ -299,9 +304,12 @@
 
   /* Scheme-invariant chrome geometry, declared once here rather than as an identical literal in
      every consumer (the header, footer, and reading-surface focus rings, and the article/archive
-     date and nav-link tracking). */
+     date and nav-link tracking). The tracking value is the header nav's tracked eyebrow letter-
+     spacing (SiteHeader's `.site-nav a` reads it directly, at every width, not just the mobile
+     lockup); it is deliberately narrower than `--tracking-eyebrow` (0.12em), which is the wider,
+     all-caps label device used above the home listing and archive ("Latest", "Archive"). */
   --cairn-focus-ring-radius: 2px;
-  --cairn-caption-tracking: 0.01em;
+  --cairn-caption-tracking: 0.09em;
 }
 
 /* The dark custom-token values, applied two ways: as the system-scheme default (media-guarded, and

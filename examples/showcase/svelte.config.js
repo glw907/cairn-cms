@@ -32,8 +32,8 @@ export default {
       // the exception to that one route by id; any other unseen prerenderable route still fails
       // the build, same as the default.
       handleUnseenRoutes: ({ routes, message }) => {
-        const unexpected = routes.filter((route) => route !== '/(site)/archive/[page]');
-        if (unexpected.length > 0) throw new Error(message);
+        const hasUnexpected = routes.some((route) => route !== '/(site)/archive/[page]');
+        if (hasUnexpected) throw new Error(message);
       },
     },
     // cairn's guard owns CSRF for the admin with its own double-submit token, tolerant of the

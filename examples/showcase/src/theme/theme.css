@@ -218,7 +218,12 @@
      floor (0.84rem) is larger than its own rescaled ceiling (0.80rem), because captions were
      already comfortably sized and never had an overshoot to fix; a CSS `clamp()` whose minimum
      exceeds its maximum resolves to the minimum unconditionally, so this step is deliberately
-     pinned at 0.84rem below 1440px width and grows only with the root clamp above it. */
+     pinned at 0.84rem below 1440px width and grows only with the root clamp above it.
+
+     Step--2 is a later addition, outside the rescale above: the header's tracked eyebrow nav wants
+     a size a notch under the caption step, so this is its own small, mostly-flat clamp rather than
+     a derived term in the Utopia ladder. */
+  --text-step--2: clamp(0.72rem, 0.7rem + 0.05vw, 0.76rem);   /* tracked nav eyebrow (SiteHeader) */
   --text-step--1: clamp(0.84rem, 0.84rem, 0.80rem);           /* caption, meta; pinned, see above */
   --text-step-0: clamp(1.06rem, 1.06rem, 1.0625rem);          /* body, effectively 17px */
   --text-step-1: clamp(1.27rem, 1.25rem + 0.10vw, 1.33rem);   /* lead, h4 */
@@ -296,6 +301,15 @@
   --cairn-cta-border: transparent;
   --cairn-cta-btn-bg: var(--color-base-100);
   --cairn-cta-btn-content: var(--color-base-content);
+
+  /* Scheme-invariant chrome geometry, declared once here rather than as an identical literal in
+     every consumer (the header, footer, and reading-surface focus rings, and the article/archive
+     date and nav-link tracking). The tracking value is the header nav's tracked eyebrow letter-
+     spacing (SiteHeader's `.site-nav a` reads it directly, at every width, not just the mobile
+     lockup); it is deliberately narrower than `--tracking-eyebrow` (0.12em), which is the wider,
+     all-caps label device used above the home listing and archive ("Latest", "Archive"). */
+  --cairn-focus-ring-radius: 2px;
+  --cairn-caption-tracking: 0.09em;
 }
 
 /* The dark custom-token values, applied two ways: as the system-scheme default (media-guarded, and
@@ -343,4 +357,47 @@
   --cairn-cta-border: var(--color-base-300);
   --cairn-cta-btn-bg: var(--color-primary);
   --cairn-cta-btn-content: var(--color-primary-content);
+}
+
+/* ----------------------------------------------------------------------------
+   Verdict 7 (motion): a token-level cross-fade on an explicit scheme change, and a plain root
+   cross-fade on internal navigation. Neither runs always-on: the toggle transition is scoped
+   behind a class `theme-toggle.ts` adds only for the duration of one flip (SiteHeader.svelte), and
+   the navigation transition only fires inside the View Transitions API's own transient pseudo-
+   element tree, which the (site) layout's `onNavigate` hook opts into per navigation. Nothing here
+   animates a first paint or a `prefers-color-scheme` media change.
+   ---------------------------------------------------------------------------- */
+
+/* The toggle flip: `.theme-flip-transition` lands on `<html>` for one flip only (theme-toggle.ts),
+   so a scheme switch that came from the OS (the media-query block above) or from first paint never
+   animates, only an explicit click does. Scoped to the token-consuming chrome surfaces (the shell,
+   header, main, footer) rather than the whole document, so an `<img>` or embed never cross-fades
+   its own paint alongside the surrounding color change. */
+:root.theme-flip-transition .site-shell,
+:root.theme-flip-transition .site-header,
+:root.theme-flip-transition .site-main,
+:root.theme-flip-transition .site-footer {
+  transition: background-color 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root.theme-flip-transition .site-shell,
+  :root.theme-flip-transition .site-header,
+  :root.theme-flip-transition .site-main,
+  :root.theme-flip-transition .site-footer {
+    transition: none;
+  }
+}
+
+/* Internal navigation: a plain root cross-fade only (no slide, no shared-element morph), scoped to
+   the document's own view-transition pseudo-elements. `startViewTransition` only ever runs from the
+   (site) group's `onNavigate` hook, so this never fires for the admin, which loads no theme.css. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.18s;
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+  }
 }

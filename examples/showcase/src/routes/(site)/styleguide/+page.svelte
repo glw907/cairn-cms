@@ -230,6 +230,10 @@ or extend it; nothing here is a literal a re-skin would miss.
       <button class="btn btn-outline">Outline</button>
       <button class="btn btn-ghost">Ghost</button>
     </div>
+    <p class="sg-note">
+      Shown at DaisyUI's stock 2.5rem (40px) height. A site that wants every button to clear the
+      WCAG 2.5.8 44px touch-target floor sizes up with <code>btn-lg</code>.
+    </p>
 
     <h3 class="sg-h3">Tags and a badge</h3>
     <div class="flex flex-wrap items-center gap-s">
@@ -499,8 +503,15 @@ or extend it; nothing here is a literal a re-skin would miss.
     background: none;
     border: 0;
     border-bottom: 2px solid transparent;
-    padding: var(--spacing-2xs) 0;
-    margin-bottom: -1px;
+    /* The 44px WCAG 2.5.8 touch-target floor: vertical padding grows the tab's own hit box (what a
+       tap measures), the matching negative vertical margin keeps the tablist's visual row height
+       unchanged, so the underline still sits exactly where it did before (the trailing -1px keeps
+       the prior border-overlap trick). The small horizontal padding is left uncompensated: a touch
+       target this narrow (five- to seven-letter labels) needs the extra width to clear 44px, and a
+       few px of added tab spacing reads as looser, not broken. */
+    padding: var(--spacing-xs) var(--spacing-2xs);
+    margin-top: calc(var(--spacing-xs) * -1);
+    margin-bottom: calc((var(--spacing-xs) * -1) - 1px);
     font-family: var(--font-body);
     font-size: var(--text-step-0);
     font-weight: 500;
@@ -545,6 +556,10 @@ or extend it; nothing here is a literal a re-skin would miss.
     display: flex;
     align-items: center;
     justify-content: space-between;
+    /* The 44px WCAG 2.5.8 touch-target floor: the summary's own box, not `.sg-details`'s padded
+       card around it, is what a tap measures. Padding-only, so the closed card grows a little
+       taller but nothing about the row's look (weight, marker, color) changes. */
+    padding-block: var(--spacing-xs);
   }
   .sg-summary::-webkit-details-marker {
     display: none;
@@ -595,6 +610,10 @@ or extend it; nothing here is a literal a re-skin would miss.
     opacity: 0.85;
   }
   .sg-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    /* The 44px floor: the visual padding stays, the box grows invisibly to the touch minimum. */
+    min-height: 2.75rem;
     flex-shrink: 0;
     padding: var(--spacing-2xs) var(--spacing-m);
     border-radius: var(--radius-field);

@@ -121,6 +121,18 @@ preset and zone transformations on it returns the variant URL; otherwise it retu
 full-size path. It returns `undefined` when media is off or no entry carries the hash, the
 preview-miss backstop. A site threads the resolver through `render` via the `resolveMedia` option.
 
+The resolved image also carries whatever layout and responsive-delivery detail the manifest and
+config can honestly derive, with no new option to wire: a manifest entry's recorded `width`/`height`
+land as intrinsic `width`/`height` attributes on the rendered `<img>` (reserving its aspect ratio and
+avoiding a layout shift on load), and with the site's `assets.transformations` on and the width known,
+the image also gets a `srcset` built from a small fixed width ladder through the same variant-URL
+mechanism a preset uses, plus a `sizes` hint derived from the image's enclosing `:::figure` placement
+role (`center`, `wide`, `full`; a bare image or an unplaced figure falls back to `100vw`). An asset
+whose dimensions are unknown (the upload's client did not report them) or whose width is too small to
+offer more than one honest srcset candidate gets none of that, never a guessed value. A raw external
+image (not a `media:` reference) is untouched either way; reserving its layout is a template-level
+concern, since the engine has no dimensions to derive it from.
+
 ---
 
 ## Types

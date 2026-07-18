@@ -44,6 +44,8 @@
     "check:chassis-boundary": "node scripts/check-chassis-boundary.mjs",
     "check:cm-internals": "node scripts/check-cm-internals.mjs",
     "check:invisible-craft": "node scripts/check-invisible-craft.mjs",
+    "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
+    "check:touch-targets": "node scripts/check-touch-targets.mjs",
     "test:reskin": "node scripts/reskin-fixture.mjs",
     "lint": "eslint src/lib",
     "check:comments": "bash scripts/check-comments.sh",

@@ -41,3 +41,23 @@ describe('durationHits and achromaticColorHits share the comment-stripped postur
     expect(achromaticColorHits(stripComments(source))).toEqual([]);
   });
 });
+
+// Regression: the template tree (examples/showcase's chassis, theme, and route components) writes
+// every transition/animation duration in CSS's `s` unit, never `ms`; the rule used to recognize only
+// `ms`, so every one of those durations passed the band check by silently never being seen at all.
+describe('durationHits recognizes the seconds unit', () => {
+  it('reads a plain CSS declaration duration in seconds and converts to ms', () => {
+    const source = 'a { transition: color 0.15s; }';
+    expect(durationHits(source)).toEqual([{ line: 1, ms: 150, token: 'transition: color 0.15s;' }]);
+  });
+
+  it('reads a Tailwind duration-[<n>s] bracket and converts to ms', () => {
+    const source = '<div class="duration-[0.2s]"></div>';
+    expect(durationHits(source)).toEqual([{ line: 1, ms: 200, token: 'duration-[0.2s]' }]);
+  });
+
+  it('flags a seconds duration outside the band the same way an ms one would be flagged', () => {
+    const source = 'a { transition: color 0.5s; }';
+    expect(durationHits(source)).toEqual([{ line: 1, ms: 500, token: 'transition: color 0.5s;' }]);
+  });
+});

@@ -12,6 +12,16 @@
      - Tailwind and the DaisyUI plugin MECHANISM activate here (`@plugin "daisyui" { themes: false }`);
        the actual named themes (`@plugin "daisyui/theme"`, the DaisyUI role colors and geometry) are
        100% a theme's own choice and never declared here.
+     - The COMPONENT SET is scoped to what the public template genuinely renders, not DaisyUI's full
+       library: `button`, `badge`, `alert`, and `card` (the last two because the engine's alert
+       directive, cairn.config.ts's `cardShell`/`headRow`, emits real `card-body`/`card-title`/`alert`
+       classes that prose.css only partially overrides, so the rest of a theme's directive styling
+       leans on their base declarations). Everything else DaisyUI ships (accordion-style `collapse`,
+       `modal`, `navbar`, form controls, and so on) never appears in a chassis-descended template's
+       markup and is excluded so the compiled theme.css does not carry ~50 component families of dead
+       weight. A theme that adopts a currently-excluded component (a `.tooltip`, a `.modal`) drops its
+       key from the `exclude` list below; this is chassis-level, shared by every theme, since it is
+       about the template's markup, not a theme's look.
      - The design-SCALE keys (`--font-*`, `--text-step-*`, `--spacing-*`, `--leading-*`,
        `--tracking-*`, `--container-measure*`, `--color-muted`, `--color-card-border`) get generic
        defaults here, inside `@theme`, so Tailwind still generates every named utility
@@ -35,6 +45,19 @@
 
 @plugin "daisyui" {
   themes: false;
+
+  /* Every DaisyUI component key except the four the public template actually renders (button, badge,
+     alert, card; see the OWNERSHIP SPLIT note above). The typography, glass, and join utilities are
+     excluded too: typography only ever emits Tailwind-Typography `--tw-prose-*` variables this repo's
+     own hand-built `.prose` (prose.css) never reads, and neither `.glass` nor `.join` appears anywhere
+     in the template. The `radius` utility stays (it powers the `rounded-field`/`rounded-box` classes
+     the chrome markup uses). */
+  exclude: footer, status, collapse, dropdown, avatar, textrotate, otp, chat, radio, toast, drawer,
+    checkbox, diff, swap, calendar, label, toggle, validator, filter, skeleton, fileinput, countdown,
+    link, select, mask, hovergallery, progress, table, indicator, list, megamenu, rating, kbd, modal,
+    radialprogress, range, aura, stack, stat, tooltip, breadcrumbs, loading, mockup, hero, fieldset,
+    timeline, tab, divider, carousel, hover3d, navbar, textarea, steps, input, fab, menu, dock,
+    typography, glass, join;
 }
 
 @theme {

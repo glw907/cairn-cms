@@ -639,6 +639,8 @@
   .prose .cta-link {
     display: inline-flex;
     align-items: center;
+    /* The 44px floor: the visual padding stays, the box grows invisibly to the touch minimum. */
+    min-height: 2.75rem;
     gap: var(--spacing-2xs);
     padding: var(--spacing-2xs) var(--spacing-m);
     border-radius: var(--radius-field);

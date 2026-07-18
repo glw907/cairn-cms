@@ -23,6 +23,9 @@ import { resolveBaseUrl, resolvePages, isAllowed, collectFindings } from './live
 const ROOT = repoRoot(import.meta.url);
 const ALLOWLIST_PATH = resolve(ROOT, 'scripts/interactive-contrast-allowlist.json');
 const RATIO_FLOOR = 1.5;
+// A fixed desktop viewport keeps the measured element set stable across runs; the audit that
+// seeded this gate measured at 1440.
+const VIEWPORT = { width: 1440, height: 900 };
 
 /**
  * Every interactive text element on the current page whose own text color barely clears its
@@ -127,8 +130,8 @@ async function main() {
     baseUrl,
     pages,
     contexts: [
-      { label: 'light', options: { colorScheme: 'light' } },
-      { label: 'dark', options: { colorScheme: 'dark' } },
+      { label: 'light', options: { colorScheme: 'light', viewport: VIEWPORT } },
+      { label: 'dark', options: { colorScheme: 'dark', viewport: VIEWPORT } },
     ],
     evaluate: findInvisibleInteractiveText,
   });

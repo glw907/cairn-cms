@@ -231,6 +231,8 @@
   .lead__link {
     display: inline-flex;
     align-items: center;
+    /* The 44px floor: the link keeps its visual line, the tappable box grows invisibly. */
+    min-height: 2.75rem;
     font-weight: 600;
     color: var(--color-primary);
     text-decoration: none;

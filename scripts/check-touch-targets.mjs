@@ -37,10 +37,16 @@ function findSmallTouchTargets() {
 
   const findings = new Map();
   for (const el of document.querySelectorAll('a, button, [role="button"], input, select, summary')) {
+    // A disabled control takes no taps, so the floor does not apply (GFM task-list checkboxes
+    // render disabled by design).
+    if (el.disabled || el.getAttribute('aria-disabled') === 'true') continue;
     const style = getComputedStyle(el);
     if (style.display === 'none' || style.visibility === 'hidden') continue;
     const rect = el.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) continue;
+    // An element parked fully outside the viewport at rest (a skip link revealed only on focus)
+    // takes no taps; the floor applies to what a finger can actually reach.
+    if (rect.bottom <= 0 || rect.right <= 0 || rect.top >= window.innerHeight || rect.left >= window.innerWidth) continue;
     // WCAG 2.5.8's own exemption: an inline link inside running prose, where the surrounding text
     // carries the tappable area rather than the link glyph alone.
     if (style.display === 'inline' && el.tagName === 'A' && el.closest('article, .prose, p')) continue;

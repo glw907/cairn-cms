@@ -610,6 +610,10 @@ or extend it; nothing here is a literal a re-skin would miss.
     opacity: 0.85;
   }
   .sg-cta-btn {
+    display: inline-flex;
+    align-items: center;
+    /* The 44px floor: the visual padding stays, the box grows invisibly to the touch minimum. */
+    min-height: 2.75rem;
     flex-shrink: 0;
     padding: var(--spacing-2xs) var(--spacing-m);
     border-radius: var(--radius-field);

@@ -50,6 +50,14 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.87.2: honest image dimensions and srcset (non-breaking)
+
+A drop-in bump. Rendered managed images now carry their intrinsic `width`/`height` when the
+media manifest records them, and gain an honest `srcset`/`sizes` pair when the site's
+`AssetConfig` declares `transformations: true`. No consumer action; a site that post-processes
+rendered `<img>` HTML should expect the new attributes. The rest of the window is gate work
+inside the repo (`check:invisible-craft` coverage, two live numeric probes).
+
 ## 0.87.1: the admin polish window (non-breaking at runtime)
 
 The invisible-craft polish pass: about thirty look-preserving refinements across the admin,

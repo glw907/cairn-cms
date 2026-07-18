@@ -154,3 +154,70 @@ five-viewport re-render of the audit's page set for the verifier gate, the audit
 outcome record, CHANGELOG under `## Unreleased`, ROADMAP prunes the shipped items (the
 "Waymark final design review" entry and the pre-B3 calendar line), STATUS advances to cairn.pub
 (step 5).
+
+## Post-mortem (pass close, 2026-07-17)
+
+**What was built.** All eight tasks landed on `waymark-final-design-review`: T1 the reading
+surface's interaction and rhythm batch (link identity, hover/active everywhere, in-band
+transitions, reduced-motion gates, off-grid spacing to tokens, the icon-stroke and
+caption-gutter root-cause fixes); T2 the chrome mechanical batch (footer pin, bracket
+retirement, the neutral wordmark, the toggle cross-fade, the navigation view-transition);
+T3 the routes batch (year-grouped paginated archive at page size 50, the article meta line on
+one date vocabulary, the calendar cut, the 404 voice, the styleguide touch floors, the
+flagship post's hero and byline); T4a the client-bundle fix (the adapter left the public
+graph: ~856-864KB to ~112-120KB decoded JS per page); T4b engine image delivery (intrinsic
+dimensions plus an honest srcset/sizes ladder, zero surface drift); T4c render-time
+typographic punctuation through the new `proseTypography` chassis seam; T4d the DaisyUI prune
+(compiled public CSS 116KB to 61KB, and the `.hero` class collision bug found and fixed by
+exclusion); T7 the two-row tracked-eyebrow header lockup (probe variant B). The chassis README
+gained `archive.ts` and `date.ts` as documented seams; the touch and contrast probes landed as
+`check:*` scripts and their first real run caught and closed three touch-floor stragglers.
+
+**What was verified, with evidence.** Final tree: `npm run check` 0/0 (1386 files), showcase
+check 0/0 (558 files), `npm test` 313/313 files and 3660/3660 tests exit 0 (captured
+un-piped), and every check gate green by name: comments, reference, reference:signatures,
+docs, package, surface, invisible-craft (now scanning the template tree with seconds-suffixed
+durations), public-tokens (including cairn.css: 30/30 AA pairs both gamuts), chassis-boundary
+(11 seams), custom-surface, test:reskin. Live probes against the final build:
+design:probe pass, check:interactive-contrast PASS, check:touch-targets PASS. Page weight
+against the 220-post fixture corpus: home document 53.1KB (was 195KB), per-page decoded JS
+~112-120KB (was ~856-864KB), compiled public CSS 61KB (was 116KB).
+
+**Decisions locked.** The seven verdicts in the audit record, including the navigation
+cross-fade extension and the calendar cut. The upgrade-guide entry lands at the next cut with
+the derived number, per the per-version convention.
+
+**The verifier gate reopened the pass (the fresh-context grader earning its keep).** The first
+close attempt failed the visual gate: the pass had un-clipped wide content without giving it
+scroll containers, so four pages (the flagship article, the styleguide, the code-blocks and
+gear-checklist fixtures) overflowed horizontally at 320/390 where the pre-fix template did not;
+the 404 page missed the footer pin; long code lines clipped at 1440 with no affordance; and the
+merge rehearsal surfaced a prerender break at a one-page corpus (nothing links deeper archive
+pages, so the route pattern is never crawled). The reopen batch fixed all four: the root cause
+of both the overflow and a cosmetic column drift was `.site-main` as a shrink-to-fit flex item
+(one `width: 100%; min-width: 0` change; the chassis's own `.cairn-site-main` recipe had
+already documented this exact bug from the AstroPaper port, and the showcase's hand-rolled copy
+never adopted it — the harvest lesson is that a chassis recipe fix must sweep the copies);
+scrollable code and table boxes gained a token-derived right-edge fade; the error page adopted
+the layout's pinned column; and a scoped `handleUnseenRoutes` handler keeps the archive route
+green at any corpus size. Re-verified: zero page-level overflow on all thirteen page keys at
+320 and 390 (mechanical loop), plus the targeted fresh-context re-grade.
+
+**Process notes.** Two agent-infrastructure failures (one API connection close, one stream
+stall) were both recovered by resuming the same agent with its context intact; neither lost
+work. The shared-worktree collision class (a concurrent dispatch's build or test tearing
+another's run) surfaced four times and was absorbed by the documented re-run-once discipline;
+two dispatches independently caught the pipe-masked-exit-code trap. One acceptance criterion
+(the calendar nav entries) stranded between two tasks' file boundaries and was closed by the
+orchestrator inline: a plan that cuts a route must own the links to it in the same task. The
+first merge attempt chained its gates with `;` before the commit and masked a manifest-regen
+failure (the shell-gate-hygiene trap, hit live); the merge redo runs each gate un-chained. The
+runaway guard's first alarm was a mis-calibrated tier (an image-reading scan agent against the
+1MB text tier); the v2 tiers held after correction.
+
+**Budgets.** Tokens: the audit workflow ~5.9M; the nine implementer/simplifier dispatches
+~1.8M combined; the register edit and probe/verifier work beside the main loop. Geoff
+interaction points: the launch, the mid-run model directive, the findings read, one verdict
+sitting (five forks ratified in one message), the toggle-motion question resolved with one
+research pass, the navigation-motion extension, and one "continue" (read as proceed on the
+standing header recommendation). No mid-execution check-ins.

@@ -98,10 +98,9 @@ filename and the date the entry already carries means there's nothing to keep in
 
 A concept's `fields` is a `fieldset` built from `fields.*` constructors, [Declare structured
 fields](../guides/structured-fields.md)'s full vocabulary of types like `text`, `date`,
-`multiselect`, and `reference`. Three different parts of the engine read that one declaration: the
-editor builds its Details panel from it, the save path validates a raw frontmatter object against
-it, and a site's own code gets the resulting frontmatter as a real TypeScript type through
-`InferFieldset`.
+`multiselect`, and `reference`. The editor builds its Details panel from that one declaration, the
+save path validates a raw frontmatter object against it, and a site's own code gets the resulting
+frontmatter as a real TypeScript type through `InferFieldset`.
 
 ```ts
 import { fieldset, fields, type InferFieldset } from '@glw907/cairn-cms';

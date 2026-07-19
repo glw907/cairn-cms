@@ -27,9 +27,9 @@ simply isn't there to consume, and two confirms racing the same link can't both 
 confirmed token creates a session row (30-day expiry) and sets a session cookie, `__Host-`
 prefixed on HTTPS, `HttpOnly`, and scoped so no script on the page can read it. Every admin
 request resolves that cookie against the live session row, joined to the editor's current
-role, resolving it to one of the engine's three capability levels (owner, editor, or none) fresh
-on every request, so a role change or a removed editor takes effect on the very next request
-rather than waiting for a stale session to expire on its own. A role your config no longer
+role, and maps it to one of the engine's three capability levels (owner, editor, or none).
+Because that happens on every request, a role change or a removed editor takes effect on the
+very next one rather than waiting for a stale session to expire. A role your config no longer
 declares still authenticates; it just resolves to no content access, and never locks the person
 out of signing in.
 

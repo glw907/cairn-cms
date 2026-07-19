@@ -1,7 +1,7 @@
 # Explanation
 
-These pages explain how cairn works and why it's built that way. Each one takes a design decision,
-gives the reasoning, and links the [reference](../reference/README.md) for the exact API behind it.
+These pages explain how cairn works and why it's built that way, each one working through a design
+decision and the reasoning behind it. Several link out to the reference for the exact API details.
 
 - [Why cairn](./why-cairn.md): who cairn is for, why the stack is Cloudflare, SvelteKit, and
   DaisyUI, and why markdown over a WYSIWYG editor.

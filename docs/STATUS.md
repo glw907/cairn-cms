@@ -29,9 +29,23 @@ em-dash rhythm). The `IntroLedger` component is banked in the showcase. Deploys 
 live admin smoke (Geoff's magic link + publish round-trip) is owed; Geoff refines content
 post-launch. Site-side record: cairn-pub `docs/STATUS.md`.
 
+**Round 2 (same day, Geoff-led): the question-title hero ("What is cairn?" + the mark, the
+identity line as its answer), the stories columns under the hero, ledger-ordered numbered
+sections, the site-wide link grammar (ink prose links, tinted underlines, 180ms ease),
+smooth anchors; point 05 de-jargoned ("One sign-in covers everything the site does"). All
+live. TWO INITIATIVES QUEUED BY GEOFF (see cairn-pub docs/STATUS.md for the briefs): (1)
+docs+help rendered on-site with TOCs, likely starting the TOPO theme; (2) a DEDICATED
+docs-register sweep, brainstorm-first — the docs must read like documentation, not
+marketing (his specimens: "writing room", "the four arms", "Eight words the docs use
+precisely", the when-something-breaks setup-colon triad; the last three still live in
+docs/README.md until the sweep). The docs README's charter opener still says "The whole
+organization works in one place... one admin" — fix rides the sweep with point-05's new
+wording. These likely PRECEDE the scaffolder now; confirm priority with Geoff at next
+session start.**
+
 **NEXT (fresh session; the Fable window closed 2026-07-19, so OPUS CONDUCTS per
-`~/.claude/docs/fable-post-cutoff-system.md`): the pre-beta ladder's step 6, the
-scaffolder** (`create-cairn-site`: the pre-B3 DX slot first, then B3/B4, then the Part C
+`~/.claude/docs/fable-post-cutoff-system.md`): Geoff's queued initiatives above, then the
+pre-beta ladder's step 6, the scaffolder** (`create-cairn-site`: the pre-B3 DX slot first, then B3/B4, then the Part C
 generator; plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`, re-verify
 their baselines). Resume prompt: "Run the scaffolder effort, the pre-beta ladder's step 6:
 read cairn-cms docs/STATUS.md's next-action entry and the existing scaffolder plans, verify

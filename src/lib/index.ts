@@ -5,6 +5,11 @@ export type { Role, Editor, AuthEnv, EmailRecipient, EmailAttachment, CairnRoles
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
 export { defineRoles, resolveCapability, roleHome, ownerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
 export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles.js';
+// The access map (admin access map and attention seams pass): one declaration a site reads twice
+// (the guard and the adapter), and one authority function every enforcement and visibility point
+// reads, so route gating and sidebar visibility cannot drift apart.
+export { defineAccess, canReach, hasAccessRule } from './auth/access.js';
+export type { AccessMap } from './auth/access.js';
 export type { AuthBranding, MagicLinkMessage, SendMagicLink } from './email.js';
 
 // Content model and adapter contract (Plan 02).

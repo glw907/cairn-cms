@@ -45,11 +45,12 @@ the figure at the cursor" once it already has one.
 
 <!-- LIVE-UI: the figure dialog, caption field and placement control both visible -->
 
-The dialog that opens asks for a caption, the line shown under the picture for every reader and
-distinct from the alt text beneath it, and a placement: one of four choices. Measure keeps the picture
-at the width of your text, the default and the right choice most of the time. Center does the same, but
-centers a picture narrower than that width rather than stretching it. Wide and Full let the picture
-spread beyond the column, wider, and then edge to edge. How far depends on your site's own design.
+The dialog that opens asks for a caption and a placement. The caption is the line shown under the
+picture for every reader, distinct from the alt text beneath it. Placement is one of four choices.
+Measure keeps the picture at the width of your text. It's the default, and the right choice most of
+the time. Center does the same, but centers a picture narrower than that width rather than
+stretching it. Wide and Full let the picture spread beyond the column, wider, and then edge to
+edge. How far depends on your site's own design.
 
 Submitting wraps the picture in a figure, and the toolbar control becomes "Edit the figure at the
 cursor" from then on: reopen it any time to change the caption or the placement, or to Unwrap it back to
@@ -130,5 +131,5 @@ Add, when the hero still needs alt text).
 
 Editing opens a dialog with a 16:9 preview, so you see the picture the way it actually appears, both as
 the entry's lead and as its social card. Below the preview sits the same describe-or-decorative choice
-as any other picture, a caption, shown under the hero only if your site's design places it there, and
-Replace or Remove, for when you've changed your mind about the picture itself.
+as any other picture. A caption field sits beside it, shown under the hero only if your site's design
+places it there. Replace and Remove change the picture itself.

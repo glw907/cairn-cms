@@ -20,7 +20,7 @@ deleting it.
 
 <!-- LIVE-UI: the Library grid with the search box, the triage filter, and the density toggle -->
 
-The screen opens on a grid of thumbnails, your whole library at a glance. Click a tile, or
+The screen opens on a grid of thumbnails. It shows your whole library at once. Click a tile, or
 focus it and press Enter, to open its details.
 
 Search sits at the top of the toolbar and matches an image's name or its alt text, over your
@@ -71,7 +71,7 @@ Deleting this changes nothing readers see," so the effect of a deletion or repla
 visible before you act.
 
 cairn can list these placements because every reference to an image is a plain line of text in
-a committed file, so it searches the content directly instead of estimating usage.
+the entry's own file, so it searches the content directly instead of estimating usage.
 
 ## Replacing an image everywhere
 
@@ -85,8 +85,8 @@ then upload the new file.
 cairn identifies an image by its content, not its filename, so a replacement gets a new
 identity of its own. The review step that follows lists every published entry that uses the
 current image and explains what changes: the name stays the same, only the underlying file
-does, so every one of those entries is repointed to the new file in a single commit, and
-readers see the new image once the site rebuilds. An edit still sitting on its own branch is
+does, so every one of those entries is repointed to the new file in one step, and readers see
+the new image once the site rebuilds. An edit still sitting on its own branch is
 left alone and keeps the old file until it publishes again; the review names any such branch
 so nothing is a surprise later.
 
@@ -104,8 +104,8 @@ you insert the image. If the image is already used in a dozen places from before
 description, **Push alt to placements** applies the current default retroactively.
 
 The review sorts every placement into three groups. An empty alt gets filled automatically.
-Existing custom text is left alone by default, listed but unchanged, unless you check a box to
-overwrite it, the one destructive choice in this flow, so it needs a deliberate opt-in. A
+Existing custom text is left alone by default, listed but unchanged. To overwrite it, check a box.
+That is the one destructive choice in this flow, so it needs a deliberate opt-in. A
 decorative image marked that way on purpose is only reported, never overwritten. As with
 Replace, an unverifiable placement holds the whole push rather than risk missing one.
 
@@ -119,8 +119,8 @@ confirmation. For an image still used somewhere, the dialog lists every entry th
 would break, published entries and open edits alike, and keeps the delete button disabled until
 you type the image's address (shown in the dialog).
 
-Deleting an image never destroys its history. The row is removed from the library, but every
-version stays in git, so a developer can bring it back later if it turns out you needed it.
+Deleting an image never destroys its history. The row is removed from the library, but no earlier
+version is lost, so a developer can bring one back later if you find you needed it.
 
 ## Deleting several at once
 
@@ -133,8 +133,8 @@ That confirmation is itself a preview: it splits your selection into what has no
 and will be deleted, and what is still used and will be held back. Nothing you can still see in
 use is removed by a bulk delete; every image is checked again, individually, at the moment it
 deletes, and anything found in use between your selection and that moment is skipped and named
-in the summary rather than silently dropped. As with a single delete, everything removed stays
-in git history.
+in the summary rather than silently dropped. As with a single delete, nothing removed is ever
+truly lost.
 
 ## Finding orphaned files
 

@@ -1,8 +1,8 @@
 # Render authoring (`@glw907/cairn-cms/render`)
 
 The component-authoring toolkit a site reaches for inside a component's `build(ctx)`. These helpers
-build hast and read the component context; the render pipeline itself stays behind `createRenderer`
-(on the package root), which is the one public, safe-by-default render path.
+build hast and read the component context. The render pipeline itself stays behind `createRenderer`
+on the package root. That function is the one public, safe-by-default render path.
 
 ```ts
 import { cardShell, headRow, iconSpan, strAttr } from '@glw907/cairn-cms/render';

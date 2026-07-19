@@ -24,7 +24,7 @@ runs at all, or the request gets through and the magic-link send itself fails.
 That last message is the one visible sign of a send failure, and it's deliberately generic: cairn
 never puts the domain or the error code in front of the editor, only in the log.
 A non-editor submitting the form gets the ordinary "check your inbox" response regardless of
-whether the send would have failed, since that path never reaches a real send at all—the
+whether the send would have failed, since that path never reaches a real send at all. The
 distinct `send_error` message only ever reaches someone on the allowlist.
 
 ## A save does nothing
@@ -68,9 +68,9 @@ belongs to your deploy pipeline, which cairn doesn't observe. Check that pipelin
 it can crash a request. `AUTH_DB` is checked at the top of the admin guard, ahead of every other
 admin route, so a Worker deployed without it serves a branded page instead of a bare stack trace
 (`guard.rejected`, `reason: "bindings"`). That page still answers with a 500, because the fault is
-real and nothing under `/admin` can work without it, but it names the missing binding and points at
-the fix, and it fires on every admin path, the login screen included, so an editor never even
-reaches a form that could never have succeeded.
+real and nothing under `/admin` can work without it. But it names the missing binding and points at
+the fix, and it fires on every admin path, including the login screen. An editor never reaches a
+form that could not have worked.
 
 `PUBLIC_ORIGIN` isn't gated the same way. A missing or invalid value throws the moment the sign-in
 form posts, straight out of the request handler, with no branded page and no log record, just your

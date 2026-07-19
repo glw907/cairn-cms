@@ -36,8 +36,8 @@ permalink change on either side. [Declare structured fields](./structured-fields
 covers the picker widget itself, a combobox for one edge and a removable chip list for many.
 
 Name a concept you've declared. cairn catches a typo, but not at `defineConcept`: it
-surfaces when your adapter composes into the runtime the admin serves from, the first point cairn
-knows the full set of declared concepts.
+surfaces when your adapter composes into the runtime the admin serves from. That is the first point
+at which cairn knows the full set of declared concepts.
 
 ```
 cairn: concept "posts" reference field "author" names concept "author", which is not declared under content

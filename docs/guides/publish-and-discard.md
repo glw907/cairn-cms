@@ -34,7 +34,7 @@ flowchart LR
     deploy --> live[Live site]
 ```
 
-You can loop through writing and saving as many times as you want. Each pass adds to the same holding branch, and nothing reaches readers. Publishing is the only step that leaves that loop; everything else keeps the work private. Once it lands on the site's main content, your site's deploy process picks up the change and rebuilds, which is why a newly published page takes a short moment to appear rather than updating instantly.
+You can loop through writing and saving as many times as you want. Each pass adds to the same holding branch, and nothing reaches readers. Publishing is the only step that leaves that loop; everything else keeps the work private. Once it lands on the site's main content, your site's deploy process picks up the change and rebuilds. A newly published page takes a short moment to appear rather than updating instantly.
 
 ## What each status means
 
@@ -46,7 +46,7 @@ Every entry list shows a status badge, and the three values track exactly where 
 | **Edited** | Published before, and carrying unpublished changes now. Readers still see the older, published version. |
 | **Published** | Live exactly as written. Nothing is waiting. |
 
-The list's Pending edits filter gathers New and Edited together. That's the useful view when you're checking what still needs a decision. The Published filter shows the rest, and a separate Hidden toggle narrows to entries kept off the site's public lists, its own setting that can apply to an entry in any of the three statuses.
+The list's Pending edits filter gathers New and Edited together. That's the useful view when you're checking what still needs a decision. The Published filter shows the rest. A separate Hidden toggle narrows to entries kept off the site's public lists. Hidden is its own setting, and an entry in any of the three statuses can be hidden.
 
 ## Discard unpublished changes
 

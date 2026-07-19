@@ -244,14 +244,11 @@ no package subpath), so its API is free to grow; the event names are the public-
 
 ## Durable gotcha (Cloudflare email)
 
-Email *Sending* to arbitrary recipients is `env.EMAIL.send({ to, from, subject, html, text })`. The
-real gate is the per-zone sending subdomain: onboard the `from` domain with `wrangler email sending
-enable <domain>` (or the API, which works with an account token) and the binding reaches any
-recipient. An un-onboarded sender throws `E_SENDER_NOT_VERIFIED`, the same string Routing uses for
-an unverified destination, which is how the ecxc outage hid. The `cloudflare:email`
-`EmailMessage`/mimetext MIME form is Email *Routing*'s forward call and reaches only **verified**
-destinations; do not confuse the two. Email Sending also needs Workers Paid plus dashboard
-onboarding.
+Email *Sending* to arbitrary recipients is `env.EMAIL.send({...})`, gated on onboarding the `from`
+domain (`wrangler email sending enable <domain>`); un-onboarded senders throw
+`E_SENDER_NOT_VERIFIED`, the same string Routing uses for an unverified destination (how the ecxc
+outage hid). The `cloudflare:email` `EmailMessage` form is *Routing*'s forward call, verified
+destinations only. Sending also needs Workers Paid plus dashboard onboarding.
 
 ## Durable gotcha (a worktree showcase e2e proves MAIN's engine)
 
@@ -265,17 +262,12 @@ The symlink half is not: reinstall before trusting a worktree e2e, or rely on CI
 
 ## Durable gotcha (Vite 8 ships TypeScript in dist `.svelte`)
 
-`svelte-package` ships `.svelte` with `<script lang="ts">` and the TypeScript intact. On Vite 8 /
-Rolldown, the builtin `dynamic-import-vars` parses that `<script>` as JavaScript before the consumer's
-Svelte plugin compiles the file, and it chokes on a TS optional parameter (`registry?: T` becomes invalid
-`registry?`), failing the consumer build. The fix is a post-package step,
-`scripts/transpile-dist-svelte.mjs` (wired into the `package` script), that transpiles each dist `.svelte`
-`<script>` body to plain JavaScript with esbuild `verbatimModuleSyntax` (which keeps value imports used
-only in the markup; the default elision breaks the component) and KEEPS the `lang="ts"` tag, because the
-markup still carries TypeScript the Svelte compiler must parse (typed `{#snippet}` parameters and
-`{@const x = y as T}` casts). Do not remove this step or strip `lang="ts"`. The showcase
-`package-lock.json` is committed and CI uses `npm ci` so the Vite 8 toolchain is reproducible; a
-gitignored lockfile once let CI float onto a build no local run could reproduce. Full post-mortem:
+Vite 8 / Rolldown parses dist `.svelte` `<script lang="ts">` as JavaScript before the consumer's
+Svelte plugin runs, so shipped TypeScript fails the consumer build. The post-package step
+`scripts/transpile-dist-svelte.mjs` (wired into `package`) transpiles each dist `<script>` body and
+KEEPS the `lang="ts"` tag (the markup still carries TS the Svelte compiler must parse). Do not remove
+the step or strip `lang="ts"`. The showcase `package-lock.json` stays committed and CI uses `npm ci`
+so the toolchain is reproducible. Full post-mortem:
 [`docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md`](docs/internal/2026-06-21-e2e-dist-svelte-build-failure.md).
 
 ## Credentials (machine-local, intentionally not in git)
@@ -314,7 +306,10 @@ vendored Google package over the published doc arms only (the in-tree `.vale.ini
 docs, since the Google standard governs published documentation, not write-once specs, plans,
 post-mortems, the rolling STATUS, or the friction log); the global `vale-hook` surfaces its findings on
 save and itself skips any `superpowers/` path, and the em dash is allowed there, since Google recommends
-it with no surrounding spaces. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
+it with no surrounding spaces. On top of the Google floor, every published docs page follows the
+register standard at [`docs/internal/docs-register.md`](docs/internal/docs-register.md) (the arm
+registers, the front-door register, and the no-pitch keystone); read it before writing or reviewing
+docs prose. This is separate from cairn's product prose tooling (`check:prose`, spellcheck, tidy), which
 serves editors, not Claude.
 
 Svelte components follow the same TSDoc standard for their `<script>` comments and the Svelte

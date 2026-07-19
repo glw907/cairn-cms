@@ -9,7 +9,7 @@ docs voice: the Google developer style, the register machinery before merge. -->
 
 You build a cairn theme by putting your design on top of the chassis: the plumbing layer
 every cairn site shares. By the end of this tutorial you will have built a small blog
-theme from the bare chassis — the same way Waymark, the flagship theme, is built — and
+theme from the bare chassis—the same way Waymark, the flagship theme, is built—and
 you will know which files are yours and which are the chassis's.
 
 ## 1. Start from the chassis
@@ -30,7 +30,7 @@ tutorial's command copies from examples/showcase/src/chassis — update at relea
 
 Look at what you copied. `src/chassis/` is the plumbing: content delivery, the token
 system, the prose foundation, the composition primitives. You will not edit these files
-in this tutorial — but they are yours (the chassis README documents every seam and what
+in this tutorial, but they are yours (the chassis README documents every seam and what
 you may remove). Everything you build next lives in `src/theme/`, which is empty. That
 emptiness is the point: **a theme is everything that isn't chassis.**
 
@@ -40,9 +40,9 @@ Run the dev server:
 npm run dev
 ```
 
-You see an unstyled page listing your (empty) content. The chassis works before your
-theme exists — that separation is what you'll rely on every time you change your design
-without touching your plumbing.
+You see an unstyled page listing your (empty) content. The chassis works before your theme
+exists. You'll rely on that separation every time you change your design without touching your
+plumbing.
 
 > **Why a chassis?** Every cairn site shares the same delivery, tokens, and prose
 > machinery. Keeping it in one copyable, documented layer means your design work never
@@ -65,7 +65,7 @@ rendering; the one-file theme test (what Waymark keeps in src/theme). -->
 <!-- TODO: prose.css consumption, NOT modification; one component (callout) declared in
 the grammar; the checkpoint: a post with the component rendering. -->
 
-## 6. Make it yours — and keep it responsive
+## 6. Make it yours, and keep it responsive
 <!-- TODO: the five-viewport standard as the finishing gate; the pixel-diff rider in CI;
 where to go next: the theme gallery's ports as worked examples, the chassis README's
 removal notes for going ultra-light. -->

@@ -1,8 +1,8 @@
 # Wire the delivery surface
 
 The adapter, schema, and renderer describe your content. A public cairn site adds three routes on
-top: a catch-all that serves one entry per request, the feed and sitemap routes a crawler reads,
-and an archive filter that narrows a long list by tag. Every snippet below is code from
+top. A catch-all serves one entry per request. The feed and sitemap routes give a crawler what it
+reads. An archive filter narrows a long list by tag. Every snippet below is code from
 [`examples/showcase`](../../examples/showcase).
 
 ## Build the site's indexes
@@ -172,8 +172,8 @@ export const load = () => ({ posts: posts.all(), vocabulary: extractVocabulary(s
 
 `extractVocabulary` reads the `{value, label}` list a site curates in `site.config.yaml`. Pair
 each option's `value` against an entry's `tags` to filter, and its `label` to display. A site with
-no vocabulary configured still gets tags on every summary, an open, uncurated list, since the tag
-field itself never depends on a vocabulary existing.
+no vocabulary configured still gets tags on every summary. That list is open and uncurated, because
+the tag field never depends on a vocabulary existing.
 
 `ContentIndex` also exposes `byTag(tag)` and `allTags()` directly, for a dedicated archive-by-tag
 view if your site wants one instead of an inline filter. Both read the same validated `tags` this
@@ -268,7 +268,7 @@ The showcase's feed and sitemap both map every entry by hand, because a full-con
 its own render pass and the sitemap wants every entry regardless of concept. A site with several
 feed-eligible concepts and no need for full content can skip the hand-written map: `feedView` and
 `sitemapView` project a site's `routing.inFeeds` and `routing.routable` concepts into feed items
-and sitemap URLs directly, summary-only, no render pass included. The [delivery data
+and sitemap URLs directly and summary-only, with no render pass. The [delivery data
 reference](../reference/delivery-data.md#feeds-sitemap-and-robots) documents both.
 
 A site also carries bespoke pages no concept describes, an about page, a tag index, and the like.

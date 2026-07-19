@@ -5,7 +5,7 @@ SEO head builder, and the small pure helpers. All of it is node-safe pure projec
 `@sveltejs/kit` into the module graph, so a plain-Node tool such as the manifest bin or the Vite
 plugin can import the builders. A SvelteKit site usually imports these symbols through the
 [`/delivery`](./delivery.md) barrel, which re-exports this whole surface. Import from
-`/delivery/data` directly when you need a builder outside the SvelteKit runtime.
+`/delivery/data` directly for a builder used outside the SvelteKit runtime.
 
 ```ts
 import { createSiteIndexes, rssResponse } from '@glw907/cairn-cms/delivery/data';
@@ -157,7 +157,7 @@ function unlistedRoutes(routeIds: string[], listedPaths: string[]): string[];
 ```
 
 Flag the site's own static route ids missing from `listedPaths`, typically the same `extraRoutes`
-array passed to `sitemapView`. Pass it the route ids under your public route tree, one per page
+array passed to `sitemapView`. Pass it the route ids under the site's public route tree, one per page
 directory, using SvelteKit's own route id form, such as `/(site)/about`. The check strips a
 route-group segment like `(site)` before comparing, since a group contributes no URL segment of
 its own. It also skips a dynamic route id, one carrying a `[param]` or `[...rest]` segment: a tag

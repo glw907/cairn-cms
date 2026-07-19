@@ -5,9 +5,9 @@ callout or an alert never needs client code. Some content wants to be interactiv
 cairn's seam for that is the `hydrate` flag on
 [`defineComponent`](../reference/core.md#definecomponent) paired with a matching entry on your
 adapter's [`rendering.islands`](../reference/core.md#renderingislands-adapter-member). This guide
-wires one up end to end, using the showcase's own `banner` directive throughout, a time-boxed
-announcement that renders until its `expires` date passes and checks that date again, independently,
-at hydration:
+wires one up end to end, using the showcase's own `banner` directive throughout. The `banner` is a
+time-boxed announcement that renders until its `expires` date passes, then checks that date again
+independently at hydration:
 [`cairn.config.ts`](../../examples/showcase/src/theme/cairn.config.ts) declares it and
 [`Banner.svelte`](../../examples/showcase/src/theme/islands/Banner.svelte) is the live component
 that mounts over it. This guide assumes you already have a directive component rendering through

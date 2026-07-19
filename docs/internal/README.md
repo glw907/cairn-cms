@@ -28,6 +28,9 @@ live one level up.
   and STATUS.
 - `docs-maintenance.md`: the three layers, gates, pass rule, monthly drift routine, that keep the
   docs current.
+- `docs-register.md`: the register standard for published docs prose (the arm registers, the
+  front-door register, the calibration specimens). Read it before writing or reviewing any
+  published docs page.
 - `dx-backlog-ecnordic-migration.md`: the DX backlog from the ecnordic migration.
 - `extending-developer-lens.md`: the persona, diagnostic questions, and baseline for the lean
   extensibility redesign; subordinate to the charter.

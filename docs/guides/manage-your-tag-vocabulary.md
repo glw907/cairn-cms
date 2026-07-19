@@ -22,8 +22,8 @@ tags you have in total. Each row shows the display name, the short slug it's sto
 underneath, and how many posts currently carry it. A tag with no posts reads Unused.
 
 The display name lives only on this screen. [A post's own details
-panel](./write-in-the-editor.md#the-details-panel) shows and stores the slug directly, the same
-string that's checked against a post and written into its file.
+panel](./write-in-the-editor.md#the-details-panel) shows and stores the slug directly. That slug is
+the string checked against a post and written into its file.
 
 ## Adding a tag
 

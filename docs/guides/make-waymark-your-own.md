@@ -37,11 +37,11 @@ build before it ever reaches a browser.
 
 Waymark shipped its original branded identity, the cairn theme, before it went neutral. The cairn
 theme is now [`examples/cairn-theme/`](../../examples/cairn-theme/) in this repository: a
-complete, working re-skin you can read end to end, not a hypothetical. `cairn.pub`, cairn's own
+complete, working re-skin you can read end to end. `cairn.pub`, cairn's own
 site, runs exactly this layer on top of Waymark.
 
 The cairn theme swaps the display face to the serif Fraunces and warms the paper ladder from hue-free to a stone tint. Both are ordinary token overrides. It also turns on the three signature prose gestures, which the next section covers. Every value it sets is the ordinary token seam described in the
-preceding section, nothing new. Read `examples/cairn-theme/cairn.css` for the exact
+preceding section. Read `examples/cairn-theme/cairn.css` for the exact
 `--color-base-*` and `--font-display` values it carries, and its own comments explaining each
 override: an import-order note for the base ladder, and why the type and face overrides need no
 special handling.

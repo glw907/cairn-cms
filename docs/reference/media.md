@@ -118,8 +118,9 @@ Build the per-call media resolver, closing over the committed manifest and the r
 resolver looks a ref's content hash up in the manifest and builds the canonical delivery path from
 the manifest entry's slug and ext, not the token's, so a rename never breaks the reference. With a
 preset and zone transformations on it returns the variant URL; otherwise it returns the bare
-full-size path. It returns `undefined` when media is off or no entry carries the hash, the
-preview-miss backstop. A site threads the resolver through `render` via the `resolveMedia` option.
+full-size path. It returns `undefined` when media is off or no entry carries the hash. The
+`undefined` return is the preview-miss backstop. A site threads the resolver through `render` via
+the `resolveMedia` option.
 
 The resolved image also carries whatever layout and responsive-delivery detail the manifest and
 config can honestly derive, with no new option to wire: a manifest entry's recorded `width`/`height`
@@ -129,9 +130,9 @@ the image also gets a `srcset` built from a small fixed width ladder through the
 mechanism a preset uses, plus a `sizes` hint derived from the image's enclosing `:::figure` placement
 role (`center`, `wide`, `full`; a bare image or an unplaced figure falls back to `100vw`). An asset
 whose dimensions are unknown (the upload's client did not report them) or whose width is too small to
-offer more than one honest srcset candidate gets none of that, never a guessed value. A raw external
-image (not a `media:` reference) is untouched either way; reserving its layout is a template-level
-concern, since the engine has no dimensions to derive it from.
+offer more than one honest srcset candidate gets none of that. The engine never substitutes a
+guessed value. A raw external image (not a `media:` reference) is untouched either way; reserving
+its layout is a template-level concern, since the engine has no dimensions to derive it from.
 
 ---
 

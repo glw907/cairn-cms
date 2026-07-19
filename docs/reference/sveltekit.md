@@ -128,7 +128,7 @@ declare function requireSession(event: { locals: { editor?: Editor | null } }): 
 ```
 
 Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
-top of a protected `load` or action when you need the signed-in editor. Its parameter is structural
+top of a protected `load` or action that needs the signed-in editor. Its parameter is structural
 and asks only for `locals`, so any event shape that carries the guard's editor satisfies it.
 
 ```ts
@@ -202,8 +202,8 @@ declare function adminAction<T>(
 ): (event: AdminActionEvent) => Promise<T>;
 ```
 
-Wrap a custom admin action's handler (Part C item 3 of the phase-2 design suite): the admin-scoped
-server helper a site's own `/admin/` form action calls for the engine's editor and audit contract.
+Wrap a custom admin action's handler: the admin-scoped server helper a site's own `/admin/` form
+action calls for the engine's editor and audit contract.
 `createAuthGuard` already verifies the double-submit CSRF token on every unsafe POST under
 `/admin/**`, custom routes included, before any route's own action runs, so `adminAction`'s own CSRF
 check is defense-in-depth, not the sole gate; its real job is resolving the signed-in editor as a
@@ -529,8 +529,8 @@ export const actions = { create: routes.createAction, delete: routes.listDeleteA
 ### Writing an admin fetch action
 
 `uploadAction` and its Library-direct sibling `mediaLibraryUploadAction` are the admin actions a client
-drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints worth
-knowing before you write another fetch-style action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
+drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints that
+govern any fetch-style admin action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
 clears before its body-cloning form-field check, since reading the body twice would consume the stream.
@@ -891,8 +891,8 @@ interface ResolvedEngineNavEntry {
 }
 ```
 
-One resolved engine door: the fixed screen id, its label (the engine default or a site relabel),
-and its engine-owned href. The shell maps `screen` to its fixed icon client-side.
+One resolved engine nav entry: the fixed screen id, its label (the engine default or a site
+relabel), and its engine-owned href. The shell maps `screen` to its fixed icon client-side.
 
 ### `ResolvedLayoutChild`
 
@@ -1013,8 +1013,8 @@ export const cairn = defineAdapter({
 });
 ```
 
-A member who publishes a post now finds an *Announce* link waiting beside the confirmation strip,
-already carrying that post's id. Omitting `concepts` follows every concept's publish. Naming one
+Resolved, the `Announce` link renders beside the confirmation strip with `{id}` already substituted
+for the published entry. Omitting `concepts` follows every concept's publish. Naming one
 or more concept ids restricts it, the same shape `adminNav`'s `ownerOnly` narrows a sidebar entry.
 
 ### `PublishActionEntry`

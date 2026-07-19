@@ -4,8 +4,8 @@ This subpath holds the build-time manifest plugin. The `cairnManifest()` plugin 
 content corpus through the build's own Vite resolution, verifies the committed manifest against it on
 every build, and fails the build on drift. Import it in your `vite.config.ts`. The write, verify, and
 derive machinery the plugin shares with the [`cairn-manifest`](./cli-cairn-manifest.md) and
-`cairn-doctor` bins is not public surface: every real caller (both bins and their unit tests) reaches
-it by relative import, never through this subpath, so it stays an internal implementation detail.
+`cairn-doctor` bins is not public surface. Every real caller (both bins and their unit tests) reaches
+it by relative import, never through this subpath.
 
 ```ts
 import { cairnManifest } from '@glw907/cairn-cms/vite';

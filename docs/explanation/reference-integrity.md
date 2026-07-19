@@ -40,8 +40,8 @@ lands on that entry's own `cairn/<concept>/<id>` branch and waits there until pu
 partway through drafting a new post can add a `related` reference to some target entry days before
 publishing it, and for those days that reference exists nowhere the main-only manifest can see. If
 the delete and rename gates checked only `main`, that unpublished edge would look like no edge at
-all, and deleting or renaming the target would strand it: a real reference, about to go dangling,
-with nobody protected against it.
+all, and deleting or renaming the target would strand a real reference. It would go dangling, and
+no gate would have caught it.
 
 So the index unions two arms. The main arm is the free one: it reads the manifest's already-
 extracted edges, no file reads required. The branch arm has no manifest to read from, since the

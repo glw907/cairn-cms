@@ -2,7 +2,11 @@
 
 ## What cairn is
 
-Your organization's website runs on a system called cairn: open-source software built to make it easy for small teams to manage websites together. Cairn sites run on [Cloudflare](https://www.cloudflare.com/), the infrastructure company that carries roughly 20% of all internet traffic, with a core focus on security and uptime. And unlike many comparable systems, cairn is focused on providing the best possible writing experience for its editors.
+Your organization's website runs on a system called cairn: open-source software that lets a small
+team manage its website together, without a developer in the loop for everyday writing. Cairn
+sites run on [Cloudflare](https://www.cloudflare.com/), the infrastructure company that carries
+roughly 20% of all internet traffic, with a core focus on security and uptime. Cairn is built as a
+writing tool rather than an administrative dashboard: you write in markdown with a live preview.
 
 Most of the system works out of sight. The part that concerns you is the one it was built around: a writing environment where the people of your organization draft, revise, and publish the site's pages themselves, with no technician in the loop for the everyday work of writing. A developer set the site up once and remains behind it; from that point on, the words belong to the writers.
 

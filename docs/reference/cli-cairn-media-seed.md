@@ -5,8 +5,8 @@ deployed cairn site, so `vite dev` serves real media on every page with no deplo
 committed media manifest (`src/content/.cairn/media.json`, the engine's own convention),
 downloads each object from the deployed site, and writes it into local R2 state under the same
 content-addressed key the media route reads. Once seeded, the [local design-iteration
-guide](../guides/iterate-your-design-locally.md) covers the loop this unblocks: edit,
-watch `vite dev`, and see the real image.
+guide](../guides/iterate-your-design-locally.md) covers the loop this enables. An author edits a
+source file, and `vite dev` serves the real image on reload.
 
 The package ships the command in its `bin` field, so an install puts it on the project's path.
 Run it once before you start iterating, and again whenever the deployed media library gains new
@@ -60,8 +60,8 @@ For each manifest row with a `slug`, `hash`, and `ext`, the command downloads
 route](./sveltekit.md) reads on every request. The command stores each object with the
 `Content-Type` its extension implies, so local reads serve the same header production does. Re-running the command overwrites each key with
 the same bytes, so it's safe to run again after the deployed library gains new objects. A row
-missing any of those three fields is dropped rather than failing the run, the same tolerance the
-manifest reader applies elsewhere.
+missing any of those three fields is dropped rather than failing the run. The manifest reader
+applies the same tolerance elsewhere.
 
 ## Exit codes
 

@@ -1,9 +1,10 @@
 # Guides
 
 Each guide here covers one task. The guides under For developers take a site from its adapter
-through deploy and day-to-day upkeep. The two under For editors cover writing in one. Every
-developer guide assumes [Define an adapter and schema](./define-an-adapter-and-schema.md) is
-already done, since every other developer task builds on the adapter it produces.
+through deploy and day-to-day upkeep. The guides under For editors cover writing, from your first
+look at the editor through publishing, images, and tags. Every developer guide assumes [Define an
+adapter and schema](./define-an-adapter-and-schema.md) is already done, since every other
+developer task builds on the adapter it produces.
 
 ## For developers
 
@@ -45,8 +46,8 @@ later, or the upkeep of a running site.
 - **[Enable tidy](./enable-tidy.md)**: turn on the optional AI copy-edit and see what a tidy call
   costs
 - **[Make Waymark your own](./make-waymark-your-own.md)**: re-skin the public template from one
-  file, the token seam every re-skin uses, worked with the cairn theme, the template's own opt-in
-  identity
+  file through the token seam every re-skin uses, worked with the cairn theme and the template's
+  own opt-in identity
 - **[Iterate your design locally](./iterate-your-design-locally.md)**: seed real media into local
   R2 state and iterate a design against `vite dev`, with no deploy per tweak
 - **[Read cairn's logs](./read-cairn-logs.md)**: read the structured events a running site emits,

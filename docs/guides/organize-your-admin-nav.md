@@ -1,7 +1,7 @@
 # Organize your admin nav
 
 Cairn's default sidebar is flat: its own screens and whatever flat entries your site added,
-one unsectioned list, no group header. That's a deliberate choice, not an unfinished one—a
+one unsectioned list, no group header. That's a deliberate choice, not an unfinished one. A
 label costs a reader a category decision on every visit, and a zero-config sidebar is small
 enough that the decision never pays for itself. It stops being enough once your site adds
 several screens of its own, because at that point the flat list needs a shape, and the
@@ -16,9 +16,9 @@ own.
 ## Declare the tree
 
 `navLayout` is a plain-data array on the adapter's `editor` group, an alternative to `adminNav`
-(declaring both throws at construction). Each node is one of three kinds: an *engine reference*
-places one of cairn's own screens by id, a *site entry* is the same shape `adminNav` already uses,
-and a *section* groups a mix of both under one label:
+(declaring both throws at construction). Each node is one of three kinds. An *engine reference*
+places one of cairn's own screens by id. A *site entry* is the same shape `adminNav` already uses.
+A *section* groups a mix of both under one label:
 
 ```ts
 import type { NavLayout } from '@glw907/cairn-cms/sveltekit';
@@ -53,7 +53,7 @@ engine-owned; `{ screen: 'settings', label: 'Site settings' }` places the built-
 under a relabel, so it never collides with a same-named screen of your own. `roles: ['owner']`
 renders the Club section only for that role; swap it for whatever your own vocabulary names a
 club-admin audience once you've declared one with `defineRoles` (see [Give a role its own admin
-area](./give-a-role-its-own-admin-area.md)) — `roles` narrows against your declared names the same
+area](./give-a-role-its-own-admin-area.md)). `roles` narrows against your declared names the same
 way, through the `CairnRolesRegister` augmentation. Wire the tree onto the adapter next to your
 other editor-experience knobs:
 

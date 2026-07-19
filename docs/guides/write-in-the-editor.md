@@ -163,7 +163,7 @@ A table is drawn with pipes for columns and a row of dashes under the header:
 
 The alignment in your draft doesn't have to be neat, because the rendered table aligns itself; the pipes only have to be present. Even so, hand-drawing one is tedious, and the toolbar's table button inserts a starter table for you to fill in. For working on a table that's already large, the [Wide posture](#postures-and-modes) shows the text denser, which makes the columns easier to track.
 
-Tables are for tabular information—results, schedules, comparisons. They are the wrong tool for laying out a page visually, and the site's design will not style them for that.
+Tables are for tabular information. Results, schedules, and comparisons are typical uses. They are the wrong tool for laying out a page visually, and the site's design will not style them for that.
 
 ### Footnotes
 
@@ -212,7 +212,7 @@ best are the ones you own.
 
 The first line is the frame's opening: three colons, the component's name, its title in square brackets, and its settings in braces. The last line, three colons alone, closes the frame. Everything between them is the block's body. The body is ordinary markdown, and you write in it, emphasize in it, and link from it exactly as anywhere else on the page.
 
-The frame and the body live by different rules. The body is yours to edit freely, as much and as often as you like. The frame is structural: the colons, the name, and the braces are how the site recognizes the block, so leave them as the insert menu wrote them. To change a title or a setting, edit the block through its form rather than retyping the frame—the same guided dialog that created it reopens on it, and the markup rewrites itself correctly.
+The frame and the body live by different rules. The body is yours to edit freely, as much and as often as you like. The frame is structural: the colons, the name, and the braces are how the site recognizes the block, so leave them as the insert menu wrote them. To change a title or a setting, edit the block through its form rather than retyping the frame. The same guided dialog that created it reopens on it, and the markup rewrites itself correctly.
 
 If a frame does get damaged anyway (a deleted closing line, a mangled brace), nothing is lost. Your words are all still in the draft as plain text. The block stops appearing in its styled form, which is how you'll notice, and the repair is to rebuild the frame with the insert menu and move the body back inside.
 
@@ -245,15 +245,15 @@ An icon is a small glyph from your site's declared set, placed as its own short 
 
 ### Video
 
-A video block takes a YouTube or Vimeo address and a title, and renders a styled card that links to the video. The page itself never contacts the video platform, which keeps your pages fast and your readers untracked until they choose to follow the card. Paste the video's ordinary web address; the form takes care of the rest.
+A video block takes a YouTube or Vimeo address and a title, and renders a styled card that links to the video. The page itself never contacts the video platform. Nothing loads and no reader is tracked until someone clicks through the card. Paste the video's ordinary web address; the form takes care of the rest.
 
 ### Pull quote
 
-A pull quote lifts a sentence from your text and sets it large, the way a magazine does, with an optional attribution beneath. It works best when the line genuinely stands on its own, and it duplicates rather than moves the sentence—readers see the line in your prose and in display. One per page is usually plenty.
+A pull quote lifts a sentence from your text and sets it large, the way a magazine does, with an optional attribution beneath. It works best when the line genuinely stands on its own, and it duplicates rather than moves the sentence. Readers see the line in your prose and in display. One per page is usually plenty.
 
 ### CTA
 
-A CTA (the printer's term is call to action) is a prominent button with a label and a destination, for the page whose point is that the reader does something: register, join, donate. The form asks for the button's text and where it goes. Write the label as the action itself—"Register for the regatta" carries more than "Click here."
+A CTA (the printer's term is call to action) is a prominent button with a label and a destination, for the page whose point is that the reader does something: register, join, donate. The form asks for the button's text and where it goes. Write the label as the action itself. "Register for the regatta" carries more than "Click here."
 
 ### FAQ
 
@@ -267,7 +267,7 @@ A banner is a time-limited announcement with an expiry date. It shows until the 
 
 Your site keeps every image in one shared place, the media library, rather than attaching copies to individual pages. A photograph uploaded for one post is available to every page after it, and replacing an image in the library updates it everywhere it appears. Before you delete or replace anything, [the library screen](./manage-the-media-library.md) shows where each image is used.
 
-Inserting an image opens that library. Pick an existing picture or upload a new one, and the editor places it in your draft as a figure—the image and its caption as one block, styled as one unit on the published page. The caption is optional and lives directly under the image in your draft, where it's easy to edit in place.
+Inserting an image opens that library. Pick an existing picture or upload a new one, and the editor places it in your draft as a figure. The image and its caption become one block, styled as one unit on the published page. The caption is optional and lives directly under the image in your draft, where it's easy to edit in place.
 
 Every image also asks for a short written description, the alt text. Readers who use a screen reader hear the description in place of the picture, so it should carry what the picture contributes in context: "two dinghies rounding the windward mark in light air" serves a racing story, where "sailboats on a lake" does not. The editor marks any image still missing its description, including an entry's hero image in the details panel, so the gap is visible rather than silent. [Add an image](./add-an-image.md) walks the whole flow step by step.
 
@@ -285,7 +285,7 @@ The editor reads along as you write, and it deliberately limits what it comments
 
 **Spelling.** The spellchecker runs locally in the editor, using your site's dialect. Click an underlined word, or press `Alt Enter` with the cursor on it, and a small popover offers up to five suggestions plus two standing choices. **Add to dictionary** teaches the word to the whole site, so a name or a term of art gets flagged exactly once in the site's life, for whichever writer meets it first. **Ignore** dismisses the mark without teaching anything.
 
-**Mechanical slips.** Alongside spelling, the editor catches a short list of objective mistakes: a doubled word ("the the"), a double space, repeated punctuation. Each comes with a one-click fix in the same popover. The list is deliberately mechanical, and there is no style or grammar opinion anywhere in it—nothing about your phrasing, your word choice, or your sentences is ever flagged. Style belongs to you, and if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject.
+**Mechanical slips.** Alongside spelling, the editor catches a short list of objective mistakes: a doubled word ("the the"), a double space, repeated punctuation. Each comes with a one-click fix in the same popover. The list is deliberately mechanical, and there is no style or grammar opinion anywhere in it. Nothing about your phrasing, your word choice, or your sentences is ever flagged. Style belongs to you, and if your site enables it, to [tidy's](#tidy) suggestions, which you accept or reject.
 
 A small live count of open issues sits in the editor's footer, next to the word count, so you can see at a glance how many checks are still open. `F8` steps through the open issues one at a time, and `Shift F8` goes back; for screen-reader users, the same running count is announced as issues appear and resolve. A sweep with `F8` until nothing is left is a quick pre-publish habit.
 
@@ -346,7 +346,7 @@ The tables below cover the editor's whole set, plus the standard undo and redo. 
 
 ## The details panel
 
-Beyond its text, every entry carries a small amount of information about itself, like its date and its address on the site. The site uses this metadata to order the archives and to describe the entry in lists and search results. The details panel is where you set it—`Ctrl .` or the toolbar opens it, organized into Details, Visibility, and Address.
+Beyond its text, every entry carries a small amount of information about itself, like its date and its address on the site. The site uses this metadata to order the archives and to describe the entry in lists and search results. The details panel is where you set it. `Ctrl .` or the toolbar opens it, organized into Details, Visibility, and Address.
 
 <!-- LIVE-UI: the details panel open, its three groups visible -->
 
@@ -376,7 +376,7 @@ stateDiagram-v2
     Published --> Editing: Edit again
 ```
 
-**Save** (`Ctrl S`) stores your work privately. A saved draft persists indefinitely, and every save is kept, so no version of your work is ever lost—you can save a half-formed thought on Tuesday and pick it up in March. **Publish** (`Ctrl Shift S`) puts the entry on the live site, and it publishes exactly what the preview shows. Editing a published entry starts the cycle again: your new changes wait privately, the entry shows **Edited** in the list, and readers keep seeing the old version until you publish again.
+**Save** (`Ctrl S`) stores your work privately. A saved draft persists indefinitely, and every save is kept, so no version of your work is ever lost. You can save a half-formed thought on Tuesday and pick it up in March. **Publish** (`Ctrl Shift S`) puts the entry on the live site, and it publishes exactly what the preview shows. Editing a published entry starts the cycle again: your new changes wait privately, the entry shows **Edited** in the list, and readers keep seeing the old version until you publish again.
 
 Two more moves round out the lifecycle. **Discard** throws away unpublished changes and leaves the published page exactly as it was, for the draft you've thought better of. **Delete**, in the entry's overflow menu, removes the entry itself, and asks for confirmation first.
 

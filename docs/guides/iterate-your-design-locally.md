@@ -4,13 +4,14 @@ Redesigning a live cairn site the naive way means deploying every tweak to see i
 the build, reload the real URL, repeat. This guide covers the faster loop: run the site locally
 against real content and real media, watch the change appear under `vite dev`, and deploy once at
 the end. It works whether you're driving the loop yourself or through an AI coding agent like
-Claude Code; either way, the tightening comes from the same thing, cutting deploy latency out of
+Claude Code; either way, the tightening comes from the same thing. It cuts deploy latency out of
 every single tweak.
 
 The worked example throughout is taking [Waymark](./make-waymark-your-own.md), cairn's starter
 template, and making it your own: swapping the palette, the type, the flourishes, against your
 site's actual posts and images rather than placeholder content. The same loop applies to any
-design change on any cairn site, a token swap, a new component, a layout rework.
+design change on any cairn site. A token swap, a new component, and a layout rework all work the
+same way.
 
 ## What you need first
 
@@ -93,7 +94,7 @@ Save that gate for once, at the end.
 
 Every several iterations, or before you'd call the design ready, step back and look at the whole
 page rather than the one element you were just tuning. A change that reads right in isolation can
-throw off the page around it, spacing that no longer lines up, a color that clashes with a
+throw off the page around it. Spacing might no longer line up, or a color might clash with a
 neighboring section. Check a narrow viewport and a wide one; cairn's own design work holds to a
 five-viewport standard (320, 390, 768, 1440, 2560) for exactly this reason.
 

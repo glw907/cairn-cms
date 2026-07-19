@@ -2,10 +2,10 @@
 
 Cairn keeps its content and config state in git, its runtime state in a self-owned D1 database,
 and the media bytes that fit neither in R2, with only a reference in git. [The architecture
-overview](./architecture.md#where-state-lives) names what lands in each store, content, site
-config, and auth, and this page is the rule behind that split: what a new kind of state has to be
-true of it before it earns a place in any of them, and the three precedents, plus one exception,
-that rule has already decided.
+overview](./architecture.md#where-state-lives) names what lands in each store: content, site
+config, and auth. This page is the rule behind that split. It sets out what a new kind of state
+has to satisfy before it earns a place in any store, and it walks the three precedents, plus the
+one exception, that the rule has already decided.
 
 ## The question that decides it
 

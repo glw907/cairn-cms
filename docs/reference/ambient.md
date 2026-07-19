@@ -32,8 +32,8 @@ production request leaves it unset. `auditSink` is the site-supplied persistence
 [`adminAction`](./sveltekit.md#adminaction)'s audit records
 ([`AdminActionAuditSink`](./sveltekit.md#adminactionauditsink) is a [sveltekit](./sveltekit.md)
 export): a site that wants audit records in its own table assigns it in a hooks handle, and this
-declaration is what types that assignment. A site that never assigns it loses nothing; every emit
-still logs `admin.action.audited`.
+declaration is what types that assignment. A site that never assigns it still logs
+`admin.action.audited` on every emit.
 
 The subpath exports nothing at runtime (its JS module is empty), so the import is safe in a
 declaration file and free everywhere else.

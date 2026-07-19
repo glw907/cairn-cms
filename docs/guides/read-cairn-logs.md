@@ -4,8 +4,8 @@ Every operationally meaningful action, from a sign-in to a rejected upload, writ
 record through `console.log`, `console.warn`, or `console.error`.
 [Log events](../reference/log-events.md) is the full vocabulary those records draw from. Reading
 them in production takes one setting. `observability.enabled` must already be `true` in your
-`wrangler.jsonc`, the step [Deploy to Cloudflare](./deploy-to-cloudflare.md#turn-on-observability)
-covers. Without it the records still fire, but Workers Logs keeps none of them.
+`wrangler.jsonc`. The [Deploy to Cloudflare](./deploy-to-cloudflare.md#turn-on-observability)
+step covers turning it on. Without it the records still fire, but Workers Logs keeps none of them.
 
 ## What's in a record
 
@@ -57,8 +57,8 @@ tailing only matters for a deployed Worker. From your site's project directory:
 npx wrangler tail --format pretty --search commit.failed
 ```
 
-`--search` matches the raw text of each record, so it's a coarser net than the dashboard's field
-queries, useful for watching one event name scroll by while you reproduce a bug. Tailing streams
+`--search` matches the raw text of each record, so it casts a coarser net than the dashboard's field
+queries. Use it to watch one event name scroll by while you reproduce a bug. Tailing streams
 live. It keeps nothing, so the records disappear once the session ends. The dashboard's **Live**
 tab gives you the same stream in the browser.
 

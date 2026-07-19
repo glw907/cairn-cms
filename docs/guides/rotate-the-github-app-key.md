@@ -66,8 +66,8 @@ with `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and the new `GITHUB_APP_PRIV
 environment. If the site is already deployed, hit its `/healthz` endpoint too; a JSON body whose
 top-level `ok` is `true` runs the same signing self-test against the value you just pushed, live.
 Past a green doctor run and a green `/healthz`, sign in to `/admin` and save something. The
-resulting commit's committer is still the App, `[bot]` suffix and all, which only the new key
-could have produced.
+resulting commit's committer is still the App, `[bot]` suffix and all. Only the new key could have
+signed it.
 
 ## Retire the old key
 

@@ -77,3 +77,51 @@ new engine subsystem or public surface (template wiring plus a repo gate), so it
 derive as a patch again; if so, confirm the mismatch with Geoff in one sentence before cutting
 (the 0.88.1 precedent: authorized as minor, derived and confirmed patch). Verify the number
 free with `npm view @glw907/cairn-cms versions --json` at the cut.
+
+## Post-mortem (2026-07-19, pass complete; PR #8 merged to main at c71cc454)
+
+**Built.** T1: the showcase public header renders `menus.primary` through the engine's
+`extractMenu`. A lean `src/theme/site-config.ts` owns the template's single `parseSiteConfig`
+call (`cairn.config.ts` re-exports `siteConfig` from it), the ROOT layout server load returns
+`nav` (root, not `(site)`, so the `+error.svelte` mount gets the same data), and `SiteHeader`
+derives from `page.data.nav` typed app-wide via a new `App.PageData` declaration. Content was
+reconciled first (the YAML now declares Writing/Styleguide/Admin, what the header had
+hardcoded), so no visual drift; CI baselines held. The footer stays hardcoded deliberately: its
+list (Writing/Admin/Feed) is different content. T2: `check:arm-indexes` (script + npm script +
+`test.yml`), a set-difference gate per arm with the tutorial arm's index mapped to the front
+door `docs/README.md`; allowlist empty. It caught one real orphan, `build-a-theme.md`, now
+linked from the front door.
+
+**Also shipped under the docs dimension.** Tutorial Milestone 7 rewritten off the client-side
+adapter import onto the server-load shape the showcase now models (T1's own anti-pattern hunt
+surfaced it); `docs/reference/core.md`'s `parseSiteConfig` example path repointed.
+
+**Verified.** Full gate green locally (check 0/0 library and showcase, `npm test` exit 0 with
+3775 passing, `check:comments`, `check:docs`, `check:arm-indexes` with red-probe evidence,
+`check:reference(:signatures)`, `check:package`, `check:snippets`) and on CI (test, e2e, design,
+scaffold all pass on PR #8; the CI e2e is the trusted consumer-build proof per the worktree
+symlink gotcha). Focused e2e 2/2: config-to-render wiring plus the error-page nav contract.
+Optical read of the rendered header at 1440 in the main loop: identical to before.
+
+**Review.** `svelte-reviewer` (Opus): sound, no blockers; two suggestions applied
+(`App.PageData`, the error-page e2e), one applied as a tutorial note (label-only nav nodes), one
+declined with reasoning (the tutorial's two-line re-export survives `check:snippets`'s import
+stubbing where `export ... from` would need a skip marker). Simplifier: one change accepted
+(typing the empty allowlist per sibling-gate idiom, fixing a latent `Set<never>` inference).
+
+**Decisions locked.** The tutorial arm's index is `docs/README.md` (encoded in the gate, by
+design). The showcase's client/server config boundary now has three enforcing artifacts: the
+lean-module split, the `App.PageData` typing, and the tutorial teaching the same shape.
+
+**Follow-ups filed.** `guides/add-an-island.md` teaches a root-layout client import of the full
+adapter (same anti-pattern family); friction-logged and filed in ROADMAP Next with the
+registry-split fix shape named.
+
+**Method note.** Two serial `cairn-implementer` dispatches (Sonnet), each gate-verified in the
+main loop before the next; zero repair rounds. One process defect: a `pkill -f "vite preview"`
+matched the orchestrating shell's own command line and killed it (exit 144) before the first
+commit ran; killing by PID recovered it. Kill preview servers by PID, not by `-f` pattern.
+
+**Release.** Authorized as "a minor bump"; derived as a patch at the cut (template wiring plus a
+repo gate; no new engine subsystem or public surface) and Geoff confirmed `0.88.2`, the second
+consecutive authorized-minor-derives-patch (the 0.88.1 precedent held).

@@ -49,6 +49,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.88.2: the template's nav wiring and docs fixes (non-breaking)
+
+A template-and-docs window. The showcase's public header now renders `menus.primary` from
+`site.config.yaml` through a root layout server load, so `/admin/nav` edits reach the rendered
+site, and the tutorial teaches the same server-load shape instead of importing the config module
+in a client script.
+
+Consumers must: nothing. An existing site keeps its own chrome; the new wiring lands in newly
+scaffolded or copied sites. If your site copied the showcase's header, consider adopting the same
+pattern so your editors' nav changes take effect.
+
 ## 0.88.1: mermaid passthrough and real dev-backend fixtures (non-breaking)
 
 A mermaid fence now leaves the build-time highlighter untouched with its `language-mermaid`

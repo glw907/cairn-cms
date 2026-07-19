@@ -1,4 +1,4 @@
-## Unreleased
+## 0.88.2
 
 ### Changed
 

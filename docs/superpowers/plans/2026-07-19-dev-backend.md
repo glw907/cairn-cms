@@ -141,3 +141,41 @@ doc gates (`check:reference`, `check:reference:signatures`, `check:package`, `ch
 after a from-scratch install (the symlink gotcha), reading `/admin/media` thumbnails and the
 fragment picker with my own eyes; CHANGELOG under `## Unreleased`; no version bump, no publish;
 post-mortem appended here; STATUS updated on `main` at merge.
+
+## Post-mortem (2026-07-19)
+
+**Shipped.** All eight tasks landed on `dev-backend` (nine commits, `705ad2d3..a248f175`),
+every one verified by an independent Sonnet verifier on the first round — zero repair rounds,
+a first for a cairn workflow pass. Method: T1 ran as a plain dispatch while the pass was
+planned; Geoff then authorized a workflow, which ran T2-T8 serially with per-task verifiers,
+then the simplifier (declined to change anything, with reasoning the main loop accepted),
+a full eight-gate measurement run (all green), and the two-reviewer fan-out (one nit total,
+accepted: `seedFragments` writes body files before the manifest-exists check, harmless while
+`devBackendHandle` orders the seeds, and the shape mirrors `seedVocabulary`).
+
+**What was verified with evidence.** Both root causes were proven before planning (delivery
+returned 200 while `SEED_PNG` was a 12-byte undecodable stub; no fragment seed existed at
+all), which made every task well-specified — the likely reason the verify pass ran clean.
+The T2 verifier decoded seeded bytes with ImageMagick itself; T3's smoke runs
+`getPlatformProxy` in the unit project with no escape hatch needed; T4 found both CI-dark
+gates already green and wired them; the optical close-out (main-loop eyes, fresh worktree
+showcase install per the symlink gotcha) read real 240x160 thumbnails on `/admin/media`
+(the only "Image missing" tile is `PASS_C_MISSING`, the deliberate broken-reference
+fixture) and both seeded fragments Published on `/admin/fragments`. The 8x8-then-240x160
+follow-up was the one post-workflow fix: tile CSS renders natural-size images, so the first
+seeds read as dots; `zlibStore` learned multi-block stored DEFLATE for the larger payload.
+
+**Friction log cleared to zero** (14 open findings: 7 shipped here, 2 already resolved,
+5 moved to ROADMAP with triggers). Notable triage discovery: the `menus:` "dead config"
+entry was wrong in both its options — the key is engine-owned (`extractMenu`,
+`createNavRoutes` ship and are documented) and the showcase simply never wired it; recorded
+in ROADMAP as wire-at-template-scope, not remove.
+
+**Riders.** All three closed: `cairn-register-editor` now loads
+`docs/internal/docs-register.md` as the canonical contract; the monthly SvelteKit routine
+watches kit#12533 beside the checkOrigin removal; the Cloudflare token gained Zone Workers
+Routes (Geoff's dashboard edit, verified live against the cairn.pub zone, recorded in the
+estate inventory).
+
+**Release:** v0.89.0 (Geoff authorized a minor at pass close); the number was verified free
+before the cut. Consumer action: none (all changes additive or dev-package-internal).

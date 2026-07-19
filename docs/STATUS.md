@@ -29,15 +29,17 @@ minor-tier leakage); all doc gates + Vale 0 errors; merged to `main`. Record: th
 post-mortem (`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`). Release: v0.87.3
 published 2026-07-18 (docs-only, drop-in; publish.yml green, the registry serves it).
 
-**NEXT (fresh session): docs+help rendered on-site with TOCs, likely starting the TOPO
-theme, then the scaffolder (step 6; Opus conducts per the post-Fable doctrine). PREP IS
-DONE: read `docs/internal/2026-07-18-docs-on-site-topo-brief.md` first — it holds the
-binding rulings, the source-read facts (the anchor-slug compatibility constraint, the
-no-TOC-API gap, the flat-concept limitation), and the ordered decision list; open the pass
-by brainstorming that decision list with Geoff. Resume prompt: "Run the docs-on-site/Topo
-pass: read cairn-cms docs/internal/2026-07-18-docs-on-site-topo-brief.md and brainstorm
-its decision list with Geoff before any design." Launch in ~/Projects/cairn-cms (the
-initiative spans the engine and cairn-pub; the brief says which decisions move it).**
+**IN FLIGHT (2026-07-18, this session executes it): the docs-on-site pipeline pass.**
+The opening brainstorm ran and Geoff ratified the full decision slate (spec:
+`docs/superpowers/specs/2026-07-18-docs-on-site-pipeline-design.md`; his picks: pipeline
+on cairn.pub this pass with Topo prep at close, docs shipped in the npm tarball). The
+plan is `docs/superpowers/plans/2026-07-18-docs-on-site-pipeline.md`: Phase A engine
+surface (renderDocument headings, slug contract test, docs-in-tarball, supportContact
+default) on the `docs-on-site` worktree then a minor release; Phase B cairn-pub loader +
+routes + deploy; Phase C close + the Topo inspiration-review prep. Method: implementer
+dispatches, full gate per task, main-loop review; Geoff authorized the run through
+release and next-pass prep with no further gates (2026-07-18). If resuming cold:
+re-enter via `cairn-pass` at the first unfinished plan task.
 
 
 **Carry-forwards (live):** the dev backend still cannot exercise fragments and renders media

@@ -195,3 +195,60 @@ fresh popularity data) run as a research fan-out; findings synthesized into a To
 next-pass brief (what each system is beloved for, which devices Topo absorbs, the
 Starlight-anatomy recap) plus mockup candidates for Geoff's async review. Banked under
 `docs/internal/`, pointed at from STATUS.
+
+---
+
+## Post-mortem (2026-07-18, pass complete)
+
+**Shipped.** Phase A on the `docs-on-site` worktree (PR #5, merged): `renderDocument` +
+`DocHeading` on `createRenderer` (lazy second processor after review), the GitHub-slug
+contract test (11 assertions over real corpus headings, zero divergence), the docs arms
+in the npm tarball (+61 files, 1.73→1.96 MB packed, allowlist-inverted `check:package`
+guard), and the `editor.supportContact` default with the unset/explicit/empty triad
+documented and test-locked. Released as **v0.87.4** (patch, not the planned "0.88.0": the
+size rule's own parenthetical — new optional exports on an existing surface — decides it;
+`check:version` agreed). Phase B in cairn-pub (7 commits, deployed live): the build-time
+loader over `node_modules/@glw907/cairn-cms/docs` with link policy (in-tree → routes with
+fragments; out-of-tree → GitHub blob URLs pinned at the installed version), navigation
+derived from arm-index link order, the full-corpus link check (the 225-anchor proof) wired
+into the build, `/docs` + `/docs/[...path]` + `/help/[guide]` prerendered, the
+TOC/breadcrumb/prev-next/mermaid furniture, and the /docs front door rewritten
+register-clean. Phase C: this post-mortem, the banked Topo inspiration review
+(`docs/internal/2026-07-18-topo-inspiration-review.md`), STATUS/ROADMAP/memory updates.
+
+**Verified.** Engine: full gate + CI (test/e2e/design/scaffold) green pre-merge and on the
+release commit; registry serves 0.87.4 with 562 files. Site: 40 screenshots (8 pages × 5
+widths), three Opus graders, ZERO structural findings (3 cosmetic, carried forward);
+register + svelte + a11y reviewers with all confirmed findings folded (including a real
+blocker: mermaid rendered once in `onMount` and died on client-side navigation; now
+`afterNavigate`). Live: /docs, reference/core, /help at 320, the mermaid architecture
+page, and a long guide read as full renders by the main loop before and after deploy.
+
+**Review yield.** The 8-angle finder pass on the engine diff surfaced one contract-drift
+cluster (four stale supportContact doc comments the change invalidated), the lazy-processor
+efficiency win, the allowlist inversion, and the empty-string suppression edge now
+documented and tested. One finding refuted at triage (the exported-symbol one-line-doc
+calibration). The site reviewers' mermaid-navigation blocker would have shipped without
+the fan-out: the build-time tests structurally cannot catch a client-navigation defect.
+
+**Deviations.** The plan's "^0.88.0" became "^0.87.4" (size re-derived at the cut per the
+release skill; the plan pre-named a number, which the skill explicitly warns is a
+hypothesis). The mermaid pipeline needed a site-side marker plugin because the engine's
+Shiki step discards `language-mermaid` (filed in the friction log as an engine candidate).
+`/docs/tutorial/build-your-first-cairn-site` does not exist as a route: the tutorial's
+single page IS the arm index at `/docs/tutorial` (a capture near-miss, not a defect).
+
+**Carry-forwards.** Cosmetic: mermaid diagrams shrink to near-illegibility at 320/390
+(consider a tap-to-expand or horizontal-scroll treatment in the Topo pass); section-index
+breadcrumbs duplicate the arm name ("Docs / Guides / Guides"). Ops: the Cloudflare API
+token lacks zone-route write on the cairn.pub zone, so `wrangler deploy` exits 1 after a
+successful upload (fix the token scope or scripted deploys will read as failures).
+
+**Budget.** Subagent tokens ≈ 3.1M (workflow 1.39M incl. three image-heavy graders;
+review finders+verify ≈ 0.6M; engine implementers + fold ≈ 0.86M; simplifier 0.08M;
+recon 0.1M) plus the main loop. Geoff interaction points: 1 batched decision slate
+(2 forks), plus his 3 unprompted steers (deploy request, workflow grant, fork answers);
+0 corrections of shipped work. Runaway-guard lesson: journal-idle is a false stall signal
+while a long agent runs (the journal writes on agent completion); newest-file activity is
+the right signal, and image-grading transcripts legitimately reach 4MB+, so size alarms
+must scope to still-growing files.

@@ -303,8 +303,10 @@ the named human gates only):**
   proof a prospective user sees before running the scaffolder; the docs site is the engine
   publishing its own manual. Subdomain-joined with shared header cross-links; Topo's Waymark
   derivation keeps the two reading as one property. Sequencing: the intro site can go up early, on
-  Waymark as it stands, before beta; the docs stay in the repo until the rewrite finishes and Topo
-  hosts them. Domain procurement: cairn.pub (see above).
+  Waymark as it stands, before beta. The docs now render on cairn.pub itself (`/docs` and `/help`,
+  shipped 2026-07-18 from the `0.87.4` in-package docs tree with TOCs and the anchor-compatibility
+  gate); the remaining step is the docs.cairn.pub split when Topo exists, a migration of the
+  already-portable pipeline, not a rebuild. Domain procurement: cairn.pub (see above).
 - **The `create-cairn-site` scaffolder.** Sequenced after Contract v2 phases 1-2 so it bakes the template
   against v2. The pre-B3 engine/DX slot lands first (remove the calendar route, the GitHub-App "appId is
   config, not secret" trap, the doctor that greens while the deploy fails, and the other first-hour DX
@@ -405,7 +407,8 @@ the named human gates only):**
 - **Per-field advisory seam plus live slug recompute.** An editor-side advisory-validation surface, and a
   slug preview that recomputes as the author retypes.
 - **`supportContact` personalization.** A richer shape than the current bare string, a name plus a
-  contact, so a self-serve hand-off reads personally.
+  contact, so a self-serve hand-off reads personally. (The bare-string default shipped in `0.87.4`:
+  unset now resolves to cairn's hosted editor help at cairn.pub/help.)
 - **Date-vs-publish field redesign.** A product look at the date field's label and affordance, since it
   reads as if it might schedule publishing.
 - **Starter content and onboarding progress.** Concept-differentiated seed content for the strongest

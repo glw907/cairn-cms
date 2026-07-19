@@ -92,3 +92,11 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   exist. Both are machine-checkable claims about the docs' own structure; a small gate that
   counts index entries against the directory (and flags numeric claims in index prose) would
   have caught both years earlier than a register sweep did.
+
+- **(developer, 2026-07-18, docs-on-site pass)** The engine's build-time Shiki step
+  (`rehypeCairnHighlight`) has no mermaid grammar and its fenced-code rewrite discards the
+  `language-mermaid` class, so nothing survives to identify a mermaid block client-side.
+  cairn-pub ships a site-side remark marker plugin (`mermaid-marker.ts`) as a workaround.
+  Candidate: the engine's highlighter should pass mermaid fences through with their
+  language class intact (or expose a fence-passthrough list), so every consumer site does
+  not re-derive the workaround. Surfaced by the 8 mermaid diagrams in the docs corpus.

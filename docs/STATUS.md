@@ -15,39 +15,48 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-18, latest: DOCS-REGISTER SWEEP SHIPPED + released; next = docs-on-site with TOCs, the Topo start)
+## Immediate next action (2026-07-18, latest: DOCS-ON-SITE PIPELINE SHIPPED, v0.87.4 published, cairn.pub /docs live; next = the Topo design pass)
 
-**THE DOCS-REGISTER SWEEP SHIPPED 2026-07-18 (same day as cairn.pub, Fable conducting by
-Geoff's model pick).** The register standard is banked at `docs/internal/docs-register.md`
-(the durable artifact: universal contract with the no-pitch-but-impressive keystone, four
-arm registers, the front-door register writing to the seasoned organizational developer with
-an editor legibility floor, calibration specimens; CLAUDE.md points at it). Both front doors
-rewritten; 107 verified findings applied over the 60 arm pages in two workflow rounds
-(Sonnet find + Opus refute-verify, then an Opus recall round after the spot-check showed
-minor-tier leakage); all doc gates + Vale 0 errors; merged to `main`. Record: the spec
-(`docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`) and the plan +
-post-mortem (`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`). Release: v0.87.3
-published 2026-07-18 (docs-only, drop-in; publish.yml green, the registry serves it).
+**THE DOCS-ON-SITE PIPELINE SHIPPED 2026-07-18 (one session: brainstorm, spec, plan,
+engine, v0.87.4, site, deploy, Topo prep; Fable conducting on Geoff's authorization to
+run through release without gates).** Engine (PR #5, merged): `renderDocument` +
+`DocHeading` on `createRenderer` (heading collection from the final rehype tree, lazy
+second processor), the GitHub-slug contract test (zero divergence; the 225 in-corpus
+anchors ride on it), the published docs arms inside the npm tarball (+61 files,
+allowlist-guarded `check:package`), and the `editor.supportContact` default
+(`https://cairn.pub/help`; unset/explicit/empty triad documented and test-locked).
+Released as **v0.87.4** (patch by the size rule, re-derived at the cut; the registry
+serves it, 562 files). Site (cairn-pub, 8 commits, LIVE): the build-time loader over the
+in-package docs with the link policy and full-corpus link check, `/docs` +
+`/docs/[...path]` + `/help/[guide]` prerendered with TOC rail, breadcrumbs, prev/next,
+lazy mermaid, and the register-clean /docs front door; verification = 40 shots, three
+Opus graders (0 structural findings), register/svelte/a11y reviewers folded (real
+blocker caught: mermaid died on client-side navigation; fixed with `afterNavigate`);
+deployed behind main-loop render reads, live routes verified. Record: the spec, the plan
++ post-mortem (`docs/superpowers/plans/2026-07-18-docs-on-site-pipeline.md`), and the
+banked Topo review (`docs/internal/2026-07-18-topo-inspiration-review.md`).
 
-**IN FLIGHT (2026-07-18, this session executes it): the docs-on-site pipeline pass.**
-The opening brainstorm ran and Geoff ratified the full decision slate (spec:
-`docs/superpowers/specs/2026-07-18-docs-on-site-pipeline-design.md`; his picks: pipeline
-on cairn.pub this pass with Topo prep at close, docs shipped in the npm tarball). The
-plan is `docs/superpowers/plans/2026-07-18-docs-on-site-pipeline.md`: Phase A engine
-surface (renderDocument headings, slug contract test, docs-in-tarball, supportContact
-default) on the `docs-on-site` worktree then a minor release; Phase B cairn-pub loader +
-routes + deploy; Phase C close + the Topo inspiration-review prep. Method: implementer
-dispatches, full gate per task, main-loop review; Geoff authorized the run through
-release and next-pass prep with no further gates (2026-07-18). If resuming cold:
-re-enter via `cairn-pass` at the first unfinished plan task.
+**NEXT (fresh session): the Topo design pass.** Open with
+`docs/internal/2026-07-18-topo-inspiration-review.md`; it carries the four-system
+synthesis, the devices-to-absorb table, the Starlight anatomy checklist, and section 5's
+open design questions for Geoff. The ruled gate: mockup candidates go to Geoff BEFORE any
+build. After Topo: the scaffolder (step 6). Resume prompt: "Open the Topo design pass:
+read cairn-cms docs/internal/2026-07-18-topo-inspiration-review.md and take section 5's
+open questions to Geoff, then mockup candidates." Launch in ~/Projects/cairn-cms. Check
+the Fable window state at session start (the post-Fable doctrine says Opus conducts after
+it closes; verify online).
 
-
-**Carry-forwards (live):** the dev backend still cannot exercise fragments and renders media
-tiles as "Image missing" (ROADMAP Now seed item); seven friction-log entries await the next
-clearing (the six from the Waymark review pass plus the arm-index-drift gate candidate from
-this sweep); `check:custom-surface`/`check:chassis-boundary` remain CI-dark; the cairn.pub
-live admin smoke (Geoff's magic link + publish round-trip) is owed on the site side; point
-`cairn-register-editor` at the banked register standard.
+**Carry-forwards (live):** NEW from this pass: mermaid diagrams near-illegible at 320/390
+(candidate: a tap-to-expand treatment in the Topo pass); section-index breadcrumbs
+duplicate the arm name ("Docs / Guides / Guides"); the Cloudflare API token lacks
+zone-route write on the cairn.pub zone, so `wrangler deploy` exits 1 after a successful
+upload (fix the token scope or scripted deploys read as failures). STANDING: the dev
+backend still cannot exercise fragments and renders media tiles as "Image missing"
+(ROADMAP Now seed item); eight friction-log entries await the next clearing (the seven
+prior plus this pass's engine mermaid-grammar gap); `check:custom-surface` and
+`check:chassis-boundary` remain CI-dark; the cairn.pub live admin smoke (Geoff's magic
+link + publish round-trip) is owed; point `cairn-register-editor` at the banked register
+standard.
 
 ## Archives
 

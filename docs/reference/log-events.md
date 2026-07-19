@@ -47,6 +47,7 @@ in production, see the [read cairn's logs guide](../guides/read-cairn-logs.md).
 | `editor.role_changed` | info | An owner changes an editor's role. | `owner` (the acting owner), `target` (the changed editor), `role` (the new role), `capability` (the new role's resolved capability) |
 | `editor.bootstrapped` | info | A magic-link request from the configured `bootstrapOwner` address inserts the first owner row into an empty `editor` table. | `email` |
 | `auth.role.unknown` | warn | A session resolves against a role string outside the declared vocabulary (a pruned config, a hand-edited row). The session still authenticates at `none` capability. | `email`, `role` |
+| `auth.access.denied` | warn | `requireAccess` refuses a request: the site's declared access map has no rule for the target, or `canReach` denies the session's role. | `email`, `role`, `target` |
 | `dictionary.added` | info | A personal-dictionary add commits the new words to the committed dictionary file. | `editor`, `words` (the added words), `retried` (true when the commit landed on the post-conflict retry) |
 | `dictionary.add_conflict` | warn | A personal-dictionary add hits a second commit conflict and gives up; the client keeps the words pending and re-attempts on the next save. | `editor`, `words` |
 | `tidy.done` | info | A tidy copy-edit returns a corrected document. Carries no content and no key. | `editor`, `model`, `usage` (the token counts) |

@@ -44,13 +44,20 @@ wording. These likely PRECEDE the scaffolder now; confirm priority with Geoff at
 session start.**
 
 **NEXT (fresh session; the Fable window closed 2026-07-19, so OPUS CONDUCTS per
-`~/.claude/docs/fable-post-cutoff-system.md`): Geoff's queued initiatives above, then the
-pre-beta ladder's step 6, the scaffolder** (`create-cairn-site`: the pre-B3 DX slot first, then B3/B4, then the Part C
-generator; plans under `docs/superpowers/plans/2026-06-2*-cairn-scaffolder-*`, re-verify
-their baselines). Resume prompt: "Run the scaffolder effort, the pre-beta ladder's step 6:
-read cairn-cms docs/STATUS.md's next-action entry and the existing scaffolder plans, verify
-their baselines against main, then plan and execute the pre-B3 DX slot." Launch in
-~/Projects/cairn-cms.
+`~/.claude/docs/fable-post-cutoff-system.md`): the DOCS-REGISTER SWEEP, a dedicated pass,
+brainstorm-first (Geoff's ruling 2026-07-18).** The docs must read like documentation, not
+marketing. The working material: the `cairn-pub-front-page-voice` memory (the register
+rules and Geoff's specimen list: "the four arms", "Eight words the docs use precisely",
+the when-something-breaks setup-colon triad, all still live in docs/README.md; the charter
+opener's "finished tool, and a toolkit" phrasing also aligns to the ratified answer line
+"both a finished CMS and an extensible toolkit", and "one admin" de-jargons per point 05).
+The brainstorm settles: the docs' positive register standard, and the sweep's verification
+shape (adversarial find-and-verify over ~126 files is workflow-shaped; Geoff has standing
+workflow authorization). Resume prompt: "Run the docs-register sweep, a dedicated pass:
+read cairn-cms docs/STATUS.md's next-action entry and the cairn-pub-front-page-voice
+memory, then brainstorm the docs register standard with Geoff before any edit." Launch in
+~/Projects/cairn-cms. After it: docs+help rendered on-site with TOCs (Topo start), then
+the scaffolder (step 6).
 
 ## The archived step-5 launch entry (superseded content below)
 

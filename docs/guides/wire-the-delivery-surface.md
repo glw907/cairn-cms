@@ -1,8 +1,8 @@
 # Wire the delivery surface
 
 The adapter, schema, and renderer describe your content. A public cairn site adds three routes on
-top: a catch-all that serves one entry per request, the feed and sitemap routes a crawler reads,
-and an archive filter that narrows a long list by tag. Every snippet below is code from
+top. A catch-all serves one entry per request. The feed and sitemap routes give a crawler what it
+reads. An archive filter narrows a long list by tag. Every snippet below is code from
 [`examples/showcase`](../../examples/showcase).
 
 ## Build the site's indexes

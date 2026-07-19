@@ -24,7 +24,7 @@ runs at all, or the request gets through and the magic-link send itself fails.
 That last message is the one visible sign of a send failure, and it's deliberately generic: cairn
 never puts the domain or the error code in front of the editor, only in the log.
 A non-editor submitting the form gets the ordinary "check your inbox" response regardless of
-whether the send would have failed, since that path never reaches a real send at all—the
+whether the send would have failed, since that path never reaches a real send at all. The
 distinct `send_error` message only ever reaches someone on the allowlist.
 
 ## A save does nothing

@@ -20,7 +20,7 @@ deleting it.
 
 <!-- LIVE-UI: the Library grid with the search box, the triage filter, and the density toggle -->
 
-The screen opens on a grid of thumbnails, your whole library at a glance. Click a tile, or
+The screen opens on a grid of thumbnails. It shows your whole library at once. Click a tile, or
 focus it and press Enter, to open its details.
 
 Search sits at the top of the toolbar and matches an image's name or its alt text, over your
@@ -71,7 +71,7 @@ Deleting this changes nothing readers see," so the effect of a deletion or repla
 visible before you act.
 
 cairn can list these placements because every reference to an image is a plain line of text in
-a committed file, so it searches the content directly instead of estimating usage.
+the entry's own file, so it searches the content directly instead of estimating usage.
 
 ## Replacing an image everywhere
 
@@ -85,8 +85,8 @@ then upload the new file.
 cairn identifies an image by its content, not its filename, so a replacement gets a new
 identity of its own. The review step that follows lists every published entry that uses the
 current image and explains what changes: the name stays the same, only the underlying file
-does, so every one of those entries is repointed to the new file in a single commit, and
-readers see the new image once the site rebuilds. An edit still sitting on its own branch is
+does, so every one of those entries is repointed to the new file in one step, and readers see
+the new image once the site rebuilds. An edit still sitting on its own branch is
 left alone and keeps the old file until it publishes again; the review names any such branch
 so nothing is a surprise later.
 

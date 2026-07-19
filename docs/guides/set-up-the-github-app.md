@@ -116,7 +116,7 @@ GitHub the way you expect, so check that too. Sign in to `/admin`, edit an entry
 the resulting commit on GitHub. It carries two identities. GitHub shows the signed-in editor as
 the author, by name and email, and the App, with `[bot]` appended, as the committer. The engine
 sends the editor as the commit's author and omits the committer entirely, so GitHub attributes the
-commit to whichever identity signed the request, the App.
+commit to whichever identity signed the request. That's the App.
 
 ## What's next
 

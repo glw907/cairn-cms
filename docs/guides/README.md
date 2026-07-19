@@ -1,9 +1,10 @@
 # Guides
 
 Each guide here covers one task. The guides under For developers take a site from its adapter
-through deploy and day-to-day upkeep. The two under For editors cover writing in one. Every
-developer guide assumes [Define an adapter and schema](./define-an-adapter-and-schema.md) is
-already done, since every other developer task builds on the adapter it produces.
+through deploy and day-to-day upkeep. The guides under For editors cover writing, from your first
+look at the editor through publishing, images, and tags. Every developer guide assumes [Define an
+adapter and schema](./define-an-adapter-and-schema.md) is already done, since every other
+developer task builds on the adapter it produces.
 
 ## For developers
 

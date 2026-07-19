@@ -104,8 +104,8 @@ you insert the image. If the image is already used in a dozen places from before
 description, **Push alt to placements** applies the current default retroactively.
 
 The review sorts every placement into three groups. An empty alt gets filled automatically.
-Existing custom text is left alone by default, listed but unchanged, unless you check a box to
-overwrite it, the one destructive choice in this flow, so it needs a deliberate opt-in. A
+Existing custom text is left alone by default, listed but unchanged. To overwrite it, check a box.
+That is the one destructive choice in this flow, so it needs a deliberate opt-in. A
 decorative image marked that way on purpose is only reported, never overwritten. As with
 Replace, an unverifiable placement holds the whole push rather than risk missing one.
 
@@ -119,8 +119,8 @@ confirmation. For an image still used somewhere, the dialog lists every entry th
 would break, published entries and open edits alike, and keeps the delete button disabled until
 you type the image's address (shown in the dialog).
 
-Deleting an image never destroys its history. The row is removed from the library, but every
-version stays in git, so a developer can bring it back later if it turns out you needed it.
+Deleting an image never destroys its history. The row is removed from the library, but no earlier
+version is lost, so a developer can bring one back later if you find you needed it.
 
 ## Deleting several at once
 
@@ -133,8 +133,8 @@ That confirmation is itself a preview: it splits your selection into what has no
 and will be deleted, and what is still used and will be held back. Nothing you can still see in
 use is removed by a bulk delete; every image is checked again, individually, at the moment it
 deletes, and anything found in use between your selection and that moment is skipped and named
-in the summary rather than silently dropped. As with a single delete, everything removed stays
-in git history.
+in the summary rather than silently dropped. As with a single delete, nothing removed is ever
+truly lost.
 
 ## Finding orphaned files
 

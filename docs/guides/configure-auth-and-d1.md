@@ -243,7 +243,7 @@ services while your Worker code still runs locally:
    consumes the token from a same-origin POST rather than the GET a link click naturally makes, so
    the token in the URL can't leak through a referrer header on the way to the confirm page.
 5. **Click "Sign in."** You land on `/admin`. Your browser now holds a session row that a magic
-   link produced, the same path an editor follows on the deployed site.
+   link produced. That is the same path an editor follows on the deployed site.
 
 This step sends actual mail through Email Sending, so use an address you own and expect the
 message to land in a real inbox. If your site's

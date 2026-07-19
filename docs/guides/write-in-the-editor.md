@@ -245,7 +245,7 @@ An icon is a small glyph from your site's declared set, placed as its own short 
 
 ### Video
 
-A video block takes a YouTube or Vimeo address and a title, and renders a styled card that links to the video. The page itself never contacts the video platform, which keeps your pages fast and your readers untracked until they choose to follow the card. Paste the video's ordinary web address; the form takes care of the rest.
+A video block takes a YouTube or Vimeo address and a title, and renders a styled card that links to the video. The page itself never contacts the video platform. Nothing loads and no reader is tracked until someone clicks through the card. Paste the video's ordinary web address; the form takes care of the rest.
 
 ### Pull quote
 

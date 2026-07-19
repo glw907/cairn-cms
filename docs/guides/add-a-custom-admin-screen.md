@@ -16,8 +16,7 @@ theme tokens, and the shared component recipes, so it reads as built in from the
 than bolted on, and the [design conventions in the components
 reference](../reference/components.md) name the treatments to reach for. And your screen inherits
 the responsive craft the same way: the shell already composes its chrome at every width, and
-building from the documented recipes keeps a custom screen composed at phone and ultrawide widths
-without extra work on your part.
+building from the documented recipes keeps a custom screen composed at phone and ultrawide widths.
 
 The rest of this guide grows that one screen into a whole custom *section*, the shape a real site
 proves once it has more than a screen or two of its own admin surface. The worked pattern below is
@@ -229,8 +228,8 @@ Every action under `/admin/club/**` wraps with `clubAction` instead of calling `
 directly, the same way every load calls `requireSession`. A validation reject or a role refusal
 that returns `fail()` from inside a `clubAction`-wrapped handler owes `adminAction` no audit
 record for the rejection itself: a request that mutated nothing needs no audit trail of its own
-non-mutation, only the handler's own domain-meaningful rejects (like the role check above) are
-worth recording. The exemption cuts one way: reject *before* you write. A handler that mutates
+non-mutation. Record only the handler's own domain-meaningful rejects, like the role check above.
+The exemption cuts one way: reject *before* you write. A handler that mutates
 and then returns `fail()` must still emit its own audit, because nothing rolls its writes back
 and the wrapper can't see them.
 

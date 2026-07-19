@@ -109,10 +109,10 @@ claiming success because a value is merely present. It reuses a recent probe's r
 minutes rather than reaching Anthropic on every single load.
 
 If a tidy call ever fails because Anthropic rejects the key, the Tidy control disappears from the
-editor for a while rather than staying live to fail the same way again: a present-but-broken key
-is absent, not disabled, the same truthful-visibility rule the settings screen follows. It comes
-back on its own a short while after the key starts working again, or immediately on the next
-successful call, whichever comes first; nothing you do in the editor forces the recheck.
+editor for a while rather than staying live to fail again. cairn treats a present-but-broken key as
+absent, not as a disabled control left in place. The settings screen handles a broken key the same
+way. It comes back on its own a short while after the key starts working again, or immediately on
+the next successful call, whichever comes first; nothing you do in the editor forces the recheck.
 
 Past that screen, tidy is an editing feature the editor drives from the toolbar. That flow, and
 tidy's remit of small fixes that never touch voice or structure, is

@@ -51,7 +51,7 @@ For a dated concept, the slug strips the id's leading date prefix, and how much 
 "the prefix" is exactly the concept's `datePrefix` granularity, `year`, `month`, or `day`.
 
 That granularity has to match how much date your filename actually carries, and getting it wrong
-doesn't fail loudly, it just leaves a stray digit in the URL. A `datePrefix: 'month'` concept strips
+doesn't fail loudly. It leaves a stray digit in the URL. A `datePrefix: 'month'` concept strips
 only `YYYY-MM-` from the front of the id. Keep a day-numbered filename like `2024-03-15-my-trip.md`
 under a month concept and the slug comes out `15-my-trip`. The day digit ends up in the part of the
 URL meant to read clean. Rename the file to `2024-03-my-trip.md` instead, and the slug is

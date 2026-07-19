@@ -13,8 +13,8 @@ questions: the thing you want is usually a concept and a reference to it.
 
 An author needs nothing a post doesn't already have: a directory, and a schema built from
 `fieldset`. Every concept identifies its entries through a `title` field, the way posts and pages
-both do, and an author is no exception, even though "Name" reads better than "Title" as its
-editor-facing label.
+do, and an author is no exception. Its editor-facing label reads "Name" rather than "Title," but
+the field is still `title`.
 
 ```ts
 import { defineConcept, fieldset, fields } from '@glw907/cairn-cms';
@@ -35,7 +35,7 @@ schema](./define-an-adapter-and-schema.md#declare-your-first-concept) already li
 that isn't routable or dated, stays out of feeds, and that nothing links to directly, because
 another concept pulls its content in. An author's bio goes in the body of the markdown file, the
 same as a post's body. Add `authors` to your adapter's `content` map the way you already added
-`posts` and `pages`, one more key beside the two you have.
+`posts` and `pages`.
 
 ## Reference it
 

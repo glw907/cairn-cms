@@ -43,7 +43,8 @@ three independent facts about a concept, resolved once at declaration.
 | `embedded` | no | no | no |
 
 Posts want `feed`. Leave `routing` off entirely for a plain page, and reach for `embedded` only for
-a concept nothing links to directly, content another concept pulls in rather than a URL of its own.
+a concept nothing links to directly. Another concept pulls it in rather than giving it a URL of its
+own.
 
 ## Add more fields to the schema
 
@@ -77,9 +78,9 @@ across entries and show up on every list card. `creatable: true` lets an editor 
 isn't in the list yet; a site that curates a fixed tag vocabulary in `site.config.yaml` narrows
 this same field to a closed picker without changing the schema.
 
-`summaryFields` names frontmatter keys a list card shows without a full per-entry read, useful for
-anything a card wants to display, an excerpt, a status, a price, that doesn't already drive the
-title or the date. Every key it names must also be a declared field.
+`summaryFields` names frontmatter keys a list card shows without a full per-entry read. Name
+anything a card displays that doesn't already drive the title or the date, such as an excerpt, a
+status, or a price. Every key it names must also be a declared field.
 
 `object` and `array` build repeatable and grouped fields (an FAQ list, a gallery, a nested address)
 over the same descriptors. They nest one level deep and no further; the full field vocabulary,

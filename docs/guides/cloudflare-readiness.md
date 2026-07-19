@@ -10,9 +10,9 @@ npx cairn-doctor --from editor@your-site.com --repo you/your-site
 ```
 
 A failing check never stops the run, so one pass prints every check the environment can answer.
-The sections below follow the checks in setup order: what each verifies, what a failure means,
-and how to fix it. For the flags, the exit codes, and how each input resolves from a flag, an
-environment variable, or the repo itself, see the
+The sections below follow the checks in setup order. Each one describes what the check verifies,
+what a failure means, and how to fix it. For the flags, the exit codes, and how each input
+resolves from a flag, an environment variable, or the repo itself, see the
 [`cairn-doctor` reference](../reference/doctor.md).
 
 ## Deploy the Worker with its bindings
@@ -140,8 +140,8 @@ config bootstrap owner, which needs no D1 access); the
 Two more checks read the same table. `auth.role-vocabulary` flags an editor row whose `role` isn't
 one of the site's declared names, a pruned config or a hand-edited row (the runtime resolves it to
 `none` capability rather than locking the person out, but the doctor still surfaces the drift).
-`auth.email-normalization` flags a row whose email isn't trimmed and lowercase, the one hygiene
-hole a manual `wrangler d1 execute` insert can open. Both skip under the same conditions
+`auth.email-normalization` flags a row whose email isn't trimmed and lowercase. A manual `wrangler
+d1 execute` insert is the only way such a row gets in. Both skip under the same conditions
 `auth.store` does.
 
 ## Install the GitHub App

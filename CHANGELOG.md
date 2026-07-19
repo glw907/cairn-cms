@@ -1,3 +1,13 @@
+## Unreleased
+
+### Changed
+
+- A mermaid fence (` ```mermaid `) now passes through the build-time Shiki highlighter untouched,
+  keeping its `language-mermaid` class on the `<code>` element instead of losing it to the
+  tokenized `<pre class="shiki">` rewrite. A site's own client-side mermaid renderer can key on
+  the class directly; it no longer needs a site-side marker plugin to recover it. Every other
+  fenced language is unaffected.
+
 ## 0.88.0
 
 <!-- release-size: minor -->

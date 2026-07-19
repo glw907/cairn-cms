@@ -28,4 +28,15 @@ describe('renderMarkdown: Shiki code-fence highlighting', () => {
     expect(html).toMatch(/<pre/);
     expect(html).toContain('just text');
   });
+
+  test('a mermaid fence passes through untouched with its language class intact', async () => {
+    const html = await renderMarkdown('```mermaid\ngraph TD\nA --> B\n```');
+    // No Shiki wrapper: mermaid is not tokenized, so the block never gets the shiki class.
+    expect(html).not.toMatch(/<pre[^>]*class="[^"]*shiki/);
+    // The language-mermaid class survives on <code>, so a client-side mermaid renderer can find it.
+    expect(html).toMatch(/<code[^>]*class="[^"]*language-mermaid/);
+    // No cairn-tok-* classes: mermaid source is not run through the token-class transformer.
+    expect(html).not.toMatch(/class="[^"]*cairn-tok-/);
+    expect(html).toContain('graph TD');
+  });
 });

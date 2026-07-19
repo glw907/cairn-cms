@@ -86,3 +86,9 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   `@import './cairn.css';` at `theme.css`'s tail instead, and a literal trailing `@import`
   is spec-invalid CSS that only works because Vite inlines it at build time. Pick one
   documented form and make it the one the ports actually use.
+- **The arm indexes drift against their own pages** (developer; docs-register sweep,
+  2026-07-18). The explanation index claimed every page "links the reference for the exact API
+  behind it" (false for half) and the guides index said "the two" editor guides where six
+  exist. Both are machine-checkable claims about the docs' own structure; a small gate that
+  counts index entries against the directory (and flags numeric claims in index prose) would
+  have caught both years earlier than a register sweep did.

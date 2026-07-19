@@ -1,3 +1,14 @@
+## Unreleased
+
+### Changed
+
+- The docs-register sweep: every published docs page (the four arms, the docs index, and the
+  repo README) now conforms to the banked register standard (`docs/internal/docs-register.md`).
+  The sweep corrected two factual errors in the arm indexes, removed marketing register,
+  internal plan citations, and private consumer names from public pages, moved git vocabulary
+  out of the editor-facing guides, and restructured the tell cadences the standard bans.
+  Docs only; no consumer action.
+
 ## 0.87.2
 
 ### Added

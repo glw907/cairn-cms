@@ -161,3 +161,53 @@ in the diffs.
 
 **Acceptance:** main carries the sweep; STATUS and memory point forward; the release is cut
 and verified per the skill.
+
+---
+
+## Post-mortem (2026-07-18)
+
+**What shipped.** The register standard banked at `docs/internal/docs-register.md` (universal
+contract with the no-pitch-but-impressive keystone, four arm registers, the front-door register
+written to the seasoned organizational developer with an editor legibility floor, calibration
+specimens); both front doors rewritten in the main loop and cleared by `cairn-register-editor`;
+107 verified findings applied across the 60 arm pages in two workflow rounds. All four doc gates
+plus Vale (0 errors over the 62 published files) green; merged to `main`.
+
+**The two rounds.** Round 1: 60 Sonnet graders, per-page Opus refute-biased verify (40 findings
+survived, 7 refuted), 8-page Opus recall spot-check. The spot-check found 4 minor-tier Sonnet
+misses and no major misses, so per the spec's mitigation round 2 ran Opus graders over the 52
+non-spot pages: 63 further findings survived verify. Every finding was triaged in the main loop;
+all were approved, 8 with amendments (overreaching rewrites: an added fact, an overstatement,
+fragment-quote splices), plus 2 authorized extensions and 1 out-of-scope catch acted on (a guide
+naming aksailingclub.org; renamed to "a production build for a membership club" per the
+don't-name-ASC ruling). Two round-2 findings fired on round-1 rewrites, the convergence signal
+that closed the loop at two rounds.
+
+**Highest-value catches.** Two factual errors in the arm indexes (the explanation index's false
+"each one links the reference" claim; the guides index's stale "the two" count); the
+editor-welcome marketing opener ("unlike many comparable systems... best possible writing
+experience"); the components reference's promotional "two commitments" passage; internal plan
+citations in public reference pages ("Part C item 1/3 of the phase-2 design suite",
+"save-500-honest-errors, Task 5", "charter-named", "invisible-craft"); git vocabulary in the
+editor-facing media-library guide; ~70 elaborative-tail and setup-colon cadences.
+
+**Verified with evidence.** `check:docs`, `check:reference`, `check:reference:signatures`,
+`check:package` all exit 0; `vale --minAlertLevel=error` reports 0 over the published arms (the
+4 pre-existing spaced-em-dash errors in `build-a-theme.md` fixed in-pass); the banned-specimen
+grep returns nothing; why-cairn survived both rounds untouched.
+
+**Decisions locked.** The register standard is the durable artifact; graders take it as input,
+so future docs prose is written and reviewed against it (CLAUDE.md points at it). Ratified
+charter sentences on the front doors were deliberately not churned beyond the known kills.
+
+**Lessons.** (1) The find-verify-triage shape held: the refute-biased verify killed 7 findings
+and everything that survived was appliable; the costly part was fragment quotes paired with
+whole-sentence rewrites, which the round-2 notes had to compensate for with stricter splice
+mechanics. (2) A Sonnet grader pool catches every major but leaks minors at ~0.5/page; when the
+keystone is prose quality itself, budget the Opus round from the start. (3) Registerable process
+leaks ("Part C item 3") cluster in reference pages generated near plan documents; the standard
+now names them, and the friction log carries a gate candidate for index-drift claims.
+
+**Follow-ups carried.** Point `cairn-register-editor` at the banked standard (one-line agent
+edit, next session touching user agents); the friction-log gate candidate for arm-index drift;
+the docs-on-site/Topo initiative renders these same pages on cairn.pub next.

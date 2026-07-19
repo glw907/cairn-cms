@@ -143,9 +143,12 @@ drops any item whose `href` doesn't match a nav entry the current session can se
 never leaks to a role that can't act on it. A zero or negative `count` renders no pill at all. A
 collapsed section's header shows the sum of its visible children's counts, computed live from the
 same items, and that header sum disappears once the section opens, since each child's own pill is
-already visible. See [the attention seam](../reference/sveltekit.md#the-attention-seam) for the
-full contract, including the accessibility shape (the count lives in the entry's accessible name,
-not on the pill itself).
+already visible. "Once per request" means every admin load and every client-side navigation
+between admin screens, so keep this function fast. A thrown error fails the whole shell load
+rather than degrading quietly, so catch a transient failure inside your own callback and return
+an empty array if you want the sidebar to render without its counts instead. See [the attention
+seam](../reference/sveltekit.md#the-attention-seam) for the full contract, including the
+accessibility shape (the count lives in the entry's accessible name, not on the pill itself).
 
 ## The principles
 

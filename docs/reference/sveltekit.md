@@ -1125,9 +1125,15 @@ cannot act on before any rendering or summing. An item is dropped when its `coun
 non-positive, when its `href` matches no visible nav entry (an engine door or a site entry, in
 the resolved-and-filtered set), or when it duplicates an earlier item's `href` (first wins,
 silently), so a count can never leak to a role that cannot see its nav entry (counts are
-information; a leaked one is a disclosure). A dep that throws fails the shell load loudly; the
-site owns its own callback's errors. Absent `attention`, the shell payload serializes an empty
-record and renders exactly as before this seam existed.
+information; a leaked one is a disclosure).
+
+The engine awaits this callback on every admin load, including every client-side navigation
+between admin screens, never once per session, so it must stay fast. A slow query here makes the
+admin shell slow for every screen a signed-in editor opens. A dep that throws fails the whole
+shell load, by contract: the engine never swallows the error for you. A site that wants graceful
+degradation on a transient failure, a flaky query or an unreachable queue, catches the error
+inside its own callback and returns an empty array rather than letting it propagate. Absent `attention`,
+the shell payload serializes an empty record and renders exactly as before this seam existed.
 
 [`CairnAdminShell`](./components.md#cairnadminshell) renders the surviving items: a quiet count
 pill on the matching visible nav entry, capped at `99+`; a collapsed section's header shows the

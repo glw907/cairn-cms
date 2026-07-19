@@ -60,6 +60,18 @@ import { theme } from './theme-handle.js';
 export const handle = sequence(theme, createAuthGuard({ roles, access }));
 ```
 
+**Wire the map in both places, or it does nothing.** `createAuthGuard({ roles, access })` and the
+adapter's `access` member aren't two views onto one setting. Each is its own wiring, and a site
+that passes the map to only one of them ends up with a silent misconfiguration, not a startup
+error. `canReach` treats an undefined access map as "no restrictions," the same zero-config
+default a site with no map at all gets, so every engine screen quietly falls back to any
+editor-capability session while a custom route's `requireAccess` call keeps enforcing correctly,
+because it reads the map from the adapter, not the guard. The failure mode looks like the map
+"mostly working": your own `/admin/money` route still refuses the right roles, but `pages` and
+`media` stay open to everyone. Declare `access` once, in its own module the way this guide's
+snippets do, and import that one value into both `createAuthGuard` and `defineAdapter`, the same
+two-places pattern `roles` already follows.
+
 `defineAccess` validates at construction: an empty map, a role name outside your vocabulary, an
 empty role list (write owner-only explicitly as `['owner']`), or a key that's neither a plausible
 screen id nor a well-formed `/admin`-prefixed path all throw an actionable error naming the bad

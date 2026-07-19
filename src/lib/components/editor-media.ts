@@ -176,7 +176,10 @@ function matchesInLine(text: string, lineFrom: number, library: MediaLibrary): M
  * Every media image match across the editor's visible ranges, in document order, each carrying its
  *  enclosing figure role. One {@link fenceScan} over the whole document feeds the cheap per-token
  *  figure detection (no remark parse on the per-rebuild chip path); the visible lines are scanned
- *  for tokens, then each token's line index drives {@link figureRoleAtLine}.
+ *  for tokens, then each token's line index drives {@link figureRoleAtLine}. A line inside a fenced
+ *  code block is skipped entirely: a documented `media:` example there is the block's own literal
+ *  text, never a live reference the renderer resolves, matching the include chip's own
+ *  {@link FenceScan.inCode} gate (editor-include.ts).
  */
 function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatch[] {
   const lines = view.state.doc.toString().split('\n');
@@ -185,9 +188,11 @@ function visibleMatches(view: EditorView, library: MediaLibrary): MediaImageMatc
   for (const { from, to } of view.visibleRanges) {
     for (let pos = from; pos <= to; ) {
       const line = view.state.doc.lineAt(pos);
-      const role = figureRoleAtLine(scan, lines, line.number - 1);
-      for (const match of matchesInLine(line.text, line.from, library)) {
-        out.push({ ...match, figureRole: role });
+      if (!scan.inCode[line.number - 1]) {
+        const role = figureRoleAtLine(scan, lines, line.number - 1);
+        for (const match of matchesInLine(line.text, line.from, library)) {
+          out.push({ ...match, figureRole: role });
+        }
       }
       pos = line.to + 1;
     }

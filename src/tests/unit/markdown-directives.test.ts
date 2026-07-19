@@ -384,6 +384,19 @@ describe('figureRoleAtLine', () => {
     // An unclosed figure runs to the document end; the image still reads its role.
     expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('wide');
   });
+  // Regression, mirroring openerTitleAttr's own label-brace fix: the old unanchored lookup read
+  // the first `{...}` group anywhere on the opener line, so a bracketed label containing braces
+  // before the real attrs group swallowed the real role.
+  it('reads the real role past a bracketed label containing braces', () => {
+    const lines = [':::figure[Read {this} first]{.wide}', '![alt](media:x.0123456789abcdef)', ':::'];
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('wide');
+  });
+  it('never mistakes label prose that looks like a role class for the real thing', () => {
+    const lines = [':::figure[see {.wide} note]', '![alt](media:x.0123456789abcdef)', ':::'];
+    // No real attrs group on this opener, so the bare-figure measure default applies; the
+    // label's own brace-looking prose must never be read as the class.
+    expect(figureRoleAtLine(fenceScan(lines), lines, 1)).toBe('figure');
+  });
 });
 
 describe('markerPrefix', () => {

@@ -9,7 +9,9 @@ import { applySecurityHeaders } from './admin-response.js';
 import { renderConditionResponse, REASON_CONDITION } from './condition-response.js';
 import { log } from '../log/index.js';
 import { resolveCapability, DEFAULT_ROLES } from '../auth/roles.js';
+import { canReach, hasAccessRule } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
+import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
 import type { HandleInput } from './types.js';
 
@@ -42,9 +44,12 @@ function isLocalHost(hostname: string): boolean {
  * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. `opts.roles` is the
  * site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every session
  * against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+ * `opts.access` is the site's declared access map (see `defineAccess`); omitted, every engine
+ * screen and `requireAccess` call keeps today's any-editor-capability behavior.
  */
-export function createAuthGuard(opts: { roles?: RolesDeclaration } = {}) {
+export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: AccessMap } = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
+  const access = opts.access;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {
     const { pathname } = event.url;
 
@@ -124,6 +129,7 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration } = {}) {
         log.warn('auth.role.unknown', { email: editor.email, role: editor.role });
       }
       event.locals.editor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
+      event.locals.cairnAccess = access;
     }
     const response = await resolve(event);
     applySecurityHeaders(response.headers);
@@ -163,5 +169,32 @@ export function requireOwner(event: { locals: { editor?: Editor | null } }): Edi
 export function requireEditor(event: { locals: { editor?: Editor | null } }): Editor {
   const editor = requireSession(event);
   if (editor.capability === 'none') throw error(403, 'Editor access required');
+  return editor;
+}
+
+/**
+ * For a site's custom route, the one-line authorization story: the session the guard already
+ * resolved, checked against the site's declared access map (attached to `locals.cairnAccess`
+ * alongside `editor`), or a 403. `target` defaults to the request path, so the common call is
+ * `const editor = requireAccess(event);`. Every denial, mapped or unmatched, emits
+ * `auth.access.denied` with the editor's email, role, and the resolved target.
+ *
+ * The unmatched case (the map has no rule at all for `target`) 403s every session, owner
+ * included: this helper's contract is "this route opted into the map and the map has no opinion
+ * on it," a misconfiguration made loud rather than an access decision, so `canReach`'s owner
+ * bypass does not apply here. A route that wants the zero-config any-editor behavior should not
+ * call this helper for that path.
+ */
+export function requireAccess(
+  event: { locals: { editor?: Editor | null; cairnAccess?: AccessMap }; url: URL },
+  target?: string,
+): Editor {
+  const editor = requireSession(event);
+  const resolvedTarget = target ?? event.url.pathname;
+  const access = event.locals.cairnAccess;
+  if (!hasAccessRule(access, resolvedTarget) || !canReach(access, editor, resolvedTarget)) {
+    log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: resolvedTarget });
+    throw error(403, 'Access denied');
+  }
   return editor;
 }

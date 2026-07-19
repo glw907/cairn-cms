@@ -49,6 +49,16 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.87.4: docs in the tarball, renderDocument, a help default (non-breaking)
+
+A drop-in bump. `createRenderer` gains `renderDocument`, which also returns the page's
+heading list for tables of contents; the published docs tree now ships inside the npm
+tarball; and the admin's Get Help hand-off gains a default destination, cairn's hosted
+editor help at `cairn.pub/help`. One behavior note: a site that never set
+`editor.supportContact` now shows that hosted-help link instead of the self-serve empty
+state. Keep it, set your own contact, or set an explicit empty string to restore the
+prior no-link state.
+
 ## 0.87.3: the docs-register sweep (non-breaking)
 
 A drop-in bump with no code changes. Every published docs page now conforms to the banked

@@ -56,6 +56,8 @@ function dataWithLayout(
     role?: 'owner' | 'editor';
     navMenuLabel?: string | null;
     concepts?: { id: string; label: string }[];
+    /** Simulates the persisted `cairn-admin-nav-collapsed` cookie's decoded set; empty means none. */
+    collapsedNav?: string[];
   } = {},
 ) {
   const capability = overrides.capability ?? 'owner';
@@ -71,7 +73,7 @@ function dataWithLayout(
     nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, editor }),
     pathname: overrides.pathname ?? '/admin/posts',
     theme: 'cairn-admin' as const,
-    collapsedNav: [] as string[],
+    collapsedNav: overrides.collapsedNav ?? ([] as string[]),
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
   };
@@ -866,6 +868,67 @@ describe('CairnAdminShell', () => {
     expect(sidebar.querySelector('summary')?.textContent).not.toContain('Settings');
     const foot = sidebar.querySelector('[data-testid="cairn-nav-fallback"]');
     expect(Array.from(foot!.querySelectorAll('a')).map((a) => a.textContent?.trim())).toEqual(['Help']);
+  });
+
+  it('renders a section declared collapsed: true closed when no cookie exists', async () => {
+    const layout: NavLayout = [
+      { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
+    ];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const content = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Content')!;
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(content.open).toBe(true);
+    expect(site.open).toBe(false);
+  });
+
+  it('lets a persisted cookie override the declared collapse default in both directions', async () => {
+    const layout: NavLayout = [
+      { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', children: [{ screen: 'settings' }] },
+    ];
+    // The cookie reopens the declared-collapsed "Content" and closes the declared-open "Site":
+    // its set wins entirely, regardless of what the declaration says either way.
+    const screen = render(CairnAdminShell, {
+      data: dataWithLayout(layout, { collapsedNav: ['Site'] }),
+      children: child,
+    });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const content = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Content')!;
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(content.open).toBe(true);
+    expect(site.open).toBe(false);
+  });
+
+  it('still persists a toggle away from a declared-open starting state to the cookie', async () => {
+    // "Site" declares no collapse default (open, today's behavior); closing it from that starting
+    // state must still write the cookie, exactly as it does for the flat default arrangement. The
+    // cookie writer scopes to path=/admin (production correctness), invisible to document.cookie on
+    // the test page's own "/" path, so the write is captured through the setter instead (the same
+    // technique the theme-cookie test above uses).
+    const writes: string[] = [];
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => '',
+      set: (value: string) => {
+        writes.push(value);
+      },
+    });
+    try {
+      const layout: NavLayout = [{ label: 'Site', children: [{ screen: 'settings' }] }];
+      const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+      const details = screen.container.querySelector('details')!;
+      expect(details.open).toBe(true);
+      details.querySelector<HTMLElement>('summary')!.click();
+      await expect.poll(() => writes.length > 0).toBe(true);
+      expect(details.open).toBe(false);
+      expect(writes.some((w) => w.includes('cairn-admin-nav-collapsed=Site'))).toBe(true);
+    } finally {
+      delete (document as { cookie?: unknown }).cookie;
+    }
   });
 
   it('renders loose top-level nodes between sections, batched outside any collapsible group', async () => {

@@ -203,6 +203,13 @@ export interface NavLayoutSection {
   label: string;
   children: (NavLayoutEntry | NavLayoutEngineRef)[];
   roles?: Role[];
+  /**
+   * Whether this group starts collapsed for a visitor with no persisted nav-collapse cookie;
+   *  absent (or false) renders open, today's behavior. Once any header is touched, the
+   *  `cairn-admin-nav-collapsed` cookie carries the full collapsed set and wins entirely, so this
+   *  declaration applies only until a visitor's first toggle.
+   */
+  collapsed?: boolean;
 }
 
 /** A site's whole declared sidebar: engine references, its own entries, and sections, in declaration order. */
@@ -409,6 +416,12 @@ export type ResolvedLayoutChild = ResolvedNavEntry | ResolvedEngineNavEntry;
 export interface ResolvedLayoutSection {
   label: string;
   children: ResolvedLayoutChild[];
+  /**
+   * Carried from the declared {@link NavLayoutSection.collapsed}; absent means open, today's
+   *  behavior. The shell reads this only to seed a session with no nav-collapse cookie; a
+   *  present cookie's own set wins regardless of this value.
+   */
+  collapsed?: boolean;
 }
 
 /** One resolved top-level navLayout node: a loose child, or a section of them. */
@@ -594,7 +607,7 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
         const resolved = resolveChild(child);
         if (resolved) children.push(resolved);
       }
-      if (children.length > 0) items.push({ label: node.label, children });
+      if (children.length > 0) items.push({ label: node.label, children, collapsed: node.collapsed });
     } else {
       const resolved = resolveChild(node);
       if (resolved) items.push(resolved);

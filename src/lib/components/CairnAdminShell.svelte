@@ -146,9 +146,24 @@ discriminant, not the fields, gates the chrome).
     return pathname === href || pathname.startsWith(`${href}/`);
   }
 
-  // Which nav groups are collapsed. Seeded once from the SSR'd cookie (so a collapsed group renders
-  // collapsed with no flash), then owned by the toggle below, which mirrors each change to the cookie.
-  let collapsed = $state(new Set(untrack(() => (data.public ? [] : data.collapsedNav))));
+  // Which nav groups are collapsed. With no persisted cookie, seeded from every section the site
+  // declared `collapsed: true` (a default a visitor has never touched); once any header is touched,
+  // the cookie carries the full collapsed set and wins entirely, even to reopen a group the
+  // declaration would collapse. SSR-seeded from `data` either way, so a collapsed group renders
+  // collapsed with no client flash, then owned by the toggle below, which mirrors each change back
+  // to the cookie.
+  let collapsed = $state(
+    new Set(
+      untrack(() => {
+        if (data.public) return [];
+        if (data.collapsedNav.length > 0) return data.collapsedNav;
+        return data.nav.items
+          .filter(isLayoutSection)
+          .filter((section) => section.collapsed)
+          .map((section) => section.label);
+      }),
+    ),
+  );
 
   function onToggleSection(label: string, open: boolean) {
     const next = new Set(collapsed);

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
-import type { ResolvedNavItem } from '../../lib/sveltekit/admin-nav.js';
+import type { ResolvedNavItem, ResolvedLayoutSection } from '../../lib/sveltekit/admin-nav.js';
 import type { Capability } from '../../lib/auth/roles.js';
 import type { Editor, Role } from '../../lib/auth/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
@@ -335,6 +335,27 @@ describe('resolveNavLayout: declarative roles and the access map both narrow', (
     expect(publisher.items).toEqual([
       { label: 'Content', children: [{ screen: 'pages', label: 'Pages', href: '/admin/pages', dated: false }] },
     ]);
+  });
+});
+
+describe('resolveNavLayout: declared collapse defaults', () => {
+  it('carries a declared collapsed: true onto the resolved section', () => {
+    const layout: NavLayout = [
+      { label: 'Sec1', collapsed: true, children: [{ screen: 'media' }] },
+    ];
+    const resolved = resolveNavLayout(opts({ layout }));
+    expect(resolved.items).toContainEqual(
+      expect.objectContaining({ label: 'Sec1', collapsed: true }),
+    );
+  });
+
+  it('leaves collapsed absent when the section declares none', () => {
+    const layout: NavLayout = [{ label: 'Sec1', children: [{ screen: 'media' }] }];
+    const resolved = resolveNavLayout(opts({ layout }));
+    const section = resolved.items.find(
+      (item): item is ResolvedLayoutSection => 'children' in item && item.label === 'Sec1',
+    );
+    expect(section?.collapsed).toBeUndefined();
   });
 });
 

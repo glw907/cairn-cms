@@ -15,6 +15,8 @@ live one level up.
   failure and its fix.
 - `2026-06-28-extensibility-competitive-research.md`: how other developer-extensible CMSs handle
   admin extension, session reuse, and upgrade safety.
+- `2026-07-18-docs-on-site-topo-brief.md`: the pre-brainstorm brief for the docs-on-site/Topo
+  initiative (rulings, source-read facts, the decision list).
 - `admin-design-system.md`: the agent-facing design system for the `/admin` surface. Read it
   before any admin UI work.
 - `admin-smoke-test.md`: the per-pass local smoke test for a site's embedded `/admin`.

@@ -30,12 +30,14 @@ post-mortem (`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`). Releas
 Geoff's direction at pass end (see the changelog; docs-only, no consumer action).
 
 **NEXT (fresh session): docs+help rendered on-site with TOCs, likely starting the TOPO
-theme (Geoff's queued initiative; the brief lives in cairn-pub `docs/STATUS.md`), then the
-scaffolder (step 6, Opus conducts per the post-Fable doctrine). The swept docs are the
-content Topo renders, so the sweep precedes it by design. Carry-forwards: point
-`cairn-register-editor` at the banked standard (one-line user-agent edit); the friction-log
-gate candidate (arm-index drift is machine-checkable); the pre-existing carry-forwards
-below.**
+theme, then the scaffolder (step 6; Opus conducts per the post-Fable doctrine). PREP IS
+DONE: read `docs/internal/2026-07-18-docs-on-site-topo-brief.md` first — it holds the
+binding rulings, the source-read facts (the anchor-slug compatibility constraint, the
+no-TOC-API gap, the flat-concept limitation), and the ordered decision list; open the pass
+by brainstorming that decision list with Geoff. Resume prompt: "Run the docs-on-site/Topo
+pass: read cairn-cms docs/internal/2026-07-18-docs-on-site-topo-brief.md and brainstorm
+its decision list with Geoff before any design." Launch in ~/Projects/cairn-cms (the
+initiative spans the engine and cairn-pub; the brief says which decisions move it).**
 
 
 **Carry-forwards (live):** the dev backend still cannot exercise fragments and renders media

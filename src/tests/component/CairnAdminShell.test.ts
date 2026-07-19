@@ -874,6 +874,23 @@ describe('CairnAdminShell', () => {
     expect(Array.from(foot!.querySelectorAll('a')).map((a) => a.textContent?.trim())).toEqual(['Help']);
   });
 
+  it('renders an engine ref icon override in place of the engine-owned glyph', async () => {
+    const layout: NavLayout = [{ screen: 'settings', icon: 'banknote' }];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
+    expect(settingsLink.querySelector('svg.lucide-banknote')).not.toBeNull();
+    expect(settingsLink.querySelector('svg.lucide-settings')).toBeNull();
+  });
+
+  it('renders the engine-owned glyph when the ref declares no icon override', async () => {
+    const layout: NavLayout = [{ screen: 'settings' }];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
+    expect(settingsLink.querySelector('svg.lucide-settings')).not.toBeNull();
+  });
+
   it('renders a section declared collapsed: true closed when no cookie exists', async () => {
     const layout: NavLayout = [
       { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },

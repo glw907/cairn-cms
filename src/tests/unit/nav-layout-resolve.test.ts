@@ -58,6 +58,22 @@ describe('resolveNavLayout: relabel', () => {
   });
 });
 
+describe('resolveNavLayout: icon override', () => {
+  it('carries a declared icon override onto the resolved engine entry', () => {
+    const layout: NavLayout = [{ screen: 'settings', icon: 'banknote' }];
+    const resolved = resolveNavLayout(opts({ layout }));
+    expect(resolved.items).toEqual([
+      { screen: 'settings', label: 'Settings', href: '/admin/settings', iconName: 'banknote' },
+    ]);
+  });
+
+  it('leaves iconName absent when the ref declares no override', () => {
+    const layout: NavLayout = [{ screen: 'settings' }];
+    const resolved = resolveNavLayout(opts({ layout }));
+    expect(resolved.items[0]).not.toHaveProperty('iconName');
+  });
+});
+
 describe('resolveNavLayout: omission fallback', () => {
   it('sends engine screens the tree never references to fallback, in engine order', () => {
     const layout: NavLayout = [{ screen: 'posts' }];

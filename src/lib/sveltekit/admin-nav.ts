@@ -9,16 +9,39 @@ import type { Capability } from '../auth/roles.js';
 import type { Editor, Role } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
 
-/** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
-const ADMIN_NAV_ICON_NAMES = [
+/**
+ * The bundled Lucide icon names a custom adminNav entry, or a navLayout engine ref's {@link
+ *  NavLayoutEngineRef.icon} override, may use. Aligns with ADMIN_NAV_ICONS (a component-test
+ *  pins the two against drift): stays an allowlist rather than the whole Lucide catalog, so the
+ *  bundle stays bounded.
+ */
+export const ADMIN_NAV_ICON_NAMES = [
   'anchor',
+  'banknote',
+  'bell',
   'calendar',
   'clipboard-list',
-  'list',
-  'users',
-  'package',
+  'file-pen',
+  'files',
+  'graduation-cap',
+  'image',
   'inbox',
+  'key-round',
+  'life-buoy',
+  'list',
+  'list-ordered',
+  'mail',
+  'megaphone',
+  'menu',
+  'package',
+  'puzzle',
+  'send',
+  'settings',
+  'shield-check',
   'table',
+  'tags',
+  'users',
+  'users-round',
   'wrench',
 ] as const;
 
@@ -180,12 +203,15 @@ export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
  * A navLayout node that places one of the engine's own screens: a concept's list/edit pair, or one
  *  of the fixed utility screens. `label` relabels the door without touching its engine-owned icon or
  *  href; `hidden: true` removes the door deliberately (the route itself stays live, since nav
- *  placement is never authorization).
+ *  placement is never authorization); `icon` overrides the engine-owned glyph with one of the
+ *  bundled allowlist names (the two dated concepts otherwise share one newspaper glyph), validated
+ *  the same way a site entry's own icon is.
  */
 export interface NavLayoutEngineRef {
   screen: EngineScreenId;
   label?: string;
   hidden?: true;
+  icon?: AdminNavIcon;
 }
 
 /** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
@@ -305,6 +331,11 @@ export function validateNavLayout(
     if (ref.label !== undefined && ref.label.trim() === '') {
       throw new Error(`navLayout: screen "${ref.screen}" has an empty relabel`);
     }
+    if (ref.icon !== undefined && !ADMIN_NAV_ICON_NAMES.includes(ref.icon)) {
+      throw new Error(
+        `navLayout: screen "${ref.screen}" has icon "${ref.icon}", not one of ${ADMIN_NAV_ICON_NAMES.join(', ')}`,
+      );
+    }
   }
 
   for (const node of layout) {
@@ -407,6 +438,11 @@ export interface ResolvedEngineNavEntry {
    *  document icon.
    */
   dated?: boolean;
+  /**
+   * Present only when the declared {@link NavLayoutEngineRef.icon} overrode the engine-owned
+   *  glyph; the shell prefers this over its own default when set.
+   */
+  iconName?: AdminNavIcon;
 }
 
 /** One resolved leaf in a navLayout tree: a site's own entry, or one of the engine's own screens. */
@@ -501,8 +537,13 @@ function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
   return canReach(opts.access, opts.editor, screen);
 }
 
-/** Resolve one engine screen into its door, applying a declared relabel when given. */
-function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverride?: string): ResolvedEngineNavEntry {
+/** Resolve one engine screen into its door, applying a declared relabel and icon override when given. */
+function engineEntry(
+  screen: string,
+  opts: ResolveNavLayoutOptions,
+  labelOverride?: string,
+  iconOverride?: AdminNavIcon,
+): ResolvedEngineNavEntry {
   const fallback = engineDefault(screen, opts);
   const concept = opts.concepts.find((c) => c.id === screen);
   // Optional-chained on purpose: normalizeConcepts always supplies routing, but test harnesses
@@ -512,6 +553,7 @@ function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverrid
     label: labelOverride ?? fallback.label,
     href: fallback.href,
     ...(concept ? { dated: concept.routing?.dated === true } : {}),
+    ...(iconOverride ? { iconName: iconOverride } : {}),
   };
 }
 
@@ -582,7 +624,7 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
     if (isNavLayoutEngineRef(node)) {
       referenced.add(node.screen);
       if (node.hidden || !engineVisible(node.screen, opts)) return null;
-      return engineEntry(node.screen, opts, node.label);
+      return engineEntry(node.screen, opts, node.label, node.icon);
     }
     if (!ownerOnlyVisible(node, opts)) return null;
     if (!roleMatches(node.roles, opts.editor.role)) return null;

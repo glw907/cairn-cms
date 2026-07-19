@@ -57,6 +57,11 @@ describe('validateNavLayout: construction throws', () => {
     expect(() => validateNavLayout(whitespace, ctx())).toThrow(/empty relabel/);
   });
 
+  it('rejects an unknown icon override on an engine ref, naming the allowlist', () => {
+    const layout = [{ screen: 'settings', icon: 'rocket' }] as unknown as NavLayout;
+    expect(() => validateNavLayout(layout, ctx())).toThrow(/icon/);
+  });
+
   it('rejects a roles name outside the declared vocabulary, on a top-level entry', () => {
     // 'club-admin' is not in the default owner/editor Role union; a real site's own augmented
     // vocabulary is what makes a name like this assignable, so the test casts to exercise the
@@ -139,6 +144,11 @@ describe('validateNavLayout: a valid tree', () => {
       },
       { label: 'Standalone', icon: 'wrench', href: '/admin/tools' },
     ];
+    expect(() => validateNavLayout(layout, ctx())).not.toThrow();
+  });
+
+  it('accepts an engine ref carrying a valid icon override', () => {
+    const layout: NavLayout = [{ screen: 'settings', icon: 'banknote' }];
     expect(() => validateNavLayout(layout, ctx())).not.toThrow();
   });
 

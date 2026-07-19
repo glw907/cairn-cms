@@ -83,12 +83,120 @@ function toBytes(input: ArrayBuffer | Uint8Array): Uint8Array {
   return input instanceof Uint8Array ? input : new Uint8Array(input);
 }
 
+const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const SEED_PNG_SIZE = 8;
+
+/** CRC-32 of a byte range, the checksum every PNG chunk trailer carries. */
+function crc32(bytes: Uint8Array): number {
+  let crc = 0xffffffff;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit++) {
+      crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+    }
+  }
+  return (crc ^ 0xffffffff) >>> 0;
+}
+
+/** Adler-32 of a byte range, the checksum a zlib stream trails its compressed data with. */
+function adler32(bytes: Uint8Array): number {
+  const MOD_ADLER = 65521;
+  let a = 1;
+  let b = 0;
+  for (const byte of bytes) {
+    a = (a + byte) % MOD_ADLER;
+    b = (b + a) % MOD_ADLER;
+  }
+  return ((b << 16) | a) >>> 0;
+}
+
+/** Build one length-prefixed, CRC-trailed PNG chunk from its four-letter type and data payload. */
+function pngChunk(type: string, data: Uint8Array): Uint8Array {
+  const typeBytes = new TextEncoder().encode(type);
+  const body = new Uint8Array(typeBytes.length + data.length);
+  body.set(typeBytes, 0);
+  body.set(data, typeBytes.length);
+
+  const out = new Uint8Array(4 + body.length + 4);
+  const view = new DataView(out.buffer);
+  view.setUint32(0, data.length, false);
+  out.set(body, 4);
+  view.setUint32(4 + body.length, crc32(body), false);
+  return out;
+}
+
 /**
- * A tiny but real PNG (the 8-byte signature plus four zero bytes), enough for the delivery route to
- * stream a 200 with image bytes. The Media Library E2E seeds one per asset hash so a thumbnail
- * resolves and an orphan delete removes real bytes.
+ * Wrap raw bytes as a zlib stream using a single uncompressed (stored) DEFLATE block: the
+ * two-byte zlib header, the stored-block header plus its length pair, the raw bytes, then the
+ * Adler-32 trailer. Valid input to any zlib inflater without a compression library.
  */
-const SEED_PNG = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 0]);
+function zlibStore(raw: Uint8Array): Uint8Array {
+  const out = new Uint8Array(2 + 1 + 4 + raw.length + 4);
+  const view = new DataView(out.buffer);
+  out[0] = 0x78; // CMF: deflate, 32k window
+  out[1] = 0x01; // FLG: fastest, no preset dictionary (0x7801 % 31 === 0)
+  out[2] = 0x01; // DEFLATE stored-block header: BFINAL=1, BTYPE=00 (stored)
+  view.setUint16(3, raw.length, true);
+  view.setUint16(5, (~raw.length) & 0xffff, true);
+  out.set(raw, 7);
+  view.setUint32(7 + raw.length, adler32(raw), false);
+  return out;
+}
+
+/**
+ * Deterministically derive a solid RGB fill from an object key, the same string-hash shape as
+ * makeEtag, so distinct seeded assets read as distinct colors in the Media Library grid.
+ */
+function colorForKey(key: string): [number, number, number] {
+  let h = 0;
+  for (const ch of key) h = (h * 31 + ch.charCodeAt(0)) | 0;
+  const u = h >>> 0;
+  return [(u >> 16) & 0xff, (u >> 8) & 0xff, u & 0xff];
+}
+
+/**
+ * Build a small, valid, solid-color PNG for a seeded object key (signature, IHDR, IDAT, IEND),
+ * enough for a browser to decode a real thumbnail. No compression library: the IDAT payload is an
+ * uncompressed zlib stream, which every PNG decoder accepts.
+ */
+function makeSeedPng(key: string): Uint8Array {
+  const [r, g, b] = colorForKey(key);
+  const bytesPerRow = 1 + SEED_PNG_SIZE * 3; // filter byte + RGB per pixel
+  const raw = new Uint8Array(bytesPerRow * SEED_PNG_SIZE);
+  for (let row = 0; row < SEED_PNG_SIZE; row++) {
+    const rowStart = row * bytesPerRow;
+    raw[rowStart] = 0; // filter type: none
+    for (let col = 0; col < SEED_PNG_SIZE; col++) {
+      const pixelStart = rowStart + 1 + col * 3;
+      raw[pixelStart] = r;
+      raw[pixelStart + 1] = g;
+      raw[pixelStart + 2] = b;
+    }
+  }
+
+  const ihdr = new Uint8Array(13);
+  const ihdrView = new DataView(ihdr.buffer);
+  ihdrView.setUint32(0, SEED_PNG_SIZE, false); // width
+  ihdrView.setUint32(4, SEED_PNG_SIZE, false); // height
+  ihdr[8] = 8; // bit depth
+  ihdr[9] = 2; // color type: truecolor RGB
+  ihdr[10] = 0; // compression method
+  ihdr[11] = 0; // filter method
+  ihdr[12] = 0; // interlace method
+
+  const signature = new Uint8Array(PNG_SIGNATURE);
+  const ihdrChunk = pngChunk('IHDR', ihdr);
+  const idatChunk = pngChunk('IDAT', zlibStore(raw));
+  const iendChunk = pngChunk('IEND', new Uint8Array(0));
+
+  const out = new Uint8Array(signature.length + ihdrChunk.length + idatChunk.length + iendChunk.length);
+  let offset = 0;
+  for (const part of [signature, ihdrChunk, idatChunk, iendChunk]) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
 
 /** Build the in-memory R2 stand-in the showcase binds as the media bucket in dev. */
 export function createFakeR2(): FakeR2Bucket {
@@ -96,11 +204,12 @@ export function createFakeR2(): FakeR2Bucket {
 
   /**
    * Seed one object's bytes under an R2 object key, so the Media Library lists a committed asset
-   * whose thumbnail resolves through the /media route. The bytes are a tiny real PNG; the content
-   * type matches the seeded media.json row.
+   * whose thumbnail resolves through the /media route. The bytes are a small, valid, solid-color
+   * PNG a browser can decode, colored deterministically from the key so distinct assets read as
+   * distinct tiles; the content type matches the seeded media.json row.
    */
   function seed(key: string): void {
-    store.set(key, { bytes: SEED_PNG, contentType: 'image/png' });
+    store.set(key, { bytes: makeSeedPng(key), contentType: 'image/png' });
   }
 
   /** Build the returned object for a stored entry, optionally with its body and a served range. */

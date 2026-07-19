@@ -211,3 +211,10 @@ now names them, and the friction log carries a gate candidate for index-drift cl
 **Follow-ups carried.** Point `cairn-register-editor` at the banked standard (one-line agent
 edit, next session touching user agents); the friction-log gate candidate for arm-index drift;
 the docs-on-site/Topo initiative renders these same pages on cairn.pub next.
+
+**Budget score (recorded at close).** Subagent tokens: ~10.9M (round-1 sweep 5.23M, round-2
+5.08M, Topo prep 0.31M, register editor + two implementer applications ~0.40M), plus the
+main-loop conversation. Geoff interaction points: 13 (four brainstorm selections, seven
+mid-turn spec refinements during the same sitting, the spec/plan approval, the read-gate
+approval with the workflow-to-release directive, and the prep-the-next-pass extension). All
+were design or approval decisions; none were avoidable process questions.

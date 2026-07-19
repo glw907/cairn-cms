@@ -26,8 +26,8 @@ rewritten; 107 verified findings applied over the 60 arm pages in two workflow r
 (Sonnet find + Opus refute-verify, then an Opus recall round after the spot-check showed
 minor-tier leakage); all doc gates + Vale 0 errors; merged to `main`. Record: the spec
 (`docs/superpowers/specs/2026-07-18-docs-register-standard-design.md`) and the plan +
-post-mortem (`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`). Release: cut per
-Geoff's direction at pass end (see the changelog; docs-only, no consumer action).
+post-mortem (`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`). Release: v0.87.3
+published 2026-07-18 (docs-only, drop-in; publish.yml green, the registry serves it).
 
 **NEXT (fresh session): docs+help rendered on-site with TOCs, likely starting the TOPO
 theme, then the scaffolder (step 6; Opus conducts per the post-Fable doctrine). PREP IS

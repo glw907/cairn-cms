@@ -20,7 +20,7 @@ building from the documented recipes keeps a custom screen composed at phone and
 
 The rest of this guide grows that one screen into a whole custom *section*, the shape a real site
 proves once it has more than a screen or two of its own admin surface. The worked pattern below is
-drawn from an aksailingclub.org production build: a `/admin/club/**` section (events, classes,
+drawn from a production build for a membership club: a `/admin/club/**` section (events, classes,
 members, assets) gated by a club-specific role, member-scale and outside cairn's own capability
 model. The code here describes that pattern; it is not the site's own files, since a site's role
 model, database, and screens are always its own. A staff-scale role that only ever needs cairn's

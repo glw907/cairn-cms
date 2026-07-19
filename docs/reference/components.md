@@ -177,12 +177,13 @@ let { eyebrow, title, subtitle, action, children }: {
 
 The office-list primitive: the header-plus-card shell every triage-table screen composes, lifted
 out of `ConceptList` and kept to exactly its header and card frame. A site's own custom `/admin/`
-screen, a Club-style events or members list say, wraps its own `<table>` in this instead of
-hand-rolling the administrative office rhythm. `eyebrow` names a grouping, such as a custom nav
-section's label, and is omitted entirely when there is none to name. `title` is the display-face
-heading. `subtitle` is the muted one-line note under it, a live count or a scope note. `action` is an
-optional header-right control such as a filter or a primary button. `children` is the screen's own
-content, rendered inside the shared bordered, theme-adaptive card shell.
+screen, a Club-style events or members list say, wraps its own `<table>` in this to reuse the
+shared header and card frame instead of rebuilding it. `eyebrow` names a grouping, such as a
+custom nav section's label, and is omitted entirely when there is none to name. `title` is the
+display-face heading. `subtitle` is the muted one-line note under it, a live count or a scope
+note. `action` is an optional header-right control such as a filter or a primary button.
+`children` is the screen's own content, rendered inside the shared bordered, theme-adaptive card
+shell.
 
 ```svelte
 <script lang="ts">
@@ -483,7 +484,7 @@ of its own.
 
 ## Composed components
 
-`MarkdownEditor` is the charter-named authoring seam, documented as a standalone bare surface a
+`MarkdownEditor` is the authoring seam, documented as a standalone bare surface a
 site can mount directly. `DeleteDialog` and `RenameDialog` mount inside `EditPage` but stay public
 for a site that builds its own per-route admin surface, pairing with the same load/action names
 `EditPage` uses. The snippets are minimal mounts with the real prop names.
@@ -509,12 +510,12 @@ let { value = $bindable(), name, registerInsert, registerFormat, completionSourc
 };
 ```
 
-The bare CodeMirror editing surface behind the `MarkdownEditor` seam, and cairn's charter-named
-authoring seam: this is the frozen stable contract a site mounting the component directly can
-depend on across minors. `value` is bindable, so the parent reads edits back; `name` is the hidden
-field the value mirrors to for form submit. `registerInsert` hands the parent a `(text) => void`
-that inserts at the cursor, and `registerFormat` hands the parent a `(kind) => void` that applies a
-named selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`.
+The bare CodeMirror editing surface behind the `MarkdownEditor` seam, and cairn's authoring seam:
+this is the frozen stable contract a site mounting the component directly can depend on across
+minors. `value` is bindable, so the parent reads edits back; `name` is the hidden field the value
+mirrors to for form submit. `registerInsert` hands the parent a `(text) => void` that inserts at
+the cursor, and `registerFormat` hands the parent a `(kind) => void` that applies a named
+selection transform such as `bold`, `italic`, `h2`, `ol`, `codeblock`, or `table`.
 `completionSources` wires generic CodeMirror autocomplete, such as the internal-link source.
 `focusMode` fades every paragraph except the caret's, and `typewriter` keeps the caret line
 vertically centered while typing. `surface` picks the posture: `prose` (the default) sets a 72ch

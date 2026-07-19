@@ -1,10 +1,9 @@
 # Admin fields (`@glw907/cairn-cms/admin-fields`)
 
-This subpath holds the field-renderer primitives a site's own custom `/admin/` screen composes: a
-site building an events or members screen beside the built-in content editor gets the admin's own
-label and control rhythm instead of hand-rolling its own. The set is small today: `SelectField`,
-`TextField`, and `FieldLabel`, proven by the aksailingclub-org club-admin scaffold's one consumer.
-New field types land as new consumers need them.
+This subpath holds the field-renderer primitives a site's own custom `/admin/` screen composes,
+such as an events or members editor. They render with the admin's own label and control rhythm,
+matching the built-in content editor's fields. The set is small today: `SelectField`, `TextField`,
+and `FieldLabel`. New field types land as new consumers need them.
 
 ```ts
 import { SelectField, TextField, FieldLabel } from '@glw907/cairn-cms/admin-fields';

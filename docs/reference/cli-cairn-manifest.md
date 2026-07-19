@@ -18,7 +18,7 @@ reuses the plugin's options, it regenerates with exactly the inputs the build ve
 
 Run it after you edit content outside the admin, so the committed manifest tracks the corpus. The
 [`cairnManifest`](./vite.md) plugin verifies the manifest on every build and fails the build on
-drift, and this command is how you fix that drift.
+drift, and this command regenerates the manifest to clear that drift.
 
 ## How to run it
 

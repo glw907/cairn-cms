@@ -68,5 +68,5 @@ model, and the outcome.
 
 The `email` on `auth.link.requested` is the raw submitted address, logged before the allow-list
 check: cairn lowercases it, trims it, and caps it at 320 characters. Because the endpoint has no
-authentication, treat a flood of distinct addresses as a signal to rate-limit at the edge. Every
-other event's `email` fires only for an allow-listed editor.
+authentication, a flood of distinct addresses here signals a request flood that edge rate-limiting
+can throttle. Every other event's `email` fires only for an allow-listed editor.

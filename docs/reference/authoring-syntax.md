@@ -3,9 +3,9 @@
 cairn content is plain markdown, with three things an author types that the engine resolves at
 render and delivery: `cairn:` internal links, `media:` asset references, and the `::include` fragment
 directive. All three are engine-internal, rather than public exports, so none has an export-keyed
-reference page. This page is their author-facing home. The editor inserts each for you (the link
+reference page. This page is their author-facing home. The editor inserts each (the link
 picker writes a `cairn:` href, the image flow writes a `media:` src, the fragment picker writes an
-`::include` directive), and you can hand-type any of them in the markdown source.
+`::include` directive), and any of them can be hand-typed in the markdown source.
 
 ## `cairn:` internal links
 
@@ -43,7 +43,7 @@ unresolved token degrades to no image rather than shipping the raw `media:` stri
 
 ## Include a fragment
 
-You can splice a published Fragments entry into another entry's body:
+A published Fragments entry can be spliced into another entry's body:
 
 ```markdown
 ::include{fragment="address"}
@@ -61,7 +61,7 @@ including entry. Resolution runs one level deep: the engine renders an `::includ
 own body as literal text rather than resolving it, so a fragment can't nest another fragment.
 
 An id the resolver can't find, or a missing or empty `fragment` attribute, replaces the directive with
-a calm notice reading "Missing fragment: `<id>`" rather than failing the render. The production build
+a notice reading "Missing fragment: `<id>`" rather than failing the render. The production build
 resolves fragments against the published content and throws on a miss, so a dangling include fails
 the build the same way a dangling `cairn:` link does. Only a preview shows the notice.
 

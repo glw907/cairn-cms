@@ -30,8 +30,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
   change shape or leave the package in any release with no deprecation window. This covers the
   advanced per-view components and the piecewise per-route factories (the recomposition seam a
   site uses only when it mounts routes by hand instead of the single-mount facade), their own
-  config, deps, and result types, and any export the audit kept for a real but narrow reason
-  without yet committing to its shape.
+  config, deps, and result types, and any other export whose shape is not yet committed.
 
 - [Core (`@glw907/cairn-cms`)](./core.md): the engine, the adapter and schema contract, render, and the runtime.
 - [SvelteKit (`/sveltekit`)](./sveltekit.md): the single-mount `createCairnAdmin` facade, the auth guard, and the per-route factories.

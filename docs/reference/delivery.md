@@ -2,7 +2,7 @@
 
 This subpath is the public read model for a SvelteKit site. It carries the catch-all route loader,
 the public route-data types, and the feed, sitemap, and robots responders. Import it from a
-`+server.ts` or a `+page.server.ts` when you build the reader-facing site. The matching head
+`+server.ts` or a `+page.server.ts` in the reader-facing site. The matching head
 component, [`CairnHead`](#cairnhead), lives one level down at `/delivery/head`.
 
 ```ts

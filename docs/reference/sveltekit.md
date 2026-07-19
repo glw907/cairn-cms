@@ -128,7 +128,7 @@ declare function requireSession(event: { locals: { editor?: Editor | null } }): 
 ```
 
 Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
-top of a protected `load` or action when you need the signed-in editor. Its parameter is structural
+top of a protected `load` or action that needs the signed-in editor. Its parameter is structural
 and asks only for `locals`, so any event shape that carries the guard's editor satisfies it.
 
 ```ts
@@ -202,8 +202,8 @@ declare function adminAction<T>(
 ): (event: AdminActionEvent) => Promise<T>;
 ```
 
-Wrap a custom admin action's handler (Part C item 3 of the phase-2 design suite): the admin-scoped
-server helper a site's own `/admin/` form action calls for the engine's editor and audit contract.
+Wrap a custom admin action's handler: the admin-scoped server helper a site's own `/admin/` form
+action calls for the engine's editor and audit contract.
 `createAuthGuard` already verifies the double-submit CSRF token on every unsafe POST under
 `/admin/**`, custom routes included, before any route's own action runs, so `adminAction`'s own CSRF
 check is defense-in-depth, not the sole gate; its real job is resolving the signed-in editor as a

@@ -369,3 +369,75 @@ AttentionItem, AdminShellData.attention). One deliberate correction inline in T2
 outcome text: unmatched requireAccess denies every session including owner (the
 misconfiguration-made-loud rule); the spec's owner-always-passes applies to `canReach`,
 not to the no-rule-matched case.
+
+---
+
+## Post-mortem (2026-07-19, pass executed and closed)
+
+**Method.** Geoff opted into workflow orchestration mid-pass ("Proceed to release with a
+workflow"). One Workflow run executed T1-T9 serially on this worktree (serial per the
+one-executor rule), each task a `cairn-implementer` dispatch with the full per-task gate,
+followed by a read-only Sonnet verifier judged against the task Outcome and the
+authorization invariants, one fix-and-reverify round on objection. The simplifier and the
+three-reviewer fan-out (web-auth-security, svelte, daisyui-a11y, all Opus) ran inside the
+same workflow. 27 agents, ~3.0M subagent tokens, zero agent errors. A background runaway
+guard watched the transcripts (one false alarm on T3's size, correctly waved through after
+a progress read).
+
+**What was built.** All nine tasks landed as specified: the access core (`defineAccess`,
+`canReach`, `hasAccessRule`), `requireAccess` plus `auth.access.denied`, adapter/runtime
+threading with composition validation and 403 enforcement at every engine gate, nav
+derivation through the one authority, declared collapse defaults with cookie-wins
+semantics, the 27-name icon vocabulary with engine-ref overrides and an alignment test,
+the attention seam (once per request, visibility-filtered, leak-proof) and its pill
+rendering with collapsed-header sums, and the docs window. Two per-task verifier catches
+were real: T3's first commit left `publishAllAction` unfiltered (a mapped-away role could
+publish a denied concept's entries in the site-wide batch), and T5's cookie decoding
+treated a present-but-empty cookie as absent, silently re-collapsing a reopened section.
+
+**Review triage (8 findings).** Fixed in `af64d6ad`/`9a8f2e08`: the shell payload's
+pending-drafts list streamed every concept's draft ids to restricted roles (the one major;
+same `canReach` predicate as `publishAllAction` now filters it), the concepts label table
+narrowed the same way, `indexRedirect` now lands on the first reachable concept instead of
+a possible 403 dead-end, an empty attention label falls back to the default noun, and the
+two-places wiring trap plus the attention dep's cost are documented. Kept as spec'd: a
+throwing attention dep fails the shell load loudly (locked contract; the guide tells sites
+to catch their own transient errors), and no live region ships (no polling exists; static
+accessible names are the plan's stated form). The simplifier's adjacent flag on `helpLoad`
+was assessed and deliberately not changed: getting-started progress is site-corpus state,
+its derivation exposes only booleans, published content is public by definition, and
+filtering would show restricted roles onboarding steps they cannot complete.
+
+**Consumer proof.** The spec's showcase matrix test (absent from the plan's tasks) was
+added: `examples/showcase/e2e/access-map.spec.ts`, a pure Playwright spec over the
+installed package exports (three-role vocabulary, mapped concept, mapped custom route,
+deep-prefix, owner bypass, none-capability), riding the existing CI e2e job. CI on the
+real checkout: design, e2e, scaffold, test all pass.
+
+**Live smoke (showcase, wrangler dev, real local D1).** Zero-config: anon 303 to login,
+login 200, owner 307 to first concept, full sidebar with the editors door, editor-role
+session without it. Restricted-role (temporary three-role adapter patch, reverted after
+evidence): publisher's sidebar lacks the pages door, `/admin` lands publisher on posts,
+webmaster and owner reach pages, publisher's denial renders the 403 page and emits
+`auth.access.denied` twice in the worker log. Two discoveries: (1) consumer sites need
+`0001_roles.sql` before custom role names insert (documented already; the smoke hit the
+D1 CHECK constraint exactly as the guides describe); (2) admin error statuses flatten to
+HTTP 200 under the shell's streamed pending count, upstream sveltejs/kit#12533,
+pre-existing engine-wide (404 identical), enforcement itself intact. The guide now carries
+the caveat, ROADMAP carries the watch (candidate for the scheduled kit-watch routine),
+and the friction log carries the probe lesson.
+
+**Gates at close (all by name, all green).** `check` 0/0 over 1406 files, `test` 318
+files / 3768 tests exit 0, `check:comments`, `check:reference`,
+`check:reference:signatures`, `check:package`, `check:docs`, `check:snippets`,
+`check:surface` (snapshot matches). Magic-link click in a browser stays the standing user
+step per the smoke doc.
+
+**Decisions locked.** Unmatched `requireAccess` denies every session including owner (the
+misconfiguration-made-loud contract, pinned by test and TSDoc); the guard and adapter stay
+two deliberate wiring points mirroring `roles`, with the silent-fail-open trap documented
+loudly rather than cross-checked at composition; `helpLoad` progress stays unfiltered.
+
+**Budget.** Subagent spend: ~3.0M tokens in the workflow plus ~0.4M across the fix batch,
+matrix test, and simplifier dispatches. Human interaction points: one (the mid-pass
+workflow-and-release authorization); zero questions asked of Geoff.

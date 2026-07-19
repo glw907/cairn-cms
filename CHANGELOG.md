@@ -1,4 +1,6 @@
-## Unreleased
+## 0.88.0
+
+<!-- release-size: minor -->
 
 ### Added
 

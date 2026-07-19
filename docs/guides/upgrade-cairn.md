@@ -49,7 +49,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: the access map, collapse defaults, icon overrides, attention badges
+## 0.88.0: the access map, collapse defaults, icon overrides, attention badges (non-breaking)
 
 A site can now declare `defineAccess(roles, map)`, one per-role map over cairn's own admin screens
 and its own `/admin` routes, enforced at the route through `requireAccess` and the engine's own

@@ -39,7 +39,7 @@ function data(
     nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, editor }),
     pathname,
     theme: 'cairn-admin' as const,
-    collapsedNav: [] as string[],
+    collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
   };
@@ -56,8 +56,12 @@ function dataWithLayout(
     role?: 'owner' | 'editor';
     navMenuLabel?: string | null;
     concepts?: { id: string; label: string }[];
-    /** Simulates the persisted `cairn-admin-nav-collapsed` cookie's decoded set; empty means none. */
-    collapsedNav?: string[];
+    /**
+     * Simulates the persisted `cairn-admin-nav-collapsed` cookie's decoded set: `null` (the
+     *  default) means no cookie exists; an array, including an empty one, means the cookie
+     *  exists and wins over any declared default.
+     */
+    collapsedNav?: string[] | null;
   } = {},
 ) {
   const capability = overrides.capability ?? 'owner';
@@ -73,7 +77,7 @@ function dataWithLayout(
     nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, editor }),
     pathname: overrides.pathname ?? '/admin/posts',
     theme: 'cairn-admin' as const,
-    collapsedNav: overrides.collapsedNav ?? ([] as string[]),
+    collapsedNav: overrides.collapsedNav ?? null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
   };
@@ -901,6 +905,24 @@ describe('CairnAdminShell', () => {
     const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
     expect(content.open).toBe(true);
     expect(site.open).toBe(false);
+  });
+
+  it('lets an empty persisted cookie reopen every declared-collapsed section (a present cookie, not an absent one)', async () => {
+    // A visitor who reopens the only declared-collapsed section writes the cookie to the empty
+    // string; the decoded set is empty, but the cookie itself exists, so it must still win over
+    // the declared default rather than being mistaken for no cookie at all.
+    const layout: NavLayout = [
+      { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
+    ];
+    const screen = render(CairnAdminShell, {
+      data: dataWithLayout(layout, { collapsedNav: [] }),
+      children: child,
+    });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(site.open).toBe(true);
   });
 
   it('still persists a toggle away from a declared-open starting state to the cookie', async () => {

@@ -110,12 +110,25 @@ describe('shellPayload', () => {
     expect(shell.collapsedNav).toEqual(['Tools', 'Black & White']);
   });
 
-  it('defaults collapsedNav to empty when no cookie is set', async () => {
+  it('defaults collapsedNav to null when no cookie is set', async () => {
     const routes = createContentRoutes(runtime());
     const shell = await authedShell(routes, makeEvent({
       pathname: '/admin/posts',
       editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
       cookies: {},
+    }));
+    expect(shell.collapsedNav).toBeNull();
+  });
+
+  it('decodes a present-but-empty collapsed cookie to an empty array, not null', async () => {
+    // A visitor who reopens every declared-collapsed section writes the cookie to the empty
+    // string; that is a present cookie whose set happens to be empty, not an absent cookie, so
+    // it must decode to [] and not be confused with the no-cookie null case.
+    const routes = createContentRoutes(runtime());
+    const shell = await authedShell(routes, makeEvent({
+      pathname: '/admin/posts',
+      editor: { email: 'ed@example.com', displayName: 'Ed', role: 'editor', capability: 'editor' },
+      cookies: { 'cairn-admin-nav-collapsed': '' },
     }));
     expect(shell.collapsedNav).toEqual([]);
   });

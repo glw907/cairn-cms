@@ -79,8 +79,13 @@ export type AdminShellData =
       pathname: string;
       /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
       theme: 'cairn-admin' | 'cairn-admin-dark';
-      /** The nav group labels the user has collapsed, from the persisted cookie. Empty when none. */
-      collapsedNav: string[];
+      /**
+       * The nav group labels the user has collapsed, decoded from the persisted cookie. Null
+       *  when no cookie exists yet (the shell then seeds from each section's declared
+       *  `collapsed: true` default); an array, including an empty one, means the cookie exists
+       *  and its decoded set wins entirely, even over a declared default, in both directions.
+       */
+      collapsedNav: string[] | null;
       /** The session's CSRF double-submit token, handed to descendant forms through context. */
       csrf: string;
       /**
@@ -397,10 +402,15 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       return { shell: { public: true, siteName: runtime.siteName, theme } };
     }
     const editor = requireSession(event);
+    // `undefined` means no cookie was ever set (seed from the declared defaults); any other
+    // value, including the empty string a visitor produces by reopening every declared-collapsed
+    // section, means the cookie exists and its decoded set (however empty) wins outright. Do not
+    // collapse this to a truthiness check: an empty string is a present, meaningful cookie value.
     const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
-    const collapsedNav = cookieCollapsed
-      ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
-      : [];
+    const collapsedNav =
+      cookieCollapsed === undefined
+        ? null
+        : cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean);
     // A none-capability session sees no publish surface (every engine content route already 403s
     // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
     // not theirs to read: skip the backend listing entirely rather than streaming a real pending

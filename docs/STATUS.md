@@ -45,7 +45,18 @@ approval (`action_required`) because the Actions bot authored it. Record: the po
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert.
 
-**NEXT (immediate): the Topo design pass.** Open with
+**NEXT (immediate): execute the chassis-nav pass plan
+(`docs/superpowers/plans/2026-07-19-chassis-nav.md`).** Two friction-derived items pulled
+forward because Topo is their consumer (Geoff, 2026-07-19): the showcase public chrome
+reads `menus.primary` through the engine's `extractMenu` (the `/admin/nav` editor is
+already wired; the header hardcodes, so editor nav edits currently publish into a void),
+and the arm-index coverage gate. Method: `cairn-implementer` per task, test-first, on a
+`chassis-nav` worktree off `main`; release at pass end (Geoff authorized "a minor bump";
+the plan's Release section carries the derive-at-the-cut rule and the 0.88.1 precedent).
+Resume prompt: "Execute the chassis-nav pass plan (STATUS names it)." Launch in
+~/Projects/cairn-cms.
+
+**QUEUED after it: the Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build). After Topo: the scaffolder (step 6). Check the

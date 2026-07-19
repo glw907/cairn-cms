@@ -49,6 +49,16 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.88.1: mermaid passthrough and real dev-backend fixtures (non-breaking)
+
+A mermaid fence now leaves the build-time highlighter untouched with its `language-mermaid`
+class intact, so a site's client-side mermaid renderer can key on the class without a marker
+plugin. The `@glw907/cairn-cms-dev` seed also grew: two published fragments and real decodable
+thumbnail PNGs, so the fragment picker and the Media Library both work under `vite dev`.
+
+Consumers must: nothing. If your site added a marker plugin to recover mermaid fences, you can
+delete it after this upgrade.
+
 ## 0.88.0: the access map, collapse defaults, icon overrides, attention badges (non-breaking)
 
 A site can now declare `defineAccess(roles, map)`, one per-role map over cairn's own admin screens

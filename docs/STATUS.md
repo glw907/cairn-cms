@@ -15,57 +15,47 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-18, latest: DOCS-ON-SITE PIPELINE SHIPPED, v0.87.4 published, cairn.pub /docs live; next = the Topo design pass)
+## Immediate next action (2026-07-19, latest: ACCESS-AND-ATTENTION SHIPPED as v0.88.0; next = the Topo design pass)
 
-**THE DOCS-ON-SITE PIPELINE SHIPPED 2026-07-18 (one session: brainstorm, spec, plan,
-engine, v0.87.4, site, deploy, Topo prep; Fable conducting on Geoff's authorization to
-run through release without gates).** Engine (PR #5, merged): `renderDocument` +
-`DocHeading` on `createRenderer` (heading collection from the final rehype tree, lazy
-second processor), the GitHub-slug contract test (zero divergence; the 225 in-corpus
-anchors ride on it), the published docs arms inside the npm tarball (+61 files,
-allowlist-guarded `check:package`), and the `editor.supportContact` default
-(`https://cairn.pub/help`; unset/explicit/empty triad documented and test-locked).
-Released as **v0.87.4** (patch by the size rule, re-derived at the cut; the registry
-serves it, 562 files). Site (cairn-pub, 8 commits, LIVE): the build-time loader over the
-in-package docs with the link policy and full-corpus link check, `/docs` +
-`/docs/[...path]` + `/help/[guide]` prerendered with TOC rail, breadcrumbs, prev/next,
-lazy mermaid, and the register-clean /docs front door; verification = 40 shots, three
-Opus graders (0 structural findings), register/svelte/a11y reviewers folded (real
-blocker caught: mermaid died on client-side navigation; fixed with `afterNavigate`);
-deployed behind main-loop render reads, live routes verified. Record: the spec, the plan
-+ post-mortem (`docs/superpowers/plans/2026-07-18-docs-on-site-pipeline.md`), and the
-banked Topo review (`docs/internal/2026-07-18-topo-inspiration-review.md`).
+**THE ADMIN ACCESS-AND-ATTENTION PASS SHIPPED 2026-07-19 (PR #6 merged, v0.88.0
+published, registry verified; Geoff authorized workflow orchestration and release in one
+directive).** The window: the access map (`defineAccess`, `canReach` as the one
+authority, `requireAccess`, 403 enforcement at every engine gate, `auth.access.denied`),
+nav derivation from the same authority, declared collapse defaults with cookie-wins,
+the 27-name icon vocabulary with engine-ref overrides, and the attention seam with
+leak-proof pills and collapsed-header sums. Method: one Workflow ran T1-T9 serially via
+`cairn-implementer` with per-task Sonnet verifiers (two real catches: publishAllAction
+unfiltered, empty-cookie precedence), then simplifier + three Opus reviewers in-flight;
+the review fan-out's one major (shell payload streamed unreachable pending-draft ids)
+and three minors were fixed; the spec's showcase consumer matrix test was added (the
+plan had omitted it). Live smoke on the showcase Worker proved zero-config parity and
+the restricted-role story end to end (door absent, 403 page, denial event logged).
+Record: the post-mortem in `docs/superpowers/plans/2026-07-18-admin-access-and-attention.md`.
 
-**NEXT (immediate): execute the admin access-and-attention pass.** The spec
-(`docs/superpowers/specs/2026-07-18-admin-access-and-attention-design.md`, Geoff-approved
-2026-07-18 after a four-sweep prior-art survey) and the plan
-(`docs/superpowers/plans/2026-07-18-admin-access-and-attention.md`, tasks T1-T10) are
-committed. Method: cairn-pass, `cairn-implementer` dispatches task-by-task, test-first,
-full gate per task, on the `admin-access-attention` worktree off `main` (create it at
-pass start). ASC's admin-sidebar-2 initiative waits on this window's release (consumer
-brief: `aksailingclub-org/docs/2026-07-18-cairn-sidebar-seams-consumer-brief.md`), so a
-cut is expected at close via `cairn-release`. Resume prompt: "Execute the admin
-access-and-attention plan (docs/superpowers/plans/2026-07-18-admin-access-and-attention.md)."
-Launch in ~/Projects/cairn-cms.
+**ASC hand-off is open:** v0.88.0 carries everything the admin-sidebar-2 consumer brief
+(`aksailingclub-org/docs/2026-07-18-cairn-sidebar-seams-consumer-brief.md`) waits on.
+ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
+before custom role names insert (the smoke re-proved the CHECK constraint path).
 
-**QUEUED after this pass: the Topo design pass.** Open with
+**NEXT (immediate): the Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build). After Topo: the scaffolder (step 6). Check the
 Fable window state at session start (post-Fable doctrine: Opus conducts after it closes;
 verify online).
 
-**Carry-forwards (live):** NEW from this pass: mermaid diagrams near-illegible at 320/390
-(candidate: a tap-to-expand treatment in the Topo pass); section-index breadcrumbs
-duplicate the arm name ("Docs / Guides / Guides"); the Cloudflare API token lacks
-zone-route write on the cairn.pub zone, so `wrangler deploy` exits 1 after a successful
-upload (fix the token scope or scripted deploys read as failures). STANDING: the dev
-backend still cannot exercise fragments and renders media tiles as "Image missing"
-(ROADMAP Now seed item); eight friction-log entries await the next clearing (the seven
-prior plus this pass's engine mermaid-grammar gap); `check:custom-surface` and
-`check:chassis-boundary` remain CI-dark; the cairn.pub live admin smoke (Geoff's magic
-link + publish round-trip) is owed; point `cairn-register-editor` at the banked register
-standard.
+**Carry-forwards (live):** NEW from this pass: admin error statuses flatten to HTTP 200
+under the shell's streamed pending count (upstream sveltejs/kit#12533; ROADMAP watch
+filed, guide caveat published, candidate rider for the scheduled kit-watch routine).
+STANDING: mermaid diagrams near-illegible at 320/390 (candidate: tap-to-expand in the
+Topo pass); section-index breadcrumbs duplicate the arm name; the Cloudflare API token
+lacks zone-route write on the cairn.pub zone (scripted deploys read as failures); the
+dev backend still cannot exercise fragments and renders media tiles as "Image missing"
+(ROADMAP Now seed item); nine friction-log entries await the next clearing (the eight
+prior plus this pass's status-flattening probe lesson); `check:chassis-boundary` remains
+CI-dark (`check:custom-surface` ran green at this release); the cairn.pub live admin
+smoke (Geoff's magic link + publish round-trip) is owed; point `cairn-register-editor`
+at the banked register standard.
 
 ## Archives
 

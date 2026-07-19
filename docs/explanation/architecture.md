@@ -62,6 +62,18 @@ the engine has always had, so this changes nothing for a zero-config site. See
 typed read-side a site augments so its own routes see its declared role names on
 `locals.editor.role`.
 
+A role vocabulary says who has which name; a site with more than one kind of editor usually also
+needs to say what each name may reach. `defineAccess` declares that map once, over cairn's own
+screens and your site's own routes alike, and one function, `canReach`, is the single authority
+every enforcement point and every visibility check reads: the guard's `requireAccess` helper, the
+engine's own route gates, and the sidebar resolver. That's a deliberate constraint, not an
+implementation detail. Splitting "what renders" from "what's allowed" into two separately
+maintained code paths is exactly how a hidden menu item stops being a hidden menu item and starts
+being an open door with a rug over it; one function closes that gap by construction; a site that
+declares no map sees no change, since capability alone stays the floor. See [access
+map](../reference/core.md#access-map) for the full contract and [Restrict admin access by
+role](../guides/restrict-admin-access.md) for the worked guide.
+
 ## The admin mount
 
 A site mounts the whole `/admin` surface with one catch-all route pair and one server

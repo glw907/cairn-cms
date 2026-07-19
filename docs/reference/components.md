@@ -136,6 +136,17 @@ button whose confirm dialog lists the held entries grouped by concept and posts 
 `?/publishAll` action to the absolute `/admin` catch-all. A null pending set (GitHub unreachable)
 hides the button rather than showing a stale count.
 
+**Attention pills.** `data.attention` (see [the attention seam](./sveltekit.md#the-attention-seam))
+decorates a visible nav entry with a quiet count pill when its `href` carries a positive count; a
+zero or absent count renders no pill at all, never a "0" one. A collapsed section's header shows
+the sum of its visible children's own counts, computed from the same `data.attention` record the
+leaf pills read, never a separate total, so the header sum and its children can never drift out of
+sync; the header's pill disappears once the section opens (the item pills remain, since they carry
+their own accessible names). Every count caps its display at `99+`. The count lives in the entry
+link's accessible name ("Asset requests, 3 pending requests"), built from the item's `label`
+(defaulting to "pending items"); the pill span itself is `aria-hidden`, so a screen reader
+announces the count exactly once, through the link, not twice.
+
 ### `ConceptList`
 
 Stability tier: Unstable API.

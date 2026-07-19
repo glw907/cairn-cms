@@ -66,11 +66,38 @@ routes, the same seam [Add a custom admin screen](./add-a-custom-admin-screen.md
 The auth guard already ran and set a populated, typed `event.locals.editor` before this route's
 `load` does, for an `instructor` session exactly as for an owner or an editor: a `none`-capability
 session still authenticates and reaches this route untouched. Nothing about `none` blocks the
-route from resolving, so gate it yourself, on the role or the capability, whichever your screen
-means to check:
+route from resolving, so gate it yourself.
+
+The recommended path is [the access map](./restrict-admin-access.md): declare which role reaches
+this path and let `requireAccess` check it, the same one-authority-function `canReach` the
+sidebar itself reads, so a change to who reaches `/admin/classes` never has to be made twice.
+
+```ts
+// src/lib/cairn.access.ts
+import { defineAccess } from '@glw907/cairn-cms';
+import { roles } from './cairn.config.js';
+
+export const access = defineAccess(roles, {
+  '/admin/classes': ['instructor'],
+});
+```
 
 ```ts
 // src/routes/admin/classes/+page.server.ts
+import { requireAccess } from '@glw907/cairn-cms/sveltekit';
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = (event) => {
+  const editor = requireAccess(event); // denies every role but instructor (and owner)
+  return { displayName: editor.displayName };
+};
+```
+
+A bare role or capability check on `requireSession` still works when a map is more than the
+screen needs, or when the check depends on something the map can't express:
+
+```ts
+// src/routes/admin/classes/+page.server.ts (a hand-rolled check, the alternative to the map)
 import { error } from '@sveltejs/kit';
 import { requireSession } from '@glw907/cairn-cms/sveltekit';
 import type { PageServerLoad } from './$types';
@@ -118,6 +145,8 @@ confirm `/admin/classes` still opens, since the preceding load admits owner capa
 
 [The declared role vocabulary](../reference/core.md#roles) documents `defineRoles`,
 `CairnRolesRegister`, and the capability-resolution helpers this guide used.
+[Restrict admin access by role](./restrict-admin-access.md) covers `defineAccess`,
+`requireAccess`, and the deny-not-hide doctrine this guide's recommended path builds on.
 [`requireSession`](../reference/sveltekit.md#requiresession) and
 [`requireEditor`](../reference/sveltekit.md#requireeditor) document the none contract in full, and
 [Add a custom admin screen](./add-a-custom-admin-screen.md) covers the custom-route seam and

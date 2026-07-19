@@ -867,6 +867,80 @@ declare module '@glw907/cairn-cms' {
 }
 ```
 
+### Access map
+
+A role vocabulary says who has which name; the access map says what each name may reach.
+`defineAccess` declares the map once, and `canReach` is the one authority function every
+enforcement and visibility point reads: the guard's [`requireAccess`](./sveltekit.md#requireaccess)
+helper, the engine's own route gates, and the nav resolver. Capability is always the floor, and
+the map only narrows it, never widens it, so a site that declares no map sees no behavior change.
+See [Restrict admin access by role](../guides/restrict-admin-access.md) for the worked guide.
+
+#### `defineAccess`
+
+Stability tier: Extension API.
+
+```ts
+declare function defineAccess<const A extends AccessMap>(roles: RolesDeclaration, map: A): A;
+```
+
+Declare a site's access map: a target, either an engine screen id (a declared concept, or one of
+`media`, `vocabulary`, `settings`) or an `/admin`-prefixed route path, to the role names admitted
+to it. Validates at construction, `defineRoles`-style: throws an actionable
+`defineAccess:`-prefixed error on an empty map, a role name outside the given vocabulary, an
+empty role list (owner-only must be written explicitly as `['owner']`), or a key that is neither a
+plausible screen id (non-empty, no `/`) nor a well-formed `/admin`-prefixed path (no query, hash,
+trailing slash, or the bare `/admin` root). A screen-id key's existence against the site's real
+concepts, and an href key's collision with a built-in admin route, validate later, at composition,
+once the runtime knows the real concept list.
+
+```ts
+// src/lib/cairn.access.ts
+import { defineAccess } from '@glw907/cairn-cms';
+import { roles } from './cairn.config.js';
+
+export const access = defineAccess(roles, {
+  pages: ['webmaster'],
+  media: ['webmaster', 'publisher'],
+  '/admin/money': ['club-admin'],
+});
+```
+
+Pass the same map to [`createAuthGuard`](./sveltekit.md#createauthguard)'s `access` option and to
+the adapter's `access` member: declaring it once and importing it twice is the pattern `roles`
+already follows.
+
+#### `canReach`, `hasAccessRule`
+
+Stability tier: Extension API.
+
+```ts
+declare function canReach(access: AccessMap | undefined, editor: Editor, target: string): boolean;
+declare function hasAccessRule(access: AccessMap | undefined, target: string): boolean;
+```
+
+`canReach` is the one decision point every enforcement and visibility check reads. `none`
+capability reaches nothing, mapped or unmapped. Owner capability reaches every target except the
+`editors` screen, which stays owner-only regardless of the map (the roster screen's existing
+floor, restated here so the one authority function covers it too). A screen-id target absent from
+the map admits any editor-capability session; present, it admits only the named roles. An href
+target matches the deepest path-segment-prefix key in the map (`/admin/money` covers
+`/admin/money/refunds` unless the deeper key is separately mapped; `/admin/moneyx` never matches
+`/admin/money`); an href with no matching key admits any editor-capability session, the nav
+semantics a `navFilter`-free sidebar relies on.
+
+`hasAccessRule` reports whether the map carries any rule at all for `target` (exact match for a
+screen id, deepest-prefix match for an href). It backs
+[`requireAccess`](./sveltekit.md#requireaccess)'s fail-closed contract: a route that opts into the
+map refuses every session with a 403, owner included, when the map has no opinion on its path at
+all, distinct from `canReach`'s own any-editor reading used for nav visibility.
+
+**Deny at the route, never merely hide.** Nav placement is never authorization: hiding a screen
+or entry from the sidebar (a `navLayout` node's `hidden: true`, an unmapped href) does not stop a
+signed-in editor from reaching it by typing its URL directly. The access map, enforced by
+`canReach` at the route and read by the nav resolver for visibility, is what actually gates a
+screen; declaring the map is what makes the sidebar and the route agree.
+
 ---
 
 ## Types
@@ -917,6 +991,7 @@ function signatures above reference these.
 | <a id="cairnrolesregister"></a>`CairnRolesRegister` | Extension API | `interface CairnRolesRegister {}` | The empty registry interface a site augments to narrow `Role` to its own declared role names (see the preceding [Roles](#roles) section). |
 | <a id="role"></a>`Role` | Extension API | `type Role` | The role names `locals.editor.role` carries: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
 | <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role, and its resolved `capability`. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
+| `AccessMap` | Extension API | `type AccessMap = Record<string, Role[]>` | A site's whole access declaration: a target (an engine screen id or an `/admin`-prefixed route path) to the role names admitted to it. A target absent from the map keeps today's behavior. See [Access map](#access-map). |
 | `AuthEnv` | Extension API | `interface AuthEnv` | Worker bindings and vars the auth layer reads. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |

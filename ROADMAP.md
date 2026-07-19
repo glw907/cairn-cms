@@ -188,13 +188,6 @@ the named human gates only):**
   first deliverable is convergence (pick the canonical recipes, re-express the engine screens in
   them), then ship the components; the audit carries the full inventory. The showcase Signups
   screen still needs a render for the bolted-on-vs-native judgment.
-- **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
-  real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
-  design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger
-  allowlist is an independent, low-risk addition (more icon names, same validation shape) that
-  doesn't need the whole-sidebar contract to land first. Candidate: survey the icon names ASC and
-  907 actually reach for past the nine, then extend `ADMIN_NAV_ICON_NAMES` and
-  `ADMIN_NAV_ICONS` together, a non-breaking additive change.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

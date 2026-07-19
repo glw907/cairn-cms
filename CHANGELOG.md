@@ -1,3 +1,32 @@
+## Unreleased
+
+### Added
+
+- The admin access map: a site declares `defineAccess(roles, map)` once, mapping engine screens
+  and its own `/admin` routes to the role names admitted to each, and one function, `canReach`,
+  is the single authority the guard's new `requireAccess` helper, every engine route gate, and
+  the sidebar resolver all read, so route enforcement and nav visibility can never drift apart.
+  Capability stays the floor (owner always passes, `none` never reaches anything, `editors`
+  keeps its owner-only floor); the map only narrows an editor-capability session further. A site
+  that declares no map sees no behavior change. See [Restrict admin access by
+  role](./docs/guides/restrict-admin-access.md). New log event `auth.access.denied` (warn:
+  `email`, `role`, `target`) makes a map denial observable.
+- `NavLayoutSection` gains `collapsed?: boolean`, the group's declared starting state for a
+  visitor with no persisted nav-collapse cookie (default `false`, today's behavior); the
+  existing cookie still wins entirely once any header is touched.
+- `NavLayoutEngineRef` gains `icon?: AdminNavIcon`, overriding the engine-owned glyph for that
+  door, and the bundled `AdminNavIcon`/`ADMIN_NAV_ICON_NAMES` allowlist widens from nine names to
+  twenty-seven (the full working set surfaced by ASC's own declared sidebar).
+- A new `attention` dependency (`ContentRoutesDeps.attention`, `CairnAdminDeps.attention`),
+  awaited once per request and never cached: a site returns `AttentionItem[]` (`href`, `count`,
+  an optional `label`) and the shell renders a quiet pending-work pill on the matching visible
+  nav entry, summed on a collapsed section's header, dropped at zero, and dropped entirely for
+  an item whose `href` the current session cannot see (a count never leaks to a role that can't
+  act on it).
+
+No `Consumers must:` action: every addition above is additive, and a site that declares none of
+it sees no behavior change.
+
 ## 0.87.4
 
 ### Added

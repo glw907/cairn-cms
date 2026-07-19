@@ -48,8 +48,8 @@ The extensions are narrow and named:
   ever runs, so the normal case leaves nothing to admit. The scheme stays on the allowlist for the
   case where a caller passes no resolver at all (the admin's standalone component-insert preview,
   which renders one directive with neither `resolve` nor `resolveMedia` set): an unresolved token
-  then survives to the output as inert text in an `href`, a visible broken-link signal the browser
-  will not act on as a scheme.
+  then survives to the output as inert text in an `href`. The browser shows it as a broken link and
+  never acts on it as a scheme.
 
 A site can extend this schema (`sanitizeSchema` on `RendererOptions`, covered in
 [Configure rendering](../guides/configure-rendering.md#extend-the-sanitize-allowlist)) to admit

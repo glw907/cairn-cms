@@ -120,8 +120,8 @@ JSON value is that the type is what keeps form, validator, and inferred type in 
 `string`, and a value outside the list fails validation rather than saving. A `date` field's
 stored value is always a `YYYY-MM-DD` string, so code reading it never has to guard against an
 editor having typed something else into a free-text box. Each guarantee holds because the
-vocabulary of field types stays fixed and each one carries its own rules, a guarantee a schema
-built from open key-value pairs has no way to keep.
+vocabulary of field types stays fixed and each one carries its own rules. A schema built from open
+key-value pairs has no way to keep those guarantees.
 
 The editor form makes the same case from the other direction. `fields.*` is a fixed vocabulary
 deliberately, so the admin can render one input per type without a developer ever writing UI code
@@ -139,7 +139,7 @@ line to its `fieldset`.
 list container, repeating one item shape down as many rows as the editor adds. Both
 stop after one level: an `object`'s leaves are always non-container fields, and an `array`'s item is a scalar or
 a flat `object`, never another `array` or an `object` of objects. Nest deeper and `fieldset()`
-throws immediately, at declaration, the same fail-loud posture as an invalid permalink.
+throws immediately, at declaration. It's the same fail-loud posture as an invalid permalink.
 
 The cap exists because `FieldInput`, the dispatcher that renders each field's widget, recurses
 into a container exactly once to render its leaves, and that one level of recursion is what lets

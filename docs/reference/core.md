@@ -136,8 +136,8 @@ posts: defineConcept({
 #### `supportContact` (adapter `editor` member)
 
 A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
-instruction. `composeRuntime` passes it to the runtime untouched, and the help renders the hand-off
-only when it is set, so an unset contact yields no dead button. Optional.
+instruction. Unset, `composeRuntime` defaults it to `https://cairn.pub/help`, cairn's own hosted editor
+help. A site that sets its own value overrides that default. Optional.
 
 <!-- snippet-check-skip: illustrates one adapter editor member's value in isolation -->
 ```ts

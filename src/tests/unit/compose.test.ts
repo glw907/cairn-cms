@@ -75,8 +75,8 @@ describe('composeRuntime supportContact', () => {
     ).toBe('help@example.org');
   });
 
-  it('leaves supportContact undefined when the adapter omits it', () => {
-    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).supportContact).toBeUndefined();
+  it('defaults to the hosted editor help when the adapter omits it', () => {
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).supportContact).toBe('https://cairn.pub/help');
   });
 });
 

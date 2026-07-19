@@ -43,21 +43,23 @@ organization works in one place... one admin" — fix rides the sweep with point
 wording. These likely PRECEDE the scaffolder now; confirm priority with Geoff at next
 session start.**
 
-**NEXT (fresh session; the Fable window closed 2026-07-19, so OPUS CONDUCTS per
-`~/.claude/docs/fable-post-cutoff-system.md`): the DOCS-REGISTER SWEEP, a dedicated pass,
-brainstorm-first (Geoff's ruling 2026-07-18).** The docs must read like documentation, not
-marketing. The working material: the `cairn-pub-front-page-voice` memory (the register
-rules and Geoff's specimen list: "the four arms", "Eight words the docs use precisely",
-the when-something-breaks setup-colon triad, all still live in docs/README.md; the charter
-opener's "finished tool, and a toolkit" phrasing also aligns to the ratified answer line
-"both a finished CMS and an extensible toolkit", and "one admin" de-jargons per point 05).
-The brainstorm settles: the docs' positive register standard, and the sweep's verification
-shape (adversarial find-and-verify over ~126 files is workflow-shaped; Geoff has standing
-workflow authorization). Resume prompt: "Run the docs-register sweep, a dedicated pass:
-read cairn-cms docs/STATUS.md's next-action entry and the cairn-pub-front-page-voice
-memory, then brainstorm the docs register standard with Geoff before any edit." Launch in
-~/Projects/cairn-cms. After it: docs+help rendered on-site with TOCs (Topo start), then
-the scaffolder (step 6).
+**NOW EXECUTING (2026-07-18, Fable conducting by Geoff's model pick this session): the
+DOCS-REGISTER SWEEP.** The brainstorm ran and Geoff ratified the register standard; the
+spec is `docs/superpowers/specs/2026-07-18-docs-register-standard-design.md` (universal
+contract with the no-pitch-but-impressive keystone, four arm registers, the front-door
+register writing to the seasoned organizational developer with an editor legibility floor,
+calibration specimens). The plan is
+`docs/superpowers/plans/2026-07-18-docs-register-sweep.md`: bank
+`docs/internal/docs-register.md`, fix the two READMEs in the main loop as calibration
+exemplars, find-verify workflow over the remaining pages (Sonnet graders, Opus refute
+verify, Opus recall spot-check; workflow explicitly authorized), main-loop triage,
+implementer application, doc gates, Geoff's read gate, then merge and RELEASE via
+`cairn-release` (Geoff directed the release, 2026-07-18). Work rides worktree
+`../cairn-cms-docs-register` (branch `docs-register-sweep`). Resume prompt if interrupted:
+"Resume the docs-register sweep: read the plan at
+docs/superpowers/plans/2026-07-18-docs-register-sweep.md and continue from the first
+unchecked task." Launch in ~/Projects/cairn-cms. After it: docs+help rendered on-site with
+TOCs (Topo start), then the scaffolder (step 6).
 
 ## The archived step-5 launch entry (superseded content below)
 

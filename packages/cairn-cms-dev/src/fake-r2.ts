@@ -84,7 +84,9 @@ function toBytes(input: ArrayBuffer | Uint8Array): Uint8Array {
 }
 
 const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
-const SEED_PNG_SIZE = 8;
+// A 3:2 landscape big enough to read as a thumbnail in the Media Library grid, not a centered dot.
+const SEED_PNG_WIDTH = 240;
+const SEED_PNG_HEIGHT = 160;
 
 /** CRC-32 of a byte range, the checksum every PNG chunk trailer carries. */
 function crc32(bytes: Uint8Array): number {
@@ -125,21 +127,37 @@ function pngChunk(type: string, data: Uint8Array): Uint8Array {
   return out;
 }
 
+/** A DEFLATE stored block's length pair is a 16-bit field, so no block can carry more raw bytes. */
+const MAX_STORED_BLOCK = 65535;
+
 /**
- * Wrap raw bytes as a zlib stream using a single uncompressed (stored) DEFLATE block: the
- * two-byte zlib header, the stored-block header plus its length pair, the raw bytes, then the
- * Adler-32 trailer. Valid input to any zlib inflater without a compression library.
+ * Wrap raw bytes as a zlib stream using one or more uncompressed (stored) DEFLATE blocks: the
+ * two-byte zlib header, then a stored-block header plus its length pair per block (BFINAL=1 only
+ * on the last), then the Adler-32 trailer over the whole raw stream. Valid input to any zlib
+ * inflater without a compression library. A stored block's length field is 16-bit, so raw input
+ * past 65535 bytes (a seed PNG's full row-filtered pixel data, well past 8x8) must split across
+ * blocks.
  */
 function zlibStore(raw: Uint8Array): Uint8Array {
-  const out = new Uint8Array(2 + 1 + 4 + raw.length + 4);
+  const blockCount = Math.max(1, Math.ceil(raw.length / MAX_STORED_BLOCK));
+  const out = new Uint8Array(2 + blockCount * 5 + raw.length + 4);
   const view = new DataView(out.buffer);
   out[0] = 0x78; // CMF: deflate, 32k window
   out[1] = 0x01; // FLG: fastest, no preset dictionary (0x7801 % 31 === 0)
-  out[2] = 0x01; // DEFLATE stored-block header: BFINAL=1, BTYPE=00 (stored)
-  view.setUint16(3, raw.length, true);
-  view.setUint16(5, (~raw.length) & 0xffff, true);
-  out.set(raw, 7);
-  view.setUint32(7 + raw.length, adler32(raw), false);
+
+  let offset = 2;
+  let rawOffset = 0;
+  for (let i = 0; i < blockCount; i++) {
+    const blockLen = Math.min(MAX_STORED_BLOCK, raw.length - rawOffset);
+    const isLast = i === blockCount - 1;
+    out[offset] = isLast ? 0x01 : 0x00; // BFINAL, BTYPE=00 (stored)
+    view.setUint16(offset + 1, blockLen, true);
+    view.setUint16(offset + 3, (~blockLen) & 0xffff, true);
+    out.set(raw.subarray(rawOffset, rawOffset + blockLen), offset + 5);
+    offset += 5 + blockLen;
+    rawOffset += blockLen;
+  }
+  view.setUint32(offset, adler32(raw), false);
   return out;
 }
 
@@ -155,18 +173,19 @@ function colorForKey(key: string): [number, number, number] {
 }
 
 /**
- * Build a small, valid, solid-color PNG for a seeded object key (signature, IHDR, IDAT, IEND),
- * enough for a browser to decode a real thumbnail. No compression library: the IDAT payload is an
- * uncompressed zlib stream, which every PNG decoder accepts.
+ * Build a valid, solid-color, thumbnail-sized PNG for a seeded object key (signature, IHDR, IDAT,
+ * IEND), enough for a browser to decode a real thumbnail that reads as a landscape tile rather
+ * than a centered dot. No compression library: the IDAT payload is an uncompressed zlib stream,
+ * which every PNG decoder accepts.
  */
 function makeSeedPng(key: string): Uint8Array {
   const [r, g, b] = colorForKey(key);
-  const bytesPerRow = 1 + SEED_PNG_SIZE * 3; // filter byte + RGB per pixel
-  const raw = new Uint8Array(bytesPerRow * SEED_PNG_SIZE);
-  for (let row = 0; row < SEED_PNG_SIZE; row++) {
+  const bytesPerRow = 1 + SEED_PNG_WIDTH * 3; // filter byte + RGB per pixel
+  const raw = new Uint8Array(bytesPerRow * SEED_PNG_HEIGHT);
+  for (let row = 0; row < SEED_PNG_HEIGHT; row++) {
     const rowStart = row * bytesPerRow;
     raw[rowStart] = 0; // filter type: none
-    for (let col = 0; col < SEED_PNG_SIZE; col++) {
+    for (let col = 0; col < SEED_PNG_WIDTH; col++) {
       const pixelStart = rowStart + 1 + col * 3;
       raw[pixelStart] = r;
       raw[pixelStart + 1] = g;
@@ -176,8 +195,8 @@ function makeSeedPng(key: string): Uint8Array {
 
   const ihdr = new Uint8Array(13);
   const ihdrView = new DataView(ihdr.buffer);
-  ihdrView.setUint32(0, SEED_PNG_SIZE, false); // width
-  ihdrView.setUint32(4, SEED_PNG_SIZE, false); // height
+  ihdrView.setUint32(0, SEED_PNG_WIDTH, false); // width
+  ihdrView.setUint32(4, SEED_PNG_HEIGHT, false); // height
   ihdr[8] = 8; // bit depth
   ihdr[9] = 2; // color type: truecolor RGB
   ihdr[10] = 0; // compression method
@@ -204,9 +223,9 @@ export function createFakeR2(): FakeR2Bucket {
 
   /**
    * Seed one object's bytes under an R2 object key, so the Media Library lists a committed asset
-   * whose thumbnail resolves through the /media route. The bytes are a small, valid, solid-color
-   * PNG a browser can decode, colored deterministically from the key so distinct assets read as
-   * distinct tiles; the content type matches the seeded media.json row.
+   * whose thumbnail resolves through the /media route. The bytes are a valid, thumbnail-sized,
+   * solid-color PNG a browser can decode, colored deterministically from the key so distinct
+   * assets read as distinct tiles; the content type matches the seeded media.json row.
    */
   function seed(key: string): void {
     store.set(key, { bytes: makeSeedPng(key), contentType: 'image/png' });

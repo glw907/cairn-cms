@@ -52,7 +52,7 @@ export type { IconSet } from './render/glyph.js';
 // createRenderer is the one public render pipeline, so the safe plugin ordering is the only public
 // path. See docs/superpowers/specs/2026-06-05-cairn-render-authoring-surface-design.md.
 export { createRenderer } from './render/pipeline.js';
-export type { RendererOptions } from './render/pipeline.js';
+export type { RendererOptions, DocHeading } from './render/pipeline.js';
 // The `::include` fragment resolver type: `renderMarkdown`'s `resolveFragment` option and
 // `SiteRender.resolveFragment` both name it, the same public-surface pattern as `LinkResolve`.
 export type { FragmentResolve } from './render/resolve-include.js';

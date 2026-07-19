@@ -130,7 +130,12 @@
   "files": [
     "dist",
     "migrations",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "docs/README.md",
+    "docs/reference",
+    "docs/guides",
+    "docs/explanation",
+    "docs/tutorial"
   ],
   "peerDependencies": {
     "@sveltejs/kit": "^2.12",

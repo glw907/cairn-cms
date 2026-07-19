@@ -1,3 +1,30 @@
+## Unreleased
+
+### Added
+
+- `createRenderer` gains `renderDocument`, a sibling to `renderMarkdown` that additionally
+  returns the rendered page's `headings` (`DocHeading[]`: `id`, flattened `text`, `depth`),
+  collected from the final rehype tree after `rehypeSlug` and any site `rehypePlugins` have
+  run. A page that needs a table of contents or a heading anchor list calls `renderDocument`
+  instead of re-parsing `renderMarkdown`'s HTML string. `renderMarkdown` is unchanged. No
+  consumer action.
+- The published docs tree (`docs/reference`, `docs/guides`, `docs/explanation`,
+  `docs/tutorial`, `docs/README.md`) now ships inside the npm tarball, so a consumer site can
+  read the docs at build time without a separate checkout. `docs/internal`, `docs/superpowers`,
+  and `docs/STATUS.md` stay out. The `check:package` gate now asserts both directions, so a
+  future `files` edit cannot silently drop or leak either. Cost: the tarball grows from 501 to
+  562 files, 1.73 MB to 1.96 MB packed (4.58 MB to 5.22 MB unpacked). No consumer action.
+
+### Changed
+
+- The admin's Get Help hand-off now has a default destination: a site that sets no
+  `editor.supportContact` gets `https://cairn.pub/help`, cairn's own hosted editor help,
+  instead of the self-serve empty state. A site that prefers its own destination sets
+  `editor.supportContact` explicitly, same as before, and a site that wants the prior
+  self-serve state back sets it to an explicit empty string, which passes through
+  untouched. A site that relied on the prior unset (no link) state now shows the
+  hosted-help link until it sets one of those two.
+
 ## 0.87.3
 
 ### Changed

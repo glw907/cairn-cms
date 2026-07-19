@@ -154,6 +154,51 @@ describe('createRenderer', () => {
     });
   });
 
+  describe('renderDocument', () => {
+    it('returns ordered headings with depth and id, alongside the rendered html', async () => {
+      const { renderDocument } = createRenderer();
+      const { html, headings } = await renderDocument(
+        '# Title\n\n## Section One\n\nText\n\n### Sub A\n\n## Section Two',
+      );
+      expect(html).toContain('<h1');
+      expect(headings).toEqual([
+        { id: 'title', text: 'Title', depth: 1 },
+        { id: 'section-one', text: 'Section One', depth: 2 },
+        { id: 'sub-a', text: 'Sub A', depth: 3 },
+        { id: 'section-two', text: 'Section Two', depth: 2 },
+      ]);
+    });
+
+    it('includes an h1 heading at depth 1', async () => {
+      const { renderDocument } = createRenderer();
+      const { headings } = await renderDocument('# Just A Title');
+      expect(headings).toEqual([{ id: 'just-a-title', text: 'Just A Title', depth: 1 }]);
+    });
+
+    it('flattens an inline-code heading to plain text and strips backticks from the slug', async () => {
+      const { renderDocument } = createRenderer();
+      const { headings } = await renderDocument('## The `renderMarkdown` helper');
+      expect(headings).toEqual([{ id: 'the-rendermarkdown-helper', text: 'The renderMarkdown helper', depth: 2 }]);
+    });
+
+    it('suffixes a duplicate heading id the same way github-slugger does', async () => {
+      const { renderDocument } = createRenderer();
+      const { headings } = await renderDocument('## How it went\n\nText\n\n## How it went');
+      expect(headings.map((heading) => heading.id)).toEqual(['how-it-went', 'how-it-went-1']);
+    });
+
+    it('collects a heading a site rehypePlugins entry adds, since the collector runs last', async () => {
+      const addHeading = () => (tree: HastRoot) => {
+        tree.children.push(h('h2', { id: 'appended' }, 'Appended By Site') as unknown as Element);
+      };
+      const { renderDocument } = createRenderer(defineRegistry({ components: [] }), {
+        rehypePlugins: [addHeading],
+      });
+      const { headings } = await renderDocument('# Title');
+      expect(headings).toContainEqual({ id: 'appended', text: 'Appended By Site', depth: 2 });
+    });
+  });
+
   describe('table-scroll default', () => {
     it('wraps a rendered table in a scrollable, labeled region by default', async () => {
       const { renderMarkdown } = createRenderer();

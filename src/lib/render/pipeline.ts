@@ -19,7 +19,18 @@ import { remarkResolveMedia, MEDIA_RESOLVE, type MediaResolve } from './resolve-
 import { remarkResolveIncludes, FRAGMENT_RESOLVE, type FragmentResolve } from './resolve-include.js';
 import { rehypeDispatch } from './rehype-dispatch.js';
 import { defineRegistry, type ComponentRegistry } from './registry.js';
+import { rehypeCollectHeadings, DOC_HEADINGS, type DocHeading } from './collect-headings.js';
 import type { LinkResolve } from '../content/links.js';
+
+export type { DocHeading } from './collect-headings.js';
+
+// The per-call resolver hooks renderMarkdown and renderDocument both accept, threaded onto the
+// VFile's data so the cairn: link, media:, and ::include steps read them at process time.
+type ResolveOptions = {
+  resolve?: LinkResolve;
+  resolveMedia?: MediaResolve;
+  resolveFragment?: FragmentResolve;
+};
 
 export interface RendererOptions {
   /**
@@ -68,7 +79,10 @@ export interface RendererOptions {
  * Compose a site's render pipeline from its component registry: directive syntax to
  *  stamped markers to registry-built hast. Returns `renderMarkdown` plus the fully composed
  *  remark/rehype plugin arrays, including any `RendererOptions.remarkPlugins`/`rehypePlugins`
- *  a site supplied, so the admin editor preview can reuse the exact same set.
+ *  a site supplied, so the admin editor preview can reuse the exact same set. `renderDocument`
+ *  takes the same options and additionally returns the document's `headings`, collected from the
+ *  final rehype tree (after `rehypeSlug` and any site `rehypePlugins` have run), in document
+ *  order.
  */
 export function createRenderer(
   registry: ComponentRegistry = defineRegistry({ components: [] }),
@@ -118,29 +132,47 @@ export function createRenderer(
   if (options.tableScroll !== false) rehypePlugins.push(rehypeTableScroll);
   // A site's own rehype plugins run last of all, over the already-wrapped tree.
   rehypePlugins.push(...(options.rehypePlugins ?? []));
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkPlugins)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypePlugins)
-    .use(rehypeStringify);
+  // Build the processor with an optional trailing rehype step, so renderMarkdown and
+  // renderDocument share every stage up to that point without either mutating the `rehypePlugins`
+  // array this function returns (the editor preview reuses that exact array).
+  const buildProcessor = (extraRehype: PluggableList) =>
+    unified()
+      .use(remarkParse)
+      .use(remarkGfm)
+      .use(remarkPlugins)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypePlugins)
+      .use(extraRehype)
+      .use(rehypeStringify);
+  const processor = buildProcessor([]);
+  // The heading-collector processor is built lazily, on renderDocument's first call, not here: every
+  // current consumer only ever calls renderMarkdown, so building it eagerly would double the
+  // attacher setup cost on every Worker cold start for a site that never calls renderDocument.
+  let documentProcessor: ReturnType<typeof buildProcessor> | undefined;
+  const makeFile = (content: string, opts: ResolveOptions) =>
+    new VFile({
+      value: content,
+      data: {
+        [CAIRN_RESOLVE]: opts.resolve,
+        [MEDIA_RESOLVE]: opts.resolveMedia,
+        [FRAGMENT_RESOLVE]: opts.resolveFragment,
+      },
+    });
   return {
     remarkPlugins,
     rehypePlugins,
-    renderMarkdown: async (
+    renderMarkdown: async (content: string, opts: ResolveOptions = {}): Promise<string> => {
+      return String(await processor.process(makeFile(content, opts)));
+    },
+    renderDocument: async (
       content: string,
-      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve } = {},
-    ): Promise<string> => {
-      const file = new VFile({
-        value: content,
-        data: {
-          [CAIRN_RESOLVE]: opts.resolve,
-          [MEDIA_RESOLVE]: opts.resolveMedia,
-          [FRAGMENT_RESOLVE]: opts.resolveFragment,
-        },
-      });
-      return String(await processor.process(file));
+      opts: ResolveOptions = {},
+    ): Promise<{ html: string; headings: DocHeading[] }> => {
+      // The heading-collector plugin runs after rehypePlugins (which already carries the site's own
+      // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
+      documentProcessor ??= buildProcessor([rehypeCollectHeadings]);
+      const file = await documentProcessor.process(makeFile(content, opts));
+      return { html: String(file), headings: (file.data[DOC_HEADINGS] as DocHeading[] | undefined) ?? [] };
     },
   };
 }

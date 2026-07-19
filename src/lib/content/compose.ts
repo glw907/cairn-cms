@@ -13,6 +13,10 @@ const CONTENT_MANIFEST_PATH = 'src/content/.cairn/index.json';
 const MEDIA_MANIFEST_PATH = 'src/content/.cairn/media.json';
 const DICTIONARY_PATH = 'src/content/.cairn/dictionary.txt';
 
+// The in-admin help's fallback hand-off when a site sets no support contact of its own: cairn's
+// hosted editor help. An explicit `editor.supportContact` still wins.
+const DEFAULT_SUPPORT_CONTACT = 'https://cairn.pub/help';
+
 /**
  * The input to {@link composeRuntime}. `siteConfig` is required: it is the canonical home for the
  *  site name, the spellcheck dialect, and the tidy block, so they can never be silently dropped.
@@ -36,7 +40,7 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     roles: adapter.roles,
     backend: adapter.backend,
     sender: adapter.email,
-    supportContact: adapter.editor?.supportContact,
+    supportContact: adapter.editor?.supportContact ?? DEFAULT_SUPPORT_CONTACT,
     render: adapter.rendering.render,
     manifestPath: CONTENT_MANIFEST_PATH,
     registry: adapter.rendering.components,

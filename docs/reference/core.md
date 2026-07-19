@@ -136,8 +136,9 @@ posts: defineConcept({
 #### `supportContact` (adapter `editor` member)
 
 A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
-instruction. `composeRuntime` passes it to the runtime untouched, and the help renders the hand-off
-only when it is set, so an unset contact yields no dead button. Optional.
+instruction. Unset, `composeRuntime` defaults it to `https://cairn.pub/help`, cairn's own hosted editor
+help. A site that sets its own value overrides that default, and a site that sets an explicit empty
+string gets the prior self-serve state back: the Help home renders no hand-off. Optional.
 
 <!-- snippet-check-skip: illustrates one adapter editor member's value in isolation -->
 ```ts
@@ -474,7 +475,8 @@ declare function createRenderer(
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
-  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>;
+  renderMarkdown: (content: string, opts?: ResolveOptions) => Promise<string>;
+  renderDocument: (content: string, opts?: ResolveOptions) => Promise<{ html: string; headings: DocHeading[] }>;
 };
 ```
 
@@ -483,6 +485,22 @@ markers, then registry-built hast. It returns `renderMarkdown` plus the fully co
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
 carries the sanitize and anchor controls, the table-scroll default, and a
 `remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
+
+`renderDocument` takes the same options as `renderMarkdown` and additionally returns `headings`: a
+`DocHeading[]` collected from the final rehype tree, after `rehypeSlug` stamps ids and after any
+`RendererOptions.rehypePlugins` a site supplied have run, so a site rewrite of a heading's id is
+the id collected. Headings come back in document order, one entry per h1-h6, with `text` flattened
+to plain content (inline code, emphasis, and links reduce to their text). A page that needs a
+table of contents or a heading anchor list calls `renderDocument` instead of `renderMarkdown`.
+
+```ts
+import { createRenderer } from '@glw907/cairn-cms';
+import { registry } from './components.js';
+
+const { renderDocument } = createRenderer(registry);
+const { html, headings } = await renderDocument('# Title\n\n## Section');
+// headings: [{ id: 'title', text: 'Title', depth: 1 }, { id: 'section', text: 'Section', depth: 2 }]
+```
 
 ```ts
 // examples/showcase/src/theme/cairn.config.ts
@@ -889,6 +907,7 @@ function signatures above reference these.
 | `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
 | `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
+| `DocHeading` | Extension API | `interface DocHeading` | One heading `renderDocument` collected from a rendered page: `id`, flattened `text`, and `depth` (1-6), in document order. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |
 | `VocabularyEntry` | Extension API | `interface VocabularyEntry` | One editor-owned tag: a frozen slug `value` (the stored frontmatter token and filter key) and an editable display `label`. The `vocabulary` site-config key is a list of these. |

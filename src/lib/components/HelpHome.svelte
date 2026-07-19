@@ -11,8 +11,11 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     the open edit branches (never a stored count). At 3 of 3 the whole section is omitted, never
     shown as a done checklist. A per-device localStorage flag hides it on request.
   - Formatting renders `data.reference` (the everyday text and links rows) as a real semantic table.
-  - Get help reads the optional `data.supportContact`. Unset is the canonical self-serve default,
-    with no control; set renders the hand-off shaped by the contact (email, URL, or a note).
+  - Get help reads the optional `data.supportContact`. The runtime composes a default here (cairn's
+    hosted help) when a site sets no `editor.supportContact`; an explicit adapter value reshapes the
+    hand-off (email, URL, or a note), and an explicit empty value renders no hand-off, the self-serve
+    state. This component only ever sees the string it is handed: a bare-unset `HelpData.supportContact`
+    reaches it only from a custom caller that bypasses `composeRuntime`.
 -->
 <script lang="ts">
   import type { MarkdownReferenceRow } from './markdown-reference.js';

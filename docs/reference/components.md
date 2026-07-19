@@ -464,11 +464,12 @@ let { data }: { data: HelpData };
 The Help home screen, the screen an author visits for getting-started progress and reference
 material. `data` is the
 `HelpData` from the help load: the getting-started progress derived from the committed manifest and
-the open edit branches, the markdown reference rows, and the optional support contact. It renders the
+the open edit branches, the markdown reference rows, and the support contact. It renders the
 masthead, a derived getting-started checklist (it drops away once the author finishes all three steps,
-and hides per device on request), the formatting reference, and the support hand-off (shown only when
-the adapter sets `supportContact`). It mounts inside `CairnAdminShell`, so it carries no theme wrapper
-of its own.
+and hides per device on request), the formatting reference, and the support hand-off. `supportContact`
+defaults to cairn's own hosted editor help, an adapter value overrides it, and an adapter value set to
+an explicit empty string suppresses the hand-off, the self-serve state. It mounts inside
+`CairnAdminShell`, so it carries no theme wrapper of its own.
 
 ```svelte
 <script lang="ts">

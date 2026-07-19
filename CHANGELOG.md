@@ -1,3 +1,24 @@
+## Unreleased
+
+### Changed
+
+- The showcase's public header nav now renders from `site.config.yaml`'s `menus.primary`
+  (resolved through the engine's `extractMenu` by the root layout server load) instead of a
+  hardcoded array, so an editor's `/admin/nav` changes reach the rendered site. A lean
+  `src/theme/site-config.ts` module now owns the template's one `parseSiteConfig` call, and
+  `cairn.config.ts` re-exports `siteConfig` from it, keeping the full adapter out of the client
+  bundle. The footer's nav stays hardcoded on purpose; its list is different content, not a copy
+  of the primary menu.
+- The tutorial's nav milestone teaches the same shape: parse the site config in a lean module,
+  read the menu in a `+layout.server.ts`, and render from `data.nav`, instead of importing the
+  config module in a client script. The theme tutorial (`build-a-theme.md`) is now linked from
+  the docs front door.
+- A new repo gate, `check:arm-indexes`, fails CI when a published docs page is missing from its
+  arm's index (the inverse of `check:docs`'s dead-link direction).
+
+No consumer action is required. The template changes land in newly scaffolded or copied sites;
+an existing site keeps its own chrome.
+
 ## 0.88.1
 
 ### Changed

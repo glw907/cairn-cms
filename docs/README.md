@@ -8,11 +8,12 @@ Cairn is an open-source content management system for the websites of small orga
 
 1. [Why cairn](./explanation/why-cairn.md) — what it is, who it's for, and why the stack is chosen for you.
 2. [Build your first cairn site](./tutorial/build-your-first-cairn-site.md) — an empty directory to a deployed site with a working `/admin`. Keep [`examples/showcase`](../examples/showcase) open alongside; it's a complete consumer site, and every shape the docs describe appears in it wired and running.
-3. After that, come back for a [guide](./guides/README.md) when a task comes up, and the [reference](./reference/README.md) while you code.
+3. If you're building a reusable design rather than a one-off site, [build a theme](./tutorial/build-a-theme.md) on the chassis: the plumbing layer every cairn site shares.
+4. After that, come back for a [guide](./guides/README.md) when a task comes up, and the [reference](./reference/README.md) while you code.
 
 ## How the docs are organized
 
-- **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end.
+- **[Tutorial](./tutorial/build-your-first-cairn-site.md)** teaches a first build end to end, and [build a theme](./tutorial/build-a-theme.md) teaches a reusable theme on the chassis.
 - **[How-to guides](./guides/README.md)** answer task questions (the GitHub App, auth and D1, the adapter, rendering, deploying, troubleshooting), with the editor-facing guides (writing, images, the media library, tags, publishing) grouped separately.
 - **[Reference](./reference/README.md)** documents each package export, one page per subpath, plus the admin route contract and the log-event table. The export pages are gated against the code.
 - **[Explanation](./explanation/README.md)** covers the architecture and the design rules: the security model, render safety, the content model, and the reasoning behind each. [Why cairn](./explanation/why-cairn.md) lives here too.

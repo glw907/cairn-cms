@@ -156,6 +156,12 @@ the named human gates only):**
 
 ## Next
 
+- **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
+  pass, 2026-07-19). The guide's root-layout snippet imports `{ cairn }` from `$lib/cairn.config`
+  in a client script to reach `cairn.rendering.islands`, shipping the whole adapter to every
+  public page. The showcase models the right shape (a lean islands-registry module plus a
+  `hasIslands` server-load flag), and the tutorial's Milestone 7 was rewritten off the same
+  pattern for nav in the chassis-nav pass. Rewrite the guide to the registry-split shape.
 - **Deferred from the folded-chip verdict (invisible-craft pass, 2026-07-17):** body-snippet
   previews on the folded chip and a phone-reachable what-it's-for affordance. The chip itself
   shipped (label, title, count; includes show their fragment's human title); these two riders
@@ -168,11 +174,6 @@ the named human gates only):**
   (a frontmatter hero with a raw external `image.src` renders nothing without a template-level
   fallback). Whether raw external URLs get parity with `media:` tokens on either surface is one
   product call; take it when either surface next opens.
-- **Wire the showcase nav to the engine's menus** (from the friction log, Waymark final review
-  T3, 2026-07-17). The `menus:` key is engine-owned (`site-config.ts`'s `extractMenu`;
-  `createNavRoutes` ships and is documented), but the showcase neither mounts `/admin/nav` nor
-  reads the parsed menu, so the header hardcodes what the config declares. Decided: wire it at
-  template scope rather than remove the key.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
@@ -343,13 +344,6 @@ the named human gates only):**
   2026-07-17). The engine's srcset `sizes` emits 800px/1200px, matching the built-in preset
   magnitudes rather than any theme's actual measure; a mismatch costs only srcset-candidate
   efficiency, but a theme with a very different measure may eventually want a seam.
-- **Index-vs-directory count gate for the docs arm indexes** (from the friction log, docs-register
-  sweep, 2026-07-18). The explanation and guides indexes have drifted against their own
-  directories before (a false "links every reference" claim, a stale "the two" editor-guides
-  count) — both machine-checkable claims about the docs' own structure. A small gate that counts
-  index entries against the directory (and flags numeric claims in index prose) would catch drift
-  earlier than a register sweep.
-
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
   flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether
   Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag

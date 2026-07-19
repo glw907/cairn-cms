@@ -33,3 +33,12 @@ The log was cleared 2026-07-16 and again 2026-07-19 (the dev-backend pass): ever
 was verified against the code and then either shipped, filed into `ROADMAP.md` with its trigger,
 or found already resolved and pruned. Git history holds the full record of both clearings. New
 findings start fresh below this line.
+
+- **(developer, 2026-07-19, chassis-nav pass)** `guides/add-an-island.md` teaches importing
+  `{ cairn }` from `$lib/cairn.config` inside the root layout's client script to reach
+  `cairn.rendering.islands`, which ships the whole adapter (renderer, icon set, media manifest)
+  to every public page. The showcase itself avoids this with a lean islands-registry module plus
+  a `hasIslands` server-load flag (`examples/showcase/src/routes/+layout.server.ts`), and the
+  chassis-nav pass just rewrote the tutorial's Milestone 7 off the same client-import pattern
+  for nav. The guide should teach the registry-split shape the showcase models. Filed into
+  ROADMAP (Next).

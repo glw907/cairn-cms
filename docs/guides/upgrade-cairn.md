@@ -49,6 +49,13 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.87.3: the docs-register sweep (non-breaking)
+
+A drop-in bump with no code changes. Every published docs page now conforms to the banked
+register standard: two factual errors in the arm indexes corrected, marketing phrasing and
+internal plan citations removed, and the editor-facing guides keep git vocabulary out. No
+consumer action.
+
 ## 0.87.2: honest image dimensions and srcset (non-breaking)
 
 A drop-in bump. Rendered managed images now carry their intrinsic `width`/`height` when the

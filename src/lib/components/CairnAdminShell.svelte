@@ -89,9 +89,11 @@ discriminant, not the fields, gates the chrome).
     if (!isEngineChild(node)) return navItemOf(node);
     // A declared icon override (navLayout's `icon:` on an engine ref) wins over the engine's own
     // glyph; absent, the engine's own default (a fixed screen's icon, or the concept-kind glyph).
-    const icon = node.iconName
-      ? (ADMIN_NAV_ICONS[node.iconName] ?? ADMIN_NAV_FALLBACK_ICON)
-      : (ENGINE_NAV_ICONS[node.screen] ?? (node.dated ? ENGINE_CONCEPT_DATED_ICON : ENGINE_NAV_FALLBACK_ICON));
+    if (node.iconName) {
+      const overrideIcon = ADMIN_NAV_ICONS[node.iconName] ?? ADMIN_NAV_FALLBACK_ICON;
+      return { label: node.label, icon: overrideIcon, href: node.href };
+    }
+    const icon = ENGINE_NAV_ICONS[node.screen] ?? (node.dated ? ENGINE_CONCEPT_DATED_ICON : ENGINE_NAV_FALLBACK_ICON);
     return { label: node.label, icon, href: node.href };
   }
 

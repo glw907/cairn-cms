@@ -495,6 +495,7 @@ table of contents or a heading anchor list calls `renderDocument` instead of `re
 
 ```ts
 import { createRenderer } from '@glw907/cairn-cms';
+import { registry } from './components.js';
 
 const { renderDocument } = createRenderer(registry);
 const { html, headings } = await renderDocument('# Title\n\n## Section');

@@ -1,8 +1,8 @@
 # Core (`@glw907/cairn-cms`)
 
-The root export is the engine. It carries the adapter and schema contract your site declares, the
+The root export is the engine. It carries the adapter and schema contract a site declares, the
 markdown render pipeline, the composed runtime, the content and manifest projections, and the auth
-and GitHub App primitives. You import it at `src/lib/cairn.config.ts` and in your admin and
+and GitHub App primitives. A site imports it at `src/lib/cairn.config.ts` and in its admin and
 delivery code.
 
 ```ts
@@ -10,7 +10,7 @@ import { defineAdapter, defineConcept, fieldset, fields, createRenderer } from '
 import type { CairnAdapter, ComponentDef } from '@glw907/cairn-cms';
 ```
 
-The `.` entry carries the earned construction surface: the adapter and schema constructors, the read
+The `.` entry carries the public construction surface: the adapter and schema constructors, the read
 helpers a site calls on its own routes, and the types that name their signatures. **Stable API** is
 the deliberate public surface, each primary entry point with a worked snippet. **Types** is a table
 of the public type aliases and interfaces. The TypeScript types in `src/lib` are the source of
@@ -164,9 +164,9 @@ site to name its compiled stylesheets here; without the knob the preview renders
 `?url` import of the site's CSS entry resolves the hashed asset URL at build time. `bodyClass`
 applies theme or typography root classes to the preview document's body, and `containerClass`
 wraps the rendered content in the site's content container (a prose or measure class); when
-omitted, the content renders bare. One default worth knowing: the frame's srcdoc pins a white body
-background, deliberately overridable, so a site whose ground is not white should state its body
-background in one of the named stylesheets.
+omitted, the content renders bare. The frame's srcdoc pins a white body background by default,
+deliberately overridable, so a site whose ground is not white should state its body background in
+one of the named stylesheets.
 
 `byConcept` overrides `bodyClass` and `containerClass` per concept, keyed by concept id, for a
 site whose concepts wrap content differently (a blog whose posts render inside a post module while
@@ -194,8 +194,8 @@ URL the server-rendered edit page hands the frame names a file the client build 
 
 Even done right, the `?url` import in the layout and the one in the adapter resolve through the
 client and the server build pipelines separately, so two hashed copies of the same sheet ship: the
-page links the client copy, the preview frame links the server copy. That is by design, not a defect,
-so do not be alarmed to find both in the build output.
+page links the client copy, the preview frame links the server copy. That is by design, not a
+defect: the build legitimately ships both copies.
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the first worked example above) to focus on the editor.preview member -->
 ```ts

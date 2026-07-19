@@ -3,7 +3,7 @@
 This subpath holds the admin Svelte UI. It spans the layout shell, the sign-in and confirm pages,
 the content list and editor, the editors and nav screens, and the dialogs and pickers those
 compose. The canonical mount is one component: `CairnAdmin`, rendered from the catch-all
-`/admin/[...path]` route, switches every view for you. The per-view components below it stay
+`/admin/[...path]` route, switches to the matching view. The per-view components below it stay
 public as the advanced seam for a site that mounts routes by hand. For the catch-all wiring, see
 [the canonical admin mount](./admin-routes.md).
 
@@ -16,13 +16,12 @@ Warm Stone admin theme ships as a CSS side effect of the import. The TypeScript 
 `src/lib/components` are the source of truth, and the export-coverage gate checks every name here
 against them.
 
-Two commitments hold for anything you build on this surface. An extended cairn still feels like
-one visually coherent system: the shell and theme carry the admin's design grammar—one emphasis
-ladder for buttons and states, reserved semantic colors, one status-pill family, a documented
-spacing scale—so a custom screen composed from these components and the theme's tokens reads as
-built in. And the responsive craft comes with it: the shell composes its chrome at every width,
-and the components recompose rather than squeeze, so screens built from them stay composed from
-phone to ultrawide without per-screen effort.
+Anything built on this surface shares the shell and theme's design grammar: an emphasis ladder for
+buttons and states, reserved semantic colors, a status-pill family, and a documented spacing scale.
+A custom screen composed from these components and the theme's tokens uses the same tokens as the
+built-in views. The shell composes its chrome at every width, and the components recompose rather
+than squeeze, so a screen built from them adapts from phone to ultrawide without added per-screen
+work.
 
 ---
 
@@ -105,8 +104,8 @@ seam](./sveltekit.md#the-navlayout-seam) for the full contract. For a none-capab
 children and the fallback group included, alongside its own view-site and theme-toggle commands.
 
 At desktop widths the sidebar is persistent and scroll-independent (`position: fixed`, so it never
-drifts with the page scroll), and it stays open across navigation—including to a site's own
-deep custom-nav routes like `/admin/club/events`. On an engine document-editor route (a desk route),
+drifts with the page scroll), and it stays open across navigation. That includes navigation to a
+site's own deep custom-nav routes like `/admin/club/events`. On an engine document-editor route (a desk route),
 the sidebar persists again at `xl` (1280px and up), recedes to the toggle-controlled overlay through
 the `lg`-`xl` tablet band (1024-1279px), where the editing surface takes priority on a narrower
 screen, and keeps the overlay drawer below `lg` like every other route. On small viewports it's
@@ -461,7 +460,8 @@ Stability tier: Unstable API.
 let { data }: { data: HelpData };
 ```
 
-The Help home screen, the standing place an author goes to get their bearings. `data` is the
+The Help home screen, the screen an author visits for getting-started progress and reference
+material. `data` is the
 `HelpData` from the help load: the getting-started progress derived from the committed manifest and
 the open edit branches, the markdown reference rows, and the optional support contact. It renders the
 masthead, a derived getting-started checklist (it drops away once the author finishes all three steps,

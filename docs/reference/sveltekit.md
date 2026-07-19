@@ -529,8 +529,8 @@ export const actions = { create: routes.createAction, delete: routes.listDeleteA
 ### Writing an admin fetch action
 
 `uploadAction` and its Library-direct sibling `mediaLibraryUploadAction` are the admin actions a client
-drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints worth
-knowing before you write another fetch-style action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
+drives with `fetch` rather than a form submit, and the transport has two SvelteKit constraints that
+govern any fetch-style admin action or a client that calls one of these. A SvelteKit form action rejects any POST whose content type is not
 form-encoded with a 415 before the action body runs, so the upload client posts `text/plain`, the one
 form content type that carries raw bytes. CSRF rides an `X-Cairn-CSRF` header that the admin guard
 clears before its body-cloning form-field check, since reading the body twice would consume the stream.
@@ -891,8 +891,8 @@ interface ResolvedEngineNavEntry {
 }
 ```
 
-One resolved engine door: the fixed screen id, its label (the engine default or a site relabel),
-and its engine-owned href. The shell maps `screen` to its fixed icon client-side.
+One resolved engine nav entry: the fixed screen id, its label (the engine default or a site
+relabel), and its engine-owned href. The shell maps `screen` to its fixed icon client-side.
 
 ### `ResolvedLayoutChild`
 
@@ -1013,8 +1013,8 @@ export const cairn = defineAdapter({
 });
 ```
 
-A member who publishes a post now finds an *Announce* link waiting beside the confirmation strip,
-already carrying that post's id. Omitting `concepts` follows every concept's publish. Naming one
+Resolved, the `Announce` link renders beside the confirmation strip with `{id}` already substituted
+for the published entry. Omitting `concepts` follows every concept's publish. Naming one
 or more concept ids restricts it, the same shape `adminNav`'s `ownerOnly` narrows a sidebar entry.
 
 ### `PublishActionEntry`

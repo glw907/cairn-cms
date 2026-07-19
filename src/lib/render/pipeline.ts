@@ -24,6 +24,14 @@ import type { LinkResolve } from '../content/links.js';
 
 export type { DocHeading } from './collect-headings.js';
 
+// The per-call resolver hooks renderMarkdown and renderDocument both accept, threaded onto the
+// VFile's data so the cairn: link, media:, and ::include steps read them at process time.
+type ResolveOptions = {
+  resolve?: LinkResolve;
+  resolveMedia?: MediaResolve;
+  resolveFragment?: FragmentResolve;
+};
+
 export interface RendererOptions {
   /**
    * Extend the sanitize allowlist. Receives cairn's default schema (defaultSchema plus the
@@ -140,10 +148,7 @@ export function createRenderer(
   // The heading-collector plugin runs after rehypePlugins (which already carries the site's own
   // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
   const documentProcessor = buildProcessor([rehypeCollectHeadings]);
-  const makeFile = (
-    content: string,
-    opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve },
-  ) =>
+  const makeFile = (content: string, opts: ResolveOptions) =>
     new VFile({
       value: content,
       data: {
@@ -155,15 +160,12 @@ export function createRenderer(
   return {
     remarkPlugins,
     rehypePlugins,
-    renderMarkdown: async (
-      content: string,
-      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve } = {},
-    ): Promise<string> => {
+    renderMarkdown: async (content: string, opts: ResolveOptions = {}): Promise<string> => {
       return String(await processor.process(makeFile(content, opts)));
     },
     renderDocument: async (
       content: string,
-      opts: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve } = {},
+      opts: ResolveOptions = {},
     ): Promise<{ html: string; headings: DocHeading[] }> => {
       const file = await documentProcessor.process(makeFile(content, opts));
       return { html: String(file), headings: (file.data[DOC_HEADINGS] as DocHeading[] | undefined) ?? [] };

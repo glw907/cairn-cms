@@ -27,6 +27,7 @@ function data(
   pathname = '/admin/posts',
   capability: 'owner' | 'editor' | 'none' = canManageEditors ? 'owner' : 'editor',
   adminNav: ResolvedNavItem[] = [],
+  attention: Record<string, { count: number; label: string }> = {},
 ) {
   const role = canManageEditors ? ('owner' as const) : ('editor' as const);
   const concepts = capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
@@ -42,7 +43,7 @@ function data(
     collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
-    attention: {} as Record<string, { count: number; label: string }>,
+    attention,
   };
 }
 
@@ -63,6 +64,8 @@ function dataWithLayout(
      *  exists and wins over any declared default.
      */
     collapsedNav?: string[] | null;
+    /** Simulates the site's own `attention` dep output, already filtered and keyed by href. */
+    attention?: Record<string, { count: number; label: string }>;
   } = {},
 ) {
   const capability = overrides.capability ?? 'owner';
@@ -81,7 +84,7 @@ function dataWithLayout(
     collapsedNav: overrides.collapsedNav ?? null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
-    attention: {} as Record<string, { count: number; label: string }>,
+    attention: overrides.attention ?? {},
   };
 }
 
@@ -1057,6 +1060,114 @@ describe('CairnAdminShell', () => {
     });
     const main = screen.container.querySelector('main')!;
     expect(main.querySelector('.max-w-5xl')).toBeNull();
+  });
+
+  // Task 8 (admin access/attention plan): the shell renders the site's own `deps.attention`
+  // counts as a quiet pill on the matching nav link, and rolls a collapsed section's visible
+  // children up into one pill on its header while it stays closed.
+  describe('attention pills and collapsed-header sums', () => {
+    it('renders a quiet count pill on the matching link, capped at 99+', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 250, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const postsLink = sidebar.getByRole('link', { name: 'Posts' }).element() as HTMLElement;
+      const pill = postsLink.querySelector('[aria-hidden="true"].badge')!;
+      expect(pill.textContent?.trim()).toBe('99+');
+    });
+
+    it('renders no pill when the href carries no attention entry', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 3, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const pagesLink = sidebar.getByRole('link', { name: 'Pages' }).element() as HTMLElement;
+      expect(pagesLink.querySelector('.badge')).toBeNull();
+    });
+
+    it('never renders a pill for a zero count, even if a fixture carries one (defense in depth)', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 0, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const postsLink = sidebar.getByRole('link', { name: 'Posts' }).element() as HTMLElement;
+      expect(postsLink.querySelector('.badge')).toBeNull();
+    });
+
+    it("joins the pending count into the link's accessible name", async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 3, label: 'pending requests' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      await expect
+        .element(sidebar.getByRole('link', { name: 'Posts, 3 pending requests' }))
+        .toBeInTheDocument();
+    });
+
+    it('sums only its own visible children while collapsed, ignoring an attention entry for an unrelated href', async () => {
+      const layout: NavLayout = [
+        { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      ];
+      const screen = render(CairnAdminShell, {
+        data: dataWithLayout(layout, {
+          attention: {
+            '/admin/posts': { count: 3, label: 'pending items' },
+            '/admin/pages': { count: 4, label: 'pending items' },
+            '/admin/settings': { count: 99, label: 'pending items' },
+          },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+      const details = Array.from(sidebar.querySelectorAll('details'));
+      const content = details.find((d) => d.querySelector('summary')?.textContent?.includes('Content'))!;
+      expect(content.open).toBe(false);
+      const headerPill = content.querySelector('summary .badge')!;
+      expect(headerPill.textContent?.trim()).toBe('7');
+    });
+
+    it("joins the summed count into the collapsed header's accessible name, then removes it once the section opens, keeping the item pills", async () => {
+      const layout: NavLayout = [
+        { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      ];
+      const screen = render(CairnAdminShell, {
+        data: dataWithLayout(layout, {
+          attention: {
+            '/admin/posts': { count: 3, label: 'pending items' },
+            '/admin/pages': { count: 4, label: 'pending items' },
+          },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+      const details = Array.from(sidebar.querySelectorAll('details'));
+      const content = details.find((d) => d.querySelector('summary')?.textContent?.includes('Content'))!;
+      const summary = content.querySelector('summary')!;
+      expect(summary.getAttribute('aria-label')).toBe('Content, 7 pending items');
+      summary.click();
+      await expect.poll(() => content.open).toBe(true);
+      // The badge and the aria-label are Svelte-derived from the reactive `collapsed` state (unlike
+      // the native `open` property above, which the browser flips immediately on click), so they
+      // clear on the next render pass rather than synchronously with the click.
+      await expect.poll(() => content.querySelector('summary .badge')).toBe(null);
+      await expect.poll(() => summary.getAttribute('aria-label')).toBe(null);
+      const postsLink = Array.from(content.querySelectorAll('a')).find((a) => a.textContent?.includes('Posts'))!;
+      const pagesLink = Array.from(content.querySelectorAll('a')).find((a) => a.textContent?.includes('Pages'))!;
+      expect(postsLink.querySelector('.badge')?.textContent?.trim()).toBe('3');
+      expect(pagesLink.querySelector('.badge')?.textContent?.trim()).toBe('4');
+    });
   });
 
   // Task 4 (audit finding 8, palette slice): below `sm` the palette sat flush against the

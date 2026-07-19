@@ -97,8 +97,27 @@ discriminant, not the fields, gates the chrome).
 
   // One rendered group of the sidebar's scroll area: a named, collapsible section, or a batch of
   // top-level loose nodes (site entries or engine references placed outside any section) rendered
-  // as a plain, header-less list between the sections around them.
-  type NavGroup = { kind: 'section'; label: string; items: NavItem[] } | { kind: 'loose'; items: NavItem[] };
+  // as a plain, header-less list between the sections around them. A section also carries the sum
+  // of its own visible children's attention counts, computed once here from the same `data.attention`
+  // record the leaf pills read below, never a second data source.
+  type NavGroup =
+    | { kind: 'section'; label: string; items: NavItem[]; attentionSum: number }
+    | { kind: 'loose'; items: NavItem[] };
+
+  // The attention record for one visible nav href, or undefined when the site's `attention` dep
+  // carried none for it (or configured no dep at all). Every href this reads is already filtered
+  // to the visible nav and to a positive count server-side (content-routes-core.ts); the
+  // non-positive guard here is defense in depth, not the primary filter.
+  function attentionFor(href: string): { count: number; label: string } | undefined {
+    const entry = shell?.attention[href];
+    return entry && entry.count > 0 ? entry : undefined;
+  }
+
+  // The pill's display text: capped at two digits so the badge never grows past "99+", while the
+  // accessible name (built from the same record) still carries the exact count.
+  function attentionDisplay(count: number): string {
+    return count > 99 ? '99+' : String(count);
+  }
 
   // shell.nav.items is the whole arranged, filtered scroll-area tree the resolver produced, in
   // declaration order: a declared navLayout as written, or, absent one, today's default arrangement
@@ -117,7 +136,9 @@ discriminant, not the fields, gates the chrome).
           groups.push({ kind: 'loose', items: loose });
           loose = [];
         }
-        groups.push({ kind: 'section', label: node.label, items: node.children.map(layoutChildItem) });
+        const items = node.children.map(layoutChildItem);
+        const attentionSum = items.reduce((sum, item) => sum + (attentionFor(item.href)?.count ?? 0), 0);
+        groups.push({ kind: 'section', label: node.label, items, attentionSum });
       } else {
         loose.push(layoutChildItem(node));
       }
@@ -754,6 +775,7 @@ discriminant, not the fields, gates the chrome).
         {#snippet navItemList(items: NavItem[], extraClass: string = '')}
           <ul class={`menu menu-sm w-full gap-0.5 p-0 ${extraClass}`}>
             {#each items as item, i (i)}
+              {@const att = attentionFor(item.href)}
               <li>
                 <a
                   href={item.href}
@@ -761,20 +783,49 @@ discriminant, not the fields, gates the chrome).
                     ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary tracking-small-medium'
                     : 'text-[0.9375rem] font-medium text-subtle tracking-small-medium'}
                   aria-current={isActive(item.href) ? 'page' : undefined}
+                  aria-label={att ? `${item.label}, ${att.count} ${att.label}` : undefined}
                 >
                   <item.icon class="h-4 w-4" aria-hidden="true" />
                   {item.label}
+                  {#if att}
+                    <!-- The pill carries no accessible text of its own (the count already joined the
+                         link's own aria-label above); it is decoration for a sighted user, capped at
+                         two digits, and color-independent (the design charter's "color carries no
+                         semantics on its own" rule). -->
+                    <span
+                      class="badge badge-xs border-transparent bg-base-content/10 text-base-content ml-auto"
+                      aria-hidden="true"
+                    >{attentionDisplay(att.count)}</span>
+                  {/if}
                 </a>
               </li>
             {/each}
           </ul>
         {/snippet}
 
-        {#snippet navSection(label: string, items: NavItem[])}
-          <details class="px-2" open={!collapsed.has(label)} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
-            <summary class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content">
+        {#snippet navSection(label: string, items: NavItem[], attentionSum: number)}
+          {@const sectionCollapsed = collapsed.has(label)}
+          {@const showHeaderPill = attentionSum > 0 && sectionCollapsed}
+          <details class="px-2" open={!sectionCollapsed} ontoggle={(e) => onToggleSection(label, e.currentTarget.open)}>
+            <!-- The header carries the visible children's summed count only while the section is
+                 closed, since an open <details> already carries each child's own pill (the rollup
+                 would double the story); it disappears the instant the section opens, per the
+                 collapsed-header rollup contract (Task 8). -->
+            <summary
+              class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content"
+              aria-label={showHeaderPill ? `${label}, ${attentionSum} pending items` : undefined}
+            >
               <span class="truncate">{label}</span>
-              <ChevronRightIcon class="cairn-caret ml-auto h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90" aria-hidden="true" />
+              {#if showHeaderPill}
+                <span
+                  class="badge badge-xs border-transparent bg-base-content/10 text-base-content ml-auto"
+                  aria-hidden="true"
+                >{attentionDisplay(attentionSum)}</span>
+              {/if}
+              <ChevronRightIcon
+                class={`cairn-caret h-3 w-3 shrink-0 opacity-50 transition-opacity group-hover/sec:opacity-90 ${showHeaderPill ? '' : 'ml-auto'}`}
+                aria-hidden="true"
+              />
             </summary>
             {@render navItemList(items, 'mt-1')}
           </details>
@@ -795,7 +846,7 @@ discriminant, not the fields, gates the chrome).
                desync a group's open/closed state from its content. -->
           {#each navGroups as group, i (i)}
             {#if group.kind === 'section'}
-              {@render navSection(group.label, group.items)}
+              {@render navSection(group.label, group.items, group.attentionSum)}
             {:else}
               <div class="px-2">
                 {@render navItemList(group.items)}

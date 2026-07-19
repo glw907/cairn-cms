@@ -370,6 +370,89 @@ export function seedMediaLibrary(): void {
   heads.set(SEED_BRANCH, nextSha());
 }
 
+// --- the fragments seed ---
+//
+// The fragments E2E (fragments.spec.ts) drives /admin/fragments and the include-picker on a real
+// post's edit screen, both of which read the committed content manifest and, for the picker's
+// candidate list, each fragment's body off `main` (content-routes-core.ts's fragmentTargets reads
+// backend.defaultBranch only, so a pending edit never leaks into another entry's preview). The bare
+// seed tree and the media seed carry no `fragments` rows, so without this the picker offers nothing
+// and /admin/fragments lists empty. seedFragments writes two PUBLISHED fragments onto main: one
+// mirrors the showcase's own on-disk fixture (src/content/fragments/trail-safety-notice.md) so the
+// two content universes (disk corpus vs. this in-memory dev backend, entirely separate per the
+// spec's own comment) agree on id and title, and one distinct fragment so the picker's list is more
+// than a single row. Both ids and titles are static and never collide with the E2E's own
+// dynamically-authored fragment (`picker-fragment-<timestamp>`, titled "Picker fragment").
+//
+// It must run AFTER seedMediaLibrary (which writes the whole content manifest), so this reads that
+// manifest back and appends rows to it rather than racing the rewrite, the same discipline
+// seedVocabulary follows for its own patch.
+
+/**
+ * The two seeded fragments, exported so the spec asserts against real ids and titles. `trailSafety`
+ * mirrors the showcase's on-disk fixture (same id and title, distinct in-memory body) so both
+ * content universes agree on identity; `gearChecklist` is a second, distinct fragment so the picker
+ * offers a real list rather than a single row.
+ */
+export const SEED_FRAGMENTS = {
+  trailSafety: {
+    id: 'trail-safety-notice',
+    title: 'Trail safety notice',
+    body: 'Check current avalanche and trail conditions before you head out on the dev backend.',
+  },
+  gearChecklist: {
+    id: 'winter-gear-checklist',
+    title: 'Winter gear checklist',
+    body: 'Pack layers, a headlamp, and a repair kit before every winter outing.',
+  },
+} as const;
+
+let fragmentsSeeded = false;
+
+/**
+ * Seed the fragments fixtures into the in-memory repo. Idempotent, like the other seeds, so a
+ * reused dev server (the Playwright reuseExistingServer path) seeds once per process. Writes each
+ * seeded fragment's markdown body under `src/content/fragments/` on main and appends a matching
+ * manifest row (concept `fragments`), so the include picker and /admin/fragments both read a
+ * populated, published set.
+ */
+export function seedFragments(): void {
+  if (fragmentsSeeded) return;
+  fragmentsSeeded = true;
+
+  const main = branches.get('main');
+  if (!main) return;
+
+  for (const fragment of Object.values(SEED_FRAGMENTS)) {
+    main.set(
+      `src/content/fragments/${fragment.id}.md`,
+      `---\ntitle: ${fragment.title}\n---\n${fragment.body}\n`,
+    );
+  }
+
+  const manifestRaw = main.get('src/content/.cairn/index.json');
+  if (manifestRaw) {
+    const manifest = JSON.parse(manifestRaw) as {
+      version: number;
+      entries: { id: string; concept: string; [key: string]: unknown }[];
+    };
+    for (const fragment of Object.values(SEED_FRAGMENTS)) {
+      manifest.entries.push({
+        id: fragment.id,
+        concept: 'fragments',
+        title: fragment.title,
+        permalink: `/fragments/${fragment.id}`,
+        summary: fragment.body,
+        draft: false,
+        links: [],
+        mediaRefs: [],
+      });
+    }
+    main.set('src/content/.cairn/index.json', `${JSON.stringify(manifest, null, 2)}\n`);
+  }
+  heads.set('main', nextSha());
+}
+
 // --- the tag-vocabulary seed ---
 //
 // The vocabulary-admin E2E (vocabulary-admin.spec.ts) and the pilot visual baseline drive the real

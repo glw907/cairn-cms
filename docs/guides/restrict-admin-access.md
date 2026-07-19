@@ -132,7 +132,14 @@ Sign in as each mapped role and confirm it reaches exactly the screens and route
 that the sidebar shows exactly the same set (a mapped-out door disappears from the nav too, since
 [`resolveNavLayout`](../reference/sveltekit.md#the-navlayout-seam) reads the same map), and that
 typing a restricted screen's URL directly answers 403 rather than rendering it. Sign in as an
-owner and confirm every mapped screen still opens. If a mapped role edits an image-bearing
+owner and confirm every mapped screen still opens.
+
+One transport caveat when you verify with `curl` rather than a browser: the denial renders the
+403 error page and emits `auth.access.denied`, but the response's numeric status can read 200.
+The admin shell's layout load streams its pending-drafts count, and SvelteKit commits the status
+before a streamed sibling load rejects ([sveltejs/kit#12533](https://github.com/sveltejs/kit/issues/12533)).
+The enforcement holds: the response carries no restricted data. Judge a scripted check by
+the rendered error page or the log event, not the status line, until the upstream fix lands. If a mapped role edits an image-bearing
 concept, confirm its picker still resolves images rather than erroring on a refused `media` call.
 
 ## Related reference

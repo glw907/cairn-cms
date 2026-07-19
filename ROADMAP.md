@@ -208,6 +208,14 @@ the named human gates only):**
   hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
   this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
   tracking item below for the removal itself.
+- **Admin error statuses flatten to 200 under the streamed pending count (upstream kit#12533).**
+  A page-load `error(403)`/`error(404)` inside `/admin` renders the right error page and emits its
+  log event, but the HTTP status reads 200 because the shell layout load streams `pendingEntries`
+  and SvelteKit commits the status before a sibling load rejects. Enforcement is intact (no
+  restricted data crosses; the access-map guide documents the caveat). Trigger: the upstream fix
+  landing in sveltejs/kit#12533; adopt it and delete the guide caveat. Candidate for the existing
+  scheduled kit-watch routine (kit#15992) to track alongside `checkOrigin`. Surfaced by the
+  access-and-attention pass's live smoke, 2026-07-19.
 - **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
   writes: a per-entry history view over the backend's commit log (the commit author is already the
   editor, so attribution is free), and revert implemented as a new commit through the existing

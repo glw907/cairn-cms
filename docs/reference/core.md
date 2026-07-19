@@ -683,7 +683,7 @@ must be one the engine reads from the YAML (`siteName`, `description`, `author`,
 home; any other unrecognized key throws listing the known keys.
 
 ```ts
-// examples/showcase/src/theme/cairn.config.ts
+// examples/showcase/src/theme/site-config.ts
 import { parseSiteConfig } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 export const siteConfig = parseSiteConfig(siteYaml);

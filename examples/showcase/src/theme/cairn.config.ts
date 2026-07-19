@@ -1,6 +1,6 @@
 // The showcase's adapter: the single seam the engine consumes. It declares one post-like concept,
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
-import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp, parseSiteConfig } from '@glw907/cairn-cms';
+import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
 import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
 import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
@@ -9,7 +9,6 @@ import type { ElementContent } from 'hast';
 import { siteIslands } from '$theme/islands/registry.js';
 import { isBannerExpired } from '$theme/islands/banner-expiry.js';
 import { makeIconRenderer, proseTypography } from '$chassis/render.js';
-import siteYaml from './site.config.yaml?raw';
 // The ?url import resolves the public chrome's stylesheet to its served URL (the hashed asset in
 // a build), so the editor's preview frame can link the same sheet the (site) layout loads. The
 // sheet must stay ?url-only; see the header comment in site.css.
@@ -479,4 +478,7 @@ export const cairn = defineAdapter({
   },
 });
 
-export const siteConfig = parseSiteConfig(siteYaml);
+// Re-exported rather than parsed here: site-config.ts owns the one parseSiteConfig call, so a
+// lean reader (the root layout server load) can pull just the parsed config and its primary menu
+// without importing this whole adapter (the renderer, the icon set, the registered components).
+export { siteConfig } from './site-config.js';

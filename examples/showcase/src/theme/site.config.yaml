@@ -1,8 +1,12 @@
 siteName: Waymark
 menus:
   primary:
-    - label: Home
+    - label: Writing
       url: /
+    - label: Styleguide
+      url: /styleguide
+    - label: Admin
+      url: /admin
 vocabulary:
   - value: trail-reports
     label: Trail Reports

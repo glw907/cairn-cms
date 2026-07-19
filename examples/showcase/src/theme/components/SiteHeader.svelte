@@ -8,8 +8,11 @@ re-adds identity there). Every colour and size reads a DaisyUI role utility or a
 (`--font-display`, `--cairn-*`), never a literal. The current route's nav link gets
 `aria-current="page"` and the accent colour. The inner content caps at `--container-measure`, the
 same width as the article and home reading column (`.site-main`), so the wordmark's left edge lines
-up with the body copy below it rather than centering independently at a wider measure. A site owner
-edits this file to re-shape the chrome; the look re-skins from `theme.css` with no edit here.
+up with the body copy below it rather than centering independently at a wider measure. The nav links
+themselves come from `page.data.nav`, the site's `menus.primary` (`site.config.yaml`), resolved by the
+root layout server load and edited from `/admin/nav`; a site owner still edits this file to re-shape
+the chrome itself (structure, markup, the theme toggle), and the look re-skins from `theme.css` with
+no edit here.
 
 The theme toggle sets `data-theme` on `<html>` between `cairn` (light) and `cairn-dark`, and
 persists the choice to a `cairn-site-theme` cookie (path `/`, a year) so it survives a reload; the
@@ -47,16 +50,17 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
     toggleThemeWithTransition,
     type ThemeToggleConfig,
   } from '$chassis/theme-toggle.js';
+  import type { NavNode } from '@glw907/cairn-cms';
 
-  /** A primary-nav entry: the visible label and the path it links to. */
-  type NavItem = { label: string; href: string };
-
-  /** The showcase's real nav targets. A scaffolded site owner edits this list. */
-  const nav: NavItem[] = [
-    { label: 'Writing', href: '/' },
-    { label: 'Styleguide', href: '/styleguide' },
-    { label: 'Admin', href: '/admin' },
-  ];
+  // The root layout server load resolves menus.primary into NavNode[] and hands it down through
+  // page.data (both mounts of this component, the (site) layout and the root +error.svelte, sit
+  // under that same root load). A node with no url is a label-only grouping header; this header
+  // renders only top-level entries with a url, flat, the same shape the hardcoded list used to be.
+  const nav = $derived(
+    (page.data.nav ?? []).filter(
+      (item): item is NavNode & { url: string } => item.url !== undefined,
+    ),
+  );
 
   /**
    * Whether a nav item points at the page being viewed. The home link matches only the exact root;
@@ -116,10 +120,10 @@ The primary nav reads as a tracked eyebrow at every width, not only on the phone
         class="site-nav order-2 flex w-full flex-wrap items-center gap-s uppercase text-step--2 md:order-none md:w-auto"
         aria-label="Primary"
       >
-        {#each nav as item (item.href)}
-          {@const current = isCurrent(item.href)}
+        {#each nav as item (item.url)}
+          {@const current = isCurrent(item.url)}
           <a
-            href={item.href}
+            href={item.url}
             aria-current={current ? 'page' : undefined}
             class="inline-flex min-h-11 items-center px-xs no-underline {current
               ? 'font-semibold text-primary'

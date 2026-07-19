@@ -367,33 +367,50 @@ menus:
       url: /about
 ```
 
-Replace the inline `siteConfig` stub from Milestone 2 with the parsed file:
+Parse it in one small module, separate from `cairn.config.ts`:
 
-<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in the milestone-5 block above) to focus on the siteConfig upgrade -->
 ```ts
-// src/lib/cairn.config.ts (replacing the Milestone 2 siteConfig stub)
-import { parseSiteConfig } from '@glw907/cairn-cms';
+// src/lib/site-config.ts
+import { parseSiteConfig, extractMenu } from '@glw907/cairn-cms';
 import siteYaml from './site.config.yaml?raw';
 
 export const siteConfig = parseSiteConfig(siteYaml);
+export const nav = extractMenu(siteConfig, 'primary', 2);
 ```
 
-Then read the menu once in the site layout:
+`cairn.config.ts` grows into your site's full adapter as later milestones add to it, so it's the
+wrong module for a layout to read just to get the nav. `cairn.config.ts` still re-exports
+`siteConfig` under its own name, since Milestone 8's admin wiring imports it from there:
+
+```ts
+// src/lib/cairn.config.ts (replacing the Milestone 2 siteConfig stub)
+import { siteConfig } from './site-config.js';
+
+export { siteConfig };
+```
+
+Then read the menu on the server, and hand it to the layout as data:
+
+```ts
+// src/routes/(site)/+layout.server.ts
+import type { LayoutServerLoad } from './$types';
+import { nav } from '$lib/site-config.js';
+
+export const load: LayoutServerLoad = () => ({ nav });
+```
 
 ```svelte
 <!-- src/routes/(site)/+layout.svelte -->
 <script lang="ts">
-  import { extractMenu } from '@glw907/cairn-cms';
-  import { siteConfig } from '$lib/cairn.config.js';
+  import type { LayoutData } from './$types';
+  import type { Snippet } from 'svelte';
 
-  let { children } = $props();
-
-  const nav = extractMenu(siteConfig, 'primary', 2);
+  let { data, children }: { data: LayoutData; children: Snippet } = $props();
 </script>
 
 <header>
   <nav>
-    {#each nav as item (item.url ?? item.label)}
+    {#each data.nav as item (item.url ?? item.label)}
       <a href={item.url}>{item.label}</a>
     {/each}
   </nav>
@@ -403,6 +420,15 @@ Then read the menu once in the site layout:
   {@render children()}
 </main>
 ```
+
+The load runs on the server, so nothing from `site-config.ts` reaches the client bundle except the
+plain array of nav nodes the layout renders. A client script that imported `site-config.ts`
+directly would ship the YAML parser to every visitor, and one that imported `cairn.config.ts`
+would ship the whole adapter, all for the sake of a nav array.
+
+A nav node's `url` is optional: a node with only a `label` is a grouping header for nested menus.
+This flat header renders entries that carry a `url`. If your menu grows grouping nodes, filter
+them out before the `{#each}`, the way the showcase's `SiteHeader.svelte` does.
 
 ## Milestone 8: Run the admin locally
 

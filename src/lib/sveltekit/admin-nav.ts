@@ -6,8 +6,8 @@
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Capability } from '../auth/roles.js';
-import type { Role } from '../auth/types.js';
-import type { AccessMap } from '../auth/access.js';
+import type { Editor, Role } from '../auth/types.js';
+import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
 
 /** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
 const ADMIN_NAV_ICON_NAMES = [
@@ -439,10 +439,20 @@ export interface ResolveNavLayoutOptions {
   concepts: { id: string; label: string; routing?: { dated: boolean } }[];
   /** The nav-menu editor's label, or null when the site configures none (gates the `nav` screen). */
   navMenuLabel: string | null;
-  /** The signed-in editor's capability, gating every engine screen (row 4 of the design table). */
-  capability: Capability;
-  /** The signed-in editor's role name, matched against a node's declarative `roles` list. */
-  role: string;
+  /**
+   * The site's declared access map, or undefined for zero-config. Every engine door is gated
+   *  through {@link canReach} against this map (folding in row 4's capability floor); a site entry
+   *  is additionally gated by it only when its href actually carries a matching rule, so an
+   *  undeclared map or an unmapped href keeps today's behavior exactly.
+   */
+  access?: AccessMap;
+  /**
+   * The signed-in editor whose capability gates every engine screen (row 4 of the design table)
+   *  and whose role is matched against a node's declarative `roles` list and against the access
+   *  map. Replaces the former loose `capability`/`role` pair so the resolver reads the same
+   *  authority ({@link canReach}) the guard and the route gates do.
+   */
+  editor: Editor;
 }
 
 /** The engine's own screen defaults (label, href) not already covered by a site's concepts. */
@@ -466,15 +476,16 @@ function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: 
 }
 
 /**
- * Whether one engine screen is visible for the current request: every engine screen requires
- *  capability !== 'none' (the 0.85.0 rule); `editors` additionally requires owner capability; `nav`
- *  additionally requires a configured navMenu.
+ * Whether one engine screen is visible for the current request: `nav` additionally requires a
+ *  configured navMenu (an orthogonal gate the access map cannot express, since an unconfigured
+ *  `nav` is never a valid reference at all); every other screen defers entirely to
+ *  {@link canReach}, which folds in the capability floor (the 0.85.0 rule), the `editors` owner
+ *  floor, and the site's own map narrowing, so this generalizes the pre-map gate rather than
+ *  adding a second one beside it.
  */
 function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
-  if (opts.capability === 'none') return false;
-  if (screen === 'editors') return opts.capability === 'owner';
-  if (screen === 'nav') return opts.navMenuLabel !== null;
-  return true;
+  if (screen === 'nav' && opts.navMenuLabel === null) return false;
+  return canReach(opts.access, opts.editor, screen);
 }
 
 /** Resolve one engine screen into its door, applying a declared relabel when given. */
@@ -493,7 +504,19 @@ function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverrid
 
 /** True when a resolved site entry stays visible: `ownerOnly` gates on capability alone. */
 function ownerOnlyVisible(entry: { ownerOnly?: boolean }, opts: ResolveNavLayoutOptions): boolean {
-  return !entry.ownerOnly || opts.capability === 'owner';
+  return !entry.ownerOnly || opts.editor.capability === 'owner';
+}
+
+/**
+ * Whether a site entry's own href passes the access map's narrowing. Unlike an engine screen, a
+ *  site entry is gated by the map only when its href actually carries a matching rule ({@link
+ *  hasAccessRule}); an undeclared map or an href the map has no opinion on keeps today's
+ *  any-editor-capability admission exactly (nav semantics, distinct from `requireAccess`'s
+ *  fail-closed route contract). A matched href defers entirely to {@link canReach}.
+ */
+function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
+  if (!opts.access || !hasAccessRule(opts.access, href)) return true;
+  return canReach(opts.access, opts.editor, href);
 }
 
 /**
@@ -549,14 +572,15 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
       return engineEntry(node.screen, opts, node.label);
     }
     if (!ownerOnlyVisible(node, opts)) return null;
-    if (!roleMatches(node.roles, opts.role)) return null;
+    if (!roleMatches(node.roles, opts.editor.role)) return null;
+    if (!hrefReachable(node.href, opts)) return null;
     return resolvedLayoutEntry(node);
   }
 
   const items: ResolvedLayoutNode[] = [];
   for (const node of layout) {
     if (isNavLayoutSection(node)) {
-      if (!roleMatches(node.roles, opts.role)) {
+      if (!roleMatches(node.roles, opts.editor.role)) {
         // The section itself is gated out for this role, but its engine references still count as
         // "referenced": a screen tucked inside a roles-gated section must not leak into fallback
         // just because this editor cannot see the section that names it.
@@ -594,12 +618,23 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
  *  each legacy adminNav section in declaration order; `help` is deliberately left unreferenced, so it
  *  resolves into `fallback`. No section wraps the engine or legacy-flat nodes: at the sizes a
  *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
- *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1).
+ *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1). A legacy
+ *  entry's href is gated by the access map the same way a declared navLayout entry's is ({@link
+ *  hrefReachable}), so the two arrangements can never drift for the same map.
  */
 function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
-  const roleFiltered = filterNavByRole(opts.adminNav, opts.capability);
-  const legacyFlatEntries = roleFiltered.filter(isResolvedNavEntry);
-  const legacySections = roleFiltered.filter(isResolvedNavSection);
+  const roleFiltered = filterNavByRole(opts.adminNav, opts.editor.capability);
+  const accessFiltered: ResolvedNavItem[] = [];
+  for (const item of roleFiltered) {
+    if (isResolvedNavSection(item)) {
+      const children = item.children.filter((child) => hrefReachable(child.href, opts));
+      if (children.length > 0) accessFiltered.push({ label: item.label, children });
+    } else if (hrefReachable(item.href, opts)) {
+      accessFiltered.push(item);
+    }
+  }
+  const legacyFlatEntries = accessFiltered.filter(isResolvedNavEntry);
+  const legacySections = accessFiltered.filter(isResolvedNavSection);
 
   const items: ResolvedLayoutNode[] = [];
   for (const concept of opts.concepts) {

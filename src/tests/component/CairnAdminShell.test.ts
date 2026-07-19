@@ -30,12 +30,13 @@ function data(
 ) {
   const role = canManageEditors ? ('owner' as const) : ('editor' as const);
   const concepts = capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
+  const editor = { displayName: 'Ed', email: 'ed@example.com', role, capability };
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, capability, role }),
+    nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, editor }),
     pathname,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
@@ -61,12 +62,13 @@ function dataWithLayout(
   const role = overrides.role ?? (capability === 'owner' ? 'owner' : 'editor');
   const concepts = overrides.concepts ?? [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
   const navMenuLabel = overrides.navMenuLabel ?? null;
+  const editor = { displayName: 'Ed', email: 'ed@example.com', role, capability };
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    user: editor,
     concepts: capability === 'none' ? [] : concepts,
-    nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, capability, role }),
+    nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, editor }),
     pathname: overrides.pathname ?? '/admin/posts',
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],

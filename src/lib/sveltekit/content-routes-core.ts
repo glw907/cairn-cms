@@ -434,8 +434,8 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       adminNav: ctx.adminNav,
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
       navMenuLabel: runtime.navMenu?.label ?? null,
-      capability,
-      role: editor.role,
+      access: runtime.access,
+      editor,
     });
     const nav: ResolvedNavLayout = ctx.deps.navFilter
       ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }

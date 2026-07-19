@@ -5,6 +5,7 @@ import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Editor } from '../../lib/auth/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import {
   resolveNavLayout,
@@ -362,8 +363,7 @@ function defaultNav(capability: 'owner' | 'editor' | 'none') {
     adminNav: RESOLVED_NAV_WITH_SECTION,
     concepts: NAV_WITH_SECTION_CONCEPTS,
     navMenuLabel: null,
-    capability,
-    role: capability,
+    editor: { email: 'inst@test', displayName: 'Inst', role: capability, capability } as Editor,
   });
 }
 

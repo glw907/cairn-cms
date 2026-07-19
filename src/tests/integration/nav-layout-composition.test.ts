@@ -9,9 +9,11 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { defineRoles } from '../../lib/auth/roles.js';
+import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
+import type { AccessMap } from '../../lib/auth/access.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -137,5 +139,92 @@ describe('navLayout composition: capability, declarative roles, and navFilter ov
     expect(topLabels(none.shell.nav.items)).toEqual([]);
     expect(none.shell.nav.fallback).toEqual([]);
     await none.shell.pendingEntries;
+  });
+});
+
+// Task 4 (admin access/attention plan): the shell-payload proof that the sidebar derives from the
+// same runtime.access declaration the engine routes enforce (Task 3), so a mapped-away screen
+// disappears from the sidebar exactly where its route also refuses. A Publisher-shaped session
+// (mapped to posts only) is the consumer acceptance shape (spec item 4).
+const ACCESS_ROLES = defineRoles({
+  owner: 'owner',
+  webmaster: 'editor',
+  publisher: 'editor',
+});
+
+const ACCESS_MAP = defineAccess(ACCESS_ROLES, {
+  pages: ['webmaster'],
+  '/admin/money': ['webmaster'],
+} as unknown as AccessMap);
+
+function accessRuntime(): CairnRuntime {
+  return {
+    siteName: 'Access Site',
+    concepts: [
+      {
+        id: 'posts', label: 'Posts', singular: 'Post', dir: 'src/content/posts',
+        routing: { routable: true, dated: false, inFeeds: true },
+        permalink: '/posts/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        validate: () => ({ ok: true as const, data: {} }),
+      },
+      {
+        id: 'pages', label: 'Pages', singular: 'Page', dir: 'src/content/pages',
+        routing: { routable: true, dated: false, inFeeds: false },
+        permalink: '/:slug', datePrefix: 'day', fields: [], schema: fieldset({}), summaryFields: [],
+        validate: () => ({ ok: true as const, data: {} }),
+      },
+    ],
+    backend: githubApp(REPO),
+    sender: { from: 'cms@test' },
+    render: ({ body }) => Promise.resolve(body),
+    manifestPath: 'src/content/.cairn/index.json',
+    mediaManifestPath: 'src/content/.cairn/media.json',
+    resolvedAssets: { enabled: false },
+    vocabulary: [],
+    roles: ACCESS_ROLES,
+    access: ACCESS_MAP,
+    navLayout: [
+      { screen: 'posts' },
+      { screen: 'pages' },
+      { label: 'Money', icon: 'wrench', href: '/admin/money' },
+    ] as unknown as NavLayout,
+  };
+}
+
+function accessEvent(role: string, capability: 'owner' | 'editor') {
+  const url = 'https://test.example/admin/posts';
+  return {
+    url: new URL(url),
+    params: {},
+    request: new Request(url),
+    locals: { editor: { email: `${role}@test`, displayName: role, role, capability }, backend },
+    platform: { env: {} },
+    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+  };
+}
+
+describe('navLayout composition: the sidebar derives from the runtime.access authority', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('hides the mapped-away concept door and site entry for a publisher, keeps them for webmaster and owner', async () => {
+    const routes = createContentRoutes(accessRuntime());
+
+    const publisher = await routes.shellPayload(accessEvent('publisher', 'editor') as never);
+    if (publisher.shell.public) throw new Error('expected authed shell');
+    expect(topLabels(publisher.shell.nav.items)).toEqual(['Posts']);
+    await publisher.shell.pendingEntries;
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(topLabels(webmaster.shell.nav.items)).toEqual(['Posts', 'Pages', 'Money']);
+    await webmaster.shell.pendingEntries;
+
+    const owner = await routes.shellPayload(accessEvent('owner', 'owner') as never);
+    if (owner.shell.public) throw new Error('expected authed shell');
+    expect(topLabels(owner.shell.nav.items)).toEqual(['Posts', 'Pages', 'Money']);
+    await owner.shell.pendingEntries;
   });
 });

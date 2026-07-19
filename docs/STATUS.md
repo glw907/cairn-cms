@@ -37,7 +37,17 @@ Record: the post-mortem in `docs/superpowers/plans/2026-07-18-admin-access-and-a
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert (the smoke re-proved the CHECK constraint path).
 
-**NEXT (immediate): the Topo design pass.** Open with
+**NEXT (immediate): the dev-backend pass (Geoff, 2026-07-19).** Brainstorm scope, plan,
+and execute in one session: make the dev backend exercise fragments and fix the
+"Image missing" media tiles under `vite dev` (the ROADMAP Now seed item plus its two
+friction-log entries), with the overdue friction-log clearing (16 entries,
+complete-or-move) as the close-out dimension and three riders: point
+`cairn-register-editor` at the banked register standard, add kit#12533 to the scheduled
+kit-watch routine, fix the Cloudflare token's missing zone-route write on cairn.pub.
+Resume prompt: "Brainstorm and execute the dev-backend pass (STATUS names the scope)."
+Launch in ~/Projects/cairn-cms.
+
+**QUEUED after it: the Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build). After Topo: the scaffolder (step 6). Check the

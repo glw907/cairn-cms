@@ -37,15 +37,16 @@ Record: the post-mortem in `docs/superpowers/plans/2026-07-18-admin-access-and-a
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert (the smoke re-proved the CHECK constraint path).
 
-**NEXT (immediate): the dev-backend pass (Geoff, 2026-07-19).** Brainstorm scope, plan,
-and execute in one session: make the dev backend exercise fragments and fix the
-"Image missing" media tiles under `vite dev` (the ROADMAP Now seed item plus its two
-friction-log entries), with the overdue friction-log clearing (16 entries,
-complete-or-move) as the close-out dimension and three riders: point
-`cairn-register-editor` at the banked register standard, add kit#12533 to the scheduled
-kit-watch routine, fix the Cloudflare token's missing zone-route write on cairn.pub.
-Resume prompt: "Brainstorm and execute the dev-backend pass (STATUS names the scope)."
-Launch in ~/Projects/cairn-cms.
+**NEXT (immediate): execute the dev-backend pass plan
+(`docs/superpowers/plans/2026-07-19-dev-backend.md`).** The plan is written and both root
+causes are verified first-hand (fragments: no seed in `packages/cairn-cms-dev`; media
+tiles: `SEED_PNG` is a 12-byte undecodable stub, delivery itself returns 200). Method:
+`cairn-implementer` per task, test-first, full gate per task, on the `dev-backend`
+worktree off `main`; friction-log clearing dispositions are locked in the plan's T8.
+Riders: register-editor repoint and kit#12533 watch run from the main loop; the cairn.pub
+token probe waits on Geoff's dashboard edit (token cannot self-modify; asked 2026-07-19).
+Resume prompt: "Execute the dev-backend pass plan (STATUS names it)." Launch in
+~/Projects/cairn-cms.
 
 **QUEUED after it: the Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices

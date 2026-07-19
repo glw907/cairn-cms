@@ -57,6 +57,12 @@ const LANGS = [
 // code text into the same <pre class="shiki"> wrapper with no token coloring.
 const PLAINTEXT = 'text';
 
+// A mermaid fence is a diagram source, not code to tokenize. Shiki has no mermaid grammar, and
+// rewriting the fence would discard the `language-mermaid` class client-side mermaid renderers key
+// on, so this language skips highlighting entirely and passes through with its original `<pre>` /
+// `<code class="language-mermaid">` markup untouched.
+const PASSTHROUGH_LANGS = new Set(['mermaid']);
+
 // Sentinel foreground colors, one per ramp slot. Shiki has no class-emitting mode, so the theme
 // assigns each scope group a unique sentinel hex, then the transformer below maps the resolved
 // sentinel back to its cairn-tok-* class and deletes the style. The sentinels never reach the
@@ -212,7 +218,8 @@ function collectFencedCode(node: Root | Element, jobs: Job[]): void {
     if (child.tagName === 'pre') {
       const code = fencedCode(child);
       if (code) {
-        jobs.push({ pre: child, code, lang: codeLanguage(code) ?? PLAINTEXT });
+        const lang = codeLanguage(code) ?? PLAINTEXT;
+        if (!PASSTHROUGH_LANGS.has(lang)) jobs.push({ pre: child, code, lang });
         continue;
       }
     }

@@ -6,7 +6,9 @@ import {
   lastRecordedCommit,
   seedMediaLibrary,
   seedVocabulary,
+  seedFragments,
   SEED_VOCABULARY,
+  SEED_FRAGMENTS,
 } from './fake-github.js';
 
 // createDevBackend is a conforming Backend over the module-level in-memory store: it mutates no
@@ -115,6 +117,31 @@ test('seedVocabulary writes a committed config, tags two main entries, and seeds
   expect(branchEntry).toContain(`- ${v.unlisted.value}`);
   // The branch lists under the cairn/ prefix, so the cross-branch usage builder reads it.
   expect(await backend.listBranches('cairn/')).toContain('cairn/posts/2026-05-vocab-seed');
+});
+
+test('seedFragments writes published fragment manifest rows and matching body files on main', async () => {
+  // The fragments seed depends on the media seed's content manifest (it appends rows to it), like
+  // the vocabulary seed above. Both are idempotent process singletons, so seeding here is safe
+  // alongside the other tests that share the module-level store.
+  seedMediaLibrary();
+  seedFragments();
+  const backend = createDevBackend();
+  const rows = Object.values(SEED_FRAGMENTS);
+
+  const manifestRaw = await backend.readFile('src/content/.cairn/index.json', 'main');
+  expect(manifestRaw).not.toBeNull();
+  const manifest = JSON.parse(manifestRaw!) as { entries: { id: string; concept: string; title: string }[] };
+
+  for (const row of rows) {
+    const entry = manifest.entries.find((e) => e.id === row.id && e.concept === 'fragments');
+    expect(entry).toBeDefined();
+    expect(entry?.title).toBe(row.title);
+
+    const body = await backend.readFile(`src/content/fragments/${row.id}.md`, 'main');
+    expect(body).not.toBeNull();
+    expect(body).toContain(`title: ${row.title}`);
+    expect(body).toContain(row.body);
+  }
 });
 
 test('expectedHead is a fail-closed guard: a matching head commits, a moved head conflicts', async () => {

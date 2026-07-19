@@ -1593,6 +1593,18 @@ describe('MarkdownEditor', () => {
     expect(screen.container.querySelector('.cm-cairn-media-thumb')).toBeNull();
   });
 
+  // Fence-awareness regression: a documented media: token example inside a fenced code block is
+  // the block's own literal text (remark never resolves the token inside a code fence), so it
+  // must read as plain source, matching the include chip's own fence-awareness (editor-include.ts
+  // over editor-media.ts's own fenceScan inCode gate).
+  it('leaves a media: token inside a fenced code block as plain source', async () => {
+    const doc = ['before', '```', `![A trail map](media:trail-map.${HASH_A})`, '```', 'after'].join('\n');
+    const screen = render(MarkdownEditor, { value: doc, name: 'body', mediaLibrary: MEDIA_LIBRARY });
+    await expect.poll(() => lineWith(screen.container, 'media:trail-map')).toBeTruthy();
+    expect(screen.container.querySelector('.cm-cairn-media-chip')).toBeNull();
+    expect(hiddenValue(screen.container)).toBe(doc);
+  });
+
   it('decorates a just-added library image after a reactive mediaLibrary change', async () => {
     // The optimistic-merge path (Task 6/7): a token already in the source whose hash joins the
     // library later must decorate once the prop updates, through the media compartment.

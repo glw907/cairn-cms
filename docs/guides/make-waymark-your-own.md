@@ -56,6 +56,15 @@ one import line directly after your `theme.css` import.
 
 No markup change, no engine change.
 
+Keep the two imports as separate, leading statements in your entry stylesheet rather than
+appending `@import './cairn.css';` inside your copy of `theme.css` itself, after its own
+`@plugin`/`@theme` blocks. CSS requires an `@import` rule to precede every other rule in a
+stylesheet. A trailing `@import` past that point is invalid, and a spec-compliant processor
+drops it. Vite inlines `@import` wherever it appears at build time, so a trailing import still
+compiles today, but it stays invalid CSS that only works by accident of one build tool's
+leniency. The documented two-import form keeps both imports at the top, where the rule holds
+regardless of build tool.
+
 ## The flourish hook
 
 Three prose gestures carry the cairn theme's identity beyond the palette and the face: a

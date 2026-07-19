@@ -1,3 +1,26 @@
+## Unreleased
+
+### Changed
+
+- A mermaid fence (` ```mermaid `) now passes through the build-time Shiki highlighter untouched,
+  keeping its `language-mermaid` class on the `<code>` element instead of losing it to the
+  tokenized `<pre class="shiki">` rewrite. A site's own client-side mermaid renderer can key on
+  the class directly; it no longer needs a site-side marker plugin to recover it. Every other
+  fenced language is unaffected.
+- `@glw907/cairn-cms-dev`'s seed now includes two published fragment entries (manifest rows plus
+  `src/content/fragments/<id>.md` bodies, one mirroring the showcase's own `trail-safety-notice`
+  fixture), so a site with a `fragments` concept can exercise the picker, an include chip's title
+  resolution, and the live preview's include splice under `vite dev` with no on-disk content of
+  its own. Idempotent like the other seeds; a site's own fragments are untouched.
+- `@glw907/cairn-cms-dev`'s seeded media objects are now real, browser-decodable PNGs (signature,
+  IHDR, IDAT, IEND, a distinct solid color per seeded asset) instead of a 12-byte stub that only
+  satisfied the delivery route's Content-Type check. The Media Library under `vite dev` now shows
+  real thumbnails instead of every tile falling to its "Image missing" state.
+
+No consumer action is required. All three changes are additive fixtures inside the dev-only
+package or a non-breaking highlighter behavior change; a site's own seeded or committed content is
+unaffected.
+
 ## 0.88.0
 
 <!-- release-size: minor -->

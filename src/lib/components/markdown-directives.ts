@@ -187,12 +187,12 @@ export function containerRanges(scan: FenceScan): ContainerRange[] {
  */
 const FIGURE_ROLES = new Set(['center', 'wide', 'full']);
 
-// The directive `{attrs}` brace, and the `.class` shorthands inside it. mdast-util-directive folds
-// every `.class` into a space-joined node.attributes.class, and remark-figure honors a role only when
-// that whole value is exactly one closed-set name. The chip reads the opener line directly (the
-// editor has no mdast), so it collects all class shorthands and applies the same exactly-one rule, so
-// a multi-class brace reads as the measure default on the chip exactly as it renders.
-const ATTR_BRACE = /\{([^}]*)\}/;
+// The `.class` shorthands inside a directive's `{attrs}` group. mdast-util-directive folds every
+// `.class` into a space-joined node.attributes.class, and remark-figure honors a role only when
+// that whole value is exactly one closed-set name. The chip reads the opener line's own attrs group
+// directly (the editor has no mdast), so it collects all class shorthands and applies the same
+// exactly-one rule, so a multi-class brace reads as the measure default on the chip exactly as it
+// renders.
 const CLASS_SHORTHAND = /\.([\w-]+)/g;
 const CLASS_ATTR = /class\s*=\s*"([^"]*)"/;
 
@@ -207,6 +207,12 @@ const CLASS_ATTR = /class\s*=\s*"([^"]*)"/;
  *  the visible decoration and the source agree, including the multi-class case remark-figure ignores).
  *  Robust to a half-typed or unpaired fence, since {@link caretContainerRange} already disowns
  *  fence-shaped lines inside code blocks and runs an unclosed container to the end.
+ *
+ *  Reads the attrs group off {@link FENCE}'s own opener match (group 4) rather than the first
+ *  `{...}` anywhere on the line, mirroring {@link openerTitleAttr}'s own fix: a bracketed
+ *  `[label]` that happens to contain braces (`[Read {this} first]`) can otherwise be mistaken for
+ *  the attrs group, either swallowing a real role into the measure default or fabricating one from
+ *  label prose.
  */
 export function figureRoleAtLine(
   scan: FenceScan,
@@ -216,8 +222,9 @@ export function figureRoleAtLine(
   const container = caretContainerRange(scan, lineIndex);
   if (!container) return null;
   const opener = lines[container.fromLine] ?? '';
-  if (directiveOpenerName(opener) !== 'figure') return null;
-  const brace = ATTR_BRACE.exec(opener)?.[1] ?? '';
+  const opened = FENCE.exec(opener);
+  if (!opened || opened[2] !== 'figure') return null; // an opener only, and named figure
+  const brace = opened[4] ? opened[4].slice(1, -1) : '';
   // mdast folds both the `.class` shorthand and an explicit `class="a b"` into one class value, so
   // collect from both to mirror what remark-figure reads off node.attributes.class.
   const classes = [...brace.matchAll(CLASS_SHORTHAND)].map((m) => m[1]);

@@ -9,7 +9,13 @@
 // why the fence exists; never relax it by analogy to the harmless mock.
 import type { Handle } from '@sveltejs/kit';
 import type { Backend } from '@glw907/cairn-cms';
-import { createDevBackend, seedMediaLibrary, seedVocabulary, SEED_MEDIA_KEYS } from './fake-github.js';
+import {
+  createDevBackend,
+  seedMediaLibrary,
+  seedVocabulary,
+  seedFragments,
+  SEED_MEDIA_KEYS,
+} from './fake-github.js';
 import { createFakeAuthDb } from './fake-auth-db.js';
 import { createFakeAppDb } from './fake-app-db.js';
 import { createFakeR2 } from './fake-r2.js';
@@ -38,6 +44,11 @@ export interface DevBackendOptions {
 export function devBackendHandle(options?: DevBackendOptions): Handle {
   // Seed the Media Library fixtures into the in-memory repo so /admin/media has a realistic set.
   seedMediaLibrary();
+
+  // Seed two published fragments (a committed body plus a manifest row each) so /admin/fragments
+  // lists a real set and the include picker on every other concept's edit screen has candidates.
+  // Runs after the media seed because it appends rows to the manifest that seed writes.
+  seedFragments();
 
   // Seed the tag-vocabulary fixtures (a committed site config, in-use tags, an unlisted seed
   // candidate) so /admin/vocabulary renders populated rather than empty. Runs after the media seed

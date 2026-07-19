@@ -40,9 +40,9 @@ Run the dev server:
 npm run dev
 ```
 
-You see an unstyled page listing your (empty) content. The chassis works before your
-theme exists — that separation is what you'll rely on every time you change your design
-without touching your plumbing.
+You see an unstyled page listing your (empty) content. The chassis works before your theme
+exists. You'll rely on that separation every time you change your design without touching your
+plumbing.
 
 > **Why a chassis?** Every cairn site shares the same delivery, tokens, and prose
 > machinery. Keeping it in one copyable, documented layer means your design work never

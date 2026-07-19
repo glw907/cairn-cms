@@ -202,7 +202,7 @@ export const cairn = defineAdapter({
 });
 ```
 
-**First payoff:** run the dev server and render an entry in a scratch route if you want to see it—or wait one milestone, because the delivery surface renders everything properly.
+**First payoff:** run the dev server and render an entry in a scratch route now, if you want to see it. Or wait one milestone: the delivery surface renders everything properly there.
 
 ## Milestone 5: Add a custom component
 

@@ -46,7 +46,7 @@ zero-config invisible: a site that declares nothing sees no behavior change.
 // src/lib/cairn/access.ts (site-side; one module, imported everywhere it is needed)
 import { defineAccess } from '@glw907/cairn-cms';
 
-export const access = defineAccess({
+export const access = defineAccess(roles, {
   // Engine screens, by screen id (concept ids and the fixed utility screens):
   pages: ['webmaster'],
   media: ['webmaster', 'publisher'],
@@ -59,11 +59,12 @@ export const access = defineAccess({
 });
 ```
 
-- `defineAccess<const A extends AccessMap>(map: A): A` validates at construction and
-  returns the map. `AccessMap = Record<string, Role[]>`, so role names narrow to the
-  site's registered vocabulary and autocomplete; keys are `EngineScreenId | (string & {})`
-  shaped, so the six fixed screens autocomplete while concept ids and hrefs stay
-  assignable.
+- `defineAccess<const A extends AccessMap>(roles: RolesDeclaration, map: A): A`
+  validates at construction and returns the map. The vocabulary comes first so role
+  names validate at module load for every site, JS included; TS sites additionally get
+  registry narrowing. `AccessMap = Record<string, Role[]>`, so role names autocomplete;
+  keys are `EngineScreenId | (string & {})` shaped, so the six fixed screens autocomplete
+  while concept ids and hrefs stay assignable.
 - Validation throws an actionable error on: a key that is neither a declared concept id,
   a fixed engine screen id, nor an `/admin`-prefixed path; an href key that collides with
   an engine-owned route (the `parseAdminPath` authority, same as navLayout entries); an

@@ -8,6 +8,12 @@
   run. A page that needs a table of contents or a heading anchor list calls `renderDocument`
   instead of re-parsing `renderMarkdown`'s HTML string. `renderMarkdown` is unchanged. No
   consumer action.
+- The published docs tree (`docs/reference`, `docs/guides`, `docs/explanation`,
+  `docs/tutorial`, `docs/README.md`) now ships inside the npm tarball, so a consumer site can
+  read the docs at build time without a separate checkout. `docs/internal`, `docs/superpowers`,
+  and `docs/STATUS.md` stay out. The `check:package` gate now asserts both directions, so a
+  future `files` edit cannot silently drop or leak either. Cost: the tarball grows from 501 to
+  562 files, 1.73 MB to 1.96 MB packed (4.58 MB to 5.22 MB unpacked). No consumer action.
 
 ## 0.87.3
 

@@ -30,6 +30,47 @@ export function checkPackageFiles(filePaths) {
   return { ok: true, count: migrations.length };
 }
 
+// The four published arm indexes plus the docs index; the tutorial's index is its single lesson
+// page, since docs/tutorial carries no README.md of its own.
+const DOCS_INDEX_PATHS = [
+  'docs/README.md',
+  'docs/reference/README.md',
+  'docs/guides/README.md',
+  'docs/explanation/README.md',
+  'docs/tutorial/build-your-first-cairn-site.md'
+];
+
+// The write-only planning trees and the rolling status file. A registry consumer's site build
+// reads the published arms only; these carry pass history and in-flight drafts that must not
+// leak into the tarball.
+const DOCS_LEAK_RE = /^docs\/(internal|superpowers)\//;
+const DOCS_STATUS_PATH = 'docs/STATUS.md';
+
+/**
+ * Check a packed file list for the published docs arms, present, and the internal docs trees,
+ * absent.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true, count: number } | { ok: false, error: string }}
+ */
+export function checkDocsPacked(filePaths) {
+  const packed = new Set(filePaths);
+  const missing = DOCS_INDEX_PATHS.filter((path) => !packed.has(path));
+  if (missing.length > 0) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${missing.join(', ')}; add the docs arms to package.json "files" so a registry consumer's site build can read the published docs`
+    };
+  }
+  const leaked = filePaths.filter((path) => DOCS_LEAK_RE.test(path) || path === DOCS_STATUS_PATH);
+  if (leaked.length > 0) {
+    return {
+      ok: false,
+      error: `the packed tarball carries internal docs paths that must not ship: ${leaked.join(', ')}; check package.json "files" for an overly broad docs entry`
+    };
+  }
+  return { ok: true, count: filePaths.filter((path) => path.startsWith('docs/')).length };
+}
+
 /**
  * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
  * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
@@ -58,12 +99,23 @@ function packedFilePaths() {
 }
 
 function main() {
-  const result = checkPackageFiles(packedFilePaths());
-  if (!result.ok) {
-    console.error(`check-package-files: ${result.error}`);
+  const files = packedFilePaths();
+
+  const migrationsResult = checkPackageFiles(files);
+  if (!migrationsResult.ok) {
+    console.error(`check-package-files: ${migrationsResult.error}`);
     process.exit(1);
   }
-  console.log(`check-package-files: OK (${result.count} migration file(s) packed)`);
+
+  const docsResult = checkDocsPacked(files);
+  if (!docsResult.ok) {
+    console.error(`check-package-files: ${docsResult.error}`);
+    process.exit(1);
+  }
+
+  console.log(
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s) packed)`
+  );
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

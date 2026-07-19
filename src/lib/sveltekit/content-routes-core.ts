@@ -35,12 +35,12 @@ import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionar
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
 import { canReach } from '../auth/access.js';
-import { resolveNavLayout, type ResolvedNavLayout } from './admin-nav.js';
+import { resolveNavLayout, type ResolvedNavLayout, type ResolvedLayoutChild } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
-import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
+import type { ContentRoutesContext, ContentEvent, AttentionItem } from './content-routes-context.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -94,6 +94,13 @@ export type AdminShellData =
        *  action rather than lying.
        */
       pendingEntries: Promise<{ concept: string; id: string }[] | null>;
+      /**
+       * Per-session pending-work counts from the site's own `deps.attention`, keyed by the visible
+       *  nav href they decorate; an entry absent from the resolved-and-filtered `nav` (an engine
+       *  door or a site entry alike) never appears here, so a count cannot leak to a role that
+       *  cannot see it. Empty when the site configures no dep.
+       */
+      attention: Record<string, { count: number; label: string }>;
     };
 
 /** One row in a concept's list view. */
@@ -450,6 +457,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const nav: ResolvedNavLayout = ctx.deps.navFilter
       ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }
       : resolved;
+    // The site's own attention dep, awaited exactly once (after nav resolution and navFilter, both
+    // of which already ran above), then filtered against the same resolved-and-filtered visible
+    // href set so a count can never leak past a nav entry the session cannot see: an unreachable
+    // queue's item is dropped before any rendering or summing.
+    const attentionRaw: AttentionItem[] = ctx.deps.attention ? await ctx.deps.attention({ editor, event }) : [];
+    const visibleHrefs = collectVisibleHrefs(nav);
+    const attention: Record<string, { count: number; label: string }> = {};
+    for (const item of attentionRaw) {
+      if (item.count <= 0) continue;
+      if (!visibleHrefs.has(item.href)) continue;
+      if (item.href in attention) continue; // first wins; a later duplicate is silently dropped
+      attention[item.href] = { count: item.count, label: item.label ?? 'pending items' };
+    }
     return {
       shell: {
         public: false,
@@ -462,8 +482,30 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         collapsedNav,
         csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
         pendingEntries,
+        attention,
       },
     };
+  }
+
+  /**
+   * Every href a resolved nav renders as a clickable entry: each top-level child (a site entry or
+   *  an engine door), each section's children, and the trailing `fallback` group of engine screens
+   *  the tree never referenced (still rendered in the shell's foot slot, so still visible). The
+   *  attention filter reads this set so a count never survives against an href the session cannot
+   *  actually see.
+   */
+  function collectVisibleHrefs(nav: ResolvedNavLayout): Set<string> {
+    const hrefs = new Set<string>();
+    const visit = (child: ResolvedLayoutChild) => hrefs.add(child.href);
+    for (const node of nav.items) {
+      if ('children' in node) {
+        for (const child of node.children) visit(child);
+      } else {
+        visit(node);
+      }
+    }
+    for (const child of nav.fallback) visit(child);
+    return hrefs;
   }
 
   /**

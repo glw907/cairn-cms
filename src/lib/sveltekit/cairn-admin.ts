@@ -68,6 +68,12 @@ export interface CairnAdminDeps {
    *  sidebar for an editor who fails that check. See `ContentRoutesDeps['navFilter']`.
    */
   navFilter?: ContentRoutesDeps['navFilter'];
+  /**
+   * Forwarded to the content routes verbatim; a site injects this to surface per-session
+   *  pending-work counts as nav badges (a queue of unread asset requests, say). See
+   *  `ContentRoutesDeps['attention']`.
+   */
+  attention?: ContentRoutesDeps['attention'];
 }
 
 /**
@@ -103,7 +109,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
     replyTo: runtime.sender.replyTo,
   };
   const auth = createAuthRoutes({ branding, send: deps.auth?.send, bootstrapOwner: deps.auth?.bootstrapOwner });
-  const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter });
+  const content = createContentRoutes(runtime, { tidy: deps.tidy, navFilter: deps.navFilter, attention: deps.attention });
   const editors = createEditorRoutes({ roles: runtime.roles });
   // The nav surface exists only when the site configures a menu; without one its view is a 404.
   const nav = runtime.navMenu ? createNavRoutes(runtime) : null;

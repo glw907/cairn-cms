@@ -21,6 +21,7 @@ export type {
   MediaLibraryData,
   ContentEvent,
   ContentRoutesDeps,
+  AttentionItem,
   SaveFailure,
   DeleteRefusal,
   RenameFailure,

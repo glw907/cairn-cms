@@ -32,7 +32,7 @@ import { createDictionaryActions } from './content-routes-dictionary.js';
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
 export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
 
-export type { ContentEvent, ContentRoutesDeps, TidyClient } from './content-routes-context.js';
+export type { ContentEvent, ContentRoutesDeps, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
   NavConcept,

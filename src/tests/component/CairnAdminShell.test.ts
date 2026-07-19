@@ -42,6 +42,7 @@ function data(
     collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention: {} as Record<string, { count: number; label: string }>,
   };
 }
 
@@ -80,6 +81,7 @@ function dataWithLayout(
     collapsedNav: overrides.collapsedNav ?? null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention: {} as Record<string, { count: number; label: string }>,
   };
 }
 

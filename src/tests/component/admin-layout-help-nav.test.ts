@@ -22,6 +22,7 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention: {} as Record<string, { count: number; label: string }>,
   };
 }
 

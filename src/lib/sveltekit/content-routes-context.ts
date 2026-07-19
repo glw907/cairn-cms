@@ -120,6 +120,36 @@ export interface ContentRoutesDeps {
     items: ResolvedLayoutNode[],
     ctx: { editor: Editor; event: ContentEvent },
   ) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>;
+  /**
+   * Per-session pending-work counts for the shell's nav badges (a queue of unread asset
+   *  requests, say), awaited fresh every request and never cached by the engine, exactly once,
+   *  after nav resolution and `navFilter` have both already run. The site computes items from its
+   *  own domain queues; the engine then drops anything the session cannot act on before any
+   *  rendering or summing, so a count never leaks to a role that cannot see its nav entry (counts
+   *  are information; CWE-200). An item is dropped when its `count` is non-positive, when its
+   *  `href` matches no visible nav entry (an engine door or a site entry, resolved-and-filtered
+   *  set), or when it duplicates an earlier item's `href` (first wins, silently). Absent, the
+   *  shell payload serializes an empty record and renders exactly as before this seam existed. A
+   *  dep that throws fails the shell load loudly; the site owns its own callback's errors.
+   */
+  attention?: (ctx: {
+    editor: Editor;
+    event: ContentEvent;
+  }) => AttentionItem[] | Promise<AttentionItem[]>;
+}
+
+/**
+ * One pending-work badge a site's `attention` dep contributes for one nav entry. The engine drops
+ *  an item whose `count` is non-positive, whose `href` matches no visible nav entry, or that
+ *  duplicates an earlier item's `href`; a surviving item's `label` defaults to `'pending items'`.
+ */
+export interface AttentionItem {
+  /** The admin route whose nav entry carries the pill; also the click-through target. */
+  href: string;
+  /** Pending actionable count. Zero or negative items are dropped. */
+  count: number;
+  /** Accessible noun for the count ("pending requests"); defaults to `'pending items'`. */
+  label?: string;
 }
 
 /**

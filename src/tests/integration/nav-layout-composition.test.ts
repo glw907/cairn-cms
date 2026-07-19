@@ -228,3 +228,75 @@ describe('navLayout composition: the sidebar derives from the runtime.access aut
     await owner.shell.pendingEntries;
   });
 });
+
+// Task 7 (admin access/attention plan): the shell-payload proof that the `attention` dep is called
+// exactly once per request, filtered against the same visibility the nav derivation just computed
+// (a mapped-away entry's item vanishes for the excluded role even though the dep itself does not
+// know about roles), dropped at zero/negative, defaulted to the standard label, and matched
+// against an engine-door href (a concept's list route), never a second, separate lookup.
+describe('shellPayload: the attention dep filters, drops, defaults, and calls once per request', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it('drops a mapped-away href for the excluded role and keeps it for the included one', async () => {
+    const attention = vi.fn(() => [
+      { href: '/admin/posts', count: 3 },
+      { href: '/admin/pages', count: 5, label: 'pending reviews' },
+    ]);
+    const routes = createContentRoutes(accessRuntime(), { attention });
+
+    const publisher = await routes.shellPayload(accessEvent('publisher', 'editor') as never);
+    if (publisher.shell.public) throw new Error('expected authed shell');
+    // 'pages' is mapped away from publisher (accessEvent's nav test above), so its item vanishes
+    // even though the dep itself returned it unconditionally.
+    expect(publisher.shell.attention).toEqual({ '/admin/posts': { count: 3, label: 'pending items' } });
+    expect(attention).toHaveBeenCalledTimes(1);
+    await publisher.shell.pendingEntries;
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(webmaster.shell.attention).toEqual({
+      '/admin/posts': { count: 3, label: 'pending items' },
+      '/admin/pages': { count: 5, label: 'pending reviews' },
+    });
+    expect(attention).toHaveBeenCalledTimes(2);
+    await webmaster.shell.pendingEntries;
+  });
+
+  it('drops a zero and a negative count, and drops an href matching no visible nav entry', async () => {
+    const attention = vi.fn(() => [
+      { href: '/admin/money', count: 0 },
+      { href: '/admin/posts', count: -1 },
+      { href: '/admin/nowhere', count: 4 },
+    ]);
+    const routes = createContentRoutes(accessRuntime(), { attention });
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(webmaster.shell.attention).toEqual({});
+    expect(attention).toHaveBeenCalledTimes(1);
+    await webmaster.shell.pendingEntries;
+  });
+
+  it('keeps the first item when the dep returns a duplicate href', async () => {
+    const attention = vi.fn(() => [
+      { href: '/admin/posts', count: 3, label: 'first' },
+      { href: '/admin/posts', count: 9, label: 'second' },
+    ]);
+    const routes = createContentRoutes(accessRuntime(), { attention });
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(webmaster.shell.attention).toEqual({ '/admin/posts': { count: 3, label: 'first' } });
+  });
+
+  it('serializes an empty record when no attention dep is configured', async () => {
+    const routes = createContentRoutes(accessRuntime());
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(webmaster.shell.attention).toEqual({});
+  });
+});

@@ -9,7 +9,7 @@ import type { Backend } from '../github/backend.js';
 import type { BackendEnv } from '../github/credentials.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
-import { normalizeAdminNav, validateNavLayout, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
+import { normalizeAdminNav, validateNavLayout, validateAccessComposition, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
@@ -214,6 +214,13 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
       roleNames: Object.keys(runtime.roles ?? DEFAULT_ROLES),
       hasAdminNav: runtime.adminNav !== undefined,
     });
+  }
+  // Validate a declared access map the same fail-loud-at-startup way: a screen-id key that names
+  // neither a real concept nor a fixed engine screen, or an href key that collides with a built-in
+  // route, throws here rather than silently never gating (or never being reachable) at request
+  // time. Undeclared (the common case) skips validation entirely, the same as navLayout.
+  if (runtime.access) {
+    validateAccessComposition(runtime.access, { conceptIds: runtime.concepts.map((concept) => concept.id) });
   }
   // Validate the developer's publishActions once at construction, the same fail-loud posture: a
   // blank field or an unknown concept throws here rather than silently rendering no link (or the

@@ -33,7 +33,7 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
-import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
+import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
 import { resolveNavLayout, type ResolvedNavLayout } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
@@ -347,6 +347,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
 function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
   const editor = requireEditor(event);
   const concept = conceptOf(runtime, event.params);
+  requireEngineAccess(runtime.access, editor, concept.id);
   const id = event.params.id ?? '';
   if (!isValidId(id)) throw error(400, 'Invalid entry id');
   return { editor, concept, id };
@@ -565,8 +566,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  to an inline error, not a thrown 500.
    */
   async function listLoad(event: ContentEvent): Promise<ListData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
@@ -611,8 +613,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const form = await event.request.formData();
     const rawTitle = String(form.get('title') ?? '').trim();
     const slug = String(form.get('slug') ?? '').trim() || slugify(rawTitle);
@@ -654,8 +657,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
   async function editLoad(event: ContentEvent): Promise<EditData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const isNew = event.url.searchParams.get('new') === '1';
@@ -1402,6 +1406,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');
     if (!isValidId(id)) throw error(400, 'Invalid entry id');

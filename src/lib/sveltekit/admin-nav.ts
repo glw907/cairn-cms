@@ -7,6 +7,7 @@ import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Capability } from '../auth/roles.js';
 import type { Role } from '../auth/types.js';
+import type { AccessMap } from '../auth/access.js';
 
 /** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
 const ADMIN_NAV_ICON_NAMES = [
@@ -330,6 +331,55 @@ export function validateNavLayout(
       resolveEntry(node, stubConcepts);
       checkHref(node.href, 'a top-level entry');
       checkRoles(node.roles, 'a top-level entry');
+    }
+  }
+}
+
+// The access-map seam: a site's defineAccess declaration validates its shape and role vocabulary
+// at construction (auth/access.ts), but a screen-id key's existence needs the real concept list and
+// engine-route table, which only composition has. validateAccessComposition is the second stage,
+// the same split validateNavLayout uses above.
+
+/**
+ * The fixed engine screens the access map can gate a role by, beyond a site's own concept ids.
+ *  `editors` stays owner-only regardless of the map (canReach's own floor) and `help` stays open
+ *  to any editor capability; neither route reads the map, so the map cannot name them.
+ */
+const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const;
+
+/**
+ * Validate a site's declared access map once at composition (server start), after `defineAccess`'s
+ *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
+ *  engine screens this pass enforces ({@link ACCESS_FIXED_SCREENS}), and an href key must not
+ *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
+ *  `normalizeAdminNav` and `validateNavLayout` both use). Throws an actionable `access:`-prefixed
+ *  error naming the bad key, so a misconfiguration fails at server start rather than silently never
+ *  gating (or never even reachable) at request time.
+ * @param access - The site's declared access map.
+ *
+ * The second parameter carries context this validation needs but does not itself derive: the
+ *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
+ */
+export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
+  const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
+  // parseAdminPath's concept lookup (findConcept) reads only `.id`, mirroring validateNavLayout's
+  // own stub above.
+  const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];
+  for (const key of Object.keys(access)) {
+    if (key.startsWith('/')) {
+      const path = key.split(/[?#]/)[0]!;
+      const parsed = parseAdminPath(path, stubConcepts);
+      if (parsed) {
+        throw new Error(
+          `access: href "${key}" collides with cairn's built-in "${parsed.view}" view; map a screen id or an unclaimed path instead`,
+        );
+      }
+      continue;
+    }
+    if (!knownScreens.has(key)) {
+      throw new Error(
+        `access: "${key}" is neither a declared concept nor one of the fixed engine screens (${ACCESS_FIXED_SCREENS.join(', ')})`,
+      );
     }
   }
 }

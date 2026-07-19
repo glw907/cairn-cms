@@ -173,6 +173,22 @@ export function requireEditor(event: { locals: { editor?: Editor | null } }): Ed
 }
 
 /**
+ * For one of the engine's own content or admin-mutation surfaces, beside its existing
+ * `requireEditor` call: refuse with 403 when the site's declared access map denies this session's
+ * role for `target` (a concept id or one of the fixed engine screens `validateAccessComposition`
+ * enforces). A target absent from the map, or no map at all, always admits (`canReach`'s
+ * zero-config floor), so a site that declares nothing sees no behavior change. Every denial emits
+ * `auth.access.denied` with the editor's email, role, and `target`, the same shape `requireAccess`
+ * emits. Unlike `requireAccess`, an unmapped target is never a fail-closed misconfiguration here:
+ * an engine screen's own route is always a legitimate destination, mapped or not.
+ */
+export function requireEngineAccess(access: AccessMap | undefined, editor: Editor, target: string): void {
+  if (canReach(access, editor, target)) return;
+  log.warn('auth.access.denied', { email: editor.email, role: editor.role, target });
+  throw error(403, 'Access denied');
+}
+
+/**
  * For a site's custom route, the one-line authorization story: the session the guard already
  * resolved, checked against the site's declared access map (attached to `locals.cairnAccess`
  * alongside `editor`), or a 403. `target` defaults to the request path, so the common call is

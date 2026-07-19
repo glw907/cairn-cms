@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { githubApp } from '../../lib/index.js';
 import { composeRuntime } from '../../lib/content/compose.js';
 import type { CairnAdapter, PreviewConfig } from '../../lib/content/types.js';
+import type { AccessMap } from '../../lib/auth/access.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { testSiteConfig } from './_content-fixture.js';
 
@@ -31,6 +32,18 @@ describe('composeRuntime preview pass-through', () => {
 
   it('leaves preview undefined when the adapter omits it', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).preview).toBeUndefined();
+  });
+});
+
+describe('composeRuntime access', () => {
+  it('carries the adapter access map onto the runtime untouched', () => {
+    const access: AccessMap = { pages: ['owner'] };
+    const runtime = composeRuntime({ adapter: { ...adapter(), access }, siteConfig: testSiteConfig });
+    expect(runtime.access).toBe(access);
+  });
+
+  it('leaves access undefined when the adapter omits it', () => {
+    expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).access).toBeUndefined();
   });
 });
 

@@ -4,7 +4,7 @@
 import { redirect, error } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
-import { requireEditor } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import { commitFailure } from './commit-log.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
@@ -54,7 +54,8 @@ export function createNavRoutes(runtime: CairnRuntime) {
 
   /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
   async function navLoad(event: ContentEvent): Promise<NavLoadData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
     if (!config) throw error(404, 'No navigation menu configured');
     const maxDepth = config.maxDepth ?? 2;
@@ -96,6 +97,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
   async function navSave(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
     if (!config) throw error(404, 'No navigation menu configured');
     const maxDepth = config.maxDepth ?? 2;

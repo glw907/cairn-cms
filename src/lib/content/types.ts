@@ -17,6 +17,7 @@ import type { FieldDescriptor } from './fields.js';
 import type { LinkResolve } from './links.js';
 import type { VariantSpec } from '../media/transform-url.js';
 import type { RolesDeclaration } from '../auth/roles.js';
+import type { AccessMap } from '../auth/access.js';
 // A type-only import: it erases at compile, so it does not breach the content-must-not-import-sveltekit
 // layering rule. The validation that needs parseAdminPath lives in the sveltekit layer, not here.
 import type { AdminNavConfig, NavLayout } from '../sveltekit/admin-nav.js';
@@ -221,6 +222,13 @@ export interface CairnAdapter {
    *  through the composed runtime.
    */
   roles?: RolesDeclaration;
+  /**
+   * The site's declared access map, from `defineAccess({ ... })`. Absent, every engine screen and
+   *  `requireAccess` call keeps today's any-editor-capability behavior. Re-validated at composition
+   *  (`createContentRoutesContext`) against the site's real concepts and engine-route table, the same
+   *  split `validateNavLayout` uses.
+   */
+  access?: AccessMap;
   /** The commit backend provider, from `githubApp({ ... })` (the GitHub App today). */
   backend: BackendProvider;
   /** The magic-link sender. */
@@ -355,6 +363,11 @@ export interface CairnRuntime {
    *  owner/editor pair.
    */
   roles?: RolesDeclaration;
+  /**
+   * The site's declared access map, carried through from the adapter by `composeRuntime`. Absent,
+   *  every engine screen and `requireAccess` call keeps today's any-editor-capability behavior.
+   */
+  access?: AccessMap;
   /** The commit backend provider, carried through from the adapter by `composeRuntime`. */
   backend: BackendProvider;
   sender: SenderConfig;

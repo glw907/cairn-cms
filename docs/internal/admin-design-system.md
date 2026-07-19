@@ -109,6 +109,15 @@ Calibration (Geoff, 2026-07-15):
   a utility (a `bg-*`, a `border-l` divider) still opts a control back into a fill or border. Use
   `.btn` for a real button, or rely on the reset and add only the utilities the control needs. This
   was a real shipped blemish on the footer toggles and the list's sort headers.
+- **The edit page's preview iframe is a second, separately-hashed consumer of the public
+  `theme.css`.** `buildPreviewDoc` (`src/lib/components/preview-doc.ts`) links every stylesheet the
+  adapter's preview knob hands it into the sandboxed `srcdoc` document, and a site's preview knob
+  points at the same `theme.css` the public layout links, so the admin loads that file too, inside
+  its own iframe document, isolated from the admin's own `cairn-admin.css` by the sandbox boundary
+  rather than by cascade layers. Anyone pruning or splitting the public CSS needs to keep this
+  consumer in mind: a token or a selector the reading surface still needs but a refactor moved out
+  of `theme.css` breaks the preview along with the public pages, even though the preview never
+  touches the admin's own stylesheet.
 
 ## The context model: office and desk
 

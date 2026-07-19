@@ -431,9 +431,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         : Promise.resolve()
             .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
             .then((names) =>
+              // Filtered by the same canReach predicate publishAllAction's own batch reads, so a
+              // restricted role never receives an id it is denied and the "Publish site (N)" count
+              // never counts an entry publishAllAction would skip.
               names.flatMap((name) => {
                 const entry = pendingEntryOf(name);
-                return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+                if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
+                return [{ concept: entry.concept.id, id: entry.id }];
               }),
             )
             .catch((err): { concept: string; id: string }[] | null => {
@@ -468,14 +472,19 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       if (item.count <= 0) continue;
       if (!visibleHrefs.has(item.href)) continue;
       if (item.href in attention) continue; // first wins; a later duplicate is silently dropped
-      attention[item.href] = { count: item.count, label: item.label ?? 'pending items' };
+      attention[item.href] = { count: item.count, label: item.label?.trim() || 'pending items' };
     }
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
-        concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+        concepts:
+          capability === 'none'
+            ? []
+            : runtime.concepts
+                .filter((c) => canReach(runtime.access, editor, c.id))
+                .map((c) => ({ id: c.id, label: c.label })),
         nav,
         pathname: event.url.pathname,
         theme,
@@ -552,7 +561,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       throw redirect(303, `${home}${suffix}`);
     }
     if (editor.capability !== 'none') {
-      const first = runtime.concepts[0];
+      // The first concept the session can reach, not the site-wide first: a role mapped away
+      // from that one would otherwise land on a 403 dead-end.
+      const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
       if (!first) throw error(404, 'No content types configured');
       throw redirect(307, `/admin/${first.id}${suffix}`);
     }

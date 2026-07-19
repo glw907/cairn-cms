@@ -292,6 +292,21 @@ describe('shellPayload: the attention dep filters, drops, defaults, and calls on
     expect(webmaster.shell.attention).toEqual({ '/admin/posts': { count: 3, label: 'first' } });
   });
 
+  it('defaults an empty or whitespace-only label to "pending items" rather than passing it through', async () => {
+    const attention = vi.fn(() => [
+      { href: '/admin/posts', count: 3, label: '' },
+      { href: '/admin/pages', count: 2, label: '   ' },
+    ]);
+    const routes = createContentRoutes(accessRuntime(), { attention });
+
+    const webmaster = await routes.shellPayload(accessEvent('webmaster', 'editor') as never);
+    if (webmaster.shell.public) throw new Error('expected authed shell');
+    expect(webmaster.shell.attention).toEqual({
+      '/admin/posts': { count: 3, label: 'pending items' },
+      '/admin/pages': { count: 2, label: 'pending items' },
+    });
+  });
+
   it('serializes an empty record when no attention dep is configured', async () => {
     const routes = createContentRoutes(accessRuntime());
 

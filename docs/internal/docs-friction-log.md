@@ -100,3 +100,12 @@ The log was cleared 2026-07-16; new findings start fresh below this line.
   Candidate: the engine's highlighter should pass mermaid fences through with their
   language class intact (or expose a fence-passthrough list), so every consumer site does
   not re-derive the workaround. Surfaced by the 8 mermaid diagrams in the docs corpus.
+
+- **(developer, 2026-07-19, access-and-attention pass)** The live smoke's `curl` checks read a
+  denied route as HTTP 200 and nearly reported the route enforcement broken: the 403 page renders
+  but the status flattens because the shell layout streams `pendingEntries` (upstream
+  sveltejs/kit#12533, affects 404 the same way). Any scripted probe of admin error semantics must
+  judge by rendered page or log event, not status line; the restrict-admin-access guide now says
+  so. Also: a consumer following the custom-roles path hits the D1 `role` CHECK constraint until
+  `0001_roles.sql` is applied; the guides say this, but the smoke initially missed it, suggesting
+  the error message is the only breadcrumb a developer gets at that moment.

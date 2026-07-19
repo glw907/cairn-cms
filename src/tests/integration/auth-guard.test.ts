@@ -6,6 +6,14 @@ import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import type { RequestContext } from '../../lib/sveltekit/types.js';
+import type { AccessMap } from '../../lib/auth/access.js';
+import type { Role } from '../../lib/auth/types.js';
+
+// This file's Role type is the unaugmented owner/editor pair; naming a custom role in an
+// AccessMap value needs the same double-cast stand-in as guard.test.ts and auth-access.test.ts.
+function r(...names: string[]): Role[] {
+  return names as unknown as Role[];
+}
 
 const db = env.AUTH_DB;
 const handle = createAuthGuard();
@@ -172,6 +180,26 @@ describe('double-wiring: a custom role against a guard that was never handed the
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; role?: string });
     expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'instructor')).toBe(true);
     vi.restoreAllMocks();
+  });
+});
+
+describe('the access map (Task 2)', () => {
+  it('attaches the declared map to locals.cairnAccess alongside locals.editor', async () => {
+    const access: AccessMap = { '/admin/money': r('club-admin') };
+    const guard = createAuthGuard({ access });
+    const cookies = await seedSession('own@x.dev');
+    const ev = event('/admin', cookies);
+    const res = await guard({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.cairnAccess).toBe(access);
+  });
+
+  it('leaves locals.cairnAccess undefined when no map is declared', async () => {
+    const cookies = await seedSession('own2@x.dev');
+    const ev = event('/admin', cookies);
+    const res = await handle({ event: ev, resolve: async () => OK });
+    expect(res).toBe(OK);
+    expect(ev.locals.cairnAccess).toBeUndefined();
   });
 });
 

@@ -35,6 +35,8 @@ later, or the upkeep of a running site.
 - **[Give a role its own admin area](./give-a-role-its-own-admin-area.md)**: declare a role that
   authenticates like any editor but sees none of cairn's own content surfaces, and land it on a
   screen your site built
+- **[Restrict admin access by role](./restrict-admin-access.md)**: declare which of your roles
+  reaches which screen, one map that gates both the route and the sidebar
 - **[Link content with references](./link-content-with-references.md)**: connect one concept's
   entries to another's with a typed reference field
 - **[Reuse content across entries](./reuse-content-across-entries.md)**: declare the Fragments

@@ -23,6 +23,7 @@ function shell(): AdminShellData {
     collapsedNav: [],
     csrf: 'test-csrf',
     pendingEntries: Promise.resolve(null),
+    attention: {},
   };
 }
 

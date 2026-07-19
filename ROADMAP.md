@@ -188,13 +188,6 @@ the named human gates only):**
   first deliverable is convergence (pick the canonical recipes, re-express the engine screens in
   them), then ship the components; the audit carries the full inventory. The showcase Signups
   screen still needs a render for the bolted-on-vs-native judgment.
-- **Widen the nine-icon `adminNav`/`navLayout` allowlist.** ASC's declared sidebar comments show
-  real saturation against the bundled nine Lucide names (spec: 2026-07-14 admin-nav-layout
-  design, §6 out-of-scope). Ruled out of the `navLayout` window on purpose, since a bigger
-  allowlist is an independent, low-risk addition (more icon names, same validation shape) that
-  doesn't need the whole-sidebar contract to land first. Candidate: survey the icon names ASC and
-  907 actually reach for past the nine, then extend `ADMIN_NAV_ICON_NAMES` and
-  `ADMIN_NAV_ICONS` together, a non-breaking additive change.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code
@@ -215,6 +208,14 @@ the named human gates only):**
   hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
   this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
   tracking item below for the removal itself.
+- **Admin error statuses flatten to 200 under the streamed pending count (upstream kit#12533).**
+  A page-load `error(403)`/`error(404)` inside `/admin` renders the right error page and emits its
+  log event, but the HTTP status reads 200 because the shell layout load streams `pendingEntries`
+  and SvelteKit commits the status before a sibling load rejects. Enforcement is intact (no
+  restricted data crosses; the access-map guide documents the caveat). Trigger: the upstream fix
+  landing in sveltejs/kit#12533; adopt it and delete the guide caveat. Candidate for the existing
+  scheduled kit-watch routine (kit#15992) to track alongside `checkOrigin`. Surfaced by the
+  access-and-attention pass's live smoke, 2026-07-19.
 - **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
   writes: a per-entry history view over the backend's commit log (the commit author is already the
   editor, so attribution is free), and revert implemented as a new commit through the existing

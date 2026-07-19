@@ -6,18 +6,42 @@
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Capability } from '../auth/roles.js';
-import type { Role } from '../auth/types.js';
+import type { Editor, Role } from '../auth/types.js';
+import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
 
-/** The bundled Lucide icon names a custom adminNav entry may use. Aligns with ADMIN_NAV_ICONS. */
-const ADMIN_NAV_ICON_NAMES = [
+/**
+ * The bundled Lucide icon names a custom adminNav entry, or a navLayout engine ref's {@link
+ *  NavLayoutEngineRef.icon} override, may use. Aligns with ADMIN_NAV_ICONS (a component-test
+ *  pins the two against drift): stays an allowlist rather than the whole Lucide catalog, so the
+ *  bundle stays bounded.
+ */
+export const ADMIN_NAV_ICON_NAMES = [
   'anchor',
+  'banknote',
+  'bell',
   'calendar',
   'clipboard-list',
-  'list',
-  'users',
-  'package',
+  'file-pen',
+  'files',
+  'graduation-cap',
+  'image',
   'inbox',
+  'key-round',
+  'life-buoy',
+  'list',
+  'list-ordered',
+  'mail',
+  'megaphone',
+  'menu',
+  'package',
+  'puzzle',
+  'send',
+  'settings',
+  'shield-check',
   'table',
+  'tags',
+  'users',
+  'users-round',
   'wrench',
 ] as const;
 
@@ -179,12 +203,15 @@ export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
  * A navLayout node that places one of the engine's own screens: a concept's list/edit pair, or one
  *  of the fixed utility screens. `label` relabels the door without touching its engine-owned icon or
  *  href; `hidden: true` removes the door deliberately (the route itself stays live, since nav
- *  placement is never authorization).
+ *  placement is never authorization); `icon` overrides the engine-owned glyph with one of the
+ *  bundled allowlist names (the two dated concepts otherwise share one newspaper glyph), validated
+ *  the same way a site entry's own icon is.
  */
 export interface NavLayoutEngineRef {
   screen: EngineScreenId;
   label?: string;
   hidden?: true;
+  icon?: AdminNavIcon;
 }
 
 /** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
@@ -202,6 +229,13 @@ export interface NavLayoutSection {
   label: string;
   children: (NavLayoutEntry | NavLayoutEngineRef)[];
   roles?: Role[];
+  /**
+   * Whether this group starts collapsed for a visitor with no persisted nav-collapse cookie;
+   *  absent (or false) renders open, today's behavior. Once any header is touched, the
+   *  `cairn-admin-nav-collapsed` cookie carries the full collapsed set and wins entirely, so this
+   *  declaration applies only until a visitor's first toggle.
+   */
+  collapsed?: boolean;
 }
 
 /** A site's whole declared sidebar: engine references, its own entries, and sections, in declaration order. */
@@ -297,6 +331,11 @@ export function validateNavLayout(
     if (ref.label !== undefined && ref.label.trim() === '') {
       throw new Error(`navLayout: screen "${ref.screen}" has an empty relabel`);
     }
+    if (ref.icon !== undefined && !ADMIN_NAV_ICON_NAMES.includes(ref.icon)) {
+      throw new Error(
+        `navLayout: screen "${ref.screen}" has icon "${ref.icon}", not one of ${ADMIN_NAV_ICON_NAMES.join(', ')}`,
+      );
+    }
   }
 
   for (const node of layout) {
@@ -334,6 +373,55 @@ export function validateNavLayout(
   }
 }
 
+// The access-map seam: a site's defineAccess declaration validates its shape and role vocabulary
+// at construction (auth/access.ts), but a screen-id key's existence needs the real concept list and
+// engine-route table, which only composition has. validateAccessComposition is the second stage,
+// the same split validateNavLayout uses above.
+
+/**
+ * The fixed engine screens the access map can gate a role by, beyond a site's own concept ids.
+ *  `editors` stays owner-only regardless of the map (canReach's own floor) and `help` stays open
+ *  to any editor capability; neither route reads the map, so the map cannot name them.
+ */
+const ACCESS_FIXED_SCREENS = ['media', 'vocabulary', 'nav', 'settings'] as const;
+
+/**
+ * Validate a site's declared access map once at composition (server start), after `defineAccess`'s
+ *  own shape/vocabulary check: a screen-id key must name either a real concept or one of the fixed
+ *  engine screens this pass enforces ({@link ACCESS_FIXED_SCREENS}), and an href key must not
+ *  collide with a built-in admin route (the `parseAdminPath` authority, the same collision check
+ *  `normalizeAdminNav` and `validateNavLayout` both use). Throws an actionable `access:`-prefixed
+ *  error naming the bad key, so a misconfiguration fails at server start rather than silently never
+ *  gating (or never even reachable) at request time.
+ * @param access - The site's declared access map.
+ *
+ * The second parameter carries context this validation needs but does not itself derive: the
+ *  site's real concept ids, the same role `validateNavLayout`'s own second parameter plays.
+ */
+export function validateAccessComposition(access: AccessMap, ctx: { conceptIds: string[] }): void {
+  const knownScreens = new Set<string>([...ctx.conceptIds, ...ACCESS_FIXED_SCREENS]);
+  // parseAdminPath's concept lookup (findConcept) reads only `.id`, mirroring validateNavLayout's
+  // own stub above.
+  const stubConcepts = ctx.conceptIds.map((id) => ({ id })) as unknown as ConceptDescriptor[];
+  for (const key of Object.keys(access)) {
+    if (key.startsWith('/')) {
+      const path = key.split(/[?#]/)[0]!;
+      const parsed = parseAdminPath(path, stubConcepts);
+      if (parsed) {
+        throw new Error(
+          `access: href "${key}" collides with cairn's built-in "${parsed.view}" view; map a screen id or an unclaimed path instead`,
+        );
+      }
+      continue;
+    }
+    if (!knownScreens.has(key)) {
+      throw new Error(
+        `access: "${key}" is neither a declared concept nor one of the fixed engine screens (${ACCESS_FIXED_SCREENS.join(', ')})`,
+      );
+    }
+  }
+}
+
 // The resolver: turns a validated (or absent) navLayout, plus the per-request capability/role and
 // the site's own concepts/navMenu/legacy adminNav, into one arranged, filtered, serializable tree
 // the shell renders directly. Runs fresh per request (the capability/role gates are per-editor), but
@@ -350,6 +438,11 @@ export interface ResolvedEngineNavEntry {
    *  document icon.
    */
   dated?: boolean;
+  /**
+   * Present only when the declared {@link NavLayoutEngineRef.icon} overrode the engine-owned
+   *  glyph; the shell prefers this over its own default when set.
+   */
+  iconName?: AdminNavIcon;
 }
 
 /** One resolved leaf in a navLayout tree: a site's own entry, or one of the engine's own screens. */
@@ -359,6 +452,12 @@ export type ResolvedLayoutChild = ResolvedNavEntry | ResolvedEngineNavEntry;
 export interface ResolvedLayoutSection {
   label: string;
   children: ResolvedLayoutChild[];
+  /**
+   * Carried from the declared {@link NavLayoutSection.collapsed}; absent means open, today's
+   *  behavior. The shell reads this only to seed a session with no nav-collapse cookie; a
+   *  present cookie's own set wins regardless of this value.
+   */
+  collapsed?: boolean;
 }
 
 /** One resolved top-level navLayout node: a loose child, or a section of them. */
@@ -389,10 +488,20 @@ export interface ResolveNavLayoutOptions {
   concepts: { id: string; label: string; routing?: { dated: boolean } }[];
   /** The nav-menu editor's label, or null when the site configures none (gates the `nav` screen). */
   navMenuLabel: string | null;
-  /** The signed-in editor's capability, gating every engine screen (row 4 of the design table). */
-  capability: Capability;
-  /** The signed-in editor's role name, matched against a node's declarative `roles` list. */
-  role: string;
+  /**
+   * The site's declared access map, or undefined for zero-config. Every engine door is gated
+   *  through {@link canReach} against this map (folding in row 4's capability floor); a site entry
+   *  is additionally gated by it only when its href actually carries a matching rule, so an
+   *  undeclared map or an unmapped href keeps today's behavior exactly.
+   */
+  access?: AccessMap;
+  /**
+   * The signed-in editor whose capability gates every engine screen (row 4 of the design table)
+   *  and whose role is matched against a node's declarative `roles` list and against the access
+   *  map. Replaces the former loose `capability`/`role` pair so the resolver reads the same
+   *  authority ({@link canReach}) the guard and the route gates do.
+   */
+  editor: Editor;
 }
 
 /** The engine's own screen defaults (label, href) not already covered by a site's concepts. */
@@ -416,19 +525,25 @@ function engineDefault(screen: string, opts: ResolveNavLayoutOptions): { label: 
 }
 
 /**
- * Whether one engine screen is visible for the current request: every engine screen requires
- *  capability !== 'none' (the 0.85.0 rule); `editors` additionally requires owner capability; `nav`
- *  additionally requires a configured navMenu.
+ * Whether one engine screen is visible for the current request: `nav` additionally requires a
+ *  configured navMenu (an orthogonal gate the access map cannot express, since an unconfigured
+ *  `nav` is never a valid reference at all); every other screen defers entirely to
+ *  {@link canReach}, which folds in the capability floor (the 0.85.0 rule), the `editors` owner
+ *  floor, and the site's own map narrowing, so this generalizes the pre-map gate rather than
+ *  adding a second one beside it.
  */
 function engineVisible(screen: string, opts: ResolveNavLayoutOptions): boolean {
-  if (opts.capability === 'none') return false;
-  if (screen === 'editors') return opts.capability === 'owner';
-  if (screen === 'nav') return opts.navMenuLabel !== null;
-  return true;
+  if (screen === 'nav' && opts.navMenuLabel === null) return false;
+  return canReach(opts.access, opts.editor, screen);
 }
 
-/** Resolve one engine screen into its door, applying a declared relabel when given. */
-function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverride?: string): ResolvedEngineNavEntry {
+/** Resolve one engine screen into its door, applying a declared relabel and icon override when given. */
+function engineEntry(
+  screen: string,
+  opts: ResolveNavLayoutOptions,
+  labelOverride?: string,
+  iconOverride?: AdminNavIcon,
+): ResolvedEngineNavEntry {
   const fallback = engineDefault(screen, opts);
   const concept = opts.concepts.find((c) => c.id === screen);
   // Optional-chained on purpose: normalizeConcepts always supplies routing, but test harnesses
@@ -438,12 +553,25 @@ function engineEntry(screen: string, opts: ResolveNavLayoutOptions, labelOverrid
     label: labelOverride ?? fallback.label,
     href: fallback.href,
     ...(concept ? { dated: concept.routing?.dated === true } : {}),
+    ...(iconOverride ? { iconName: iconOverride } : {}),
   };
 }
 
 /** True when a resolved site entry stays visible: `ownerOnly` gates on capability alone. */
 function ownerOnlyVisible(entry: { ownerOnly?: boolean }, opts: ResolveNavLayoutOptions): boolean {
-  return !entry.ownerOnly || opts.capability === 'owner';
+  return !entry.ownerOnly || opts.editor.capability === 'owner';
+}
+
+/**
+ * Whether a site entry's own href passes the access map's narrowing. Unlike an engine screen, a
+ *  site entry is gated by the map only when its href actually carries a matching rule ({@link
+ *  hasAccessRule}); an undeclared map or an href the map has no opinion on keeps today's
+ *  any-editor-capability admission exactly (nav semantics, distinct from `requireAccess`'s
+ *  fail-closed route contract). A matched href defers entirely to {@link canReach}.
+ */
+function hrefReachable(href: string, opts: ResolveNavLayoutOptions): boolean {
+  if (!opts.access || !hasAccessRule(opts.access, href)) return true;
+  return canReach(opts.access, opts.editor, href);
 }
 
 /**
@@ -496,17 +624,18 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
     if (isNavLayoutEngineRef(node)) {
       referenced.add(node.screen);
       if (node.hidden || !engineVisible(node.screen, opts)) return null;
-      return engineEntry(node.screen, opts, node.label);
+      return engineEntry(node.screen, opts, node.label, node.icon);
     }
     if (!ownerOnlyVisible(node, opts)) return null;
-    if (!roleMatches(node.roles, opts.role)) return null;
+    if (!roleMatches(node.roles, opts.editor.role)) return null;
+    if (!hrefReachable(node.href, opts)) return null;
     return resolvedLayoutEntry(node);
   }
 
   const items: ResolvedLayoutNode[] = [];
   for (const node of layout) {
     if (isNavLayoutSection(node)) {
-      if (!roleMatches(node.roles, opts.role)) {
+      if (!roleMatches(node.roles, opts.editor.role)) {
         // The section itself is gated out for this role, but its engine references still count as
         // "referenced": a screen tucked inside a roles-gated section must not leak into fallback
         // just because this editor cannot see the section that names it.
@@ -520,7 +649,7 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
         const resolved = resolveChild(child);
         if (resolved) children.push(resolved);
       }
-      if (children.length > 0) items.push({ label: node.label, children });
+      if (children.length > 0) items.push({ label: node.label, children, collapsed: node.collapsed });
     } else {
       const resolved = resolveChild(node);
       if (resolved) items.push(resolved);
@@ -544,12 +673,23 @@ function resolveDeclaredLayout(layout: NavLayout, opts: ResolveNavLayoutOptions)
  *  each legacy adminNav section in declaration order; `help` is deliberately left unreferenced, so it
  *  resolves into `fallback`. No section wraps the engine or legacy-flat nodes: at the sizes a
  *  zero-config site actually reaches, a section header pays a category-decision cost the flat list
- *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1).
+ *  never earns back (docs/superpowers/specs/2026-07-14-admin-reorganization-design.md, §1). A legacy
+ *  entry's href is gated by the access map the same way a declared navLayout entry's is ({@link
+ *  hrefReachable}), so the two arrangements can never drift for the same map.
  */
 function resolveDefaultLayout(opts: ResolveNavLayoutOptions): ResolvedNavLayout {
-  const roleFiltered = filterNavByRole(opts.adminNav, opts.capability);
-  const legacyFlatEntries = roleFiltered.filter(isResolvedNavEntry);
-  const legacySections = roleFiltered.filter(isResolvedNavSection);
+  const roleFiltered = filterNavByRole(opts.adminNav, opts.editor.capability);
+  const accessFiltered: ResolvedNavItem[] = [];
+  for (const item of roleFiltered) {
+    if (isResolvedNavSection(item)) {
+      const children = item.children.filter((child) => hrefReachable(child.href, opts));
+      if (children.length > 0) accessFiltered.push({ label: item.label, children });
+    } else if (hrefReachable(item.href, opts)) {
+      accessFiltered.push(item);
+    }
+  }
+  const legacyFlatEntries = accessFiltered.filter(isResolvedNavEntry);
+  const legacySections = accessFiltered.filter(isResolvedNavSection);
 
   const items: ResolvedLayoutNode[] = [];
   for (const concept of opts.concepts) {

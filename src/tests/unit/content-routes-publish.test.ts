@@ -7,8 +7,11 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
+import { defineRoles } from '../../lib/auth/roles.js';
+import { defineAccess } from '../../lib/auth/access.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import { runtime as baseRuntime, postsConcept, contentEvent } from './_content-harness.js';
+import type { AccessMap } from '../../lib/auth/access.js';
+import { runtime as baseRuntime, postsConcept, contentEvent, backend as sharedBackend } from './_content-harness.js';
 
 const MANIFEST_PATH = 'src/content/.cairn/index.json';
 const ENTRY_PATH = 'src/content/posts/2026-05-01-hi.md';
@@ -36,6 +39,30 @@ function multiRuntime(): CairnRuntime {
     validate: () => ({ ok: true as const, data: { title: 'About' } }),
   });
   return r;
+}
+
+/** A custom two-role vocabulary, `pages` mapped away from `publisher`, for publishAllAction's
+ *  own access-map enforcement (Task 3 verification finding: publishAllAction batches across
+ *  every concept, so its own filter, not a single-target requireEngineAccess gate, is what
+ *  proves the invariant). */
+const PUBLISH_ALL_ROLES = defineRoles({ owner: 'owner', webmaster: 'editor', publisher: 'editor' });
+const PUBLISH_ALL_ACCESS = defineAccess(PUBLISH_ALL_ROLES, { pages: ['webmaster'] } as unknown as AccessMap);
+
+/** {@link multiRuntime} with `pages` mapped away from the `publisher` role. */
+function restrictedMultiRuntime(): CairnRuntime {
+  return { ...multiRuntime(), roles: PUBLISH_ALL_ROLES, access: PUBLISH_ALL_ACCESS };
+}
+
+/** A publishAllAction request driven by a named custom role rather than the harness's default editor. */
+function roleActionEvent(role: 'webmaster' | 'publisher') {
+  const url = 'https://t.example/admin/posts';
+  return {
+    url: new URL(url),
+    params: { concept: 'posts' },
+    request: new Request(url, { method: 'POST' }),
+    locals: { editor: { email: `${role}@t`, displayName: role, role, capability: 'editor' as const }, backend: sharedBackend },
+    platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
+  };
 }
 
 /** A single undated pages concept, so an entry's address is its own path-derived permalink. */
@@ -475,6 +502,41 @@ describe('publishAllAction', () => {
 
     // The branch survives a failed commit, so the edits are not lost.
     expect(gh.branches.has(BRANCH)).toBe(true);
+  });
+
+  it('publishes only the pending entries the access map admits, leaving the rest pending', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
+    });
+    gh.install();
+    const routes = createContentRoutes(restrictedMultiRuntime());
+
+    // publisher cannot reach 'pages' (mapped to webmaster only), so its batch publishes just posts.
+    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('publisher') as never));
+    expect(location).toBe('/admin/posts?publishedAll=1');
+    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', PAGE_PATH)).toBeNull();
+    expect(gh.branches.has(BRANCH)).toBe(false);
+    expect(gh.branches.has(PAGE_BRANCH)).toBe(true);
+  });
+
+  it('publishes every mapped concept for a role the access map admits to all of them', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
+    });
+    gh.install();
+    const routes = createContentRoutes(restrictedMultiRuntime());
+
+    const location = await redirectedTo(routes.publishAllAction(roleActionEvent('webmaster') as never));
+    expect(location).toBe('/admin/posts?publishedAll=2');
+    expect(gh.read('main', ENTRY_PATH)).toBe(PENDING_MD);
+    expect(gh.read('main', PAGE_PATH)).toBe(PAGE_MD);
+    expect(gh.branches.has(BRANCH)).toBe(false);
+    expect(gh.branches.has(PAGE_BRANCH)).toBe(false);
   });
 });
 

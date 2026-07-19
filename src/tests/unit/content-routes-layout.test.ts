@@ -4,7 +4,10 @@ import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { runtime as baseRuntime, postsConcept, REPO, backend, contentEvent } from './_content-harness.js';
 import { defineRoles } from '../../lib/auth/roles.js';
+import { defineAccess } from '../../lib/auth/access.js';
+import type { AccessMap } from '../../lib/auth/access.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
+import type { Editor } from '../../lib/auth/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 import {
   resolveNavLayout,
@@ -38,6 +41,17 @@ const CLUB_ROLES = defineRoles({
 /** The same posts/pages runtime, but declaring CLUB_ROLES instead of the implicit default. */
 function runtimeWithRoles(): CairnRuntime {
   return { ...runtime(), roles: CLUB_ROLES };
+}
+
+/** A two-role vocabulary, `pages` mapped away from `publisher`, for the access-map filters over
+ *  shellPayload's pendingEntries and concepts (mirrors publishAllAction's own canReach filter). */
+const ACCESS_ROLES = defineRoles({ owner: 'owner', webmaster: 'editor', publisher: 'editor' });
+const ACCESS_MAP = defineAccess(ACCESS_ROLES, { pages: ['webmaster'] } as unknown as AccessMap);
+
+/** The same posts/pages runtime, but declaring ACCESS_ROLES and ACCESS_MAP instead of the
+ *  implicit default. */
+function runtimeWithAccess(): CairnRuntime {
+  return { ...runtime(), roles: ACCESS_ROLES, access: ACCESS_MAP };
 }
 
 function event(pathname: string, role: 'owner' | 'editor' | null, eventBackend: Backend = backend) {
@@ -362,8 +376,7 @@ function defaultNav(capability: 'owner' | 'editor' | 'none') {
     adminNav: RESOLVED_NAV_WITH_SECTION,
     concepts: NAV_WITH_SECTION_CONCEPTS,
     navMenuLabel: null,
-    capability,
-    role: capability,
+    editor: { email: 'inst@test', displayName: 'Inst', role: capability, capability } as Editor,
   });
 }
 
@@ -460,6 +473,69 @@ describe('shellPayload: navFilter', () => {
   });
 });
 
+// Task (admin access/attention fix batch): shellPayload's own pendingEntries and concepts must
+// derive from the same runtime.access authority publishAllAction's batch filter already reads, so
+// a restricted role never receives an id or a nav concept it is denied.
+describe('shellPayload: the access map filters pendingEntries and concepts', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+  afterEach(() => vi.restoreAllMocks());
+
+  it("filters pendingEntries by canReach, mirroring publishAllAction's own filter", async () => {
+    const gh = new GithubDouble({ main: {} });
+    gh.createBranch('cairn/posts/2026-05-hello', 'main');
+    gh.createBranch('cairn/pages/about', 'main');
+    gh.install();
+    const routes = createContentRoutes(runtimeWithAccess());
+
+    // 'pages' is mapped away from publisher (webmaster-only), so the restricted role's pending
+    // list excludes its draft while keeping its own reachable concept's draft.
+    const publisher = await routes.shellPayload(customRoleEvent('/admin/posts', 'publisher', 'editor') as never);
+    if (publisher.shell.public) throw new Error('expected authed shell');
+    expect(await publisher.shell.pendingEntries).toEqual([{ concept: 'posts', id: '2026-05-hello' }]);
+
+    // Owner capability bypasses the map entirely, so it still sees every pending draft.
+    const owner = await routes.shellPayload(customRoleEvent('/admin/posts', 'owner', 'owner') as never);
+    if (owner.shell.public) throw new Error('expected authed shell');
+    expect(await owner.shell.pendingEntries).toEqual([
+      { concept: 'pages', id: 'about' },
+      { concept: 'posts', id: '2026-05-hello' },
+    ]);
+  });
+
+  it('narrows the concepts array to what canReach admits, unchanged for owner and for a site with no access map', async () => {
+    const routes = createContentRoutes(runtimeWithAccess());
+
+    const publisher = await routes.shellPayload(
+      customRoleEvent('/admin/posts', 'publisher', 'editor', quickFailBackend()) as never,
+    );
+    if (publisher.shell.public) throw new Error('expected authed shell');
+    expect(publisher.shell.concepts).toEqual([{ id: 'posts', label: 'Posts' }]);
+    await publisher.shell.pendingEntries;
+
+    const owner = await routes.shellPayload(
+      customRoleEvent('/admin/posts', 'owner', 'owner', quickFailBackend()) as never,
+    );
+    if (owner.shell.public) throw new Error('expected authed shell');
+    expect(owner.shell.concepts).toEqual([
+      { id: 'posts', label: 'Posts' },
+      { id: 'pages', label: 'Pages' },
+    ]);
+    await owner.shell.pendingEntries;
+
+    // Zero-config: a site declaring no access map keeps today's unfiltered behavior.
+    const unmapped = createContentRoutes(runtime());
+    const { shell } = await unmapped.shellPayload(event('/admin/posts', 'editor', quickFailBackend()) as never);
+    if (shell.public) throw new Error('expected authed shell');
+    expect(shell.concepts).toEqual([
+      { id: 'posts', label: 'Posts' },
+      { id: 'pages', label: 'Pages' },
+    ]);
+    await shell.pendingEntries;
+  });
+});
+
 describe('indexRedirect', () => {
   it('redirects /admin to the first concept', () => {
     const routes = createContentRoutes(runtime());
@@ -516,5 +592,32 @@ describe('indexRedirect', () => {
       view: 'welcome',
       page: { displayName: 'Inst', siteName: 'Test Site' },
     });
+  });
+
+  it('redirects a role with no declared home to its first reachable concept, not the site-wide first', () => {
+    // 'pages' is mapped away from publisher (webmaster-only); with pages first in the concepts
+    // array a naive site-wide-first landing would send publisher to a 403 dead-end. Flip the
+    // order (pages, posts) to prove the redirect really consults canReach rather than happening
+    // to land on index 0 because posts was already first.
+    const rt = runtimeWithAccess();
+    rt.concepts = [rt.concepts[1], rt.concepts[0]]; // pages, posts
+    const flippedRoutes = createContentRoutes(rt);
+    const publisherEvent = customRoleEvent('/admin', 'publisher', 'editor');
+    try {
+      flippedRoutes.indexRedirect(publisherEvent as never);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { status: number; location: string }).status).toBe(307);
+      expect((err as { location: string }).location).toBe('/admin/posts');
+    }
+
+    // A role that can reach the site-wide first concept (pages, for webmaster) still lands there.
+    const webmasterEvent = customRoleEvent('/admin', 'webmaster', 'editor');
+    try {
+      flippedRoutes.indexRedirect(webmasterEvent as never);
+      throw new Error('expected a redirect');
+    } catch (err) {
+      expect((err as { location: string }).location).toBe('/admin/pages');
+    }
   });
 });

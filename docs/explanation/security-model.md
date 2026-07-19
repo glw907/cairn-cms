@@ -1,15 +1,16 @@
 # The security model
 
-cairn draws three trust boundaries around a site: who may open the admin, what a save may write
-to the repo, and what an author's markdown may render in a visitor's browser. Each boundary below
-states the guarantee, the risk it leaves uncovered, and where the full mechanics live when a
-sibling page owns them.
+cairn draws trust boundaries around a site: who may open the admin, what each signed-in role may
+reach once inside, what a save may write to the repo, and what an author's markdown may render in
+a visitor's browser. Each boundary below states the guarantee, the risk it leaves uncovered, and
+where the full mechanics live when a sibling page owns them.
 
 ## The boundary table
 
 | Boundary | cairn handles | Your site handles |
 | --- | --- | --- |
 | Who may edit | Magic-link delivery, single-use tokens, session rows, CSRF on every unsafe request | The allowlist itself (who holds which of your declared roles), and swapping in a different identity provider if you want one |
+| What each role may reach | Enforcing the declared [access map](../reference/core.md#access-map) at the route, and deriving sidebar visibility from the same check | Declaring which roles reach which screens and routes |
 | What a save can write | Author/committer separation, branch confinement, path confinement to your declared concepts | Which repo the GitHub App installs on, branch protection on `main`, who reviews what lands there |
 | What an author's markdown can render | The sanitize floor (scripts, event handlers, dangerous URL schemes stripped before delivery) | Your own `render()` function and any component registry you add to it |
 
@@ -56,6 +57,30 @@ framing, no sniffing, no referrer, HSTS.
 **Residual risk.** The email account is now the credential. Anyone who reads an editor's inbox
 in the ten minutes after a request can claim their session, which is the trade every magic-link
 system makes in exchange for never asking a non-technical editor to manage a password.
+
+## What each role may reach
+
+Authenticating only decides whether a session exists; a site with more than one kind of editor
+also needs to decide what that session may do. cairn's floor is the three capability levels
+(owner, editor, none): an `owner`-capability role reaches everything, a `none`-capability role
+reaches nothing cairn's own surfaces guard, and an `editor`-capability role reaches every one of
+cairn's own screens unless the site narrows it further. A site declares that narrowing once, as an
+[access map](../reference/core.md#access-map): a target, a screen id or one of its own
+`/admin`-prefixed routes, to the role names admitted to it.
+
+The map's authority is one function, `canReach`, and every enforcement point and every visibility
+check reads it: the engine's own route gates (a direct URL to a restricted screen answers 403,
+never a silent redirect), the `requireAccess` helper a site's own custom route calls, and the
+sidebar resolver. Reading the same function everywhere is the guarantee, not an implementation
+convenience: a system that decides "what renders" and "what's allowed" in two separately
+maintained places is how a hidden menu item quietly becomes an open, unguarded route, a
+vulnerability class documented widely enough to have its own name (hide-in-UI-is-not-authorization,
+OWASP A01). Nav placement is never the authorization here; the map, checked at the route, is.
+
+**Residual risk.** The map narrows by role name, not by row: it can say "a club-admin reaches the
+money screens" but not "this instructor reaches only their own class," since that needs state the
+map doesn't carry (which class, which instructor). A site that needs row-level scoping still owns
+that check itself, inside the route the map already gated to the right role.
 
 ## What a save can write
 

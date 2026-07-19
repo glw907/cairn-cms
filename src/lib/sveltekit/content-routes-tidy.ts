@@ -4,7 +4,7 @@
 import { fail } from '@sveltejs/kit';
 import { DEFAULT_TIDY_MODEL, resolveTidyConventions } from '../nav/site-config.js';
 import { log } from '../log/index.js';
-import { requireEditor } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus } from './content-routes-context.js';
@@ -82,6 +82,10 @@ export function createTidyActions(ctx: ContentRoutesContext) {
       return fail(403, { error: 'csrf' } satisfies TidyFailure);
     }
     const editor = requireEditor(event);
+    // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
+    // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
+    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action.
+    if (event.params.concept) requireEngineAccess(ctx.runtime.access, editor, event.params.concept);
 
     // Fail-fast: refuse before any model call if tidy is off or the key is missing. The model is read
     // from config (a stated fact in this tier); a missing key is the "not enabled" refusal. No secret is

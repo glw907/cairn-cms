@@ -38,6 +38,7 @@ export function composeRuntime({ adapter, siteConfig }: ComposeInput): CairnRunt
     siteName: siteConfig.siteName,
     concepts: normalizeConcepts(adapter.content),
     roles: adapter.roles,
+    access: adapter.access,
     backend: adapter.backend,
     sender: adapter.email,
     supportContact: adapter.editor?.supportContact ?? DEFAULT_SUPPORT_CONTACT,

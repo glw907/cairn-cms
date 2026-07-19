@@ -75,6 +75,81 @@ a broken sidebar. A site entry inside the tree validates the same way an `adminN
 bundled icon allowlist, the built-in href collision); see [the navLayout
 seam](../reference/sveltekit.md#the-navlayout-seam) for the full contract.
 
+`roles` is a visibility hint, not enforcement: it decides what renders in the sidebar, the same
+courtesy `hidden: true` is, and says nothing about what a direct URL visit is allowed to do. For a
+role that should actually be refused at the route, declare [the access
+map](./restrict-admin-access.md) instead (or alongside it): a site with a real multi-role
+authorization story reaches for the map, and `roles` stays for the lighter case of just steering
+what a role notices.
+
+## Start a section collapsed
+
+A section renders open by default, the same as before `navLayout` existed. Declare `collapsed:
+true` to start it closed instead, for a section most editors open rarely:
+
+```ts
+{
+  label: 'Site',
+  collapsed: true,
+  children: [{ screen: 'media' }, { screen: 'vocabulary' }, { screen: 'settings' }],
+},
+```
+
+This only sets the *starting* state for a visitor who has never touched a section header. The
+`cairn-admin-nav-collapsed` cookie remembers each visitor's own toggles once they touch any
+header, and from then on the cookie wins entirely, in both directions, even over a declared
+default. A section you add later, after a returning visitor's cookie already exists, renders open
+regardless of its own `collapsed` declaration, since the cookie is authoritative from the moment
+it exists. There's no way to force a section open or closed for a visitor who has already made
+their own choice, by design: a declared default is a first impression, not a standing override.
+
+## Override an engine screen's icon
+
+Every concept shares one document icon by default, so two dated concepts (Posts and, say,
+Bulletins) look identical in the sidebar at a glance. Give one an `icon` override, any name from
+the bundled [`AdminNavIcon`](../reference/sveltekit.md#adminnavicon) allowlist:
+
+```ts
+{ screen: 'bulletins', icon: 'megaphone' },
+```
+
+The override replaces only the icon; the door's label and href stay engine-owned unless you also
+set `label`. An unknown name throws the same allowlist error a site entry's own `icon` does.
+
+## Badge a nav entry with pending work
+
+A site computes its own pending-work counts, such as an unreviewed signups queue, and the shell
+renders them as quiet pills on the matching nav entry. Declare an `attention` function beside your
+other content-routes dependencies:
+
+```ts
+// src/lib/cairn.server.ts
+import { composeRuntime } from '@glw907/cairn-cms';
+import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
+import { cairn, siteConfig } from './cairn.config.js';
+import { db } from './club/db.js';
+
+export const runtime = composeRuntime({ adapter: cairn, siteConfig });
+export const admin = createCairnAdmin(runtime, {
+  attention: async ({ editor }) => {
+    const pending = await db.assetRequests.countPendingFor(editor.role);
+    return [{ href: '/admin/club/assets', count: pending, label: 'pending requests' }];
+  },
+});
+```
+
+The engine calls this once per request, after the sidebar is already resolved and filtered, and
+drops any item whose `href` doesn't match a nav entry the current session can see, so a count
+never leaks to a role that can't act on it. A zero or negative `count` renders no pill at all. A
+collapsed section's header shows the sum of its visible children's counts, computed live from the
+same items, and that header sum disappears once the section opens, since each child's own pill is
+already visible. "Once per request" means every admin load and every client-side navigation
+between admin screens, so keep this function fast. A thrown error fails the whole shell load
+rather than degrading quietly, so catch a transient failure inside your own callback and return
+an empty array if you want the sidebar to render without its counts instead. See [the attention
+seam](../reference/sveltekit.md#the-attention-seam) for the full contract, including the
+accessibility shape (the count lives in the entry's accessible name, not on the pill itself).
+
 ## The principles
 
 `navLayout` enforces structure. It has no opinion of its own about what a good sidebar looks
@@ -142,10 +217,11 @@ To remove a door on purpose instead, mark it `hidden: true`:
 
 The route stays live; only the sidebar link disappears. That's deliberate: **nav placement is
 never authorization.** Hiding a screen from the sidebar doesn't stop a signed-in editor from typing
-its URL directly. Gate the route itself with `requireSession`, `requireEditor`, `requireOwner`, or
-your own check, the way [Add a custom admin screen](./add-a-custom-admin-screen.md) covers. The
-`roles` visibility on a `navLayout` node is the same kind of courtesy `hidden` is: it decides what
-renders, not what's allowed.
+its URL directly. Gate the route itself with `requireAccess` (the recommended path once you've
+declared [an access map](./restrict-admin-access.md)), `requireSession`, `requireEditor`,
+`requireOwner`, or your own check, the way [Add a custom admin screen](./add-a-custom-admin-screen.md)
+covers. The `roles` visibility on a `navLayout` node is the same kind of courtesy `hidden` is: it
+decides what renders, not what's allowed.
 
 ## Verify it
 
@@ -158,11 +234,15 @@ who should see it.
 ## Related reference
 
 [The navLayout seam](../reference/sveltekit.md#the-navlayout-seam) documents every node type,
-`validateNavLayout`, and `resolveNavLayout` in full. [The custom admin-nav
-seam](../reference/sveltekit.md#the-custom-admin-nav-seam) documents `AdminNavEntry` and its icon
-allowlist, the shape a `navLayout` site entry reuses. [`ContentRoutesDeps`
-`navFilter`](../reference/sveltekit.md#contentroutesdeps) is the per-request seam for a grant that
-depends on state outside cairn's own role vocabulary, composed after every gate `navLayout` already
-applies. [Give a role its own admin area](./give-a-role-its-own-admin-area.md) covers declaring a
-role vocabulary with `defineRoles` in full, the prerequisite for a `roles` list naming anything
+`validateNavLayout`, and `resolveNavLayout` in full, including `collapsed` and the `icon` override.
+[The custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam) documents
+`AdminNavEntry` and its icon allowlist, the shape a `navLayout` site entry reuses.
+[`ContentRoutesDeps` `navFilter`](../reference/sveltekit.md#contentroutesdeps) is the per-request
+seam for a grant that depends on state outside cairn's own role vocabulary, composed after every
+gate `navLayout` already applies. [The attention seam](../reference/sveltekit.md#the-attention-seam)
+documents the `attention` dep and `AttentionItem` in full. [Restrict admin access by
+role](./restrict-admin-access.md) covers `defineAccess` and `requireAccess`, the recommended path
+for enforcement rather than the `roles` visibility hint. [Give a role its own admin
+area](./give-a-role-its-own-admin-area.md) covers declaring a role vocabulary with `defineRoles`
+in full, the prerequisite for a `roles` list naming anything
 beyond `owner` and `editor`.

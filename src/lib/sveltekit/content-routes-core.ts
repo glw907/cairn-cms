@@ -33,13 +33,14 @@ import { mediaLibraryEntry } from '../media/library-entry.js';
 import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
-import { requireSession, requireEditor, isPublicAdminPath } from './guard.js';
-import { resolveNavLayout, type ResolvedNavLayout } from './admin-nav.js';
+import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
+import { canReach } from '../auth/access.js';
+import { resolveNavLayout, type ResolvedNavLayout, type ResolvedLayoutChild } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
-import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
+import type { ContentRoutesContext, ContentEvent, AttentionItem } from './content-routes-context.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -78,8 +79,13 @@ export type AdminShellData =
       pathname: string;
       /** The admin theme resolved for SSR: the persisted cookie choice, or the light default. */
       theme: 'cairn-admin' | 'cairn-admin-dark';
-      /** The nav group labels the user has collapsed, from the persisted cookie. Empty when none. */
-      collapsedNav: string[];
+      /**
+       * The nav group labels the user has collapsed, decoded from the persisted cookie. Null
+       *  when no cookie exists yet (the shell then seeds from each section's declared
+       *  `collapsed: true` default); an array, including an empty one, means the cookie exists
+       *  and its decoded set wins entirely, even over a declared default, in both directions.
+       */
+      collapsedNav: string[] | null;
       /** The session's CSRF double-submit token, handed to descendant forms through context. */
       csrf: string;
       /**
@@ -88,6 +94,13 @@ export type AdminShellData =
        *  action rather than lying.
        */
       pendingEntries: Promise<{ concept: string; id: string }[] | null>;
+      /**
+       * Per-session pending-work counts from the site's own `deps.attention`, keyed by the visible
+       *  nav href they decorate; an entry absent from the resolved-and-filtered `nav` (an engine
+       *  door or a site entry alike) never appears here, so a count cannot leak to a role that
+       *  cannot see it. Empty when the site configures no dep.
+       */
+      attention: Record<string, { count: number; label: string }>;
     };
 
 /** One row in a concept's list view. */
@@ -347,6 +360,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
 function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
   const editor = requireEditor(event);
   const concept = conceptOf(runtime, event.params);
+  requireEngineAccess(runtime.access, editor, concept.id);
   const id = event.params.id ?? '';
   if (!isValidId(id)) throw error(400, 'Invalid entry id');
   return { editor, concept, id };
@@ -395,10 +409,15 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       return { shell: { public: true, siteName: runtime.siteName, theme } };
     }
     const editor = requireSession(event);
+    // `undefined` means no cookie was ever set (seed from the declared defaults); any other
+    // value, including the empty string a visitor produces by reopening every declared-collapsed
+    // section, means the cookie exists and its decoded set (however empty) wins outright. Do not
+    // collapse this to a truthiness check: an empty string is a present, meaningful cookie value.
     const cookieCollapsed = event.cookies?.get('cairn-admin-nav-collapsed');
-    const collapsedNav = cookieCollapsed
-      ? cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean)
-      : [];
+    const collapsedNav =
+      cookieCollapsed === undefined
+        ? null
+        : cookieCollapsed.split(',').map((part) => decodeURIComponent(part)).filter(Boolean);
     // A none-capability session sees no publish surface (every engine content route already 403s
     // it, and the shell's "Publish site (N)" action has nothing for it to act on), so the count is
     // not theirs to read: skip the backend listing entirely rather than streaming a real pending
@@ -412,9 +431,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         : Promise.resolve()
             .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
             .then((names) =>
+              // Filter by canReach, the same access authority publishAllAction applies to its
+              // batch, so a restricted role never receives a denied id and the "Publish site (N)"
+              // count never counts an entry publishAllAction would skip.
               names.flatMap((name) => {
                 const entry = pendingEntryOf(name);
-                return entry ? [{ concept: entry.concept.id, id: entry.id }] : [];
+                if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
+                return [{ concept: entry.concept.id, id: entry.id }];
               }),
             )
             .catch((err): { concept: string; id: string }[] | null => {
@@ -432,26 +455,66 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       adminNav: ctx.adminNav,
       concepts: runtime.concepts.map((c) => ({ id: c.id, label: c.label, routing: c.routing })),
       navMenuLabel: runtime.navMenu?.label ?? null,
-      capability,
-      role: editor.role,
+      access: runtime.access,
+      editor,
     });
     const nav: ResolvedNavLayout = ctx.deps.navFilter
       ? { ...resolved, items: await ctx.deps.navFilter(resolved.items, { editor, event }) }
       : resolved;
+    // The site's own attention dep, awaited exactly once (after nav resolution and navFilter, both
+    // of which already ran above), then filtered against the same resolved-and-filtered visible
+    // href set so a count can never leak past a nav entry the session cannot see: an unreachable
+    // queue's item is dropped before any rendering or summing.
+    const attentionRaw: AttentionItem[] = ctx.deps.attention ? await ctx.deps.attention({ editor, event }) : [];
+    const visibleHrefs = collectVisibleHrefs(nav);
+    const attention: Record<string, { count: number; label: string }> = {};
+    for (const item of attentionRaw) {
+      if (item.count <= 0) continue;
+      if (!visibleHrefs.has(item.href)) continue;
+      if (item.href in attention) continue; // first wins; a later duplicate is silently dropped
+      attention[item.href] = { count: item.count, label: item.label?.trim() || 'pending items' };
+    }
     return {
       shell: {
         public: false,
         siteName: runtime.siteName,
         user: { displayName: editor.displayName, email: editor.email, role: editor.role, capability },
-        concepts: capability === 'none' ? [] : runtime.concepts.map((c) => ({ id: c.id, label: c.label })),
+        concepts:
+          capability === 'none'
+            ? []
+            : runtime.concepts
+                .filter((c) => canReach(runtime.access, editor, c.id))
+                .map((c) => ({ id: c.id, label: c.label })),
         nav,
         pathname: event.url.pathname,
         theme,
         collapsedNav,
         csrf: event.cookies ? issueCsrfToken({ url: event.url, cookies: event.cookies }) : '',
         pendingEntries,
+        attention,
       },
     };
+  }
+
+  /**
+   * Every href a resolved nav renders as a clickable entry: each top-level child (a site entry or
+   *  an engine door), each section's children, and the trailing `fallback` group of engine screens
+   *  the tree never referenced (still rendered in the shell's foot slot, so still visible). The
+   *  attention filter reads this set so a count never survives against an href the session cannot
+   *  actually see.
+   */
+  function collectVisibleHrefs(nav: ResolvedNavLayout): Set<string> {
+    const hrefs = new Set<string>();
+    const visit = (child: ResolvedLayoutChild) => hrefs.add(child.href);
+    for (const node of nav.items) {
+      if ('children' in node) {
+        for (const child of node.children) visit(child);
+      } else {
+        visit(node);
+      }
+    }
+    for (const child of nav.fallback) visit(child);
+    return hrefs;
   }
 
   /**
@@ -498,7 +561,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       throw redirect(303, `${home}${suffix}`);
     }
     if (editor.capability !== 'none') {
-      const first = runtime.concepts[0];
+      // The first concept the session can reach, not the site-wide first: a role mapped away
+      // from that one would otherwise land on a 403 dead-end.
+      const first = runtime.concepts.find((c) => canReach(runtime.access, editor, c.id));
       if (!first) throw error(404, 'No content types configured');
       throw redirect(307, `/admin/${first.id}${suffix}`);
     }
@@ -565,8 +630,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  to an inline error, not a thrown 500.
    */
   async function listLoad(event: ContentEvent): Promise<ListData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const formError = event.url.searchParams.get('error');
     const publishedAllRaw = event.url.searchParams.get('publishedAll');
     const publishedAll = publishedAllRaw !== null && /^\d+$/.test(publishedAllRaw) ? Number(publishedAllRaw) : null;
@@ -611,8 +677,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
   async function createAction(event: ContentEvent): Promise<never> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const form = await event.request.formData();
     const rawTitle = String(form.get('title') ?? '').trim();
     const slug = String(form.get('slug') ?? '').trim() || slugify(rawTitle);
@@ -654,8 +721,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
   async function editLoad(event: ContentEvent): Promise<EditData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const id = event.params.id ?? '';
     if (!isValidId(id)) throw error(400, 'Invalid entry id');
     const isNew = event.url.searchParams.get('new') === '1';
@@ -1173,7 +1241,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Publish every pending entry site-wide: one atomic commit on main carrying each branch's
    *  entry file plus the manifest with every row upserted, then delete the consumed branches.
    *  Mounted on the concept list shim, but the topbar posts here from anywhere, so the route's
-   *  concept param is ignored and the redirect lands on the first configured concept.
+   *  concept param is ignored and the redirect lands on the first configured concept. This is
+   *  the one engine action that spans every concept in a single call, so it cannot gate with a
+   *  single `requireEngineAccess(runtime.access, editor, target)` call the way every other
+   *  concept route does: instead each pending entry is filtered by `canReach` against its own
+   *  concept id, so a role mapped away from a concept never has that concept's entries published
+   *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
    */
   async function publishAllAction(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
@@ -1183,11 +1256,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const listPage = `/admin/${first.id}`;
 
     // Each cairn/ ref names a pending entry; the shared predicate skips a stray ref rather
-    // than failing the whole batch on it.
+    // than failing the whole batch on it. A concept the access map denies this editor is
+    // skipped the same way: this batch only ever acts on entries the editor could also reach
+    // one at a time through the concept's own publish action.
     const names = await backend.listBranches(PENDING_PREFIX);
     const pending = names.flatMap((name) => {
       const entry = pendingEntryOf(name);
-      return entry ? [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }] : [];
+      if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
+      return [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }];
     });
 
     // Read every branch in parallel, capturing each head sha BEFORE its file read: the sha
@@ -1402,6 +1478,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
+    requireEngineAccess(runtime.access, editor, concept.id);
     const form = await event.request.formData();
     const id = String(form.get('id') ?? '');
     if (!isValidId(id)) throw error(400, 'Invalid entry id');

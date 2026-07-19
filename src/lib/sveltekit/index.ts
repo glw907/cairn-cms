@@ -1,6 +1,6 @@
 // SvelteKit server logic consumed by site route shims: the guard plus the auth, editor,
 // content, and health route factories and functions.
-export { createAuthGuard, requireSession, requireOwner, requireEditor } from './guard.js';
+export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess } from './guard.js';
 export { createAuthRoutes, type AuthRoutesConfig, type RequestResult } from './auth-routes.js';
 export { createEditorRoutes } from './editors-routes.js';
 export { createContentRoutes } from './content-routes.js';
@@ -21,6 +21,7 @@ export type {
   MediaLibraryData,
   ContentEvent,
   ContentRoutesDeps,
+  AttentionItem,
   SaveFailure,
   DeleteRefusal,
   RenameFailure,

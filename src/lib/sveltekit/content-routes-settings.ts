@@ -18,7 +18,7 @@ import {
 import type { SiteConfig, TidyConventions, VocabularyEntry } from '../nav/site-config.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { buildTagUsageIndex } from '../content/tag-usage-index.js';
-import { requireEditor } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import { cachedProbeResult } from './tidy-key-health.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
@@ -181,7 +181,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  Anthropic SDK's own multi-minute default.
    */
   async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'settings');
     const tidy = runtime.tidy;
     const tidyEnabled = tidy?.enabled === true;
     const keyPresent = keyConfigured(event);
@@ -221,6 +222,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    */
   async function settingsSave(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
     // surface to commit), the server half of the truthful gate.
     if (runtime.tidy?.enabled !== true) throw error(404, 'Tidy is not enabled for this site');
@@ -278,7 +280,8 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
    */
   async function vocabularyLoad(event: ContentEvent): Promise<VocabularyLoadData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'vocabulary');
     const backend = ctx.resolveBackend(event);
 
     let vocabulary: VocabularyEntry[] = [];
@@ -338,6 +341,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    */
   async function vocabularySave(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'vocabulary');
 
     const form = await event.request.formData();
     let posted: VocabularyEntry[];

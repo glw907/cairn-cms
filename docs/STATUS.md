@@ -36,15 +36,24 @@ deployed behind main-loop render reads, live routes verified. Record: the spec, 
 + post-mortem (`docs/superpowers/plans/2026-07-18-docs-on-site-pipeline.md`), and the
 banked Topo review (`docs/internal/2026-07-18-topo-inspiration-review.md`).
 
-**NEXT (fresh session): the Topo design pass.** Open with
-`docs/internal/2026-07-18-topo-inspiration-review.md`; it carries the four-system
-synthesis, the devices-to-absorb table, the Starlight anatomy checklist, and section 5's
-open design questions for Geoff. The ruled gate: mockup candidates go to Geoff BEFORE any
-build. After Topo: the scaffolder (step 6). Resume prompt: "Open the Topo design pass:
-read cairn-cms docs/internal/2026-07-18-topo-inspiration-review.md and take section 5's
-open questions to Geoff, then mockup candidates." Launch in ~/Projects/cairn-cms. Check
-the Fable window state at session start (the post-Fable doctrine says Opus conducts after
-it closes; verify online).
+**NEXT (immediate): execute the admin access-and-attention pass.** The spec
+(`docs/superpowers/specs/2026-07-18-admin-access-and-attention-design.md`, Geoff-approved
+2026-07-18 after a four-sweep prior-art survey) and the plan
+(`docs/superpowers/plans/2026-07-18-admin-access-and-attention.md`, tasks T1-T10) are
+committed. Method: cairn-pass, `cairn-implementer` dispatches task-by-task, test-first,
+full gate per task, on the `admin-access-attention` worktree off `main` (create it at
+pass start). ASC's admin-sidebar-2 initiative waits on this window's release (consumer
+brief: `aksailingclub-org/docs/2026-07-18-cairn-sidebar-seams-consumer-brief.md`), so a
+cut is expected at close via `cairn-release`. Resume prompt: "Execute the admin
+access-and-attention plan (docs/superpowers/plans/2026-07-18-admin-access-and-attention.md)."
+Launch in ~/Projects/cairn-cms.
+
+**QUEUED after this pass: the Topo design pass.** Open with
+`docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
+table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
+candidates go to Geoff BEFORE any build). After Topo: the scaffolder (step 6). Check the
+Fable window state at session start (post-Fable doctrine: Opus conducts after it closes;
+verify online).
 
 **Carry-forwards (live):** NEW from this pass: mermaid diagrams near-illegible at 320/390
 (candidate: a tap-to-expand treatment in the Topo pass); section-index breadcrumbs

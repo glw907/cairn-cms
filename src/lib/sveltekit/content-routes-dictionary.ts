@@ -7,7 +7,7 @@ import { log } from '../log/index.js';
 import type { Backend } from '../github/backend.js';
 import { parseDictionary, mergeDictionaryWords, serializeDictionary, isValidDictionaryWord } from '../content/site-dictionary.js';
 import { validateCsrfHeader } from './csrf.js';
-import { requireEditor } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
 import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 
@@ -96,6 +96,10 @@ export function createDictionaryActions(ctx: ContentRoutesContext) {
       return fail(403, { error: 'csrf' } satisfies DictionaryAddFailure);
     }
     const editor = requireEditor(event);
+    // The edit view always carries the concept in its params (cairn-admin.ts's contentEvent), so
+    // this gates the same as editLoad/saveAction on the entry's own concept, closing the deny-at-
+    // the-route gap a mapped-away concept would otherwise leave in this edit-screen action.
+    if (event.params.concept) requireEngineAccess(ctx.runtime.access, editor, event.params.concept);
 
     let payload: { word?: unknown; words?: unknown };
     try {

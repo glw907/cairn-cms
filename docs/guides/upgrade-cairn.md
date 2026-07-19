@@ -49,6 +49,20 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: the access map, collapse defaults, icon overrides, attention badges
+
+A site can now declare `defineAccess(roles, map)`, one per-role map over cairn's own admin screens
+and its own `/admin` routes, enforced at the route through `requireAccess` and the engine's own
+gates, and read by the sidebar resolver for visibility, so the two can never say two different
+things: see [Restrict admin access by role](./restrict-admin-access.md). `NavLayoutSection` gains
+a declared `collapsed` starting state, `NavLayoutEngineRef` gains an `icon` override, the bundled
+icon allowlist widens from nine names to twenty-seven, and a new `attention` dependency renders
+per-session pending-work pills on the sidebar: see [Organize your admin
+nav](./organize-your-admin-nav.md).
+
+Consumers must: nothing. Every addition here is additive, off by default, and a site that declares
+none of it sees no behavior change.
+
 ## 0.87.4: docs in the tarball, renderDocument, a help default (non-breaking)
 
 A drop-in bump. `createRenderer` gains `renderDocument`, which also returns the page's

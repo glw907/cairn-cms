@@ -10,17 +10,19 @@ function data(canManageEditors: boolean, navLabel: string | null = null, pathnam
   const role = canManageEditors ? ('owner' as const) : ('editor' as const);
   const capability = role;
   const concepts = [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
+  const editor = { displayName: 'Ed', email: 'ed@example.com', role, capability };
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, adminNav: [], concepts, navMenuLabel: navLabel, capability, role }),
+    nav: resolveNavLayout({ layout: undefined, adminNav: [], concepts, navMenuLabel: navLabel, editor }),
     pathname,
     theme: 'cairn-admin' as const,
     collapsedNav: [] as string[],
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention: {} as Record<string, { count: number; label: string }>,
   };
 }
 

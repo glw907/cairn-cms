@@ -27,20 +27,23 @@ function data(
   pathname = '/admin/posts',
   capability: 'owner' | 'editor' | 'none' = canManageEditors ? 'owner' : 'editor',
   adminNav: ResolvedNavItem[] = [],
+  attention: Record<string, { count: number; label: string }> = {},
 ) {
   const role = canManageEditors ? ('owner' as const) : ('editor' as const);
   const concepts = capability === 'none' ? [] : [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
+  const editor = { displayName: 'Ed', email: 'ed@example.com', role, capability };
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    user: editor,
     concepts,
-    nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, capability, role }),
+    nav: resolveNavLayout({ layout: undefined, adminNav, concepts, navMenuLabel: navLabel, editor }),
     pathname,
     theme: 'cairn-admin' as const,
-    collapsedNav: [] as string[],
+    collapsedNav: null as string[] | null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention,
   };
 }
 
@@ -55,23 +58,33 @@ function dataWithLayout(
     role?: 'owner' | 'editor';
     navMenuLabel?: string | null;
     concepts?: { id: string; label: string }[];
+    /**
+     * Simulates the persisted `cairn-admin-nav-collapsed` cookie's decoded set: `null` (the
+     *  default) means no cookie exists; an array, including an empty one, means the cookie
+     *  exists and wins over any declared default.
+     */
+    collapsedNav?: string[] | null;
+    /** Simulates the site's own `attention` dep output, already filtered and keyed by href. */
+    attention?: Record<string, { count: number; label: string }>;
   } = {},
 ) {
   const capability = overrides.capability ?? 'owner';
   const role = overrides.role ?? (capability === 'owner' ? 'owner' : 'editor');
   const concepts = overrides.concepts ?? [{ id: 'posts', label: 'Posts' }, { id: 'pages', label: 'Pages' }];
   const navMenuLabel = overrides.navMenuLabel ?? null;
+  const editor = { displayName: 'Ed', email: 'ed@example.com', role, capability };
   return {
     public: false as const,
     siteName: 'Test Site',
-    user: { displayName: 'Ed', email: 'ed@example.com', role, capability },
+    user: editor,
     concepts: capability === 'none' ? [] : concepts,
-    nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, capability, role }),
+    nav: resolveNavLayout({ layout, adminNav: [], concepts, navMenuLabel, editor }),
     pathname: overrides.pathname ?? '/admin/posts',
     theme: 'cairn-admin' as const,
-    collapsedNav: [] as string[],
+    collapsedNav: overrides.collapsedNav ?? null,
     csrf: 'test-csrf-token',
     pendingEntries: Promise.resolve(null) as Promise<{ concept: string; id: string }[] | null>,
+    attention: overrides.attention ?? {},
   };
 }
 
@@ -866,6 +879,102 @@ describe('CairnAdminShell', () => {
     expect(Array.from(foot!.querySelectorAll('a')).map((a) => a.textContent?.trim())).toEqual(['Help']);
   });
 
+  it('renders an engine ref icon override in place of the engine-owned glyph', async () => {
+    const layout: NavLayout = [{ screen: 'settings', icon: 'banknote' }];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
+    expect(settingsLink.querySelector('svg.lucide-banknote')).not.toBeNull();
+    expect(settingsLink.querySelector('svg.lucide-settings')).toBeNull();
+  });
+
+  it('renders the engine-owned glyph when the ref declares no icon override', async () => {
+    const layout: NavLayout = [{ screen: 'settings' }];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+    const settingsLink = sidebar.getByRole('link', { name: 'Settings' }).element() as HTMLElement;
+    expect(settingsLink.querySelector('svg.lucide-settings')).not.toBeNull();
+  });
+
+  it('renders a section declared collapsed: true closed when no cookie exists', async () => {
+    const layout: NavLayout = [
+      { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
+    ];
+    const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const content = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Content')!;
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(content.open).toBe(true);
+    expect(site.open).toBe(false);
+  });
+
+  it('lets a persisted cookie override the declared collapse default in both directions', async () => {
+    const layout: NavLayout = [
+      { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', children: [{ screen: 'settings' }] },
+    ];
+    // The cookie reopens the declared-collapsed "Content" and closes the declared-open "Site":
+    // its set wins entirely, regardless of what the declaration says either way.
+    const screen = render(CairnAdminShell, {
+      data: dataWithLayout(layout, { collapsedNav: ['Site'] }),
+      children: child,
+    });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const content = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Content')!;
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(content.open).toBe(true);
+    expect(site.open).toBe(false);
+  });
+
+  it('lets an empty persisted cookie reopen every declared-collapsed section (a present cookie, not an absent one)', async () => {
+    // A visitor who reopens the only declared-collapsed section writes the cookie to the empty
+    // string; the decoded set is empty, but the cookie itself exists, so it must still win over
+    // the declared default rather than being mistaken for no cookie at all.
+    const layout: NavLayout = [
+      { label: 'Content', children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      { label: 'Site', collapsed: true, children: [{ screen: 'settings' }] },
+    ];
+    const screen = render(CairnAdminShell, {
+      data: dataWithLayout(layout, { collapsedNav: [] }),
+      children: child,
+    });
+    const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+    const details = Array.from(sidebar.querySelectorAll('details'));
+    const site = details.find((d) => d.querySelector('summary')?.textContent?.trim() === 'Site')!;
+    expect(site.open).toBe(true);
+  });
+
+  it('still persists a toggle away from a declared-open starting state to the cookie', async () => {
+    // "Site" declares no collapse default (open, today's behavior); closing it from that starting
+    // state must still write the cookie, exactly as it does for the flat default arrangement. The
+    // cookie writer scopes to path=/admin (production correctness), invisible to document.cookie on
+    // the test page's own "/" path, so the write is captured through the setter instead (the same
+    // technique the theme-cookie test above uses).
+    const writes: string[] = [];
+    Object.defineProperty(document, 'cookie', {
+      configurable: true,
+      get: () => '',
+      set: (value: string) => {
+        writes.push(value);
+      },
+    });
+    try {
+      const layout: NavLayout = [{ label: 'Site', children: [{ screen: 'settings' }] }];
+      const screen = render(CairnAdminShell, { data: dataWithLayout(layout), children: child });
+      const details = screen.container.querySelector('details')!;
+      expect(details.open).toBe(true);
+      details.querySelector<HTMLElement>('summary')!.click();
+      await expect.poll(() => writes.length > 0).toBe(true);
+      expect(details.open).toBe(false);
+      expect(writes.some((w) => w.includes('cairn-admin-nav-collapsed=Site'))).toBe(true);
+    } finally {
+      delete (document as { cookie?: unknown }).cookie;
+    }
+  });
+
   it('renders loose top-level nodes between sections, batched outside any collapsible group', async () => {
     const layout: NavLayout = [
       { screen: 'posts' },
@@ -951,6 +1060,114 @@ describe('CairnAdminShell', () => {
     });
     const main = screen.container.querySelector('main')!;
     expect(main.querySelector('.max-w-5xl')).toBeNull();
+  });
+
+  // Task 8 (admin access/attention plan): the shell renders the site's own `deps.attention`
+  // counts as a quiet pill on the matching nav link, and rolls a collapsed section's visible
+  // children up into one pill on its header while it stays closed.
+  describe('attention pills and collapsed-header sums', () => {
+    it('renders a quiet count pill on the matching link, capped at 99+', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 250, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const postsLink = sidebar.getByRole('link', { name: 'Posts' }).element() as HTMLElement;
+      const pill = postsLink.querySelector('[aria-hidden="true"].badge')!;
+      expect(pill.textContent?.trim()).toBe('99+');
+    });
+
+    it('renders no pill when the href carries no attention entry', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 3, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const pagesLink = sidebar.getByRole('link', { name: 'Pages' }).element() as HTMLElement;
+      expect(pagesLink.querySelector('.badge')).toBeNull();
+    });
+
+    it('never renders a pill for a zero count, even if a fixture carries one (defense in depth)', async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 0, label: 'pending items' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      const postsLink = sidebar.getByRole('link', { name: 'Posts' }).element() as HTMLElement;
+      expect(postsLink.querySelector('.badge')).toBeNull();
+    });
+
+    it("joins the pending count into the link's accessible name", async () => {
+      const screen = render(CairnAdminShell, {
+        data: data(true, null, '/admin/posts', 'owner', [], {
+          '/admin/posts': { count: 3, label: 'pending requests' },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' });
+      await expect
+        .element(sidebar.getByRole('link', { name: 'Posts, 3 pending requests' }))
+        .toBeInTheDocument();
+    });
+
+    it('sums only its own visible children while collapsed, ignoring an attention entry for an unrelated href', async () => {
+      const layout: NavLayout = [
+        { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      ];
+      const screen = render(CairnAdminShell, {
+        data: dataWithLayout(layout, {
+          attention: {
+            '/admin/posts': { count: 3, label: 'pending items' },
+            '/admin/pages': { count: 4, label: 'pending items' },
+            '/admin/settings': { count: 99, label: 'pending items' },
+          },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+      const details = Array.from(sidebar.querySelectorAll('details'));
+      const content = details.find((d) => d.querySelector('summary')?.textContent?.includes('Content'))!;
+      expect(content.open).toBe(false);
+      const headerPill = content.querySelector('summary .badge')!;
+      expect(headerPill.textContent?.trim()).toBe('7');
+    });
+
+    it("joins the summed count into the collapsed header's accessible name, then removes it once the section opens, keeping the item pills", async () => {
+      const layout: NavLayout = [
+        { label: 'Content', collapsed: true, children: [{ screen: 'posts' }, { screen: 'pages' }] },
+      ];
+      const screen = render(CairnAdminShell, {
+        data: dataWithLayout(layout, {
+          attention: {
+            '/admin/posts': { count: 3, label: 'pending items' },
+            '/admin/pages': { count: 4, label: 'pending items' },
+          },
+        }),
+        children: child,
+      });
+      const sidebar = screen.getByRole('navigation', { name: 'Site content' }).element() as HTMLElement;
+      const details = Array.from(sidebar.querySelectorAll('details'));
+      const content = details.find((d) => d.querySelector('summary')?.textContent?.includes('Content'))!;
+      const summary = content.querySelector('summary')!;
+      expect(summary.getAttribute('aria-label')).toBe('Content, 7 pending items');
+      summary.click();
+      await expect.poll(() => content.open).toBe(true);
+      // The badge and the aria-label are Svelte-derived from the reactive `collapsed` state (unlike
+      // the native `open` property above, which the browser flips immediately on click), so they
+      // clear on the next render pass rather than synchronously with the click.
+      await expect.poll(() => content.querySelector('summary .badge')).toBe(null);
+      await expect.poll(() => summary.getAttribute('aria-label')).toBe(null);
+      const postsLink = Array.from(content.querySelectorAll('a')).find((a) => a.textContent?.includes('Posts'))!;
+      const pagesLink = Array.from(content.querySelectorAll('a')).find((a) => a.textContent?.includes('Pages'))!;
+      expect(postsLink.querySelector('.badge')?.textContent?.trim()).toBe('3');
+      expect(pagesLink.querySelector('.badge')?.textContent?.trim()).toBe('4');
+    });
   });
 
   // Task 4 (audit finding 8, palette slice): below `sm` the palette sat flush against the

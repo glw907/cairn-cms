@@ -28,7 +28,8 @@ import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX } from '../content/pending.js';
 import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
-import { requireEditor } from './guard.js';
+import { requireEditor, requireEngineAccess } from './guard.js';
+import { canReach } from '../auth/access.js';
 import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
 // R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
 // appears in an exported signature, so it does not reach the public `.d.ts`.
@@ -366,7 +367,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture.
    */
   async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
     // `?publishedAll` grammar: a deleted/updated success flag and a commit-conflict error. The
     // conflict error rides its own slot so it never collides with the degraded-load `error` below.
@@ -482,6 +484,15 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     //    unauthenticated POST is already 303'd before this runs. For a direct or un-guarded call,
     //    read the resolved editor directly and refuse with a 401 envelope rather than a 303 redirect.
     if (!editor) return refuse(401, 'session-expired');
+
+    // 4.5. The access map's own admission gate for the media screen, the same one every other media
+    //      action enforces. The concept editor's inline image picker calls this exact endpoint, so
+    //      restricting `media` restricts it too (the documented media-picker landmine): a role edits
+    //      an image-bearing concept only when it also reaches `media`.
+    if (!canReach(runtime.access, editor, 'media')) {
+      log.warn('auth.access.denied', { email: editor.email, role: editor.role, target: 'media' });
+      return refuse(403, 'access-denied');
+    }
 
     // 5. Read the body once. Content-Length is client-advisory, so a lying client could send more
     //    than it declared; recheck the real size against the cap after the read.
@@ -641,6 +652,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -751,6 +763,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaBulkDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     // Read the selected hashes from the form. Accept the repeated `hash` field, falling back to a JSON
@@ -853,7 +866,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
   async function mediaOrphanScanAction(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     // Resolve the R2 binding. The reconcile lists the raw bucket directly, so keep the raw binding;
@@ -911,6 +925,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaPurgeOrphansAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     // Resolve the R2 binding, the same media-off / missing-binding refusals as the scan. The purge
@@ -984,6 +999,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -1039,7 +1055,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf', hash: '', usage: [], foundIn: 0 } satisfies MediaReplaceFailure);
     }
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
 
     // Parse the JSON body. A malformed body or a hash that fails the 16-hex grammar refuses with a 400
     // before any GitHub read. The slug is the OLD asset's: a replace keeps the name and changes only the
@@ -1117,6 +1134,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaReplaceApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();
@@ -1233,7 +1251,8 @@ export function createMediaActions(ctx: ContentRoutesContext) {
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
       return fail(403, { error: 'csrf' } satisfies MediaAltPropagateFailure);
     }
-    requireEditor(event);
+    const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
 
     let payload: { hash?: unknown };
     try {
@@ -1306,6 +1325,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    */
   async function mediaAltApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
+    requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
 
     const form = await event.request.formData();

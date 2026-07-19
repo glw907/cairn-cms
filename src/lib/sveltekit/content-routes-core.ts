@@ -34,6 +34,7 @@ import type { MediaLibrary } from '../media/library-entry.js';
 import { parseDictionary, mergeDictionaryWords } from '../content/site-dictionary.js';
 import { issueCsrfToken } from './csrf.js';
 import { requireSession, requireEditor, requireEngineAccess, isPublicAdminPath } from './guard.js';
+import { canReach } from '../auth/access.js';
 import { resolveNavLayout, type ResolvedNavLayout } from './admin-nav.js';
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
@@ -1177,7 +1178,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Publish every pending entry site-wide: one atomic commit on main carrying each branch's
    *  entry file plus the manifest with every row upserted, then delete the consumed branches.
    *  Mounted on the concept list shim, but the topbar posts here from anywhere, so the route's
-   *  concept param is ignored and the redirect lands on the first configured concept.
+   *  concept param is ignored and the redirect lands on the first configured concept. This is
+   *  the one engine action that spans every concept in a single call, so it cannot gate with a
+   *  single `requireEngineAccess(runtime.access, editor, target)` call the way every other
+   *  concept route does: instead each pending entry is filtered by `canReach` against its own
+   *  concept id, so a role mapped away from a concept never has that concept's entries published
+   *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
    */
   async function publishAllAction(event: ContentEvent): Promise<never> {
     const editor = requireEditor(event);
@@ -1187,11 +1193,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const listPage = `/admin/${first.id}`;
 
     // Each cairn/ ref names a pending entry; the shared predicate skips a stray ref rather
-    // than failing the whole batch on it.
+    // than failing the whole batch on it. A concept the access map denies this editor is
+    // skipped the same way: this batch only ever acts on entries the editor could also reach
+    // one at a time through the concept's own publish action.
     const names = await backend.listBranches(PENDING_PREFIX);
     const pending = names.flatMap((name) => {
       const entry = pendingEntryOf(name);
-      return entry ? [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }] : [];
+      if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];
+      return [{ ...entry, branch: name, path: `${entry.concept.dir}/${filenameFromId(entry.id)}` }];
     });
 
     // Read every branch in parallel, capturing each head sha BEFORE its file read: the sha

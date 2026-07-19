@@ -431,9 +431,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
         : Promise.resolve()
             .then(() => ctx.resolveBackend(event).listBranches(PENDING_PREFIX))
             .then((names) =>
-              // Filtered by the same canReach predicate publishAllAction's own batch reads, so a
-              // restricted role never receives an id it is denied and the "Publish site (N)" count
-              // never counts an entry publishAllAction would skip.
+              // Filter by canReach, the same access authority publishAllAction applies to its
+              // batch, so a restricted role never receives a denied id and the "Publish site (N)"
+              // count never counts an entry publishAllAction would skip.
               names.flatMap((name) => {
                 const entry = pendingEntryOf(name);
                 if (!entry || !canReach(runtime.access, editor, entry.concept.id)) return [];

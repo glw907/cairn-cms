@@ -1,3 +1,14 @@
+## Unreleased
+
+### Added
+
+- `createRenderer` gains `renderDocument`, a sibling to `renderMarkdown` that additionally
+  returns the rendered page's `headings` (`DocHeading[]`: `id`, flattened `text`, `depth`),
+  collected from the final rehype tree after `rehypeSlug` and any site `rehypePlugins` have
+  run. A page that needs a table of contents or a heading anchor list calls `renderDocument`
+  instead of re-parsing `renderMarkdown`'s HTML string. `renderMarkdown` is unchanged. No
+  consumer action.
+
 ## 0.87.3
 
 ### Changed

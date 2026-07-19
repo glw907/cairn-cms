@@ -86,14 +86,6 @@ The original decision framing, for the record:
 
 ## Now
 
-- **A `getPlatformProxy` media-delivery smoke (born from the 0.84.x local-dev bounce,
-  2026-07-08).** Two miniflare serialization bugs shipped past a green suite because no gate
-  drives the media route through the dev platform proxy: the vitest workers pool binds native
-  R2 (no RPC boundary) and `vite preview` carries no bindings at all. Add a small test that
-  runs the composed route against a `getPlatformProxy` env (seeded local R2, one GET asserting
-  200 + Content-Type), so the serialization class fails in CI rather than on a consumer's
-  first `vite dev`.
-
 - **Docs-effectiveness infrastructure from the Superforms study (2026-07-03), Topo-era:**
   Pagefind-class Ctrl+K search on the docs site (the single biggest perceived-quality lever
   at zero infra), a FAQ/help top-nav page, a task-tagged examples gallery, an /llms
@@ -168,11 +160,19 @@ the named human gates only):**
   previews on the folded chip and a phone-reachable what-it's-for affordance. The chip itself
   shipped (label, title, count; includes show their fragment's human title); these two riders
   were explicitly cut from that verdict and wait for a real editor asking.
-- **Seed fragments into the dev backend** (from the friction log, 2026-07-17). The fake GitHub
-  store ships `fragmentTargets: []`, so `vite dev` cannot exercise the picker, the include
-  chip's title resolution, or any fragments surface; the media-tile thumbnails are similarly
-  unresolvable locally. Both belong in `packages/cairn-cms-dev`'s seed. Small, unblocks local
-  design iteration on fragments.
+- **Raw-URL parity for media-adjacent surfaces** (from the friction log, Waymark final review
+  T1/T3, 2026-07-17). Two engine surfaces serve `media:` tokens only: `remark-figure` promotes a
+  caption to a real `<figcaption>` only when the figure wraps a `media:` token (a figure over a
+  raw external URL renders its trailing text as a plain sibling `<p>`, so caption styling
+  silently forks by source type), and the `heroImage` projection resolves `media:` tokens only
+  (a frontmatter hero with a raw external `image.src` renders nothing without a template-level
+  fallback). Whether raw external URLs get parity with `media:` tokens on either surface is one
+  product call; take it when either surface next opens.
+- **Wire the showcase nav to the engine's menus** (from the friction log, Waymark final review
+  T3, 2026-07-17). The `menus:` key is engine-owned (`site-config.ts`'s `extractMenu`;
+  `createNavRoutes` ships and is documented), but the showcase neither mounts `/admin/nav` nor
+  reads the parsed menu, so the header hardcodes what the config declares. Decided: wire it at
+  template scope rather than remove the key.
 - **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
   extension idiom currently rests on docs and recipes; a developer re-derives the page header,
   card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
@@ -270,6 +270,11 @@ the named human gates only):**
   render plugin (charter-clean, the default answer) or a deliberate engine decision to admit text
   directives (a design question, not a task). Figure needs no component at all: the engine owns
   `:::figure` natively, and the name is reserved — the docs pass records this.
+  (3) **Glyph rendering is fill-only** (from the friction log, Waymark final review T1,
+  2026-07-17) — a line-shaped subpath (the flag glyph's pole) paints nothing under a fill-only
+  renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
+  set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
+  icon vocabulary shipped.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
@@ -334,6 +339,16 @@ the named human gates only):**
   optimizeDeps, or a documented `design:dev` script that watches `src/lib` and repackages +
   restarts. The consumer-site loop is unaffected (site source HMRs directly).
 
+- **`sizes` breakpoints are generic constants** (from the friction log, Waymark final review T4b,
+  2026-07-17). The engine's srcset `sizes` emits 800px/1200px, matching the built-in preset
+  magnitudes rather than any theme's actual measure; a mismatch costs only srcset-candidate
+  efficiency, but a theme with a very different measure may eventually want a seam.
+- **Index-vs-directory count gate for the docs arm indexes** (from the friction log, docs-register
+  sweep, 2026-07-18). The explanation and guides indexes have drifted against their own
+  directories before (a false "links every reference" claim, a stale "the two" editor-guides
+  count) — both machine-checkable claims about the docs' own structure. A small gate that counts
+  index entries against the directory (and flags numeric claims in index prose) would catch drift
+  earlier than a register sweep.
 
 - **`AssetConfig.transformations` doctor corroboration check.** `transformations` is a self-declared
   flag on `AssetConfig` (default `false`); nothing in the engine verifies it matches whether

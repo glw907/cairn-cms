@@ -137,7 +137,8 @@ posts: defineConcept({
 
 A free-form string the in-admin help points a stuck editor to: an email address, a URL, or a name and
 instruction. Unset, `composeRuntime` defaults it to `https://cairn.pub/help`, cairn's own hosted editor
-help. A site that sets its own value overrides that default. Optional.
+help. A site that sets its own value overrides that default, and a site that sets an explicit empty
+string gets the prior self-serve state back: the Help home renders no hand-off. Optional.
 
 <!-- snippet-check-skip: illustrates one adapter editor member's value in isolation -->
 ```ts
@@ -474,8 +475,8 @@ declare function createRenderer(
 ): {
   remarkPlugins: PluggableList;
   rehypePlugins: PluggableList;
-  renderMarkdown: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>;
-  renderDocument: (content: string, opts?: { resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<{ html: string; headings: DocHeading[] }>;
+  renderMarkdown: (content: string, opts?: ResolveOptions) => Promise<string>;
+  renderDocument: (content: string, opts?: ResolveOptions) => Promise<{ html: string; headings: DocHeading[] }>;
 };
 ```
 

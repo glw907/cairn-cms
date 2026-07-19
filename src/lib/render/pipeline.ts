@@ -145,9 +145,10 @@ export function createRenderer(
       .use(extraRehype)
       .use(rehypeStringify);
   const processor = buildProcessor([]);
-  // The heading-collector plugin runs after rehypePlugins (which already carries the site's own
-  // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
-  const documentProcessor = buildProcessor([rehypeCollectHeadings]);
+  // The heading-collector processor is built lazily, on renderDocument's first call, not here: every
+  // current consumer only ever calls renderMarkdown, so building it eagerly would double the
+  // attacher setup cost on every Worker cold start for a site that never calls renderDocument.
+  let documentProcessor: ReturnType<typeof buildProcessor> | undefined;
   const makeFile = (content: string, opts: ResolveOptions) =>
     new VFile({
       value: content,
@@ -167,6 +168,9 @@ export function createRenderer(
       content: string,
       opts: ResolveOptions = {},
     ): Promise<{ html: string; headings: DocHeading[] }> => {
+      // The heading-collector plugin runs after rehypePlugins (which already carries the site's own
+      // options.rehypePlugins last), so it sees rehypeSlug's ids and any site rewrite of them.
+      documentProcessor ??= buildProcessor([rehypeCollectHeadings]);
       const file = await documentProcessor.process(makeFile(content, opts));
       return { html: String(file), headings: (file.data[DOC_HEADINGS] as DocHeading[] | undefined) ?? [] };
     },

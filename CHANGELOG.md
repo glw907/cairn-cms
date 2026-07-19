@@ -20,9 +20,10 @@
 - The admin's Get Help hand-off now has a default destination: a site that sets no
   `editor.supportContact` gets `https://cairn.pub/help`, cairn's own hosted editor help,
   instead of the self-serve empty state. A site that prefers its own destination sets
-  `editor.supportContact` explicitly, same as before; there is no way to suppress the
-  hand-off entirely, so a site that relied on the prior unset (no link) state now shows
-  the hosted-help link until it sets its own value.
+  `editor.supportContact` explicitly, same as before, and a site that wants the prior
+  self-serve state back sets it to an explicit empty string, which passes through
+  untouched. A site that relied on the prior unset (no link) state now shows the
+  hosted-help link until it sets one of those two.
 
 ## 0.87.3
 

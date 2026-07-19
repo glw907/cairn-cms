@@ -252,7 +252,9 @@ export interface EditData {
 
 /**
  * The Help home's data: the derived getting-started progress, the full markdown reference (the
- *  component curates by group), and the optional support hand-off (rendered only when set).
+ *  component curates by group), and the support hand-off. `composeRuntime` defaults an unset
+ *  adapter `supportContact` to cairn's hosted help, so this reaches the view unset only through a
+ *  caller that bypasses that composition; an explicitly empty string renders no hand-off.
  */
 export interface HelpData {
   gettingStarted: GettingStarted;

@@ -45,6 +45,14 @@ describe('HelpHome', () => {
       .toHaveAttribute('href', expect.stringContaining('mailto:help@example.org'));
   });
 
+  it('renders the hosted-help default as a Get help link', async () => {
+    render(HelpHome, { data: fixture({ supportContact: 'https://cairn.pub/help' }) });
+
+    const link = page.getByRole('link', { name: /Get help/ });
+    await expect.element(link).toBeInTheDocument();
+    await expect.element(link).toHaveAttribute('href', 'https://cairn.pub/help');
+  });
+
   it('renders the self-serve get-help line and no email link when supportContact is unset', async () => {
     render(HelpHome, {
       data: fixture({

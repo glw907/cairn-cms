@@ -78,6 +78,13 @@ describe('checkDocsPacked', () => {
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/STATUS.md');
   });
+
+  it('fails naming a hypothetical docs path outside the allowlist, unnamed by any prior denylist', () => {
+    const result = checkDocsPacked([...arms, 'docs/drafts/x.md']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('docs/drafts/x.md');
+  });
 });
 
 // The CLI parses `npm pack --json` stdout, which on some npm versions carries the `prepare`

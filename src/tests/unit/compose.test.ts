@@ -78,6 +78,12 @@ describe('composeRuntime supportContact', () => {
   it('defaults to the hosted editor help when the adapter omits it', () => {
     expect(composeRuntime({ adapter: adapter(), siteConfig: testSiteConfig }).supportContact).toBe('https://cairn.pub/help');
   });
+
+  it('passes an explicit empty string through untouched, since the default only covers nullish', () => {
+    expect(
+      composeRuntime({ adapter: { ...adapter(), editor: { supportContact: '' } }, siteConfig: testSiteConfig }).supportContact,
+    ).toBe('');
+  });
 });
 
 describe('composeRuntime mediaManifestPath', () => {

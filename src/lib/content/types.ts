@@ -258,8 +258,11 @@ export interface CairnAdapter {
     nav?: NavMenuConfig;
     /**
      * Optional contact a stuck editor is pointed to from the in-admin help (an email address, a URL,
-     *  or a name and instruction). The help renders the hand-off only when this is set. Plain string,
-     *  passed through verbatim.
+     *  or a name and instruction). Unset, `composeRuntime` defaults it to cairn's hosted help
+     *  (`https://cairn.pub/help`); an explicit value overrides that default and wins. An explicitly
+     *  empty string (`''`) passes through untouched, since the default only covers the nullish case,
+     *  and the Help home then renders no hand-off, the same self-serve state as an unset value would
+     *  have been before the default existed.
      */
     supportContact?: string;
     /**

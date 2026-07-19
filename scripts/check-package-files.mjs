@@ -40,14 +40,19 @@ const DOCS_INDEX_PATHS = [
   'docs/tutorial/build-your-first-cairn-site.md'
 ];
 
-// The write-only planning trees and the rolling status file. A registry consumer's site build
-// reads the published arms only; these carry pass history and in-flight drafts that must not
-// leak into the tarball.
-const DOCS_LEAK_RE = /^docs\/(internal|superpowers)\//;
-const DOCS_STATUS_PATH = 'docs/STATUS.md';
+// The published docs allowlist. A registry consumer's site build reads the published arms only,
+// so any other docs/ path (the write-only planning trees, the rolling status file, or a future
+// tree nobody has named yet) fails by construction instead of by an ever-growing denylist.
+const DOCS_ALLOWED_ARM_PREFIXES = [
+  'docs/reference/',
+  'docs/guides/',
+  'docs/explanation/',
+  'docs/tutorial/'
+];
+const DOCS_INDEX_PATH = 'docs/README.md';
 
 /**
- * Check a packed file list for the published docs arms, present, and the internal docs trees,
+ * Check a packed file list for the published docs arms, present, and every other docs/ path,
  * absent.
  * @param {string[]} filePaths the paths npm would include in the tarball
  * @returns {{ ok: true, count: number } | { ok: false, error: string }}
@@ -61,11 +66,16 @@ export function checkDocsPacked(filePaths) {
       error: `the packed tarball is missing ${missing.join(', ')}; add the docs arms to package.json "files" so a registry consumer's site build can read the published docs`
     };
   }
-  const leaked = filePaths.filter((path) => DOCS_LEAK_RE.test(path) || path === DOCS_STATUS_PATH);
+  const leaked = filePaths.filter(
+    (path) =>
+      path.startsWith('docs/') &&
+      path !== DOCS_INDEX_PATH &&
+      !DOCS_ALLOWED_ARM_PREFIXES.some((prefix) => path.startsWith(prefix))
+  );
   if (leaked.length > 0) {
     return {
       ok: false,
-      error: `the packed tarball carries internal docs paths that must not ship: ${leaked.join(', ')}; check package.json "files" for an overly broad docs entry`
+      error: `the packed tarball carries docs paths outside the published allowlist: ${leaked.join(', ')}; check package.json "files" for an overly broad docs entry`
     };
   }
   return { ok: true, count: filePaths.filter((path) => path.startsWith('docs/')).length };

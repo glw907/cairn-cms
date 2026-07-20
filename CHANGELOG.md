@@ -1,7 +1,16 @@
-## Unreleased
+## 0.88.3
 
 ### Changed
 
+- A new documented safelist source, `src/lib/components/admin-css-safelist.ts`, makes the admin CSS
+  build compile a curated blessed set of daisyUI 5 classes that no shipped admin component references
+  yet: the `stats`/`stat-*` family, `table-zebra`/`table-xs`, `toast` plus its placement modifiers,
+  the `indicator`/`status`/`join` placement and orientation modifiers, and `badge-soft`/
+  `badge-outline`/`badge-dash`. The pass-B "admin CSS class-inventory gap" harvest finding named the
+  trap (a daisy class only styles anything once cairn's build compiles it); the ASC admin-toolkit
+  design survey defines this blessed set, so a site-authored admin screen can use the vocabulary ahead
+  of any cairn component adopting it. No consumer action is required: this is an internal build change
+  no consumer imports.
 - The showcase's banked `IntroLedger` syncs to cairn.pub's ratified masthead form: the title
   at the full step-5 masthead grade with the scaled mark, the answer one grade up, the summary
   as full-ink paragraphs (`summary` is now `string[]`), and the `leadIn` prop replaced by
@@ -15,8 +24,8 @@
   variant choice, plus an optional note line for a short gloss on where the link goes. The
   styleguide's reading surface demonstrates it beside the full `cta`.
 
-No consumer action is required. All three are template components; existing sites keep their own
-copies until they choose to pull the updated forms.
+No consumer action is required for the three showcase template components either; existing sites
+keep their own copies until they choose to pull the updated forms.
 
 ## 0.88.2
 

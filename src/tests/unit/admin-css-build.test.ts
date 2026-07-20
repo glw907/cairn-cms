@@ -115,4 +115,38 @@ describe('admin css build', () => {
       expect(css, `foreign token ${foreign} leaked into the shipped admin sheet`).not.toContain(foreign);
     }
   });
+
+  // The blessed daisyUI 5 safelist (admin-css-safelist.ts): the pass-B "admin CSS class-inventory
+  // gap" harvest finding generalized. A daisy class only works in the admin once cairn's build
+  // compiles it, so a site-authored admin screen (the ASC admin toolkit, first) can reach for this
+  // vocabulary before any shipped cairn component references it. Curated, not exhaustive: these are
+  // the families the safelist source documents, not every daisyUI class.
+  it('compiles the blessed daisyUI safelist for the admin-toolkit vocabulary', () => {
+    for (const cls of [
+      '.table-zebra',
+      '.table-xs',
+      '.stats',
+      '.stat-title',
+      '.stat-value',
+      '.stat-desc',
+      '.stat-figure',
+      '.stat-actions',
+      '.toast-start',
+      '.toast-end',
+      '.toast-top',
+      '.toast-bottom',
+      '.indicator-start',
+      '.indicator-end',
+      '.status-primary',
+      '.status-xs',
+      '.join-item',
+      '.join-horizontal',
+      '.join-vertical',
+      '.badge-soft',
+      '.badge-outline',
+      '.badge-dash',
+    ]) {
+      expect(css, `missing blessed class ${cls}`).toContain(cls);
+    }
+  });
 });

@@ -49,6 +49,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.88.3: a blessed daisyUI safelist for the admin (non-breaking)
+
+The admin CSS build now compiles a curated blessed set of daisyUI 5 classes no shipped cairn admin
+component references yet: `stats`/`stat-*`, `table-zebra`/`table-xs`, `toast` with its placement
+modifiers, the `indicator`/`status`/`join` placement and orientation modifiers, and
+`badge-soft`/`badge-outline`/`badge-dash`. A site-authored admin screen can now use this vocabulary
+directly; previously an unreferenced daisy class silently compiled to nothing.
+
+Consumers must: nothing. This changes only the compiled `cairn-admin.css` output, adding classes,
+never removing or restyling any that already shipped.
+
 ## 0.88.2: the template's nav wiring and docs fixes (non-breaking)
 
 A template-and-docs window. The showcase's public header now renders `menus.primary` from

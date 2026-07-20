@@ -16,25 +16,33 @@ merely happens to link them (the existing micro-ctas retarget at the end of the 
 
 ## Dimension 1: the five principle pages
 
-New pages in `docs/explanation/`, one per principle. Proposed slugs and titles (approve or
-amend at plan review):
+The principles integrate into the docs as first-class content that flows with and
+complements what exists (Geoff, 2026-07-19). They do NOT all have to sit in the same
+relative position, a principle page may absorb content from other pages or supplant a page
+outright, and adding them can trigger reorganizing the documentation where that produces
+the better tree. The unit of design is the docs as a whole, not five insertions.
 
-| Slug | Title (the ratified claim) |
-| ---- | -------------------------- |
-| `writing-tool.md` | It's a writing tool, not a dashboard |
-| `content-in-git.md` | The content lives in the organization's own repository |
-| `nothing-to-run.md` | There is nothing to run or protect |
-| `extension-idiom.md` | Developers extend it in its own idiom |
-| `one-sign-in.md` | One sign-in covers everything the site does |
+**The disposition survey (the pass's first deliverable):** for each principle, map the
+existing coverage across the arms, then commit a disposition: a new page (and where it
+lands), a merge that absorbs or supplants an existing page (named, with every inbound link
+retargeted), or a placement outside the expected arm where the reader's path argues for
+it. The survey also proposes any broader reorganization the additions justify. It is a
+committed recommendation with reasoning per principle, not an option menu; slugs and
+titles fall out of it rather than being fixed here.
 
 **Content charter, per page:** the claim; the mechanics that make it true (linking the
 reference pages for exact APIs); the reasoning and the trade-offs, including what cairn
-gives up by choosing this way; and the honest limits. Depth that already exists in the
-specialized pages (security-model, data-tiers, media-storage, architecture,
-editor-copyedit) is linked into, never forked; the principle page owns the principle's
-narrative and curates the rest. `why-cairn` stays intact as the personal narrative opener
-and gains a short pointer to the cluster; the principle pages are the structured
-expansions, not its replacement.
+gives up by choosing this way; and the honest limits. Where a specialized page survives
+beside a principle page, depth is linked into, never forked. `why-cairn` stays intact as
+the narrative opener unless the survey makes a stronger case Geoff accepts.
+
+**Supplanting and reorganization rules:** a supplanted or renamed page's content is
+absorbed, its index entries move in the same change (`check:arm-indexes` and `check:docs`
+prove closure), and every in-tree inbound link retargets. cairn.pub has no redirect layer
+for docs URLs today, so any URL a reorganization retires must either gain a redirect
+mechanism in the site's docs route (small, worth building if the survey retires more than
+a page or two) or be accepted as a break while the docs are pre-1.0; the survey names
+which, per retired URL.
 
 **Authoring:** the pages are register-bearing user-facing prose, so the main loop drafts
 them (never an implementer), and each page clears the full machinery before it lands: Vale
@@ -89,21 +97,27 @@ the 2026 best-practice guides), verified live at execution time:
 
 ## Sequencing and release
 
-1. T1a through T1e: draft the five pages (main loop), each through the full register
-   machinery; land in `docs/explanation/` with the arm index updated per page.
-2. T2 (implementer, cairn-cms): cross-links, nav, `check:docs` and `check:arm-indexes`
-   green, full repo gate.
-3. T3 (implementer, cairn-pub): the three ingestion surfaces (`/llms.txt`,
+1. T0: the disposition survey (main loop): per-principle dispositions, the reorganization
+   proposal, the retired-URL list with its redirect-or-break call. Rides in the pass
+   record; execution follows it.
+2. T1a through T1e: draft the five pages (main loop), each through the full register
+   machinery; land per the survey's dispositions with each arm index updated in the same
+   change, absorbed pages retired in the same change.
+3. T2 (implementer, cairn-cms): cross-links, nav, any redirect mechanism the survey called
+   for, `check:docs` and `check:arm-indexes` green, full repo gate.
+4. T3 (implementer, cairn-pub): the three ingestion surfaces (`/llms.txt`,
    `/llms-full.txt`, per-page markdown endpoints) generated from the docs corpus, with
    tests asserting presence, shape, and the token ceiling.
-4. T4 (implementer, cairn-pub): retarget the five front-page micro-ctas to the new pages.
-5. Verification: live fetch of every new endpoint, register spot-read of llms.txt's
+5. T4 (implementer, cairn-pub): retarget the five front-page micro-ctas per the survey's
+   final page map.
+6. Verification: live fetch of every new endpoint, register spot-read of llms.txt's
    summary block, gates in both repos.
-6. **Release:** the docs ship in the npm tarball and cairn.pub renders the docs from the
-   installed package, so the five pages reach the live site only through a publish. The
-   pass therefore ends with a release cut (the `cairn-release` skill; the consumer-needs-it
-   trigger is genuine). T3 and T4 land after the cairn-pub dependency bump.
-7. Records: STATUS in both repos, the pass post-mortem beside this plan.
+7. **Release:** the docs ship in the npm tarball and cairn.pub renders the docs from the
+   installed package, so the reorganized docs reach the live site only through a publish.
+   The pass therefore ends with a release cut (the `cairn-release` skill; the
+   consumer-needs-it trigger is genuine). T3 and T4 land after the cairn-pub dependency
+   bump.
+8. Records: STATUS in both repos, the pass post-mortem beside this plan.
 
 ## Acceptance for the whole pass
 

@@ -91,6 +91,13 @@ the 2026 best-practice guides), verified live at execution time:
   the alternate (a `link` alternate or equivalent) so agents can discover it.
 - **Crawler policy:** the docs are public open-source documentation; robots stays
   permissive for AI crawlers. No auth walls on any docs path (already true).
+- **Human-facing surfacing (ruled 2026-07-19): not on the front page.** The front page
+  states what cairn is; machine ingestion is a property of the documentation. Two quiet
+  placements instead, both carrying real links to the text docs: one factual line on the
+  /docs landing under the doors linking `/llms.txt` and `/llms-full.txt` and naming the
+  per-page markdown source (each docs page advertises its own), and an `llms.txt` link in
+  the site footer beside Feed and GitHub, the RSS-discovery convention. A fuller
+  human-facing telling, if ever wanted, is a blog post, not front-page copy.
 - **Out of scope, noted for harvest:** generalizing llms.txt generation into the engine or
   Waymark so consumer sites get it for their own content. File in ROADMAP if the pass
   proves the mechanism cleanly.

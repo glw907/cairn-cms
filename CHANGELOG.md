@@ -10,8 +10,12 @@
   generic form: stacked cross-fading slides with a caller-supplied label row, one 7-second
   auto-advance cycle that then rests, pause on hover and focus, permanent manual control on any
   dot click, and no auto-advance or transition under reduced motion.
+- The showcase's content component set banks a new `micro-cta`, the cta's compact
+  further-reading sibling: the same label-plus-link shape without the primary/secondary
+  variant choice, plus an optional note line for a short gloss on where the link goes. The
+  styleguide's reading surface demonstrates it beside the full `cta`.
 
-No consumer action is required. Both are template components; existing sites keep their own
+No consumer action is required. All three are template components; existing sites keep their own
 copies until they choose to pull the updated forms.
 
 ## 0.88.2

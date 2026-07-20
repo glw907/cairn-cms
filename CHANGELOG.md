@@ -1,3 +1,19 @@
+## Unreleased
+
+### Changed
+
+- The showcase's banked `IntroLedger` syncs to cairn.pub's ratified masthead form: the title
+  at the full step-5 masthead grade with the scaled mark, the answer one grade up, the summary
+  as full-ink paragraphs (`summary` is now `string[]`), and the `leadIn` prop replaced by
+  `ledgerTitle`, a tracked small-caps label on a running hairline.
+- A new showcase theme component, `Carousel.svelte`, banks cairn.pub's screenshot carousel in
+  generic form: stacked cross-fading slides with a caller-supplied label row, one 7-second
+  auto-advance cycle that then rests, pause on hover and focus, permanent manual control on any
+  dot click, and no auto-advance or transition under reduced motion.
+
+No consumer action is required. Both are template components; existing sites keep their own
+copies until they choose to pull the updated forms.
+
 ## 0.88.2
 
 ### Changed

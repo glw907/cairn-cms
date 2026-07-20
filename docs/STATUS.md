@@ -15,7 +15,20 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-19, latest: CHASSIS-NAV SHIPPED as v0.88.2; next = the Topo design pass)
+## Immediate next action (2026-07-20, latest: v0.88.3 published; next = the Topo design pass)
+
+**v0.88.3 SHIPPED 2026-07-20 (ASC-triggered, out-of-band single-task publish; `latest`
+verified).** A new documented safelist source, `src/lib/components/admin-css-safelist.ts`,
+makes the admin CSS build compile a curated blessed set of daisyUI 5 classes no shipped
+admin component references yet: `stats`/`stat-*`, `table-zebra`/`table-xs`, `toast` with
+its placement modifiers, the `indicator`/`status`/`join` placement and orientation
+modifiers, and `badge-soft`/`badge-outline`/`badge-dash`. This is T1 of ASC's Members pass
+(`aksailingclub-org/docs/plans/2026-07-20-members-pass.md`), the engine change its
+admin-toolkit design survey's "daisyUI-first assembly" ruling needed before that site could
+build the toolkit's StatBand/StatusChip/TagChip/Pagination components. Full gate green
+(`check` 0/0, 3776 tests, `check:custom-surface`, `check:comments`, the four doc gates, a
+from-scratch showcase build); patch by the sizing rule (no new subsystem or public surface,
+only internal build output). No `Consumers must:` action.
 
 **THE CHASSIS-NAV PASS SHIPPED 2026-07-19 (PR #8 merged, v0.88.2 published, `latest`
 verified).** The window: the showcase public header renders `menus.primary` through the

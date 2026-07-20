@@ -42,12 +42,20 @@ authorized "minor" derived and confirmed as patch `0.88.2`.
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert.
 
-**NEXT (immediate): the Topo design pass.** Open with
+**NEXT: two queued passes, Geoff sequences.** (1) **Principle pages + LLM ingestion**,
+planned 2026-07-19 and awaiting his approval:
+`docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (five standalone
+explanation pages for the core design principles, the ASC extended-admin figure with its
+naming question flagged as his call, and cairn.pub's llms.txt / llms-full.txt / per-page
+markdown endpoints; ends with a release cut so the site can render the new pages).
+(2) **The Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
-candidates go to Geoff BEFORE any build). After Topo: the scaffolder (step 6). Check the
-Fable window state at session start (post-Fable doctrine: Opus conducts after it closes;
-verify online).
+candidates go to Geoff BEFORE any build); the cairn.pub design arc (its Passes 2 through 4)
+ratified seed vocabulary for it: the four-door landing, the docs rail on /help, the
+step-down doc heading scale, and the micro-cta device. After Topo: the scaffolder (step 6).
+Check the Fable window state at session start (post-Fable doctrine: Opus conducts after it
+closes; verify online).
 
 **Carry-forwards (live):** admin error statuses flatten to HTTP 200 under the shell's
 streamed pending count (upstream sveltejs/kit#12533; guide caveat published, ROADMAP watch

@@ -1,17 +1,17 @@
 <!-- @component
-The ratified round-2 front-page hero: a head lockup (the cairn mark beside the "What is cairn?"
-question, rendered as `headingTag`, `h1` by default so it becomes the page's one heading), a
-one-line answer, a numbered ledger of lead/body rows, and a small-caps footline. The markup and
-the CSS below reproduce the ratified round-2 probe (`scratchpad/probe/mock-all.html`'s
-`mock-compact` block) exactly: every color and font size reads a cairn theme token
+The front-page hero, a masthead lockup: the cairn mark beside a large display title (rendered as
+`headingTag`, `h1` by default so it becomes the page's one heading), a one-line answer, an
+optional multi-paragraph summary, an optional labeled head introducing the numbered ledger of
+lead/body rows, and a small-caps footline. Every color and font size reads a cairn theme token
 (`--text-step-*`, `--font-display`/`--font-sans`, `--font-weight-*`, `--color-primary`,
-`--color-muted`), and the handful of values with no design-scale token (the ledger's
-grid-column widths, its row padding and gap, the three distinct tracking widths) are ad hoc
-layout literals, the same idiom `(site)/+page.svelte`'s own listing rows already use. The
-row and footline hairlines share one `--hero-hairline`, a `color-mix` off
-`--color-base-content` so it holds its contrast in both color schemes with no dark-mode
-override. Below 480px the ledger's grid tightens, matching the probe's own narrow-frame
-adjustment; the answer line needs no step change at any width, so it carries no responsive rule.
+`--color-muted`); the handful of values with no design-scale token (the ledger's grid-column
+widths, its row padding and gap, the three distinct tracking widths) are ad hoc layout literals,
+the same idiom `(site)/+page.svelte`'s own listing rows already use. The row and footline
+hairlines, and the ledger head's own rule, share one `--hero-hairline`, a `color-mix` off
+`--color-base-content` so it holds its contrast in both color schemes with no dark-mode override.
+When `ledgerTitle` is set, its rule stands in for the first row's own top hairline, so the first
+`<li>` drops it. Below 480px the head lockup and the ledger's grid both tighten; the answer line
+needs no step change at any width, so it carries no responsive rule.
 -->
 <script lang="ts">
   /** One ledger row: a bold lead line and its supporting sentence. */
@@ -27,7 +27,7 @@ adjustment; the answer line needs no step change at any width, so it carries no 
     title = 'What is cairn?',
     answer,
     summary,
-    leadIn,
+    ledgerTitle,
     items,
     foot,
     headingTag = 'h1',
@@ -38,10 +38,10 @@ adjustment; the answer line needs no step change at any width, so it carries no 
     title?: string;
     /** The one-line answer below the head lockup. */
     answer: string;
-    /** An optional opening summary paragraph between the answer and the ledger. */
-    summary?: string;
-    /** An optional short paragraph leading into the numbered ledger. */
-    leadIn?: string;
+    /** An optional opening summary, one paragraph per array entry, in order. */
+    summary?: string[];
+    /** An optional labeled head between the summary and the numbered ledger. */
+    ledgerTitle?: string;
     /** The numbered ledger rows, rendered in order, one to a `<li>`. */
     items: LedgerItem[];
     /** The footline phrases, joined by a centered dot. */
@@ -57,11 +57,19 @@ adjustment; the answer line needs no step change at any width, so it carries no 
     <svelte:element this={headingTag} class="title">{title}</svelte:element>
   </div>
   <p class="answer">{answer}</p>
-  {#if summary}<p class="summary">{summary}</p>{/if}
-  {#if leadIn}<p class="lead-in">{leadIn}</p>{/if}
+  {#if summary}
+    <div class="summary">
+      {#each summary as paragraph, i (i)}<p>{paragraph}</p>{/each}
+    </div>
+  {/if}
+  {#if ledgerTitle}
+    <div class="ledger-title">
+      <span>{ledgerTitle}</span>
+    </div>
+  {/if}
   <ol>
     {#each items as item, i (item.lead)}
-      <li>
+      <li class:no-rule={i === 0 && ledgerTitle}>
         {#if item.href}
           <a class="row" href={item.href}>
             <span class="num">{String(i + 1).padStart(2, '0')}</span>
@@ -95,41 +103,57 @@ adjustment; the answer line needs no step change at any width, so it carries no 
   }
 
   .hero .head {
-    display: flex; align-items: center; gap: 0.8rem; margin: 0 0 0.5rem;
+    display: flex; align-items: center; gap: 1.1rem; margin: 0 0 1.2rem;
   }
   .hero .mark {
-    width: 2.1rem; height: 2.1rem; color: var(--color-primary); flex-shrink: 0;
+    width: 3.3rem; height: 3.3rem; color: var(--color-primary); flex-shrink: 0;
   }
   .hero .title {
     font-family: var(--font-display);
-    font-size: var(--text-step-2);
+    font-size: var(--text-step-5);
     font-weight: var(--font-weight-semibold);
-    letter-spacing: -0.01em;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
     margin: 0;
   }
 
   .hero .answer {
     font-family: var(--font-display);
-    font-size: var(--text-step-1);
+    font-size: var(--text-step-2);
     font-weight: var(--font-weight-medium);
-    line-height: 1.35;
+    line-height: 1.32;
     text-wrap: balance;
-    margin: 0 0 0.55rem;
+    margin: 0 0 1.4rem;
   }
 
   .hero .summary {
     font-size: var(--text-step-0);
-    line-height: 1.55;
-    color: var(--color-muted);
+    line-height: 1.62;
     max-width: 38rem;
-    margin: 0 0 0.8rem;
+  }
+  .hero .summary p {
+    margin: 0 0 0.85em;
   }
 
-  .hero .lead-in {
-    font-size: var(--text-step-0);
-    line-height: 1.55;
-    max-width: 38rem;
-    margin: 0 0 0.9rem;
+  .hero .ledger-title {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin: 2.4rem 0 0.3rem;
+  }
+  .hero .ledger-title span {
+    font-family: var(--font-sans);
+    font-size: var(--text-step--1);
+    font-weight: 700;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    white-space: nowrap;
+  }
+  .hero .ledger-title::after {
+    content: '';
+    flex: 1;
+    border-top: 1px solid var(--hero-hairline);
   }
 
   .hero ol {
@@ -141,11 +165,14 @@ adjustment; the answer line needs no step change at any width, so it carries no 
   .hero li {
     border-top: 1px solid var(--hero-hairline);
   }
+  .hero li.no-rule {
+    border-top: none;
+  }
   .hero .row {
     display: grid;
     grid-template-columns: 2.6rem 1fr;
     gap: 0 1.1rem;
-    padding-block: 0.72rem;
+    padding-block: 0.85rem;
     color: inherit;
     text-decoration: none;
     transition: color 180ms ease;
@@ -225,6 +252,13 @@ adjustment; the answer line needs no step change at any width, so it carries no 
   }
 
   @media (max-width: 480px) {
+    .hero .head {
+      gap: 0.8rem;
+    }
+    .hero .mark {
+      width: 2.4rem;
+      height: 2.4rem;
+    }
     .hero .row {
       grid-template-columns: 2.1rem 1fr;
       gap: 0 0.8rem;

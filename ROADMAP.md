@@ -174,21 +174,26 @@ the named human gates only):**
   (a frontmatter hero with a raw external `image.src` renders nothing without a template-level
   fallback). Whether raw external URLs get parity with `media:` tokens on either surface is one
   product call; take it when either surface next opens.
-- **A small shipped admin component kit (Geoff, 2026-07-15: "probably helpful").** The
-  extension idiom currently rests on docs and recipes; a developer re-derives the page header,
-  card, table shell, form rows, and empty state from `admin-design-system.md` each time, and the
-  built-in-from-the-get-go goal (the design charter) holds only by diligence. A small kit of
-  composable admin components would enforce it structurally. Real new public surface with a
-  stability promise, so it is a deliberate design effort, not a fold-in: scope it against the
-  charter's leanness boundary (the fewest components that cover a custom section's skeleton),
-  and design it after the admin UI/UX audit reports, so the kit encodes the audited idiom rather
-  than freezing today's. Weigh whether it gates 1.0 (the extending-developer seam story is
-  stronger with it). THE AUDIT HAS REPORTED (2026-07-15,
-  docs/internal/2026-07-15-admin-ux-audit.md, finding 11): the engine's own screens carry the
-  page-header idiom five ways, counts three ways, and search placement two ways, so the kit's
-  first deliverable is convergence (pick the canonical recipes, re-express the engine screens in
-  them), then ship the components; the audit carries the full inventory. The showcase Signups
-  screen still needs a render for the bolted-on-vs-native judgment.
+- **The admin toolkit: organize the library and set cairn up as its consumer (Geoff,
+  2026-07-20; evolves the 2026-07-15 "small shipped admin component kit" sketch).** The kit is
+  now real and building ASC-first: the aksailingclub-org Members pass births the first six
+  general-contract components (AdminTable, ExpandableRow, ListToolbar, StatusChip, Pagination,
+  the formatters) in that site's theme layer, grounded in its 2026-07-20 admin-toolkit research
+  survey; v0.88.3's blessed daisy safelist is the compile-side seam. The rulings (recorded in
+  that repo's `docs/2026-07-20-members-pass-harvest-findings.md`): components publish inside
+  `@glw907/cairn-cms` behind a dedicated subpath export (shape: `@glw907/cairn-cms/admin-toolkit`),
+  never a sibling package; harvest cadence is wave-by-graduation (a component moves on its
+  second contract-unchanged consumer or on engine pull, batched into a few harvest releases
+  across the ASC admin series, never a big bang); and cairn DOGFOODS the toolkit (engine admin
+  screens use it wherever a component fits, each wave includes an adoption sweep, new engine
+  surfaces reach for it first). THE QUEUED PASS, once the ASC Members pass lands: establish the
+  subpath-export structure (module layout, the contract-doc convention the toolkit READMEs
+  seed, doc-gate coverage for the new surface) and prepare the engine screens for adoption —
+  the 2026-07-15 audit's finding 11 (page-header idiom five ways, counts three, search
+  placement two; `docs/internal/2026-07-15-admin-ux-audit.md` carries the inventory) becomes
+  the adoption sweep's first target. This pass is the receiving structure for the first harvest
+  wave, so it precedes or opens that wave. Weigh whether the toolkit gates 1.0 (the
+  extending-developer seam story is stronger with it).
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

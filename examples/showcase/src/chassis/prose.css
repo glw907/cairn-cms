@@ -714,6 +714,54 @@
     outline-offset: 2px;
   }
 
+  /* Micro CTA: the cta's compact sibling, a further-reading chip rather than a button. A hairline
+     border warms to the primary color on hover, in chip form. */
+  .prose .micro-cta {
+    --flow-space: var(--spacing-m);
+  }
+  .prose .micro-cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+    /* The 44px floor, the same idiom as `.cta-link`. */
+    min-height: 2.75rem;
+    padding: 0.45rem 0.95rem;
+    border: 1px solid var(--color-card-border);
+    border-radius: var(--radius-field);
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 180ms ease;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .prose .micro-cta-link {
+      transition: none;
+    }
+  }
+  .prose .micro-cta-link:hover {
+    border-color: color-mix(in oklab, var(--color-primary) 45%, transparent);
+  }
+  .prose .micro-cta-link:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+  .prose .micro-cta-label {
+    /* The ratified recipe reads --font-sans, a Tailwind default the showcase's own token layer
+       never defines; --font-body is the showcase's equivalent sans face (Source Sans 3), so the
+       chip's label stays on the site's own token system rather than an incidental default. */
+    font-family: var(--font-body);
+    font-size: var(--text-step--1);
+    font-weight: 600;
+  }
+  .prose .micro-cta-note {
+    font-size: var(--text-step--1);
+    color: var(--color-muted);
+  }
+  .prose .micro-cta-link .ec-glyph {
+    width: 0.9em;
+    height: 0.9em;
+    color: var(--color-primary);
+  }
+
   /* FAQ: a native <details>/<summary> disclosure. The default marker is hidden and replaced by the
      chevron glyph in the summary, which rotates open (a non-color state cue, matching the task-list
      checkbox's real-control cue elsewhere in this sheet). A run of several FAQs reads as a divided

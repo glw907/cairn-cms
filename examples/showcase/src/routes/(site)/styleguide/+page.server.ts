@@ -10,9 +10,9 @@ export const prerender = true;
 // A sample that exercises every element the reading surface styles: the lead, headings, emphasis and
 // a link, an unordered list, an ordered list, a task list, a blockquote, inline code, two fenced
 // blocks in different languages (to show the highlighter across token kinds), a table, a horizontal
-// rule, a figure, and the full component kit (callout note/tip/warning, alert, icon, cta, video,
-// faq, and pull-quote, now the real directive rather than a hand-styled paragraph). It doubles as
-// documentation, the bar's "the prose is the documentation" principle.
+// rule, a figure, and the full component kit (callout note/tip/warning, alert, icon, cta, micro-cta,
+// video, faq, and pull-quote, now the real directive rather than a hand-styled paragraph). It doubles
+// as documentation, the bar's "the prose is the documentation" principle.
 const SAMPLE = `<p class="lead">This is the reading surface. Every element below is rendered by the same theme a reader sees, so the styleguide shows the real prose output rather than an imitation of it.</p>
 
 You write in markdown, and the surface binds each element to the theme tokens. Change one token and the whole surface, this article included, re-skins in lockstep.
@@ -113,6 +113,11 @@ A standalone icon is a single glyph with no card and no title, for a short line 
 A CTA is a single link styled like a button, for pointing the reader at the one next step that matters:
 
 :::cta{label="Read the getting-started guide" url="https://example.com/guide" variant="primary"}
+:::
+
+A micro-CTA is the cta's compact sibling, a further-reading pointer for the end of a section rather than a marketing button:
+
+:::micro-cta{label="Read the guide" url="#" note="an example pointer"}
 :::
 
 A video link never requests the platform until a reader clicks through; before that it is a static panel naming where the link goes:

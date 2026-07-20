@@ -246,6 +246,34 @@ const cta = defineComponent({
   },
 });
 
+// The cta's compact sibling: a further-reading pointer at the end of a section, not a marketing
+// button. It carries the same label-plus-link shape but drops the primary/secondary variant
+// choice (a micro-cta is always the same restrained chip) and adds an optional note line for a
+// short gloss on where the link goes.
+const microCta = defineComponent({
+  name: 'micro-cta',
+  label: 'Micro CTA',
+  description: 'A compact pointer link, for further reading at the end of a section.',
+  use: 'Point the reader at one related page without the weight of a full call to action.',
+  group: 'Actions',
+  icon: 'arrow-right',
+  preview: { attributes: { label: 'Read the guide', url: 'https://example.com', note: 'a short gloss on the link' } },
+  attributes: {
+    label: fields.text({ label: 'Label', required: true }),
+    url: fields.url({ label: 'URL', required: true }),
+    note: fields.text({ label: 'Note' }),
+  },
+  build: (ctx) => {
+    const label = strAttr(ctx, 'label') ?? '';
+    const url = strAttr(ctx, 'url') ?? '';
+    const note = strAttr(ctx, 'note');
+    const children: ElementContent[] = [h('span', { className: ['micro-cta-label'] }, [label])];
+    if (note) children.push(h('span', { className: ['micro-cta-note'] }, [note]));
+    children.push(makeIcon('arrow-right'));
+    return h('p', { className: ['micro-cta'] }, [h('a', { className: ['micro-cta-link'], href: url }, children)]);
+  },
+});
+
 // A frequently-asked question on the native <details>/<summary> disclosure, so it works with no JS: a
 // closed question is still fully readable by a screen reader and keyboard, it is simply collapsed. The
 // question is an attribute (one line, no inline formatting need) rather than a slot, unlike the
@@ -317,7 +345,7 @@ const banner = defineComponent({
   },
 });
 
-const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, faq, banner] });
+const registry = defineRegistry({ components: [callout, alert, icon, video, pullQuote, cta, microCta, faq, banner] });
 
 // The real render path: parse markdown through the engine so registered components render. The
 // chassis's proseTypography remark plugin smartens quotes, dashes, and ellipses in body prose;

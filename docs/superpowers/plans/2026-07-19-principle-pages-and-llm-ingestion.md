@@ -1,7 +1,16 @@
 # Principle pages and LLM ingestion
 
-**Status: PLANNED, awaiting Geoff's approval. Written 2026-07-19 at the close of the
-cairn.pub design arc (cairn-pub Passes 2 through 4).**
+**Status: APPROVED 2026-07-20 (Geoff). Written 2026-07-19 at the close of the cairn.pub
+design arc (cairn-pub Passes 2 through 4). Ready to execute in a fresh session.**
+
+**Decisions locked at approval (Geoff, 2026-07-20):**
+- The extended-admin figure is a **staged demo admin**, not the real ASC capture. Build a
+  small demo admin wearing a fictional organization's identity (custom screens beside the
+  content screens, one nav, one sign-in), and capture that. This keeps the never-name-ASC
+  ruling intact with no redaction of a real capture. The staged demo's build is a plan task
+  (see the figure section); it exercises the same extending-developer seams the page
+  describes, so the figure is honest.
+- Sequencing: **this pass first, Topo second** (token-efficiency call, reasoning in STATUS).
 
 Two dimensions, one pass. First: a purpose-built explanation page for each of the five core
 design principles, landed as first-class citizens of the docs. Second: cairn's docs made
@@ -55,19 +64,18 @@ fact-check against the engine source, and the linking audit. The docs-register s
 sibling pages where a reader would actually jump, and present in the docs nav tree
 cairn.pub renders.
 
-**The extended-admin figure (Geoff, 2026-07-19):** the one-sign-in page (and possibly the
-extension-idiom page) carries a real snapshot of the current ASC admin, showing what an
-extended admin looks like for an organization that builds one: custom screens beside the
-content screens, one nav, one sign-in. Three things to settle at execution:
+**The extended-admin figure (Geoff, 2026-07-20: STAGED DEMO):** the one-sign-in page (and
+possibly the extension-idiom page) carries a snapshot of a staged demo admin, showing what
+an extended admin looks like for an organization that builds one: custom screens beside the
+content screens, one nav, one sign-in. Execution:
 
-- **Naming (GEOFF'S CALL at plan approval):** the standing docs-register ruling is that ASC
-  is never named publicly, and the admin's own chrome shows the club's name. Options: use
-  the snapshot as-is (reversing that ruling for this figure), redact or re-brand the
-  identifying chrome in the capture, or stage an equivalent demo admin. The plan does not
-  pick; the figure ships only under whichever rule Geoff sets.
-- **Capture:** the ASC dev or staging admin sits behind Cloudflare Access (service token in
-  the local secrets store; the admin-smoke session-row process). Capture at the docs'
-  standard figure widths, light and dark if the shell supports both.
+- **Build the demo admin (plan task):** a small admin under a fictional organization's
+  identity, adding one or two custom screens (a sign-up list, a schedule) beside the
+  content screens through the real extending-developer seams (`CairnAdminShell`, `adminNav`,
+  `locals.editor`). Building it on the actual seams keeps the figure honest and doubles as a
+  live exercise of the surface the page describes. The showcase or a throwaway consumer is
+  the likely host; pick at execution.
+- **Capture:** the docs' standard figure widths, light and dark if the shell supports both.
 - **Pipeline:** confirm the docs tree carries images through the npm tarball and the
   cairn.pub docs renderer (the arms are markdown; verify image support end to end before
   drafting the page around the figure, and fall back to hosting the figure as cairn.pub

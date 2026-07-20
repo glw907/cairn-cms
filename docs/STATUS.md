@@ -55,13 +55,19 @@ authorized "minor" derived and confirmed as patch `0.88.2`.
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert.
 
-**NEXT: two queued passes, Geoff sequences.** (1) **Principle pages + LLM ingestion**,
-planned 2026-07-19 and awaiting his approval:
-`docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (five standalone
-explanation pages for the core design principles, the ASC extended-admin figure with its
-naming question flagged as his call, and cairn.pub's llms.txt / llms-full.txt / per-page
-markdown endpoints; ends with a release cut so the site can render the new pages).
-(2) **The Topo design pass.** Open with
+**NEXT (immediate): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
+`docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (a disposition
+survey that integrates the five core principles into the docs and reorganizes as needed,
+a STAGED DEMO extended-admin figure, and cairn.pub's llms.txt / llms-full.txt / per-page
+markdown endpoints plus the /docs-landing and footer surfacing; ends with a release cut so
+the site can render the reorganized docs). **Sequenced FIRST, before Topo, on token
+efficiency:** it is fully planned and approved (no mockup-gate loop), it is docs-prose work
+that reuses the register machinery and docs-arm context rather than opening a fresh design
+domain, and its release cut is a natural session boundary. Execute in a FRESH session (this
+plan is the cold-start handoff; the design-arc session that wrote it should close rather
+than carry its context forward).
+
+**THEN (2) The Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build); the cairn.pub design arc (its Passes 2 through 4)

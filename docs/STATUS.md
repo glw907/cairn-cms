@@ -15,60 +15,33 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-20, latest: v0.88.3 published; next = the Topo design pass)
+## Immediate next action (2026-07-21, latest: v0.89.0 published; next = the principle-pages pass)
 
-**v0.88.3 SHIPPED 2026-07-20 (ASC-triggered, out-of-band single-task publish; `latest`
-verified).** A new documented safelist source, `src/lib/components/admin-css-safelist.ts`,
-makes the admin CSS build compile a curated blessed set of daisyUI 5 classes no shipped
-admin component references yet: `stats`/`stat-*`, `table-zebra`/`table-xs`, `toast` with
-its placement modifiers, the `indicator`/`status`/`join` placement and orientation
-modifiers, and `badge-soft`/`badge-outline`/`badge-dash`. This is T1 of ASC's Members pass
-(`aksailingclub-org/docs/plans/2026-07-20-members-pass.md`), the engine change its
-admin-toolkit design survey's "daisyUI-first assembly" ruling needed before that site could
-build the toolkit's StatBand/StatusChip/TagChip/Pagination components. Full gate green
-(`check` 0/0, 3776 tests, `check:custom-surface`, `check:comments`, the four doc gates, a
-from-scratch showcase build); patch by the sizing rule (no new subsystem or public surface,
-only internal build output). No `Consumers must:` action.
+**THE ADMIN-TOOLKIT ORGANIZATION PASS SHIPPED 2026-07-21 (PR #9 merged, v0.89.0 published,
+`latest` verified).** The window: the new public subpath `@glw907/cairn-cms/admin-toolkit`
+(PageHeader, ListToolbar, AdminTable, StatusChip, Pagination, EmptyState, and the four
+formatters, graduated from the ASC-born contracts with the additive ruling-6 extensions;
+`formatTimestamp` defaults UTC; ExpandableRow held ASC-local per ruling 1), the adoption
+sweep re-expressing every engine admin screen on the toolkit (finding 11 closed: one header
+idiom, one count device, one search-placement rule; the showcase Signups screen is the
+packaged-subpath consumer proof), T8's daisy absorption ritual + Dependabot watch, and the
+reviewer-fix round (live-region count lines, disclosure dismissal, 24px targets, EmptyState
+heading levels, the AdminTable empty contract). Late catch worth knowing: the admin CSS
+build's `@source` scan had never included `src/lib/admin-toolkit`, so classes used only
+there silently never compiled (ListToolbar's segmented filters rendered stacked; the first
+CI baseline regen swallowed it; the main-loop crop read caught it). Fixed at the root plus
+a new CI gate, `check:admin-css-classes`, that fails on any referenced-but-never-compiled
+class. Record: the post-mortem in
+`docs/superpowers/plans/2026-07-20-admin-toolkit-organization.md` (method, cost, the
+five-gate miss, and the two evidence-backed finding refutations).
 
-**THE CHASSIS-NAV PASS SHIPPED 2026-07-19 (PR #8 merged, v0.88.2 published, `latest`
-verified).** The window: the showcase public header renders `menus.primary` through the
-engine's `extractMenu` via the ROOT layout server load (the root placement also feeds the
-`+error.svelte` mount; `App.PageData` types it app-wide), a lean `src/theme/site-config.ts`
-owns the template's single `parseSiteConfig` call with `cairn.config.ts` re-exporting
-`siteConfig`, content reconciled first so no visual drift (CI baselines held), a two-test
-e2e locks the config-to-render wiring and the error-page nav contract, tutorial Milestone 7
-rewritten off the client-side adapter import onto the same server-load shape, and the
-`check:arm-indexes` CI gate (set difference per arm; the tutorial arm's index is the front
-door, encoded explicitly; it caught and fixed the orphaned `build-a-theme.md`). The footer
-stays hardcoded deliberately (different content). Both ROADMAP items removed; one new
-finding filed (guides/add-an-island.md teaches a root-layout client import of the full
-adapter; ROADMAP Next with the registry-split fix named). Method: two serial
-`cairn-implementer` dispatches, zero repair rounds, simplifier one accepted change,
-`svelte-reviewer` sound-no-blockers with three suggestions applied and one declined with
-reasoning; full gate green locally and on CI. One human interaction point (the release-size
-confirmation). Record: the post-mortem in
-`docs/superpowers/plans/2026-07-19-chassis-nav.md`. Sizing lesson proven a third time:
-authorized "minor" derived and confirmed as patch `0.88.2`.
+**ASC hand-off now fully unblocked:** v0.89.0 carries the toolkit subpath ASC's next screen
+pass swaps onto (deleting its local `src/admin-club/toolkit/` copies; `formatTimestamp` now
+needs an explicit `America/Anchorage`), plus everything the admin-sidebar-2 consumer brief
+waited on. ASC work runs in aksailingclub-org's own sessions; its sites must apply
+`0001_roles.sql` before custom role names insert.
 
-**ASC hand-off remains open:** v0.88.x carries everything the admin-sidebar-2 consumer brief
-(`aksailingclub-org/docs/2026-07-18-cairn-sidebar-seams-consumer-brief.md`) waits on.
-ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
-before custom role names insert.
-
-**NEXT (immediate): the admin-toolkit organization pass, APPROVED 2026-07-20 (Geoff
-re-sequenced it ahead of principle-pages).**
-`docs/superpowers/plans/2026-07-20-admin-toolkit-organization.md`, spec
-`docs/superpowers/specs/2026-07-20-admin-toolkit-organization-design.md`. Harvest wave 1
-plus engine adoption: establish `@glw907/cairn-cms/admin-toolkit`, graduate the ASC-born
-components (ExpandableRow conditional on engine pull; ASC's Members pass landed 2026-07-20
-and its toolkit is usable), mint the cairn-born PageHeader off audit finding 11, and sweep
-every engine admin screen onto the toolkit so no bespoke parallel survives. Method:
-`admin-toolkit` worktree off `main`, `cairn-implementer` per task test-first with the full
-gate, main loop holds the adoption-map and PageHeader rulings; ends with a minor cut via
-`cairn-release` (ASC's next screen pass is the waiting consumer). ASC's import swap is out
-of scope (rides ASC's own sessions).
-
-**THEN (2): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
+**NEXT (immediate): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
 `docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (a disposition
 survey that integrates the five core principles into the docs and reorganizes as needed,
 a STAGED DEMO extended-admin figure, and cairn.pub's llms.txt / llms-full.txt / per-page
@@ -76,7 +49,7 @@ markdown endpoints plus the /docs-landing and footer surfacing; ends with a rele
 the site can render the reorganized docs). Docs-prose work that reuses the register
 machinery; execute in a FRESH session (the plan is the cold-start handoff).
 
-**THEN (3) The Topo design pass.** Open with
+**THEN (2) The Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build); the cairn.pub design arc (its Passes 2 through 4)
@@ -90,11 +63,14 @@ streamed pending count (upstream sveltejs/kit#12533; guide caveat published, ROA
 filed, scheduled routine now watches it); mermaid diagrams near-illegible at 320/390
 (candidate: tap-to-expand in the Topo pass, which the engine's new mermaid passthrough
 unblocks); section-index breadcrumbs duplicate the arm name; the cairn.pub live admin
-smoke (Geoff's magic link + publish round-trip) is owed.
+smoke (Geoff's magic link + publish round-trip) is owed; the `/admin/help` first-steps
+card overlap (pre-existing, found 2026-07-21 during the toolkit pass's render read) is
+filed in ROADMAP Now with a baseline-coverage rider.
 
 ## Archives
 
 Superseded entries live under `docs/internal/history/`:
-`STATUS-archive-2026-05-to-2026-07.md`, `STATUS-archive-2026-07-02-to-2026-07-16.md`, and
+`STATUS-archive-2026-05-to-2026-07.md`, `STATUS-archive-2026-07-02-to-2026-07-16.md`,
 `STATUS-archive-2026-07-17-to-2026-07-18.md` (the cairn.pub step-5 launch and the Waymark
-final-review entries).
+final-review entries), and `STATUS-archive-2026-07-19-to-2026-07-20.md` (the chassis-nav
+pass and the v0.88.3 safelist publish).

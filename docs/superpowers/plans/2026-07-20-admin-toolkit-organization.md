@@ -296,3 +296,65 @@ Grounded in the 2026-07-20 screen survey (all file:line references verified agai
   breadcrumb detail chrome (single-use), TidyReview (modal), the editor internals.
 
 T6/T7 groupings stand as drafted (A: ConceptList + CairnMediaLibrary; B: the rest above).
+## Post-mortem (2026-07-21)
+
+**Shipped.** T2 through T8 landed on the `admin-toolkit` worktree and merged to `main` via PR #9;
+the pass cut v0.89.0 through `cairn-release` (the new public subpath meets the minor bar).
+
+**What was built.** The `@glw907/cairn-cms/admin-toolkit` subpath: `format.ts` (four formatters,
+`formatTimestamp` defaulting to UTC as the graduation contract adjustment, `formatCivilDate` with
+the Intl-options passthrough), StatusChip, Pagination (with the additive page-size extension),
+AdminTable, ListToolbar (with the segmented-filter and `trailing` extensions, and the ARIA
+radiogroup absorbed from MediaLibrary's fuller pre-toolbar implementation), and the cairn-born
+PageHeader and EmptyState. The adoption sweep re-expressed ConceptList, CairnMediaLibrary,
+ManageEditors, VocabularyAdmin, CairnTidySettings, NavTree, HelpHome (masthead), WelcomeView, and
+the showcase Signups screen (the packaged-subpath consumer proof); the finding-11 spread is closed
+to one header idiom, one count device, and one search-placement rule, with the bespoke parallels
+deleted in the same diffs. T8 added the Dependabot daisyui watch, the daisy absorption ritual doc,
+the design-system repoints, and the changelog/upgrade-guide entries. ExpandableRow stayed ASC-local
+per ruling 1.
+
+**Method and cost.** Geoff opted into a workflow: 20 agents (seven Sonnet implementers, seven Opus
+per-task verifies with one repair round, the simplifier, a Sonnet gate battery, two Opus reviewers),
+about 2.63M subagent tokens over roughly five hours, plus two follow-up Sonnet dispatches (the
+reviewer-findings fix at ~0.22M, the segmented-filter repair at ~0.30M): roughly 3.16M subagent
+tokens total, with the Fable main loop holding orchestration, diff review, triage, and the render
+reads only. Orchestrator-initiated mid-execution questions: zero. Geoff-initiated exchanges: four
+(a cost check-in, the ASC-benefit question, a remaining-work question, and the release-sizing
+exchange that confirmed the plan's 0.x minor).
+
+**Verified with evidence.** Full gate battery by name (check 0/0, 3893 tests exit 0,
+check:comments, the four doc gates, check:package, check:surface, check:invisible-craft, and the
+new check:admin-css-classes); the live admin smoke against `wrangler dev` (anon redirect/login/
+public 200s; authed 307 to first concept and 200s across posts, pages, media, editors, vocabulary,
+nav, settings, help, signups after applying local migrations); main-loop render reads of every
+re-expressed screen; CI e2e green on the final tip; visual baselines regenerated on CI and the
+before/after crops read by the main loop.
+
+**The segmented-filter incident, and the gate it minted.** The first CI baseline regeneration
+captured ListToolbar's segmented filters rendering stacked and overlapping the search box. Five
+mechanical layers had passed it (implementer gate, Opus verify, component tests, the ten-gate
+battery, the regen itself, which cannot judge what it captures); the main-loop crop read caught it.
+The dispatched diagnosis (`.join` missing from the safelist) was refuted by the repair implementer:
+the grep pattern was a formatting trap (the compiled sheet always emits a space before `{`), and
+the real root cause was that `scripts/admin-css.input.css`'s `@source` scan never included
+`src/lib/admin-toolkit/**`, so any class used only there silently never compiled. That also
+retroactively explains T7's dead `text-balance` (the Opus verify's one mid-pass catch): same root
+cause, caught at instance level. The fix: the scan root, a `span-2` grid column for the segmented
+group, the count device restored to the shipped "All 6" form, and the structural gate
+`check:admin-css-classes` (proven to fail on the pre-fix state) so a referenced-but-never-compiled
+class fails CI instead of shipping. Lessons: a baseline regeneration must be followed by a
+main-loop crop read before it is trusted; a dispatched diagnosis is a hypothesis the implementer
+should verify against rendered truth, and refuting it with evidence is the desired behavior (it
+happened twice this pass: the diagnosis refutation, and the T8 type-facet finding traced to the
+2026-06-28 charter-adherence pass and tombstoned rather than restored).
+
+**Filed, not fixed.** The Help screen's first-steps card overlap at desktop widths reproduces
+identically on `main` (verified by rendering main's engine side by side), so it predates this pass;
+filed to ROADMAP rather than scope-creeping the close. The styleguide site-visual baseline delta
+was staleness (the micro-CTA section already on `main`), trued up by the regen.
+
+**Operational note.** The T2 implementer found the workstation at load ~165 with swap nearly full
+from 64 orphaned `workerd` processes leaked by earlier sessions across three repos, and cleared the
+ppid-1 orphans before its gate runs would pass reliably. Worth a workstation hygiene follow-up
+outside this repo.

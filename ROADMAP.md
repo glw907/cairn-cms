@@ -86,6 +86,14 @@ The original decision framing, for the record:
 
 ## Now
 
+- **Help screen first-steps card overlap (pre-existing, found 2026-07-21).** The getting-started
+  steps card on `/admin/help` renders its three step columns overlapping at desktop widths (the
+  step text collides with the checkbox rail and the step CTAs). Reproduced identically on the
+  pre-toolkit engine, so it predates the admin-toolkit pass; the section is hand-written scoped
+  CSS in `HelpHome.svelte`, untouched by the sweep. Needs a design-bearing fix against the
+  intended card layout, plus a visual-suite baseline for `/admin/help` so the screen stops being
+  the one admin surface with no render coverage.
+
 - **Docs-effectiveness infrastructure from the Superforms study (2026-07-03), Topo-era:**
   Pagefind-class Ctrl+K search on the docs site (the single biggest perceived-quality lever
   at zero infra), a FAQ/help top-nav page, a task-tagged examples gallery, an /llms

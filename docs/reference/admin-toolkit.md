@@ -98,7 +98,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, EmptyState } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -340,6 +340,74 @@ Every one of these already compiles from cairn's own admin usage. None needed a 
   count={filtered.length}
   itemLabel="entries"
 />
+```
+
+### `PageHeader`
+
+Stability tier: Extension API.
+
+```ts
+let { eyebrow, title, meta, action }: {
+  eyebrow?: string;
+  title: string;
+  meta?: string;
+  action?: Snippet;
+};
+```
+
+The canonical admin page-header recipe, the `OfficeList` shape generalized: an optional eyebrow,
+the page's one display-face `h1`, an optional muted meta line, and an optional single
+right-aligned action. `eyebrow` names a grouping (a custom nav section, "Media") and is omitted
+entirely when a screen has none worth naming. `meta` is the toolkit's one home for a page-level
+count outside a toolbar: `ListToolbar`'s own `computeCountLine` covers a screen with a search or
+filter row, and this line covers a screen with neither (a stats-prose summary, a scope note).
+`action` is the header's one right-aligned control (a create button, an upload trigger); search
+never lives in this band, since `ListToolbar` owns it.
+
+**daisyUI assembly:** none. This component is typography and layout only, the eyebrow and
+page-heading recipes from `docs/internal/admin-design-system.md`.
+
+**Exact class inventory:** none (no daisyUI component class).
+
+```svelte
+<PageHeader eyebrow="Media" title="Media library" meta="128 images · 4 need alt text">
+  {#snippet action()}
+    <button type="button" class="btn btn-sm btn-primary" onclick={openUpload}>Upload</button>
+  {/snippet}
+</PageHeader>
+```
+
+### `EmptyState`
+
+Stability tier: Extension API.
+
+```ts
+let { icon, heading, message, action }: {
+  icon?: Snippet;
+  heading: string;
+  message: string;
+  action?: Snippet;
+};
+```
+
+The centered first-run empty state: a fill on the content area holding an icon (the cairn mark by
+default, or a caller-supplied `icon` snippet for a site's own custom section), a heading, muted
+explanatory copy, and an optional action. This is the whole-concept-empty state only (a fresh "no
+posts yet" screen); a filtered-to-zero state (a search or filter narrowing a non-empty list to
+nothing) is a smaller, in-card notice inside `AdminTable`'s own `empty` snippet instead, never this
+component.
+
+**daisyUI assembly:** none. Typography and layout only, the same empty-state recipe
+`docs/internal/admin-design-system.md` documents.
+
+**Exact class inventory:** none (no daisyUI component class).
+
+```svelte
+<EmptyState heading="No posts yet" message="Stack your first one and it will show up here.">
+  {#snippet action()}
+    <button type="button" class="btn btn-sm btn-primary" onclick={create}>New post</button>
+  {/snippet}
+</EmptyState>
 ```
 
 ---

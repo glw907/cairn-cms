@@ -24,6 +24,7 @@ const ROOT = repoRoot(import.meta.url);
 // editor actually sees, and so every surface the rubric's three rules apply to.
 const SCAN_DIRS = [
   'src/lib/components',
+  'src/lib/admin-toolkit',
   'examples/showcase/src/chassis',
   'examples/showcase/src/theme',
   'examples/showcase/src/routes',

@@ -93,12 +93,21 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 ## `/admin-toolkit`
 
 - `ageFromBirthdate`: (birthdateIso: string | null, asOf?: Date) => number | null
+- `computeItemRange`: (page: number, pageSize: number, totalItems: number) => ItemRange | null
+- `computePageWindow`: (page: number, pageCount: number) => PageWindowItem[]
 - `formatCivilDate`: (iso: string | null, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
 - `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string
 - `FormatMoneyOptions`: { currency?: string; locale?: string }
 - `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string }
+- `ItemRange`: { first: number; last: number; total: number }
+- `PageWindowItem`: number | "ellipsis"
+- `Pagination`: Component<Props, {}, "">
+- `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }
+- `StatusChip`: Component<Props, {}, "">
+- `StatusChipSize`: "xs" | "sm"
+- `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
 
 ## `/ambient`
 

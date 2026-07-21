@@ -12,3 +12,11 @@ export {
   type FormatMoneyOptions,
   type FormatTimestampOptions,
 } from './format.js';
+export { default as StatusChip, STATUS_CHIP_DOT_CLASS, type StatusChipSize, type StatusChipTone } from './StatusChip.svelte';
+export {
+  default as Pagination,
+  computeItemRange,
+  computePageWindow,
+  type ItemRange,
+  type PageWindowItem,
+} from './Pagination.svelte';

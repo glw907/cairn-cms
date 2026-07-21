@@ -22,9 +22,13 @@ sits outside `scripts/admin-css.input.css`'s own `@source` scan, every utility c
 already compiled from the identical literal token in a scanned `src/lib/components/*.svelte`
 file (the eyebrow and page-heading recipes documented in `docs/internal/admin-design-system.md`,
 already carried by `OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm
-value; `text-balance`, absorbed from `HelpHome.svelte`'s own sentence-length masthead title so a
-long title's line rags evenly rather than leaving a lone last word, already scanned from
-`WelcomeView.svelte`'s copy); this component introduces no new utility token of its own.
+value); this component introduces no new Tailwind utility token of its own. The h1's even-line-rag
+balancing (absorbed from `HelpHome.svelte`'s own sentence-length masthead title, so a long title's
+line rags evenly rather than leaving a lone last word) is a `text-wrap: balance` rule in this
+component's own scoped `<style>` below, not a Tailwind utility class: `/admin/**` routes load only
+the precompiled `cairn-admin.css`, and this component lives outside its `@source` scan, so an
+arbitrary utility class (`text-balance` included) never reaches the shipped sheet, exactly the
+constraint `StatusChip.svelte`'s own header comment documents.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -52,8 +56,17 @@ long title's line rags evenly rather than leaving a lone last word, already scan
     {#if eyebrow}
       <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="text-2xl font-bold text-balance font-[family-name:var(--font-display)]">{title}</h1>
+    <h1 class="page-h1 text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="text-sm text-muted">{meta}</p>{/if}
   </div>
   {#if action}{@render action()}{/if}
 </header>
+
+<style>
+  /* The even-line-rag balance for a wrapped title, absorbed from HelpHome's own masthead rule.
+     Scoped CSS ships regardless of the Tailwind @source scan, unlike the `text-balance` utility
+     this component lives outside the reach of (see the header comment above). */
+  .page-h1 {
+    text-wrap: balance;
+  }
+</style>

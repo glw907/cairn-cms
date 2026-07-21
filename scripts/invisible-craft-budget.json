@@ -9,6 +9,11 @@
       "file": "src/lib/components/cairn-admin.css",
       "token": "transition-duration: 0.01ms !important;",
       "reason": "reduced-motion accessibility override, deliberately near-zero to disable transitions under prefers-reduced-motion"
+    },
+    {
+      "file": "examples/showcase/src/theme/components/Carousel.svelte",
+      "token": "transition: opacity 650ms ease;",
+      "reason": "PRE-EXISTING: deliberately slow image crossfade for the carousel, well outside the micro-interaction band this rule targets; predates this gate's own coverage of examples/showcase/src/theme; review at next polish round"
     }
   ],
   "spacingBrackets": [

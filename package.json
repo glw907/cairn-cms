@@ -84,6 +84,11 @@
       "svelte": "./dist/admin-fields/index.js",
       "default": "./dist/admin-fields/index.js"
     },
+    "./admin-toolkit": {
+      "types": "./dist/admin-toolkit/index.d.ts",
+      "svelte": "./dist/admin-toolkit/index.js",
+      "default": "./dist/admin-toolkit/index.js"
+    },
     "./islands": {
       "types": "./dist/islands/index.d.ts",
       "default": "./dist/islands/index.js"

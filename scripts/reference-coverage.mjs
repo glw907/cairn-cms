@@ -299,6 +299,7 @@ export const CONFIG = [
   { subpath: '/sveltekit', dts: 'dist/sveltekit/index.d.ts', page: 'docs/reference/sveltekit.md' },
   { subpath: '/components', dts: 'dist/components/index.d.ts', page: 'docs/reference/components.md' },
   { subpath: '/admin-fields', dts: 'dist/admin-fields/index.d.ts', page: 'docs/reference/admin-fields.md' },
+  { subpath: '/admin-toolkit', dts: 'dist/admin-toolkit/index.d.ts', page: 'docs/reference/admin-toolkit.md' },
   { subpath: '/render', dts: 'dist/render/authoring.d.ts', page: 'docs/reference/render.md' },
   { subpath: '/islands', dts: 'dist/islands/index.d.ts', page: 'docs/reference/islands.md' },
   { subpath: '/delivery', dts: 'dist/delivery/index.d.ts', page: 'docs/reference/delivery.md', excludeDts: 'dist/delivery/data.d.ts' },

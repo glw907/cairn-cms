@@ -90,6 +90,16 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `SelectFieldOption`: { value: string; label: string }
 - `TextField`: Component<Props, {}, "value">
 
+## `/admin-toolkit`
+
+- `ageFromBirthdate`: (birthdateIso: string | null, asOf?: Date) => number | null
+- `formatCivilDate`: (iso: string | null, options?: FormatCivilDateOptions) => string
+- `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
+- `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string
+- `FormatMoneyOptions`: { currency?: string; locale?: string }
+- `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
+- `FormatTimestampOptions`: { timeZone?: string; locale?: string }
+
 ## `/ambient`
 
 - `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }

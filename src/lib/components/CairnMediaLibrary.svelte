@@ -1362,11 +1362,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   }
 
   // --- display helpers ---
-  const dateFmt = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
-  function formatAdded(iso: string): string {
-    const parsed = new Date(iso);
-    return Number.isNaN(parsed.getTime()) ? iso : dateFmt.format(parsed);
-  }
   function formatBytes(bytes: number): string {
     // A non-breaking space between the number and its unit, so a narrow metadata line never
     // wraps "482" onto one line and "KB" onto the next.
@@ -1895,7 +1890,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <dt class="text-muted">Type</dt>
           <dd class="m-0 text-right">{typeLabel(asset)}</dd>
           <dt class="text-muted">Added</dt>
-          <dd class="m-0 text-right tabular-nums">{formatAdded(asset.createdAt)}</dd>
+          <dd class="m-0 text-right tabular-nums">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</dd>
         </dl>
       </div>
 

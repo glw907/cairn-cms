@@ -98,7 +98,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -194,6 +194,154 @@ modifiers).
 <Pagination page={page} pageCount={pageCount} onPageChange={(p) => (page = p)} totalItems={149} pageSize={20} itemLabel="households" />
 ```
 
+### `AdminTable`
+
+Stability tier: Extension API.
+
+```ts
+let { density = 'sm', zebra = false, header, children, rowCount, empty, emptyColspan = 100 }: {
+  density?: AdminTableDensity;
+  zebra?: boolean;
+  header: Snippet;
+  children: Snippet;
+  rowCount: number;
+  empty?: Snippet;
+  emptyColspan?: number;
+};
+```
+
+The table shell. `density` (defaults `'sm'`) names the two density tiers; `zebra` (defaults
+`false`) turns on alternating-row shading, off by default so a screen opts in rather than
+inheriting a house style. `header` and `children` are snippets, a `<tr>` of `<th>` cells and the
+`<tbody>` row markup respectively, so this component owns the table's own chrome and never a row
+shape or a data contract: it carries no `rows: T[]` prop, and a caller's row markup is entirely its
+own template. `rowCount` switches the body to the `empty` snippet when `0` (omit `empty` for an
+empty `<tbody>` instead); `emptyColspan` (defaults `100`, which HTML's own `colspan` clamps to the
+real column count) sizes the empty-state cell's span.
+
+Single-line enforcement is a contract, not a full mechanism. Every cell gets `white-space: nowrap`
+from this component's own scoped CSS, so a wrap never happens even if a caller forgets, but
+ellipsis truncation of one specific long value is the calling cell's own scoped-CSS
+responsibility, the same scoped-truncation model `StatusChip`'s `.status-chip-label` carries; this
+component can't reach inside a snippet's own markup to add truncation there itself. The wrapper's
+`overflow-x: auto` is the horizontal-scroll fallback for a table wider than its viewport.
+
+**daisyUI assembly:** `table`, `table-xs`, `table-sm`, `table-zebra`, every one already compiled
+into the packaged `cairn-admin.css`.
+
+**Exact class inventory:** `table`, `table-xs`, `table-sm`, `table-zebra`.
+
+```svelte
+<AdminTable {density} zebra rowCount={rows.length}>
+  {#snippet header()}
+    <th>Household</th>
+    <th>Standing</th>
+  {/snippet}
+  {#snippet children()}
+    {#each rows as row (row.id)}
+      <tr><td>{row.household}</td><td><StatusChip tone={row.tone} label={row.standing} /></td></tr>
+    {/each}
+  {/snippet}
+  {#snippet empty()}
+    <p>No households match.</p>
+  {/snippet}
+</AdminTable>
+```
+
+### `ListToolbar`
+
+Stability tier: Extension API.
+
+```ts
+let {
+  search,
+  onSearch,
+  searchLabel = 'Search',
+  autofocus = false,
+  filters = [],
+  overflowLabel = 'More filters',
+  primaryAction,
+  count,
+  itemLabel,
+  trailing,
+}: {
+  search: string;
+  onSearch: (value: string) => void;
+  searchLabel?: string;
+  autofocus?: boolean;
+  filters?: ListToolbarFilter[];
+  overflowLabel?: string;
+  primaryAction?: ListToolbarAction;
+  count: number;
+  itemLabel: string;
+  trailing?: Snippet;
+};
+```
+
+The list-header band: search, any number of promoted filters, an overflow disclosure for filters
+a screen chooses not to promote (present in the contract even when a consumer promotes every
+filter and never renders it), exactly one right-aligned primary action, applied-filter pills with
+a remove control, and a count line that always states its own filter scope. Every prop is a
+controlled value plus a change callback, the same fully controlled convention `Pagination`
+establishes. A search box's own text, a filter's own selected value, and each filter's own promotion status
+are all state the caller owns, never this component.
+
+Each `ListToolbarFilter` carries `id`, `label` (the control's accessible name, never rendered as
+visible chrome), `options`, `value`, `onChange`, an optional `defaultValue` (the "no filter
+applied" value, defaults `'all'`), `promoted` (defaults `true`, choosing the band versus the
+overflow disclosure), and `display` (`'select'` or `'segmented'`, defaults `'select'`, see below).
+`primaryAction` is `{ label, onClick }`, the toolbar's one right-aligned action; the contract never
+accepts more than one. `count`/`itemLabel` feed the count line's own scope.
+
+`display: 'segmented'` renders a filter as a group of always-visible toggle buttons instead of a
+`<select>`, for a filter whose vocabulary reads better as tabs than a dropdown (a publish-state
+filter, a triage radiogroup); each `ListToolbarFilterOption`'s optional `count` renders beside its
+label. A segmented filter that opts out of promotion (`promoted: false`) still renders as a
+`<select>` in the overflow disclosure, since a button group behind a disclosure menu loses the
+always-visible scan-ability segmented display exists for. `trailing` is an optional snippet
+rendered after the toolbar band, for a screen-specific view control this component has no
+vocabulary for (a grid/list density toggle).
+
+The module context exports two functions, independently unit tested the same way `Pagination`'s
+`computePageWindow`/`computeItemRange` are:
+
+- `computeAppliedFilters(filters)` returns every filter away from its own `defaultValue`, as a
+  pill `{ id, label }` where `label` reads from the matching option's own label, falling back to
+  the raw value for a stale or externally set one, so a pill is never blank.
+- `computeCountLine(count, itemLabel, appliedLabels)` returns the count line's own copy pattern:
+  `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot
+  (`"12 households · Overdue · Holding assets"`). The line always renders, even at zero applied
+  filters or a zero count, per the count-line-always-states-its-scope contract.
+
+Applied-filter pills render in the toolkit's one neutral badge tone (`badge-neutral`), never an
+alarm color: an applied filter is a normal state of the list, not a warning.
+
+**daisyUI assembly:** `input`/`input-sm` (search), `select`/`select-sm` (a `'select'`-display
+filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a `'segmented'`-
+display filter, the same assembly `Pagination`'s own page nav uses), `btn`/`btn-sm`/`btn-primary`/
+`btn-outline` (the primary action and the overflow trigger), `dropdown`/`dropdown-content`/
+`dropdown-open`/`menu` (the overflow disclosure), `badge`/`badge-neutral`/`badge-sm` (the pills).
+Every one of these already compiles from cairn's own admin usage. None needed a safelist addition.
+
+**Exact class inventory:** `input`, `input-sm`, `select`, `select-sm`, `join`, `join-item`, `btn`,
+`btn-sm`, `btn-active`, `btn-primary`, `btn-outline`, `dropdown`, `dropdown-content`,
+`dropdown-open`, `menu`, `badge`, `badge-neutral`, `badge-sm`.
+
+```svelte
+<ListToolbar
+  search={query}
+  onSearch={(value) => (query = value)}
+  filters={[
+    { id: 'state', label: 'Publish state', display: 'segmented',
+      options: [{ value: 'all', label: 'All', count: 149 }, { value: 'draft', label: 'Draft', count: 4 }],
+      value: state, onChange: (v) => (state = v) },
+  ]}
+  primaryAction={{ label: 'New entry', onClick: create }}
+  count={filtered.length}
+  itemLabel="entries"
+/>
+```
+
 ---
 
 ## Types
@@ -210,3 +358,10 @@ modifiers).
 | `ItemRange` | Extension API | `interface ItemRange { first: number; last: number; total: number }` | The inclusive item range a page covers (`computeItemRange`'s return shape), plus the total it is drawn from. |
 | `computePageWindow` | Extension API | `declare function computePageWindow(page: number, pageCount: number): PageWindowItem[]` | Reduces `1..pageCount` to a bounded set of page buttons, windowing to first, last, and a run around `page` once `pageCount` exceeds 7. Returns `[]` for `pageCount <= 0`. |
 | `computeItemRange` | Extension API | `declare function computeItemRange(page: number, pageSize: number, totalItems: number): ItemRange \| null` | The inclusive 1-based item range `page` covers at `pageSize`, clamped to `totalItems`. Returns `null` for a non-positive `pageSize`/`totalItems`, or a `page` past the last item. |
+| `AdminTableDensity` | Extension API | `type AdminTableDensity = 'xs' \| 'sm'` | `AdminTable`'s two named density tiers, matching `StatusChip`'s own size vocabulary. |
+| `ListToolbarFilterOption` | Extension API | `interface ListToolbarFilterOption { value: string; label: string; count?: number }` | One option in a `ListToolbarFilter`'s own vocabulary. `count` is an optional per-option match count for the segmented display. |
+| `ListToolbarFilter` | Extension API | `interface ListToolbarFilter { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: 'select' \| 'segmented' }` | One filter control, fully controlled by the caller. |
+| `ListToolbarAction` | Extension API | `interface ListToolbarAction { label: string; onClick: () => void }` | The toolbar's one right-aligned primary action. |
+| `AppliedFilterPill` | Extension API | `interface AppliedFilterPill { id: string; label: string }` | One rendered applied-filter pill, `computeAppliedFilters`'s return shape. |
+| `computeAppliedFilters` | Extension API | `declare function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilterPill[]` | Every filter away from its own default value, as a pill. |
+| `computeCountLine` | Extension API | `declare function computeCountLine(count: number, itemLabel: string, appliedLabels: string[]): string` | The count line's own copy pattern: `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot. |

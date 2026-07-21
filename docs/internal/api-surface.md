@@ -92,7 +92,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/admin-toolkit`
 
+- `AdminTable`: Component<Props, {}, "">
+- `AdminTableDensity`: "xs" | "sm"
 - `ageFromBirthdate`: (birthdateIso: string | null, asOf?: Date) => number | null
+- `AppliedFilterPill`: { id: string; label: string }
+- `computeAppliedFilters`: (filters: ListToolbarFilter[]) => AppliedFilterPill[]
+- `computeCountLine`: (count: number, itemLabel: string, appliedLabels: string[]) => string
 - `computeItemRange`: (page: number, pageSize: number, totalItems: number) => ItemRange | null
 - `computePageWindow`: (page: number, pageCount: number) => PageWindowItem[]
 - `formatCivilDate`: (iso: string | null, options?: FormatCivilDateOptions) => string
@@ -102,6 +107,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string }
 - `ItemRange`: { first: number; last: number; total: number }
+- `ListToolbar`: Component<Props, {}, "">
+- `ListToolbarAction`: { label: string; onClick: () => void }
+- `ListToolbarFilter`: { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: "select" | "segmented" }
+- `ListToolbarFilterOption`: { value: string; label: string; count?: number }
 - `PageWindowItem`: number | "ellipsis"
 - `Pagination`: Component<Props, {}, "">
 - `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }

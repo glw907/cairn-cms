@@ -24,6 +24,16 @@ function fixture(over: Partial<HelpData> = {}): HelpData {
 }
 
 describe('HelpHome', () => {
+  it('renders its masthead through the admin toolkit', async () => {
+    // The admin-toolkit organization pass's T7 adoption sweep: the masthead renders through
+    // PageHeader; the section sub-headers below stay their own recipe this wave.
+    const screen = render(HelpHome, { data: fixture() });
+    const header = screen.container.querySelector('header.mb-10');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).toContain('Help');
+    expect(header?.textContent).toContain('If you need more, the get-help section below names who to ask.');
+  });
+
   it('renders the masthead, the 1-of-3 progress with a Done tag, the reference table, and the email hand-off', async () => {
     render(HelpHome, { data: fixture() });
 

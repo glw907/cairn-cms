@@ -77,10 +77,18 @@ export const ADMIN_CSS_SAFELIST = [
   'status-lg',
   'status-xl',
 
-  // join: the Pagination toolkit component. `join` already compiles from the admin's own usage;
-  // `join-item` and both orientation modifiers are new. Verified against the built sheet that every
-  // `btn` variant the join-pagination idiom needs (`btn`, `btn-active`, `btn-sm`, ...) already
-  // compiles from the admin's own usage, so no `btn` addition belongs in this safelist.
+  // join: the Pagination and ListToolbar toolkit components (the segmented filter's own wrapping
+  // div). `join` itself compiles from the admin-toolkit's own literal `class="join"` usage now
+  // that the CSS build's `@source` scans src/lib/admin-toolkit (the visual-regression repair this
+  // safelist entry documents: admin-toolkit was never added to the scan root when it graduated out
+  // of src/lib/components, so its own usage alone did not compile the class, and the segmented
+  // filter rendered as a plain block div with no compiled `.join` rule at all). Blessed here
+  // anyway, deliberately rather than incidentally, so a future admin-toolkit refactor away from a
+  // literal `class="join"` string can never silently drop the rule again. Verified against the
+  // built sheet that every `btn` variant the join-pagination idiom needs (`btn`, `btn-active`,
+  // `btn-sm`, ...) already compiles from the admin's own usage, so no `btn` addition belongs in
+  // this safelist.
+  'join',
   'join-item',
   'join-horizontal',
   'join-vertical',

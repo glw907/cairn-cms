@@ -45,6 +45,7 @@
     "check:chassis-boundary": "node scripts/check-chassis-boundary.mjs",
     "check:cm-internals": "node scripts/check-cm-internals.mjs",
     "check:invisible-craft": "node scripts/check-invisible-craft.mjs",
+    "check:admin-css-classes": "npm run package && node scripts/check-admin-css-classes.mjs",
     "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/check-touch-targets.mjs",
     "test:reskin": "node scripts/reskin-fixture.mjs",
@@ -83,6 +84,11 @@
       "types": "./dist/admin-fields/index.d.ts",
       "svelte": "./dist/admin-fields/index.js",
       "default": "./dist/admin-fields/index.js"
+    },
+    "./admin-toolkit": {
+      "types": "./dist/admin-toolkit/index.d.ts",
+      "svelte": "./dist/admin-toolkit/index.js",
+      "default": "./dist/admin-toolkit/index.js"
     },
     "./islands": {
       "types": "./dist/islands/index.d.ts",

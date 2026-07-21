@@ -1,0 +1,19 @@
+# This config is deliberately narrow: it watches ONLY daisyui, not every npm dependency in this
+# repo. The admin (`cairn-admin.css`) and the admin toolkit (`@glw907/cairn-cms/admin-toolkit`)
+# both assemble their markup from a curated blessed set of daisyUI classes, and daisy can rename
+# or drop a class with no build error, only a silently unstyled control. A daisyUI PR here is the
+# trigger for the absorption ritual in docs/internal/daisy-absorption-ritual.md: read the
+# changelog, rebuild, verify the blessed-set class inventory still compiles, and run the visual
+# suite before merging the bump. Do not widen this to a blanket npm watch without also widening
+# that doc's reach; every other dependency bumps on its own maintainer-reviewed schedule.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+    allow:
+      - dependency-name: "daisyui"
+    labels:
+      - dependencies
+      - daisyui

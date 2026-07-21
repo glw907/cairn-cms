@@ -79,12 +79,14 @@ and a matching `+page.svelte`:
 <!-- src/routes/admin/signups/+page.svelte -->
 <script lang="ts">
   import { CsrfField } from '@glw907/cairn-cms/components';
+  import { PageHeader, AdminTable } from '@glw907/cairn-cms/admin-toolkit';
   import type { PageData } from './$types';
 
   let { data }: { data: PageData } = $props();
 </script>
 
-<h1 class="text-2xl font-semibold">Signups</h1>
+<PageHeader title="Signups" />
+
 <form method="POST" action="?/create" class="my-4 flex gap-2">
   <CsrfField />
   <label class="sr-only" for="signup-name">Name</label>
@@ -93,11 +95,14 @@ and a matching `+page.svelte`:
   <input id="signup-email" name="email" placeholder="Email" class="input input-bordered" />
   <button class="btn btn-primary">Add</button>
 </form>
-<table class="table">
-  <thead>
-    <tr><th>Name</th><th>Email</th><th><span class="sr-only">Actions</span></th></tr>
-  </thead>
-  <tbody>
+
+<AdminTable density="sm" rowCount={data.signups.length}>
+  {#snippet header()}
+    <th scope="col">Name</th>
+    <th scope="col">Email</th>
+    <th scope="col"><span class="sr-only">Actions</span></th>
+  {/snippet}
+  {#snippet children()}
     {#each data.signups as s (s.id)}
       <tr>
         <td>{s.name}</td>
@@ -111,18 +116,23 @@ and a matching `+page.svelte`:
         </td>
       </tr>
     {/each}
-  </tbody>
-</table>
+  {/snippet}
+</AdminTable>
 ```
 
 Nothing here mounts a layout of its own. The site's shared `/admin/+layout.svelte` already wraps
 the whole `/admin/**` subtree in
 [`CairnAdminShell`](../reference/components.md#cairnadminshell), so this page renders inside the
-same sidebar, top bar, and theme as every built-in view. The preceding DaisyUI classes (`input`,
-`btn`, `table`) are the same ones cairn builds the shell with, so a screen that reuses them needs
-no stylesheet of its own. [`OfficeList`](../reference/components.md#officelist) wraps this same
-header-plus-card shell for you, with an optional `eyebrow` naming the section a screen belongs to;
-the Club section's own screens below all pass `eyebrow="Club"`.
+same sidebar, top bar, and theme as every built-in view.
+[`PageHeader`](../reference/admin-toolkit.md#pageheader) and
+[`AdminTable`](../reference/admin-toolkit.md#admintable), from the packaged
+`@glw907/cairn-cms/admin-toolkit` subpath, are the same header and table shell cairn's own admin
+screens build with, so a custom screen reaches for them instead of hand-rolling a parallel header
+or table chrome. The remaining DaisyUI classes (`input`, `btn`) are the same ones cairn builds the
+shell with, so a form needs no stylesheet of its own.
+[`OfficeList`](../reference/components.md#officelist) is the alternative header-plus-card shell
+for a triage screen that wants both in one wrap, with an optional `eyebrow` naming the section a
+screen belongs to; the Club section's own screens below all pass `eyebrow="Club"`.
 
 ## Gate it with `requireSession`, `requireEditor`, or `requireOwner`
 
@@ -423,9 +433,12 @@ wrapper the custom section composes. [The custom admin-nav seam](../reference/sv
 [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) documents `navFilter`.
 [Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging
 the whole sidebar rather than adding one entry to it.
-[`CairnAdminShell`](../reference/components.md#cairnadminshell), [`OfficeList`](../reference/components.md#officelist), and
-[`CsrfField`](../reference/components.md#csrffield) document the shell your screen renders inside,
-the header-plus-card frame a triage screen composes, and the field every one of its forms needs.
+[`CairnAdminShell`](../reference/components.md#cairnadminshell) documents the shell your screen
+renders inside. [The admin toolkit](../reference/admin-toolkit.md) documents `PageHeader` and
+`AdminTable`, the packaged header and table components this guide's screen builds with, and
+[`OfficeList`](../reference/components.md#officelist) documents the alternative header-plus-card
+frame a triage screen composes in one wrap. [`CsrfField`](../reference/components.md#csrffield)
+documents the field every one of this guide's forms needs.
 [The canonical admin mount](../reference/admin-routes.md)
 covers the route pair and layout this guide assumed were already in place, and [the ambient types
 reference](../reference/ambient.md) covers the `locals.editor` typing in full.

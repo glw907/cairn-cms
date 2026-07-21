@@ -81,6 +81,17 @@ function fixture(over: Partial<MediaLibraryData> = {}): MediaLibraryData {
   return { assets: ASSETS, usage: USAGE, error: null, flash: null, flashError: null, ...over };
 }
 
+describe('CairnMediaLibrary toolkit adoption', () => {
+  // The admin-toolkit organization pass's T6 adoption sweep: the header and toolbar band render
+  // through the toolkit's own components, not a bespoke fork. Each assertion pins a structural
+  // signature the toolkit component itself owns, so a regression back to a local fork trips it.
+  it('renders its header and toolbar through the admin toolkit', async () => {
+    const screen = render(CairnMediaLibrary, { data: fixture() } as never);
+    expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
+    expect(screen.container.querySelector('.toolkit-toolbar')).not.toBeNull();
+  });
+});
+
 describe('CairnMediaLibrary grid', () => {
   it('renders a roving listbox of tiles with names, alt-status glyphs, and usage markers', async () => {
     const screen = render(CairnMediaLibrary, { data: fixture() } as never);
@@ -91,13 +102,14 @@ describe('CairnMediaLibrary grid', () => {
     expect(screen.container.textContent ?? '').toContain('first-light');
     expect(screen.container.textContent ?? '').toContain('valley-ridge');
 
-    // The Needs-alt tile names its status as a label, never hue alone.
+    // The Needs-alt tile names its status as a label, never hue alone (now the toolkit's
+    // StatusChip: a tone dot plus its own visible text label, never a dot alone).
     const needsAltTile = options.find((o) => /valley-ridge/.test(o.textContent ?? ''))!;
     expect(needsAltTile.textContent ?? '').toMatch(/needs alt/i);
-    // The described tile carries the Described accessible name, AND a visible text label beside
-    // the check glyph (audit finding 10: the glyph-plus-label rule, never hue or the glyph alone).
+    expect(needsAltTile.querySelector('.status-warning')).not.toBeNull();
+    // The described tile carries a visible text label beside the toolkit's neutral status dot.
     const describedTile = options.find((o) => /first-light/.test(o.textContent ?? ''))!;
-    expect(describedTile.querySelector('[aria-label="Described"]')).not.toBeNull();
+    expect(describedTile.querySelector('.status-neutral')).not.toBeNull();
     expect(describedTile.textContent ?? '').toMatch(/described/i);
 
     // The no-references tile carries the "Not referenced" marker; the used tile names its count.

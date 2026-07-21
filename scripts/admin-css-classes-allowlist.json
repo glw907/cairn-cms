@@ -1,0 +1,62 @@
+[
+  {
+    "file": "src/lib/components/CairnMediaLibrary.svelte",
+    "token": "cairn-ml-name",
+    "reason": "a test-selector hook (CairnMediaLibrary.test.ts queries it directly); the visible name's styling rides on the Tailwind utilities in the same class attribute"
+  },
+  {
+    "file": "src/lib/components/ComponentInsertDialog.svelte",
+    "token": "ec-glyph",
+    "reason": "shared with the public render pipeline (src/lib/render/glyph.ts): the admin preview reuses the exact class the embed-card glyph ships with on a public page, deliberately outside the admin sheet since public render output stays design-agnostic"
+  },
+  {
+    "file": "src/lib/components/IconPicker.svelte",
+    "token": "ec-glyph",
+    "reason": "same public-render-pipeline class as ComponentInsertDialog's own ec-glyph use"
+  },
+  {
+    "file": "src/lib/components/MediaPicker.svelte",
+    "token": "ec-glyph",
+    "reason": "same public-render-pipeline class as ComponentInsertDialog's own ec-glyph use"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-save-state",
+    "reason": "a test-selector hook (EditPage.test.ts queries it directly); the save-state text's styling rides on the Tailwind utilities in the same class attribute"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "menu-divider",
+    "reason": "a naming hook distinguishing a custom divider <li> from daisyUI's own .divider (EditorToolbar.test.ts queries it directly); the line itself is drawn by the accompanying Tailwind utilities"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-feedback",
+    "reason": "a test-selector hook (EditPage.test.ts queries it directly)"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-preview-frame",
+    "reason": "a test-selector hook (EditPage.test.ts queries it directly)"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-edit-actionbar",
+    "reason": "a naming hook alongside the same element's data-testid=\"cairn-edit-actionbar\" (EditPage.test.ts queries the testid); the bar's own styling rides on the Tailwind utilities in the same class attribute"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-zen-chip",
+    "reason": "a test-selector hook (EditPage.test.ts queries it directly)"
+  },
+  {
+    "file": "src/lib/components/EditPage.svelte",
+    "token": "cairn-editor-zen",
+    "reason": "a naming hook the zen tests toggle directly (also, coincidentally, the unrelated localStorage preference key of the same name); the editor card's zen styling rides on its own Tailwind utilities"
+  },
+  {
+    "file": "src/lib/components/EditorToolbar.svelte",
+    "token": "menu-divider",
+    "reason": "same divider naming hook as EditPage's own menu-divider use"
+  }
+]

@@ -49,6 +49,25 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: the admin toolkit, and the header idiom converges (non-breaking)
+
+A new public subpath, `@glw907/cairn-cms/admin-toolkit`, packages the general-purpose admin
+components and formatters aksailingclub-org's own admin build proved first: `PageHeader`,
+`ListToolbar`, `AdminTable`, `StatusChip`, `Pagination`, `EmptyState`, and the
+`formatMoney`/`formatCivilDate`/`formatTimestamp`/`ageFromBirthdate` formatters. Build your own
+`/admin/` screen on it instead of hand-rolling a bespoke parallel; see [the admin-toolkit
+reference](../reference/admin-toolkit.md).
+
+cairn's own built-in admin screens now build on that toolkit too. `ConceptList`,
+`CairnMediaLibrary`, `ManageEditors`, `VocabularyAdmin`, `CairnTidySettings`, `NavTree`, and
+`HelpHome` all render their page header through the toolkit's `PageHeader`, converging five ad
+hoc header markups into one visible idiom, and `ConceptList` and `CairnMediaLibrary` converge
+their search, filter, count, table, and pager markup the same way.
+
+Consumers must: nothing. The new subpath is additive, and the header convergence touches only
+cairn's own built-in admin screens; you may notice their rhythm settle to one shape, but no prop
+or route contract changed.
+
 ## 0.88.3: a blessed daisyUI safelist for the admin (non-breaking)
 
 The admin CSS build now compiles a curated blessed set of daisyUI 5 classes no shipped cairn admin

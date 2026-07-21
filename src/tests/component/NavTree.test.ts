@@ -22,6 +22,15 @@ function treeFromForm(container: HTMLElement): unknown {
 }
 
 describe('NavTree', () => {
+  it('renders its header through the admin toolkit', async () => {
+    // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
+    // PageHeader, not a bare h1; the sortable-list card stays untouched.
+    const screen = render(NavTree, { data: data() });
+    const header = screen.container.querySelector('header.mb-10');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).toContain('Primary nav');
+  });
+
   it('renders a row per node with its label and url', async () => {
     const screen = render(NavTree, { data: data() });
     // Three nodes: Home (0), Guides (1), Start nested at (2).

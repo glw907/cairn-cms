@@ -1,3 +1,42 @@
+## Unreleased
+
+### Added
+
+- A new public subpath, `@glw907/cairn-cms/admin-toolkit`, packages the general-purpose admin
+  components and formatters aksailingclub-org's own admin build proved first: `PageHeader`,
+  `ListToolbar`, `AdminTable`, `StatusChip`, `Pagination`, `EmptyState`, and the
+  `formatMoney`/`formatCivilDate`/`formatTimestamp`/`ageFromBirthdate` formatters. A site building
+  its own `/admin/` screen reaches for the same shared vocabulary cairn's own admin now uses,
+  instead of hand-rolling a bespoke parallel. See [the admin-toolkit
+  reference](docs/reference/admin-toolkit.md).
+
+### Changed
+
+- cairn's own admin screens now build on that toolkit. `ConceptList`, `CairnMediaLibrary`,
+  `ManageEditors`, `VocabularyAdmin`, `CairnTidySettings`, `NavTree`, and `HelpHome` all render
+  their page header through the toolkit's `PageHeader`, converging five ad hoc header markups
+  into one visible idiom: an optional eyebrow, the display-face title, an optional muted meta
+  line, and one right-aligned action. `ConceptList` and `CairnMediaLibrary` also converge their
+  search, filter, count, table, and pager markup onto `ListToolbar`, `AdminTable`, `StatusChip`,
+  and `Pagination`. A site that already matched the old per-screen headers and lists by eye may
+  notice the rhythm settle to one shape; no prop or route contract changed.
+
+No consumer action is required. The new subpath is additive, and the visible header convergence
+touches only cairn's own built-in admin screens, with no exported contract behind it.
+
+### Fixed
+
+- The admin CSS build's `@source` scan never included `src/lib/admin-toolkit` (the subpath was
+  never added to the scan root when it graduated out of `src/lib/components`), so any daisyUI or
+  Tailwind class used only there silently never compiled. `ListToolbar`'s segmented filter (the
+  Posts publish-state triage, Media's asset triage) rendered its options stacked one per line
+  instead of a row; `EmptyState`/`PageHeader`/`StatusChip` lost a handful of plain utilities the
+  same way. A new gate, `check:admin-css-classes`, checks every admin-toolkit and admin component
+  template's class tokens against the built sheet so a class miss like this fails CI instead of
+  shipping. `ListToolbar`'s segmented option count also drops its parenthesized reading ("All(6)")
+  for the shipped device's own presentation: the label, then the count in its own visually
+  secondary span ("All 6"). No consumer action is required.
+
 ## 0.88.3
 
 ### Changed

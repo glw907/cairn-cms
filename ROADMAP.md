@@ -174,26 +174,35 @@ the named human gates only):**
   (a frontmatter hero with a raw external `image.src` renders nothing without a template-level
   fallback). Whether raw external URLs get parity with `media:` tokens on either surface is one
   product call; take it when either surface next opens.
-- **The admin toolkit: organize the library and set cairn up as its consumer (Geoff,
-  2026-07-20; evolves the 2026-07-15 "small shipped admin component kit" sketch).** The kit is
-  now real and building ASC-first: the aksailingclub-org Members pass births the first six
-  general-contract components (AdminTable, ExpandableRow, ListToolbar, StatusChip, Pagination,
-  the formatters) in that site's theme layer, grounded in its 2026-07-20 admin-toolkit research
-  survey; v0.88.3's blessed daisy safelist is the compile-side seam. The rulings (recorded in
-  that repo's `docs/2026-07-20-members-pass-harvest-findings.md`): components publish inside
-  `@glw907/cairn-cms` behind a dedicated subpath export (shape: `@glw907/cairn-cms/admin-toolkit`),
-  never a sibling package; harvest cadence is wave-by-graduation (a component moves on its
-  second contract-unchanged consumer or on engine pull, batched into a few harvest releases
-  across the ASC admin series, never a big bang); and cairn DOGFOODS the toolkit (engine admin
-  screens use it wherever a component fits, each wave includes an adoption sweep, new engine
-  surfaces reach for it first). THE QUEUED PASS, once the ASC Members pass lands: establish the
-  subpath-export structure (module layout, the contract-doc convention the toolkit READMEs
-  seed, doc-gate coverage for the new surface) and prepare the engine screens for adoption —
-  the 2026-07-15 audit's finding 11 (page-header idiom five ways, counts three, search
-  placement two; `docs/internal/2026-07-15-admin-ux-audit.md` carries the inventory) becomes
-  the adoption sweep's first target. This pass is the receiving structure for the first harvest
-  wave, so it precedes or opens that wave. Weigh whether the toolkit gates 1.0 (the
-  extending-developer seam story is stronger with it).
+- **The admin toolkit's harvest wave 1 shipped (2026-07-20).** `@glw907/cairn-cms/admin-toolkit`
+  is real: `PageHeader`, `ListToolbar`, `AdminTable`, `StatusChip`, `Pagination`, `EmptyState`, and
+  the `format.ts` formatters, each graduated from aksailingclub-org's own admin build and
+  documented on [the admin-toolkit reference page](docs/reference/admin-toolkit.md). Cairn
+  dogfoods it: every top-level built-in admin screen now renders its header through `PageHeader`
+  (closing the 2026-07-15 audit's finding 11, "page-header idiom five ways"), and `ConceptList`
+  and `CairnMediaLibrary` additionally converge their search, filter, count, table, and pager
+  markup onto `ListToolbar`/`AdminTable`/`Pagination`/`StatusChip`. `OfficeList` keeps its own
+  contract unchanged this wave (see the entry below). Whether the toolkit belongs on the `1.0`
+  readiness checklist as a versioned seam (the extending-developer story is stronger with it) is
+  still an open call. The next wave holds:
+  - **ASC's own import swap.** aksailingclub-org's admin still imports its first-party
+    `src/admin-club/toolkit/` copies; its own next screen pass swaps those imports to the packaged
+    `@glw907/cairn-cms/admin-toolkit` subpath, in its own sessions.
+  - **`ExpandableRow`'s Classes-pass shakedown.** No engine screen renders expand-in-place rows
+    (ruling 1 of the pass's adoption map), so `ExpandableRow` stayed ASC-local this wave; graduate
+    it once ASC's Classes pass has shaken it out against a second real consumer.
+  - **A toggle-device candidate (ruling 7 of the pass's adoption map).** A bare daisy `badge` for
+    an identity label and a single-use on/off pill (`CairnTidySettings`'s tidy-convention toggle)
+    both stayed bespoke this wave, correctly: neither has a second consumer yet. Mint a shared
+    toggle device once a third one demonstrates the repetition, not before.
+- **OfficeList's PageHeader convergence, filed at the T7 adoption sweep (2026-07-20).**
+  `OfficeList`'s own header is the exact shape `PageHeader` generalized from, but its rhythm
+  differs (`mb-6` versus `PageHeader`'s `mb-10`); re-expressing OfficeList's internals on
+  PageHeader would visibly change the vertical rhythm of every custom `/admin/` screen a site
+  already built on it, so it is not behavior-preserving (ruling 8 of the pass's adoption map).
+  OfficeList stays hand-rolled with its exported contract unchanged this wave. Whether to
+  converge its spacing onto PageHeader (a breaking visual change for an existing consumer) is
+  a question for a later major.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

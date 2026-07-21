@@ -55,19 +55,28 @@ authorized "minor" derived and confirmed as patch `0.88.2`.
 ASC work runs in aksailingclub-org's own sessions; its sites must apply `0001_roles.sql`
 before custom role names insert.
 
-**NEXT (immediate): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
+**NEXT (immediate): the admin-toolkit organization pass, APPROVED 2026-07-20 (Geoff
+re-sequenced it ahead of principle-pages).**
+`docs/superpowers/plans/2026-07-20-admin-toolkit-organization.md`, spec
+`docs/superpowers/specs/2026-07-20-admin-toolkit-organization-design.md`. Harvest wave 1
+plus engine adoption: establish `@glw907/cairn-cms/admin-toolkit`, graduate the ASC-born
+components (ExpandableRow conditional on engine pull; ASC's Members pass landed 2026-07-20
+and its toolkit is usable), mint the cairn-born PageHeader off audit finding 11, and sweep
+every engine admin screen onto the toolkit so no bespoke parallel survives. Method:
+`admin-toolkit` worktree off `main`, `cairn-implementer` per task test-first with the full
+gate, main loop holds the adoption-map and PageHeader rulings; ends with a minor cut via
+`cairn-release` (ASC's next screen pass is the waiting consumer). ASC's import swap is out
+of scope (rides ASC's own sessions).
+
+**THEN (2): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
 `docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (a disposition
 survey that integrates the five core principles into the docs and reorganizes as needed,
 a STAGED DEMO extended-admin figure, and cairn.pub's llms.txt / llms-full.txt / per-page
 markdown endpoints plus the /docs-landing and footer surfacing; ends with a release cut so
-the site can render the reorganized docs). **Sequenced FIRST, before Topo, on token
-efficiency:** it is fully planned and approved (no mockup-gate loop), it is docs-prose work
-that reuses the register machinery and docs-arm context rather than opening a fresh design
-domain, and its release cut is a natural session boundary. Execute in a FRESH session (this
-plan is the cold-start handoff; the design-arc session that wrote it should close rather
-than carry its context forward).
+the site can render the reorganized docs). Docs-prose work that reuses the register
+machinery; execute in a FRESH session (the plan is the cold-start handoff).
 
-**THEN (2) The Topo design pass.** Open with
+**THEN (3) The Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
 table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
 candidates go to Geoff BEFORE any build); the cairn.pub design arc (its Passes 2 through 4)

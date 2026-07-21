@@ -2384,7 +2384,7 @@ persistent "?" carries Markdown help, design-arc D2).
     <span class="opacity-50" aria-hidden="true">·</span>
     <button
       type="button"
-      class="ftr-link inline-flex items-center cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
+      class="inline-flex items-center cursor-pointer text-muted underline [text-decoration-color:color-mix(in_oklab,currentColor_40%,transparent)] [text-underline-offset:2px] hover:text-[var(--color-primary)]"
       onclick={() => setZen(false)}
     >
       <!-- The Esc hint is meaningless on a touch device (no Esc key to press), so it gates on

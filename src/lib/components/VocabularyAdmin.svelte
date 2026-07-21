@@ -22,6 +22,11 @@ list mutation (add, remove, seed), a larger change than the tidy twin's fixed-ro
 Built natively on the frozen role interface: secondary text rides only the `text-muted` / `text-subtle`
 named utilities, error text the sanctioned Tier-2 AA ink `text-[var(--cairn-error-ink)]`. No bespoke
 custom surface, no `@layer components` rule, no retired muted/subtle bracket token.
+
+The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its `meta`
+line carrying the lede this screen already stated. The ledger below stays hand-rolled: it is an
+editable grid of rename inputs and guarded deletes, not a data table, so it does not adopt
+`AdminTable`; the "Your tags" count chip stays its own section device, per the pass's adoption map.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -32,6 +37,7 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
   import Trash2Icon from '@lucide/svelte/icons/trash-2';
   import type { VocabularyLoadData } from '../sveltekit/content-routes.js';
   import type { VocabularyEntry } from '../index.js';
+  import { PageHeader } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The committed vocabulary, the per-value cross-branch usage count, and the unlisted seed set. */
@@ -141,12 +147,11 @@ custom surface, no `@layer components` rule, no retired muted/subtle bracket tok
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">
-  <!-- The office heading recipe: the display face, no eyebrow above the h1 -->
-  <h1 class="text-2xl font-bold tracking-tight">Tags</h1>
-  <p class="mt-1.5 max-w-prose text-[0.9375rem] leading-relaxed text-muted">
-    A tag groups related posts. This list is shared across the site, so every editor picks from the
-    same names. Add one, rename it, or remove a tag nothing uses.
-  </p>
+  <PageHeader
+    eyebrow="Settings"
+    title="Tags"
+    meta="A tag groups related posts. This list is shared across the site, so every editor picks from the same names. Add one, rename it, or remove a tag nothing uses."
+  />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.error}

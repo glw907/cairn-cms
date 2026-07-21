@@ -26,6 +26,14 @@ announces the new total; the per-keystroke diff examples are aria-hidden so the 
 
 The save commits the conventions block to the same committed YAML the nav editor writes (one config
 home), diffable and shared across editors.
+
+The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its `meta`
+line carrying the lede this screen already stated; Save stays in the form's own foot, the screen's
+form-semantic primary action. The section-count pills (Fixes' On/Off, Style conventions' on-count)
+re-express on `StatusChip` at a neutral tone (ruling 9 of the pass's adoption map: a Tidy pill never
+reaches past neutral/warning), each still wrapped in its own `role="status" aria-live="polite"`
+region so the announcement contract is unchanged. The On/Off check-and-tint toggle itself stays
+bespoke (ruling 7): a single-use control, not a repeated device.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -43,6 +51,7 @@ home), diffable and shared across editors.
   import type { SettingsData } from '../sveltekit/content-routes.js';
   import type { TidyConventions } from '../nav/site-config.js';
   import { segmentTintClass } from './segmented-control.js';
+  import { PageHeader, StatusChip } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The two-tier settings load: the read-only developer facts, the truthful gate flag, and the
@@ -317,12 +326,11 @@ home), diffable and shared across editors.
 </script>
 
 <div class="mx-auto max-w-3xl px-2 py-2">
-  <!-- The office heading recipe: the display face, no eyebrow above the h1 -->
-  <h1 class="text-2xl font-bold tracking-tight">Tidy</h1>
-  <p class="mt-1.5 max-w-prose text-[0.9375rem] leading-relaxed text-muted">
-    A light copy-edit from Claude. Choose what tidy is allowed to change. You always review every
-    change as a diff before accepting it.
-  </p>
+  <PageHeader
+    eyebrow="Settings"
+    title="Tidy"
+    meta="A light copy-edit from Claude. Choose what tidy is allowed to change. You always review every change as a diff before accepting it."
+  />
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.saved}
@@ -400,7 +408,10 @@ home), diffable and shared across editors.
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
               Fixes
-              <span role="status" aria-live="polite" class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">{conv.fixes ? 'On' : 'Off'}<span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span></span>
+              <span role="status" aria-live="polite">
+                <StatusChip tone="neutral" label={conv.fixes ? 'On' : 'Off'} size="sm" />
+                <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
+              </span>
             </h2>
             <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
           </div>
@@ -444,7 +455,10 @@ home), diffable and shared across editors.
           <div class="min-w-0 flex-1">
             <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
               Style conventions
-              <span role="status" aria-live="polite" class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted">{styleOnCount} on<span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span></span>
+              <span role="status" aria-live="polite">
+                <StatusChip tone="neutral" label={`${styleOnCount} on`} size="sm" />
+                <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
+              </span>
             </h2>
             <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
           </div>

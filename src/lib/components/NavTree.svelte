@@ -132,7 +132,7 @@ title the menu's own declared label; the sortable-list card below stays untouche
     <button type="button" class="btn btn-sm" onclick={addRow}>Add item</button>
   </div>
 
-  <div class="sortable-list-area rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-2 shadow-[var(--cairn-shadow)]" style="min-height:2.5rem">
+  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-2 shadow-[var(--cairn-shadow)]" style="min-height:2.5rem">
     <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
       {#each rows as row, index (row.id)}
         <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>

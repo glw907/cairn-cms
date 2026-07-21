@@ -24,6 +24,19 @@
 No consumer action is required. The new subpath is additive, and the visible header convergence
 touches only cairn's own built-in admin screens, with no exported contract behind it.
 
+### Fixed
+
+- The admin CSS build's `@source` scan never included `src/lib/admin-toolkit` (the subpath was
+  never added to the scan root when it graduated out of `src/lib/components`), so any daisyUI or
+  Tailwind class used only there silently never compiled. `ListToolbar`'s segmented filter (the
+  Posts publish-state triage, Media's asset triage) rendered its options stacked one per line
+  instead of a row; `EmptyState`/`PageHeader`/`StatusChip` lost a handful of plain utilities the
+  same way. A new gate, `check:admin-css-classes`, checks every admin-toolkit and admin component
+  template's class tokens against the built sheet so a class miss like this fails CI instead of
+  shipping. `ListToolbar`'s segmented option count also drops its parenthesized reading ("All(6)")
+  for the shipped device's own presentation: the label, then the count in its own visually
+  secondary span ("All 6"). No consumer action is required.
+
 ## 0.88.3
 
 ### Changed

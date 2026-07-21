@@ -193,8 +193,9 @@ contract: omit both for the original behavior unchanged, or pass both to add a p
 
 **daisyUI assembly:** `join` + `join-item` + `btn`/`btn-sm`/`btn-active` for the page nav, plus
 `select`/`select-sm` for the optional page-size control. Every class already compiles from
-cairn's own admin usage or the blessed safelist (`join-item` and the `join` orientation
-modifiers).
+cairn's own admin usage or the blessed safelist (`join` itself, `join-item`, and the `join`
+orientation modifiers; see `ListToolbar`'s own daisyUI-assembly note for why `join` moved from an
+incidental compile to an explicit safelist entry).
 
 **Exact class inventory:** `join`, `join-item`, `btn`, `btn-sm`, `btn-active`, `btn-disabled`,
 `select`, `select-sm`.
@@ -304,8 +305,9 @@ accepts more than one. `count`/`itemLabel` feed the count line's own scope.
 
 `display: 'segmented'` renders a filter as a group of always-visible toggle buttons instead of a
 `<select>`, for a filter whose vocabulary reads better as tabs than a dropdown (a publish-state
-filter, a triage radiogroup); each `ListToolbarFilterOption`'s optional `count` renders beside its
-label. A segmented filter that opts out of promotion (`promoted: false`) still renders as a
+filter, a triage radiogroup); each `ListToolbarFilterOption`'s optional `count` renders in its own
+visually secondary span after the label: `All 6`, never a parenthesized `All(6)`. A segmented
+filter that opts out of promotion (`promoted: false`) still renders as a
 `<select>` in the overflow disclosure, since a button group behind a disclosure menu loses the
 always-visible scan-ability segmented display exists for. `trailing` is an optional snippet
 rendered after the toolbar band, for a screen-specific view control this component has no
@@ -346,7 +348,10 @@ filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a
 display filter, the same assembly `Pagination`'s own page nav uses), `btn`/`btn-sm`/`btn-primary`/
 `btn-outline` (the primary action and the overflow trigger), `dropdown`/`dropdown-content`/
 `dropdown-open`/`menu` (the overflow disclosure), `badge`/`badge-neutral`/`badge-sm` (the pills).
-Every one of these already compiles from cairn's own admin usage. None needed a safelist addition.
+The CSS build's `@source` now scans `src/lib/admin-toolkit` (it didn't when this component first
+graduated there, the visual regression `check:admin-css-classes` now guards against), and `join`
+carries an explicit, deliberate safelist entry alongside `join-item`; every other class already
+compiles from cairn's own admin usage.
 
 **Exact class inventory:** `input`, `input-sm`, `select`, `select-sm`, `join`, `join-item`, `btn`,
 `btn-sm`, `btn-active`, `btn-primary`, `btn-outline`, `dropdown`, `dropdown-content`,

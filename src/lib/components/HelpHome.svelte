@@ -244,7 +244,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
         </table>
       {/snippet}
 
-      <div class="card ref-card">
+      <div class="card">
         <div class="ref-cols">
           {@render refTable('Text', textRows)}
           {@render refTable('Links and lists', linkRows)}

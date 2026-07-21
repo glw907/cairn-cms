@@ -124,7 +124,7 @@ dialog's a11y conventions.
 
     <input
       type="search"
-      class="input input-bordered mb-3 w-full"
+      class="input mb-3 w-full"
       placeholder="Search by title"
       aria-label={searchLabel}
       bind:this={searchInput}

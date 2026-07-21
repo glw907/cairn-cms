@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'vitest-browser-svelte';
+import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 import ListToolbar from '../../lib/admin-toolkit/ListToolbar.svelte';
 import type { ListToolbarFilter } from '../../lib/admin-toolkit/list-toolbar.js';
 
@@ -295,6 +296,32 @@ describe('ListToolbar', () => {
     expect(screen.container.textContent).toContain('4');
   });
 
+  // Regression: a segment's count used to read "All(6)" (the parenthesized form, with Svelte
+  // collapsing the leading whitespace); the shipped device it graduated from read "All 6", the
+  // count in its own visually secondary span, never in parentheses.
+  it('gives a segmented option\'s count its own span, with no parenthesized reading', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        {
+          id: 'publish-state',
+          label: 'Publish state',
+          display: 'segmented',
+          options: [{ value: 'all', label: 'All', count: 6 }],
+          value: 'all',
+          onChange: () => {},
+        },
+      ],
+      count: 6,
+      itemLabel: 'entries',
+    });
+    const option = screen.getByRole('radio', { name: /all/i }).element();
+    expect(option.textContent).not.toContain('(');
+    expect(option.textContent).not.toContain(')');
+    expect(option.querySelector('.toolkit-toolbar-segment-count')?.textContent).toBe('6');
+  });
+
   it('renders the trailing snippet after the toolbar band', () => {
     const trailing = createRawSnippet(() => ({ render: () => '<button type="button">Grid view</button>' }));
     const screen = render(ListToolbar, {
@@ -305,5 +332,56 @@ describe('ListToolbar', () => {
       trailing,
     });
     expect(screen.container.textContent).toContain('Grid view');
+  });
+});
+
+// The layout contract, not just the markup: a segmented filter's options must actually share one
+// row under production sizing. Component tests otherwise load only the source admin partial (no
+// compiled daisyUI `.btn`/`.join` sizing), so the fit assertion injects the real compiled sheet
+// (component-fit-test-needs-compiled-css) and sets data-theme, the same seam CairnAdminShell's own
+// fit suites use. Regression: `.join`'s own base rule never compiled once ListToolbar graduated out
+// of the `@source`-scanned src/lib/components tree (admin-toolkit was never added to the scan
+// root), and the segmented filter's grid column was too narrow for its own options; both silently
+// stacked the triage buttons one per line instead of one row.
+describe('ListToolbar segmented layout (compiled CSS)', () => {
+  let styleEl: HTMLStyleElement;
+
+  beforeAll(() => {
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    styleEl = document.createElement('style');
+    styleEl.textContent = compiledAdminCss;
+    document.head.appendChild(styleEl);
+  });
+
+  afterAll(() => {
+    document.documentElement.removeAttribute('data-theme');
+    styleEl.remove();
+  });
+
+  it('lays out a three-option segmented filter\'s buttons on one row, not stacked', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        {
+          id: 'publish-state',
+          label: 'Publish state',
+          display: 'segmented',
+          options: [
+            { value: 'all', label: 'All', count: 6 },
+            { value: 'draft', label: 'Pending edits', count: 2 },
+            { value: 'published', label: 'Published', count: 4 },
+          ],
+          value: 'all',
+          onChange: () => {},
+        },
+      ],
+      count: 6,
+      itemLabel: 'entries',
+    });
+    const group = screen.container.querySelector('[role="radiogroup"]')!;
+    expect(['flex', 'inline-flex']).toContain(getComputedStyle(group).display);
+    const tops = [...group.querySelectorAll('button')].map((b) => b.getBoundingClientRect().top);
+    expect(new Set(tops).size).toBe(1);
   });
 });

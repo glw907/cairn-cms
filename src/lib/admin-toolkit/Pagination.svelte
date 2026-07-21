@@ -70,7 +70,7 @@ if given) if one applies.
         </p>
       {/if}
       {#if showPageSize}
-        <label class="toolkit-pagination-page-size">
+        <label>
           <span class="sr-only">Rows per page</span>
           <select
             class="select select-sm"

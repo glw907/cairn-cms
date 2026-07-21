@@ -238,7 +238,7 @@ visible size change.
                 onkeydown={(event) => onSegmentedKeydown(event, filter)}
               >
                 {#if option.value === filter.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
-                {option.label}{#if option.count != null} ({option.count}){/if}
+                {option.label}{#if option.count != null}<span class="toolkit-toolbar-segment-count">{option.count}</span>{/if}
               </button>
             {/each}
           </div>
@@ -369,8 +369,23 @@ visible size change.
     width: 100%;
   }
 
+  /* A segmented filter's own content (one button per option, each carrying its label plus an
+     optional count) needs more room than the single 11rem track a `<select>` control is content
+     with, the same reasoning `.toolkit-toolbar-search` already gets its own span-2. Without it, a
+     three-option filter (a publish-state triage, say) wrapped one button per line, reading as a
+     stack rather than a row (the T7-adjacent visual regression this rule fixes). `flex-wrap: wrap`
+     stays as the safety net for a filter with more options than even two tracks fit. */
   .toolkit-toolbar-segmented {
+    grid-column: span 2;
     flex-wrap: wrap;
+  }
+
+  /* The per-option count: visually secondary to its own label, opacity-dimmed (not a separate
+     muted color) so it reads correctly against both a plain and an active/tinted `.btn-active`
+     segment, the same opacity-based dimming ConceptList's own draft-row treatment uses. */
+  .toolkit-toolbar-segment-count {
+    margin-left: 0.375rem;
+    opacity: 0.65;
   }
 
   .toolkit-toolbar-primary {

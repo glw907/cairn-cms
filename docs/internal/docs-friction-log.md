@@ -42,3 +42,11 @@ findings start fresh below this line.
   chassis-nav pass just rewrote the tutorial's Milestone 7 off the same client-import pattern
   for nav. The guide should teach the registry-split shape the showcase models. Filed into
   ROADMAP (Next).
+- **(maintainer, 2026-07-20, admin-toolkit pass, T8 drift hunt)** `CairnMediaLibrary`'s
+  re-expression onto `ListToolbar` (T6) dropped the dormant "type facet" seam (a hidden `Images` /
+  `Documents` filter, designed to appear only once a site stores a second asset type) that the
+  pre-toolkit toolbar carried. No visible behavior changed today (every site still stores exactly
+  one asset type, so the facet was always hidden), and it is not named in the pass's adoption map,
+  so this was not a deliberate ruling. `ListToolbarFilter`'s `promoted: false` seam covers the same
+  hidden-until-needed shape if a maintainer wants it back; verify against the code before
+  re-adding it, since this finding was not itself confirmed as a live consumer need.

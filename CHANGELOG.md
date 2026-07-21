@@ -1,3 +1,29 @@
+## Unreleased
+
+### Added
+
+- A new public subpath, `@glw907/cairn-cms/admin-toolkit`, packages the general-purpose admin
+  components and formatters aksailingclub-org's own admin build proved first: `PageHeader`,
+  `ListToolbar`, `AdminTable`, `StatusChip`, `Pagination`, `EmptyState`, and the
+  `formatMoney`/`formatCivilDate`/`formatTimestamp`/`ageFromBirthdate` formatters. A site building
+  its own `/admin/` screen reaches for the same shared vocabulary cairn's own admin now uses,
+  instead of hand-rolling a bespoke parallel. See [the admin-toolkit
+  reference](docs/reference/admin-toolkit.md).
+
+### Changed
+
+- cairn's own admin screens now build on that toolkit. `ConceptList`, `CairnMediaLibrary`,
+  `ManageEditors`, `VocabularyAdmin`, `CairnTidySettings`, `NavTree`, and `HelpHome` all render
+  their page header through the toolkit's `PageHeader`, converging five ad hoc header markups
+  into one visible idiom: an optional eyebrow, the display-face title, an optional muted meta
+  line, and one right-aligned action. `ConceptList` and `CairnMediaLibrary` also converge their
+  search, filter, count, table, and pager markup onto `ListToolbar`, `AdminTable`, `StatusChip`,
+  and `Pagination`. A site that already matched the old per-screen headers and lists by eye may
+  notice the rhythm settle to one shape; no prop or route contract changed.
+
+No consumer action is required. The new subpath is additive, and the visible header convergence
+touches only cairn's own built-in admin screens, with no exported contract behind it.
+
 ## 0.88.3
 
 ### Changed

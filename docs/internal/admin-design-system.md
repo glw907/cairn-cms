@@ -269,40 +269,49 @@ Recipes:
 - **Primary action:** `btn btn-primary`. It gets a soft violet lift from a scoped rule, so do not add an
   ad-hoc shadow. Long-running submits (save, create) flip a local `$state` on `onsubmit` to show a
   `loading loading-spinner` and a working label.
+- **The admin toolkit (`@glw907/cairn-cms/admin-toolkit`, born 2026-07-20).** Several of the
+  recipes below are no longer hand-rolled per screen. `PageHeader`, `ListToolbar`, `AdminTable`,
+  `Pagination`, `StatusChip`, and `EmptyState` are the shared implementations of the page-header,
+  toolbar, table, pager, status-pill, and first-run-empty devices; `formatCivilDate` is the shared
+  date formatter. Every engine screen that owns one of these devices imports the component instead
+  of restating it, and a new screen (built-in or a site's own custom `/admin/` route) reaches for
+  the toolkit first before hand-rolling a parallel. Each component's own prop contract and its
+  exact daisyUI class inventory, the grep surface for a daisy upgrade's blast radius, live on [the
+  admin-toolkit reference page](../reference/admin-toolkit.md); [the absorption
+  ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
+  release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
+  screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
-  and it will show up here") and the create CTA. Not a bare line of text. When a whole concept is empty
+  and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
+  `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
   (the office list with no entries), the state drops the list card and centers on the content area so a
   first-run office reads as composed, not as a small box hugging the top of a tall page.
-- **Office list (the concept list view):** `ConceptList` extends the desk's grade. Above the table a
-  triage bar filters by publish state in the segmented check-and-tint grammar (see that recipe below):
-  a pick-one partition (All, Pending edits, Published) and a separate orthogonal Hidden toggle, each
-  carrying a live count from the loaded set. The axes are independent, so a published-but-hidden entry
-  counts in both Published and Hidden, and the Hidden toggle composes with whichever partition is
-  active. Filtering, counts, and search all run client-side over the already-loaded entries. The whole
-  page composes at the document list's natural measure, one centered `max-w-3xl` column inside the
-  shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list opens a dead band
-  between short titles and the date). The page follows the F3 proximity-grouping scale (the named
-  4/8px steps documented as a comment beside the theme tokens in `cairn-admin.css`; design arc
-  2026-07-15): the header stands apart as the page's one loose element (`mb-10`), the triage bar
-  belongs to the card below it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`). The
-  rows are a sortable `<table>` of ONE-LINE rows at the 15px chrome step with `py-2` cells: the title
-  (`font-medium`, truncating; weight stays medium because nothing sits under it to out-rank), the date
-  (muted, tabular), the status pill, and the quiet delete (60% ink, full on hover/focus; red lives only
-  in the confirm dialog). `EntrySummary.summary` stays off the list (the density ruling; it still
-  serves the edit page). The status pills are ONE family: shared geometry (`badge badge-xs sm:badge-sm
-  border-transparent`) and shared base ink (`bg-base-content/[0.06] text-base-content`), each state
-  differing on exactly one attribute: Published `font-medium`, New `font-semibold`, Edited swaps the
-  wash for the act-on tint (`bg-primary/10 text-primary`), rhyming with the topbar's "Publish site (N)"
-  pill; all three carry the E3 tracking scale's `tracking-small-semibold` (the letter-spacing steps
-  documented beside `text-muted`/`text-subtle` in `scripts/admin-css.input.css`; design arc
-  2026-07-15). Hidden is a row
-  treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title) and carries an
-  eye-off "Hidden" tag inline beside the title, leaving the status cell to one publish-state pill. The
-  header's ink New button is the ONE create affordance on a populated list (the old trailing foot row
-  duplicated it and read as a content row; removed 2026-07-15). The card's frame is the column-header
-  band alone (the gentle 0.04 wash), so content rows are the card's only white rows. A filter or search
-  that matches nothing keeps the card and offers a Clear action; a concept with no entries at all uses
-  the page-owning empty state above, which carries its own create CTA.
+- **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
+  for the title and the header's ink New button (the ONE create affordance on a populated list, the
+  old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),
+  `ListToolbar` for the search box, the two independent segmented filters (a pick-one publish-state
+  partition — All, Pending edits, Published — and an orthogonal Hidden toggle, each carrying a live
+  count from the loaded set; the axes are independent, so a published-but-hidden entry counts in
+  both Published and Hidden), and the count line, `AdminTable` for the sortable ONE-LINE-row table
+  shell (the sortable `th`s are the screen's own markup in the `header` snippet; a filtered-to-zero
+  search or filter keeps the card and offers a Clear action through the screen's own `empty`
+  snippet), `Pagination` for the numbered pager and the rows-per-page select, `StatusChip` for the
+  publish-state pill, and `formatCivilDate` for the date column. Filtering, counts, and search all
+  run client-side over the already-loaded entries. What the toolkit leaves to the screen:
+  - The whole page composes at the document list's natural measure, one centered `max-w-3xl` column
+    inside the shell's 5xl ceiling (the natural-measure rule, design arc 2026-07-15: a wider list
+    opens a dead band between short titles and the date).
+  - The page follows the F3 proximity-grouping scale (the named 4/8px steps documented as a comment
+    beside the theme tokens in `cairn-admin.css`; design arc 2026-07-15): the header stands apart as
+    the page's one loose element (`PageHeader`'s own `mb-10`), the toolbar belongs to the card below
+    it (`mb-3`), and the card itself hugs the pager beneath it (`mb-2`).
+  - `EntrySummary.summary` stays off the list (the density ruling; it still serves the edit page).
+  - Tone mapping (ruling 9 of the 2026-07-20 admin-toolkit adoption map): Published and New both
+    read `StatusChip`'s neutral tone; Edited alone carries the act-on info tone, rhyming with the
+    topbar's "Publish site (N)" pill.
+  - Hidden is a row treatment, not a fourth pill: the row de-emphasizes (~0.62 opacity on the title)
+    and carries an eye-off "Hidden" tag inline beside the title, leaving the status cell to one
+    publish-state chip.
 - **Dialog:** a native `<dialog class="modal">` with a `modal-box`, an `aria-labelledby` title, a close
   button, and the `method="dialog"` backdrop. `showModal()` gives focus trap and Escape for free. A
   dialog that holds its own `<form>` must mount outside any page-level form: nested forms are invalid
@@ -631,12 +640,14 @@ Recipes:
   nested here, and a Name field a hero does not use). Alt is debt: confirm is never disabled for a
   missing alt, and the needs-alt notice counts a hero with an empty alt and focuses its alt input.
 - **Media: the Library screen (`CairnMediaLibrary`).** The admin Media Library, a first-class office
-  view at `/admin/media`, a peer of Posts and Pages. It composes from the established office parts: the
-  office header recipe up top (the Media eyebrow, the display-face "Media library" heading, a live
-  count, the Upload primary action), one toolbar row (search left, the triage segmented control, a
-  hidden type facet, the grid/list density toggle), then the asset surface. The resting surface is a
-  contact-sheet grid (`role="listbox"`) of image tiles; the density toggle flips it to the enriched
-  sortable table the office list uses. Activating a tile or row opens the detail in a non-modal
+  view at `/admin/media`, a peer of Posts and Pages. It composes from the admin toolkit: `PageHeader`
+  (the Media eyebrow, the display-face "Media library" heading, its `meta` line carrying the live
+  count and stored-bytes summary in place of a toolbar count line, the Upload primary action), then
+  `ListToolbar` (search, the triage as a segmented filter, and a `trailing` snippet carrying the two
+  screen-specific view controls the toolkit has no vocabulary for, the on-demand orphan-scan entry
+  and the grid/list density toggle), then the asset surface. The resting surface is a contact-sheet
+  grid (`role="listbox"`) of image tiles; the density toggle flips it to `AdminTable`, the same
+  table shell the office list uses. Activating a tile or row opens the detail in a non-modal
   slide-over (the details-slide-over recipe), which carries the preview, the name and `media:`
   reference, the alt editor, the grouped where-used list, the metadata, and the actions. Delete opens a
   two-faced safe-delete `alertdialog`. The screen and the 2b picker share the row vocabulary but keep
@@ -646,10 +657,11 @@ Recipes:
     `tabindex="0"` and every other carries `-1`; arrows move the active index, Home/End jump, Space or
     Enter opens the detail, and `aria-selected` tracks the open asset. Filtering preserves a valid
     active index.
-  - **The triage is a true radiogroup, not a toggle group.** `role="radiogroup"` over `role="radio"`
-    segments with `aria-checked` (never `aria-pressed`), the same roving-tabindex keyboard model the
-    ARIA radio pattern owes (the selected radio is the only tabstop, arrows move and select). The
-    selected segment shows a check glyph so hue is not the only state cue (WCAG 1.4.1).
+  - **The triage is a true radiogroup, not a toggle group.** `ListToolbar`'s segmented-display
+    contract: `role="radiogroup"` over `role="radio"` segments with `aria-checked` (never
+    `aria-pressed`), the same roving-tabindex keyboard model the ARIA radio pattern owes (the
+    selected radio is the only tabstop, arrows move and select). The selected segment shows a check
+    glyph so hue is not the only state cue (WCAG 1.4.1).
   - **The list sorts through real header buttons.** The Added column header is a `<button>` inside a
     `<th>` carrying `aria-sort`, never a div with a click handler.
   - **The slide-over is a non-modal region.** `role="region"` with an `aria-label`, no scrim, so the

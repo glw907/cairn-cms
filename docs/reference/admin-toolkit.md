@@ -122,10 +122,13 @@ domain knowledge baked in. `size` defaults `'sm'`, matching AdminTable's own den
 `sm` keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no
 minimum of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the
 chip's width against its own short vocabulary rather than a floor sized for a longer label.
-`legend` is optional explanatory text for a tone a label alone does not fully carry (for example
-"full member benefits continue during the grace window"); it surfaces as a native tooltip and
-folds into the chip's accessible name (`aria-label="<label>: <legend>"`), and is omitted
-entirely for a self-explanatory label.
+`legend` carries optional explanatory text for a tone a label alone can't fully carry, for example
+"full member benefits continue during the grace window." It surfaces as a native tooltip and as a
+visually hidden `sr-only` span that reads straight after the visible label, so the chip's
+accessible name reads `"<label>: <legend>"` from plain text instead of an `aria-label` on the
+outer element; some assistive technology exposes an outer `aria-label` inconsistently. A
+self-explanatory label omits `legend` entirely, and the chip then carries neither the tooltip nor
+the hidden span.
 
 **daisyUI assembly:** `badge badge-outline` (shape only, no tone reads through the badge fill)
 plus a `status status-<tone>` dot for the color signal, and `badge-xs`/`badge-sm` +
@@ -179,6 +182,9 @@ gets a working pager. `itemLabel` defaults `'items'`. A page count of 7 or fewer
 page button; beyond that, `computePageWindow` (below) reduces the control to first, last, and a
 run around the current page with `'ellipsis'` gap markers. A single page renders no nav at all,
 only the range line (and the page-size select, if given) if one applies.
+
+The range line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a page or
+page-size change announces the new range to assistive technology even though nothing moves focus.
 
 `pageSizeOptions`/`onPageSizeChange` are an additive graduation extension over the ASC-born
 contract: omit both for the original behavior unchanged, or pass both to add a page-size
@@ -324,7 +330,16 @@ The module context exports two functions, independently unit tested the same way
   filters or a zero count, per the count-line-always-states-its-scope contract.
 
 Applied-filter pills render in the toolkit's one neutral badge tone (`badge-neutral`), never an
-alarm color: an applied filter is a normal state of the list, not a warning.
+alarm color: an applied filter is a normal state of the list, not a warning. A pill's remove
+control keeps its glyph at the pill's own quiet visual size but grows its own hit box to WCAG
+2.5.8's 24x24 CSS px floor through `min-width`/`min-height`, never a visible size change.
+
+The count line carries `role="status"` (`aria-live="polite"`, `aria-atomic="true"`), so a search
+or filter change announces the new scope to assistive technology even though nothing moves focus.
+
+The overflow disclosure is a full disclosure pattern, not just an `aria-expanded` toggle. Escape,
+fired from the trigger or from a control inside the panel, closes it and returns focus to the
+trigger; a pointerdown outside the trigger and panel closes it without moving focus.
 
 **daisyUI assembly:** `input`/`input-sm` (search), `select`/`select-sm` (a `'select'`-display
 filter, promoted or overflow), `join`/`join-item`/`btn`/`btn-sm`/`btn-active` (a `'segmented'`-
@@ -392,9 +407,10 @@ page-heading recipes from `docs/internal/admin-design-system.md`.
 Stability tier: Extension API.
 
 ```ts
-let { icon, heading, message, action }: {
+let { icon, heading, headingLevel = 'p', message, action }: {
   icon?: Snippet;
   heading: string;
+  headingLevel?: EmptyStateHeadingLevel;
   message: string;
   action?: Snippet;
 };
@@ -406,6 +422,12 @@ explanatory copy, and an optional action. This is the whole-concept-empty state 
 posts yet" screen); a filtered-to-zero state (a search or filter narrowing a non-empty list to
 nothing) is a smaller, in-card notice inside `AdminTable`'s own `empty` snippet instead, never this
 component.
+
+`headingLevel` picks the heading's own element (`'p'`, `'h1'`, `'h2'`, or `'h3'`) and defaults to
+`'p'`, the original contract unchanged. A screen that already carries its own `h1` (a preceding
+`PageHeader`) keeps the default; a screen that renders `EmptyState` as its only content,
+with no heading of its own (`WelcomeView`, the none-capability landing view), passes `'h1'` so the
+page still has a real heading in its accessible tree.
 
 **daisyUI assembly:** none. Typography and layout only, the same empty-state recipe
 `docs/internal/admin-design-system.md` documents.
@@ -443,3 +465,4 @@ component.
 | `AppliedFilterPill` | Extension API | `interface AppliedFilterPill { id: string; label: string }` | One rendered applied-filter pill, `computeAppliedFilters`'s return shape. |
 | `computeAppliedFilters` | Extension API | `declare function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilterPill[]` | Every filter away from its own default value, as a pill. |
 | `computeCountLine` | Extension API | `declare function computeCountLine(count: number, itemLabel: string, appliedLabels: string[]): string` | The count line's own copy pattern: `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot. |
+| `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's own element, defaulting to `'p'`. |

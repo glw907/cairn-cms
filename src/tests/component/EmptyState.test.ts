@@ -30,6 +30,20 @@ describe('EmptyState', () => {
     expect(screen.container.textContent).toContain('Stack your first one.');
   });
 
+  it('renders the heading as a plain <p> by default, and as the requested element on request', () => {
+    const bare = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
+    expect(bare.container.querySelector('p')?.textContent).toBe('No posts yet');
+    expect(bare.container.querySelector('h1, h2, h3')).toBeNull();
+
+    const withHeading = render(EmptyState, {
+      heading: 'Welcome, Ada',
+      headingLevel: 'h1',
+      message: 'There is nothing to manage yet.',
+    });
+    const h1 = withHeading.container.querySelector('h1')!;
+    expect(h1.textContent).toBe('Welcome, Ada');
+  });
+
   it('omits the action when not given, and renders it below the copy when given', () => {
     const bare = render(EmptyState, { heading: 'No posts yet', message: 'Stack your first one.' });
     expect(bare.container.querySelector('button')).toBeNull();

@@ -60,8 +60,10 @@ needs).
     /** Defaults to `'sm'`. */
     size?: StatusChipSize;
     /** Optional explanatory text for a tone a label alone does not fully carry (e.g. "full
-     *  member benefits continue during the grace window"). Surfaces as a native tooltip and
-     *  folds into the chip's accessible name; omit for a self-explanatory label. */
+     *  member benefits continue during the grace window"). Surfaces as a native tooltip and as a
+     *  visually-hidden span read straight after the visible label, rather than an `aria-label` on
+     *  the outer element (which some assistive technology exposes inconsistently); omit for a
+     *  self-explanatory label. */
     legend?: string;
   }
 
@@ -73,10 +75,9 @@ needs).
 <span
   class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip {size === 'xs' ? 'status-chip-xs' : ''}"
   title={legend}
-  aria-label={legend ? `${label}: ${legend}` : undefined}
 >
   <span class="status {STATUS_CHIP_DOT_CLASS[tone]} {dotSizeClass}" aria-hidden="true"></span>
-  <span class="status-chip-label">{label}</span>
+  <span class="status-chip-label">{label}</span>{#if legend}<span class="sr-only">: {legend}</span>{/if}
 </span>
 
 <style>

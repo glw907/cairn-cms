@@ -25,4 +25,10 @@ describe('WelcomeView', () => {
     expect(screen.container.querySelector('button')).toBeNull();
     expect(screen.container.querySelector('a')).toBeNull();
   });
+
+  it('renders the greeting as a real h1, since this screen carries no PageHeader of its own', async () => {
+    const screen = render(WelcomeView, { data: data() });
+    const h1 = screen.container.querySelector('h1')!;
+    expect(h1.textContent).toBe('Welcome, Ada');
+  });
 });

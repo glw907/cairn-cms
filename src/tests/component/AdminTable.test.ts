@@ -63,6 +63,17 @@ describe('AdminTable', () => {
     expect(cell.getAttribute('colspan')).toBe('4');
   });
 
+  it('renders an empty tbody, not a padded empty row, when empty is omitted', () => {
+    const screen = render(AdminTable, {
+      header: staticSnippet('<th>Household</th>'),
+      children: staticSnippet(''),
+      rowCount: 0,
+    });
+    const tbody = screen.container.querySelector('tbody')!;
+    expect(tbody.querySelectorAll('tr').length).toBe(0);
+    expect(screen.container.querySelector('.toolkit-admin-table-empty-row')).toBeNull();
+  });
+
   it('defaults the empty-state colspan to 100 (HTML clamps it to the real column count)', () => {
     const screen = render(AdminTable, {
       header: staticSnippet('<th>Household</th>'),

@@ -26,6 +26,16 @@ clearings.
   both prerender-side and already sharing one `cairn.config` export. The real wart (silently broken
   public images) is fixed instead by the `media.resolver_absent` warn event at `createPublicRoutes`
   construction. Do not re-propose the runtime member.
+- **`CairnMediaLibrary`'s dormant "type facet" (a hidden Images/Documents filter).** RESOLVED
+  2026-07-20, admin-toolkit review-fixes round. The pass's T8 drift-hunt had filed this as a live
+  open finding, attributing the facet's absence to T6's `ListToolbar` re-expression; `git log`/`git
+  show` on `CairnMediaLibrary.svelte` instead confirm the facet was removed three weeks earlier, in
+  the 2026-06-28 charter-adherence pass (`23abe438`, "the speculative Media Library type-facet is
+  removed"), as inert scaffolding for a second stored asset type that has never existed. T6 never
+  carried it forward because it was already gone at the branch point. The delivery route is still
+  image-only today, so the charter's "we don't accommodate that universe" stands: do not re-add it
+  speculatively. `ListToolbarFilter`'s `promoted: false` seam covers the same hidden-until-needed
+  shape if a real second asset type ever ships.
 
 ## Open findings
 
@@ -42,11 +52,3 @@ findings start fresh below this line.
   chassis-nav pass just rewrote the tutorial's Milestone 7 off the same client-import pattern
   for nav. The guide should teach the registry-split shape the showcase models. Filed into
   ROADMAP (Next).
-- **(maintainer, 2026-07-20, admin-toolkit pass, T8 drift hunt)** `CairnMediaLibrary`'s
-  re-expression onto `ListToolbar` (T6) dropped the dormant "type facet" seam (a hidden `Images` /
-  `Documents` filter, designed to appear only once a site stores a second asset type) that the
-  pre-toolkit toolbar carried. No visible behavior changed today (every site still stores exactly
-  one asset type, so the facet was always hidden), and it is not named in the pass's adoption map,
-  so this was not a deliberate ruling. `ListToolbarFilter`'s `promoted: false` seam covers the same
-  hidden-until-needed shape if a maintainer wants it back; verify against the code before
-  re-adding it, since this finding was not itself confirmed as a live consumer need.

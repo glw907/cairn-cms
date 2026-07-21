@@ -62,11 +62,11 @@ a breaking prop-shape change.
       <tr>{@render header()}</tr>
     </thead>
     <tbody>
-      {#if rowCount === 0}
+      {#if rowCount === 0 && empty}
         <tr class="toolkit-admin-table-empty-row">
-          <td colspan={emptyColspan}>{#if empty}{@render empty()}{/if}</td>
+          <td colspan={emptyColspan}>{@render empty()}</td>
         </tr>
-      {:else}
+      {:else if rowCount !== 0}
         {@render children()}
       {/if}
     </tbody>

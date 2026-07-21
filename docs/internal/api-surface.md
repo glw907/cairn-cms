@@ -101,6 +101,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `computeItemRange`: (page: number, pageSize: number, totalItems: number) => ItemRange | null
 - `computePageWindow`: (page: number, pageCount: number) => PageWindowItem[]
 - `EmptyState`: Component<Props, {}, "">
+- `EmptyStateHeadingLevel`: "p" | "h1" | "h2" | "h3"
 - `formatCivilDate`: (iso: string | null, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
 - `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string

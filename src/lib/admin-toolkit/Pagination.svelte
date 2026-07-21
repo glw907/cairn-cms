@@ -65,7 +65,7 @@ if given) if one applies.
   {#if range || showPageSize}
     <div class="toolkit-pagination-leading">
       {#if range}
-        <p class="toolkit-pagination-range">
+        <p class="toolkit-pagination-range" role="status" aria-live="polite" aria-atomic="true">
           Showing {range.first}&ndash;{range.last} of {range.total} {itemLabel}
         </p>
       {/if}

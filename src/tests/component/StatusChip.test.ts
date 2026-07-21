@@ -46,7 +46,7 @@ describe('StatusChip', () => {
     expect(xsChip.querySelector('.status-xs')).not.toBeNull();
   });
 
-  it('carries an optional legend into the tooltip and the accessible name, and omits both without one', () => {
+  it('carries an optional legend into the tooltip and a visually-hidden text node, and omits both without one', () => {
     const withLegend = render(StatusChip, {
       tone: 'warning',
       label: 'Overdue',
@@ -54,11 +54,19 @@ describe('StatusChip', () => {
     });
     const withLegendChip = withLegend.container.querySelector('.status-chip')!;
     expect(withLegendChip.getAttribute('title')).toBe('Full benefits continue for 30 days.');
-    expect(withLegendChip.getAttribute('aria-label')).toBe('Overdue: Full benefits continue for 30 days.');
+    // The legend rides a visually-hidden span read straight after the visible label, not an
+    // aria-label on the outer element (which some assistive technology exposes inconsistently),
+    // so the chip's accessible name still reads "<label>: <legend>" via plain text concatenation.
+    expect(withLegendChip.getAttribute('aria-label')).toBeNull();
+    expect(withLegendChip.querySelector('.sr-only')?.textContent).toBe(': Full benefits continue for 30 days.');
+    // The dot glyph's own empty span leaves a leading whitespace text node before the label;
+    // trimming matches how running text (and an accessible-name computation) collapses it.
+    expect((withLegendChip.textContent ?? '').trim()).toBe('Overdue: Full benefits continue for 30 days.');
 
     const withoutLegend = render(StatusChip, { tone: 'warning', label: 'Overdue' });
     const withoutLegendChip = withoutLegend.container.querySelector('.status-chip')!;
     expect(withoutLegendChip.getAttribute('title')).toBeNull();
     expect(withoutLegendChip.getAttribute('aria-label')).toBeNull();
+    expect(withoutLegendChip.querySelector('.sr-only')).toBeNull();
   });
 });

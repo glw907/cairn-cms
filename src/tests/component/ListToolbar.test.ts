@@ -134,6 +134,74 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households · Overdue');
   });
 
+  it('gives the count line a polite, atomic status role so a filter change is announced', () => {
+    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const count = screen.container.querySelector('.toolkit-toolbar-count')!;
+    expect(count.getAttribute('role')).toBe('status');
+    expect(count.getAttribute('aria-live')).toBe('polite');
+    expect(count.getAttribute('aria-atomic')).toBe('true');
+  });
+
+  it('gives the pill remove control at least a 24x24 CSS px hit area', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    const remove = screen.container.querySelector('.toolkit-toolbar-pill-remove')!;
+    const style = getComputedStyle(remove);
+    expect(parseFloat(style.minWidth)).toBeGreaterThanOrEqual(24);
+    expect(parseFloat(style.minHeight)).toBeGreaterThanOrEqual(24);
+  });
+
+  it('closes the overflow disclosure on Escape and returns focus to the trigger', async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ promoted: false })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'More filters' });
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    trigger.element().dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.poll(() => document.activeElement).toBe(trigger.element());
+  });
+
+  it('closes the overflow disclosure on a pointerdown outside the trigger and panel', async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ promoted: false })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'More filters' });
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('keeps the overflow disclosure open on a pointerdown inside the panel', async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ promoted: false })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'More filters' });
+    await trigger.click();
+    const panel = screen.container.querySelector('.dropdown-content')!;
+    panel.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('renders a segmented filter as an ARIA radiogroup, one checked at a time', async () => {
     const onChange = vi.fn();
     const screen = render(ListToolbar, {

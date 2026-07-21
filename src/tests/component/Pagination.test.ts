@@ -23,6 +23,21 @@ describe('Pagination', () => {
     expect(screen.container.textContent ?? '').not.toContain('Showing');
   });
 
+  it('gives the range line a polite, atomic status role so a page/filter change is announced', () => {
+    const screen = render(Pagination, {
+      page: 1,
+      pageCount: 8,
+      onPageChange: () => {},
+      totalItems: 149,
+      pageSize: 20,
+      itemLabel: 'households',
+    });
+    const range = screen.container.querySelector('.toolkit-pagination-range')!;
+    expect(range.getAttribute('role')).toBe('status');
+    expect(range.getAttribute('aria-live')).toBe('polite');
+    expect(range.getAttribute('aria-atomic')).toBe('true');
+  });
+
   it('renders no page nav at all for a single page', () => {
     const screen = render(Pagination, { page: 1, pageCount: 1, onPageChange: () => {} });
     expect(screen.container.querySelector('.join')).toBeNull();

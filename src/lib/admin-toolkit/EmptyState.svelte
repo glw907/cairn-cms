@@ -15,10 +15,22 @@ Props stay data-plus-slots: `heading`/`message` are plain strings, and `icon`/`a
 snippets the caller fully authors, so this component carries no domain knowledge of what is empty
 or what the action does.
 
+`headingLevel` (additive, defaults `'p'`, the original contract unchanged) selects the heading's
+own element: a screen that sits under a `PageHeader` (whose own `h1` already names the page) keeps
+the default `<p>`, while a screen that renders this component as its ONLY content, with no
+`PageHeader` of its own (`WelcomeView`, the none-capability landing), passes `'h1'` so the page
+still carries a real heading in its accessible tree.
+
 Typography and layout classes only, no daisyUI component class, per the same `@source`-scan note
 `PageHeader` documents: every utility token here is one already compiled from the identical
 literal token in `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-state markup.
 -->
+<script module lang="ts">
+  /** The heading's own element. Defaults to `'p'`, the original contract; pass `'h1'`/`'h2'`/`'h3'`
+   *  when this component is a screen's only content and needs a real heading in the a11y tree. */
+  export type EmptyStateHeadingLevel = 'p' | 'h1' | 'h2' | 'h3';
+</script>
+
 <script lang="ts">
   import type { Snippet } from 'svelte';
   import CairnLogo from '../components/CairnLogo.svelte';
@@ -28,13 +40,16 @@ literal token in `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-sta
     icon?: Snippet;
     /** The empty state's heading (e.g. `'No posts yet'`). */
     heading: string;
+    /** The heading's own element. Defaults to `'p'`: a screen already carrying its own `h1` (a
+     *  `PageHeader`) keeps the default, while a screen with no heading of its own passes `'h1'`. */
+    headingLevel?: EmptyStateHeadingLevel;
     /** The muted explanatory copy beneath the heading. */
     message: string;
     /** An optional action (typically a create or upload button), rendered below the copy. */
     action?: Snippet;
   }
 
-  let { icon, heading, message, action }: Props = $props();
+  let { icon, heading, headingLevel = 'p', message, action }: Props = $props();
 </script>
 
 <div class="flex min-h-[56vh] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
@@ -44,7 +59,7 @@ literal token in `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-sta
     <CairnLogo class="h-12 w-12 text-primary opacity-30" />
   {/if}
   <div class="space-y-1">
-    <p class="font-semibold text-base-content">{heading}</p>
+    <svelte:element this={headingLevel} class="font-semibold text-base-content">{heading}</svelte:element>
     <p class="mx-auto max-w-[40ch] text-sm text-muted">{message}</p>
   </div>
   {#if action}{@render action()}{/if}

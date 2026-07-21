@@ -56,6 +56,19 @@ The band's two children (the controls cluster and the primary action) share one 
 whenever both fit; the controls cluster is a CSS grid, not a wrapped flex row, so a wide viewport
 never wraps the band itself and a wrapped narrower one keeps every control's columns aligned
 across lines.
+
+The overflow disclosure is a full disclosure pattern, not just an `aria-expanded` toggle: Escape
+(fired from the trigger or from a control inside the panel) closes it and returns focus to the
+trigger, and a pointerdown outside the trigger+panel closes it without moving focus, both wired
+through the disclosure's own container and trigger refs rather than a bare `:focus-within`.
+
+The count line and (on `Pagination`) the item-range line are `role="status"` live regions
+(`aria-live="polite"`, `aria-atomic="true"`): a search or filter change updates the line's text with
+no focus move, so an AT user only hears the new scope if it is announced as a status message.
+
+The applied-filter pill's remove control keeps its glyph at the pill's own quiet visual size but
+grows its own hit box to WCAG 2.5.8's 24x24 CSS px floor via `min-width`/`min-height`, never a
+visible size change.
 -->
 <script module lang="ts">
   import {
@@ -133,6 +146,45 @@ across lines.
   const uid = $props.id();
   const overflowId = `${uid}-overflow`;
 
+  // The disclosure's own trigger and container refs: the trigger is the Escape focus-return
+  // target, and the container is the outside-click boundary (a pointerdown landing outside it
+  // closes the disclosure without moving focus, the standard disclosure-pattern shape).
+  let overflowTriggerEl = $state<HTMLButtonElement | null>(null);
+  let overflowContainerEl = $state<HTMLElement | null>(null);
+
+  function toggleOverflow() {
+    overflowOpen = !overflowOpen;
+  }
+  function closeOverflow(returnFocus: boolean) {
+    if (!overflowOpen) return;
+    overflowOpen = false;
+    if (returnFocus) overflowTriggerEl?.focus();
+  }
+  // Escape closes the disclosure and returns focus to the trigger, whether it fires from the
+  // trigger button or from a control inside the panel (the keydown bubbles to this container).
+  // Attached programmatically below rather than a declarative `onkeydown` on the container, since
+  // the container carries no interactive role of its own (it is delegation, not an affordance);
+  // the same pattern the toolbar/shortcut keydown delegation elsewhere in this codebase uses.
+  function onOverflowKeydown(event: KeyboardEvent) {
+    if (event.key === 'Escape' && overflowOpen) {
+      event.preventDefault();
+      closeOverflow(true);
+    }
+  }
+  $effect(() => {
+    const el = overflowContainerEl;
+    if (!el) return;
+    el.addEventListener('keydown', onOverflowKeydown);
+    return () => el.removeEventListener('keydown', onOverflowKeydown);
+  });
+  // A pointerdown anywhere outside the trigger+panel closes the disclosure without moving focus
+  // (the standard light-dismiss shape); a window listener rather than a document-level one keeps
+  // this component's own event wiring self-contained, matching Svelte's `<svelte:window>` idiom.
+  function onWindowPointerdown(event: PointerEvent) {
+    if (!overflowOpen || !overflowContainerEl) return;
+    if (!overflowContainerEl.contains(event.target as Node)) closeOverflow(false);
+  }
+
   // A segmented filter's roving-tabindex ARIA radio pattern (graduated from MediaLibrary's own
   // pre-toolbar triage radiogroup): the checked option is the only tab stop, and the arrow/Home/End
   // keys move the selection and the focus together, mirroring a native radio group. Reading the
@@ -154,6 +206,8 @@ across lines.
     radios[next]?.focus();
   }
 </script>
+
+<svelte:window onpointerdown={onWindowPointerdown} />
 
 <div class="toolkit-toolbar">
   <div class="toolkit-toolbar-band">
@@ -202,13 +256,14 @@ across lines.
         {/if}
       {/each}
       {#if overflowFilters.length > 0}
-        <div class="dropdown" class:dropdown-open={overflowOpen}>
+        <div class="dropdown" class:dropdown-open={overflowOpen} bind:this={overflowContainerEl}>
           <button
             type="button"
             class="btn btn-sm btn-outline"
             aria-expanded={overflowOpen}
             aria-controls={overflowId}
-            onclick={() => (overflowOpen = !overflowOpen)}
+            bind:this={overflowTriggerEl}
+            onclick={toggleOverflow}
           >{overflowLabel}</button>
           <div id={overflowId} class="dropdown-content menu toolkit-toolbar-overflow">
             {#each overflowFilters as filter (filter.id)}
@@ -257,7 +312,7 @@ across lines.
       {/each}
     </div>
   {/if}
-  <p class="toolkit-toolbar-count">{countLine}</p>
+  <p class="toolkit-toolbar-count" role="status" aria-live="polite" aria-atomic="true">{countLine}</p>
   {#if trailing}
     <div class="toolkit-toolbar-trailing">{@render trailing()}</div>
   {/if}
@@ -350,10 +405,15 @@ across lines.
     gap: 0.25rem;
   }
 
+  /* WCAG 2.5.8's 24x24 CSS px minimum target size: the &times; glyph itself stays the pill's own
+     quiet small size (font-size below), but the button's own box grows to the floor via
+     min-width/min-height, so the hit area meets the floor without a visible glyph size change. */
   .toolkit-toolbar-pill-remove {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    min-width: 24px;
+    min-height: 24px;
     line-height: 1;
     padding: 0;
     border: none;

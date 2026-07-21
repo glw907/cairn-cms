@@ -15,9 +15,9 @@
 <form method="POST" action="?/create" class="my-4 flex gap-2">
   <CsrfField />
   <label class="sr-only" for="signup-name">Name</label>
-  <input id="signup-name" name="name" placeholder="Name" class="input input-bordered" />
+  <input id="signup-name" name="name" placeholder="Name" class="input" />
   <label class="sr-only" for="signup-email">Email</label>
-  <input id="signup-email" name="email" placeholder="Email" class="input input-bordered" />
+  <input id="signup-email" name="email" placeholder="Email" class="input" />
   <button class="btn btn-primary">Add</button>
 </form>
 

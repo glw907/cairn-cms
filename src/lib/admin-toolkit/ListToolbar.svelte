@@ -29,6 +29,19 @@ scan-ability segmented display exists for. The optional `trailing` snippet rende
 toolbar band, for a screen-specific view control this component has no vocabulary for (a
 grid/list density toggle).
 
+A segmented filter is a real ARIA radiogroup, not a bare button group (the admin-toolkit
+organization pass's T6 absorption: ConceptList's and MediaLibrary's own pre-toolbar segmented
+controls each independently carried this pattern, and MediaLibrary's carried the fuller
+implementation, so it is the one graduated here rather than forked twice more). The wrapping `join`
+is `role="radiogroup"` and each option is `role="radio"` with `aria-checked`, never `aria-pressed`;
+only the checked option is a tab stop (`tabindex="0"`), every other option is `tabindex="-1"`, and
+ArrowRight/ArrowDown, ArrowLeft/ArrowUp, Home, and End move both the selection and the focus
+together, mirroring the native radio-button keyboard model. The checked option also carries a small
+check glyph (`aria-hidden`) beside its label, the non-color selected cue (WCAG 1.4.1) both source
+screens already carried. The search box carries a leading search icon inside a `label.input`
+wrapper, the same daisyUI labeled-input convention both source screens already used ahead of this
+graduation.
+
 Assembles from daisyUI 5 primitives already compiled into cairn's packaged `cairn-admin.css`:
 `input`/`input-sm`, `select`/`select-sm`, `btn`/`btn-sm`/`btn-primary`/`btn-outline`/`btn-active`,
 `join`/`join-item` (the segmented display, the same assembly `Pagination`'s own page nav uses),
@@ -60,6 +73,7 @@ across lines.
 
 <script lang="ts">
   import type { Snippet } from 'svelte';
+  import { CheckIcon, SearchIcon } from '../components/admin-icons.js';
 
   interface Props {
     /** The search box's current text. */
@@ -118,31 +132,60 @@ across lines.
   let overflowOpen = $state(false);
   const uid = $props.id();
   const overflowId = `${uid}-overflow`;
+
+  // A segmented filter's roving-tabindex ARIA radio pattern (graduated from MediaLibrary's own
+  // pre-toolbar triage radiogroup): the checked option is the only tab stop, and the arrow/Home/End
+  // keys move the selection and the focus together, mirroring a native radio group. Reading the
+  // sibling radios from the DOM at keydown time (rather than a bound ref array) keeps this correct
+  // for any number of segmented filters without a per-filter ref collection.
+  function onSegmentedKeydown(event: KeyboardEvent, filter: ListToolbarFilter) {
+    const group = (event.currentTarget as HTMLElement).closest('[role="radiogroup"]');
+    if (!group) return;
+    const radios = Array.from(group.querySelectorAll<HTMLButtonElement>('[role="radio"]'));
+    const current = radios.indexOf(event.currentTarget as HTMLButtonElement);
+    let next = current;
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') next = (current + 1) % radios.length;
+    else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') next = (current - 1 + radios.length) % radios.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = radios.length - 1;
+    else return;
+    event.preventDefault();
+    filter.onChange(filter.options[next].value);
+    radios[next]?.focus();
+  }
 </script>
 
 <div class="toolkit-toolbar">
   <div class="toolkit-toolbar-band">
     <div class="toolkit-toolbar-controls">
-      <!-- svelte-ignore a11y_autofocus -->
-      <input
-        type="search"
-        class="input input-sm toolkit-toolbar-search"
-        aria-label={searchLabel}
-        placeholder={searchLabel}
-        value={search}
-        {autofocus}
-        oninput={(event) => onSearch((event.currentTarget as HTMLInputElement).value)}
-      />
+      <label class="input input-sm toolkit-toolbar-search">
+        <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
+        <!-- svelte-ignore a11y_autofocus -->
+        <input
+          type="search"
+          aria-label={searchLabel}
+          placeholder={searchLabel}
+          value={search}
+          {autofocus}
+          oninput={(event) => onSearch((event.currentTarget as HTMLInputElement).value)}
+        />
+      </label>
       {#each promotedFilters as filter (filter.id)}
         {#if filter.display === 'segmented'}
-          <div class="join toolkit-toolbar-segmented" role="group" aria-label={filter.label}>
+          <div class="join toolkit-toolbar-segmented" role="radiogroup" aria-label={filter.label}>
             {#each filter.options as option (option.value)}
               <button
                 type="button"
+                role="radio"
                 class="join-item btn btn-sm {option.value === filter.value ? 'btn-active' : ''}"
-                aria-pressed={option.value === filter.value}
+                aria-checked={option.value === filter.value}
+                tabindex={option.value === filter.value ? 0 : -1}
                 onclick={() => filter.onChange(option.value)}
-              >{option.label}{#if option.count != null} ({option.count}){/if}</button>
+                onkeydown={(event) => onSegmentedKeydown(event, filter)}
+              >
+                {#if option.value === filter.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
+                {option.label}{#if option.count != null} ({option.count}){/if}
+              </button>
             {/each}
           </div>
         {:else}
@@ -257,10 +300,13 @@ across lines.
   .toolkit-toolbar-search {
     grid-column: span 2;
     width: 100%;
-    /* Strips the browser's own `type="search"` chrome (a clear button, and on some engines a
-       second, separately-drawn focus ring that layers on top of `.input`'s own themed one,
-       reading as a doubled outline): `.input:focus`'s outline below then becomes the only ring a
-       reader sees. */
+  }
+
+  /* Strips the browser's own `type="search"` chrome (a clear button, and on some engines a
+     second, separately-drawn focus ring that layers on top of `.input`'s own themed one, reading
+     as a doubled outline): `.input:focus-within`'s outline on the wrapping label then becomes the
+     only ring a reader sees. */
+  .toolkit-toolbar-search :global(input) {
     appearance: none;
   }
 

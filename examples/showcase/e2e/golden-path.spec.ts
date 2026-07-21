@@ -244,18 +244,19 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   await page.goto('/admin/posts');
   await expect(page).toHaveURL(/\/admin\/posts$/);
 
-  // The triage control is present: the three publish-state filters, each with its live count.
-  const triage = page.getByRole('group', { name: 'Filter by publish state' });
+  // The triage control is present: the three publish-state filters, each with its live count (the
+  // admin toolkit's ListToolbar segmented filter, an ARIA radiogroup).
+  const triage = page.getByRole('radiogroup', { name: 'Filter by publish state' });
   await expect(triage).toBeVisible();
-  const allFilter = triage.getByRole('button', { name: /^All/ });
-  const pendingFilter = triage.getByRole('button', { name: /^Pending edits/ });
-  const publishedFilter = triage.getByRole('button', { name: /^Published/ });
+  const allFilter = triage.getByRole('radio', { name: /^All/ });
+  const pendingFilter = triage.getByRole('radio', { name: /^Pending edits/ });
+  const publishedFilter = triage.getByRole('radio', { name: /^Published/ });
   // Each filter names a numeric count (the exact totals shift with prior tests, so match the shape,
-  // not a brittle literal). All defaults pressed.
+  // not a brittle literal). All defaults checked.
   await expect(allFilter).toHaveText(/All\s*\d+/);
   await expect(pendingFilter).toHaveText(/Pending edits\s*\d+/);
   await expect(publishedFilter).toHaveText(/Published\s*\d+/);
-  await expect(allFilter).toHaveAttribute('aria-pressed', 'true');
+  await expect(allFilter).toHaveAttribute('aria-checked', 'true');
 
   // The list's rows are one line (the density ruling, design arc 2026-07-15): the summary stays
   // off the office list even for an entry that carries one, so the seeded row renders its title
@@ -288,7 +289,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
   // its New badge confirms it sits in the pending partition.
   await page.goto('/admin/posts');
   const draftRow = page.locator('tr', { has: page.locator(`a[href="/admin/posts/${id}"]`) });
-  await page.getByRole('button', { name: /^Pending edits/ }).click();
+  await page.getByRole('radio', { name: /^Pending edits/ }).click();
   await expect(draftRow).toBeVisible();
   await expect(draftRow.getByText('New', { exact: true })).toBeVisible();
   // One-line rows (the density ruling): no summary node renders on the list.
@@ -296,7 +297,7 @@ test('the office triage: the publish-state filters carry counts, Pending edits n
 
   // Switching to Published drops the never-published draft (it is not on main), proving the
   // partition narrows rather than just toggling chrome.
-  await page.getByRole('button', { name: /^Published/ }).click();
+  await page.getByRole('radio', { name: /^Published/ }).click();
   await expect(draftRow).toHaveCount(0);
 });
 

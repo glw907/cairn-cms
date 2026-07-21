@@ -72,7 +72,6 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   import { resolveDialogOrigin, refocusDialogOrigin } from './dialog-origin.js';
   import { postFormAction, createRequestGuard } from './client-action.js';
   import CsrfField from './CsrfField.svelte';
-  import CairnLogo from './CairnLogo.svelte';
   import MediaCaptureCard from './MediaCaptureCard.svelte';
   import {
     SearchIcon,
@@ -96,6 +95,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     MegaphoneIcon,
     DatabaseIcon,
   } from './admin-icons.js';
+  import {
+    PageHeader,
+    ListToolbar,
+    AdminTable,
+    StatusChip,
+    EmptyState,
+    formatCivilDate,
+    type ListToolbarFilter,
+  } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The media library load's data: the unioned assets, the per-hash usage overlay, and a
@@ -152,31 +160,27 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let triage = $state<Triage>('all');
   let density = $state<Density>('grid');
 
-  // The triage segments, in display order, each naming its value, label, and live count.
+  // The triage segments, in display order, each naming its value, label, and live count. The
+  // admin toolkit's ListToolbar renders these as a segmented filter, an ARIA radiogroup with the
+  // roving-tabindex keyboard pattern this triage originated (see ListToolbar's own header comment).
   const segments: { value: Triage; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => triageCounts.all },
     { value: 'needs-alt', label: 'Needs alt', count: () => triageCounts.needsAlt },
     { value: 'unused', label: 'No references found', count: () => triageCounts.unused },
   ];
 
-  // The triage radiogroup's roving tabindex and ARIA radio keyboard pattern: the selected radio is
-  // the only tab stop, and Arrow/Home/End move the selection and the focus, mirroring the grid's
-  // roving listbox. A declared radiogroup owes this keyboard model.
-  let segEls = $state<HTMLButtonElement[]>([]);
-  function selectTriage(value: Triage) {
-    triage = value;
+  function selectTriage(value: string) {
+    triage = value as Triage;
   }
-  function onTriageKeydown(e: KeyboardEvent, i: number) {
-    let next = i;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') next = (i + 1) % segments.length;
-    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') next = (i - 1 + segments.length) % segments.length;
-    else if (e.key === 'Home') next = 0;
-    else if (e.key === 'End') next = segments.length - 1;
-    else return;
-    e.preventDefault();
-    selectTriage(segments[next].value);
-    segEls[next]?.focus();
-  }
+
+  const triageFilter: ListToolbarFilter = $derived({
+    id: 'triage',
+    label: 'Filter assets',
+    display: 'segmented',
+    options: segments.map((seg) => ({ value: seg.value, label: seg.label, count: seg.count() })),
+    value: triage,
+    onChange: selectTriage,
+  });
 
   function matchesTriage(asset: MediaLibraryEntry): boolean {
     switch (triage) {
@@ -1383,34 +1387,29 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     return publicPath(asset.slug, asset.hash, asset.ext, 'slug');
   }
 
-  // The selected-cue check glyph for the triage radiogroup (WCAG 1.4.1): hue never carries the
-  // chosen state alone, the same non-color cue the ConceptList triage uses.
-  function segButtonClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1 text-[0.8125rem] font-normal ${on ? segmentTintClass(on) : 'text-muted hover:bg-base-content/[0.06]'}`;
-  }
   function densityButtonClass(on: boolean): string {
     return `inline-flex items-center justify-center rounded-md p-1.5 hover:bg-base-content/[0.06] ${segmentTintClass(on)}`;
   }
 
   const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+
+  // The header's meta line (the office recipe's live count line, PageHeader's own home for a
+  // page-level count outside a toolbar): the library's total image count, its used count, and its
+  // total stored bytes, unaffected by the toolbar's own search/triage scope below.
+  const libraryMeta = $derived(
+    `${triageCounts.all} ${triageCounts.all === 1 ? 'image' : 'images'}, ${usedCount} used on the site · ${formatBytes(totalBytes)} stored`,
+  );
 </script>
 
 <svelte:window onkeydown={onWindowKeydown} ondragover={onPageDragover} ondrop={onPageDrop} />
 
-<!-- The office header recipe: the Media eyebrow, the display-face heading, a live count line, and
-     the Upload primary action top-right. -->
-<header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-  <div class="flex flex-col gap-0.5">
-    <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Media</span>
-    <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">Media library</h1>
-    <p class="text-sm text-muted">
-      {triageCounts.all} {triageCounts.all === 1 ? 'image' : 'images'}, {usedCount} used on the site<span class="px-1.5" aria-hidden="true">&middot;</span>{formatBytes(totalBytes)} stored
-    </p>
-  </div>
+{#snippet uploadAction()}
   <button type="button" class="btn btn-sm shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
     <UploadIcon class="h-4 w-4" /> Upload
   </button>
-</header>
+{/snippet}
+
+<PageHeader eyebrow="Media" title="Media library" meta={libraryMeta} action={uploadAction} />
 
 <!-- The hidden file input behind both Upload buttons and their shared capture dialog below. -->
 <input
@@ -1438,74 +1437,59 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 {/if}
 
 {#if data.assets.length === 0}
-  <!-- The empty state owns the content area (the office recipe): the mark, the copy, and an Upload
-       CTA over a dropzone line. Triage and search stay hidden until there is content. -->
-  <div class="flex min-h-[52vh] flex-col items-center justify-center gap-4 px-6 py-14 text-center">
-    <CairnLogo class="h-12 w-12 text-primary opacity-30" />
-    <div class="space-y-1">
-      <p class="font-semibold text-base-content font-[family-name:var(--font-display)] text-xl">No media yet</p>
-      <p class="mx-auto max-w-[40ch] text-sm text-muted">
-        Upload an image and it shows up here, ready to drop into a post or set as a hero.
-      </p>
-    </div>
+  <!-- The empty state owns the content area (the office recipe, the admin toolkit's EmptyState):
+       the mark, the copy, and an Upload CTA over a dropzone line. Triage and search stay hidden
+       until there is content. -->
+  {#snippet emptyUploadAction()}
     <div class="mt-1 flex flex-col items-center gap-2 rounded-box border border-dashed border-[var(--cairn-card-border)] px-7 py-5 text-muted">
       <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" onclick={onUploadButtonClick}>
         <UploadIcon class="h-4 w-4" /> Upload an image
       </button>
       <span class="text-xs">or drop a file anywhere on this page</span>
     </div>
-  </div>
+  {/snippet}
+  <EmptyState
+    heading="No media yet"
+    message="Upload an image and it shows up here, ready to drop into a post or set as a hero."
+    action={emptyUploadAction}
+  />
 {:else}
-  <!-- One toolbar row: search (left, flexes), the triage radiogroup, and the grid/list density
-       toggle (right). -->
-  <div class="mb-4 flex flex-wrap items-center gap-3">
-    <label class="input input-sm min-w-0 flex-1 sm:max-w-xs">
-      <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
-      <input type="search" aria-label="Search the media library" bind:value={query} placeholder="Search name or alt" />
-    </label>
+  <!-- One toolbar row (the admin toolkit's ListToolbar): search, the triage as a segmented filter,
+       and the trailing grid/list density toggle plus the orphan-scan entry, screen-specific view
+       controls the toolkit has no vocabulary for. -->
+  <div class="mb-4">
+    {#snippet toolbarTrailing()}
+      <!-- The on-demand orphan scan entry: a quiet bordered office control, NEVER the danger family
+           (it opens a scan, not a purge). The mockup places it beside Upload; the Library has no
+           Upload button in the toolbar, so it sits beside the density toggle instead. -->
+      <button
+        bind:this={orphanFindButton}
+        type="button"
+        class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100 font-normal text-muted hover:bg-base-content/[0.06]"
+        aria-haspopup="dialog"
+        onclick={openOrphanScan}
+      >
+        <DatabaseIcon class="h-4 w-4" aria-hidden="true" /> Find orphaned files
+      </button>
 
-    <!-- The triage is a pick-one radiogroup: aria-checked, never aria-pressed. -->
-    <div role="radiogroup" aria-label="Filter assets" class="bg-base-100 inline-flex items-center overflow-hidden rounded-lg border border-[var(--cairn-card-border)]">
-      {#each segments as seg, i (seg.value)}
-        <button
-          bind:this={segEls[i]}
-          type="button"
-          role="radio"
-          aria-checked={triage === seg.value}
-          tabindex={triage === seg.value ? 0 : -1}
-          class="{segButtonClass(triage === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}"
-          onclick={() => selectTriage(seg.value)}
-          onkeydown={(e) => onTriageKeydown(e, i)}
-        >
-          {#if triage === seg.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
-          {seg.label}<span class="tabular-nums">{seg.count()}</span>
+      <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-center gap-1 rounded-lg border border-[var(--cairn-card-border)] p-0.5">
+        <button type="button" aria-label="Grid view" aria-pressed={density === 'grid'} class={densityButtonClass(density === 'grid')} onclick={() => (density = 'grid')}>
+          <LayoutGridIcon class="h-4 w-4" />
         </button>
-      {/each}
-    </div>
-
-    <span class="flex-1"></span>
-
-    <!-- The on-demand orphan scan entry: a quiet bordered office control, NEVER the danger family (it
-         opens a scan, not a purge). The mockup places it beside Upload; the Library has no Upload
-         button in the toolbar, so it sits in the toolbar row near the density toggle. -->
-    <button
-      bind:this={orphanFindButton}
-      type="button"
-      class="btn btn-sm border-[var(--cairn-card-border)] bg-base-100 font-normal text-muted hover:bg-base-content/[0.06]"
-      aria-haspopup="dialog"
-      onclick={openOrphanScan}
-    >
-      <DatabaseIcon class="h-4 w-4" aria-hidden="true" /> Find orphaned files
-    </button>
-
-    <div role="group" aria-label="Layout density" class="bg-base-100 inline-flex items-center gap-1 rounded-lg border border-[var(--cairn-card-border)] p-0.5">
-      <button type="button" aria-label="Grid view" aria-pressed={density === 'grid'} class={densityButtonClass(density === 'grid')} onclick={() => (density = 'grid')}>
-        <LayoutGridIcon class="h-4 w-4" />
-      </button>
-      <button type="button" aria-label="List view" aria-pressed={density === 'list'} class={densityButtonClass(density === 'list')} onclick={() => (density = 'list')}>
-        <ListIcon class="h-4 w-4" />
-      </button>
-    </div>
+        <button type="button" aria-label="List view" aria-pressed={density === 'list'} class={densityButtonClass(density === 'list')} onclick={() => (density = 'list')}>
+          <ListIcon class="h-4 w-4" />
+        </button>
+      </div>
+    {/snippet}
+    <ListToolbar
+      search={query}
+      onSearch={(value) => (query = value)}
+      searchLabel="Search the media library"
+      filters={[triageFilter]}
+      count={sorted.length}
+      itemLabel="images"
+      trailing={toolbarTrailing}
+    />
   </div>
 
   {#if triage === 'unused'}
@@ -1599,21 +1583,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                    truncates for whichever label happens to be narrower). A flex item's default
                    min-width:auto otherwise lets its own content override a smaller explicit width,
                    so the reserve must exceed the content, not merely match it. -->
-              {#if missing}
-                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1 text-[var(--cairn-warning-ink)]" role="img" aria-label="Needs alt text">
-                  <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" />
-                  <span class="text-[0.625rem] font-medium tracking-small-semibold">Needs alt</span>
-                </span>
-              {:else}
-                <!-- The muted done-treatment (design arc 2026-07-15, E3/F3): a completed state reads
-                     as quiet confirmation, not a green accent, so the check and the label take the
-                     same muted/base-content pair CairnTidySettings' setup rows use, keeping this
-                     pill's own geometry. -->
-                <span class="inline-flex w-24 shrink-0 items-center justify-end gap-1" role="img" aria-label="Described">
-                  <CheckIcon class="h-3.5 w-3.5 text-muted" aria-hidden="true" />
-                  <span class="text-[0.625rem] font-medium tracking-small-semibold text-base-content">Described</span>
-                </span>
-              {/if}
+              <span class="w-24 shrink-0 text-right">
+                {#if missing}
+                  <StatusChip tone="warning" label="Needs alt" size="xs" />
+                {:else}
+                  <StatusChip tone="neutral" label="Described" size="xs" />
+                {/if}
+              </span>
             </div>
           </div>
         </li>
@@ -1626,33 +1602,31 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          pattern for a selectable table. The earlier role="grid" + aria-multiselectable promised grid
          keyboard navigation (arrow cell moves, roving tabindex) the table never implemented, so it
          is dropped: a plain table with a checkbox column is honest and fully usable. -->
-    <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
-      <table class="table text-[0.9375rem] [&_:where(td,th):first-child]:pl-6">
-        <!-- Frame zone (the column-header row) carries the office band grammar (design arc
-             2026-07-15, propagated from ConceptList), and the first column insets to the card's
-             rounded edge. -->
-        <thead class="bg-base-content/[0.04]">
-          <tr class="border-base-300">
-            <th class="w-10"><span class="sr-only">Select</span></th>
-            <th class={headerLabel}>Asset</th>
-            <th class="{headerLabel} w-32">Alt status</th>
-            <th class="{headerLabel} w-40">Used</th>
-            <th class="w-24 text-right" aria-sort={addedSort}>
-              <button type="button" class="ml-auto inline-flex items-center gap-1 {headerLabel} hover:text-base-content" aria-label="Sort by date added" onclick={toggleSort}>
-                Added
-                <ChevronDownIcon class="h-3 w-3 {sortAsc ? 'rotate-180' : ''}" aria-hidden="true" />
-              </button>
-            </th>
-            <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
+    <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+      <AdminTable density="sm" rowCount={visible.length}>
+        {#snippet header()}
+          <!-- Frame zone (the column-header row) carries the office band grammar (design arc
+               2026-07-15, propagated from ConceptList), and the first column insets to the card's
+               rounded edge. -->
+          <th class="w-10 pl-6"><span class="sr-only">Select</span></th>
+          <th class={headerLabel}>Asset</th>
+          <th class="{headerLabel} w-32">Alt status</th>
+          <th class="{headerLabel} w-40">Used</th>
+          <th class="w-24 text-right" aria-sort={addedSort}>
+            <button type="button" class="ml-auto inline-flex items-center gap-1 {headerLabel} hover:text-base-content" aria-label="Sort by date added" onclick={toggleSort}>
+              Added
+              <ChevronDownIcon class="h-3 w-3 {sortAsc ? 'rotate-180' : ''}" aria-hidden="true" />
+            </button>
+          </th>
+          <th class="w-12 text-right"><span class="sr-only">Actions</span></th>
+        {/snippet}
+        {#snippet children()}
           {#each visible as asset (asset.hash)}
             {@const used = usageCount(asset.hash)}
             {@const missing = needsAlt(asset)}
             {@const picked = selectedHashes.has(asset.hash)}
             <tr class="transition-colors hover:bg-base-200/60 {picked ? 'bg-primary/[0.06]' : selected?.hash === asset.hash ? 'bg-primary/[0.03]' : ''}">
-              <td class="w-10">
+              <td class="w-10 pl-6">
                 <input
                   type="checkbox"
                   class="checkbox checkbox-sm"
@@ -1682,23 +1656,19 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
               <td class="w-32">
                 {#if missing}
-                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium tracking-small-semibold text-[var(--cairn-warning-ink)]">
-                    <TriangleAlertIcon class="h-3.5 w-3.5" aria-hidden="true" /> Needs alt
-                  </span>
+                  <StatusChip tone="warning" label="Needs alt" size="xs" />
                 {:else}
-                  <span class="inline-flex items-center gap-1 text-[0.75rem] font-medium tracking-small-semibold text-base-content">
-                    <CheckIcon class="h-3.5 w-3.5 text-muted" aria-hidden="true" /> Described
-                  </span>
+                  <StatusChip tone="neutral" label="Described" size="xs" />
                 {/if}
               </td>
               <td class="w-40 text-[0.8125rem]">
                 {#if used > 0}
-                  <span class="text-base-content">found in {used}</span>
+                  <StatusChip tone="neutral" label={`found in ${used}`} size="xs" />
                 {:else}
-                  <span class="text-muted">no references found</span>
+                  <StatusChip tone="warning" label="no references found" size="xs" />
                 {/if}
               </td>
-              <td class="w-24 text-right text-sm tabular-nums text-muted">{formatAdded(asset.createdAt)}</td>
+              <td class="w-24 text-right text-sm tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4" />
@@ -1706,8 +1676,8 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               </td>
             </tr>
           {/each}
-        </tbody>
-      </table>
+        {/snippet}
+      </AdminTable>
     </div>
   {/if}
 

@@ -134,7 +134,7 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households · Overdue');
   });
 
-  it('renders a segmented filter as a group of toggle buttons, one active at a time', async () => {
+  it('renders a segmented filter as an ARIA radiogroup, one checked at a time', async () => {
     const onChange = vi.fn();
     const screen = render(ListToolbar, {
       search: '',
@@ -155,10 +155,52 @@ describe('ListToolbar', () => {
       count: 149,
       itemLabel: 'entries',
     });
-    const active = screen.getByRole('button', { name: 'All' });
-    await expect.element(active).toHaveAttribute('aria-pressed', 'true');
-    await screen.getByRole('button', { name: 'Draft' }).click();
+    expect(screen.container.querySelector('[role="radiogroup"]')).not.toBeNull();
+    const active = screen.getByRole('radio', { name: /all/i });
+    await expect.element(active).toHaveAttribute('aria-checked', 'true');
+    expect(active.element().querySelector('svg')).not.toBeNull();
+    await screen.getByRole('radio', { name: 'Draft' }).click();
     expect(onChange).toHaveBeenCalledWith('draft');
+  });
+
+  it("moves a segmented filter's focus with its selection on ArrowRight, Home, and End", async () => {
+    const onChange = vi.fn();
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        {
+          id: 'publish-state',
+          label: 'Publish state',
+          display: 'segmented',
+          options: [
+            { value: 'all', label: 'All' },
+            { value: 'draft', label: 'Draft' },
+            { value: 'published', label: 'Published' },
+          ],
+          value: 'all',
+          onChange,
+        },
+      ],
+      count: 149,
+      itemLabel: 'entries',
+    });
+    const radios = () => [...screen.container.querySelectorAll<HTMLElement>('[role="radio"]')];
+    // One tab stop: only the checked radio (All) is tabbable, matching the native radio pattern.
+    expect(radios().filter((r) => r.getAttribute('tabindex') === '0').length).toBe(1);
+
+    radios()[0].focus();
+    radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    expect(onChange).toHaveBeenCalledWith('draft');
+    await expect.poll(() => document.activeElement).toBe(radios()[1]);
+
+    radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    expect(onChange).toHaveBeenCalledWith('published');
+    await expect.poll(() => document.activeElement).toBe(radios()[2]);
+
+    radios()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    expect(onChange).toHaveBeenCalledWith('all');
+    await expect.poll(() => document.activeElement).toBe(radios()[0]);
   });
 
   it('renders per-option counts on a segmented filter when given', () => {

@@ -1,22 +1,30 @@
 <!--
 @component
-One concept's list view, dressed to the office gold standard. A triage bar partitions by publish
-state (a bordered segmented control with live counts) beside an orthogonal Hidden toggle. The list
-is a sortable table of one-line rows composed at the document list's 3xl natural measure: the title,
-the date, the publish-state pill, and a quiet delete action. A draft row de-emphasizes and carries
-an eye-off Hidden tag inline beside the title. The header's New button is the one create affordance
-on a populated list (the empty state carries its own CTA). Filtering, sorting, and paging run over
-the loaded entries in component state.
+One concept's list view, dressed to the office gold standard and built on the admin toolkit. A
+toolbar partitions by publish state (a segmented filter with live counts) beside an orthogonal
+Hidden filter. The list is a sortable table of one-line rows composed at the document list's 3xl
+natural measure: the title, the date, the publish-state chip, and a quiet delete action. A draft
+row de-emphasizes and carries an eye-off Hidden tag inline beside the title. The header's New
+button is the one create affordance on a populated list (the empty state carries its own CTA).
+Filtering, sorting, and paging run over the loaded entries in component state.
 -->
 <script lang="ts">
   import { slugify } from '../content/ids.js';
   import type { DeleteRefusal, EntrySummary, ListData } from '../sveltekit/content-routes.js';
   import CsrfField from './CsrfField.svelte';
   import DeleteDialog from './DeleteDialog.svelte';
-  import CairnLogo from './CairnLogo.svelte';
-  import { segmentTintClass } from './segmented-control.js';
-  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
+  import { SearchIcon, ArrowUpIcon, ArrowDownIcon, ChevronsUpDownIcon, PlusIcon, Trash2Icon } from './admin-icons.js';
   import EyeOffIcon from '@lucide/svelte/icons/eye-off';
+  import {
+    PageHeader,
+    ListToolbar,
+    AdminTable,
+    Pagination,
+    StatusChip,
+    EmptyState,
+    formatCivilDate,
+    type ListToolbarFilter,
+  } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The list load's data: the concept, its entries, and any inline or form errors. */
@@ -43,7 +51,7 @@ the loaded entries in component state.
   type SortKey = 'title' | 'date';
   // The triage runs on two independent axes. A pick-one publish-state partition (`all` passes
   // everything, `pending` is new + edited, `published` is live-as-is) and a separate Hidden
-  // toggle that composes with it. They are orthogonal: a published-but-hidden entry is on main
+  // filter that composes with it. They are orthogonal: a published-but-hidden entry is on main
   // (so it counts as Published) and also hidden from the public site (so it counts as Hidden).
   type Partition = 'all' | 'pending' | 'published';
   let query = $state('');
@@ -54,13 +62,6 @@ the loaded entries in component state.
   let sortAsc = $state(false);
   let pageSize = $state(10);
   let page = $state(1);
-
-  const dateFmt = new Intl.DateTimeFormat(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-  function formatDate(iso: string | null): string {
-    if (!iso) return '';
-    const parsed = new Date(`${iso}T00:00:00`);
-    return Number.isNaN(parsed.getTime()) ? iso : dateFmt.format(parsed);
-  }
 
   // Triage counts over the full loaded set, each axis counted independently. Pending is new +
   // edited (status !== 'published'); Published is live-as-is (status === 'published'); Hidden is
@@ -74,7 +75,7 @@ the loaded entries in component state.
   });
 
   // The three publish-state segments, in display order. Each names its partition value, its label,
-  // and the count axis it shows; the markup loops this so the segments share one block.
+  // and the count axis it shows; the toolbar's segmented filter loops these as its own options.
   const segments: { value: Partition; label: string; count: () => number }[] = [
     { value: 'all', label: 'All', count: () => counts.all },
     { value: 'pending', label: 'Pending edits', count: () => counts.pending },
@@ -103,13 +104,13 @@ the loaded entries in component state.
     ),
   );
 
-  function setPartition(next: Partition) {
-    partition = next;
+  function setPartition(next: string) {
+    partition = next as Partition;
     page = 1;
   }
 
-  function toggleHidden() {
-    hiddenOnly = !hiddenOnly;
+  function setHiddenOnly(next: string) {
+    hiddenOnly = next === 'hidden';
     page = 1;
   }
 
@@ -118,20 +119,31 @@ the loaded entries in component state.
     page = 1;
   }
 
-  // The triage controls dress to the established footer grammar (the design system's segmented /
-  // check-and-tint recipe). Each helper returns a verbatim Tailwind string so the admin CSS
-  // build's @source scan reads the utilities whole. The scoped button reset (cairn-admin.css)
-  // already strips UA chrome from these bare buttons.
-  //
-  // A segment of the bordered publish-state control: the shared group border carries the pick-one
-  // semantics, so a segment stays borderless; the active one tints and bolds.
-  function segButtonClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 whitespace-nowrap px-3 py-1 text-[0.8125rem] font-normal ${pressed ? segmentTintClass(pressed) : 'text-muted hover:bg-base-content/[0.06]'}`;
-  }
-  // The standalone Hidden toggle: rounded, transparent until hover, check-and-tint when pressed.
-  function hiddenToggleClass(pressed: boolean): string {
-    return `inline-flex items-center gap-1.5 whitespace-nowrap rounded-lg px-3 py-1 text-[0.8125rem] font-normal hover:bg-base-content/[0.06] ${segmentTintClass(pressed)}`;
-  }
+  // The toolbar's two independent segmented filters (the admin toolkit's ListToolbar): the
+  // publish-state partition and the orthogonal Hidden filter. Both ride the same graduated
+  // segmented-display contract (an ARIA radiogroup, roving tabindex, a non-color check glyph)
+  // ConceptList's own pre-toolbar segmented control originated.
+  const partitionFilter: ListToolbarFilter = $derived({
+    id: 'partition',
+    label: 'Filter by publish state',
+    display: 'segmented',
+    options: segments.map((seg) => ({ value: seg.value, label: seg.label, count: seg.count() })),
+    value: partition,
+    onChange: setPartition,
+  });
+
+  const hiddenFilter: ListToolbarFilter = $derived({
+    id: 'hidden',
+    label: 'Filter by visibility',
+    display: 'segmented',
+    options: [
+      { value: 'all', label: 'Shown' },
+      { value: 'hidden', label: 'Hidden', count: counts.hidden },
+    ],
+    value: hiddenOnly ? 'hidden' : 'all',
+    onChange: setHiddenOnly,
+  });
+
   // Hidden is a row treatment: a draft row de-emphasizes its TITLE by opacity (the title is
   // high-contrast base-content, so it stays above the AA text floor when dimmed). The already-muted
   // summary line is left at full strength: stacking opacity on muted text drops it below 4.5:1 in
@@ -245,24 +257,17 @@ the loaded entries in component state.
   const liveError = $derived(lifecycleError ? `${lifecycleError}${nonce()}` : '');
 </script>
 
-<!-- The non-color selected cue for the triage controls (WCAG 1.4.1): a small check glyph that
-     renders only inside the active segment or toggle, so hue never carries the state alone. -->
-{#snippet check()}
-  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
-{/snippet}
-
 <!-- The office natural-measure rule (design arc 2026-07-15): a document list composes at 3xl
      within the shell's 5xl ceiling, so short titles never open a dead band against the date. -->
 <div class="mx-auto w-full max-w-3xl">
-<!-- The header carries the page's two anchors only, title left and the one standing action right;
-     search lives in the triage row below (the toolbar placement, converging with Media), so the
-     header's right side never out-weighs the h1 (the page-balance ruling, design arc 2026-07-15). -->
-<header class="mb-10 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-  <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{data.label}</h1>
+
+{#snippet headerAction()}
   <button type="button" class="btn btn-sm w-full shrink-0 border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)] sm:w-auto" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
     <PlusIcon class="h-4 w-4" /> New {createNoun}
   </button>
-</header>
+{/snippet}
+
+<PageHeader title={data.label} action={headerAction} />
 
 <!-- One persistent live region announces the publish-all flash (the EditPage pattern): a
      {#if}-gated role element inserted fresh is announced inconsistently, so the visible alert
@@ -304,167 +309,131 @@ the loaded entries in component state.
 {/if}
 
 {#if data.entries.length > 0}
-  <!-- The triage filters on two independent axes, dressed to the footer grammar. The publish-state
-       partition is one bordered segmented control: the shared border carries the pick-one semantics
-       and the active segment tints with a check (the non-color cue, WCAG 1.4.1). The Hidden toggle
-       is a separate standalone check-and-tint toggle that composes with the active partition. Each
-       count dims to muted when zero, so a sparse list never jumps. -->
-  <div class="mb-3 flex flex-wrap items-center gap-3">
-    <div role="group" aria-label="Filter by publish state" class="bg-base-100 inline-flex max-w-full items-center overflow-x-auto rounded-lg border border-[var(--cairn-card-border)]">
-      {#each segments as seg, i (seg.value)}
-        <button type="button" class="{segButtonClass(partition === seg.value)} {i > 0 ? 'border-l border-[var(--cairn-card-border)]' : ''}" aria-pressed={partition === seg.value} onclick={() => setPartition(seg.value)}>
-          {#if partition === seg.value}{@render check()}{/if}
-          {seg.label}<span class="tabular-nums">{seg.count()}</span>
-        </button>
-      {/each}
-    </div>
-    <span class="h-5 w-px bg-[var(--cairn-card-border)]" aria-hidden="true"></span>
-    <button type="button" class={hiddenToggleClass(hiddenOnly)} aria-pressed={hiddenOnly} onclick={toggleHidden}>
-      {#if hiddenOnly}{@render check()}{/if}
-      Hidden<span class="tabular-nums">{counts.hidden}</span>
-    </button>
-    <!-- Below sm the search takes its own full row (at 320 a shared row squeezes the input to a
-         few characters, the reported icon-plus-"S" collapse). -->
-    <label class="input input-sm w-full min-w-0 sm:ml-auto sm:w-auto sm:max-w-56">
-      <SearchIcon class="h-4 w-4 opacity-60" aria-hidden="true" />
-      <input type="search" aria-label="Search {data.label}" bind:value={query} placeholder="Search {data.label.toLowerCase()}" oninput={() => (page = 1)} />
-    </label>
+  <div class="mb-3">
+    <ListToolbar
+      search={query}
+      onSearch={(value) => { query = value; page = 1; }}
+      searchLabel={`Search ${data.label}`}
+      filters={[partitionFilter, hiddenFilter]}
+      count={sorted.length}
+      itemLabel={data.label.toLowerCase()}
+    />
   </div>
 {/if}
 
 {#if data.entries.length === 0}
   <!-- The empty state owns the content area (no card): the cairn mark, concept-named copy, and the
        create CTA centered on a tall fill, so a first-run office reads as composed. -->
-  <div class="flex min-h-[56vh] flex-col items-center justify-center gap-4 px-6 py-16 text-center">
-    <CairnLogo class="h-12 w-12 text-primary opacity-30" />
-    <div class="space-y-1">
-      <p class="font-semibold text-base-content">No {data.label.toLowerCase()} yet</p>
-      <p class="text-sm text-muted">Stack your first one and it will show up here.</p>
-    </div>
+  {#snippet emptyAction()}
     <button type="button" class="btn btn-sm border-transparent bg-neutral text-neutral-content shadow-none tracking-small-semibold hover:bg-[var(--cairn-ink-hover)]" aria-haspopup="dialog" onclick={() => createDialog?.showModal()}>
       <PlusIcon class="h-4 w-4" /> New {createNoun}
     </button>
-  </div>
+  {/snippet}
+  <EmptyState heading={`No ${data.label.toLowerCase()} yet`} message="Stack your first one and it will show up here." action={emptyAction} />
 {:else}
-  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-2 overflow-x-auto shadow-[var(--cairn-shadow)]">
-    {#if sorted.length === 0}
-      <!-- A filter or a search narrowed the list to zero; the entries exist, none match. Offer the
-           way back: a search query clears, a filter is named in the copy. -->
-      <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
-        <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
-        {#if query.trim()}
-          <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
-          <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
-        {:else}
-          <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
+  <div class="mb-2 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+    <AdminTable density="sm" rowCount={pageRows.length}>
+      {#snippet header()}
+        <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
+             the card's only white rows; the first column insets to the card's rounded edge. -->
+        <th class="pl-6" aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+          <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
+            Title
+            {#if sortKey === 'title'}
+              {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
+            {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
+          </button>
+        </th>
+        {#if data.dated}
+          <!-- w-32, not w-28: a two-digit day ("May 18, 2026") needs a few px more than the
+               column had (audit finding 10), which wrapped it to two lines while a single-digit
+               day fit. whitespace-nowrap on the cell below is the actual no-wrap guarantee; the
+               wider column keeps that text from crowding the Status column beside it. -->
+          <th class="hidden w-32 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
+            <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
+              Date
+              {#if sortKey === 'date'}
+                {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
+              {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
+            </button>
+          </th>
         {/if}
-      </div>
-    {:else}
-      <table class="table text-[0.9375rem] [&_:where(td)]:py-2 [&_:where(td,th):first-child]:pl-6">
-        <!-- Frame zones (the column-header row and the foot action row) carry the sidebar's gentle
-             band so content rows are the card's only white rows; borders alone were not separating
-             the foot from the titles. -->
-        <thead class="bg-base-content/[0.04]">
-          <tr class="border-base-300">
-            <th aria-sort={sortKey === 'title' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-              <button type="button" class={sortButton} aria-label="Sort by title" onclick={() => toggleSort('title')}>
-                Title
-                {#if sortKey === 'title'}
-                  {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
-                {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
-              </button>
-            </th>
-            {#if data.dated}
-              <!-- w-32, not w-28: a two-digit day ("May 18, 2026") needs a few px more than the
-                   column had (audit finding 10), which wrapped it to two lines while a single-digit
-                   day fit. whitespace-nowrap on the cell below is the actual no-wrap guarantee; the
-                   wider column keeps that text from crowding the Status column beside it. -->
-              <th class="hidden w-32 sm:table-cell" aria-sort={sortKey === 'date' ? (sortAsc ? 'ascending' : 'descending') : 'none'}>
-                <button type="button" class={sortButton} aria-label="Sort by date" onclick={() => toggleSort('date')}>
-                  Date
-                  {#if sortKey === 'date'}
-                    {#if sortAsc}<ArrowUpIcon class="h-3 w-3" aria-hidden="true" />{:else}<ArrowDownIcon class="h-3 w-3" aria-hidden="true" />{/if}
-                  {:else}<ChevronsUpDownIcon class="h-3 w-3 opacity-40" aria-hidden="true" />{/if}
-                </button>
-              </th>
-            {/if}
-            <!-- Status and Actions trade the table's default 1rem cell padding for a tighter 0.5rem
-                 below sm, so their columns give the title column the freed width instead of the
-                 desktop-width columns the audit flagged (finding 8). -->
-            <th class="{headerLabel} w-16 px-2 sm:w-28 sm:px-4">Status</th>
-            <th class="w-12 px-2 text-right sm:px-4"><span class="sr-only">Actions</span></th>
-          </tr>
-        </thead>
-        <tbody>
-          {#each pageRows as entry (entry.id)}
-            <tr class="transition-colors hover:bg-base-200/60">
-              <td class="max-w-0">
-                <!-- One-line row (density ruling, design arc 2026-07-15): the scan job is
-                     title-status-date, so the summary line stays off the office list and the
-                     Hidden tag sits inline beside the title. -->
-                <div class="flex items-center gap-2">
-                  <a class="truncate text-base font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
-                  {#if entry.draft}
-                    <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
-                         eye-off tag sits by the title, leaving the Status cell to its publish badge. -->
-                    <span class="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
-                      <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
-                    </span>
-                  {/if}
-                </div>
-              </td>
-              {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell">{formatDate(entry.date)}</td>{/if}
-              <td class="w-16 px-2 sm:w-28 sm:px-4">
-                <!-- The pill compacts below sm (badge-xs), where the column itself narrows, so the
-                     status stays legible without keeping the desktop-width column. -->
-                <!-- One pill family (design arc 2026-07-15): shared geometry and base ink; each
-                     state differs on exactly one attribute (New: weight; Edited: the act-on tint). -->
-                {#if entry.status === 'new'}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-semibold text-base-content tracking-small-semibold sm:badge-sm">New</span>
-                {:else if entry.status === 'edited'}<span class="badge badge-xs border-transparent bg-primary/10 font-medium text-primary tracking-small-semibold sm:badge-sm">Edited</span>
-                {:else}<span class="badge badge-xs border-transparent bg-base-content/[0.06] font-medium text-base-content tracking-small-semibold sm:badge-sm">Published</span>{/if}
-              </td>
-              <td class="w-12 px-2 text-right sm:px-4">
-                {#if deleteRefused?.id === entry.id}
-                  <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
-                  <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
-                {:else}
-                  <form method="POST" action="?/delete">
-                    <CsrfField />
-                    <input type="hidden" name="id" value={entry.id} />
-                    <button type="submit" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
-                      <Trash2Icon class="h-4 w-4" />
-                    </button>
-                  </form>
+        <!-- Status and Actions trade the table's default cell padding for a tighter one below sm,
+             so their columns give the title column the freed width instead of the desktop-width
+             columns the audit flagged (finding 8). -->
+        <th class="{headerLabel} w-16 px-2 sm:w-28 sm:px-4">Status</th>
+        <th class="w-12 px-2 text-right sm:px-4"><span class="sr-only">Actions</span></th>
+      {/snippet}
+      {#snippet children()}
+        {#each pageRows as entry (entry.id)}
+          <tr class="transition-colors hover:bg-base-200/60">
+            <td class="max-w-0 py-2 pl-6">
+              <!-- One-line row (density ruling, design arc 2026-07-15): the scan job is
+                   title-status-date, so the summary line stays off the office list and the
+                   Hidden tag sits inline beside the title. -->
+              <div class="flex items-center gap-2">
+                <a class="truncate text-base font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                {#if entry.draft}
+                  <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
+                       eye-off tag sits by the title, leaving the Status cell to its publish chip. -->
+                  <span class="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
+                    <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
+                  </span>
                 {/if}
-              </td>
-            </tr>
-          {/each}
-        </tbody>
-      </table>
-    {/if}
+              </div>
+            </td>
+            {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 text-[0.9375rem]">{formatCivilDate(entry.date)}</td>{/if}
+            <td class="w-16 px-2 py-2 sm:w-28 sm:px-4">
+              <!-- One chip family (design arc 2026-07-15, re-expressed on the toolkit's StatusChip):
+                   New and Published share the toolkit's neutral tone; Edited alone carries the
+                   act-on info tone, rhyming with the topbar's "Publish site (N)" pill. -->
+              {#if entry.status === 'new'}<StatusChip tone="neutral" label="New" size="xs" />
+              {:else if entry.status === 'edited'}<StatusChip tone="info" label="Edited" size="xs" />
+              {:else}<StatusChip tone="neutral" label="Published" size="xs" />{/if}
+            </td>
+            <td class="w-12 px-2 py-2 text-right sm:px-4">
+              {#if deleteRefused?.id === entry.id}
+                <!-- A prior delete was refused: DeleteDialog names the blockers and offers no confirm. -->
+                <DeleteDialog conceptId={data.conceptId} id={entry.id} label={data.label} inboundLinks={deleteRefused.inboundLinks} inboundKind={deleteRefused.inboundKind} pending={entry.status !== 'published'} />
+              {:else}
+                <form method="POST" action="?/delete">
+                  <CsrfField />
+                  <input type="hidden" name="id" value={entry.id} />
+                  <button type="submit" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {entry.title}">
+                    <Trash2Icon class="h-4 w-4" />
+                  </button>
+                </form>
+              {/if}
+            </td>
+          </tr>
+        {/each}
+      {/snippet}
+      {#snippet empty()}
+        <!-- A filter or a search narrowed the list to zero; the entries exist, none match. Offer the
+             way back: a search query clears, a filter is named in the copy. -->
+        <div role="status" class="flex flex-col items-center gap-3">
+          <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
+          {#if query.trim()}
+            <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
+            <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
+          {:else}
+            <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
+          {/if}
+        </div>
+      {/snippet}
+    </AdminTable>
   </div>
-{/if}
-
-{#if data.entries.length > 0}
-  <div class="mb-4 flex flex-wrap items-center justify-between gap-2 text-sm">
-    <span role="status" class="text-muted tabular-nums">{sorted.length} of {data.entries.length}</span>
-    <div class="flex items-center gap-2">
-      <label class="flex items-center gap-1">
-        <span class="sr-only">Rows per page</span>
-        <select class="select select-sm" bind:value={pageSize} onchange={() => (page = 1)} aria-label="Rows per page">
-          <option value={10}>10</option>
-          <option value={25}>25</option>
-          <option value={50}>50</option>
-        </select>
-      </label>
-      <button type="button" class="btn btn-sm btn-ghost" aria-label="Previous page" disabled={page <= 1} onclick={() => (page -= 1)}>
-        <ChevronLeftIcon class="h-4 w-4" />
-      </button>
-      <span class="tabular-nums">Page {page} of {pageCount}</span>
-      <button type="button" class="btn btn-sm btn-ghost" aria-label="Next page" disabled={page >= pageCount} onclick={() => (page += 1)}>
-        <ChevronRightIcon class="h-4 w-4" />
-      </button>
-    </div>
+  <div class="mb-4">
+    <Pagination
+      page={page}
+      pageCount={pageCount}
+      onPageChange={(next) => (page = next)}
+      totalItems={sorted.length}
+      pageSize={pageSize}
+      itemLabel={data.label.toLowerCase()}
+      pageSizeOptions={[10, 25, 50]}
+      onPageSizeChange={(size) => { pageSize = size; page = 1; }}
+    />
   </div>
 {/if}
 </div>

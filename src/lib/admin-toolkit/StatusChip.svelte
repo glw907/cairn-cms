@@ -21,6 +21,13 @@ zebra at all.
 Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
 than a Tailwind utility string, since `/admin/**` routes load only cairn's precompiled admin CSS
 and an arbitrary utility never reaches it.
+
+The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
+consumer's own household-standing context); `xs` carries no floor of its own (the admin-toolkit
+organization pass's T6 absorption: a dense table column, ConceptList's publish-state cell and
+MediaLibrary's alt/usage cells, budgets its narrow-viewport width against the chip's real content,
+not a fixed reservation sized for a longer label the office's own three-word vocabulary never
+needs).
 -->
 <script module lang="ts">
   /** The chip's full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under
@@ -64,7 +71,7 @@ and an arbitrary utility never reaches it.
 </script>
 
 <span
-  class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip"
+  class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip {size === 'xs' ? 'status-chip-xs' : ''}"
   title={legend}
   aria-label={legend ? `${label}: ${legend}` : undefined}
 >
@@ -83,6 +90,12 @@ and an arbitrary utility never reaches it.
     gap: 0.375rem;
     min-width: 5rem;
     max-width: 10rem;
+  }
+
+  /* xs carries no reserved floor: a dense table column budgets its own narrow-viewport width
+     against the chip's real content, per the header comment above. */
+  .status-chip-xs {
+    min-width: 0;
   }
 
   .status-chip-label {

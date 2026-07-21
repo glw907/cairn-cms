@@ -119,6 +119,9 @@ semantic vocabulary (`neutral`/`info`/`success`/`warning`/`danger`); the tone-to
 (which standing reads `warning`, which reads `neutral`) lives with the consumer, so the same chip
 serves a publish-state pill on one screen and a household-standing pill on another with no shared
 domain knowledge baked in. `size` defaults `'sm'`, matching AdminTable's own density tier names.
+`sm` keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no
+minimum of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the
+chip's width against its own short vocabulary rather than a floor sized for a longer label.
 `legend` is optional explanatory text for a tone a label alone does not fully carry (for example
 "full member benefits continue during the grace window"); it surfaces as a native tooltip and
 folds into the chip's accessible name (`aria-label="<label>: <legend>"`), and is omitted
@@ -301,6 +304,13 @@ label. A segmented filter that opts out of promotion (`promoted: false`) still r
 always-visible scan-ability segmented display exists for. `trailing` is an optional snippet
 rendered after the toolbar band, for a screen-specific view control this component has no
 vocabulary for (a grid/list density toggle).
+
+A segmented filter is a real ARIA radiogroup: the wrapping group is `role="radiogroup"` and each
+option is `role="radio"` with `aria-checked`, never `aria-pressed`. Only the checked option is a
+tab stop; ArrowRight/ArrowDown, ArrowLeft/ArrowUp, Home, and End move the selection and the focus
+together, the native radio-button keyboard model. The checked option also carries a small
+`aria-hidden` check glyph beside its label, the non-color selected cue WCAG 1.4.1 calls for. The
+search box wraps in a `label.input` with a leading search icon.
 
 The module context exports two functions, independently unit tested the same way `Pagination`'s
 `computePageWindow`/`computeItemRange` are:

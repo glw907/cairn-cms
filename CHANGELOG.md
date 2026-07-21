@@ -1,3 +1,14 @@
+## 0.89.1
+
+### Added
+
+- `itemNoun(count, label)` and `ItemLabel` (`{ one: string; many: string }`) join the
+  `admin-toolkit` subpath's formatters, and `Pagination`'s and `ListToolbar`'s `itemLabel` prop
+  widens to `string | ItemLabel`. An `{ one, many }` pair picks the grammatical number on every
+  count and range line ("1 class", "6 classes"), graduating the fix aksailingclub-org's own
+  toolkit proved for the "1 households" defect. A plain-string `itemLabel` renders exactly as
+  before. No consumer action is required.
+
 ## 0.89.0
 
 <!-- release-size: minor -->

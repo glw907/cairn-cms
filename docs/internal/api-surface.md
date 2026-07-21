@@ -97,7 +97,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ageFromBirthdate`: (birthdateIso: string | null, asOf?: Date) => number | null
 - `AppliedFilterPill`: { id: string; label: string }
 - `computeAppliedFilters`: (filters: ListToolbarFilter[]) => AppliedFilterPill[]
-- `computeCountLine`: (count: number, itemLabel: string, appliedLabels: string[]) => string
+- `computeCountLine`: (count: number, itemLabel: string | ItemLabel, appliedLabels: string[]) => string
 - `computeItemRange`: (page: number, pageSize: number, totalItems: number) => ItemRange | null
 - `computePageWindow`: (page: number, pageCount: number) => PageWindowItem[]
 - `EmptyState`: Component<Props, {}, "">
@@ -108,6 +108,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FormatMoneyOptions`: { currency?: string; locale?: string }
 - `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string }
+- `ItemLabel`: { one: string; many: string }
+- `itemNoun`: (count: number, label: string | ItemLabel) => string
 - `ItemRange`: { first: number; last: number; total: number }
 - `ListToolbar`: Component<Props, {}, "">
 - `ListToolbarAction`: { label: string; onClick: () => void }

@@ -49,7 +49,16 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: the admin toolkit, and the header idiom converges (non-breaking)
+## 0.89.1: grammatical number on toolkit count lines (non-breaking)
+
+`itemNoun` and `ItemLabel` join the admin-toolkit formatters, and `Pagination`'s and
+`ListToolbar`'s `itemLabel` prop now also accepts an `{ one, many }` pair, so a count of
+exactly 1 reads its singular form while every other count reads the plural. A plain-string
+`itemLabel` renders exactly as before.
+
+Consumers must: nothing. The widening is additive.
+
+## 0.89.0: the admin toolkit, and the header idiom converges (non-breaking)
 
 A new public subpath, `@glw907/cairn-cms/admin-toolkit`, packages the general-purpose admin
 components and formatters aksailingclub-org's own admin build proved first: `PageHeader`,

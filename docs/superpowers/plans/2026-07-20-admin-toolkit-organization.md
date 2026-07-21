@@ -206,6 +206,93 @@ bar, so no size-mismatch confirmation is expected this time). Verify the number 
 changelog window since the last published tag. ASC's swap to the subpath imports rides
 ASC's next screen pass, in its own sessions.
 
-## Appendix: the adoption map (T1 output)
+## Appendix: the adoption map (T1 output, ruled 2026-07-20)
 
-Recorded by T1 before any graduation task runs.
+Grounded in the 2026-07-20 screen survey (all file:line references verified against
+`36737393`) and finding 11's inventory. Rulings first, then the per-screen map.
+
+### Rulings
+
+1. **ExpandableRow is NOT pulled.** No engine screen renders expand-in-place rows. It
+   stays ASC-local for the Classes-pass shakedown; T4 graduates AdminTable and ListToolbar
+   only, and the reference page does not mention ExpandableRow.
+2. **EmptyState IS minted.** The centered first-run idiom repeats three times
+   (`ConceptList.svelte:335-347`, `CairnMediaLibrary.svelte:1440-1457`,
+   `WelcomeView.svelte` in full): `min-h`-centered fill, `CairnLogo`/icon slot, heading,
+   muted copy, optional action. One component, riding T5. The filtered-to-zero state
+   (ConceptList:350-361, MediaLibrary:1526-1531) is NOT a component: it is the recipe
+   inside AdminTable's `empty` snippet (or the grid's own status block).
+3. **The canonical page header** (T5's PageHeader) is the OfficeList shape, generalized:
+   optional eyebrow (the `text-[0.6875rem] ... uppercase tracking-[0.08em]` device, today
+   restated inline in four files), h1 in the display face, optional muted subtitle/meta
+   line, optional single action snippet top-right. Every top-level screen adopts it;
+   screens whose primary action is form-semantic (Tidy's footer Save, Editors' add-form
+   row) keep that action where it is and mount PageHeader with an empty action slot.
+   HelpHome's masthead maps onto it (eyebrow Help + sentence title + lede); its section
+   sub-headers stay a recipe this wave.
+4. **Counts converge to one home per level.** Page-level collection counts render in the
+   count line: ListToolbar's `computeCountLine` where a toolbar exists, PageHeader's meta
+   line where none does (MediaLibrary's stats prose becomes the PageHeader meta).
+   Pagination's range line covers paged tables. Filter-segment counts are part of the
+   segmented filter device (ruling 6). Section-level status summaries (Tidy's subheading
+   pills) are status, not counts, and re-express as StatusChip.
+5. **Search placement is ruled once:** in the toolbar row below the header (ListToolbar),
+   never in the header band. ConceptList's triage row and MediaLibrary's toolbar row both
+   converge into ListToolbar.
+6. **Contract extensions at graduation** (all additive; ASC's existing usage stays valid,
+   and the reference page documents the extended contract as canonical):
+   - ListToolbar: a segmented-filter presentation (`display: 'segmented' | 'select'` per
+     filter, with optional per-option counts) — finding 11's "segmented filter group"
+     device; ConceptList's publish-state segments and MediaLibrary's triage radiogroup are
+     the consumers. Also an optional `trailing` snippet for screen-specific view controls
+     (MediaLibrary's grid/list density toggle).
+   - Pagination: optional page-size selection (`pageSizeOptions`/`onPageSizeChange`) —
+     ConceptList's rows-per-page select is the consumer.
+   - `formatCivilDate`: an Intl-options passthrough so MediaLibrary's month/day rendering
+     and ConceptList's year/month/day both adopt it.
+7. **Plain daisy primitives are not "bespoke parallels."** A bare `badge` for an identity
+   label (ManageEditors' role badge) may stay; StatusChip is for stateful indicators. The
+   Tidy On/Off toggle pill (single-use, `CairnTidySettings.svelte:302-313`) stays bespoke
+   this wave; file a ROADMAP note for a toggle device in a later wave.
+8. **OfficeList stays exported with its contract unchanged** (public surface). T7
+   re-expresses its internals on PageHeader only if exactly behavior-preserving; otherwise
+   leave it and file the deprecation question to ROADMAP for a later major.
+9. **Tone mappings stay with each screen** (StatusChip carries no domain knowledge), under
+   the design system's accent-reservation and colorless-Tidy rules: ConceptList
+   Edited=info, New/Published=neutral (candidate; T6 confirms against the emphasis
+   ladder); MediaLibrary Needs-alt=warning, Described=neutral; Tidy pills neutral/warning
+   only.
+
+### Per-screen map
+
+- **ConceptList** (T6): PageHeader (title + New action); ListToolbar (search + segmented
+  publish-state filter with counts + Hidden toggle as a segmented/boolean filter);
+  AdminTable (sortable `th`s stay caller markup in the `header` snippet); Pagination
+  (numbered window + page-size extension; replaces Prev/Next "Page X of Y");
+  StatusChip (publish pills); `formatCivilDate` (replaces inline `Intl` at :58);
+  EmptyState (first-run); filtered-zero via the `empty`-snippet recipe. Bespoke dies:
+  header markup, triage row, pager, pill markup, local `formatDate`.
+- **CairnMediaLibrary** (T6): PageHeader (eyebrow Media + title + stats-prose meta +
+  Upload action); ListToolbar (search + triage as segmented filter + density toggle in
+  `trailing`); AdminTable for the list density; StatusChip (alt/usage chips); EmptyState
+  (first-run); `formatCivilDate` (passthrough options). Keeps: the grid `listbox`, the
+  Load-more device (deliberately not Pagination; reuse `computeItemRange` copy if
+  trivial), the bulk-selection bar, `formatBytes` (local; future graduation candidate).
+- **ManageEditors** (T7): PageHeader (eyebrow + title; add-form stays below); AdminTable
+  (thead chrome moves into the component, killing the restated band classes). Role badge
+  stays plain daisy per ruling 7.
+- **VocabularyAdmin** (T7): PageHeader (eyebrow + title + lede). The grid ledger stays
+  (editable rows, not a data table); count chip stays a section device.
+- **CairnTidySettings** (T7): PageHeader (eyebrow + title + lede; Save stays in the
+  foot); subheading pills → StatusChip; On/Off toggle stays per ruling 7.
+- **NavTree** (T7): PageHeader (title; standard eyebrow); SortableList card untouched.
+- **HelpHome** (T7): PageHeader for the masthead only; sections untouched this wave.
+- **WelcomeView** (T7): re-express on EmptyState.
+- **OfficeList** (T7): per ruling 8.
+- **Showcase Signups** (`examples/showcase/src/routes/admin/signups/+page.svelte`, T7):
+  adopts PageHeader + AdminTable **via the `@glw907/cairn-cms/admin-toolkit` subpath
+  import** — the in-repo consumer proof that the packaged surface works.
+- **Out of scope this wave:** LoginPage/ConfirmPage (auth cards), EditPage and its
+  breadcrumb detail chrome (single-use), TidyReview (modal), the editor internals.
+
+T6/T7 groupings stand as drafted (A: ConceptList + CairnMediaLibrary; B: the rest above).

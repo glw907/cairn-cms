@@ -88,4 +88,13 @@ describe('computeCountLine', () => {
   it('states a zero count rather than omitting the line', () => {
     expect(computeCountLine(0, 'households', ['former'])).toBe('0 households · former');
   });
+
+  it('picks the singular noun at exactly 1 when itemLabel is an { one, many } pair', () => {
+    expect(computeCountLine(1, { one: 'household', many: 'households' }, [])).toBe('1 household');
+  });
+
+  it('picks the plural noun at any other count when itemLabel is an { one, many } pair', () => {
+    expect(computeCountLine(6, { one: 'household', many: 'households' }, [])).toBe('6 households');
+    expect(computeCountLine(0, { one: 'household', many: 'households' }, [])).toBe('0 households');
+  });
 });

@@ -135,6 +135,26 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households · Overdue');
   });
 
+  it('picks the singular noun in the count line when itemLabel is an { one, many } pair and count is 1', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      count: 1,
+      itemLabel: { one: 'household', many: 'households' },
+    });
+    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('1 household');
+  });
+
+  it('picks the plural noun in the count line when itemLabel is an { one, many } pair and count is not 1', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      count: 12,
+      itemLabel: { one: 'household', many: 'households' },
+    });
+    expect(screen.container.querySelector('.toolkit-toolbar-count')!.textContent).toBe('12 households');
+  });
+
   it('gives the count line a polite, atomic status role so a filter change is announced', () => {
     const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
     const count = screen.container.querySelector('.toolkit-toolbar-count')!;

@@ -29,6 +29,8 @@ if given) if one applies.
 </script>
 
 <script lang="ts">
+  import { itemNoun, type ItemLabel } from './format.js';
+
   interface Props {
     /** The current page, 1-based. */
     page: number;
@@ -41,8 +43,10 @@ if given) if one applies.
     /** Items per page. Required alongside `totalItems` to compute the range line, and doubles as
      *  the page-size select's current value when `pageSizeOptions` is given. */
     pageSize?: number;
-    /** The plural noun the range line names. Defaults to `'items'`. */
-    itemLabel?: string;
+    /** The noun the range line names. Defaults to `'items'`. A plain string is invariant across
+     *  every total, the original contract unchanged; an `{ one, many }` pair picks by grammatical
+     *  number through `itemNoun`, so a total of exactly 1 reads its singular form. */
+    itemLabel?: string | ItemLabel;
     /** The selectable page sizes. Omit (with `onPageSizeChange`) to render no page-size select,
      *  the original contract unchanged. */
     pageSizeOptions?: number[];
@@ -66,7 +70,7 @@ if given) if one applies.
     <div class="toolkit-pagination-leading">
       {#if range}
         <p class="toolkit-pagination-range" role="status" aria-live="polite" aria-atomic="true">
-          Showing {range.first}&ndash;{range.last} of {range.total} {itemLabel}
+          Showing {range.first}&ndash;{range.last} of {range.total} {itemNoun(range.total, itemLabel)}
         </p>
       {/if}
       {#if showPageSize}

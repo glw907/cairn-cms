@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ageFromBirthdate, formatCivilDate, formatMoney, formatTimestamp } from '../../lib/admin-toolkit/format.js';
+import { ageFromBirthdate, formatCivilDate, formatMoney, formatTimestamp, itemNoun } from '../../lib/admin-toolkit/format.js';
 
 describe('formatMoney', () => {
   it('formats zero cents as a zeroed currency string', () => {
@@ -93,5 +93,25 @@ describe('ageFromBirthdate', () => {
 
   it('computes a whole-years age after the birthday this year', () => {
     expect(ageFromBirthdate('2015-08-20', new Date(2026, 7, 21, 12))).toBe(11);
+  });
+});
+
+describe('itemNoun', () => {
+  it('picks the singular form at exactly 1', () => {
+    expect(itemNoun(1, { one: 'household', many: 'households' })).toBe('household');
+  });
+
+  it('picks the plural form for a count greater than 1', () => {
+    expect(itemNoun(6, { one: 'household', many: 'households' })).toBe('households');
+  });
+
+  it('picks the plural form for a zero count', () => {
+    expect(itemNoun(0, { one: 'household', many: 'households' })).toBe('households');
+  });
+
+  it('reads a plain string label back unchanged regardless of count, the original contract', () => {
+    expect(itemNoun(1, 'items')).toBe('items');
+    expect(itemNoun(0, 'items')).toBe('items');
+    expect(itemNoun(6, 'items')).toBe('items');
   });
 });

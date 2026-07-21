@@ -79,6 +79,7 @@ visible size change.
     type ListToolbarFilter,
     type ListToolbarFilterOption,
   } from './list-toolbar.js';
+  import type { ItemLabel } from './format.js';
 
   export { computeAppliedFilters, computeCountLine };
   export type { AppliedFilterPill, ListToolbarAction, ListToolbarFilter, ListToolbarFilterOption };
@@ -106,8 +107,10 @@ visible size change.
     primaryAction?: ListToolbarAction;
     /** The count line's own count (e.g. the number of entries the current filters match). */
     count: number;
-    /** The count line's plural noun (e.g. `'households'`). */
-    itemLabel: string;
+    /** The count line's noun (e.g. `'households'`). A plain string is invariant across every
+     *  count, the original contract unchanged; an `{ one, many }` pair picks by grammatical
+     *  number through `itemNoun`, so a count of exactly 1 reads its singular form. */
+    itemLabel: string | ItemLabel;
     /** A screen-specific view control (a grid/list density toggle), rendered after the toolbar
      *  band. Omit for a toolbar with no trailing control. */
     trailing?: Snippet;

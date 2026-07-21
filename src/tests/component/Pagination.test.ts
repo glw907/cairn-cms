@@ -68,6 +68,32 @@ describe('Pagination', () => {
     expect(screen.container.querySelector('select')).toBeNull();
   });
 
+  it('picks the singular noun when itemLabel is an { one, many } pair and the total is exactly 1', () => {
+    const screen = render(Pagination, {
+      page: 1,
+      pageCount: 1,
+      onPageChange: () => {},
+      totalItems: 1,
+      pageSize: 20,
+      itemLabel: { one: 'household', many: 'households' },
+    });
+    const text = screen.container.textContent ?? '';
+    expect(text).toContain('1 household');
+    expect(text).not.toContain('1 households');
+  });
+
+  it('picks the plural noun when itemLabel is an { one, many } pair and the total is not 1', () => {
+    const screen = render(Pagination, {
+      page: 1,
+      pageCount: 8,
+      onPageChange: () => {},
+      totalItems: 149,
+      pageSize: 20,
+      itemLabel: { one: 'household', many: 'households' },
+    });
+    expect(screen.container.textContent ?? '').toContain('149 households');
+  });
+
   it('offers a page-size selector when pageSizeOptions and onPageSizeChange are given', async () => {
     const onPageSizeChange = vi.fn();
     const screen = render(Pagination, {

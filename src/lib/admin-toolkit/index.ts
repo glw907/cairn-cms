@@ -8,9 +8,11 @@ export {
   formatCivilDate,
   formatMoney,
   formatTimestamp,
+  itemNoun,
   type FormatCivilDateOptions,
   type FormatMoneyOptions,
   type FormatTimestampOptions,
+  type ItemLabel,
 } from './format.js';
 export { default as StatusChip, STATUS_CHIP_DOT_CLASS, type StatusChipSize, type StatusChipTone } from './StatusChip.svelte';
 export {

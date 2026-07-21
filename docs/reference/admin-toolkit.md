@@ -89,6 +89,21 @@ date for deterministic call sites). Turns over on the birthday itself rather tha
 after, and reads `null` for a missing or unparseable birthdate so a caller renders its own "age
 unknown" copy instead of a formatter guessing at it.
 
+### `itemNoun`
+
+Stability tier: Extension API.
+
+```ts
+declare function itemNoun(count: number, label: string | ItemLabel): string;
+```
+
+Pick the grammatical number for a count surface: `label.one` at exactly 1, `label.many`
+otherwise, zero included (for example `"0 households"`). `label` also accepts a plain string,
+which is invariant across every count, the original `Pagination`/`ListToolbar` contract's
+behavior unchanged for a caller that hasn't opted into grammatical number. `Pagination`'s range
+line and `ListToolbar`'s count line both route their own `itemLabel` prop through this, so the
+"1 households" defect class has a single fix point.
+
 ---
 
 ## Components
@@ -169,7 +184,7 @@ let {
   onPageChange: (page: number) => void;
   totalItems?: number;
   pageSize?: number;
-  itemLabel?: string;
+  itemLabel?: string | ItemLabel;
   pageSizeOptions?: number[];
   onPageSizeChange?: (pageSize: number) => void;
 };
@@ -178,7 +193,10 @@ let {
 Page navigation plus an optional item-range line. `page` and `pageCount` drive the nav on their
 own; `totalItems`/`pageSize` are optional and only add the "Showing X&ndash;Y of N `<itemLabel>`"
 line, so a consumer that knows its own page count but not a raw item total (or the reverse) still
-gets a working pager. `itemLabel` defaults `'items'`. A page count of 7 or fewer renders every
+gets a working pager. `itemLabel` defaults `'items'` and accepts a plain string (invariant across
+every total, the original contract unchanged) or an `{ one, many }` pair, picked by grammatical
+number through `itemNoun` -- so `totalItems={1}` with `itemLabel={{ one: 'household', many:
+'households' }}` reads `"1 household"`, never `"1 households"`. A page count of 7 or fewer renders every
 page button; beyond that, `computePageWindow` (below) reduces the control to first, last, and a
 run around the current page with `'ellipsis'` gap markers. A single page renders no nav at all,
 only the range line (and the page-size select, if given) if one applies.
@@ -283,7 +301,7 @@ let {
   overflowLabel?: string;
   primaryAction?: ListToolbarAction;
   count: number;
-  itemLabel: string;
+  itemLabel: string | ItemLabel;
   trailing?: Snippet;
 };
 ```
@@ -301,7 +319,10 @@ visible chrome), `options`, `value`, `onChange`, an optional `defaultValue` (the
 applied" value, defaults `'all'`), `promoted` (defaults `true`, choosing the band versus the
 overflow disclosure), and `display` (`'select'` or `'segmented'`, defaults `'select'`, see below).
 `primaryAction` is `{ label, onClick }`, the toolbar's one right-aligned action; the contract never
-accepts more than one. `count`/`itemLabel` feed the count line's own scope.
+accepts more than one. `count`/`itemLabel` feed the count line's own scope; `itemLabel` accepts a
+plain string (invariant across every count, the original contract unchanged) or an `{ one, many }`
+pair, picked by grammatical number through `itemNoun`, the same widening `Pagination`'s own
+`itemLabel` carries.
 
 `display: 'segmented'` renders a filter as a group of always-visible toggle buttons instead of a
 `<select>`, for a filter whose vocabulary reads better as tabs than a dropdown (a publish-state
@@ -329,7 +350,9 @@ The module context exports two functions, independently unit tested the same way
 - `computeCountLine(count, itemLabel, appliedLabels)` returns the count line's own copy pattern:
   `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot
   (`"12 households · Overdue · Holding assets"`). The line always renders, even at zero applied
-  filters or a zero count, per the count-line-always-states-its-scope contract.
+  filters or a zero count, per the count-line-always-states-its-scope contract. `itemLabel`
+  accepts a plain string or an `{ one, many }` pair, routed through `itemNoun`, so
+  `computeCountLine(1, { one: 'household', many: 'households' }, [])` reads `"1 household"`.
 
 Applied-filter pills render in the toolkit's one neutral badge tone (`badge-neutral`), never an
 alarm color: an applied filter is a normal state of the list, not a warning. A pill's remove
@@ -469,5 +492,7 @@ page still has a real heading in its accessible tree.
 | `ListToolbarAction` | Extension API | `interface ListToolbarAction { label: string; onClick: () => void }` | The toolbar's one right-aligned primary action. |
 | `AppliedFilterPill` | Extension API | `interface AppliedFilterPill { id: string; label: string }` | One rendered applied-filter pill, `computeAppliedFilters`'s return shape. |
 | `computeAppliedFilters` | Extension API | `declare function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilterPill[]` | Every filter away from its own default value, as a pill. |
-| `computeCountLine` | Extension API | `declare function computeCountLine(count: number, itemLabel: string, appliedLabels: string[]): string` | The count line's own copy pattern: `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot. |
+| `computeCountLine` | Extension API | `declare function computeCountLine(count: number, itemLabel: string \| ItemLabel, appliedLabels: string[]): string` | The count line's own copy pattern: `"<count> <itemLabel>"`, followed by every applied-filter label joined with a middle dot. |
 | `EmptyStateHeadingLevel` | Extension API | `type EmptyStateHeadingLevel = 'p' \| 'h1' \| 'h2' \| 'h3'` | `EmptyState`'s `headingLevel` prop vocabulary: the heading's own element, defaulting to `'p'`. |
+| `ItemLabel` | Extension API | `interface ItemLabel { one: string; many: string }` | A count-line noun in both grammatical numbers, for `Pagination`'s and `ListToolbar`'s `itemLabel` prop and `computeCountLine`'s own parameter. |
+| `itemNoun` | Extension API | `declare function itemNoun(count: number, label: string \| ItemLabel): string` | Picks the grammatical number for a count surface: `label.one` at exactly 1, `label.many` otherwise. A plain string `label` is invariant across every count. |

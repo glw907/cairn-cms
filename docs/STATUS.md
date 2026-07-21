@@ -15,7 +15,16 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-21, latest: v0.89.0 published; next = the principle-pages pass)
+## Immediate next action (2026-07-21, latest: v0.89.1 published; next = the principle-pages pass)
+
+**v0.89.1 published 2026-07-21 (`latest` verified).** The one-item window: `itemNoun`/`ItemLabel`
+graduated from ASC's toolkit into the `admin-toolkit` subpath, with `Pagination`'s and
+`ListToolbar`'s `itemLabel` widened to `string | ItemLabel` (plain strings unchanged; no
+consumer action). Cut mid-classes-pass because ASC's toolkit swap (its Task 2) needs the export
+on the registry; a blind swap onto 0.89.0 would have regressed the "1 households" coherence
+fix. The cut also stamped the api-surface snapshot and renamed the upgrade guide's stale
+`Unreleased` heading to 0.89.0 (missed at the prior cut). ASC's range bump to `^0.89.1` rides
+its classes pass.
 
 **THE ADMIN-TOOLKIT ORGANIZATION PASS SHIPPED 2026-07-21 (PR #9 merged, v0.89.0 published,
 `latest` verified).** The window: the new public subpath `@glw907/cairn-cms/admin-toolkit`

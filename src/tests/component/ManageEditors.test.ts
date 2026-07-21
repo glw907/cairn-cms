@@ -31,6 +31,15 @@ function data() {
 }
 
 describe('ManageEditors', () => {
+  it('renders its header and table through the admin toolkit', async () => {
+    // The admin-toolkit organization pass's T7 adoption sweep: the header band and the editor
+    // table render through the toolkit's own components (PageHeader, AdminTable), not a bespoke
+    // fork. Each assertion pins a structural signature the toolkit component itself owns.
+    const screen = render(ManageEditors, { data: data(), form: null });
+    expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
+    expect(screen.container.querySelector('.toolkit-admin-table-wrap')).not.toBeNull();
+  });
+
   it('lists editors with their roles', async () => {
     const screen = render(ManageEditors, { data: data(), form: null });
     await expect.element(screen.getByText('Owner One')).toBeInTheDocument();

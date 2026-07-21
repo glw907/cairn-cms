@@ -53,6 +53,17 @@ describe('CairnTidySettings: the visibility gate (tidy disabled)', () => {
 });
 
 describe('CairnTidySettings: the editor tier (enabled with key)', () => {
+  it('renders its header and the section-count pills through the admin toolkit', async () => {
+    // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
+    // PageHeader; the Fixes and Style conventions counts render through StatusChip (a `status`
+    // dot, never a bespoke rounded-full pill), each still inside its own live region.
+    const screen = render(CairnTidySettings, { data: data() });
+    expect(screen.container.querySelector('header.mb-10')).not.toBeNull();
+    const fixesPill = screen.container.querySelector('[role="status"] .status-chip');
+    expect(fixesPill).not.toBeNull();
+    expect(fixesPill?.closest('[role="status"][aria-live="polite"]')).not.toBeNull();
+  });
+
   it('renders the read-only developer facts including the model', async () => {
     const screen = render(CairnTidySettings, { data: data() });
     // Two copies of the pill exist (one per breakpoint, only one visible at a time via

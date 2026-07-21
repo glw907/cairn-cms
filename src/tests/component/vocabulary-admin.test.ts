@@ -29,6 +29,15 @@ function postedVocabulary(container: Element): { value: string; label: string }[
 }
 
 describe('VocabularyAdmin', () => {
+  it('renders its header through the admin toolkit, meta line carrying the lede', async () => {
+    // The admin-toolkit organization pass's T7 adoption sweep: the header band renders through
+    // PageHeader, not a bespoke fork; the ledger below stays its own hand-rolled grid.
+    const screen = render(VocabularyAdmin, { data: data() });
+    const header = screen.container.querySelector('header.mb-10');
+    expect(header).not.toBeNull();
+    expect(header?.textContent).toContain('A tag groups related posts.');
+  });
+
   it('renders each entry with its label and its in-use count', async () => {
     const screen = render(VocabularyAdmin, { data: data() });
     // The labels ride editable rename inputs, named by the immutable slug so the accessible name is

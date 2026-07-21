@@ -194,6 +194,14 @@ the named human gates only):**
   the adoption sweep's first target. This pass is the receiving structure for the first harvest
   wave, so it precedes or opens that wave. Weigh whether the toolkit gates 1.0 (the
   extending-developer seam story is stronger with it).
+- **OfficeList's PageHeader convergence, filed at the T7 adoption sweep (2026-07-20).**
+  `OfficeList`'s own header is the exact shape `PageHeader` generalized from, but its rhythm
+  differs (`mb-6` versus `PageHeader`'s `mb-10`); re-expressing OfficeList's internals on
+  PageHeader would visibly change the vertical rhythm of every custom `/admin/` screen a site
+  already built on it, so it is not behavior-preserving (ruling 8 of the pass's adoption map).
+  OfficeList stays hand-rolled with its exported contract unchanged this wave. Whether to
+  converge its spacing onto PageHeader (a breaking visual change for an existing consumer) is
+  a question for a later major.
 - **Scaffolder finding (cairn-pub deploy, 2026-07-02): the dev wiring must be strippable.**
   A standalone scaffold without `@glw907/cairn-cms-dev` fails the BUILD: Rolldown cannot
   resolve the absent specifier even behind the dev gate (resolution precedes dead-code

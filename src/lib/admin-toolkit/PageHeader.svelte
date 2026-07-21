@@ -22,7 +22,9 @@ sits outside `scripts/admin-css.input.css`'s own `@source` scan, every utility c
 already compiled from the identical literal token in a scanned `src/lib/components/*.svelte`
 file (the eyebrow and page-heading recipes documented in `docs/internal/admin-design-system.md`,
 already carried by `OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm
-value); this component introduces no new utility token of its own.
+value; `text-balance`, absorbed from `HelpHome.svelte`'s own sentence-length masthead title so a
+long title's line rags evenly rather than leaving a lone last word, already scanned from
+`WelcomeView.svelte`'s copy); this component introduces no new utility token of its own.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';
@@ -50,7 +52,7 @@ value); this component introduces no new utility token of its own.
     {#if eyebrow}
       <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
+    <h1 class="text-2xl font-bold text-balance font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="text-sm text-muted">{meta}</p>{/if}
   </div>
   {#if action}{@render action()}{/if}

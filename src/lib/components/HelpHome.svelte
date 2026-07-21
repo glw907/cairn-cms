@@ -5,7 +5,8 @@ how things work. It renders inside `CairnAdminShell` (the office shell), so it c
 wrapper and imports no CSS: the layout owns the theme and `cairn-admin.css`, and this component
 consumes the Warm Stone tokens through its scoped `<style>` block.
 
-The content is one calm column: a masthead, then three co-equal eyebrow-plus-display sections.
+The content is one calm column: a masthead (the admin toolkit's `PageHeader`), then three co-equal
+eyebrow-plus-display sections that stay their own hand-written recipe this wave.
 
   - Getting started reads `data.gettingStarted`, the count derived from the committed manifest and
     the open edit branches (never a stored count). At 3 of 3 the whole section is omitted, never
@@ -20,6 +21,7 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
 <script lang="ts">
   import type { MarkdownReferenceRow } from './markdown-reference.js';
   import type { HelpData } from '../sveltekit/content-routes.js';
+  import { PageHeader } from '../admin-toolkit/index.js';
 
   let { data }: { data: HelpData } = $props();
 
@@ -99,12 +101,14 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
 
 <div class="cairn-help-content">
   <div class="help-col">
-    <!-- masthead: a real-sentence h1, the page's single display beat -->
-    <div class="page-head">
-      <span class="eyebrow">Help</span>
-      <h1 class="page-h1">Find formatting help and get your site set up.</h1>
-      <p class="page-lede">If you need more, the get-help section below names who to ask.</p>
-    </div>
+    <!-- The masthead (the admin-toolkit organization pass's T7 adoption sweep): PageHeader,
+         mounted for the masthead only. The three section sub-headers below stay their own
+         eyebrow-plus-display recipe this wave (ruling 3 of the pass's adoption map). -->
+    <PageHeader
+      eyebrow="Help"
+      title="Find formatting help and get your site set up."
+      meta="If you need more, the get-help section below names who to ask."
+    />
 
     <!-- SECTION 1: getting started (omitted at 3 of 3) -->
     {#if doneCount < 3}
@@ -372,27 +376,6 @@ The content is one calm column: a masthead, then three co-equal eyebrow-plus-dis
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--color-muted);
-  }
-
-  /* the masthead: a plain eyebrow over a real-sentence h1, the page's single display beat */
-  .page-head {
-    margin-bottom: 30px;
-  }
-  .page-h1 {
-    font-family: var(--font-display);
-    font-size: 1.875rem;
-    font-weight: 700;
-    margin: 5px 0 0;
-    /* Even line rags rather than a lone last word, at the phone widths where this full-sentence
-       heading wraps. */
-    text-wrap: balance;
-  }
-  .page-lede {
-    font-size: 0.9375rem;
-    color: var(--color-muted);
-    margin: 8px 0 0;
-    max-width: 54ch;
-    line-height: 1.55;
   }
 
   /* the shared section-head rhythm: an eyebrow over a display title, with an optional trailing meta */

@@ -1,15 +1,21 @@
 <!--
 @component
-The owner-gated editor management surface: a table of editors with role-flip and remove actions,
-and an add-editor form. The acting owner's own row disables its destructive controls; the
-last-owner anti-lockout rule itself is enforced server-side (editors-routes). Actions post to the
-named `?/setRole`, `?/removeEditor`, and `?/addEditor` actions, the names the single-mount
-dispatcher defines.
+The owner-gated editor management surface, built on the admin toolkit: a table of editors with
+role-flip and remove actions, and an add-editor form. The acting owner's own row disables its
+destructive controls; the last-owner anti-lockout rule itself is enforced server-side
+(editors-routes). Actions post to the named `?/setRole`, `?/removeEditor`, and `?/addEditor`
+actions, the names the single-mount dispatcher defines.
+
+The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, mounted
+with no action slot: the add-editor form stays its own row below the table, the screen's one
+form-semantic primary action. The role badge stays a plain daisy `badge` (ruling 7 of the pass's
+adoption map): it names an identity, not a stateful standing, so `StatusChip` does not apply.
 -->
 <script lang="ts">
   import CsrfField from './CsrfField.svelte';
   import type { Editor } from '../auth/types.js';
   import type { Capability } from '../auth/roles.js';
+  import { PageHeader, AdminTable } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The editors load's data: the allowlist, the acting owner's email, any `?error=` an
@@ -83,29 +89,28 @@ dispatcher defines.
 <!-- The office natural-measure rule (design arc 2026-07-15, propagated from ConceptList): this
      document list composes at 3xl within the shell's 5xl ceiling. -->
 <div class="mx-auto w-full max-w-3xl">
-<header class="mb-6">
-  <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">Editors</h1>
-</header>
+<PageHeader eyebrow="Settings" title="Editors" />
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if lifecycleError}
   <div class="alert alert-error mb-4 text-sm">{lifecycleError}</div>
 {/if}
 
-<div class="overflow-x-auto rounded-box border border-[var(--cairn-card-border)] bg-base-100 mb-4 shadow-[var(--cairn-shadow)]">
-  <table class="table text-[0.9375rem] [&_:where(td,th):first-child]:pl-6">
-    <!-- Frame zone (design arc 2026-07-15, propagated from ConceptList): the column-header row
-         carries the office band grammar. -->
-    <thead class="bg-base-content/[0.04]">
-      <tr><th scope="col" class={col}>Name</th><th scope="col" class={col}>Email</th><th scope="col" class={col}>Role</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
-    </thead>
-    <tbody>
+<div class="mb-4 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+  <AdminTable density="sm" rowCount={data.editors.length}>
+    {#snippet header()}
+      <th scope="col" class="{col} pl-6">Name</th>
+      <th scope="col" class={col}>Email</th>
+      <th scope="col" class={col}>Role</th>
+      <th scope="col"><span class="sr-only">Actions</span></th>
+    {/snippet}
+    {#snippet children()}
       {#each data.editors as editor (editor.email)}
         {@const isSelf = editor.email === data.self}
         <tr>
           <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
                primary identifying cell, so it reads text-base font-medium over the 15px meta. -->
-          <td class="text-base font-medium">{editor.displayName}</td>
+          <td class="pl-6 py-2 text-base font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>
             <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'badge-ghost'}">{editor.role}</span>
@@ -147,8 +152,8 @@ dispatcher defines.
           </td>
         </tr>
       {/each}
-    </tbody>
-  </table>
+    {/snippet}
+  </AdminTable>
 </div>
 
 <form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">

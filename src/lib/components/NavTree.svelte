@@ -5,6 +5,9 @@ explicit depth) and posts the whole tree as JSON to the save action. Vertical or
 svelte-sortable-list (mouse, and keyboard with Space to lift, arrows to move, Space to drop);
 depth comes from the Indent and Outdent buttons, capped at the menu's maxDepth. The engine
 validates on save.
+
+The header band (the admin-toolkit organization pass's T7 adoption sweep) is `PageHeader`, its
+title the menu's own declared label; the sortable-list card below stays untouched.
 -->
 <script lang="ts">
   import { untrack } from 'svelte';
@@ -14,6 +17,7 @@ validates on save.
   import '@rodrigodagostino/svelte-sortable-list/styles.css';
   import type { NavLoadData } from '../sveltekit/nav-routes.js';
   import type { NavNode } from '../nav/site-config.js';
+  import { PageHeader } from '../admin-toolkit/index.js';
 
   interface Props {
     /** The nav load's data: the menu meta, the current tree, page options, and flags. */
@@ -110,7 +114,7 @@ validates on save.
   const liveError = $derived(data.error ? `${data.error}${nonce()}` : '');
 </script>
 
-<h1 class="mb-6 text-2xl font-bold font-[family-name:var(--font-display)]">{data.menu.label}</h1>
+<PageHeader eyebrow="Settings" title={data.menu.label} />
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if data.saved}

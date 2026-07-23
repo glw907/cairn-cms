@@ -113,7 +113,7 @@ spacing, truncation, and wrapper layout in its own scoped `<style>` rather than 
 utility string, per the compiled-CSS constraint at the top of this page.
 
 ```ts
-import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, EmptyState } from '@glw907/cairn-cms/admin-toolkit';
+import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, EmptyState, ExpandableRow } from '@glw907/cairn-cms/admin-toolkit';
 ```
 
 ### `StatusChip`
@@ -468,6 +468,91 @@ page still has a real heading in its accessible tree.
     <button type="button" class="btn btn-sm btn-primary" onclick={create}>New post</button>
   {/snippet}
 </EmptyState>
+```
+
+### `ExpandableRow`
+
+Stability tier: Extension API.
+
+```ts
+let { expanded, onToggle, datum, colspan, summary, panel, triggerLabel }: {
+  expanded: boolean;
+  onToggle: () => void;
+  datum: T;
+  colspan: number;
+  summary: Snippet;
+  panel: Snippet<[T]>;
+  triggerLabel: string;
+};
+```
+
+The expand-in-place table row: a summary `<tr>` plus a conditional panel `<tr>` whose single
+spanning cell receives the row's own `datum`, so the `panel` snippet never needs a closure over
+the row it belongs to. Fully controlled, matching `Pagination`'s own convention: `expanded` and
+`onToggle` are props, not internal state, so the caller holds a single expanded-row id and derives
+`expanded={expandedId === row.id}` per instance, the "one row expanded at a time" contract living
+in the caller the same way a radio group's own `checked` prop carries it. `summary` is the row's
+own `<td>` cells (this component supplies the wrapping `<tr>` and the trailing trigger cell);
+`colspan` is the summary row's own `<td>` count, including that trigger cell, since the panel's
+single spanning cell must cover the whole row.
+
+Keyboard operability rides the native `<button>` element's own Enter/Space activation; the summary
+`<tr>` also carries a mouse-only click convenience, but the trailing button is the one control
+carrying `aria-expanded` and `triggerLabel` as its accessible name, so a summary cell should stay
+non-interactive (plain text, a `StatusChip`, and similar). The trigger cell is `position: sticky;
+right: 0`, so `AdminTable`'s own horizontal-scroll fallback never strands it off-screen: a summary
+row wider than its viewport scrolls rather than wraps, and the trigger stays reachable at every
+scroll position, unconditionally, with no caller opt-in. The panel cell stays a genuine `<td
+colspan>`, not `display: block`, because a spanning cell removed from table layout still resolves
+its width against the table's own real column widths through the browser's anonymous fixup row; a
+caller that wants the panel's own internal grid to collapse at a narrow width needs the table
+itself to never need horizontal scroll in the first place (hide lower-priority summary columns
+under a breakpoint instead).
+
+Three treatments carry no prop of their own. They apply unconditionally. The whole summary row
+washes with `color-mix(in oklab, var(--color-base-content) 5%, transparent)` on hover, including
+the sticky trigger cell (adversarially verified against a zebra-striped row, where a plain
+`base-200` wash reads as invisible, being the stripe's own color). The trigger cell's own
+background follows zebra parity instead of a fixed `base-100`: on a `table-zebra` ancestor it
+mirrors the exact `tr:nth-child(2n)` selector daisyUI's own zebra striping uses, so the pinned
+column never seams against a striped row underneath it. The panel `<td>` carries a depth story,
+`background: var(--color-base-300)` plus `box-shadow: inset 0 1px 0 var(--cairn-card-border)`, so
+it reads as a recessed drawer rather than a flat continuation of the row preceding it. A `base-200`
+recess was the first attempt, and adversarial review refuted it: it's the zebra stripe's own color,
+so the drawer visually merged with a striped row.
+
+**daisyUI assembly:** `btn`, `btn-ghost`, `btn-xs` for the trigger control, every class already
+compiled from cairn's own admin usage.
+
+**Exact class inventory:** `btn`, `btn-ghost`, `btn-xs`.
+
+```svelte
+<AdminTable {density} zebra rowCount={households.length}>
+  {#snippet header()}
+    <th>Household</th>
+    <th>Standing</th>
+    <th></th>
+  {/snippet}
+  {#snippet children()}
+    {#each households as household (household.id)}
+      <ExpandableRow
+        expanded={expandedId === household.id}
+        onToggle={() => (expandedId = expandedId === household.id ? null : household.id)}
+        datum={household}
+        colspan={3}
+        triggerLabel={`${expandedId === household.id ? 'Collapse' : 'Expand'} the ${household.name} household`}
+      >
+        {#snippet summary()}
+          <td>{household.name}</td>
+          <td><StatusChip tone={household.tone} label={household.standing} /></td>
+        {/snippet}
+        {#snippet panel(household)}
+          <p>{household.contact}</p>
+        {/snippet}
+      </ExpandableRow>
+    {/each}
+  {/snippet}
+</AdminTable>
 ```
 
 ---

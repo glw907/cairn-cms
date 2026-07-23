@@ -34,3 +34,4 @@ export {
 } from './ListToolbar.svelte';
 export { default as PageHeader } from './PageHeader.svelte';
 export { default as EmptyState, type EmptyStateHeadingLevel } from './EmptyState.svelte';
+export { default as ExpandableRow } from './ExpandableRow.svelte';

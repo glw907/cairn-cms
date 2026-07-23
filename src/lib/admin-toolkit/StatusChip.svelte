@@ -15,19 +15,23 @@ rather than four covered by a badge fill plus a gap.
 `badge-outline`, not `badge-ghost`: `badge-ghost` compiles to an explicit background and border
 color that matches one of AdminTable's own zebra stripe colors, so a ghost chip melts into
 whichever row shares that color. `badge-outline` has no fill and sets no `--badge-color`, so its
-border resolves to the inherited text color, reading the same against either zebra stripe or no
-zebra at all.
+border would otherwise resolve to the full-strength inherited text color, which reads as a
+clickable button rather than a status marker. The scoped `<style>` below demotes it to
+`color-mix(in oklab, currentColor 35%, transparent)`, a hairline adversarially verified against
+both zebra stripes in both themes (22% sits at the visibility floor on the light zebra; 35%
+survives).
 
 Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
 than a Tailwind utility string, since `/admin/**` routes load only cairn's precompiled admin CSS
 and an arbitrary utility never reaches it.
 
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
-consumer's own household-standing context); `xs` carries no floor of its own (the admin-toolkit
-organization pass's T6 absorption: a dense table column, ConceptList's publish-state cell and
-MediaLibrary's alt/usage cells, budgets its narrow-viewport width against the chip's real content,
-not a fixed reservation sized for a longer label the office's own three-word vocabulary never
-needs).
+consumer's own household-standing context; a min-width-free "hugging" alternative was tried and
+adversarially refuted -- it produces a ragged column when chip labels vary in length); `xs`
+carries no floor of its own (the admin-toolkit organization pass's T6 absorption: a dense table
+column, ConceptList's publish-state cell and MediaLibrary's alt/usage cells, budgets its narrow-
+viewport width against the chip's real content, not a fixed reservation sized for a longer label
+the office's own three-word vocabulary never needs).
 -->
 <script module lang="ts">
   /** The chip's full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under
@@ -91,6 +95,10 @@ needs).
     gap: 0.375rem;
     min-width: 5rem;
     max-width: 10rem;
+    /* Demoted from badge-outline's full-strength `border-color: currentColor` (reads as a
+       button, not a status marker): a hairline at 35% of the tone color survives adversarial
+       zebra-stripe testing on both themes (22% sat at the visibility floor on light zebra). */
+    border-color: color-mix(in oklab, currentColor 35%, transparent);
   }
 
   /* xs carries no reserved floor: a dense table column budgets its own narrow-viewport width

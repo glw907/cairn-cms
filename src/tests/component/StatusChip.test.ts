@@ -46,6 +46,32 @@ describe('StatusChip', () => {
     expect(xsChip.querySelector('.status-xs')).not.toBeNull();
   });
 
+  it('demotes the badge-outline border to a 35% currentColor hairline, not the full-strength default', () => {
+    const screen = render(StatusChip, { tone: 'danger', label: 'Overdue' });
+    const chip = screen.container.querySelector('.status-chip')!;
+    const style = getComputedStyle(chip);
+    // badge-outline alone would resolve `border-color: currentColor` to a fully opaque color; the
+    // demoted hairline mixes it down to 35% against transparent. Chromium serializes a resolved
+    // `color-mix(in oklab, ...)` as a functional color notation with a trailing `/ <alpha>`
+    // component (e.g. `oklab(0 0 0 / 0.35)`), so the alpha is the number right before the
+    // closing paren rather than an rgba() fourth channel.
+    const alphaMatch = style.borderColor.match(/\/\s*([\d.]+)\s*\)\s*$/);
+    expect(alphaMatch).not.toBeNull();
+    const alpha = Number.parseFloat(alphaMatch![1]);
+    expect(alpha).toBeGreaterThan(0);
+    expect(alpha).toBeCloseTo(0.35, 2);
+  });
+
+  it('keeps the sm size at a 5rem min-width floor (hugging was adversarially refuted) while xs stays floor-free', () => {
+    const sm = render(StatusChip, { tone: 'neutral', label: 'Former' });
+    const smChip = sm.container.querySelector('.status-chip')!;
+    expect(getComputedStyle(smChip).minWidth).toBe('80px'); // 5rem at the default 16px root
+
+    const xs = render(StatusChip, { tone: 'neutral', label: 'Former', size: 'xs' });
+    const xsChip = xs.container.querySelector('.status-chip')!;
+    expect(getComputedStyle(xsChip).minWidth).toBe('0px');
+  });
+
   it('carries an optional legend into the tooltip and a visually-hidden text node, and omits both without one', () => {
     const withLegend = render(StatusChip, {
       tone: 'warning',

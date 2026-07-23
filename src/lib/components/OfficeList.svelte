@@ -28,14 +28,22 @@ supplies its own `<table>` (or any content) inside.
 </script>
 
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-  <div class="flex flex-col gap-0.5">
+  <div class="flex flex-col gap-0">
     {#if eyebrow}
       <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
-    {#if subtitle}<p class="text-sm text-muted">{subtitle}</p>{/if}
+    <!-- The UA default h1/p margins do not collapse inside a flex column, so they leaked past
+         this stack's own gap-0.5 intent into a ~32px rendered gap. Zeroed here and replaced
+         with an explicit mt-1 (4px) on the subtitle only, so the eyebrow sits flush above the
+         title and the subtitle sits a deliberate 4px below it. -->
+    <h1 class="m-0 text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
+    {#if subtitle}<p class="m-0 mt-1 text-sm text-muted">{subtitle}</p>{/if}
   </div>
-  {#if action}{@render action()}{/if}
+  {#if action}
+    <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its
+         intrinsic content width instead. -->
+    <div class="self-start">{@render action()}</div>
+  {/if}
 </header>
 
 <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">

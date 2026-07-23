@@ -94,6 +94,21 @@ describe('Pagination', () => {
     expect(screen.container.textContent ?? '').toContain('149 households');
   });
 
+  it('gives the range line 13px text with tabular-nums', () => {
+    const screen = render(Pagination, {
+      page: 1,
+      pageCount: 8,
+      onPageChange: () => {},
+      totalItems: 149,
+      pageSize: 20,
+      itemLabel: 'households',
+    });
+    const range = screen.container.querySelector('.toolkit-pagination-range')!;
+    const style = getComputedStyle(range);
+    expect(style.fontSize).toBe('13px');
+    expect(style.fontVariantNumeric).toBe('tabular-nums');
+  });
+
   it('offers a page-size selector when pageSizeOptions and onPageSizeChange are given', async () => {
     const onPageSizeChange = vi.fn();
     const screen = render(Pagination, {

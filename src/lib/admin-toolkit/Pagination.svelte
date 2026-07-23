@@ -148,6 +148,7 @@ if given) if one applies.
   .toolkit-pagination-range {
     margin: 0;
     font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
     color: var(--color-muted);
   }
 </style>

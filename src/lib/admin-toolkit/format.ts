@@ -102,6 +102,23 @@ export function ageFromBirthdate(birthdateIso: string | null | undefined, asOf: 
   return age;
 }
 
+/** A stored E.164 `+1` NANP number (10 digits after the country code), the one shape a phone
+ *  normalized at write time (a member-normalize style parse) produces. */
+const NANP_E164 = /^\+1(\d{3})(\d{3})(\d{4})$/;
+
+/**
+ * Format a stored E.164 phone number for a table cell: `+19075550100` becomes the hyphenated
+ * `907-555-0100`, no leading `+1`. A number outside the NANP `+1` shape (a non-US country code,
+ * or anything that fails to parse) passes through unchanged; a table cell has no reason to
+ * reformat what it cannot parse.
+ */
+export function formatPhone(phone: string): string {
+  const match = NANP_E164.exec(phone);
+  if (!match) return phone;
+  const [, area, prefix, line] = match;
+  return `${area}-${prefix}-${line}`;
+}
+
 /**
  * A count-line noun in both grammatical numbers, graduated from aksailingclub-org's own
  * `format.ts` (the "1 households" defect: a bare plural noun reads wrong at exactly one). `one`

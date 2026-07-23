@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { ageFromBirthdate, formatCivilDate, formatMoney, formatTimestamp, itemNoun } from '../../lib/admin-toolkit/format.js';
+import {
+  ageFromBirthdate,
+  formatCivilDate,
+  formatMoney,
+  formatPhone,
+  formatTimestamp,
+  itemNoun,
+} from '../../lib/admin-toolkit/format.js';
 
 describe('formatMoney', () => {
   it('formats zero cents as a zeroed currency string', () => {
@@ -93,6 +100,20 @@ describe('ageFromBirthdate', () => {
 
   it('computes a whole-years age after the birthday this year', () => {
     expect(ageFromBirthdate('2015-08-20', new Date(2026, 7, 21, 12))).toBe(11);
+  });
+});
+
+describe('formatPhone', () => {
+  it('formats a stored NANP E.164 number as a hyphenated display, no +1', () => {
+    expect(formatPhone('+19075550100')).toBe('907-555-0100');
+  });
+
+  it('passes through a non-NANP number unchanged', () => {
+    expect(formatPhone('+447911123456')).toBe('+447911123456');
+  });
+
+  it('passes through a malformed value unchanged', () => {
+    expect(formatPhone('not a phone number')).toBe('not a phone number');
   });
 });
 

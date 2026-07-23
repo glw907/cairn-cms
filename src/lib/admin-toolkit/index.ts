@@ -7,6 +7,7 @@ export {
   ageFromBirthdate,
   formatCivilDate,
   formatMoney,
+  formatPhone,
   formatTimestamp,
   itemNoun,
   type FormatCivilDateOptions,

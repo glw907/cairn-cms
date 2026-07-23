@@ -51,12 +51,15 @@ export interface ListToolbarFilter {
    */
   promoted?: boolean;
   /**
-   * The filter's presentation: a `<select>` (the default) or a `'segmented'` group of toggle
+   * The filter's presentation: a `<select>` (the default), a `'segmented'` group of toggle
    * buttons (graduation extension: ruling 6, finding-11's segmented filter device; ConceptList's
-   * publish-state filter and MediaLibrary's triage radiogroup are the first consumers). Defaults
+   * publish-state filter and MediaLibrary's triage radiogroup are the first consumers), or a
+   * `'menu'` quiet bordered button showing the filter's own name at rest and its applied value
+   * in-control (the Members-refinement-round-1 recomposition: `"Standing"` at rest,
+   * `"Standing: Overdue"` once applied, with a separate inline clear affordance). Defaults
    * `'select'`.
    */
-  display?: 'select' | 'segmented';
+  display?: 'select' | 'segmented' | 'menu';
 }
 
 /** The toolbar's one primary action, always right-aligned. */
@@ -101,4 +104,19 @@ export function computeAppliedFilters(filters: ListToolbarFilter[]): AppliedFilt
  */
 export function computeCountLine(count: number, itemLabel: string | ItemLabel, appliedLabels: string[]): string {
   return [`${count} ${itemNoun(count, itemLabel)}`, ...appliedLabels].join(' · ');
+}
+
+/**
+ * A `'menu'`-display facet's own in-control label: the bare filter label at rest (`"Standing"`),
+ * or `"<label>: <value>"` once the filter's value differs from its own default
+ * (`"Standing: Overdue"`), falling back to the raw value if the options list carries no matching
+ * option (the same fallback `computeAppliedFilters` uses, so a stale or externally-set value
+ * never renders a blank trigger). The applied-pills row this once fed retired with the
+ * recomposition; the label now renders directly in the facet control instead.
+ */
+export function computeFacetLabel(filter: ListToolbarFilter): string {
+  const defaultValue = filter.defaultValue ?? 'all';
+  if (filter.value === defaultValue) return filter.label;
+  const option = filter.options.find((candidate) => candidate.value === filter.value);
+  return `${filter.label}: ${option?.label ?? filter.value}`;
 }

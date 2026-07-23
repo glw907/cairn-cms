@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { computeAppliedFilters, computeCountLine } from '../../lib/admin-toolkit/list-toolbar.js';
+import { computeAppliedFilters, computeCountLine, computeFacetLabel } from '../../lib/admin-toolkit/list-toolbar.js';
 import type { ListToolbarFilter } from '../../lib/admin-toolkit/list-toolbar.js';
 
 function standingFilter(overrides: Partial<ListToolbarFilter> = {}): ListToolbarFilter {
@@ -96,5 +96,32 @@ describe('computeCountLine', () => {
   it('picks the plural noun at any other count when itemLabel is an { one, many } pair', () => {
     expect(computeCountLine(6, { one: 'household', many: 'households' }, [])).toBe('6 households');
     expect(computeCountLine(0, { one: 'household', many: 'households' }, [])).toBe('0 households');
+  });
+});
+
+describe('computeFacetLabel', () => {
+  it('renders the bare filter label at rest', () => {
+    expect(computeFacetLabel(standingFilter())).toBe('Standing');
+  });
+
+  it('renders "<label>: <value>" once the value departs the default', () => {
+    expect(computeFacetLabel(standingFilter({ value: 'overdue' }))).toBe('Standing: Overdue');
+  });
+
+  it('honors a non-default defaultValue', () => {
+    const filter = standingFilter({
+      value: 'archived',
+      defaultValue: 'members',
+      options: [
+        { value: 'members', label: 'Members only' },
+        { value: 'archived', label: 'Archived' },
+      ],
+    });
+    expect(computeFacetLabel(filter)).toBe('Standing: Archived');
+    expect(computeFacetLabel({ ...filter, value: 'members' })).toBe('Standing');
+  });
+
+  it('falls back to the raw value when no option matches it', () => {
+    expect(computeFacetLabel(standingFilter({ value: 'stale-value' }))).toBe('Standing: stale-value');
   });
 });

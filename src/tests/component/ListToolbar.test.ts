@@ -84,44 +84,155 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-primary')).toBeNull();
   });
 
-  it('renders an applied-filter pill in the neutral badge tone with a labeled remove control', () => {
-    const screen = render(ListToolbar, {
-      search: '',
-      onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue' })],
-      count: 12,
-      itemLabel: 'households',
-    });
-    const pill = screen.container.querySelector('.toolkit-toolbar-pill')!;
-    expect(pill.className).toContain('badge-neutral');
-    expect(pill.className).not.toContain('badge-error');
-    expect(pill.className).not.toContain('badge-warning');
-    expect(pill.textContent).toContain('Overdue');
-    expect(screen.container.querySelector('[aria-label="Remove Overdue filter"]')).not.toBeNull();
-  });
-
-  it('calls onChange with the default value when a pill is removed', async () => {
-    const onChange = vi.fn();
-    const screen = render(ListToolbar, {
-      search: '',
-      onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue', onChange })],
-      count: 12,
-      itemLabel: 'households',
-    });
-    await screen.getByRole('button', { name: 'Remove Overdue filter' }).click();
-    expect(onChange).toHaveBeenCalledWith('all');
-  });
-
-  it('renders no pills row when every filter is at its default', () => {
-    const screen = render(ListToolbar, {
+  it('never renders a separate applied-filter pills row, applied or not (the pills row retired)', () => {
+    const atRest = render(ListToolbar, {
       search: '',
       onSearch: () => {},
       filters: [standingFilter()],
       count: 149,
       itemLabel: 'households',
     });
-    expect(screen.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
+    expect(atRest.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
+
+    const applied = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    expect(applied.container.querySelector('.toolkit-toolbar-pills')).toBeNull();
+    expect(applied.container.querySelector('.toolkit-toolbar-pill')).toBeNull();
+  });
+
+  it("renders a 'menu' facet as a quiet bordered button showing the filter's own name at rest", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
+    expect(trigger.textContent).toContain('Standing');
+    expect(screen.container.querySelector('.toolkit-toolbar-facet-clear')).toBeNull();
+    expect(screen.container.querySelector('.toolkit-toolbar-facet-applied')).toBeNull();
+  });
+
+  it("shows a 'menu' facet's applied value in-control, with a separate inline clear element (not a nested button)", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
+    expect(trigger.textContent).toContain('Standing: Overdue');
+    const facet = screen.container.querySelector('.toolkit-toolbar-facet-applied')!;
+    expect(facet).not.toBeNull();
+    const clear = screen.container.querySelector('[aria-label="Clear Standing filter"]')!;
+    expect(clear).not.toBeNull();
+    // The clear control is a sibling of the trigger, never nested inside it (nested interactive
+    // controls are invalid markup and unreliable to activate).
+    expect(trigger.contains(clear)).toBe(false);
+    expect(clear.tagName).toBe('BUTTON');
+  });
+
+  it("calls onChange with the default value when a 'menu' facet's inline clear is activated", async () => {
+    const onChange = vi.fn();
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu', onChange })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    await screen.getByRole('button', { name: 'Clear Standing filter' }).click();
+    expect(onChange).toHaveBeenCalledWith('all');
+  });
+
+  it("opens a 'menu' facet's option list on a trigger click, with real toggle semantics", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.container.querySelector('.toolkit-toolbar-facet-menu')?.textContent).toContain('Overdue');
+  });
+
+  it("selects a 'menu' facet's option, calls onChange, closes the menu, and returns focus to the trigger", async () => {
+    const onChange = vi.fn();
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu', onChange })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    await screen.getByRole('button', { name: 'Overdue' }).click();
+    expect(onChange).toHaveBeenCalledWith('overdue');
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.poll(() => document.activeElement).toBe(trigger.element());
+  });
+
+  it("closes an open 'menu' facet on Escape and returns focus to its own trigger", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    await expect.poll(() => document.activeElement).toBe(trigger.element());
+  });
+
+  it("closes an open 'menu' facet on a pointerdown outside its own trigger and panel", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('only ever shows one facet menu open at a time', async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        standingFilter({ display: 'menu' }),
+        standingFilter({ id: 'holdings', label: 'Holdings', display: 'menu' }),
+      ],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const standingTrigger = screen.getByRole('button', { name: 'Standing' });
+    const holdingsTrigger = screen.getByRole('button', { name: 'Holdings' });
+    await standingTrigger.click();
+    await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'true');
+    await holdingsTrigger.click();
+    await expect.element(holdingsTrigger).toHaveAttribute('aria-expanded', 'true');
+    await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'false');
   });
 
   it('states the applied scope in the count line, matching computeCountLine', () => {
@@ -163,18 +274,18 @@ describe('ListToolbar', () => {
     expect(count.getAttribute('aria-atomic')).toBe('true');
   });
 
-  it('gives the pill remove control at least a 24x24 CSS px hit area', () => {
+  it("gives the 'menu' facet's inline clear control at least a 24x24 CSS px hit area", () => {
     const screen = render(ListToolbar, {
       search: '',
       onSearch: () => {},
-      filters: [standingFilter({ value: 'overdue' })],
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
       count: 12,
       itemLabel: 'households',
     });
-    const remove = screen.container.querySelector('.toolkit-toolbar-pill-remove')!;
-    const style = getComputedStyle(remove);
-    expect(parseFloat(style.minWidth)).toBeGreaterThanOrEqual(24);
-    expect(parseFloat(style.minHeight)).toBeGreaterThanOrEqual(24);
+    const clear = screen.container.querySelector('.toolkit-toolbar-facet-clear')!;
+    const style = getComputedStyle(clear);
+    expect(parseFloat(style.width)).toBeGreaterThanOrEqual(24);
+    expect(parseFloat(style.height)).toBeGreaterThanOrEqual(24);
   });
 
   it('closes the overflow disclosure on Escape and returns focus to the trigger', async () => {
@@ -363,7 +474,7 @@ describe('ListToolbar', () => {
 // of the `@source`-scanned src/lib/components tree (admin-toolkit was never added to the scan
 // root), and the segmented filter's grid column was too narrow for its own options; both silently
 // stacked the triage buttons one per line instead of one row.
-describe('ListToolbar segmented layout (compiled CSS)', () => {
+describe('ListToolbar layout (compiled CSS)', () => {
   let styleEl: HTMLStyleElement;
 
   beforeAll(() => {
@@ -403,5 +514,107 @@ describe('ListToolbar segmented layout (compiled CSS)', () => {
     expect(['flex', 'inline-flex']).toContain(getComputedStyle(group).display);
     const tops = [...group.querySelectorAll('button')].map((b) => b.getBoundingClientRect().top);
     expect(new Set(tops).size).toBe(1);
+  });
+
+  // The Members-refinement-round-1 recomposition: the band is a flat flex row (not the prior
+  // grid), search/select/facet controls force one shared 30px height rather than trusting
+  // input-sm/btn-sm to already agree, and the search/count text land at the ruled 13px.
+  it('lays out the band as a wrapped flex row, not a grid', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      primaryAction: { label: 'Add household', onClick: () => {} },
+      count: 149,
+      itemLabel: 'households',
+    });
+    const band = screen.container.querySelector('.toolkit-toolbar-band')!;
+    const style = getComputedStyle(band);
+    expect(style.display).toBe('flex');
+    expect(style.flexWrap).toBe('wrap');
+  });
+
+  it('forces the search box and the menu facet control to the same 30px height', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const search = screen.container.querySelector('.toolkit-toolbar-search')!;
+    const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
+    expect(getComputedStyle(search).height).toBe('30px');
+    expect(getComputedStyle(facet).height).toBe('30px');
+  });
+
+  it('sets the search input and count line text to the ruled 13px (0.8125rem)', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      count: 149,
+      itemLabel: 'households',
+    });
+    const input = screen.container.querySelector('.toolkit-toolbar-search input')!;
+    const count = screen.container.querySelector('.toolkit-toolbar-count')!;
+    expect(getComputedStyle(input).fontSize).toBe('13px');
+    expect(getComputedStyle(count).fontSize).toBe('13px');
+  });
+
+  it('gives the count line tabular-nums', () => {
+    const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
+    const count = screen.container.querySelector('.toolkit-toolbar-count')!;
+    expect(getComputedStyle(count).fontVariantNumeric).toBe('tabular-nums');
+  });
+
+  it("gives an applied 'menu' facet the ratified border/fill treatment, distinct from its rest state", () => {
+    const atRest = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const applied = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    const restFacet = atRest.container.querySelector('.toolkit-toolbar-facet')!;
+    const appliedFacet = applied.container.querySelector('.toolkit-toolbar-facet')!;
+    const restStyle = getComputedStyle(restFacet);
+    const appliedStyle = getComputedStyle(appliedFacet);
+    expect(appliedStyle.borderColor).not.toBe(restStyle.borderColor);
+    expect(appliedStyle.backgroundColor).not.toBe(restStyle.backgroundColor);
+  });
+
+  it("caps an applied 'menu' facet's in-control value at 14rem with an ellipsis", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
+    const value = screen.container.querySelector('.toolkit-toolbar-facet-value')!;
+    expect(getComputedStyle(trigger).maxWidth).toBe('224px'); // 14rem at the default 16px root
+    expect(getComputedStyle(value).textOverflow).toBe('ellipsis');
+  });
+
+  it("restyles the 'select' variant to the shared 30px height and 13px text", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter()],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const select = screen.container.querySelector('.toolkit-toolbar-select')!;
+    const style = getComputedStyle(select);
+    expect(style.height).toBe('30px');
+    expect(style.fontSize).toBe('13px');
   });
 });

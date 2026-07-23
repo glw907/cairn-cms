@@ -23,6 +23,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     StatusChip,
     EmptyState,
     formatCivilDate,
+    itemNoun,
     type ListToolbarFilter,
   } from '../admin-toolkit/index.js';
 
@@ -202,10 +203,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   });
   const derivedSlug = $derived(slugEdited ? slug : slugify(title));
   const slugPlaceholder = $derived(data.dated ? 'my-entry' : 'about-us');
-  // The create affordances name one new item, so they read in the singular ("New post"). The
-  // descriptor resolves `singular` (defaulting it to the label), so the fallback here only guards an
-  // older caller that ships no `singular` on its ListData.
-  const createNoun = $derived(data.singular ?? data.label);
+  // The create affordances name one new item, so they read in the singular ("New post"), picked
+  // through the toolkit's shared `itemNoun` grammar (the same one/many selector Pagination and
+  // ListToolbar's count lines use) rather than a bespoke fallback. A count of 1 always resolves to
+  // `one` when `singular` is set, and passing a bare string through `itemNoun` returns it unchanged
+  // for a `singular`-less older caller on the descriptor's own default, which is the label (plural).
+  const createNoun = $derived(itemNoun(1, data.singular ?? data.label));
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.

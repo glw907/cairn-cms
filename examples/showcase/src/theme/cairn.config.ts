@@ -425,6 +425,9 @@ export const cairn = defineAdapter({
     pages: defineConcept({
       dir: 'src/content/pages',
       label: 'Pages',
+      // The create affordances read in the singular ("New page"); an omitted `singular` would fall
+      // back to `label` and read "New Pages" instead (the same fallback `posts` names above).
+      singular: 'page',
       routing: 'page',
       fields: fieldset({
         title: fields.text({ label: 'Title', required: true }),

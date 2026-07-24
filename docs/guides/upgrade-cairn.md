@@ -49,6 +49,19 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.90.0: ExpandableRow graduates, a menu filter facet, formatPhone (non-breaking)
+
+`ExpandableRow` joins the `admin-toolkit` subpath (its second consumer, carrying three
+zebra/hover/panel-depth fixes from the graduation), `ListToolbar` gains a `display: 'menu'`
+filter variant, and `formatPhone` joins the toolkit's formatters. `ListToolbar`'s controls row
+also recomposes to a wrapped flex row and `StatusChip`'s border demotes to a 35% currentColor
+hairline; `OfficeList`'s header stack and mobile action sizing get two proven fixes; cairn's own
+`ConceptList` create-button label now reads through the shared `itemNoun` grammar.
+
+Consumers must: nothing. `ExpandableRow` and `formatPhone` are new, additive exports; the
+`'menu'` display value widens an existing string union; every other change is a visual
+refinement inside cairn's own admin-toolkit and built-in admin screens.
+
 ## 0.89.1: grammatical number on toolkit count lines (non-breaking)
 
 `itemNoun` and `ItemLabel` join the admin-toolkit formatters, and `Pagination`'s and

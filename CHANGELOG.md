@@ -1,3 +1,53 @@
+## 0.90.0
+
+<!-- release-size: minor -->
+
+### Added
+
+- `ExpandableRow` graduates into the `admin-toolkit` subpath (second consumer landed:
+  aksailingclub-org's own `src/admin-club/toolkit/ExpandableRow.svelte`), carrying three visual
+  fixes from the Members-refinement audit: the summary row's hover wash now reaches the sticky
+  trigger cell with its own opaque tint (a transparent-based wash would let content scrolling
+  underneath a pinned column show through); the trigger cell follows zebra parity
+  (`base-200` on striped rows) instead of a hardcoded `base-100`, closing the right-edge seam;
+  and the expanded panel's `<td>` gets `background: var(--color-base-300)` with an inset
+  top-border, so the drawer reads as its own surface instead of merging with the zebra stripe.
+  All of the component's contracts (colspan mechanics, the 390 column-hiding pattern,
+  `aria-expanded`/keyboard behavior) are unchanged.
+- `ListToolbar` gains a `display: 'menu'` filter variant: a quiet bordered button showing the
+  facet's name at rest ("Standing") and its applied value in-control ("Standing: Overdue") with
+  a separate inline clear affordance, opening a keyboard-operable option list (focus moves to
+  the first option on open, Escape and outside-pointerdown close it, only one facet stays open
+  at a time). The existing `'select'` variant is unchanged behaviorally and now shares the same
+  30px control height and 13px text as every other control in the row.
+- `formatPhone(phone: string): string` joins the `admin-toolkit` formatters: a stored E.164 NANP
+  number (`+19075550100`) renders as the hyphenated `907-555-0100` for a table cell; anything
+  outside that shape passes through unchanged.
+
+### Changed
+
+- `ListToolbar`'s controls row recomposes from a rigid `repeat(auto-fill, minmax(11rem, 1fr))`
+  grid to a wrapped flex row (search `flex: 1 1 240px`), so five promoted facets plus search fit
+  one line at a realistic container width and wrap cleanly at narrow widths instead of forcing
+  ragged per-cell wrapping. The applied-pills row is retired; `computeAppliedFilters` now only
+  feeds the count line. The 13px count line gains `tabular-nums`, as does `Pagination`'s range
+  line.
+- `StatusChip`'s border demotes from `badge-outline`'s full-strength `currentColor` (which read
+  as a clickable button) to `color-mix(in oklab, currentColor 35%, transparent)`, the value
+  verified against zebra stripes in both themes; the `sm` size keeps its `5rem` min-width floor.
+- `OfficeList`'s header stack (eyebrow/title/subtitle) no longer leaks the browser's default
+  `h1`/`p` margins past its own `gap-0.5` (flex does not collapse child margins), so the
+  rendered gaps settle to the intended few px instead of a ~32px leak; the header's action slot
+  no longer stretches full-width below the `sm` breakpoint.
+- cairn's own `ConceptList` create-button label now resolves its singular noun through the same
+  `itemNoun` grammar `Pagination` and `ListToolbar` use, instead of a bespoke fallback, so a
+  concept that only declares a plural `label` (the showcase's `pages`, before this change) no
+  longer reads "New Pages" where "New Page" was intended.
+
+No consumer action is required. `ExpandableRow` and `formatPhone` are new, additive exports;
+`ListToolbar`'s `'menu'` display value widens an existing string union; every other change is a
+visual refinement inside cairn's own admin-toolkit and built-in admin screens.
+
 ## 0.89.1
 
 ### Added

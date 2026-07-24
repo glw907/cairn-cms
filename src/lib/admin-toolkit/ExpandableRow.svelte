@@ -96,7 +96,7 @@ verified against zebra stripes in both themes):**
   <td class="toolkit-expandable-row-trigger-cell">
     <button
       type="button"
-      class="btn btn-ghost btn-xs toolkit-expandable-row-trigger"
+      class="btn btn-ghost btn-xs"
       aria-expanded={expanded}
       aria-label={triggerLabel}
       onclick={(event) => {

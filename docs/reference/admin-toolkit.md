@@ -89,6 +89,19 @@ date for deterministic call sites). Turns over on the birthday itself rather tha
 after, and reads `null` for a missing or unparseable birthdate so a caller renders its own "age
 unknown" copy instead of a formatter guessing at it.
 
+### `formatPhone`
+
+Stability tier: Extension API.
+
+```ts
+declare function formatPhone(phone: string): string;
+```
+
+Format a stored E.164 NANP phone number for a table cell: `+19075550100` becomes the
+hyphenated `907-555-0100`, no leading `+1`. A value outside the NANP `+1` shape (a non-US
+country code, or anything that fails to parse) passes through unchanged; a table cell has no
+reason to reformat what it cannot parse.
+
 ### `itemNoun`
 
 Stability tier: Extension API.

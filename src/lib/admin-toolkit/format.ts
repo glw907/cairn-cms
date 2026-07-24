@@ -102,8 +102,10 @@ export function ageFromBirthdate(birthdateIso: string | null | undefined, asOf: 
   return age;
 }
 
-/** A stored E.164 `+1` NANP number (10 digits after the country code), the one shape a phone
- *  normalized at write time (a member-normalize style parse) produces. */
+/**
+ * A stored E.164 `+1` NANP number (10 digits after the country code), the one shape a phone
+ * normalized at write time (a member-normalize style parse) produces.
+ */
 const NANP_E164 = /^\+1(\d{3})(\d{3})(\d{4})$/;
 
 /**

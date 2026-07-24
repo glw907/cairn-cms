@@ -102,10 +102,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `computePageWindow`: (page: number, pageCount: number) => PageWindowItem[]
 - `EmptyState`: Component<Props, {}, "">
 - `EmptyStateHeadingLevel`: "p" | "h1" | "h2" | "h3"
+- `ExpandableRow`: $$IsomorphicComponent
 - `formatCivilDate`: (iso: string | null, options?: FormatCivilDateOptions) => string
 - `FormatCivilDateOptions`: { fallback?: string; locale?: string; intlOptions?: Intl.DateTimeFormatOptions }
 - `formatMoney`: (cents: number, options?: FormatMoneyOptions) => string
 - `FormatMoneyOptions`: { currency?: string; locale?: string }
+- `formatPhone`: (phone: string) => string
 - `formatTimestamp`: (sqliteDatetime: string, options?: FormatTimestampOptions) => string
 - `FormatTimestampOptions`: { timeZone?: string; locale?: string }
 - `ItemLabel`: { one: string; many: string }
@@ -113,7 +115,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `ItemRange`: { first: number; last: number; total: number }
 - `ListToolbar`: Component<Props, {}, "">
 - `ListToolbarAction`: { label: string; onClick: () => void }
-- `ListToolbarFilter`: { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: "select" | "segmented" }
+- `ListToolbarFilter`: { id: string; label: string; options: ListToolbarFilterOption[]; value: string; onChange: (value: string) => void; defaultValue?: string; promoted?: boolean; display?: "select" | "segmented" | "menu" }
 - `ListToolbarFilterOption`: { value: string; label: string; count?: number }
 - `PageHeader`: Component<Props, {}, "">
 - `PageWindowItem`: number | "ellipsis"

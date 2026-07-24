@@ -15,7 +15,17 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-21, latest: v0.89.1 published; next = the principle-pages pass)
+## Immediate next action (2026-07-23, latest: v0.90.0 published; next = the principle-pages pass)
+
+**v0.90.0 published 2026-07-23 (`latest` verified).** Cut for the Members-refinement round-1
+cairn phase (C1-C6): `ExpandableRow` graduates into `admin-toolkit` (its second consumer,
+aksailingclub-org's own copy, carrying three hover/zebra/panel-depth fixes), `ListToolbar`
+gains a `display: 'menu'` filter facet plus a flex-row recomposition of its controls,
+`StatusChip`'s border demotes to a 35% currentColor hairline, `OfficeList`'s header-stack
+margin leak and mobile action stretch are fixed, `formatPhone` joins the toolkit formatters,
+and `ConceptList`'s create-button label now reads through `itemNoun`. Minor per the 0.x scheme
+(a new component export plus a new `ListToolbar` display variant). Full window in the
+CHANGELOG's `0.90.0` entry. ASC's own pickup (the plan's Phase A) rides this publish.
 
 **v0.89.1 published 2026-07-21 (`latest` verified).** The one-item window: `itemNoun`/`ItemLabel`
 graduated from ASC's toolkit into the `admin-toolkit` subpath, with `Pagination`'s and

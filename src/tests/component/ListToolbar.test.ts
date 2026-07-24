@@ -167,6 +167,42 @@ describe('ListToolbar', () => {
     expect(screen.container.querySelector('.toolkit-toolbar-facet-menu')?.textContent).toContain('Overdue');
   });
 
+  it("moves focus to a 'menu' facet's first option when it opens, the menu-button idiom", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const firstOption = screen.getByRole('button', { name: 'All' });
+    await expect.poll(() => document.activeElement).toBe(firstOption.element());
+  });
+
+  it("closes an open 'menu' facet when focus tabs past its last option, without moving focus again", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
+    const lastOption = screen.getByRole('button', { name: 'Former' }).element();
+    const nextControl = document.createElement('button');
+    document.body.appendChild(nextControl);
+    // A Tab out of the last option moves focus to whatever's next in the document and fires a
+    // native focusout on the facet container with that element as `relatedTarget`.
+    lastOption.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: nextControl }));
+    await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
+    expect(document.activeElement).not.toBe(trigger.element());
+    nextControl.remove();
+  });
+
   it("selects a 'menu' facet's option, calls onChange, closes the menu, and returns focus to the trigger", async () => {
     const onChange = vi.fn();
     const screen = render(ListToolbar, {
@@ -233,6 +269,49 @@ describe('ListToolbar', () => {
     await holdingsTrigger.click();
     await expect.element(holdingsTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  // Regression: the outside-click dismissal used to key `document.querySelector` on the bare
+  // filter id ("standing"), not the component's own `uid`. Two `ListToolbar` instances sharing a
+  // filter id then collided: the query always resolved the FIRST toolbar's facet container, so a
+  // pointerdown inside the SECOND toolbar's own open menu read as "outside" and wrongly closed it.
+  it("scopes a facet's outside-click dismissal by component instance, so a pointerdown inside a second toolbar's own open menu leaves it open", async () => {
+    const firstTarget = document.createElement('div');
+    const secondTarget = document.createElement('div');
+    document.body.appendChild(firstTarget);
+    document.body.appendChild(secondTarget);
+
+    render(ListToolbar, {
+      target: firstTarget,
+      props: {
+        search: '',
+        onSearch: () => {},
+        filters: [standingFilter({ display: 'menu' })],
+        count: 149,
+        itemLabel: 'households',
+      },
+    } as never);
+    const second = render(ListToolbar, {
+      target: secondTarget,
+      props: {
+        search: '',
+        onSearch: () => {},
+        filters: [standingFilter({ display: 'menu' })],
+        count: 149,
+        itemLabel: 'households',
+      },
+    } as never);
+
+    const secondTrigger = second.getByRole('button', { name: 'Standing' });
+    await secondTrigger.click();
+    await expect.element(secondTrigger).toHaveAttribute('aria-expanded', 'true');
+
+    const secondOption = second.container.querySelector('.toolkit-toolbar-facet-menu button')!;
+    secondOption.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+    await expect.element(secondTrigger).toHaveAttribute('aria-expanded', 'true');
+
+    firstTarget.remove();
+    secondTarget.remove();
   });
 
   it('states the applied scope in the count line, matching computeCountLine', () => {
@@ -588,6 +667,46 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const appliedStyle = getComputedStyle(appliedFacet);
     expect(appliedStyle.borderColor).not.toBe(restStyle.borderColor);
     expect(appliedStyle.backgroundColor).not.toBe(restStyle.backgroundColor);
+  });
+
+  // Regression: `.toolkit-toolbar-facet` (daisyUI's own `.dropdown`, `position: relative`) used to
+  // carry `overflow: hidden` to tidy the trigger/clear corner. daisyUI's `.dropdown-content` is
+  // `position: absolute`, so this element is its containing block -- `overflow: hidden` clipped the
+  // option list away entirely below the 30px-tall trigger, invisible in jsdom (no layout) and
+  // undetected by any markup-only assertion (the list was present in the DOM, just unpainted).
+  // This test only fails against real layout, hence the compiled-CSS/real-browser describe block.
+  it("does not clip an open 'menu' facet's option list under its own container", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
+    expect(getComputedStyle(facet).overflow).not.toBe('hidden');
+  });
+
+  it("keeps every option of an open 'menu' facet actually paintable, not clipped away by its container", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const overdueOption = screen.getByRole('button', { name: 'Overdue' }).element();
+    const rect = overdueOption.getBoundingClientRect();
+    expect(rect.width).toBeGreaterThan(0);
+    expect(rect.height).toBeGreaterThan(0);
+    // `elementFromPoint` only finds an element that is actually painted at that point; an
+    // ancestor's `overflow: hidden` would clip the option away and this would resolve to
+    // something else (or nothing) instead, the exact way the pre-fix bug was invisible to any
+    // assertion that only checked the DOM, not what the browser actually paints.
+    const paintedAt = document.elementFromPoint(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    expect(paintedAt === overdueOption || overdueOption.contains(paintedAt)).toBe(true);
   });
 
   it("caps an applied 'menu' facet's in-control value at 14rem with an ellipsis", () => {

@@ -45,11 +45,15 @@ breakpoint so the whole row, panel included, fits the viewport with nothing to s
 **Three visual fixes carried at graduation (the Members-refinement round-1 audit, adversarially
 verified against zebra stripes in both themes):**
 
-1. Row hover feedback: the whole summary row washes with a `color-mix(in oklab,
-   var(--color-base-content) 5%, transparent)` tint on hover, including the sticky trigger cell.
-   Two other candidates were refuted first -- the engine's own `base-200/60` row-hover wash is
-   invisible on a zebra-striped row (it IS the stripe color), and a primary-tint wash read
-   off-idiom for a plain row hover, not an applied-state affordance.
+1. Row hover feedback: the whole summary row washes on hover. The caller's own summary cells get
+   a `color-mix(in oklab, var(--color-base-content) 5%, transparent)` tint; the sticky trigger cell
+   gets a dedicated, opaque hover color instead (a transparent-based mix would let content
+   scrolling underneath show through a pinned column, and a review pass also found the shared
+   rule's specificity lost outright to the zebra-parity rule below on an even row -- see the
+   trigger cell's own dedicated hover rules for both). Two other candidates were refuted first for
+   the base wash -- the engine's own `base-200/60` row-hover wash is invisible on a zebra-striped
+   row (it IS the stripe color), and a primary-tint wash read off-idiom for a plain row hover, not
+   an applied-state affordance.
 2. The sticky trigger cell follows zebra parity instead of a fixed `base-100`: on a `table-zebra`
    ancestor its background matches the same `tr:nth-child(2n)` rule daisyUI's own zebra striping
    uses, so the pinned column no longer seams against a striped row underneath it.
@@ -117,13 +121,14 @@ verified against zebra stripes in both themes):**
     cursor: pointer;
   }
 
-  /* Row hover feedback (fix 1 above). `:global(td)` on the child side: the summary row's own
-     cells are the CALLER's snippet markup (opaque to this component's compiler, the same reason
-     AdminTable's own single-line enforcement rule needs :global() on `td`/`th`), so the scope
-     attribute Svelte would otherwise require never lands on them. The rule's own specificity (a
-     class plus a pseudo-class on the row) intentionally outranks the trigger cell's own
-     background-color declaration below, so hovering replaces whatever base or zebra color a cell
-     was showing rather than needing a second layered rule to reach it. */
+  /* Row hover feedback (fix 1 above), for the CALLER's own summary cells. `:global(td)` on the
+     child side: those cells are the caller's snippet markup (opaque to this component's compiler,
+     the same reason AdminTable's own single-line enforcement rule needs :global() on `td`/`th`),
+     so the scope attribute Svelte would otherwise require never lands on them. This rule also
+     happens to match the trigger cell (this component's own `<td>`, a direct child of the same
+     `<tr>`), but its transparent-based mix is wrong for a `position: sticky` cell -- it would let
+     content scrolling underneath show through -- so the trigger cell gets its own higher-specificity,
+     opaque rules below, which win over this one. */
   .toolkit-expandable-row-summary:hover > :global(td) {
     background-color: color-mix(in oklab, var(--color-base-content) 5%, transparent);
   }
@@ -146,6 +151,28 @@ verified against zebra stripes in both themes):**
      whatever daisyUI itself decided that row's background is. */
   :global(.table-zebra tbody) tr.toolkit-expandable-row-summary:nth-child(2n) .toolkit-expandable-row-trigger-cell {
     background-color: var(--color-base-200);
+  }
+
+  /* Trigger cell hover (fix 1's own dedicated half): opaque, since a `position: sticky` cell must
+     stay opaque against whatever scrolls underneath it -- a transparent-based mix (the wash the
+     rule above gives every other cell) would let that content bleed through. Two rules, one per
+     zebra state, each mixed toward that state's own resting color (base-100 / base-200) so hover
+     reads as a tint of whatever the cell already was, not a color swap.
+
+     Specificity, not source order, is what makes hover win here: this first rule (0,3,0: two
+     classes plus `:hover`) already outranks both the plain resting rule above (0,1,0) and the
+     shared `:hover > :global(td)` rule (0,2,1) for this cell specifically. The second rule adds
+     the zebra ancestor and `:nth-child(2n)` (0,5,2), which is the only combination in this file
+     that outranks the zebra-parity rule immediately above (0,4,2) -- without it, hovering an even
+     row left the pinned trigger cell showing its plain zebra color while every other cell in the
+     row washed, the seam a review pass caught. */
+  .toolkit-expandable-row-summary:hover .toolkit-expandable-row-trigger-cell {
+    background-color: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
+  }
+  :global(.table-zebra tbody)
+    tr.toolkit-expandable-row-summary:hover:nth-child(2n)
+    .toolkit-expandable-row-trigger-cell {
+    background-color: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-200));
   }
 
   .toolkit-expandable-row-chevron {

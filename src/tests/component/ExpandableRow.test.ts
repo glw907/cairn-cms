@@ -183,20 +183,45 @@ describe('ExpandableRow visual fixes (compiled CSS)', () => {
     expect(getComputedStyle(evenTrigger).backgroundColor).toBe(resolve('var(--color-base-200)'));
   });
 
-  it('washes the whole summary row on hover with a base-content 5% tint, including the sticky trigger cell', async () => {
+  it('washes the whole summary row on hover, the caller cells with a transparent-based tint, the sticky trigger cell with an opaque one', async () => {
     document.documentElement.setAttribute('data-theme', 'cairn-admin');
     const { rows } = mountRows(1);
     const regularCell = rows[0]!.tr.querySelector('td:not(.toolkit-expandable-row-trigger-cell)')!;
     const triggerCell = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
-    const washed = resolve('color-mix(in oklab, var(--color-base-content) 5%, transparent)');
+    const regularWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, transparent)');
+    // The trigger cell is `position: sticky`, so its own hover wash must stay opaque (a
+    // transparent-based mix would let content scrolling underneath show through); it mixes toward
+    // its own resting base-100 background instead.
+    const triggerWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100))');
 
-    expect(getComputedStyle(regularCell).backgroundColor).not.toBe(washed);
-    expect(getComputedStyle(triggerCell).backgroundColor).not.toBe(washed);
+    expect(getComputedStyle(regularCell).backgroundColor).not.toBe(regularWashed);
+    expect(getComputedStyle(triggerCell).backgroundColor).not.toBe(triggerWashed);
 
     await userEvent.hover(rows[0]!.tr as HTMLElement);
 
-    expect(getComputedStyle(regularCell).backgroundColor).toBe(washed);
-    expect(getComputedStyle(triggerCell).backgroundColor).toBe(washed);
+    expect(getComputedStyle(regularCell).backgroundColor).toBe(regularWashed);
+    expect(getComputedStyle(triggerCell).backgroundColor).toBe(triggerWashed);
+  });
+
+  // Regression: the zebra-parity rule's own specificity (0,4,2) outranked the shared row-hover
+  // rule (0,2,1) on an even row, so hovering a striped row's trigger cell left it showing its
+  // plain base-200 zebra color while every other cell in the row washed -- a visible seam at the
+  // pinned column, invisible to any test that only hovered a non-zebra row.
+  it('washes the sticky trigger cell on hover even on a zebra-striped row, opaque and mixed toward that row\'s own parity color', async () => {
+    document.documentElement.setAttribute('data-theme', 'cairn-admin');
+    const { rows } = mountRows(2, { zebra: true });
+    const oddTriggerWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100))');
+    const evenTriggerWashed = resolve('color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-200))');
+    const oddTrigger = rows[0]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
+    const evenTrigger = rows[1]!.tr.querySelector('.toolkit-expandable-row-trigger-cell')!;
+
+    await userEvent.hover(rows[0]!.tr as HTMLElement);
+    expect(getComputedStyle(oddTrigger).backgroundColor).toBe(oddTriggerWashed);
+
+    await userEvent.hover(rows[1]!.tr as HTMLElement);
+    expect(getComputedStyle(evenTrigger).backgroundColor).toBe(evenTriggerWashed);
+    // Not just still its plain resting zebra color: hover must visibly change it.
+    expect(getComputedStyle(evenTrigger).backgroundColor).not.toBe(resolve('var(--color-base-200)'));
   });
 
   it('recesses the panel cell with a base-300 background and an inset top hairline, in both themes', () => {

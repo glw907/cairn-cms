@@ -99,7 +99,7 @@ reflows its neighboring characters.
 </script>
 
 <script lang="ts">
-  import type { Snippet } from 'svelte';
+  import { tick, type Snippet } from 'svelte';
   import { CheckIcon, SearchIcon } from '../components/admin-icons.js';
 
   interface Props {
@@ -197,7 +197,7 @@ reflows its neighboring characters.
       closeOverflow(false);
     }
     if (openFacetId !== null) {
-      const container = document.querySelector(`[data-facet-id="${openFacetId}"]`);
+      const container = document.querySelector(`[data-facet-id="${uid}-${openFacetId}"]`);
       if (container && !container.contains(event.target as Node)) closeFacet(false);
     }
   }
@@ -207,19 +207,42 @@ reflows its neighboring characters.
   // same single-panel behavior a native `<select>` or the overflow disclosure itself already
   // gives for free. `data-facet-id` on each facet's own container is the outside-click and
   // focus-return lookup, rather than a per-filter ref array (the same reasoning
-  // `onSegmentedKeydown` already uses for reading its siblings from the DOM).
+  // `onSegmentedKeydown` already uses for reading its siblings from the DOM). The attribute value
+  // is prefixed with `uid`, not the bare filter id: two `ListToolbar` instances on one page can
+  // share a filter id (two lists each with their own "standing" facet), and a bare id would let
+  // `document.querySelector` resolve the first match in document order -- the wrong toolbar.
   let openFacetId = $state<string | null>(null);
 
-  function toggleFacet(id: string) {
-    openFacetId = openFacetId === id ? null : id;
+  async function toggleFacet(id: string) {
+    const opening = openFacetId !== id;
+    openFacetId = opening ? id : null;
+    if (opening) {
+      // Menu-button idiom: opening via the trigger moves focus straight to the first option,
+      // rather than leaving a keyboard user to Tab into the list themselves.
+      await tick();
+      document
+        .querySelector<HTMLButtonElement>(`[data-facet-id="${uid}-${id}"] .toolkit-toolbar-facet-menu button`)
+        ?.focus();
+    }
   }
   function closeFacet(returnFocus: boolean) {
     if (openFacetId === null) return;
     const id = openFacetId;
     openFacetId = null;
     if (returnFocus) {
-      document.querySelector<HTMLButtonElement>(`[data-facet-id="${id}"] .toolkit-toolbar-facet-trigger`)?.focus();
+      document
+        .querySelector<HTMLButtonElement>(`[data-facet-id="${uid}-${id}"] .toolkit-toolbar-facet-trigger`)
+        ?.focus();
     }
+  }
+  // Tabbing out of an open facet's trigger+menu closes it without moving focus (focus has already
+  // moved on); a pointerdown-only or Escape-only dismissal leaves the menu visually open while a
+  // keyboard user's focus has already left it for the next toolbar control.
+  function onFacetFocusOut(event: FocusEvent, id: string) {
+    if (openFacetId !== id) return;
+    const container = event.currentTarget as HTMLElement;
+    const next = event.relatedTarget as Node | null;
+    if (!next || !container.contains(next)) closeFacet(false);
   }
   function selectFacetOption(filter: ListToolbarFilter, value: string) {
     filter.onChange(value);
@@ -302,7 +325,8 @@ reflows its neighboring characters.
           class="dropdown toolkit-toolbar-facet"
           class:toolkit-toolbar-facet-applied={applied}
           class:dropdown-open={openFacetId === filter.id}
-          data-facet-id={filter.id}
+          data-facet-id={`${uid}-${filter.id}`}
+          onfocusout={(event) => onFacetFocusOut(event, filter.id)}
         >
           <button
             type="button"
@@ -462,8 +486,13 @@ reflows its neighboring characters.
   }
 
   /* The 'menu' facet's own control: a quiet bordered button pair (trigger + optional clear),
-     sharing the row's 30px height. `overflow: hidden` on the shared rounded border keeps the
-     clear button's own left divider from poking past the rounded corner. */
+     sharing the row's 30px height. This is daisyUI's own `.dropdown` (`position: relative`), and
+     its `.dropdown-content` option list is `position: absolute` -- so this element is that list's
+     containing block. `overflow: hidden` here would clip the list away entirely rather than just
+     tidy the trigger/clear corners (a review pass caught this: the list rendered below the 30px
+     box and was silently invisible, since this is a class-toggled disclosure, not the popover API,
+     so nothing lets it escape ancestor clipping). The trigger and clear round their own corners
+     instead, below. */
   .toolkit-toolbar-facet {
     display: inline-flex;
     align-items: stretch;
@@ -472,7 +501,6 @@ reflows its neighboring characters.
     border-radius: var(--radius-field);
     border: 1px solid var(--cairn-card-border);
     background: transparent;
-    overflow: hidden;
   }
 
   .toolkit-toolbar-facet-trigger {
@@ -488,6 +516,14 @@ reflows its neighboring characters.
     cursor: pointer;
     color: inherit;
     min-width: 0;
+    /* Rounds the shared border's own left corner; the trigger is always the first child. It is
+       also always the last child (and so rounds both corners) when no clear button renders. */
+    border-top-left-radius: var(--radius-field);
+    border-bottom-left-radius: var(--radius-field);
+  }
+  .toolkit-toolbar-facet-trigger:last-child {
+    border-top-right-radius: var(--radius-field);
+    border-bottom-right-radius: var(--radius-field);
   }
 
   /* The applied treatment: a primary-tinted border and fill, refuter-verified against the
@@ -533,6 +569,10 @@ reflows its neighboring characters.
     font-size: 0.9375rem;
     line-height: 1;
     padding: 0;
+    /* Rounds the shared border's own right corner, now that `.toolkit-toolbar-facet` no longer
+       clips it there with `overflow: hidden`. */
+    border-top-right-radius: var(--radius-field);
+    border-bottom-right-radius: var(--radius-field);
   }
   .toolkit-toolbar-facet-clear:hover {
     background: color-mix(in oklab, var(--color-primary) 12%, transparent);

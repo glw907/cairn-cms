@@ -15,7 +15,17 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-23, latest: v0.90.0 published; next = the principle-pages pass)
+## Immediate next action (2026-07-24, latest: v0.90.1 published; next = the principle-pages pass)
+
+**v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
+coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and
+size to content, sharing the `'menu'` facet's border family; both dropdown disclosures now show
+only on `dropdown-open` so `aria-expanded` stays truthful; the menu options carry
+`role="menuitemradio"`/`aria-checked` with a roving-tabindex keyboard model. Window in the
+CHANGELOG's `0.90.1` entry. OPEN DESIGN QUESTION for Geoff (measured at the cut, report-only):
+`--cairn-card-border` as the facet controls' only boundary measures 1.11:1 light / 1.43:1 dark
+against `base-200` — well under WCAG 1.4.11's 3:1 — a deliberate ratified hairline, but a one-token
+ruling could clear it in a follow-up patch.
 
 **v0.90.0 published 2026-07-23 (`latest` verified).** Cut for the Members-refinement round-1
 cairn phase (C1-C6): `ExpandableRow` graduates into `admin-toolkit` (its second consumer,

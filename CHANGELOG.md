@@ -1,3 +1,30 @@
+## Unreleased
+
+<!-- release-size: patch -->
+
+### Fixed
+
+- `ListToolbar`'s `'select'` facet no longer pins to daisyUI's own fixed 320px clamp
+  (`width: clamp(3rem, 20rem, 100%)`, whose middle value is a fixed length, not a container-relative
+  one); it now sizes to its own content (`width: auto; max-width: 100%`), so a short-option facet
+  renders narrow and a container of real-world facets (four selects plus a menu facet plus search)
+  fits one line at the widths the Members-refinement recomposition targeted. A select facet's
+  border also now shares the `'menu'` facet's own `var(--cairn-card-border)` treatment (via the
+  same `--input-color` custom property daisy's compiled rule already reads), so the two read as one
+  control family rather than two vocabularies side by side.
+- A `'menu'` facet's option list and the overflow disclosure's own panel no longer open on keyboard
+  focus alone: daisyUI's `.dropdown` shows `.dropdown-content` on `:focus-within` for free, which
+  let Tabbing onto a trigger reveal the panel while `aria-expanded` (driven purely by this
+  component's own `dropdown-open` class) stayed `false`. Both disclosures' visibility now tracks
+  `dropdown-open` exactly, so `aria-expanded` always matches what is actually shown.
+- A `'menu'` facet's option list carries real ARIA menu semantics (`role="menu"`/`"menuitem"`,
+  previously bare buttons in a plain `<ul>`) with a roving tabindex: only the focused option is a
+  Tab stop, and ArrowUp/ArrowDown/Home/End move that focus, wrapping at the ends, mirroring the
+  segmented filter's own keyboard model. Escape-closes-and-returns-focus and the click-to-select
+  behavior are unchanged.
+
+No consumer action is required; every change is inside `ListToolbar`'s own markup and styling.
+
 ## 0.90.0
 
 <!-- release-size: minor -->

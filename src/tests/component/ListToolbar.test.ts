@@ -20,6 +20,74 @@ function standingFilter(overrides: Partial<ListToolbarFilter> = {}): ListToolbar
   };
 }
 
+// The exact facet shape aksailingclub-org's Members screen renders (four `'select'` facets plus
+// one `'menu'` facet, C2's own stress case): the C2 972px/326px acceptance measurements below
+// render this fixture, not a synthetic short-option stand-in, so a passing measurement actually
+// proves the real screen's own option lengths fit.
+function membersScreenFilters(): ListToolbarFilter[] {
+  return [
+    {
+      id: 'standing',
+      label: 'Standing',
+      value: 'members',
+      defaultValue: 'members',
+      options: [
+        { value: 'members', label: 'Current + Overdue' },
+        { value: 'current', label: 'Current' },
+        { value: 'overdue', label: 'Overdue' },
+        { value: 'former', label: 'Former' },
+      ],
+      onChange: vi.fn(),
+    },
+    {
+      id: 'holdings',
+      label: 'Holdings',
+      value: 'all',
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'Any holdings' },
+        { value: 'holding', label: 'Holding assets' },
+      ],
+      onChange: vi.fn(),
+    },
+    {
+      id: 'role',
+      label: 'Role',
+      value: 'all',
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'Any role' },
+        { value: 'instructor', label: 'Instructor' },
+      ],
+      onChange: vi.fn(),
+    },
+    {
+      id: 'class',
+      label: 'Class',
+      value: 'all',
+      defaultValue: 'all',
+      options: [
+        { value: 'all', label: 'Any class' },
+        { value: 'keelboat', label: 'Keelboat Fundamentals' },
+        { value: 'racing', label: 'Advanced Racing Clinic' },
+      ],
+      onChange: vi.fn(),
+    },
+    {
+      id: 'archived',
+      label: 'Archived',
+      value: 'active',
+      defaultValue: 'active',
+      display: 'menu',
+      options: [
+        { value: 'active', label: 'Active only' },
+        { value: 'include', label: 'Include archived' },
+      ],
+      onChange: vi.fn(),
+    },
+  ];
+}
+
 describe('ListToolbar', () => {
   it('renders the search box with its accessible name and no autofocus by default', () => {
     const screen = render(ListToolbar, { search: '', onSearch: () => {}, count: 149, itemLabel: 'households' });
@@ -177,7 +245,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const firstOption = screen.getByRole('button', { name: 'All' });
+    const firstOption = screen.getByRole('menuitem', { name: 'All' });
     await expect.poll(() => document.activeElement).toBe(firstOption.element());
   });
 
@@ -192,7 +260,7 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    const lastOption = screen.getByRole('button', { name: 'Former' }).element();
+    const lastOption = screen.getByRole('menuitem', { name: 'Former' }).element();
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
     // A Tab out of the last option moves focus to whatever's next in the document and fires a
@@ -214,7 +282,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    await screen.getByRole('button', { name: 'Overdue' }).click();
+    await screen.getByRole('menuitem', { name: 'Overdue' }).click();
     expect(onChange).toHaveBeenCalledWith('overdue');
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
@@ -270,6 +338,89 @@ describe('ListToolbar', () => {
     await expect.element(holdingsTrigger).toHaveAttribute('aria-expanded', 'true');
     await expect.element(standingTrigger).toHaveAttribute('aria-expanded', 'false');
   });
+
+  // Proper menu semantics (the WAI menu-button pattern), not bare buttons in a plain list: the
+  // option list carries `role="menu"` and each option `role="menuitem"`, so an AT user hears a
+  // menu rather than an unordered list of buttons.
+  it("gives a 'menu' facet's option list real menu semantics (role=menu, role=menuitem)", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    expect(screen.getByRole('menu').element()).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'All' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Overdue' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitem', { name: 'Former' }).element()).not.toBeNull();
+  });
+
+  // Roving tabindex (the standard menu keyboard model): only the currently-focused option is a
+  // tab stop, so Tab moves straight out of the menu instead of stopping at every option in turn.
+  it("gives a 'menu' facet's option list a roving tabindex, only the focused option tabbable", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    await expect.poll(() => options().filter((o) => o.getAttribute('tabindex') === '0').length).toBe(1);
+    expect(options()[0].getAttribute('tabindex')).toBe('0');
+    expect(options()[1].getAttribute('tabindex')).toBe('-1');
+    expect(options()[2].getAttribute('tabindex')).toBe('-1');
+  });
+
+  it("moves a 'menu' facet's roving focus with ArrowDown/ArrowUp, wrapping at the ends", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+
+    options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[1]);
+    expect(options()[1].getAttribute('tabindex')).toBe('0');
+    expect(options()[0].getAttribute('tabindex')).toBe('-1');
+
+    // ArrowUp from the first option wraps to the last, mirroring the segmented filter's own
+    // roving keyboard model.
+    options()[1].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+    options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[2]);
+  });
+
+  it("moves a 'menu' facet's roving focus to the first/last option on Home/End", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+    options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[2]);
+    options()[2].dispatchEvent(new KeyboardEvent('keydown', { key: 'Home', bubbles: true }));
+    await expect.poll(() => document.activeElement).toBe(options()[0]);
+  });
+
 
   // Regression: the outside-click dismissal used to key `document.querySelector` on the bare
   // filter id ("standing"), not the component's own `uid`. Two `ListToolbar` instances sharing a
@@ -697,7 +848,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const overdueOption = screen.getByRole('button', { name: 'Overdue' }).element();
+    const overdueOption = screen.getByRole('menuitem', { name: 'Overdue' }).element();
     const rect = overdueOption.getBoundingClientRect();
     expect(rect.width).toBeGreaterThan(0);
     expect(rect.height).toBeGreaterThan(0);
@@ -735,5 +886,150 @@ describe('ListToolbar layout (compiled CSS)', () => {
     const style = getComputedStyle(select);
     expect(style.height).toBe('30px');
     expect(style.fontSize).toBe('13px');
+  });
+
+  // Measured root cause (the coherence-round finding): daisyUI's own `.select` sets
+  // `width: clamp(3rem, 20rem, 100%)`, and `20rem` is a fixed length, not a container-relative
+  // one, so every select pins to exactly 320px regardless of its own options. A facet with only
+  // two short options must render far narrower than that fixed width once it sizes to its own
+  // content instead.
+  it("sizes a select facet to its own content, not daisyUI's fixed 20rem clamp", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        standingFilter({
+          options: [
+            { value: 'all', label: 'Any role' },
+            { value: 'instructor', label: 'Instructor' },
+          ],
+        }),
+      ],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const select = screen.container.querySelector('.toolkit-toolbar-select')!;
+    expect(select.getBoundingClientRect().width).toBeLessThan(160);
+  });
+
+  it("never lets a select facet exceed its own container, however wide its content", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [
+        standingFilter({
+          options: [
+            { value: 'all', label: 'Any class' },
+            { value: 'long', label: 'A very long class title that would otherwise overflow its container' },
+          ],
+        }),
+      ],
+      count: 149,
+      itemLabel: 'households',
+    });
+    screen.container.style.width = '200px';
+    screen.container.style.boxSizing = 'border-box';
+    const select = screen.container.querySelector('.toolkit-toolbar-select')!;
+    expect(select.getBoundingClientRect().width).toBeLessThanOrEqual(200);
+  });
+
+  // C2's family-harmony requirement: a select facet and a `'menu'` facet sitting side by side
+  // must read as one visual family (the same 30px height and 13px text already covered above,
+  // plus the same border treatment), not two different control vocabularies.
+  it("harmonizes a select facet's border with the 'menu' facet's own border treatment", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter(), standingFilter({ id: 'archived', label: 'Archived', display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const select = screen.container.querySelector('.toolkit-toolbar-select')!;
+    const facet = screen.container.querySelector('.toolkit-toolbar-facet')!;
+    expect(getComputedStyle(select).borderColor).toBe(getComputedStyle(facet).borderColor);
+  });
+
+  // C2 acceptance, proven against the real Members screen's own facet shape rather than a
+  // synthetic stand-in: at a 972px container, four select facets plus one menu facet plus search
+  // all sit on one line at rest.
+  it('fits four select facets, one menu facet, and search on one line at a 972px container (C2 acceptance)', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: membersScreenFilters(),
+      count: 149,
+      itemLabel: 'households',
+    });
+    screen.container.style.width = '972px';
+    screen.container.style.boxSizing = 'border-box';
+    const controls = [
+      screen.container.querySelector('.toolkit-toolbar-search')!,
+      ...screen.container.querySelectorAll('.toolkit-toolbar-select'),
+      screen.container.querySelector('.toolkit-toolbar-facet')!,
+    ];
+    expect(controls).toHaveLength(6);
+    const tops = controls.map((el) => Math.round(el.getBoundingClientRect().top));
+    expect(new Set(tops).size).toBe(1);
+    const band = screen.container.querySelector('.toolkit-toolbar-band')!;
+    expect(band.getBoundingClientRect().width).toBeLessThanOrEqual(972);
+  });
+
+  // C2 acceptance: nothing exceeds the container at ASC's own narrow content-column width.
+  it('keeps every control within a 326px container, nothing exceeding the container width (C2 acceptance)', () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: membersScreenFilters(),
+      count: 149,
+      itemLabel: 'households',
+    });
+    screen.container.style.width = '326px';
+    screen.container.style.boxSizing = 'border-box';
+    const containerRight = screen.container.getBoundingClientRect().right;
+    const controls = screen.container.querySelectorAll<HTMLElement>(
+      '.toolkit-toolbar-search, .toolkit-toolbar-select, .toolkit-toolbar-facet',
+    );
+    expect(controls.length).toBeGreaterThan(0);
+    for (const control of controls) {
+      expect(control.getBoundingClientRect().right).toBeLessThanOrEqual(containerRight + 0.5);
+    }
+  });
+
+  // Regression guard for the coherence-round finding: daisyUI's own `.dropdown` shows
+  // `.dropdown-content` on `:focus-within` for free, so tabbing onto a facet trigger used to open
+  // the menu while `aria-expanded` stayed `false` (the component's own toggle state never
+  // changed). The menu's visibility must track `aria-expanded` exactly, driven purely by the
+  // `dropdown-open` class -- this only fails against real compiled CSS, hence living in this
+  // describe block rather than the markup-only suite above.
+  it("keeps a 'menu' facet's option list hidden on focus alone, so aria-expanded always matches what's visible", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' }).element() as HTMLButtonElement;
+    trigger.focus();
+    await expect.poll(() => document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    const menu = screen.container.querySelector('.toolkit-toolbar-facet-menu')!;
+    expect(getComputedStyle(menu).display).toBe('none');
+  });
+
+  it("keeps the overflow disclosure hidden on focus alone, so aria-expanded always matches what's visible", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ promoted: false })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'More filters' }).element() as HTMLButtonElement;
+    trigger.focus();
+    await expect.poll(() => document.activeElement).toBe(trigger);
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    const panel = screen.container.querySelector('.toolkit-toolbar-overflow')!;
+    expect(getComputedStyle(panel).display).toBe('none');
   });
 });

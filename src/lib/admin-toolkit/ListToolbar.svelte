@@ -24,7 +24,11 @@ its value in-control instead, on the `'menu'` display below).
 
 Graduation extensions over the ASC-born contract (both additive, ASC's own existing usage stays
 valid): a filter's `display` chooses `'select'` (the original contract, unchanged, restyled to
-the shared 30px height and 13px text), `'segmented'`, a group of toggle buttons for a filter
+the shared 30px height and 13px text and, since the C2 coherence-round fix, `width: auto` so it
+sizes to its own content rather than daisyUI's fixed 320px clamp, `max-width: 100%` so it never
+exceeds its container, and a border tinted to the same `--cairn-card-border` a `'menu'` facet
+carries, so a select and a menu facet sitting side by side read as one control family), or
+`'segmented'`, a group of toggle buttons for a filter
 whose vocabulary reads better as always-visible tabs than a dropdown (a publish-state filter, a
 triage radiogroup), with each option's own optional `count` rendered beside its label, or
 `'menu'` (Members-refinement-round-1: the ratified filter grammar), a quiet bordered button
@@ -58,11 +62,18 @@ Assembles from daisyUI 5 primitives already compiled into cairn's packaged `cair
 `join`/`join-item` (the segmented display, the same assembly `Pagination`'s own page nav uses),
 and `dropdown`/`dropdown-content`/`dropdown-open`/`menu` (the overflow disclosure and, since the
 recomposition, each `'menu'` facet's own option list too, every one driven by a real `$state`
-toggle rather than the bare `:focus-within` daisyUI gives every `.dropdown` for free). The
-controls row, the facet control's own quiet-button chrome and applied treatment, the segmented
-group, and the count line's muted color live in this component's own scoped `<style>`, per the
-compiled-CSS constraint documented on `StatusChip`/`Pagination`: an unverified Tailwind utility
-string never reaches an `/admin/**` route.
+toggle rather than the bare `:focus-within` daisyUI gives every `.dropdown` for free). That
+`:focus-within` path is also neutralized in CSS (`display: none !important` unless
+`dropdown-open` is present), not just tracked in state: daisy's own compiled rule still shows
+`.dropdown-content` on keyboard focus alone, which used to open a facet's panel while
+`aria-expanded` (driven purely by the class) stayed `false` -- the two now always agree. Each
+`'menu'` facet's option list is a real ARIA menu (`role="menu"`/`"menuitem"`, not bare buttons in
+a plain list) with a roving tabindex: only the focused option is a Tab stop, and
+ArrowUp/ArrowDown/Home/End move that focus, wrapping at the ends. The controls row, the facet
+control's own quiet-button chrome and applied treatment, the segmented group, and the count
+line's muted color live in this component's own scoped `<style>`, per the compiled-CSS constraint
+documented on `StatusChip`/`Pagination`: an unverified Tailwind utility string never reaches an
+`/admin/**` route.
 
 The band is a single wrapped flex row, not a CSS grid: search, every promoted filter, the
 overflow trigger (when present), and the primary action all share one `flex-wrap: wrap` line, so
@@ -213,10 +224,43 @@ reflows its neighboring characters.
   // `document.querySelector` resolve the first match in document order -- the wrong toolbar.
   let openFacetId = $state<string | null>(null);
 
+  // A `'menu'` facet's option list is a real ARIA menu (role="menu"/"menuitem"), so it carries the
+  // standard roving-tabindex keyboard model, not one tab stop per option: only the currently-
+  // focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any number of
+  // `'menu'` facets can render in one toolbar). Reset to the first option on every open (below),
+  // matching the menu-button idiom's own "focus moves to the first option" contract.
+  let facetFocusIndex = $state<Record<string, number>>({});
+
+  function facetOptionTabIndex(filter: ListToolbarFilter, index: number): number {
+    return (facetFocusIndex[filter.id] ?? 0) === index ? 0 : -1;
+  }
+  function onFacetOptionFocus(filter: ListToolbarFilter, index: number) {
+    facetFocusIndex = { ...facetFocusIndex, [filter.id]: index };
+  }
+  // ArrowUp/ArrowDown move the roving focus, wrapping at the ends; Home/End jump to the first/
+  // last option. Mirrors `onSegmentedKeydown`'s own DOM-read-siblings approach below, except a
+  // menu's arrow keys move focus alone (Enter/click still does the selecting), where a radio
+  // group's arrow keys move the selection itself.
+  function onFacetMenuKeydown(event: KeyboardEvent) {
+    const menu = (event.currentTarget as HTMLElement).closest('[role="menu"]');
+    if (!menu) return;
+    const options = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    const current = options.indexOf(event.currentTarget as HTMLButtonElement);
+    let next = current;
+    if (event.key === 'ArrowDown') next = (current + 1) % options.length;
+    else if (event.key === 'ArrowUp') next = (current - 1 + options.length) % options.length;
+    else if (event.key === 'Home') next = 0;
+    else if (event.key === 'End') next = options.length - 1;
+    else return;
+    event.preventDefault();
+    options[next]?.focus();
+  }
+
   async function toggleFacet(id: string) {
     const opening = openFacetId !== id;
     openFacetId = opening ? id : null;
     if (opening) {
+      facetFocusIndex = { ...facetFocusIndex, [id]: 0 };
       // Menu-button idiom: opening via the trigger moves focus straight to the first option,
       // rather than leaving a keyboard user to Tab into the list themselves.
       await tick();
@@ -331,6 +375,7 @@ reflows its neighboring characters.
           <button
             type="button"
             class="toolkit-toolbar-facet-trigger"
+            aria-haspopup="menu"
             aria-expanded={openFacetId === filter.id}
             aria-controls={menuId}
             onclick={() => toggleFacet(filter.id)}
@@ -346,10 +391,22 @@ reflows its neighboring characters.
               onclick={() => clearFacet(filter)}
             >&times;</button>
           {/if}
-          <ul id={menuId} class="dropdown-content menu toolkit-toolbar-facet-menu" aria-label={filter.label}>
-            {#each filter.options as option (option.value)}
-              <li>
-                <button type="button" onclick={() => selectFacetOption(filter, option.value)}>
+          <ul
+            id={menuId}
+            class="dropdown-content menu toolkit-toolbar-facet-menu"
+            role="menu"
+            aria-label={filter.label}
+          >
+            {#each filter.options as option, index (option.value)}
+              <li role="none">
+                <button
+                  type="button"
+                  role="menuitem"
+                  tabindex={facetOptionTabIndex(filter, index)}
+                  onclick={() => selectFacetOption(filter, option.value)}
+                  onfocus={() => onFacetOptionFocus(filter, index)}
+                  onkeydown={onFacetMenuKeydown}
+                >
                   {#if option.value === filter.value}<CheckIcon class="h-3 w-3" aria-hidden="true" />{/if}
                   {option.label}
                 </button>
@@ -371,7 +428,11 @@ reflows its neighboring characters.
       {/if}
     {/each}
     {#if overflowFilters.length > 0}
-      <div class="dropdown" class:dropdown-open={overflowOpen} bind:this={overflowContainerEl}>
+      <div
+        class="dropdown toolkit-toolbar-overflow-dropdown"
+        class:dropdown-open={overflowOpen}
+        bind:this={overflowContainerEl}
+      >
         <button
           type="button"
           class="btn btn-sm btn-outline toolkit-toolbar-overflow-trigger"
@@ -458,11 +519,27 @@ reflows its neighboring characters.
     font-size: 0.8125rem;
   }
 
+  /* Measured root cause (the coherence-round finding): daisyUI's own `.select` sets
+     `width: clamp(3rem, 20rem, 100%)`, and `20rem` is a fixed length rather than a
+     container-relative one, so every select pins to exactly 320px regardless of its own options
+     -- a lone season select on a sibling screen held a 4-character value at that width, and four
+     of them together wrapped the whole toolbar off one line at a realistic container width.
+     `width: auto` restores the native `<select>`'s own content-driven sizing (the browser sizes it
+     to its own longest option); `max-width: 100%` is the hard floor that still keeps it inside a
+     narrow container, since `flex: 0 0 auto` alone would let it overflow rather than shrink.
+     `--input-color` is the same custom property the compiled `.select` rule reads for both its
+     border and its inset box-shadow, so overriding it here (rather than `border-color` alone)
+     pulls both onto the `'menu'` facet's own `--cairn-card-border` treatment in one step -- a
+     select and a menu facet sitting side by side now read as the same control family instead of
+     two different border vocabularies. */
   .toolkit-toolbar-select {
     flex: 0 0 auto;
+    width: auto;
+    max-width: 100%;
     height: 30px;
     min-height: 30px;
     font-size: 0.8125rem;
+    --input-color: var(--cairn-card-border);
   }
 
   .toolkit-toolbar-segmented {
@@ -580,6 +657,20 @@ reflows its neighboring characters.
 
   .toolkit-toolbar-facet-menu {
     min-width: 10rem;
+  }
+
+  /* Neutralizes daisyUI's own `:focus-within` disclosure path (the coherence-round finding): the
+     compiled `.dropdown` rule shows `.dropdown-content` on `.dropdown-open`, `.dropdown-hover:hover`,
+     OR `:focus-within`, so tabbing onto a facet trigger (or the overflow trigger) opened the panel
+     on focus alone while this component's own `aria-expanded` -- driven purely by the
+     `dropdown-open` class -- stayed `false`. `!important` is deliberate: the compiled rule already
+     carries a heavier selector (`:not(details, .dropdown-open, .dropdown-hover:hover,
+     :focus-within)`), so this states "closed means closed" outright rather than out-specificitying
+     it. Only the hidden state needs a rule here; `.dropdown-open` already shows the content via the
+     compiled sheet's own rule once the class is present. */
+  .toolkit-toolbar-facet:not(.dropdown-open) .dropdown-content,
+  .toolkit-toolbar-overflow-dropdown:not(.dropdown-open) .dropdown-content {
+    display: none !important;
   }
 
   .toolkit-toolbar-overflow-trigger {

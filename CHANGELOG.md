@@ -1,4 +1,4 @@
-## Unreleased
+## 0.90.1
 
 <!-- release-size: patch -->
 
@@ -17,11 +17,12 @@
   let Tabbing onto a trigger reveal the panel while `aria-expanded` (driven purely by this
   component's own `dropdown-open` class) stayed `false`. Both disclosures' visibility now tracks
   `dropdown-open` exactly, so `aria-expanded` always matches what is actually shown.
-- A `'menu'` facet's option list carries real ARIA menu semantics (`role="menu"`/`"menuitem"`,
-  previously bare buttons in a plain `<ul>`) with a roving tabindex: only the focused option is a
-  Tab stop, and ArrowUp/ArrowDown/Home/End move that focus, wrapping at the ends, mirroring the
-  segmented filter's own keyboard model. Escape-closes-and-returns-focus and the click-to-select
-  behavior are unchanged.
+- A `'menu'` facet's option list carries real ARIA menu semantics (`role="menu"` with
+  `role="menuitemradio"` options, previously bare buttons in a plain `<ul>`): the applied value is
+  exposed programmatically via `aria-checked`, not just the sighted-only check glyph, and a roving
+  tabindex makes only the focused option a Tab stop, with ArrowUp/ArrowDown/Home/End moving that
+  focus, wrapping at the ends, mirroring the segmented filter's own keyboard model.
+  Escape-closes-and-returns-focus and the click-to-select behavior are unchanged.
 
 No consumer action is required; every change is inside `ListToolbar`'s own markup and styling.
 

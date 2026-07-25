@@ -49,6 +49,17 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## 0.90.1: ListToolbar select sizing and menu-facet disclosure/a11y (non-breaking)
+
+`ListToolbar`'s `'select'` facets now size to their own content instead of daisyUI's fixed
+320px clamp, and share the `'menu'` facet's border treatment so the two read as one control
+family. Both dropdown disclosures (a `'menu'` facet's option list and the overflow panel) now
+show only when `dropdown-open` is present, so `aria-expanded` always matches what is visible,
+and the menu options carry `role="menuitemradio"` with `aria-checked` plus a roving-tabindex
+keyboard model.
+
+Consumers must: nothing. Every change is inside `ListToolbar`'s own markup and styling.
+
 ## 0.90.0: ExpandableRow graduates, a menu filter facet, formatPhone (non-breaking)
 
 `ExpandableRow` joins the `admin-toolkit` subpath (its second consumer, carrying three

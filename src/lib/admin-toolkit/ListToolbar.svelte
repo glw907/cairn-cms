@@ -67,8 +67,11 @@ toggle rather than the bare `:focus-within` daisyUI gives every `.dropdown` for 
 `dropdown-open` is present), not just tracked in state: daisy's own compiled rule still shows
 `.dropdown-content` on keyboard focus alone, which used to open a facet's panel while
 `aria-expanded` (driven purely by the class) stayed `false` -- the two now always agree. Each
-`'menu'` facet's option list is a real ARIA menu (`role="menu"`/`"menuitem"`, not bare buttons in
-a plain list) with a roving tabindex: only the focused option is a Tab stop, and
+`'menu'` facet's option list is a real ARIA menu of `role="menuitemradio"` options (a single-select
+choice within the menu, not bare `"menuitem"` buttons in a plain list), each carrying
+`aria-checked` so the applied value is exposed to assistive tech the same way the segmented
+filter's own `role="radio"` options already are, not just through the sighted-only check glyph
+(WCAG 1.3.1/4.1.2). The roving tabindex still applies: only the focused option is a Tab stop, and
 ArrowUp/ArrowDown/Home/End move that focus, wrapping at the ends. The controls row, the facet
 control's own quiet-button chrome and applied treatment, the segmented group, and the count
 line's muted color live in this component's own scoped `<style>`, per the compiled-CSS constraint
@@ -224,15 +227,21 @@ reflows its neighboring characters.
   // `document.querySelector` resolve the first match in document order -- the wrong toolbar.
   let openFacetId = $state<string | null>(null);
 
-  // A `'menu'` facet's option list is a real ARIA menu (role="menu"/"menuitem"), so it carries the
-  // standard roving-tabindex keyboard model, not one tab stop per option: only the currently-
-  // focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any number of
-  // `'menu'` facets can render in one toolbar). Reset to the first option on every open (below),
-  // matching the menu-button idiom's own "focus moves to the first option" contract.
+  // A `'menu'` facet's option list is a real ARIA menu (role="menu"/"menuitemradio"), so it
+  // carries the standard roving-tabindex keyboard model, not one tab stop per option: only the
+  // currently-focused option is a Tab stop, keyed by filter id the same way `openFacetId` is (any
+  // number of `'menu'` facets can render in one toolbar). Reset to the first option on every open
+  // (below), matching the menu-button idiom's own "focus moves to the first option" contract.
   let facetFocusIndex = $state<Record<string, number>>({});
 
+  // Clamped, not read raw: if a menu's own options array shrinks while it is open (a live facet
+  // vocabulary), a stale stored index could point past the end and leave every remaining option at
+  // tabindex="-1" with no tab stop at all. Clamping in the accessor keeps the stored value itself
+  // untouched (no extra effect to keep it in sync) while every render still resolves a real option.
   function facetOptionTabIndex(filter: ListToolbarFilter, index: number): number {
-    return (facetFocusIndex[filter.id] ?? 0) === index ? 0 : -1;
+    const stored = facetFocusIndex[filter.id] ?? 0;
+    const effective = Math.min(stored, filter.options.length - 1);
+    return effective === index ? 0 : -1;
   }
   function onFacetOptionFocus(filter: ListToolbarFilter, index: number) {
     facetFocusIndex = { ...facetFocusIndex, [filter.id]: index };
@@ -244,7 +253,7 @@ reflows its neighboring characters.
   function onFacetMenuKeydown(event: KeyboardEvent) {
     const menu = (event.currentTarget as HTMLElement).closest('[role="menu"]');
     if (!menu) return;
-    const options = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]'));
+    const options = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitemradio"]'));
     const current = options.indexOf(event.currentTarget as HTMLButtonElement);
     let next = current;
     if (event.key === 'ArrowDown') next = (current + 1) % options.length;
@@ -401,7 +410,8 @@ reflows its neighboring characters.
               <li role="none">
                 <button
                   type="button"
-                  role="menuitem"
+                  role="menuitemradio"
+                  aria-checked={option.value === filter.value}
                   tabindex={facetOptionTabIndex(filter, index)}
                   onclick={() => selectFacetOption(filter, option.value)}
                   onfocus={() => onFacetOptionFocus(filter, index)}

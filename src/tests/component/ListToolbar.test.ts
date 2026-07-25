@@ -245,7 +245,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const firstOption = screen.getByRole('menuitem', { name: 'All' });
+    const firstOption = screen.getByRole('menuitemradio', { name: 'All' });
     await expect.poll(() => document.activeElement).toBe(firstOption.element());
   });
 
@@ -260,7 +260,7 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'true');
-    const lastOption = screen.getByRole('menuitem', { name: 'Former' }).element();
+    const lastOption = screen.getByRole('menuitemradio', { name: 'Former' }).element();
     const nextControl = document.createElement('button');
     document.body.appendChild(nextControl);
     // A Tab out of the last option moves focus to whatever's next in the document and fires a
@@ -282,7 +282,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    await screen.getByRole('menuitem', { name: 'Overdue' }).click();
+    await screen.getByRole('menuitemradio', { name: 'Overdue' }).click();
     expect(onChange).toHaveBeenCalledWith('overdue');
     await expect.element(trigger).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => document.activeElement).toBe(trigger.element());
@@ -340,9 +340,10 @@ describe('ListToolbar', () => {
   });
 
   // Proper menu semantics (the WAI menu-button pattern), not bare buttons in a plain list: the
-  // option list carries `role="menu"` and each option `role="menuitem"`, so an AT user hears a
-  // menu rather than an unordered list of buttons.
-  it("gives a 'menu' facet's option list real menu semantics (role=menu, role=menuitem)", async () => {
+  // option list carries `role="menu"` and each option `role="menuitemradio"` (a single-select
+  // choice within the menu), so an AT user hears a menu of mutually exclusive options rather than
+  // an unordered list of buttons.
+  it("gives a 'menu' facet's option list real menu semantics (role=menu, role=menuitemradio)", async () => {
     const screen = render(ListToolbar, {
       search: '',
       onSearch: () => {},
@@ -353,9 +354,51 @@ describe('ListToolbar', () => {
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
     expect(screen.getByRole('menu').element()).not.toBeNull();
-    expect(screen.getByRole('menuitem', { name: 'All' }).element()).not.toBeNull();
-    expect(screen.getByRole('menuitem', { name: 'Overdue' }).element()).not.toBeNull();
-    expect(screen.getByRole('menuitem', { name: 'Former' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'All' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Overdue' }).element()).not.toBeNull();
+    expect(screen.getByRole('menuitemradio', { name: 'Former' }).element()).not.toBeNull();
+  });
+
+  // WCAG 1.3.1/4.1.2: a single-select filter's applied choice must be exposed to assistive tech,
+  // not carried only by the sighted-only check glyph. Mirrors the segmented filter's own
+  // aria-checked assertion above.
+  it("exposes a 'menu' facet's applied option via aria-checked, not just the sighted check glyph", async () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ value: 'overdue', display: 'menu' })],
+      count: 12,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing: Overdue' });
+    await trigger.click();
+    await expect
+      .element(screen.getByRole('menuitemradio', { name: 'Overdue' }))
+      .toHaveAttribute('aria-checked', 'true');
+    await expect
+      .element(screen.getByRole('menuitemradio', { name: 'All' }))
+      .toHaveAttribute('aria-checked', 'false');
+    await expect
+      .element(screen.getByRole('menuitemradio', { name: 'Former' }))
+      .toHaveAttribute('aria-checked', 'false');
+  });
+
+  // Locks the trigger<->menu contract: `aria-haspopup="menu"` names what kind of popup the trigger
+  // owns, and `aria-controls` must resolve to that same menu's own id.
+  it("gives a 'menu' facet's trigger an aria-haspopup=menu that resolves to its own menu via aria-controls", () => {
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [standingFilter({ display: 'menu' })],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.container.querySelector('.toolkit-toolbar-facet-trigger')!;
+    expect(trigger.getAttribute('aria-haspopup')).toBe('menu');
+    const controlsId = trigger.getAttribute('aria-controls');
+    expect(controlsId).toBeTruthy();
+    const menu = screen.container.querySelector('[role="menu"]')!;
+    expect(menu.getAttribute('id')).toBe(controlsId);
   });
 
   // Roving tabindex (the standard menu keyboard model): only the currently-focused option is a
@@ -370,11 +413,52 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => options().filter((o) => o.getAttribute('tabindex') === '0').length).toBe(1);
     expect(options()[0].getAttribute('tabindex')).toBe('0');
     expect(options()[1].getAttribute('tabindex')).toBe('-1');
     expect(options()[2].getAttribute('tabindex')).toBe('-1');
+  });
+
+  // Regression: if a menu's own options array shrinks while it is open, a stale stored focus index
+  // (pointing past the new end) used to leave every remaining option at tabindex="-1", with no tab
+  // stop at all. The accessor clamps to the last valid index instead.
+  it("keeps at least one 'menu' facet option tabbable when its options shrink out from under a stale focus index", async () => {
+    const onChange = vi.fn();
+    const filter: ListToolbarFilter = {
+      id: 'standing',
+      label: 'Standing',
+      options: [
+        { value: 'all', label: 'All' },
+        { value: 'overdue', label: 'Overdue' },
+        { value: 'former', label: 'Former' },
+      ],
+      value: 'all',
+      onChange,
+    };
+    const screen = render(ListToolbar, {
+      search: '',
+      onSearch: () => {},
+      filters: [{ ...filter, display: 'menu' }],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const trigger = screen.getByRole('button', { name: 'Standing' });
+    await trigger.click();
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
+    // Move the roving focus to the last option (index 2), then shrink the options to just one.
+    options()[2].focus();
+    await expect.poll(() => document.activeElement).toBe(options()[2]);
+    await screen.rerender({
+      search: '',
+      onSearch: () => {},
+      filters: [{ ...filter, options: [{ value: 'all', label: 'All' }], display: 'menu' }],
+      count: 149,
+      itemLabel: 'households',
+    });
+    const shrunkOptions = options();
+    expect(shrunkOptions).toHaveLength(1);
+    expect(shrunkOptions[0].getAttribute('tabindex')).toBe('0');
   });
 
   it("moves a 'menu' facet's roving focus with ArrowDown/ArrowUp, wrapping at the ends", async () => {
@@ -387,7 +471,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => document.activeElement).toBe(options()[0]);
 
     options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
@@ -413,7 +497,7 @@ describe('ListToolbar', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitem"]')];
+    const options = () => [...screen.container.querySelectorAll<HTMLElement>('[role="menuitemradio"]')];
     await expect.poll(() => document.activeElement).toBe(options()[0]);
     options()[0].dispatchEvent(new KeyboardEvent('keydown', { key: 'End', bubbles: true }));
     await expect.poll(() => document.activeElement).toBe(options()[2]);
@@ -848,7 +932,7 @@ describe('ListToolbar layout (compiled CSS)', () => {
     });
     const trigger = screen.getByRole('button', { name: 'Standing' });
     await trigger.click();
-    const overdueOption = screen.getByRole('menuitem', { name: 'Overdue' }).element();
+    const overdueOption = screen.getByRole('menuitemradio', { name: 'Overdue' }).element();
     const rect = overdueOption.getBoundingClientRect();
     expect(rect.width).toBeGreaterThan(0);
     expect(rect.height).toBeGreaterThan(0);

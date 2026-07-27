@@ -34,7 +34,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   let { data, form }: Props = $props();
 
   // Eyebrow styling for the table column headers, matching the concept list.
-  const col = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+  const col = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
 
   // The default two-name vocabulary keeps today's bare toggle button; any larger or
   // differently-shaped vocabulary needs a labeled select naming every declared role. The
@@ -158,15 +158,15 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
 
 <form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">Name</span>
     <input class="input" name="name" aria-label="Name" autocomplete="off" required />
   </label>
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">Email</span>
     <input class="input" type="email" name="email" aria-label="Email" autocomplete="off" required />
   </label>
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">Role</span>
     <select class="select" name="role" aria-label="Role">
       {#each data.vocabulary as entry (entry.role)}

@@ -27,6 +27,41 @@
    declaration stays inside the theme-root block it themes (light here, dark below); the two theme blocks
    are the Tier-1 home, and the Tier-2 vars cluster at the end of each. */
 
+/* ===== GRAMMAR TOKENS (design infrastructure Pass 1) =====
+   The admin's structural type and spacing vocabulary, declared once here and never inside a
+   theme block. A grammar token names a RELATIONSHIP (a heading's role, a control-to-control gap),
+   not a palette choice, so it holds across light and dark: a consuming site re-tunes the
+   `--color-*` palette tokens above and never redeclares one of these. Values are measured from
+   the current call sites (docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md
+   section 4), not invented. Pass 2's audit rule, the reference docs page, and this file's own
+   definition test all read the single inventory at src/lib/design/grammar-tokens.ts; keep the two
+   in sync by name. This is a plain :root rule, so the build's scoper is what confines it to the
+   admin theme roots at compile time, and check:custom-surface (which pins only rules anchored on
+   [data-theme=) does not see it; grammar-tokens.test.ts is the guard that does. A component
+   <style> block references var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not
+   markup; markup uses only the named role utilities in scripts/admin-css.input.css. One exception,
+   in src/lib/admin-toolkit only: those components ship on a public subpath and a consumer can mount
+   one outside the admin theme root, where these tokens are undefined, so their scoped styles carry
+   the measured literal as a var() fallback. Engine screens under src/lib/components always render
+   inside CairnAdminShell's themed wrapper and reference the token bare. */
+:root {
+  /* The six-role type scale: title, the T4 chrome scale (nav items, table cells, card-row
+     titles), body, meta, label (the eyebrow recipe), and chip. */
+  --cairn-type-title: 1.5rem;
+  --cairn-type-subtitle: 0.9375rem;
+  --cairn-type-body: 0.875rem;
+  --cairn-type-meta: 0.8125rem;
+  --cairn-type-label: 0.6875rem;
+  --cairn-type-chip: 0.625rem;
+
+  /* The four spacing roles, named for the relationship they mark rather than their pixel value:
+     label-to-control, control-to-control, field-to-field within a group, and section-to-section. */
+  --cairn-gap-label: 0.25rem;
+  --cairn-gap-control: 0.5rem;
+  --cairn-gap-group: 1rem;
+  --cairn-gap-section: 1.5rem;
+}
+
 /* Warm Stone: the cairn admin theme. Self-contained, since DaisyUI v5 reads these vars at point
    of use, so this fully overrides the host's theme with no @plugin and no host build step. */
 [data-theme='cairn-admin'] {

@@ -145,7 +145,7 @@ stays pinned at the row's right end, reachable at every width.
   ];
 
   // The eyebrow recipe (docs/internal/admin-design-system.md), shared by the three cluster labels.
-  const eyebrowClass = 'hidden text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted sm:block';
+  const eyebrowClass = 'hidden type-label font-semibold uppercase tracking-[0.08em] text-muted sm:block';
   // The eyebrow-topped cluster wrapper (Format, Structure, Insert): the eyebrow floats above its
   // button row, and the whole cluster holds its width below sm so the scrolling region never
   // squeezes it.

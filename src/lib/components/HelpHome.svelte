@@ -371,7 +371,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   }
 
   .eyebrow {
-    font-size: 0.6875rem;
+    font-size: var(--cairn-type-label);
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -450,7 +450,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     min-width: 0;
   }
   .start-lead-sub {
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     color: var(--color-muted);
     margin: 0;
     max-width: 46ch;
@@ -464,7 +464,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-align: right;
   }
   .prog-count {
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     font-weight: 600;
     color: var(--color-base-content);
   }
@@ -533,12 +533,12 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     flex-direction: column;
   }
   .step-title {
-    font-size: 0.9375rem;
+    font-size: var(--cairn-type-subtitle);
     font-weight: 600;
     color: var(--color-base-content);
   }
   .step-desc {
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     color: var(--color-muted);
     margin-top: 2px;
     line-height: 1.45;
@@ -670,7 +670,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   }
   .ref-table caption {
     text-align: left;
-    font-size: 0.625rem;
+    font-size: var(--cairn-type-chip);
     font-weight: 600;
     letter-spacing: 0.09em;
     text-transform: uppercase;
@@ -680,7 +680,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   .ref-table thead th {
     text-align: left;
     width: 50%;
-    font-size: 0.625rem;
+    font-size: var(--cairn-type-chip);
     font-weight: 600;
     letter-spacing: 0.07em;
     text-transform: uppercase;
@@ -699,7 +699,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-align: left;
     padding: 10px 22px;
     font-family: var(--font-editor);
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     line-height: 1.5;
     color: var(--color-base-content);
     white-space: nowrap;
@@ -707,7 +707,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   /* the "what it makes" cell: the plain gloss in the body face */
   .ref-table td {
     padding: 10px 22px;
-    font-size: 0.875rem;
+    font-size: var(--cairn-type-body);
     line-height: 1.5;
     color: var(--color-base-content);
   }
@@ -721,7 +721,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     padding: 12px 22px;
     border-top: 1px solid var(--cairn-card-border);
     background: color-mix(in oklab, var(--color-base-content) 1.5%, transparent);
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     color: var(--color-muted);
   }
   .ref-foot svg {
@@ -732,7 +732,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
   }
   .kbd {
     font-family: var(--font-editor);
-    font-size: 0.6875rem;
+    font-size: var(--cairn-type-label);
     border: 1px solid var(--cairn-card-border);
     border-radius: 0.25rem;
     padding: 1px 5px;
@@ -752,7 +752,7 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     min-width: 0;
   }
   .help-card-sub {
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta);
     color: var(--color-muted);
     margin: 0;
     line-height: 1.45;

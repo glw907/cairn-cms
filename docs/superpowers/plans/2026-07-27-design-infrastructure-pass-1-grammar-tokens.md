@@ -202,3 +202,102 @@ sections 4 and 10 (Pass 1). Read its section 4 before starting.
   `## Unreleased`, STATUS.md updated (Pass 1 landed; next = Pass 2, enforcement), plan
   post-mortem appended to this file, merge the worktree to `main`. No version bump, no
   publish (the initiative cuts once at its boundary, spec section 10).
+
+---
+
+## Post-mortem (2026-07-27)
+
+**Landed.** All six tasks, in seven commits on `design-infra-pass-1-grammar-tokens`
+(`ddf0afbd` through `6b3a5138`). Ten grammar tokens, ten role utilities, 25 migrated components,
+the deviations ledger, and the public contract page.
+
+### What was verified, with evidence
+
+- **Pixel identity, the pass's contract.** The 18 committed `admin-visual` snapshots do not move.
+  Checked twice, after the migration and again after the safelist change, 18 passed both times.
+- **Full gate.** `npm run check` 0 errors 0 warnings, `npm test` 333 files / 3968 tests exit 0,
+  plus `check:comments`, `check:custom-surface`, `check:admin-css-classes`, `check:invisible-craft`,
+  `check:docs`, `check:arm-indexes`, `check:reference`, `check:reference:signatures`, `check:version`.
+- **From-scratch consumer proof.** `rm -rf node_modules && npm ci` in `examples/showcase`, then the
+  full e2e suite: 107 passed, 6 failed. The 6 are the `admin-visual` screens characterized below,
+  and every behavioral spec passed.
+
+### The local baseline problem, worth knowing before the next visual pass
+
+The committed `admin-visual` baselines are CI artifacts, and 6 of the 18 do not reproduce on this
+workstation: the office shell, the media library, and the media detail panel, each in both schemes.
+That was true on unmodified `main` before a line of this pass was written, so a local assert against
+the committed baselines cannot serve as a drift gate. The workaround: capture a local baseline set
+from the pass's starting commit, then swap it in, assert, and restore the committed files. The first
+local run also fails everything on a cold font cache; the second run onward is stable.
+
+CI remains the authoritative proof, since `e2e.yml` asserts against the baselines on push and
+regenerates them only on a manual dispatch.
+
+### Decisions locked
+
+1. **Role utilities set one property.** A `type-*` utility sets `font-size` and nothing else. The
+   plan asked for each role's full ruled recipe; the measurement refuted the premise. Of 66 markup
+   sites at the 11px label size, 24 are uppercase and 14 carry the eyebrow's tracking, so a
+   full-recipe `type-label` would have matched about 14 sites and stranded 52. Weight, case, and
+   tracking stay component recipes; color stays palette.
+2. **Only bracketed literals migrate.** `.text-sm` sets `font-size` AND `line-height`;
+   `.text-[0.8125rem]` sets font-size only. A font-size-only utility is therefore pixel-identical to
+   a bracketed site and would change a named step's line-height. The named steps wait on a
+   line-height ruling, which is now the largest owed design decision.
+3. **No indentation role.** One call site (`NavTree`'s `depth * 1.5rem`) is below the plan's
+   two-site floor. It stays a ledger candidate.
+4. **The public subpath carries fallbacks.** `src/lib/admin-toolkit` scoped styles reference a token
+   with the measured literal as a fallback, because those components can mount outside the admin
+   theme root; `src/lib/components` references the token bare. `Pagination.test.ts` found this by
+   mounting the component bare and asserting a computed 13px, which fell back to 16px.
+5. **Every role utility ships, used or not.** A Tailwind `@utility` is tree-shaken, so `type-title`
+   and `gap-control` were absent from the compiled sheet while the reference page presented all ten
+   as the supported authoring interface. A consumer's own Tailwind never sees the `@utility`
+   definitions, only the compiled sheet, so an `@source inline(...)` safelist now carries all ten.
+
+### What went wrong, and what caught it
+
+Three defects reached a commit and were caught downstream rather than at authorship.
+
+- **The tree-shaking gap** survived its own test, because the test scanned a probe fixture to force
+  the utilities to compile. That proved the definitions were correct while saying nothing about what
+  a consumer receives. The `code-simplifier` pass found it by compiling the sheet the way `package`
+  does. The test now asserts against the plain build and the fixture is deleted. Lesson: a test that
+  arranges for the thing it is testing to exist is not testing the shipping path.
+- **Two counting errors in the deviations ledger**, both from raw substring counts. `text-base` swept
+  in DaisyUI's `text-base-content` and `text-base-100` color utilities, overstating a 19-site
+  population as 68, and a seventh-type-step ruling was being sized against it. The review gate caught
+  both. The ledger now states its counting method.
+- **Stale recipes in the design system.** The Recipes list still prescribed the bracketed literals
+  this pass removed, ten lines above the new rule forbidding them. An agent adding a screen would
+  have read the recipe and reintroduced the literal.
+
+The pattern across all three: the mechanical gates were green throughout. Every one of these was
+found by a fresh context reading for meaning.
+
+### Method notes
+
+- The measurement ran in the main loop rather than in the first implementer dispatch. Token values
+  drive every downstream task, and a wrong value propagates into 25 files and a public contract page.
+- The type migration ran as a deterministic substitution rather than an agent fan-out. It is a pure
+  string replacement, verified by grep and the visual gate, so a fan-out would have spent tokens to
+  reach the same bytes with more variance.
+- The gap migration did NOT run that way, deliberately. `gap-2` at 8px and `gap-1` at 4px each serve
+  both a named relationship and unrelated inline spacing, so only sites genuinely expressing the
+  relationship moved: 27 label-to-control, three control gaps, five field groups, three sections. A
+  blanket substitution would have been pixel-identical and semantically wrong.
+- The review gate ran as a four-lens adversarial workflow: 21 findings, 9 surviving refutation,
+  deduping to 5 real defects, all documentation. 12 findings were refuted, including two that
+  restated a ratified decision and one that predicted a caller that does not exist.
+
+### Carried forward
+
+The line-height ruling for the type roles is the largest owed decision, and it gates `type-title`
+plus 127 `text-sm` sites. The 12px step (120 sites with no role) is the largest open design question.
+Both live in the deviations ledger, which is Pass 2's calibration input.
+
+`check:custom-surface` does not see the new `:root` block, since it pins only rules anchored on
+`[data-theme=`. `grammar-tokens.test.ts` is the compensating guard. Nothing enforces that
+`GRAMMAR_TOKENS` matches the CSS in the reverse direction, so a token added to the CSS but not the
+inventory would go unguarded; that is a cheap assertion for Pass 2 to add alongside its audit rule.

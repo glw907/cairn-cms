@@ -235,15 +235,58 @@ Recipes:
 - Page heading: `text-2xl font-bold font-[family-name:var(--font-display)]` — normal tracking, the same
   K4 reasoning as the brand wordmark below.
 - Eyebrow (sidebar group headers and table column labels):
-  `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`.
-- Nav item: `text-[0.9375rem]` (the lists use `menu-sm` for layout), `font-medium` inactive,
+  `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
+  utility; the weight, case, and tracking are this recipe's own.
+- Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
-  table cells share it via `table text-[0.9375rem]`.
+  table cells share it via `table type-subtitle`.
 - Brand wordmark: `text-[1.375rem] font-semibold font-[family-name:var(--font-display)]` — normal
   tracking on purpose. The K4 keming fix (design arc, 2026-07-15): at the old
   `text-xl font-bold tracking-[-0.01em]` the rn pair merged and "Cairn" read "Caim"; larger,
   lighter, and untracked resolves it. The topbar site name drops `tracking-tight` for the same
   reason. Do not reintroduce negative tracking on the display face at these sizes.
+
+## Grammar tokens
+
+The design-infrastructure Pass 1 layer beneath the recipes above: ten CSS custom properties
+(`--cairn-type-title/subtitle/body/meta/label/chip`, `--cairn-gap-label/control/group/section`)
+declared once in `cairn-admin.css`, outside both theme roots, since a structural role does not
+change with the palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth
+inventory; the reference page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is
+the versioned contract a site reads, and this section is where an agent extending the admin meets
+the same vocabulary alongside the component recipes above and below it.
+
+- **Markup writes the role utility, never the token or a pixel value.** Ten named utilities in
+  `scripts/admin-css.input.css` (`type-title`, `type-subtitle`, `type-body`, `type-meta`,
+  `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`) are the only
+  supported way to reach a grammar token from a template. Each sets exactly one property
+  (`font-size` or `gap`) and nothing else.
+- **A type role is a size, not a recipe.** Weight, case, tracking, and color stay with the
+  component recipes above (the eyebrow's uppercase and tracking, the nav item's weight swap, the
+  wordmark's own sizing) rather than folding into the role utility. Color is a palette choice, so
+  it stays a separate `text-muted` / `text-subtle` class on the element, the same rule the Tokens
+  section states for those two utilities.
+- **A component `<style>` block references the token directly.** `font-size:
+  var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
+  not markup.
+- **The one scoped-style exception: `src/lib/admin-toolkit`.** Those components ship on a public
+  subpath and a consumer can mount one outside the admin theme root, where the grammar tokens are
+  undefined. Their scoped styles carry the measured literal as a `var()` fallback,
+  `font-size: var(--cairn-type-meta, 0.8125rem)`, so the component still renders correctly outside
+  `CairnAdminShell`. Engine screens under `src/lib/components` always render inside the shell's
+  themed wrapper and reference the token bare, with no fallback.
+- **A site re-tunes the palette and never redeclares a grammar token.** Grammar names structure
+  (a heading's size, a gap's relationship) and holds across light and dark; palette
+  (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
+  re-tuned palette.
+- **Two roles have no markup call site yet, for different reasons.** `type-title` awaits a
+  line-height ruling: the `text-2xl` it would replace sets `line-height` too, so the swap is not
+  pixel-identical. `gap-control` is reached only through its token, from the toolbar's scoped
+  styles. `type-body` is NOT in this pair; it has live call sites, migrated from bracketed
+  literals. Both roles still ship in the compiled sheet, so either is yours to write. See the
+  reference page's current-state note and
+  `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
+  off-scale call sites this pass measured but did not resolve.
 
 ## Component recipes
 

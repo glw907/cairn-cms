@@ -1423,7 +1423,7 @@ persistent "?" carries Markdown help, design-arc D2).
 
   // The eyebrow legend each sidebar group opens with, one class string for all three.
   const eyebrowClass =
-    'mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+    'mb-2 type-label font-semibold uppercase tracking-[0.08em] text-muted';
 
   // The sidebar's grouping. The title field hoists above the editor card as the document title,
   // and a boolean named draft becomes the Visibility group's Hidden toggle (both production
@@ -2081,7 +2081,7 @@ persistent "?" carries Markdown help, design-arc D2).
             style:width={activeDevice.width === null ? '100%' : `${activeDevice.width}px`}
           >
             {#if activeDevice.width !== null}
-              <p class="mb-2 text-right text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">
+              <p class="mb-2 text-right type-label font-semibold uppercase tracking-[0.08em] text-muted">
                 {deviceLabel(activeDevice)}
               </p>
             {/if}
@@ -2240,7 +2240,7 @@ persistent "?" carries Markdown help, design-arc D2).
     <!-- The panel header: the Details eyebrow and the close button. The eyebrow is a plain span
          (not a legend), so the three group legends below still read as the only sidebar legends. -->
     <div class="mb-3.5 flex items-center justify-between">
-      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Details</span>
+      <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">Details</span>
       <button
         bind:this={detailsClose}
         type="button"
@@ -2253,7 +2253,7 @@ persistent "?" carries Markdown help, design-arc D2).
     </div>
     <!-- Three labeled groups. Each group is its own fieldset so its eyebrow is a real legend that
          screen readers announce with the fields it holds. -->
-    <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-section">
       {#if detailFields.length}
       <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
       <!-- The panel header already shows the "Details" eyebrow, so this group's legend stays for
@@ -2278,7 +2278,7 @@ persistent "?" carries Markdown help, design-arc D2).
       </fieldset>
       {/if}
       {#if draftField}
-      <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+      <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
       <legend class={eyebrowClass}>Visibility</legend>
         <label class="label cursor-pointer justify-start gap-2">
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
@@ -2287,7 +2287,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <p class="text-xs text-muted">Hidden entries stay off the site's lists and feeds, even when published.</p>
       </fieldset>
       {/if}
-      <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+      <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
       <legend class={eyebrowClass}>{data.routable ? 'Address' : 'Name'}</legend>
         <div class="flex items-center justify-between gap-2">
           <code class="min-w-0 break-all text-xs text-muted">{data.routable ? `/${data.slug}` : data.slug}</code>
@@ -2306,7 +2306,7 @@ persistent "?" carries Markdown help, design-arc D2).
              consumers, the same data.inboundLinks the delete guard blocks on, so an author sees the
              blast radius before publishing rather than only when a delete refuses. Read-only, no new
              colors or badges, following the group idiom above. -->
-        <fieldset class="m-0 flex min-w-0 flex-col gap-1 border-0 p-0">
+        <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
           <legend class={eyebrowClass}>Included in</legend>
           {#if data.inboundLinks.length}
             <p class="text-xs text-muted">
@@ -2390,7 +2390,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <!-- The Esc hint is meaningless on a touch device (no Esc key to press), so it gates on
            pointer:coarse rather than hiding by viewport width, which does not track touch capability
            on a tablet. -->
-      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 text-[0.625rem] no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
+      Exit zen<kbd class="ml-1.5 inline-block rounded border border-[var(--cairn-card-border)] px-1 type-chip no-underline pointer-coarse:hidden" aria-hidden="true">Esc</kbd>
     </button>
   </div>
 {/if}

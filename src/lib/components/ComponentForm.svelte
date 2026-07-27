@@ -235,7 +235,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         <span class="text-sm">{field.label}</span>
       </label>
     {:else if field.type === 'select'}
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <select
           class="select"
@@ -265,7 +265,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </div>
     {:else}
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
@@ -287,7 +287,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
 
   {#each flatSlots as slot (slot.name)}
     {#if slot.kind === 'markdown'}
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <textarea
           class="textarea"
@@ -304,7 +304,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         ></textarea>
       </label>
     {:else}
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"

@@ -1,3 +1,29 @@
+## Unreleased
+
+### Added
+
+- The admin's structural type and spacing scale is now named: ten CSS custom properties
+  (`--cairn-type-title/subtitle/body/meta/label/chip`, `--cairn-gap-label/control/group/section`)
+  declared once in `cairn-admin.css`, outside the light and dark theme blocks, so a heading's size
+  or a control-to-control gap holds across both themes. Ten role utilities
+  (`type-title`/`type-subtitle`/`type-body`/`type-meta`/`type-label`/`type-chip`,
+  `gap-control`/`gap-label`/`gap-group`/`gap-section`) are the supported way to reach a token from
+  markup; each sets one property and nothing else. All ten ship in the compiled admin stylesheet
+  whether or not cairn's own screens use them, so a role is available to a custom admin route on
+  the strength of the documentation alone. See [Admin grammar
+  tokens](./docs/reference/admin-grammar-tokens.md).
+- `src/lib/admin-toolkit` and the built-in engine admin screens migrate their on-scale type and
+  spacing literals to the new role utilities and tokens, pixel-identically: the committed
+  admin-visual snapshots do not move. The toolkit's scoped styles carry the measured literal as a
+  `var()` fallback, since those components can mount outside the admin theme root; engine screens
+  reference the token bare.
+- The palette/grammar boundary is now a documented contract: a site re-tunes the palette tokens
+  (`--color-*`) to its own brand and never redeclares a grammar token, since grammar names
+  structure and palette is the brand layer.
+
+No consumer action is required. Every change here is internal to the admin's own CSS and
+components; no exported type, prop, or route contract changed.
+
 ## 0.90.1
 
 <!-- release-size: patch -->

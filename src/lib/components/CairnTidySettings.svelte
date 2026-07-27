@@ -348,18 +348,18 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         <CodeIcon class="h-5 w-5" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
-        <div class="text-[0.8125rem] font-semibold">Tidy is set up for this site</div>
+        <div class="type-meta font-semibold">Tidy is set up for this site</div>
         <div class="mt-0.5 text-xs leading-relaxed text-muted">
           Your developer turned tidy on and chose how it runs. You cannot change these here.
         </div>
         <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
              inline before the value at a fixed column width, today's composition. -->
         <div class="mt-2.5 flex flex-col gap-1.5">
-          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+          <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
             <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Tidy</span>
             <span>On for this site</span>
           </div>
-          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+          <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
             <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />API key</span>
             <span>
               {#if data.keyStatus === 'valid'}Set, and Anthropic confirms it works
@@ -367,7 +367,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
               {/if}
             </span>
           </div>
-          <div class="flex flex-col gap-1 text-[0.8125rem] sm:flex-row sm:items-baseline sm:gap-2">
+          <div class="flex flex-col gap-1 type-meta sm:flex-row sm:items-baseline sm:gap-2">
             <span class="inline-flex items-center gap-1.5 text-muted sm:min-w-[8.5rem] sm:flex-none sm:font-medium sm:text-base-content"><CheckIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />Model</span>
             <span>{data.modelLabel} <span class="text-muted">&middot; the careful default for a light copy-edit</span></span>
           </div>
@@ -375,24 +375,24 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         <!-- Below sm the "Set by your developer" pill drops out of the head row (its sm+ copy
              just below is hidden here) and renders on its own line under the grid above. -->
         <div class="mt-2 sm:hidden">
-          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+          <span class="inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
         </div>
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
-          <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
+          <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
           <div class="mt-1 text-xs leading-relaxed text-muted">
             Tidy is on (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{data.model}</code>. Switch to <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">claude-haiku-4-5</code> for a cheaper, faster run.
           </div>
         </div>
       </div>
       <!-- The sm+ head-row copy of the pill; hidden below sm, where the copy above renders instead. -->
-      <span class="mt-0.5 hidden flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 text-[0.625rem] font-semibold text-muted sm:inline-flex"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
+      <span class="mt-0.5 hidden flex-none items-center gap-1.5 whitespace-nowrap rounded-full border border-[var(--cairn-card-border)] px-2.5 py-1 type-chip font-semibold text-muted sm:inline-flex"><LockIcon class="h-3 w-3" aria-hidden="true" />Set by your developer</span>
     </div>
 
     <!-- THE GENERATED SUMMARY LINE, inside the live region. Rendered unconditionally so it can
          announce when it changes. -->
     <div role="status" aria-live="polite" class="mb-6 mt-6 flex items-start gap-3 rounded-box border border-primary/[0.16] bg-primary/[0.05] p-3.5">
       <span class="mt-0.5 inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-primary/[0.12] text-primary" aria-hidden="true"><ListIcon class="h-4 w-4" /></span>
-      <div class="min-w-0 flex-1 text-[0.8125rem] leading-relaxed">
+      <div class="min-w-0 flex-1 type-meta leading-relaxed">
         <span class="font-semibold">Tidy will fix</span> {summaryFixes}.
         <span class="text-muted"><b class="font-semibold text-subtle">It leaves alone</b> {summaryLeaves}.</span>
       </div>
@@ -413,7 +413,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                 <span class="sr-only">, the fixes group is {conv.fixes ? 'on' : 'off'}</span>
               </span>
             </h2>
-            <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
+            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
           </div>
           <div class="flex flex-none items-center gap-1">
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
@@ -422,22 +422,22 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
           <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
             <div class="min-w-0 flex-1">
-              <div class="text-[0.9375rem] font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
+              <div class="type-subtitle font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
               <!-- the colorless diff (the design arc's accent reservation, 2026-07-15): a deletion
                    is muted strikethrough, an insertion is semibold ink, both on a neutral wash -->
-              <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug" aria-hidden="true">
-                <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
+              <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
+                <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
                 <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">accomodate</span>
-                <span class="text-[0.6875rem] text-muted">to</span>
+                <span class="type-label text-muted">to</span>
                 <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">accommodate</span>
               </div>
               <!-- the "kept as written" cue: regional spelling is never normalized, dialect-aware -->
-              <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug" aria-hidden="true">
-                <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">keeps</span>
+              <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug" aria-hidden="true">
+                <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">keeps</span>
                 <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">colour</span>
-                <span class="text-[0.6875rem] text-muted">and</span>
+                <span class="type-label text-muted">and</span>
                 <span class="rounded-sm bg-[var(--cairn-code-chip)] px-1">organise</span>
-                <span class="text-[0.6875rem] text-muted">as written, following your site's English</span>
+                <span class="type-label text-muted">as written, following your site's English</span>
               </div>
             </div>
             <span class="flex-none">
@@ -460,7 +460,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                 <span class="sr-only">, {styleOnCount} style {styleOnCount === 1 ? 'convention' : 'conventions'} on</span>
               </span>
             </h2>
-            <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
+            <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
           </div>
           <div class="flex flex-none items-center gap-1">
             <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOn}>Turn all on</button>
@@ -475,12 +475,12 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             {@const on = rowOn(row.key)}
             <div class="flex gap-4 p-3.5 {ri > 0 ? 'border-t border-[var(--cairn-card-border)]' : ''} {on && row.variants ? 'items-start' : 'items-center'}">
               <div class="min-w-0 flex-1">
-                <div class="text-[0.9375rem] font-semibold leading-snug">{row.name}</div>
+                <div class="type-subtitle font-semibold leading-snug">{row.name}</div>
                 {#if on && row.variants}
                   <!-- the inline variant chooser, revealed when the row is on: the shipped pick-one
                        recipe (radiogroup + radio + aria-checked + roving tabindex + check glyph) -->
                   <div class="mt-3 flex flex-col gap-2">
-                    <div id={`tidy-var-${String(row.key)}`} class="text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">{row.variantLabel}</div>
+                    <div id={`tidy-var-${String(row.key)}`} class="type-label font-semibold uppercase tracking-wide text-muted">{row.variantLabel}</div>
                     <div role="radiogroup" aria-labelledby={`tidy-var-${String(row.key)}`} class="inline-flex flex-wrap self-start overflow-hidden rounded-lg border border-[var(--cairn-card-border)] bg-base-100">
                       {#each row.variants as variant, vi (variant.value)}
                         {@const checked = conv[row.key] === variant.value}
@@ -500,10 +500,10 @@ bespoke (ruling 7): a single-use control, not a repeated device.
                     </div>
                   </div>
                 {:else}
-                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
-                    <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
+                    <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
                     <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
-                    <span class="text-[0.6875rem] text-muted">to</span>
+                    <span class="type-label text-muted">to</span>
                     <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 {/if}
@@ -524,13 +524,13 @@ bespoke (ruling 7): a single-use control, not a repeated device.
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
             <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
-              <span class="flex items-center gap-2 text-[0.9375rem] font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">Needs care</span></span>
-              <span class="mt-0.5 block text-[0.8125rem] leading-snug text-muted">Two more changes that need a careful eye. Off by default. Open this only if you want them.</span>
+              <span class="flex items-center gap-2 type-subtitle font-semibold">Advanced <span class="rounded-full bg-warning/[0.14] px-2 py-0.5 type-chip font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">Needs care</span></span>
+              <span class="mt-0.5 block type-meta leading-snug text-muted">Two more changes that need a careful eye. Off by default. Open this only if you want them.</span>
             </span>
             <ArrowRightIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
           </summary>
           <div class="border-t border-[var(--cairn-card-border)]">
-            <div class="flex items-start gap-2.5 border-b border-[var(--cairn-card-border)] bg-warning/[0.08] p-3.5 text-[0.8125rem] leading-relaxed">
+            <div class="flex items-start gap-2.5 border-b border-[var(--cairn-card-border)] bg-warning/[0.08] p-3.5 type-meta leading-relaxed">
               <TriangleAlertIcon class="mt-0.5 h-4 w-4 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />
               <span>These two reach a little further than the rest, so check the diff with care. <b class="font-semibold">Curly quotes can trip on apostrophes</b>, and brand names only fix from a list cairn keeps. Review every change before accepting it, the same as always.</span>
             </div>
@@ -538,11 +538,11 @@ bespoke (ruling 7): a single-use control, not a repeated device.
               {@const on = rowOn(row.key)}
               <div class="flex items-center gap-4 p-3.5 {ai > 0 ? 'border-t border-[var(--cairn-card-border)]' : ''}">
                 <div class="min-w-0 flex-1">
-                  <div class="text-[0.9375rem] font-semibold leading-snug">{row.name}</div>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono text-[0.8125rem] leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
-                    <span class="mr-0.5 text-[0.6875rem] font-semibold uppercase tracking-wide text-muted">changes</span>
+                  <div class="type-subtitle font-semibold leading-snug">{row.name}</div>
+                  <div class="mt-1.5 flex flex-wrap items-center gap-1.5 font-mono type-meta leading-snug {on ? '' : 'opacity-55'}" aria-hidden="true">
+                    <span class="mr-0.5 type-label font-semibold uppercase tracking-wide text-muted">changes</span>
                     <span class="rounded-sm bg-[var(--cairn-tidy-del-run)] px-0.5 text-muted line-through">{row.egBefore}</span>
-                    <span class="text-[0.6875rem] text-muted">to</span>
+                    <span class="type-label text-muted">to</span>
                     <span class="rounded-sm bg-[var(--cairn-tidy-add-run)] px-0.5 font-semibold text-base-content">{row.egAfter}</span>
                   </div>
                 </div>
@@ -559,11 +559,11 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
       <!-- THE "NOT HERE YET" NOTE: honest, non-interactive -->
       <div class="mb-2 rounded-box border border-dashed border-[var(--cairn-card-border)] bg-base-content/[0.015] p-4">
-        <div class="flex items-center gap-2 text-[0.8125rem] font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
-        <div class="mt-1.5 text-[0.8125rem] leading-relaxed text-muted">Two more conventions aren’t offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they’re reliable enough to trust.</div>
+        <div class="flex items-center gap-2 type-meta font-semibold"><InfoIcon class="h-4 w-4 text-muted" aria-hidden="true" />Not yet available</div>
+        <div class="mt-1.5 type-meta leading-relaxed text-muted">Two more conventions aren’t offered yet. Both can change how your writing sounds, not just how it looks, so they wait until they’re reliable enough to trust.</div>
         <ul class="mt-2 flex flex-col gap-1.5">
-          <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
-          <li class="flex items-start gap-2 text-[0.8125rem] leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
+          <li class="flex items-start gap-2 type-meta leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Your own custom rules</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>free-text instructions can reach into voice</span></li>
+          <li class="flex items-start gap-2 type-meta leading-snug text-muted"><span class="flex-none font-semibold text-base-content">Heading capitals</span><span class="flex-none opacity-50" aria-hidden="true">&middot;</span><span>retitling your headings is a bigger change than it looks</span></li>
         </ul>
       </div>
 
@@ -593,15 +593,15 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 opacity-60">
           <span class="flex-none text-muted"><CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
-          <span class="text-[0.8125rem] leading-snug">Your developer turned tidy on for the site.</span>
+          <span class="type-meta leading-snug">Your developer turned tidy on for the site.</span>
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[color-mix(in_oklab,var(--cairn-warning-ink)_22%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_6%,var(--color-base-100))] p-3">
           <span class="flex-none text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="mt-0.5 h-4 w-4" aria-hidden="true" /></span>
-          <span class="text-[0.8125rem] leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
+          <span class="type-meta leading-snug">A key is set, but Anthropic rejects it.<span class="mt-0.5 block text-muted">Check it hasn’t been revoked or rotated elsewhere.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">
-        <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
+        <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
         <div class="mt-1 text-xs leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page or run <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">cairn-doctor</code> to confirm it again.</div>
       </div>
     </div>
@@ -620,22 +620,22 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <div class="mt-1.5 flex w-full max-w-md flex-col gap-2.5 text-left">
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.tidyEnabled ? 'opacity-60' : ''}">
           <span class="flex-none {data.tidyEnabled ? 'text-muted' : 'text-subtle'}">
-            {#if data.tidyEnabled}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] text-[0.6875rem] font-semibold">1</span>{/if}
+            {#if data.tidyEnabled}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] type-label font-semibold">1</span>{/if}
           </span>
-          <span class="text-[0.8125rem] leading-snug">Your developer turns tidy on for the site.<span class="mt-0.5 block text-muted">It is one setting in the site config.</span></span>
+          <span class="type-meta leading-snug">Your developer turns tidy on for the site.<span class="mt-0.5 block text-muted">It is one setting in the site config.</span></span>
         </div>
         <div class="flex items-start gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 {data.keyConfigured ? 'opacity-60' : ''}">
           <span class="flex-none {data.keyConfigured ? 'text-muted' : 'text-subtle'}">
-            {#if data.keyConfigured}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] text-[0.6875rem] font-semibold">2</span>{/if}
+            {#if data.keyConfigured}<CheckIcon class="mt-0.5 h-4 w-4" aria-hidden="true" />{:else}<span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-base-content/[0.09] type-label font-semibold">2</span>{/if}
           </span>
-          <span class="text-[0.8125rem] leading-snug">Your developer adds an Anthropic API key.<span class="mt-0.5 block text-muted">It stays on the server and never reaches the browser.</span></span>
+          <span class="type-meta leading-snug">Your developer adds an Anthropic API key.<span class="mt-0.5 block text-muted">It stays on the server and never reaches the browser.</span></span>
         </div>
       </div>
       <div class="w-full max-w-md text-left">
-        <span class="inline-flex items-center gap-1.5 text-[0.625rem] font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
+        <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
         <div class="mt-1 text-xs leading-relaxed text-muted">Set <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
       </div>
-      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 text-[0.8125rem] text-muted">
+      <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 type-meta text-muted">
         <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />
         <span><b class="font-semibold text-base-content">Spellcheck is already working.</b> It runs in your browser, so it needs no setup and underlines misspellings as you type.</span>
       </div>

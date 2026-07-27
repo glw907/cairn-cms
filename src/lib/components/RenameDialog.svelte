@@ -75,7 +75,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
       <CsrfField />
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{routable ? 'Address' : 'Name'}</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>

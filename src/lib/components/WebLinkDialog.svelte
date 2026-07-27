@@ -69,11 +69,11 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <form onsubmit={submit} class="flex flex-col gap-3">
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">Web address</span>
         <input class="input w-full" type="url" required placeholder="https://…" bind:value={href} bind:this={hrefInput} />
       </label>
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">Text</span>
         <input class="input w-full" placeholder="What the link says" bind:value={text} />
       </label>

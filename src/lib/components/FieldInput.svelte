@@ -152,7 +152,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 
 {#if field.type === 'textarea'}
   {@const f = field as NamedField & TextareaField}
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{f.label}</span>
     <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
@@ -161,7 +161,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   </label>
 {:else if field.type === 'number'}
   {@const f = field as NamedField & NumberField}
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{f.label}</span>
     <input
       class="input input-sm"
@@ -181,7 +181,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   </label>
 {:else if field.type === 'select'}
   {@const f = field as NamedField & SelectField}
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{f.label}</span>
     <select class="select select-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} required={f.required}>
       <!-- A leading empty option submits '' (the key is dropped on save); a required select
@@ -196,7 +196,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
     {/if}
   </label>
 {:else if field.type === 'date'}
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
@@ -251,7 +251,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'multiselect'}
   {@const f = field as NamedField & MultiselectField}
   {@const tagValue = ((frontmatter[f.name] ?? []) as string[]).join(', ')}
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{f.label}</span>
     <input
       class="input input-sm"
@@ -312,7 +312,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else}
   <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
        one shape and differ only in the input type inputType() resolves. -->
-  <label class="flex flex-col gap-1">
+  <label class="flex flex-col gap-label">
     <span class="text-sm font-medium">{field.label}</span>
     <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
     {#if field.help}

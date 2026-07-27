@@ -71,18 +71,20 @@ durable orientation only.
   clears the full gate before reporting done (targeted test + `npm run check` 0/0 + `npm test` exit
   0), with the cairn conventions baked in. It is the default executor for plan tasks and is pinned
   to Sonnet for token economy; the main loop orchestrates, reviews each diff, and verifies the gate
-  between dispatches. Pass `model: opus` or `model: fable` to upshift a single
-  correctness-critical task.
+  between dispatches. Pass `model: opus` to upshift a single correctness-critical task;
+  `model: fable` only when an Opus verdict itself hedges on something that matters.
 - **Review subagents** (user-scoped, read-only): `svelte-reviewer`, `cloudflare-workers-reviewer`,
   `web-auth-security-reviewer`, `daisyui-a11y-reviewer`. Fan them out in parallel at a review gate to
   complement `/code-review`.
 - **Subagent models:** the workstation `.bashrc` sets `CLAUDE_CODE_SUBAGENT_MODEL=inherit`, so each
   agent's frontmatter `model:` wins, and a per-dispatch `model` beats the frontmatter. Token
   economy governs the assignments: `cairn-implementer` pins Sonnet (upshift per dispatch only for
-  novel correctness-critical logic), the four reviewer agents pin Opus deliberately (Sonnet
-  implements, Opus reviews, and the model diversity is part of the gate), and the
-  `code-simplifier` plugin agent pins Opus in its own frontmatter. The frontier main model keeps
-  the thinking work: brainstorms, specs, plans, review triage, post-mortems, and final prose.
+  novel correctness-critical logic), the four reviewer agents pin `claude-opus-5` deliberately
+  (Sonnet implements, Opus 5 reviews, and the fresh-context gate with model diversity is part of
+  the gate), and the `code-simplifier` plugin agent pins Opus in its own frontmatter. Fable keeps
+  the planning and taste work (brainstorms, specs, plans, post-mortems, final prose) and ends a
+  planning sitting at plan approval; execution sessions run on Opus 5 per the global model
+  economy.
 - **Cloudflare MCP** (account `glw907`, `120c269ad6d3dfbe6d63a0bb53758ca0`) provisions and queries D1
   for the auth store. Prefer it over the dashboard.
 

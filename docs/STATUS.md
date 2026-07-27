@@ -15,7 +15,19 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-24, latest: v0.90.1 published; next = the principle-pages pass)
+## Immediate next action (2026-07-27: execute design-infrastructure Pass 1, grammar tokens)
+
+**THE DESIGN-INFRASTRUCTURE INITIATIVE IS SPEC'D AND PASS 1 IS PLANNED (2026-07-27).** The
+ratified spec is `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`
+(register-edited, then hardened by a clean-context adversarial Fable review whose full
+report is `docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`). The
+Pass 1 plan is `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`.
+**A fresh Opus 5 session executes it** (per the revised model economy: Fable plans, Opus 5
+executes), launched from `~/Projects/cairn-cms` with: "Execute design-infrastructure Pass 1
+(`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`), on a
+feature worktree off main per cairn-pass." Passes 2 (enforcement) and 3 (capture) get
+just-in-time plans after Pass 1 lands; one release at the initiative boundary, then the ASC
+Assets trial. The principle-pages pass queues behind the initiative.
 
 **v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
 coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and

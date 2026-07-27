@@ -22,8 +22,8 @@ library's own development proves changes against `examples/showcase`.
 outside the theme blocks, ten role utilities that set exactly one property each, 25 admin components
 migrated pixel-identically (the 18 `admin-visual` snapshots do not move), the deviations ledger, and
 the public contract page `docs/reference/admin-grammar-tokens.md`. Full gate green, plus a
-from-scratch showcase `npm ci` + e2e (107 passed; the 6 `admin-visual` failures are the
-local-vs-CI renderer divergence that predates the pass, see the post-mortem). Method, the five locked
+from-scratch showcase `npm ci` + e2e (107 passed; the 6 `admin-visual` failures are the stale
+baselines described below, which predate the pass). Method, the five locked
 decisions, and the three defects the mechanical gates missed are in the post-mortem appended to
 `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`. Read it before
 planning Pass 2.
@@ -44,8 +44,20 @@ Assets trial. The principle-pages pass queues behind the initiative. When that r
 MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
 its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
 
-**Owed, not blocking:** the branch has not been pushed, so CI has not run its authoritative
-`admin-visual` assertion against the committed baselines. Push `main` to close that loop.
+**RED CI, PRE-EXISTING, OWED (found 2026-07-27 on pushing Pass 1).** The `e2e` workflow has been
+failing on `main` since 2026-07-24, through the `0.90.0` and `0.90.1` cuts. Six `admin-visual`
+baselines are stale: the office shell, the media library, and the media detail panel, each in both
+schemes. They were last regenerated 2026-07-21 (`bff6ee46`), and `0.90.0` (ExpandableRow graduation,
+the ListToolbar menu facet and its flex-row recomposition, StatusChip's border, OfficeList) plus
+`0.90.1` (ListToolbar select sizing) changed exactly those screens without regenerating. Local and CI
+renderers agree, so this is not a renderer artifact; the images are out of date.
+
+Pass 1 did not cause it and is not implicated: its drift proof compared pre-migration to
+post-migration on one renderer and showed zero drift twice, and the same six fail on unmodified
+`main`. The fix is `e2e.yml`'s `workflow_dispatch` with `update_snapshots` ticked, but that blesses
+whatever currently renders, so read the six regenerated images against the `0.90.x` design intent
+before accepting them. Until it is done, `e2e` stays red and cannot gate anything, which is itself
+the risk: the next real visual regression will hide in an already-red job.
 
 **v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
 coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and

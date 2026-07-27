@@ -222,17 +222,28 @@ the deviations ledger, and the public contract page.
   full e2e suite: 107 passed, 6 failed. The 6 are the `admin-visual` screens characterized below,
   and every behavioral spec passed.
 
-### The local baseline problem, worth knowing before the next visual pass
+### Six baselines were already stale, and CI was already red
 
-The committed `admin-visual` baselines are CI artifacts, and 6 of the 18 do not reproduce on this
-workstation: the office shell, the media library, and the media detail panel, each in both schemes.
-That was true on unmodified `main` before a line of this pass was written, so a local assert against
-the committed baselines cannot serve as a drift gate. The workaround: capture a local baseline set
-from the pass's starting commit, then swap it in, assert, and restore the committed files. The first
-local run also fails everything on a cold font cache; the second run onward is stable.
+6 of the 18 `admin-visual` baselines fail on unmodified `main`: the office shell, the media library,
+and the media detail panel, each in both schemes. This pass first read that as a local-vs-CI renderer
+difference. **That read was wrong.** CI's own `e2e` run on the merge commit failed the same six, and
+`e2e` has been failing on `main` since 2026-07-24, through the `0.90.0` and `0.90.1` release cuts.
 
-CI remains the authoritative proof, since `e2e.yml` asserts against the baselines on push and
-regenerates them only on a manual dispatch.
+The cause: the baselines were last regenerated 2026-07-21 (`bff6ee46`), and the `0.90.0` pass
+(ExpandableRow's graduation, the ListToolbar menu facet and its flex-row recomposition, StatusChip's
+border, the OfficeList fixes) plus `0.90.1` (ListToolbar select sizing) changed exactly those screens
+without regenerating. The local and CI renderers agree; the committed images are simply out of date.
+One genuine local quirk is unrelated: the first run on a cold font cache fails everything on a small
+height delta, so discard run one.
+
+**This pass's own drift proof is unaffected**, because it never asserted against the stale set. It
+captured a local reference from the starting commit and compared pre-migration to post-migration on
+one renderer, which is the drift question. Zero drift, twice. What the stale set does mean is that
+CI could not independently confirm it, so the pass leaned on the captured-reference comparison.
+
+Owed, and deliberately not done here: regenerate the six via `e2e.yml`'s `update_snapshots` dispatch.
+It blesses whatever currently renders, so the six new images want an eyes-on read against the
+`0.90.x` design intent first. That is a decision about someone else's shipped work, not this pass's.
 
 ### Decisions locked
 

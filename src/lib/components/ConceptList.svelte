@@ -212,7 +212,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
-  const headerLabel = 'text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted';
+  const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
   const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
 
   // The publish-all flash. A racing second admin can publish first, leaving this redirect
@@ -379,13 +379,13 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish chip. -->
-                  <span class="inline-flex shrink-0 items-center gap-1 text-[0.6875rem] font-semibold uppercase tracking-[0.02em] text-muted">
+                  <span class="inline-flex shrink-0 items-center gap-1 type-label font-semibold uppercase tracking-[0.02em] text-muted">
                     <EyeOffIcon class="h-3 w-3" aria-hidden="true" />Hidden
                   </span>
                 {/if}
               </div>
             </td>
-            {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 text-[0.9375rem]">{formatCivilDate(entry.date)}</td>{/if}
+            {#if data.dated}<td class="hidden w-32 whitespace-nowrap tabular-nums text-muted sm:table-cell py-2 type-subtitle">{formatCivilDate(entry.date)}</td>{/if}
             <td class="w-16 px-2 py-2 sm:w-28 sm:px-4">
               <!-- One chip family (design arc 2026-07-15, re-expressed on the toolkit's StatusChip):
                    New and Published share the toolkit's neutral tone; Edited alone carries the
@@ -418,7 +418,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
           <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
           {#if query.trim()}
             <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
-            <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
+            <button type="button" class="type-meta font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
           {:else}
             <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
           {/if}
@@ -449,11 +449,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
     </div>
     <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">
       <CsrfField />
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">Title</span>
         <input class="input w-full" name="title" bind:value={title} required />
       </label>
-      <label class="flex flex-col gap-1">
+      <label class="flex flex-col gap-label">
         <span class="text-sm font-medium">{data.routable ? 'Address' : 'Name'}</span>
         <input
           class="input w-full"
@@ -464,7 +464,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
         />
       </label>
       {#if data.dated}
-        <label class="flex flex-col gap-1">
+        <label class="flex flex-col gap-label">
           <span class="text-sm font-medium">Date</span>
           <input class="input w-full" type="date" name="date" value={dateDefault} />
         </label>

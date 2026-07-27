@@ -392,22 +392,22 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           class="h-9 w-[3.25rem] flex-none rounded-field border border-[var(--cairn-card-border)] object-cover"
         />
         <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span class="truncate text-[0.8125rem] font-medium">{committedName}</span>
+          <span class="truncate type-meta font-medium">{committedName}</span>
           {#if committedStatus === 'described'}
             <!-- The muted done-treatment (design arc 2026-07-15, E3/F3): a completed state reads
                  as quiet confirmation, not a green accent, matching the Media Library's own
                  Described chip. -->
-            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-base-content">
+            <span class="inline-flex w-max items-center gap-1 type-label font-medium text-base-content">
               <svg class="h-[0.6875rem] w-[0.6875rem] text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5" /></svg>
               <span>Described</span>
             </span>
           {:else if committedStatus === 'needs-alt'}
-            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-[var(--cairn-warning-ink)]">
+            <span class="inline-flex w-max items-center gap-1 type-label font-medium text-[var(--cairn-warning-ink)]">
               <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" /><line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>
               <span>Needs alt</span>
             </span>
           {:else}
-            <span class="inline-flex w-max items-center gap-1 text-[0.6875rem] font-medium text-muted">
+            <span class="inline-flex w-max items-center gap-1 type-label font-medium text-muted">
               <svg class="h-[0.6875rem] w-[0.6875rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" y1="2" x2="22" y2="22" /></svg>
               <span>Decorative</span>
             </span>
@@ -415,7 +415,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </span>
         <button
           type="button"
-          class="flex-none bg-transparent p-1 text-[0.8125rem] font-medium text-[var(--color-primary)] underline underline-offset-2"
+          class="flex-none bg-transparent p-1 type-meta font-medium text-[var(--color-primary)] underline underline-offset-2"
           aria-haspopup="dialog"
           onclick={() => openDialog('placement')}
         >
@@ -450,12 +450,12 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><circle cx="9" cy="9" r="2" /><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21" /></svg>
       </span>
       <span class="flex min-w-0 flex-col gap-px">
-        <span class="text-[0.8125rem] font-medium">Add {field.label.toLowerCase()}</span>
-        <span class="text-[0.6875rem] text-muted">Drop an image here, or pick from the library</span>
+        <span class="type-meta font-medium">Add {field.label.toLowerCase()}</span>
+        <span class="type-label text-muted">Drop an image here, or pick from the library</span>
       </span>
     </button>
     {#if lead}
-      <p class="text-[0.6875rem] leading-snug text-muted">
+      <p class="type-label leading-snug text-muted">
         This image leads the page, and it is the picture shown when the post is shared.
       </p>
     {/if}
@@ -477,7 +477,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
 <dialog bind:this={dialog} class="modal" aria-labelledby={titleId}>
   <div class="modal-box max-w-md">
     <div class="mb-3 flex items-center justify-between gap-2">
-      <h2 id={titleId} class="text-[0.9375rem] font-semibold">
+      <h2 id={titleId} class="type-subtitle font-semibold">
         {view === 'chooser' ? `Add ${field.label.toLowerCase()}` : field.label}
       </h2>
       <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={closeDialog}>
@@ -519,11 +519,11 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <fieldset class="flex flex-col gap-2" role="radiogroup" aria-label="Alt text" aria-describedby={altNoteId}>
           <legend class="text-sm font-medium">Alt text</legend>
           <div class="flex gap-2">
-            <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[0.8125rem] {workAltMode === 'describe' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
+            <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 type-meta {workAltMode === 'describe' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
               <input type="radio" class="radio radio-xs" name="cairn-hero-alt-{uid}" value="describe" bind:group={workAltMode} />
               <span>Describe it</span>
             </label>
-            <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 text-[0.8125rem] {workAltMode === 'decorative' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
+            <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 type-meta {workAltMode === 'decorative' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
               <input type="radio" class="radio radio-xs" name="cairn-hero-alt-{uid}" value="decorative" bind:group={workAltMode} />
               <span>Decorative</span>
             </label>
@@ -542,13 +542,13 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           </p>
         </fieldset>
 
-        <label class="flex flex-col gap-1">
+        <label class="flex flex-col gap-label">
           <span class="text-sm font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
           <input class="input input-sm w-full" bind:value={workCaption} aria-label="Caption" />
           <span class="text-xs text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
         </label>
 
-        <p class="text-[0.6875rem] leading-snug text-muted">
+        <p class="type-label leading-snug text-muted">
           This image is also the picture shown when the post is shared to social.
         </p>
 
@@ -576,7 +576,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
             onchange={onChosenFile}
           />
         </div>
-        <p class="text-center text-[0.6875rem] uppercase tracking-[0.08em] text-muted">or pick from the library</p>
+        <p class="text-center type-label uppercase tracking-[0.08em] text-muted">or pick from the library</p>
         <MediaPicker library={mediaLibrary} onselect={onPick} />
       </div>
     {/if}

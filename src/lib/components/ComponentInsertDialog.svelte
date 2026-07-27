@@ -337,7 +337,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {/if}
         <div class="min-w-0 flex-1">
           {#if picked}
-            <div class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
+            <div class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
             <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold">{picked.label}</h2>
           {:else}
             <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
@@ -360,7 +360,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
               </div>
               <div data-testid="cairn-pk-preview" class="flex flex-col gap-2 rounded-box border border-[var(--cairn-card-border)] bg-base-200 p-3">
                 <div class="flex items-baseline justify-between gap-2">
-                  <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">Preview</span>
+                  <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">Preview</span>
                   <!-- A silent visual cue, never an announcement: it re-rendered on every debounced
                        keystroke, so a screen reader read "Settling"/"Settled" aloud on each edit. The
                        incomplete and render-failed conditions reach assistive tech through the
@@ -432,7 +432,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
           <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
             <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
-            <button type="button" class="text-[0.8125rem] font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
+            <button type="button" class="type-meta font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}
           <!-- One scroll region holds every group, so the arrow keys roam the whole catalog. It
@@ -442,7 +442,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             {#each groups as group (group.heading)}
               <div class="mt-3 first:mt-0">
                 {#if group.heading}
-                  <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{group.heading}</div>
+                  <div data-testid="cairn-pk-group-heading" class="px-2 pb-1.5 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.heading}</div>
                 {/if}
                 <ul class="menu w-full p-0">
                   {#each group.defs as def (def.name)}

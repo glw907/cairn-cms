@@ -164,7 +164,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     role="status"
     aria-live="polite"
     data-testid="vocab-mutation-live"
-    class="mt-3 flex min-h-5 items-center gap-1.5 text-[0.8125rem] text-muted"
+    class="mt-3 flex min-h-5 items-center gap-1.5 type-meta text-muted"
   >
     {#if mutation.trim()}
       <CheckIcon class="h-3.5 w-3.5 flex-none text-[var(--color-positive-ink)]" aria-hidden="true" />
@@ -174,7 +174,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   <!-- THE ADD CARD: a human label, a live slug preview, the primary Add control. -->
   <section class="mt-5 {cardClass} p-4">
-    <label for="cairn-vocab-new-label" class="text-[0.9375rem] font-semibold">Add a tag</label>
+    <label for="cairn-vocab-new-label" class="type-subtitle font-semibold">Add a tag</label>
     <div class="mt-2.5 flex flex-wrap items-start gap-2.5">
       <input
         id="cairn-vocab-new-label"
@@ -197,7 +197,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
         <PlusIcon class="h-4 w-4" aria-hidden="true" />Add tag
       </button>
     </div>
-    <div id="cairn-vocab-new-help" class="mt-2 text-[0.8125rem] leading-relaxed">
+    <div id="cairn-vocab-new-help" class="mt-2 type-meta leading-relaxed">
       {#if addError}
         <span role="alert" class="text-[var(--cairn-error-ink)]">{addError}</span>
       {:else if newSlug}
@@ -226,7 +226,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     </div>
     <div class="overflow-hidden {cardClass}">
       {#if working.length === 0}
-        <div class="p-6 text-center text-[0.9375rem] text-muted">
+        <div class="p-6 text-center type-subtitle text-muted">
           No tags yet. Add your first one above{seedCandidates.length
             ? ', or seed from tags already on your posts'
             : ''}.
@@ -236,7 +236,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
              header keeps only Name; the meta line labels itself. At sm+ the four-track grid and
              its full header return. -->
         <div
-          class="grid grid-cols-[1fr_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted sm:grid-cols-[1fr_auto_auto_auto]"
+          class="grid grid-cols-[1fr_auto] gap-x-4 border-b border-[var(--cairn-card-border)] px-4 py-2 type-label font-semibold uppercase tracking-[0.08em] text-muted sm:grid-cols-[1fr_auto_auto_auto]"
         >
           <span>Name</span>
           <span class="hidden sm:block">Stored as</span>
@@ -258,7 +258,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
             />
             <!-- The stacked row's meta line, below sm only: the slug and count sit under the
                  input, indented to the typed text (pl-3 matches input-sm's text inset). -->
-            <div class="col-start-1 row-start-2 flex items-baseline gap-1.5 pl-3 text-[0.8125rem] sm:hidden">
+            <div class="col-start-1 row-start-2 flex items-baseline gap-1.5 pl-3 type-meta sm:hidden">
               <code class="font-mono text-muted">{entry.value}</code>
               <span aria-hidden="true" class="text-muted">·</span>
               {#if count > 0}
@@ -267,13 +267,13 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
                 <span class="whitespace-nowrap text-subtle">Unused</span>
               {/if}
             </div>
-            <code class="hidden font-mono text-[0.8125rem] text-muted sm:block">{entry.value}</code>
+            <code class="hidden font-mono type-meta text-muted sm:block">{entry.value}</code>
             {#if count > 0}
-              <span class="hidden whitespace-nowrap text-[0.8125rem] tabular-nums text-subtle sm:inline"
+              <span class="hidden whitespace-nowrap type-meta tabular-nums text-subtle sm:inline"
                 >{count} {count === 1 ? 'post' : 'posts'}</span
               >
             {:else}
-              <span class="hidden whitespace-nowrap text-[0.8125rem] text-subtle sm:inline">Unused</span>
+              <span class="hidden whitespace-nowrap type-meta text-subtle sm:inline">Unused</span>
             {/if}
             {#if count > 0}
               <!-- GUARDED delete: aria-disabled, never native disabled, with a stateful name and
@@ -315,7 +315,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
     <section class="mt-5">
       <div class="mb-2.5 px-0.5">
         <h2 class="text-lg font-bold tracking-tight">Already on your posts</h2>
-        <p class="mt-1 max-w-prose text-[0.8125rem] leading-relaxed text-muted">
+        <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">
           These tags are in use but not in your list yet. Add the ones you want editors to keep
           picking.
         </p>
@@ -329,8 +329,8 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
           >
             <TagIcon class="h-4 w-4 flex-none text-subtle" aria-hidden="true" />
             <div class="min-w-0 flex-1">
-              <code class="font-mono text-[0.9375rem]">{candidate.value}</code>
-              <span class="ml-2 text-[0.8125rem] tabular-nums text-subtle"
+              <code class="font-mono type-subtitle">{candidate.value}</code>
+              <span class="ml-2 type-meta tabular-nums text-subtle"
                 >{candidate.count} {candidate.count === 1 ? 'post' : 'posts'}</span
               >
             </div>

@@ -80,14 +80,14 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
   }
 </script>
 
-<form class="flex flex-col gap-4" onsubmit={submit}>
+<form class="flex flex-col gap-group" onsubmit={submit}>
   <div class="flex items-start gap-3">
     <img
       src={previewUrl}
       alt=""
       class="h-16 w-16 flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"
     />
-    <label class="flex flex-1 flex-col gap-1">
+    <label class="flex flex-1 flex-col gap-label">
       <span class="flex items-center gap-2 text-sm font-medium">
         Name
         {#if proposed !== null}

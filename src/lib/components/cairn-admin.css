@@ -39,7 +39,11 @@
    admin theme roots at compile time, and check:custom-surface (which pins only rules anchored on
    [data-theme=) does not see it; grammar-tokens.test.ts is the guard that does. A component
    <style> block references var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not
-   markup; markup uses only the named role utilities in scripts/admin-css.input.css. */
+   markup; markup uses only the named role utilities in scripts/admin-css.input.css. One exception,
+   in src/lib/admin-toolkit only: those components ship on a public subpath and a consumer can mount
+   one outside the admin theme root, where these tokens are undefined, so their scoped styles carry
+   the measured literal as a var() fallback. Engine screens under src/lib/components always render
+   inside CairnAdminShell's themed wrapper and reference the token bare. */
 :root {
   /* The six-role type scale: title, the T4 chrome scale (nav items, table cells, card-row
      titles), body, meta, label (the eyebrow recipe), and chip. */

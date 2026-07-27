@@ -30,7 +30,7 @@ supplies its own `<table>` (or any content) inside.
 <header class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
   <div class="flex flex-col gap-0">
     {#if eyebrow}
-      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
+      <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
     <!-- The UA default h1/p margins do not collapse inside a flex column, so they leaked past
          this stack's own gap-0.5 intent into a ~32px rendered gap. Zeroed here and replaced

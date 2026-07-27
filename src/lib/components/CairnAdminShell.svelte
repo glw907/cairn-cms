@@ -627,7 +627,7 @@ discriminant, not the fields, gates the chrome).
               <!-- The keyboard shortcut hint is meaningless on a touch device (no ⌘K to press), so
                    it gates on pointer:fine, not only the sm width breakpoint: a touch tablet at or
                    above sm would otherwise still show it. -->
-              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 text-[0.6875rem] font-medium sm:pointer-fine:inline">&#8984;K</kbd>
+              <kbd class="ml-auto hidden rounded border border-[var(--cairn-card-border)] px-1.5 type-label font-medium sm:pointer-fine:inline">&#8984;K</kbd>
             </button>
           </div>
           {#await data.pendingEntries then pending}
@@ -728,7 +728,7 @@ discriminant, not the fields, gates the chrome).
               </div>
               <p class="text-sm">Every entry below goes live in one step.</p>
               {#each groups as group, i (group.label)}
-                <p id={`cairn-publish-group-${i}`} class="mt-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{group.label}</p>
+                <p id={`cairn-publish-group-${i}`} class="mt-3 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.label}</p>
                 <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
                   {#each group.ids as id (id)}
                     <li>{id}</li>
@@ -770,7 +770,7 @@ discriminant, not the fields, gates the chrome).
               <CairnLogo class="h-5 w-5" />
             </span>
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
-            <span class="rounded-md border border-base-300 px-1.5 py-px text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
+            <span class="rounded-md border border-base-300 px-1.5 py-px type-chip font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>
         </div>
 
@@ -782,8 +782,8 @@ discriminant, not the fields, gates the chrome).
                 <a
                   href={item.href}
                   class={isActive(item.href)
-                    ? 'text-[0.9375rem] bg-primary/10 font-semibold text-primary tracking-small-medium'
-                    : 'text-[0.9375rem] font-medium text-subtle tracking-small-medium'}
+                    ? 'type-subtitle bg-primary/10 font-semibold text-primary tracking-small-medium'
+                    : 'type-subtitle font-medium text-subtle tracking-small-medium'}
                   aria-current={isActive(item.href) ? 'page' : undefined}
                   aria-label={att ? `${item.label}, ${att.count} ${att.label}` : undefined}
                 >
@@ -814,7 +814,7 @@ discriminant, not the fields, gates the chrome).
                  would double the story); it disappears the instant the section opens, per the
                  collapsed-header rollup contract (Task 8). -->
             <summary
-              class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content"
+              class="group/sec flex cursor-pointer select-none items-center gap-2 rounded-field bg-base-content/[0.04] py-2 pl-3 pr-3 type-label font-semibold uppercase tracking-[0.08em] text-muted transition-colors hover:bg-base-content/[0.08] hover:text-base-content"
               aria-label={showHeaderPill ? `${label}, ${attentionSum} pending items` : undefined}
             >
               <span class="truncate">{label}</span>

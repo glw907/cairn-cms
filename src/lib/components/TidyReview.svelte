@@ -295,10 +295,10 @@ must never make, so no such count exists.
         <div id="cairn-tidy-title" class="text-lg font-bold leading-tight">Review tidy</div>
         <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
           <span><b class="text-base-content">{hunks.length} {hunks.length === 1 ? 'change' : 'changes'}</b> to <b class="text-base-content">{title}</b></span>
-          <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 text-[0.6875rem] font-semibold">{model}</span>
+          <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 type-label font-semibold">{model}</span>
         </div>
       </div>
-      <span class="hidden flex-none items-center gap-1.5 text-[0.6875rem] text-muted sm:inline-flex" aria-hidden="true">
+      <span class="hidden flex-none items-center gap-1.5 type-label text-muted sm:inline-flex" aria-hidden="true">
         <kbd class="kbd kbd-xs">j</kbd><kbd class="kbd kbd-xs">k</kbd> move
         <kbd class="kbd kbd-xs">a</kbd><kbd class="kbd kbd-xs">r</kbd> accept / reject
       </span>
@@ -355,20 +355,20 @@ must never make, so no such count exists.
               : 'bg-[color-mix(in_oklab,var(--color-base-content)_1.5%,transparent)]'}"
           >
             <span
-              class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[0.6875rem] font-semibold {isJudgment
+              class="inline-flex items-center gap-1 rounded-full px-2 py-0.5 type-label font-semibold {isJudgment
                 ? 'bg-[color-mix(in_oklab,var(--cairn-warning-ink)_11%,transparent)] text-[var(--cairn-warning-ink)]'
                 : 'bg-[color-mix(in_oklab,var(--color-base-content)_6%,transparent)] text-muted'}"
             >
               {h.label}
             </span>
             {#if isJudgment}
-              <span class="inline-flex items-center gap-1 text-[0.625rem] font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">
+              <span class="inline-flex items-center gap-1 type-chip font-semibold uppercase tracking-wide text-[var(--cairn-warning-ink)]">
                 <EyeIcon class="size-3" aria-hidden="true" />Review this
               </span>
             {/if}
             <button
               type="button"
-              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono text-[0.6875rem] text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
+              class="inline-flex min-h-6 items-center gap-1 rounded px-1.5 py-1.5 font-mono type-label text-muted underline decoration-[color-mix(in_oklab,currentColor_35%,transparent)] underline-offset-2 hover:bg-primary/[0.08] hover:text-primary"
               title="Show this line in the editor"
               onclick={() => showInText(h)}
             >
@@ -378,7 +378,7 @@ must never make, so no such count exists.
             <span class="inline-flex flex-none items-center overflow-hidden rounded-md border border-[var(--cairn-card-border)]" role="group" aria-label={actsLabel(h)}>
               <button
                 type="button"
-                class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 text-[0.6875rem] font-medium {actClass(
+                class="inline-flex min-h-6 items-center gap-1 px-2.5 py-1.5 type-label font-medium {actClass(
                   decided === 'kept',
                 )}"
                 aria-pressed={decided === 'kept'}
@@ -388,7 +388,7 @@ must never make, so no such count exists.
               </button>
               <button
                 type="button"
-                class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 text-[0.6875rem] font-medium {actClass(
+                class="inline-flex min-h-6 items-center gap-1 border-l border-[var(--cairn-card-border)] px-2.5 py-1.5 type-label font-medium {actClass(
                   decided === 'rejected',
                 )}"
                 aria-pressed={decided === 'rejected'}
@@ -400,7 +400,7 @@ must never make, so no such count exists.
           </div>
 
           <!-- the unified diff body: context, deletion, insertion, optional because-line -->
-          <div class="font-mono text-[0.8125rem] leading-relaxed">
+          <div class="font-mono type-meta leading-relaxed">
             {#if h.contextBefore}
               <div class="flex items-baseline">
                 <span class="w-6 flex-none select-none text-center text-muted opacity-60" aria-hidden="true">&nbsp;</span>
@@ -448,7 +448,7 @@ must never make, so no such count exists.
 
     <!-- the review footer: the commit note + Cancel + the one-transaction Apply -->
     <div class="flex items-center gap-2.5 border-t border-[var(--cairn-card-border)] px-4 py-3.5">
-      <span class="flex flex-1 items-center gap-1.5 text-[0.6875rem] leading-snug text-muted">
+      <span class="flex flex-1 items-center gap-1.5 type-label leading-snug text-muted">
         <CheckIcon class="size-3 flex-none text-muted" aria-hidden="true" />
         Applies to the editor only. Your next Save commits it like any edit, and Undo takes the whole tidy back.
       </span>

@@ -54,7 +54,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 <!-- data-theme on a bare wrapper: the scoped sheet styles descendants, so the layout classes go one
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
-  <div class="flex min-h-screen flex-col items-center justify-center gap-6 bg-base-200 p-4 text-base-content">
+  <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
     {#if (form?.status === 'sent' || form?.sent) && !dismissed}
       <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
@@ -73,7 +73,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         </p>
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
           <InfoIcon class="mt-px h-4 w-4 shrink-0 text-muted" />
-          <p class="text-[0.8125rem] leading-relaxed text-subtle">
+          <p class="type-meta leading-relaxed text-subtle">
             No link after a minute or two? Check your spam folder first. If it still hasn’t arrived, the
             address may not match the one your site owner added.
           </p>
@@ -106,7 +106,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={data.csrf} />
-        <label class="flex flex-col gap-1">
+        <label class="flex flex-col gap-label">
           <span class="text-sm font-medium">Email</span>
           <input
             type="email"

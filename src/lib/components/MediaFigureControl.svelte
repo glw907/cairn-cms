@@ -89,7 +89,7 @@ own name.
   }
 </script>
 
-<form class="flex flex-col gap-4" onsubmit={submit}>
+<form class="flex flex-col gap-group" onsubmit={submit}>
   <div class="flex flex-col gap-1">
     <label for="cairn-figure-caption" class="text-sm font-medium">Caption</label>
     <input

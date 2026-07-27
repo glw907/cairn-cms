@@ -37,7 +37,9 @@
    definition test all read the single inventory at src/lib/design/grammar-tokens.ts; keep the two
    in sync by name. This is a plain :root rule, so the build's scoper is what confines it to the
    admin theme roots at compile time, and check:custom-surface (which pins only rules anchored on
-   [data-theme=) does not see it; grammar-tokens.test.ts is the guard that does. */
+   [data-theme=) does not see it; grammar-tokens.test.ts is the guard that does. A component
+   <style> block references var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not
+   markup; markup uses only the named role utilities in scripts/admin-css.input.css. */
 :root {
   /* The six-role type scale: title, the T4 chrome scale (nav items, table cells, card-row
      titles), body, meta, label (the eyebrow recipe), and chip. */

@@ -48,3 +48,49 @@
 @utility tracking-small-medium {
   letter-spacing: 0.005em;
 }
+
+/* The grammar-token role utilities (design infrastructure Pass 1): the authoring interface for the
+   --cairn-type-* and --cairn-gap-* tokens in cairn-admin.css. A component writes a named role
+   (type-body, gap-control), never a pixel value or a bracketed var() wrapper. Each type-* utility
+   sets font-size ONLY: a survey of the 66 markup sites at the 11px label size found only 24
+   uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label would match
+   about 14 sites and strand the other 52. Size-only matches all 66; the eyebrow's weight, case, and
+   tracking stay a documented component recipe (docs/internal/admin-design-system.md), and color
+   stays palette, not grammar, so it stays a separate text-muted/text-subtle class on the element. A
+   component <style> block references var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS
+   is not markup; markup uses only these named utilities. */
+@utility type-title {
+  font-size: var(--cairn-type-title);
+}
+@utility type-subtitle {
+  font-size: var(--cairn-type-subtitle);
+}
+@utility type-body {
+  font-size: var(--cairn-type-body);
+}
+@utility type-meta {
+  font-size: var(--cairn-type-meta);
+}
+@utility type-label {
+  font-size: var(--cairn-type-label);
+}
+@utility type-chip {
+  font-size: var(--cairn-type-chip);
+}
+
+/* The four spacing-role utilities, for flex/grid containers. Checked against Tailwind's own numeric
+   gap-* scale (gap-control etc. do not match any Tailwind spacing key, so no collision) before
+   naming these; see grammar-tokens.test.ts for the compiled-sheet proof that .gap-2 still resolves
+   to Tailwind's own rule. */
+@utility gap-control {
+  gap: var(--cairn-gap-control);
+}
+@utility gap-label {
+  gap: var(--cairn-gap-label);
+}
+@utility gap-group {
+  gap: var(--cairn-gap-group);
+}
+@utility gap-section {
+  gap: var(--cairn-gap-section);
+}

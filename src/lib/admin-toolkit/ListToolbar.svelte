@@ -507,7 +507,7 @@ reflows its neighboring characters.
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.5rem;
+    gap: var(--cairn-gap-control, 0.5rem);
     row-gap: 0.625rem;
   }
 
@@ -526,7 +526,7 @@ reflows its neighboring characters.
     appearance: none;
     height: 30px;
     min-height: 30px;
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta, 0.8125rem);
   }
 
   /* Measured root cause (the coherence-round finding): daisyUI's own `.select` sets
@@ -548,7 +548,7 @@ reflows its neighboring characters.
     max-width: 100%;
     height: 30px;
     min-height: 30px;
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta, 0.8125rem);
     --input-color: var(--cairn-card-border);
   }
 
@@ -595,7 +595,7 @@ reflows its neighboring characters.
     align-items: center;
     gap: 0.3125rem;
     padding: 0 0.625rem;
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta, 0.8125rem);
     line-height: 1;
     white-space: nowrap;
     background: transparent;
@@ -633,7 +633,7 @@ reflows its neighboring characters.
 
   .toolkit-toolbar-facet-caret {
     opacity: 0.55;
-    font-size: 0.625rem;
+    font-size: var(--cairn-type-chip, 0.625rem);
     transform: translateY(1px);
     flex-shrink: 0;
   }
@@ -653,7 +653,7 @@ reflows its neighboring characters.
     background: transparent;
     cursor: pointer;
     color: inherit;
-    font-size: 0.9375rem;
+    font-size: var(--cairn-type-subtitle, 0.9375rem);
     line-height: 1;
     padding: 0;
     /* Rounds the shared border's own right corner, now that `.toolkit-toolbar-facet` no longer
@@ -698,20 +698,20 @@ reflows its neighboring characters.
   .toolkit-toolbar-overflow {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: var(--cairn-gap-control, 0.5rem);
     padding: 0.75rem;
   }
 
   .toolkit-toolbar-overflow-field {
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
-    font-size: 0.8125rem;
+    gap: var(--cairn-gap-label, 0.25rem);
+    font-size: var(--cairn-type-meta, 0.8125rem);
   }
 
   .toolkit-toolbar-count {
     margin: 0;
-    font-size: 0.8125rem;
+    font-size: var(--cairn-type-meta, 0.8125rem);
     font-variant-numeric: tabular-nums;
     color: var(--color-muted);
   }

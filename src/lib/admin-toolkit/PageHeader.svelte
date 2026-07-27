@@ -54,7 +54,7 @@ constraint `StatusChip.svelte`'s own header comment documents.
 <header class="mb-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
   <div class="flex flex-col gap-0.5">
     {#if eyebrow}
-      <span class="text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
+      <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
     <h1 class="page-h1 text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
     {#if meta}<p class="text-sm text-muted">{meta}</p>{/if}

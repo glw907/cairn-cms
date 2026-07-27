@@ -5,6 +5,10 @@ cairn-cms). Supersedes the seed at
 `~/Projects/aksailingclub-org/docs/2026-07-22-cairn-design-infrastructure-brainstorm-seed.md`
 for everything except the ASC evidence corpus it points to, which remains this initiative's
 data. Implementation runs as three just-in-time pass plans under `docs/superpowers/plans/`.
+Revised 2026-07-27 after a clean-context adversarial Fable review with prior-art research;
+the full report with sources is
+[`docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`](../../internal/2026-07-27-design-infrastructure-adversarial-review.md),
+and the revision marks are noted inline where they changed a decision.
 
 ## 1. The question and the bet
 
@@ -30,8 +34,13 @@ assumed: tokens and component contracts (layers 1–2) > canonical exemplars > w
 may matter as much as the capture itself.
 
 **The thesis test:** the ASC Assets pass, built against the finished structure, lands
-resolved on its first coherence read. Members took two reads (FAIL with 8 tells, then PASS);
-Classes took three (FAIL 4, FAIL 2, PASS). The target is one.
+resolved on its first external coherence read, with the resolving happening INSIDE the build
+(the builder converges against the packaged gates before declaring done; section 7). Members
+took two external reads (FAIL with 8 tells, then PASS); Classes took three (FAIL 4, FAIL 2,
+PASS). The target is one, measured by consensus reads with first-read tell count as
+co-primary (section 9). No one has demonstrated first-shot compositional harmony from
+packaged capture alone; a developer's agent converging unattended inside one session is the
+form of the win the thesis actually needs.
 
 ## 2. Scope and audience
 
@@ -60,6 +69,11 @@ Six layers, each carrying the design language in a different form:
 5. **The packaged skill** — in-context delivery at build time (section 7).
 6. **`cairn-audit`** — the mechanical gate (section 6).
 
+One framing rule binds every layer: **audit-green means vocabulary-clean, never design-done**
+(Polaris spent years with fully token-compliant screens merchants rated bland; compliance and
+register are separable). The skill and the trial never present a green audit as finished
+design; composition and register stay with the exemplars, the ladder, and the grader.
+
 The layers divide the novel-component problem three ways. The audit checks that a novel
 component uses cairn's vocabulary. The derivation ladder and the coherence-read grader
 judge whether it says something coherent in that vocabulary. The graduation ratchet turns
@@ -80,18 +94,36 @@ Type roles AND relational spacing roles ship as engine tokens:
   never pixel values.
 - **Migration is pixel-identical.** The toolkit and admin screens move onto the tokens with
   the existing visual baselines as the no-drift proof.
+- **The authoring interface is named role utilities**, extending the repo's existing
+  `text-muted`/`text-subtle` idiom (frozen interface, standing build test), never bracketed
+  `var()` wrappers in markup. The role-utility interface is also what makes the audit's
+  static resolution tractable in a utility-class-driven codebase.
 - **The palette/grammar boundary is written and audit-enforced.** A site re-tunes palette
   tokens (`--color-*`); it never redeclares a grammar token. The `grammar-boundary` audit
-  rule (section 6.2) is the enforcement half.
+  rule (section 6.2) is the enforcement half. Palette re-tuning is a constrained operation:
+  its acceptance test is a clean consumer-side rendered audit in both themes, because
+  cairn's craft couples to the palette (warm shadows, near-floor contrast pairs) and a
+  divergent brand must re-prove those relationships, not inherit Warm Stone's numbers.
 
 ## 5. Primitives, the standard, and the extension grammar (design section 2, approved)
 
-**Primitives gap-closure, nothing speculative:** the destination-picker pattern and
-PageHeader adoption. (EmptyState already shipped in `admin-toolkit` at 0.89.0.)
+**Primitives gap-closure, nothing speculative** — extended by the adversarial review's C4,
+which surfaced filed gaps the original list missed: the destination-picker pattern,
+PageHeader adoption, a card-shell primitive (the shell string is copied verbatim at four
+sites; Classes harvest finding 9), the in-card empty-notice recipe (reinvented three times;
+finding 10), and a form-row/label register contract (the ClassForm label-wrap defect is
+on-record debt, and ASC's two-level label ruling in `decisions.md` is the raw material).
+(EmptyState already shipped in `admin-toolkit` at 0.89.0.)
 
-**The standard doc** is written for an agent's context window, with the annotated Members
-exemplar as its load-bearing half: anatomy, the annotated screen, per-component contracts,
-and the register rules (one filled action per surface, chip passivity, facet quietness).
+**The standard doc** is written for an agent's context window with a hard prose budget: a
+thin core in the low thousands of tokens, since practitioner evidence says models weight
+examples over instructions and long rules files fail (Builder.io's postmortem). Every rule
+that can be mechanical moves to the audit or the manifest; prose is connective tissue. The
+load-bearing half is the exemplars, now TWO genres per C4 (the trial's screens are grid-,
+detail-, and form-heavy, and one list exemplar cannot carry them): the annotated Members
+list screen and an annotated detail/slide-over screen, plus the form-anatomy contract above.
+The doc carries anatomy, the annotated screens, per-component contracts, and the register
+rules (one filled action per surface, chip passivity, facet quietness).
 
 **The craft chapter** takes the hardest part of the capture question: whether the
 invisible feel (spacing rhythm, font treatment, color tinting, indentation, optical
@@ -125,10 +157,13 @@ skill, and the graduation feedback loop so consumer inventions flow back to the 
   `check:admin-css-classes`, `check:interactive-contrast`, `check:touch-targets`) graduate
   INTO the packaged engine; the repo scripts become thin wrappers. cairn-cms is the audit's
   first consumer, so every engine pass exercises the code a site runs.
-- **Static substrate is `svelte/compiler`, not regexes.** An adversarial review proved the
-  regex substrate the repo gates use today fails open on three common Svelte 5 idioms
-  (single-quoted attributes, array classes, object classes) and false-positives on prose
-  ("the white background"). Svelte is already a peer dependency, so the parser is guaranteed present in
+- **Static substrate is `svelte/compiler` plus built-sheet resolution, not regexes.** An
+  adversarial review proved the regex substrate the repo gates use today fails open on three
+  common Svelte 5 idioms (single-quoted attributes, array classes, object classes) and
+  false-positives on prose ("the white background"). And because the admin is
+  utility-class-driven, font sizes and hover states live in class tokens, not style blocks:
+  `type-scale`, `gap-scale`, and `focus-parity` evaluate class tokens through the compiled
+  `cairn-admin.css`, not the AST alone. Svelte is already a peer dependency, so the parser is guaranteed present in
   any consumer at zero dependency cost. **The graduation of the repo gates is gated on this
   swap**; the regexes never ship to consumers.
 - **Suppressions are co-located comments** for static rules:
@@ -136,6 +171,10 @@ skill, and the graduation feedback loop so consumer inventions flow back to the 
   replaces the file+token JSON allowlists, whose entries orphan silently on rename, exempt
   whole files rather than lines, and hide the reason in a file nobody opens. Rendered mode
   keeps a page+selector+reason JSON, since a live-page finding has no source line.
+  **Suppressions are counted, loudly:** the report and exit summary total them, and the
+  skill forbids an unattended builder adding one without flagging it in its own report —
+  agents under completion pressure silence gates, and a build that passes by suppression is
+  a disguised failure (the trial counts suppressions as a metric, section 9).
 - **Rendered mode never starts a server** (clear error if BASE_URL is not answering) and
   dynamically imports Playwright from the consumer's node_modules, exiting with a one-line
   install instruction if absent. cairn takes no browser dependency.
@@ -148,14 +187,23 @@ skill, and the graduation feedback loop so consumer inventions flow back to the 
   agent does from a report it already reads. Stylelint is rejected outright: the admin is
   utility-class-driven (8 scoped style blocks against ~1,900 class attributes).
 - **Config.** One consumer-side file: the rendered-mode page list (defaulting to the core
-  admin routes) and the rendered-mode allowlist.
-- **Tiers.** `error` exits nonzero; `advisory` reports and never gates.
+  admin routes), the rendered-mode allowlist, and the static scan scope (defaulting to the
+  site's admin routes plus their imported components).
+- **Tiers.** `error` exits nonzero; `advisory` reports and never gates. Compositional
+  rendered rules START advisory and promote to error by measured evidence (no design system
+  anywhere has shipped mechanical composition rules; the false-positive literature does not
+  exist, so cairn's own screens and ASC's are the calibration corpus during Pass 2). This is
+  the graduation ratchet applied to the audit's own rules.
+- **Both themes, always.** Every rendered rule runs light and dark; color-adjacent rules
+  (`chip-ground-collision`, `interactive-contrast`, `focus-renders`) can pass one theme and
+  fail the other.
 
-### 6.2 Static rules, v1 (all error tier)
+### 6.2 Static rules, v1 (all error tier; nine rules)
 
 | ID | Checks | Evidence |
 | --- | --- | --- |
 | `no-uncompiled-class` | Every class token in admin markup exists in the built `cairn-admin.css` | Three real failures under green gates (invisible Overdue chip; silent `ml-1`/`divide-y`; unstyled stats strip) |
+| `stock-default-hazards` | Stock DaisyUI patterns cairn's recipes deliberately replace: `badge-ghost`, `.dropdown`, native `disabled` on guarded buttons, flat `base-300` card borders | The regress-to-stock failure mode (stock daisy is in-distribution for an agent; cairn's deviations are not); each hazard is a refuted alternative on record in `admin-design-system.md` |
 | `type-scale` | Every font-size resolves to a `--cairn-type-*` token | "Seven unrelated type sizes" on Members |
 | `gap-scale` | Margin/padding/gap literals resolve to gap-role or spacing tokens | ~40 off-scale literals in the ASC mechanical audit |
 | `token-colors` | No raw hex/rgb/named colors; no pure achromatics; neutrals derive from the palette's neutral role | Five literal-white declarations bypassing tokens; the craft chapter's neutral-derivation rule |
@@ -166,22 +214,31 @@ skill, and the graduation feedback loop so consumer inventions flow back to the 
 
 ### 6.3 Rendered rules, v1
 
-Error tier:
+Error tier (value rules with settled definitions):
 
 | ID | Checks | Evidence |
 | --- | --- | --- |
-| `one-filled-action` | At most one filled control per surface | Ratified register rule ("the portal's first filled button") |
+| `one-filled-action` | At most one accent-filled control per surface. "Surface" = the topmost open layer (a modal, slide-over, or expanded panel wins over the page beneath), landmarks partitioning within a layer; "filled" = accent fill, so the sanctioned ink fills (ink-opener buttons, PageHeader's ink New) are exempt by ruling | Ratified register rule ("the portal's first filled button") |
 | `focus-renders` | Keyboard focus produces a real computed outline | The rendered half of focus-visible coverage |
 | `interactive-contrast` | Interactive text vs its own composited background ≥ 1.5 | Graduates the existing probe (the invisible-CTA lesson) |
 | `touch-targets` | 44px at 390, aware of `::before` inset hit-area expansion | Graduates the existing probe; the `.nav-caret` finding |
-| `weight-budget` | At most two distinct font-weights per surface | The craft chapter's numeric rule; a "surface" is a rendered route, so this is rendered-mode work |
-| `viewport-overflow` | Nothing renders wider than the viewport at 390 | ExpandableRow overflow, rediscovered independently by two consumers |
+| `viewport-overflow` | Nothing renders wider than the viewport at 390 AND 320 (the family's composition floor) | ExpandableRow overflow, rediscovered independently by two consumers |
 | `chip-ground-collision` | Chip/badge background distinguishable from its row background | badge-ghost melting into the zebra stripe |
-| `relational-spacing` | Gap monotonicity (section > group > label-to-control); labels at label-gap from their control; equal gaps for same-level siblings | The invisible-feel "spacing rhythm" item, made measurable |
-| `screen-anatomy` | One PageHeader with one h1; primary action in the header slot; content in the card region | The mechanical floor under "buried primary action" |
 
-Advisory tier:
+Advisory tier (the compositional rules promote by evidence per 6.1; the last two are
+advisory by principle):
 
+- `relational-spacing` — gap monotonicity (section > group > label-to-control), labels at
+  label-gap distance from their control, equal gaps for same-level siblings. The
+  invisible-feel "spacing rhythm" item made measurable; advisory because inferring hierarchy
+  from an arbitrary live DOM has no shipped precedent anywhere.
+- `screen-anatomy` — one PageHeader with one h1, primary action in the header slot, content
+  in the card region; desk routes exempt per the office/desk context model. The mechanical
+  floor under "buried primary action".
+- `weight-budget` — at most two distinct font-weights per content region, NOT per route:
+  cairn's own flagship screens legitimately run 400/500/600/700 across body, nav, eyebrows,
+  and heading chrome, which refutes the route-level form the brainstorm ratified. The craft
+  chapter's numeric rule, scoped to where it is true.
 - `border-contrast` — WCAG 1.4.11 boundary contrast (3:1). The ratified `--cairn-card-border`
   hairline currently measures 1.11:1 light / 1.43:1 dark, and that design question is open
   on Geoff's queue, so the rule reports without gating until ruled.
@@ -191,17 +248,36 @@ Advisory tier:
   deliberately; the grader judges whether the step was earned, and the advisory finding
   ensures it was seen.
 
+Rendered captures include an interaction state (an open menu, a focus-visible pass) so the
+rules and the grader see behavior, not just rest states. Interaction and motion judgment
+beyond `motion-band`/`reduced-motion` routes to the grader prompt explicitly.
+
 ### 6.4 The norms manifest
 
-A build-time script renders the toolkit and admin screens and extracts the observed norms
-as data: control heights by role, padding-to-font-size ratios, the border treatment
-vocabulary, corner radii, icon and chip metrics, and the computed styles of each semantic
-role. Shipped in the package as JSON. It serves both directions: the skill feeds it to the
-builder agent at build time (measured norms as data, never inference from screenshots), and
-the audit checks novel components against its bands (`norms-bands`, advisory). Because it
-is generated from the toolkit rather than authored, it tracks the toolkit as long as the
-generator runs; the generator is wired into the package build so a cut cannot ship a stale
-manifest.
+A generator renders the toolkit and admin screens and extracts the observed norms as data:
+control heights by role, padding-to-font-size ratios, the border treatment vocabulary,
+corner radii, icon and chip metrics, and the computed styles of each semantic role. Shipped
+in the package as JSON, queryable through the CLI (`cairn-audit norms <selector-or-role>`)
+rather than inlined into a builder's context — every shipped AI-facing design system works
+by structured lookup, not bulk context. It serves both directions: the skill points the
+builder agent at it (measured norms as data, never inference from screenshots), and the
+audit checks novel components against its bands (`norms-bands`, advisory).
+
+Three disciplines keep it honest (there is no prior art for gating on derived bands, so
+these are first-principles guards):
+
+- **Provenance per entry**: ratified-decision reference vs observed-only. Entries matching
+  OPEN design questions (the `--cairn-card-border` hairline is on Geoff's queue today) are
+  excluded or flagged, so the manifest never teaches an unsettled number as ground truth.
+- **Minimum observation count**: with roughly ten toolkit components, a band below the
+  threshold is flagged as a single observation, not presented as a distribution.
+- **Palette-dependent norms store as relationships** (role, mix formula, required floor),
+  never resolved Warm Stone values, so a consumer's re-tuned palette invalidates nothing
+  silently; the consumer-side rendered audit in both themes is the re-proof (section 4).
+
+The generator runs at publish/CI with a freshness check (`check:*` scripts invoke
+`npm run package` constantly, and a Playwright render inside that hot path adds latency and
+flake); a cut still cannot ship a stale manifest.
 
 ### 6.5 Deferred rule candidates
 
@@ -221,10 +297,23 @@ calibration.
 ## 7. The packaged skill
 
 A SKILL.md under the package's `skills/`, installed and freshness-checked by `cairn-doctor`.
-It loads at build time: the standard doc, the annotated exemplar, the craft chapter, the
-derivation ladder, the norms manifest, and the grader prompt, plus the instruction to run
-`cairn-audit` (static) before declaring a screen done and the coherence-read gate for any
-derivation.
+Delivery is tiered, not bulk (instruction-following decays well below the size of a full
+standard, and every shipped AI-facing design system delivers by lookup): the always-loaded
+core is the thin standard plus the derivation ladder pointer, within a hard token budget in
+the low thousands; the exemplars, craft chapter, and grader prompt load on demand; the norms
+manifest is queried through `cairn-audit norms`, never inlined. The rules a builder must
+hold in working memory are only the few the audit cannot check.
+
+**The done-gate lives in the build loop.** A builder declares a screen done only after, in
+order: (a) the static audit passes; (b) the rendered audit passes against the running dev
+server, both themes; (c) for any derivation or novel composition, the builder runs the
+shipped grader prompt against its own multi-state captures and fixes what it finds. The
+external fresh-context coherence read remains the independent verification, never the first
+time the gates fire — the rules with the strongest evidence lineage are rendered-mode, and
+running them only at review would make their catches the refinement round the initiative
+exists to eliminate. A green audit is reported as vocabulary-clean, never as design-done
+(section 3). Builder-added suppressions must be flagged in the builder's own report
+(section 6.1).
 
 ## 8. Narrative deliverables
 
@@ -238,27 +327,52 @@ deliverable.
 **Setup.** The ASC Assets pass resumes only after the initiative's release is on the
 registry. It runs under the same process that built Members and Classes (fresh builder
 sessions, plan-driven, uncoordinated), with one change: builders carry the packaged capture
-(the skill in-context, the audit mid-build). **Control:** the Assets plan must not smuggle
-in ad-hoc design coaching beyond what the package ships; if the plan hand-holds the design,
-the trial measures the plan.
+(the skill loaded, the full done-gate of section 7 in the loop). **Control:** the Assets
+plan must not smuggle in ad-hoc design coaching beyond what the package ships. The
+skill-load instruction itself is sanctioned process, not coaching — the dispatch protocol
+("load the cairn admin-screen skill") ships with the process, and any design content beyond
+that pointer is a control violation. The trial log records what each builder actually had
+in context, and the record notes the baselines were never zero-capture either (the
+Members/Classes builders had ASC's decisions.md and repo docs available): the trial
+measures packaging plus enforcement, and says so.
+
+**The pre-registered coverage contract, written before the trial starts.** A short document
+enumerating what the capture claims to carry: the type and gap roles, the register rules,
+the anatomy of the genres the exemplars cover (list, detail/slide-over, forms per section
+5), and the craft chapter's named phenomena. This is what makes the verdict falsifiable —
+without it, every tell is classifiable as a capture gap after the fact and the trial cannot
+indict anything.
 
 **Measurement.** The grader recipe holds constant with the Members refinement rounds
-(fresh-context Opus, multi-state captures, 390 and 1440, light and dark) so the numbers
-compare. Three metrics:
+(fresh-context multi-state captures, 390 and 1440 plus an interaction state, light and
+dark), with two hardenings against grader noise (LLM judges flip borderline absolute
+verdicts run-to-run, and coherence sits at the low end of even human inter-rater
+agreement): the shipped grader prompt is **calibrated once against the archived labeled
+captures** (Members read 1 FAIL-8, the Classes reads, the refinement reads — known verdicts,
+free calibration set), and every trial read runs **k=3 with a consensus verdict and the tell
+union reported**, on a pinned prompt and pinned model version recorded in the ledger. Four
+metrics:
 
-1. **Reads-to-PASS** (primary). Baselines: Members 2, Classes 3. Target: 1.
-2. **First-read tell count.** Baselines: 8 (Members), 4 (Classes). A graded result even on
-   a miss.
+1. **Reads-to-PASS** (co-primary). Baselines: Members 2, Classes 3. Target: 1.
+2. **First-read tell count** (co-primary — it has the dynamic range a binary read lacks).
+   Baselines: 8 (Members), 4 (Classes). A first read with one cosmetic tell is a
+   substantial win, and the metric says so where reads-to-PASS cannot.
 3. **Mid-build audit catches**: findings the gates fired on during the build that never
    reached the coherence read — the evidence that capture moved failures upstream.
+4. **Suppressions added**: a build that passes by suppressing findings is a disguised
+   covered-but-missed failure and counts as one.
 
-**Verdict logic.** On a first-read FAIL, every tell is classified before any conclusion:
+**Verdict logic.** On a first-read FAIL, every tell is classified against the
+pre-registered coverage contract, not against the rule inventory:
 
-- **(a) Capture-gap tells** — no token, rule, exemplar, or manifest band covered the miss.
+- **(a) Capture-gap tells** — the tell falls OUTSIDE the contract's claimed perimeter.
   These indict the implementation's completeness; each feeds the ratchet as a new rule or
   token candidate.
-- **(b) Covered-but-missed tells** — the capture existed, the agent had it in-context, and
-  the screen still shipped wrong. Only these count against the thesis itself.
+- **(b) Covered-but-missed tells** — the tell falls INSIDE a claimed area, even when no
+  specific rule named the exact miss. The capture claimed this territory and the screen
+  still shipped wrong; only these count against the thesis itself. (Classifying against
+  the contract rather than the rule list closes the loophole where any tell can be excused
+  post hoc by naming a rule that did not exist.)
 
 A refinement round forced by incomplete capture is ordinary iteration. A round forced
 despite complete capture is the result that counts against the thesis, recorded as its
@@ -274,14 +388,21 @@ Three passes, each a worktree off `main`, each plan written just-in-time:
 
 1. **Pass 1, grammar.** The token layers; pixel-identical toolkit and admin migration with
    visual baselines as the no-drift proof; the palette/grammar boundary written as contract.
-2. **Pass 2, enforcement.** The `cairn-audit` bin (svelte/compiler substrate, static and
-   rendered rules, tiers, suppression idiom, graduation of the four repo gates; the new
-   bin joins the `package` script's chmod list); the norms-manifest generator, wired into
-   the package build; primitives gap-closure so the manifest measures a complete toolkit.
-3. **Pass 3, capture.** The standard doc, exemplar, craft chapter, extension grammar, the
-   packaged skill with the doctor freshness check (`skills/` joins the package `files`
-   array, which today omits it), the rationale doc, and the README and front-page
-   positioning.
+2. **Pass 2, enforcement.** The `cairn-audit` bin (svelte/compiler-plus-built-sheet
+   substrate, the nine static and eleven rendered rules with their tiers, the suppression
+   idiom with counting, graduation of the four repo gates; the new bin joins the `package`
+   script's chmod list); the norms-manifest generator with provenance and the CLI query,
+   running at publish/CI with a freshness check; primitives gap-closure per section 5's
+   extended list (destination-picker, PageHeader adoption, card-shell, empty-notice recipe,
+   form-row register) so the manifest measures a complete toolkit. The compositional
+   rendered rules calibrate their false-positive rate against cairn's and ASC's existing
+   screens during this pass.
+3. **Pass 3, capture.** The standard doc within its prose budget, the two annotated
+   exemplars (Members list, detail/slide-over) and the form-anatomy contract, the craft
+   chapter, the extension grammar, the packaged skill with the tiered loading and the
+   done-gate (`skills/` joins the package `files` array, which today omits it), the grader
+   prompt calibrated against the archived labeled captures, the pre-registered coverage
+   contract for the trial, the rationale doc, and the README and front-page positioning.
 
 **One release at the initiative boundary.** Passes accumulate under `## Unreleased`; no
 per-pass publishes. The cut has a hard consumer trigger: ASC installs from the registry, so
@@ -299,14 +420,24 @@ returns here as the initiative's post-mortem.
 
 ## 12. Acceptance criteria
 
-1. Every static and rendered rule in sections 6.2–6.3 implemented on the svelte/compiler
-   substrate with fixture tests; the four repo gates run as thin wrappers over the packaged
-   engine with no behavior drift on cairn's own tree.
-2. Toolkit and admin screens migrate to grammar tokens with zero visual-baseline drift.
-3. The norms manifest generates from the toolkit, ships in the package, and the skill loads
-   it.
-4. `cairn-doctor` installs and freshness-checks the skill in a consumer repo.
-5. The craft chapter passes its acceptance test: a fresh agent, a plain daisy component,
-   and the chapter produce a measurable move toward the cairn feel without art direction.
-6. The Assets trial runs with the section 9 measurement design and its verdict is recorded,
-   classified (a) vs (b), in the initiative post-mortem.
+1. Every static and rendered rule in sections 6.2–6.3 implemented on the
+   svelte/compiler-plus-built-sheet substrate with fixture tests; the four repo gates run
+   as thin wrappers over the packaged engine with no behavior drift on cairn's own tree;
+   the compositional rules' false-positive rates are measured on cairn's and ASC's screens
+   and recorded.
+2. Toolkit and admin screens migrate to grammar tokens (via the named role-utility
+   interface) with zero visual-baseline drift.
+3. The norms manifest generates at publish/CI with per-entry provenance, ships in the
+   package, and answers `cairn-audit norms` queries; no open design question ships as a
+   norm.
+4. `cairn-doctor` installs and freshness-checks the skill in a consumer repo, and the
+   skill's always-loaded core fits its declared token budget.
+5. The craft chapter passes its acceptance test under a defined protocol: a fixed
+   plain-daisy fixture, before/after renders, the pinned calibrated grader prompt, k=3
+   runs, and a pre-stated pass condition.
+6. The grader prompt is calibrated against the archived labeled captures (reproduces the
+   known Members/Classes verdicts) before the trial, and the coverage contract is written
+   and committed before the trial starts.
+7. The Assets trial runs with the section 9 measurement design (k=3 consensus reads, four
+   metrics) and its verdict is recorded, classified (a) vs (b) against the coverage
+   contract, in the initiative post-mortem.

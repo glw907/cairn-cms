@@ -19,6 +19,29 @@ this file did.
 Type: title 24px, subtitle 15px, body 14px, meta 13px, label 11px, chip 10px.
 Spacing: label 4px, control 8px, group 16px, section 24px.
 
+## Ratified rulings (2026-07-27, Pass 2 brainstorm)
+
+Recorded canonically in the design spec's Amendments section
+(`docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`, section 13).
+Each type entry below now has a destination; the entries retire from this file when Pass 2's
+normalization migration lands and the baselines regenerate.
+
+- **Section 1 (12px):** no seventh step. The 120 sites resolve onto meta or label by
+  relationship, per-site.
+- **Section 2 (named steps):** the type roles gain a ruled leading (body 20px, title 32px,
+  small roles measured in-pass) behind a `--tw-leading` override, so `text-sm` and
+  `text-2xl` migrate pixel-identically. 16px and 18px resolve onto the new heading role
+  below; 20px resolves or joins the exception list; 30px is a ratified exception.
+- **Section 3 (one-offs):** the wordmark 22px sites and the EditPage 30px document title are
+  ratified named exceptions. The 11.2px and 9.6px slips resolve onto label and chip. The
+  17px and 18px one-offs resolve onto the heading role or subtitle at migration judgment.
+- **New heading role:** the scale admits a seventh role between subtitle and title for
+  dialog/panel headings, unifying the 16px-semibold and 18px-display-bold families; size and
+  recipe settled in-pass from side-by-side rendered candidates.
+- **Section 4 (spacing) is not blocked and not ruled:** the audit's `gap-scale` rule targets
+  off-scale literals, and named Tailwind steps resolve to the spacing scale, so these
+  entries stay open vocabulary questions for Pass 3.
+
 ## 1. The 12px step: in live use, absent from the scale
 
 The largest single finding. 12px is the admin's most-used size with no role, spread across the whole

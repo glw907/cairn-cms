@@ -15,7 +15,24 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-27: plan design-infrastructure Pass 2, enforcement)
+## Immediate next action (2026-07-27: EXECUTE design-infrastructure Pass 2, enforcement)
+
+**The Pass 2 plan is written and committed:**
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. The two
+owed design decisions plus a third the brainstorm's measurement surfaced are RATIFIED and
+recorded in the spec's new section 13 (Amendments) and the deviations ledger's rulings
+section: (1) type roles carry a ruled leading behind a `--tw-leading` override; (2) no 12px
+step, the 120 sites resolve onto meta/label per-site; (3) a seventh heading role is
+admitted between subtitle and title, recipe picked by Geoff from the Task 2 probe, with the
+wordmark and EditPage document title as ratified named exceptions. Pixel-freeze ends
+deliberately: acceptance criterion 2 is amended (one regen at Task 6, eyes-on read).
+
+**Execute in a fresh Opus 5 session** (Fable planning sitting ended at plan approval).
+Resume prompt: "Execute the design-infrastructure Pass 2 plan at
+docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md, task by
+task per cairn-pass" from `~/Projects/cairn-cms`. Task 0 (the stale-baseline regen below)
+runs on `main` BEFORE the worktree; Task 2's heading probe goes to Geoff EARLY so his pick
+lands before Task 5 needs it.
 
 **PASS 1 (GRAMMAR TOKENS) LANDED 2026-07-27, unpublished on `main`.** Seven commits
 (`ddf0afbd`..`6b3a5138`): ten grammar tokens (`--cairn-type-*` x6, `--cairn-gap-*` x4) declared once
@@ -28,23 +45,12 @@ decisions, and the three defects the mechanical gates missed are in the post-mor
 `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`. Read it before
 planning Pass 2.
 
-**NEXT: write the Pass 2 (enforcement) plan**, per spec section 6 (`cairn-audit`, the nine static
-rules including `grammar-boundary`, and the rendered rules). Its calibration input is
-`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`, which catalogs what the ruled
-scale does not yet cover. Two design decisions are owed and should be settled with Geoff at the Pass
-2 brainstorm, because the audit's rules depend on both:
-1. **The line-height ruling.** Do the type roles carry a ruled `line-height`? Tailwind's named steps
-   (`text-sm`, `text-2xl`) set font-size AND line-height, so 127 `text-sm` sites plus `type-title`
-   cannot migrate pixel-identically until this is answered.
-2. **The 12px step.** 120 sites use 12px, which no role names. Does the scale admit a seventh step,
-   or do those sites resolve onto meta (13px) and label (11px)?
-
 Pass 3 (capture) follows, then ONE release at the initiative boundary (spec section 10), then the ASC
 Assets trial. The principle-pages pass queues behind the initiative. When that release is cut it is a
 MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
 its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
 
-**RED CI, PRE-EXISTING, OWED (found 2026-07-27 on pushing Pass 1).** The `e2e` workflow has been
+**RED CI, PRE-EXISTING, OWED — now Task 0 of the Pass 2 plan.** The `e2e` workflow has been
 failing on `main` since 2026-07-24, through the `0.90.0` and `0.90.1` cuts. Six `admin-visual`
 baselines are stale: the office shell, the media library, and the media detail panel, each in both
 schemes. They were last regenerated 2026-07-21 (`bff6ee46`), and `0.90.0` (ExpandableRow graduation,

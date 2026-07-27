@@ -441,3 +441,38 @@ returns here as the initiative's post-mortem.
 7. The Assets trial runs with the section 9 measurement design (k=3 consensus reads, four
    metrics) and its verdict is recorded, classified (a) vs (b) against the coverage
    contract, in the initiative post-mortem.
+
+## 13. Amendments
+
+### 2026-07-27: the Pass 2 rulings (type scale completed)
+
+Ratified at the Pass 2 brainstorm, calibrated against the Pass 1 deviations ledger
+(`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`) and a call-site
+measurement of the unruled named steps. Three rulings amend section 4:
+
+1. **Type roles carry a ruled line-height.** Each `--cairn-type-*` role gains a paired
+   leading token, measured from the role's dominant computed value (body takes `text-sm`'s
+   20px, title takes `text-2xl`'s 32px; the small roles are measured in-pass). The role
+   utilities set both properties and respect Tailwind's `--tw-leading` override, the same
+   mechanism the named steps use, so an explicit `leading-*` still composes. This unblocks
+   the 129 named-step sites and makes a role a complete recipe rather than a size alone.
+2. **No 12px step.** The 120 twelve-pixel sites resolve onto meta (13px) or label (11px) by
+   the relationship each expresses, with per-site judgment, never blanket substitution. A
+   one-pixel interval expresses no hierarchy, and 39 of the 40 bracketed sites are one
+   screen's local idiom.
+3. **One heading role, plus named exceptions.** The scale admits a seventh role between
+   subtitle (15px) and title (24px) for dialog and panel headings, unifying the two
+   competing recipes the measurement found (16px semibold across the admin; 18px
+   display-bold in the media library). The winning size and recipe is a taste call settled
+   in-pass from side-by-side rendered candidates. The brand wordmark (22px, the K4 keming
+   fix) and the EditPage document title (30px, an editor-canvas special) are ratified named
+   exceptions the audit knows about; the media library's three 20px stat numbers resolve or
+   join the exception list at migration.
+
+**Consequence for acceptance criterion 2.** Pixel identity was Pass 1's proof device, not a
+standing vow. Pass 2's normalization applies these rulings, which moves pixels deliberately:
+criterion 2's "zero visual-baseline drift" is amended to "zero drift outside the ratified
+rulings; the visual baselines regenerate once at normalization end and the regenerated set
+passes an eyes-on read." After normalization, cairn's own tree must pass the audit's
+error tier with no suppressions beyond the ratified named exceptions above, each carried as
+a counted, reasoned suppression directive at its call site.

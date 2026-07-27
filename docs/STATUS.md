@@ -15,19 +15,37 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-27: execute design-infrastructure Pass 1, grammar tokens)
+## Immediate next action (2026-07-27: plan design-infrastructure Pass 2, enforcement)
 
-**THE DESIGN-INFRASTRUCTURE INITIATIVE IS SPEC'D AND PASS 1 IS PLANNED (2026-07-27).** The
-ratified spec is `docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`
-(register-edited, then hardened by a clean-context adversarial Fable review whose full
-report is `docs/internal/2026-07-27-design-infrastructure-adversarial-review.md`). The
-Pass 1 plan is `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`.
-**A fresh Opus 5 session executes it** (per the revised model economy: Fable plans, Opus 5
-executes), launched from `~/Projects/cairn-cms` with: "Execute design-infrastructure Pass 1
-(`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`), on a
-feature worktree off main per cairn-pass." Passes 2 (enforcement) and 3 (capture) get
-just-in-time plans after Pass 1 lands; one release at the initiative boundary, then the ASC
-Assets trial. The principle-pages pass queues behind the initiative.
+**PASS 1 (GRAMMAR TOKENS) LANDED 2026-07-27, unpublished on `main`.** Seven commits
+(`ddf0afbd`..`6b3a5138`): ten grammar tokens (`--cairn-type-*` x6, `--cairn-gap-*` x4) declared once
+outside the theme blocks, ten role utilities that set exactly one property each, 25 admin components
+migrated pixel-identically (the 18 `admin-visual` snapshots do not move), the deviations ledger, and
+the public contract page `docs/reference/admin-grammar-tokens.md`. Full gate green, plus a
+from-scratch showcase `npm ci` + e2e (107 passed; the 6 `admin-visual` failures are the
+local-vs-CI renderer divergence that predates the pass, see the post-mortem). Method, the five locked
+decisions, and the three defects the mechanical gates missed are in the post-mortem appended to
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`. Read it before
+planning Pass 2.
+
+**NEXT: write the Pass 2 (enforcement) plan**, per spec section 6 (`cairn-audit`, the nine static
+rules including `grammar-boundary`, and the rendered rules). Its calibration input is
+`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`, which catalogs what the ruled
+scale does not yet cover. Two design decisions are owed and should be settled with Geoff at the Pass
+2 brainstorm, because the audit's rules depend on both:
+1. **The line-height ruling.** Do the type roles carry a ruled `line-height`? Tailwind's named steps
+   (`text-sm`, `text-2xl`) set font-size AND line-height, so 127 `text-sm` sites plus `type-title`
+   cannot migrate pixel-identically until this is answered.
+2. **The 12px step.** 120 sites use 12px, which no role names. Does the scale admit a seventh step,
+   or do those sites resolve onto meta (13px) and label (11px)?
+
+Pass 3 (capture) follows, then ONE release at the initiative boundary (spec section 10), then the ASC
+Assets trial. The principle-pages pass queues behind the initiative. When that release is cut it is a
+MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
+its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
+
+**Owed, not blocking:** the branch has not been pushed, so CI has not run its authoritative
+`admin-visual` assertion against the committed baselines. Push `main` to close that loop.
 
 **v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
 coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and

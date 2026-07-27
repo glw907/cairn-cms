@@ -20,6 +20,14 @@
    PageHeader/StatusChip use. check:admin-css-classes guards this scan root the same way it guards
    the safelist below. */
 @source "../src/lib/admin-toolkit/**/*.{svelte,ts,js}";
+/* The ten grammar role utilities are safelisted, not scanned. A Tailwind `@utility` is tree-shaken,
+   so a role with no internal call site would never reach the shipped sheet: `type-title` and
+   `gap-control` were both absent until this line went in. They are a DOCUMENTED PUBLIC INTERFACE
+   (docs/reference/admin-grammar-tokens.md), and a consumer's own Tailwind build never sees the
+   `@utility` definitions below, only this compiled sheet, so a role a consumer is told to write must
+   ship whether or not cairn's own screens happen to use it. grammar-tokens.test.ts asserts all ten
+   against the plain build for that reason. */
+@source inline("type-title type-subtitle type-body type-meta type-label type-chip gap-control gap-label gap-group gap-section");
 @import "../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an

@@ -75,12 +75,15 @@ Stone inherits none of those relationships for free and has to re-prove them aga
 values. The acceptance test for a re-tuned palette is a clean consumer-side rendered audit in
 both themes, once `cairn-audit` ships.
 
-## Current state: two roles with no markup call site
+## Current state: `type-title` has no call site yet
 
-`type-title` and `type-body` compile and are ready to use, but no admin markup calls either one
-yet. The engine's 24px and 14px text still uses Tailwind's built-in
-`text-2xl` and `text-sm`, which set both `font-size` and `line-height`. A role utility sets
-`font-size` only, so replacing a named Tailwind step with `type-title` or `type-body` today
-would drop that step's `line-height` and change the rendered layout. Those call sites wait on a
-line-height ruling for the type roles before they migrate. The other roles are fully in use:
-`type-subtitle`, `type-meta`, `type-label`, `type-chip`, and all four gap roles.
+Every role utility ships in the compiled sheet, whether or not cairn's own screens use it. Two have no
+markup call site inside the engine today: `type-title`, and `gap-control`, which the toolbar's
+scoped styles reach through its token instead. Both are still yours to write.
+
+`type-title` is empty for a specific reason. The engine's 24px text still uses Tailwind's built-in
+`text-2xl`, which sets both `font-size` and `line-height`, while a role utility sets `font-size`
+only. Swapping one for the other would drop that step's `line-height` and change the rendered
+layout, so those call sites wait on a line-height ruling for the type roles. The same reasoning
+covers most of the engine's 14px text, which stays on `text-sm`; `type-body` does have call sites,
+migrated from bracketed literals rather than from a named step.

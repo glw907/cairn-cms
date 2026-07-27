@@ -245,6 +245,45 @@ Recipes:
   lighter, and untracked resolves it. The topbar site name drops `tracking-tight` for the same
   reason. Do not reintroduce negative tracking on the display face at these sizes.
 
+## Grammar tokens
+
+The design-infrastructure Pass 1 layer beneath the recipes above: ten CSS custom properties
+(`--cairn-type-title/subtitle/body/meta/label/chip`, `--cairn-gap-label/control/group/section`)
+declared once in `cairn-admin.css`, outside both theme roots, since a structural role does not
+change with the palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth
+inventory; the reference page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is
+the versioned contract a site reads, and this section is where an agent extending the admin meets
+the same vocabulary alongside the component recipes above and below it.
+
+- **Markup writes the role utility, never the token or a pixel value.** Ten named utilities in
+  `scripts/admin-css.input.css` (`type-title`, `type-subtitle`, `type-body`, `type-meta`,
+  `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`) are the only
+  supported way to reach a grammar token from a template. Each sets exactly one property
+  (`font-size` or `gap`) and nothing else.
+- **A type role is a size, not a recipe.** Weight, case, tracking, and color stay with the
+  component recipes above (the eyebrow's uppercase and tracking, the nav item's weight swap, the
+  wordmark's own sizing) rather than folding into the role utility. Color is a palette choice, so
+  it stays a separate `text-muted` / `text-subtle` class on the element, the same rule the Tokens
+  section states for those two utilities.
+- **A component `<style>` block references the token directly.** `font-size:
+  var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
+  not markup.
+- **The one scoped-style exception: `src/lib/admin-toolkit`.** Those components ship on a public
+  subpath and a consumer can mount one outside the admin theme root, where the grammar tokens are
+  undefined. Their scoped styles carry the measured literal as a `var()` fallback,
+  `font-size: var(--cairn-type-meta, 0.8125rem)`, so the component still renders correctly outside
+  `CairnAdminShell`. Engine screens under `src/lib/components` always render inside the shell's
+  themed wrapper and reference the token bare, with no fallback.
+- **A site re-tunes the palette and never redeclares a grammar token.** Grammar names structure
+  (a heading's size, a gap's relationship) and holds across light and dark; palette
+  (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
+  re-tuned palette.
+- **Two roles have no markup call site yet.** `type-title` and `type-body` compile but await a
+  line-height ruling before the named Tailwind steps they would replace (`text-2xl`, `text-sm`)
+  can migrate pixel-identically; see the reference page's current-state note and
+  `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
+  off-scale call sites this pass measured but did not resolve.
+
 ## Component recipes
 
 - **Floating card:** `rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]`.

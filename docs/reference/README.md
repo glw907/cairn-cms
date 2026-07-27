@@ -50,8 +50,11 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
 
-One page here is not export-keyed, since it documents author-facing markdown syntax rather than a
+Two pages here are not export-keyed, since they document an internal contract rather than a
 package subpath:
 
 - [Content authoring syntax](./authoring-syntax.md): the `cairn:` internal-link and `media:` asset
   token schemes, and the `::include` fragment directive, an author types in markdown.
+- [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
+  vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
+  site's own theming respects.

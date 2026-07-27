@@ -9,7 +9,10 @@ deliberately, with the visual baselines regenerated to match.
 
 Pass 2 calibrates its audit rules against this ledger, and the Pass 3 standard reads it for what the
 ruled scale does not yet cover. Counts are from `src/lib/components` and `src/lib/admin-toolkit` at
-commit `ddf0afbd`.
+commit `ddf0afbd`, matched as class tokens with word boundaries rather than as raw substrings. That
+distinction is load-bearing: a naive grep for `text-base` also catches DaisyUI's `text-base-content`
+and `text-base-100` color utilities and overstates that row roughly fourfold, which a first draft of
+this file did.
 
 ## The ruled scale, for reference
 
@@ -24,17 +27,19 @@ surface rather than isolated to one screen.
 | Form | Count | Concentration |
 |---|---|---|
 | `text-xs` | 80 | EditPage 17, CairnTidySettings 13, CairnMediaLibrary 11, MediaHeroField 8 |
-| `text-[0.75rem]` | 39 | CairnMediaLibrary 38, ShortcutsGrid 1 |
+| `text-[0.75rem]` | 40 | CairnMediaLibrary 39, ShortcutsGrid 1 |
 
 Nearest roles: meta (13px) above, label (11px) below. The question for Pass 2 or 3 is whether the
-scale admits a seventh step or whether these 119 sites resolve upward and downward onto meta and
-label. This is a design ruling, not a cleanup: 119 sites is not an accident, and both neighbors are
-one pixel away, which is exactly the interval a six-role scale is supposed to make unnecessary.
+scale admits a seventh step or whether these 120 sites resolve upward and downward onto meta and
+label. Rule it as design, not cleanup. 120 sites is not an accident, and both neighbors are one
+pixel away, which is exactly the interval a six-role scale is supposed to make unnecessary.
 
 ## 2. Named Tailwind steps: blocked on a line-height ruling
 
-These sites are not off-scale by accident. They are blocked by a mechanical coupling, and they are
-the reason `type-title` and `type-body` ship with no markup call sites.
+These sites are not off-scale by accident. They are blocked by a mechanical coupling, and it is why
+`type-title` ships with no markup call site at all. `type-body` is a different case: it migrated from
+bracketed literals only, never from `text-sm`, so it has three live call sites in
+`CairnMediaLibrary.svelte` and the 127 `text-sm` sites below are still owed to it.
 
 In the compiled sheet a named step sets two properties:
 
@@ -50,7 +55,7 @@ and change the rendered layout, which Pass 1's contract forbids.
 | Utility | Size | Count | Role it would map to |
 |---|---|---|---|
 | `text-sm` | 14px | 127 | body |
-| `text-base` | 16px | 68 | none |
+| `text-base` | 16px | 19 | none |
 | `text-2xl` | 24px | 2 | title |
 | `text-lg` | 18px | 22 | none |
 | `text-xl` | 20px | 6 | none |
@@ -63,7 +68,7 @@ seventh-step question as section 1, one size at a time.
 
 ## 3. One-off literals
 
-Seven sites, each the only use of its value.
+Seven sites across five values, three of them the brand wordmark at 22px.
 
 | Site | Value | Nearest role |
 |---|---|---|

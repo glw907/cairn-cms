@@ -8,7 +8,9 @@
   or a control-to-control gap holds across both themes. Ten role utilities
   (`type-title`/`type-subtitle`/`type-body`/`type-meta`/`type-label`/`type-chip`,
   `gap-control`/`gap-label`/`gap-group`/`gap-section`) are the supported way to reach a token from
-  markup; each sets one property and nothing else. See [Admin grammar
+  markup; each sets one property and nothing else. All ten ship in the compiled admin stylesheet
+  whether or not cairn's own screens use them, so a role is available to a custom admin route on
+  the strength of the documentation alone. See [Admin grammar
   tokens](./docs/reference/admin-grammar-tokens.md).
 - `src/lib/admin-toolkit` and the built-in engine admin screens migrate their on-scale type and
   spacing literals to the new role utilities and tokens, pixel-identically: the committed

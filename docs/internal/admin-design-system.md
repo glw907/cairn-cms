@@ -235,10 +235,11 @@ Recipes:
 - Page heading: `text-2xl font-bold font-[family-name:var(--font-display)]` — normal tracking, the same
   K4 reasoning as the brand wordmark below.
 - Eyebrow (sidebar group headers and table column labels):
-  `text-[0.6875rem] font-semibold uppercase tracking-[0.08em] text-muted`.
-- Nav item: `text-[0.9375rem]` (the lists use `menu-sm` for layout), `font-medium` inactive,
+  `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
+  utility; the weight, case, and tracking are this recipe's own.
+- Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
-  table cells share it via `table text-[0.9375rem]`.
+  table cells share it via `table type-subtitle`.
 - Brand wordmark: `text-[1.375rem] font-semibold font-[family-name:var(--font-display)]` — normal
   tracking on purpose. The K4 keming fix (design arc, 2026-07-15): at the old
   `text-xl font-bold tracking-[-0.01em]` the rn pair merged and "Cairn" read "Caim"; larger,
@@ -278,9 +279,12 @@ the same vocabulary alongside the component recipes above and below it.
   (a heading's size, a gap's relationship) and holds across light and dark; palette
   (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
   re-tuned palette.
-- **Two roles have no markup call site yet.** `type-title` and `type-body` compile but await a
-  line-height ruling before the named Tailwind steps they would replace (`text-2xl`, `text-sm`)
-  can migrate pixel-identically; see the reference page's current-state note and
+- **Two roles have no markup call site yet, for different reasons.** `type-title` awaits a
+  line-height ruling: the `text-2xl` it would replace sets `line-height` too, so the swap is not
+  pixel-identical. `gap-control` is reached only through its token, from the toolbar's scoped
+  styles. `type-body` is NOT in this pair; it has live call sites, migrated from bracketed
+  literals. Both roles still ship in the compiled sheet, so either is yours to write. See the
+  reference page's current-state note and
   `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
   off-scale call sites this pass measured but did not resolve.
 

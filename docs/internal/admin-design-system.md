@@ -248,8 +248,8 @@ Recipes:
 
 ## Grammar tokens
 
-The design-infrastructure layer beneath the recipes above: sixteen CSS custom properties
-(`--cairn-type-title/subtitle/body/meta/label/chip`, each with a paired
+The design-infrastructure layer beneath the recipes above: eighteen CSS custom properties
+(`--cairn-type-title/heading/subtitle/body/meta/label/chip`, each with a paired
 `--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
 `cairn-admin.css`, outside both theme roots, since a structural role does not change with the
 palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory; the reference
@@ -257,16 +257,22 @@ page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is the versi
 site reads, and this section is where an agent extending the admin meets the same vocabulary
 alongside the component recipes above and below it.
 
-- **Markup writes the role utility, never the token or a pixel value.** Ten named utilities in
-  `scripts/admin-css.input.css` (`type-title`, `type-subtitle`, `type-body`, `type-meta`,
-  `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`) are the only
+- **Markup writes the role utility, never the token or a pixel value.** Eleven named utilities in
+  `scripts/admin-css.input.css` (`type-title`, `type-heading`, `type-subtitle`, `type-body`,
+  `type-meta`, `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`)
+  are the only
   supported way to reach a grammar token from a template. A `type-*` utility sets `font-size` and
   the role's ruled `line-height`; a `gap-*` utility sets `gap`. Neither sets anything else.
-- **A type role is a size and its leading, not a recipe.** Weight, case, tracking, and color stay
-  with the component recipes above (the eyebrow's uppercase and tracking, the nav item's weight
-  swap, the wordmark's own sizing) rather than folding into the role utility. Color is a palette
-  choice, so it stays a separate `text-muted` / `text-subtle` class on the element, the same rule
-  the Tokens section states for those two utilities.
+- **A type role is a size and its leading, not a recipe.** Weight, case, tracking, font family, and
+  color stay with the component recipes above (the eyebrow's uppercase and tracking, the nav item's
+  weight swap, the wordmark's own sizing) rather than folding into the role utility. Color is a
+  palette choice, so it stays a separate `text-muted` / `text-subtle` class on the element, the same
+  rule the Tokens section states for those two utilities.
+- **The heading recipe.** `type-heading` plus `font-bold` plus
+  `font-[family-name:var(--font-display)]` is the dialog and section heading, 18px in Bricolage.
+  Write all three; the role carries only the size and its leading. One deliberate partial use: the
+  media library's stat numerals take `type-heading` for its size and keep `tabular-nums` without the
+  display family, because a numeral is not prose.
 - **A component `<style>` block references the token directly.** `font-size:
   var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
   not markup.
@@ -280,14 +286,21 @@ alongside the component recipes above and below it.
   (a heading's size, a gap's relationship) and holds across light and dark; palette
   (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
   re-tuned palette.
-- **Two roles have no markup call site yet, for different reasons.** `type-title` matches
-  `text-2xl` on both `font-size` and `line-height`, so the swap it was waiting on is
-  pixel-identical and only the migration remains. `gap-control` is reached only through its token,
-  from the toolbar's scoped styles. `type-body` is NOT in this pair; it has live call sites,
-  migrated from bracketed literals. Both roles still ship in the compiled sheet, so either is yours
-  to write. See the reference page's current-state note and
-  `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
-  off-scale call sites this pass measured but did not resolve.
+- **Every type role now has call sites, and every admin font size resolves to one**, with five
+  ratified exceptions carrying counted `cairn-audit-disable-next-line type-scale` directives: the
+  three wordmark sites and the editor canvas's two. `gap-control` remains reachable only through its
+  token, from the toolbar's scoped styles. The reference page lists the exceptions; the deviations
+  ledger (`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`) keeps the spacing
+  vocabulary questions, which are still open.
+- **Never convert between a named Tailwind step and a bracketed size casually.** A named step such
+  as `text-2xl` sets `font-size` and `line-height`; a bracketed `text-[1.5rem]` sets `font-size`
+  alone. Writing a bracketed value in place of a step silently drops the leading, which is how the
+  editor's document title lost 2.25rem during this migration. Use `text-[1.5rem]/[2rem]` when a
+  bracketed value genuinely needs both.
+- **A class used only outside the stylesheet's scan roots never compiles.** The roots are
+  `src/lib/components`, `src/lib/admin-toolkit`, and `src/lib/admin-fields`. A class used only in a
+  directory that is not scanned resolves to nothing at runtime rather than failing a build, so a new
+  admin-rendering directory joins both the `@source` list and `check:admin-css-classes`.
 
 ## Component recipes
 

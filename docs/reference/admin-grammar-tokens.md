@@ -1,19 +1,20 @@
 # Reference: admin grammar tokens
 
-The admin's structural type and spacing vocabulary: sixteen CSS custom properties declared once
-in `cairn-admin.css`, outside the light and dark theme blocks, plus the ten named utility classes
+The admin's structural type and spacing vocabulary: eighteen CSS custom properties declared once
+in `cairn-admin.css`, outside the light and dark theme blocks, plus the eleven named utility classes
 that are the only supported way to reach them from markup. A grammar token names a relationship
 rather than a color: a heading's role, a control-to-control gap. The same value holds in both
 themes.
 
 ## The token inventory
 
-Six `--cairn-type-*` roles. Each pairs a `font-size` token with a `--leading` token that carries
+Seven `--cairn-type-*` roles. Each pairs a `font-size` token with a `--leading` token that carries
 the role's `line-height`:
 
 | Role | `font-size` token | Value | `line-height` token | Value |
 |---|---|---|---|---|
 | Title | `--cairn-type-title` | `1.5rem` | `--cairn-type-title--leading` | `2rem` |
+| Heading | `--cairn-type-heading` | `1.125rem` | `--cairn-type-heading--leading` | `1.75rem` |
 | Subtitle | `--cairn-type-subtitle` | `0.9375rem` | `--cairn-type-subtitle--leading` | `1.1875rem` |
 | Body | `--cairn-type-body` | `0.875rem` | `--cairn-type-body--leading` | `1.25rem` |
 | Meta | `--cairn-type-meta` | `0.8125rem` | `--cairn-type-meta--leading` | `1.0625rem` |
@@ -31,13 +32,14 @@ Four `--cairn-gap-*` roles, each a `gap`:
 
 ## The role utilities
 
-Markup writes one of these ten named utilities, never a pixel value and never a bracketed
+Markup writes one of these eleven named utilities, never a pixel value and never a bracketed
 `var()` wrapper. Each `type-*` utility sets `font-size` and `line-height` from its paired tokens,
 and each `gap-*` utility sets `gap`. Neither sets anything else:
 
 | Utility | Property | Token |
 |---|---|---|
 | `type-title` | `font-size`, `line-height` | `--cairn-type-title`, `--cairn-type-title--leading` |
+| `type-heading` | `font-size`, `line-height` | `--cairn-type-heading`, `--cairn-type-heading--leading` |
 | `type-subtitle` | `font-size`, `line-height` | `--cairn-type-subtitle`, `--cairn-type-subtitle--leading` |
 | `type-body` | `font-size`, `line-height` | `--cairn-type-body`, `--cairn-type-body--leading` |
 | `type-meta` | `font-size`, `line-height` | `--cairn-type-meta`, `--cairn-type-meta--leading` |
@@ -83,14 +85,42 @@ Stone inherits none of those relationships for free and has to re-prove them aga
 values. The acceptance test for a re-tuned palette is a clean consumer-side rendered audit in
 both themes, once `cairn-audit` ships.
 
-## Current state: `type-title` has no call site yet
+## A type role is not a full recipe
 
-Every role utility ships in the compiled sheet, whether or not cairn's own screens use it. Two have no
-markup call site inside the engine today: `type-title`, and `gap-control`, which the toolbar's
-scoped styles reach through its token instead. Both are still yours to write.
+A `type-*` utility sets a size and its leading. Weight, case, tracking, and font family are not part
+of a role, because a role that carried them would match only the sites that want the whole recipe
+and strand the rest. Two roles show why:
 
-`type-title` and `type-body` carry the same `font-size` and `line-height` as the Tailwind named
-steps they replace, `text-2xl` and `text-sm`, so swapping either step for its role changes no
-rendered pixel. The engine's 24px text and most of its 14px text still write `text-2xl` and
-`text-sm` directly. Migrating those call sites is separate work. `type-body` does have call sites
-today, migrated from bracketed literals rather than from a named step.
+- `type-label` sets 11px. Of the admin's label-sized sites, fewer than a quarter are uppercase and
+  fewer still carry the eyebrow's tracking, so the eyebrow's case and tracking stay a component
+  recipe and the role fits every site.
+- `type-heading` sets 18px. Its prose sites also write `font-bold` and the display family, which
+  together form the ratified heading recipe. The media library's stat numerals take the same role
+  for its size while keeping `tabular-nums` and skipping the display family, because a numeral is
+  not prose.
+
+Color is a palette choice, so it stays a separate `text-muted` or `text-subtle` class.
+
+## Off-scale values and the exception list
+
+Every font size in the admin resolves to a `--cairn-type-*` role, with five ratified exceptions.
+Each one carries a counted, reasoned directive at its call site:
+
+```
+<!-- cairn-audit-disable-next-line type-scale -- why this value is ruled, not drift -->
+```
+
+| Site | Value | Why it is exempt |
+|---|---|---|
+| The brand wordmark, three sites | 22px | The keming fix raised the wordmark off the nearest step because the `rn` pair merged and "Cairn" read "Caim". |
+| The editor document title | 30px | The editor canvas sets its own scale, deliberately larger than the admin chrome. |
+| The editor prose surface | 18px | The editor's own canvas in the editor face. Its size coincides with `type-heading`, but it is body text, not a heading. |
+
+The count is the contract. `cairn-audit` reports the total, and a total above the exception list
+means something was suppressed rather than resolved.
+
+Two cautions if you add a value of your own. A bracketed arbitrary size such as `text-[1.5rem]` sets
+`font-size` only, while a named Tailwind step such as `text-2xl` sets `line-height` too, so
+converting between the two silently changes leading. And a class used only in a directory the admin
+stylesheet does not scan never compiles at all, so it resolves to nothing at runtime rather than
+failing a build.

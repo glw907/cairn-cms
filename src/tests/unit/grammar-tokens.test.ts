@@ -8,7 +8,7 @@ import { GRAMMAR_TOKENS } from '../../lib/design/grammar-tokens.js';
 // package` ships. An earlier draft scanned a probe fixture to defeat tree-shaking, which proved the
 // utility DEFINITIONS were correct while saying nothing about what reaches a consumer; the role
 // utilities are a documented public interface, so the input's `@source inline(...)` safelist now
-// carries all ten into the shipped sheet and this file asserts against that sheet.
+// carries all eleven into the shipped sheet and this file asserts against that sheet.
 //
 // Keep this to ONE buildAdminCss() call. @tailwindcss/postcss caches its compiler per `from` path
 // across calls within one process (keyed on disk mtime, not on the in-memory input string), so a
@@ -52,6 +52,7 @@ describe('grammar tokens', () => {
   it('matches the locked type-role scale', () => {
     const typeScale: Record<string, number> = {
       '--cairn-type-title': 1.5,
+      '--cairn-type-heading': 1.125,
       '--cairn-type-subtitle': 0.9375,
       '--cairn-type-body': 0.875,
       '--cairn-type-meta': 0.8125,
@@ -75,12 +76,13 @@ describe('grammar tokens', () => {
     }
   });
 
-  // The Pass 2 ruling (spec section 13): body and title take the named Tailwind steps they
-  // replace (text-sm's 20px, text-2xl's 32px); subtitle, meta, label, and chip are the dominant
-  // computed line-height measured at their live call sites.
+  // The Pass 2 ruling (spec section 13): body, title, and heading take the named Tailwind steps
+  // they replace (text-sm's 20px, text-2xl's 32px, text-lg's 28px); subtitle, meta, label, and
+  // chip are the dominant computed line-height measured at their live call sites.
   it('matches the ruled type-role leading scale', () => {
     const leadingScale: Record<string, number> = {
       '--cairn-type-title--leading': 2,
+      '--cairn-type-heading--leading': 1.75,
       '--cairn-type-subtitle--leading': 1.1875,
       '--cairn-type-body--leading': 1.25,
       '--cairn-type-meta--leading': 1.0625,
@@ -148,11 +150,12 @@ describe('grammar tokens', () => {
 // component writes a named role (type-body, gap-control), never a pixel value or a bracketed
 // var() wrapper. A type-* utility carries font-size and its role's ruled line-height; a gap-*
 // utility carries gap. Neither carries anything more, and in particular no weight, case, tracking,
-// or color (the block comment in scripts/admin-css.input.css has why a full recipe would strand
-// most of the 66 real call sites).
+// font family, or color (the block comment in scripts/admin-css.input.css has why a full recipe
+// would strand most of the 66 real call sites).
 describe('grammar-token role utilities', () => {
   const typeUtilities: Record<string, string> = {
     'type-title': '--cairn-type-title',
+    'type-heading': '--cairn-type-heading',
     'type-subtitle': '--cairn-type-subtitle',
     'type-body': '--cairn-type-body',
     'type-meta': '--cairn-type-meta',

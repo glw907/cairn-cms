@@ -16,7 +16,8 @@ this file did.
 
 ## The ruled scale, for reference
 
-Type: title 24px, subtitle 15px, body 14px, meta 13px, label 11px, chip 10px.
+Type, after Pass 2 admitted the heading role: title 24px, heading 18px, subtitle 15px, body 14px,
+meta 13px, label 11px, chip 10px. Each carries a paired leading token.
 Spacing: label 4px, control 8px, group 16px, section 24px.
 
 ## Ratified rulings (2026-07-27, Pass 2 brainstorm)
@@ -46,74 +47,44 @@ normalization migration lands and the baselines regenerate.
   off-scale literals, and named Tailwind steps resolve to the spacing scale, so these
   entries stay open vocabulary questions for Pass 3.
 
-## 1. The 12px step: in live use, absent from the scale
+## Type sections 1 through 3: RESOLVED, retired 2026-07-28
 
-The largest single finding. 12px is the admin's most-used size with no role, spread across the whole
-surface rather than isolated to one screen.
+Pass 2's normalization applied the ratified rulings and every type entry this file catalogued now
+has a role or a ratified exception. The sections are collapsed to this note rather than kept as a
+to-do list that reads as open.
 
-| Form | Count | Concentration |
-|---|---|---|
-| `text-xs` | 80 | EditPage 17, CairnTidySettings 13, CairnMediaLibrary 11, MediaHeroField 8 |
-| `text-[0.75rem]` | 40 | CairnMediaLibrary 39, ShortcutsGrid 1 |
+What the ledger held, and where each entry went:
 
-Nearest roles: meta (13px) above, label (11px) below. The question for Pass 2 or 3 is whether the
-scale admits a seventh step or whether these 120 sites resolve upward and downward onto meta and
-label. Rule it as design, not cleanup. 120 sites is not an accident, and both neighbors are one
-pixel away, which is exactly the interval a six-role scale is supposed to make unnecessary.
+- **The 12px step, 119 sites** (recorded here as 120; one was prose inside a code comment). No
+  seventh step was admitted. The sites resolved per-site onto `type-meta` (109) and `type-label`
+  (10) by the relationship each expressed. Two rulings settled the cases a first pass split
+  inconsistently: a control's own caption is meta, following `ListToolbar`, the toolkit's canonical
+  segmented control; and a list-row value beside an action is meta, because a URL, slug, branch
+  name, or file key is content rather than a label naming something else.
+- **The named Tailwind steps, blocked on a line-height ruling.** The ruling landed: every role
+  carries a paired leading token. `text-sm` (127 sites) and `text-2xl` (2) moved pixel-identically
+  onto body and title, proven by comparing a full local render against a reference captured right
+  after the leading landed. `text-base`, `text-lg`, `text-xl`, and `text-3xl` resolved onto the new
+  heading role, onto subtitle, or onto the exception list.
+- **The one-off literals.** The 11.2px and 9.6px slips resolved onto label and chip, as suspected.
+  The 17px panel title joined the heading role. The three wordmark sites and the editor's document
+  title became ratified exceptions with counted directives. The 18px editor prose surface became a
+  fifth exception, newly ratified: the ledger had filed it as resolving onto subtitle, but reading
+  the markup showed it is the editor's own canvas wrapper, whose 18px merely coincides with the
+  heading role's.
 
-## 2. Named Tailwind steps: blocked on a line-height ruling
+Two lessons this file earned, both worth carrying:
 
-These sites are not off-scale by accident. They are blocked by a mechanical coupling, and it is why
-`type-title` ships with no markup call site at all. `type-body` is a different case: it migrated from
-bracketed literals only, never from `text-sm`, so it has three live call sites in
-`CairnMediaLibrary.svelte` and the 127 `text-sm` sites below are still owed to it.
+**Counting is where this initiative keeps slipping.** Three separate miscounts, none in the row
+data and all in a hand-tallied summary: the fourfold `text-base` overstatement this file's first
+draft carried, the 120-versus-119 comment site, and a 19-versus-16 label tally during the
+migration. The row-level work has been right every time. Trust the rows, recount the summary.
 
-In the compiled sheet a named step sets two properties:
-
-```
-.text-sm { font-size: var(--text-sm); line-height: var(--tw-leading, var(--text-sm--line-height)); }
-.text-\[0\.8125rem\] { font-size: .8125rem; }
-```
-
-An arbitrary bracketed value sets font-size only, so a font-size-only role utility replaces it
-pixel-identically. Replacing a named step with the same utility would drop that step's line-height
-and change the rendered layout, which Pass 1's contract forbids.
-
-| Utility | Size | Count | Role it would map to |
-|---|---|---|---|
-| `text-sm` | 14px | 127 | body |
-| `text-base` | 16px | 19 | none |
-| `text-2xl` | 24px | 2 | title |
-| `text-lg` | 18px | 22 | none |
-| `text-xl` | 20px | 6 | none |
-| `text-3xl` | 30px | 1 | none |
-
-Two separate rulings are owed. For `text-sm` and `text-2xl`, whether the role utilities carry a
-ruled line-height per role, which would let 129 sites migrate and would make the type roles a
-complete recipe rather than a size alone. For 16px, 18px, 20px, and 30px, the same
-seventh-step question as section 1, one size at a time.
-
-## 3. One-off literals
-
-Seven sites across five values, three of them the brand wordmark at 22px.
-
-| Site | Value | Nearest role |
-|---|---|---|
-| `CairnAdminShell.svelte:772` | 22px | title (24px) |
-| `ConfirmPage.svelte:36` | 22px | title (24px) |
-| `LoginPage.svelte:50` | 22px | title (24px) |
-| `EditPage.svelte:1842` | 18px | subtitle (15px) |
-| `CairnMediaLibrary.svelte:1769` | 17px | subtitle (15px) |
-| `ComponentInsertDialog.svelte:368` | 11.2px | label (11px) |
-| `CairnMediaLibrary.svelte:1982` | 9.6px | chip (10px) |
-
-The three 22px sites are the brand wordmark, and they are deliberate: the K4 keming fix (design arc
-2026-07-15) raised the wordmark from `text-xl font-bold tracking-[-0.01em]` because the rn pair
-merged and "Cairn" read "Caim". `docs/internal/admin-design-system.md` documents the recipe. Treat
-them as a ratified exception, not debt.
-
-The 11.2px and 9.6px sites sit a fraction off a role they almost certainly meant. They are the two
-entries in this file most likely to be simple slips.
+**A migration can break a surface it never touches.** Removing the last scanned `text-sm` stopped
+Tailwind compiling that rule, and `src/lib/admin-fields`, a public export subpath, still used it
+and had never been in the stylesheet's scan roots. It had ridden along on another directory's scan.
+The fix was structural, not local: the directory joined both the scan roots and
+`check:admin-css-classes`.
 
 ## 4. Spacing values with no role
 
@@ -155,6 +126,8 @@ the plan's two-site floor, so no indentation token was defined. It stays a candi
 indented surface makes the role real.
 
 **PageHeader's `meta` prop renders at 14px, one step off the meta role.** `PageHeader.svelte:60`
-uses `text-sm text-muted` for the line the component itself calls meta, while the meta role is 13px.
-Both readings are defensible, that the header's secondary line is body-sized on purpose, or that it
-should join the meta role, and the name collision makes it worth ruling explicitly.
+now writes `type-body text-muted` for the line the component itself calls meta, while the meta role
+is 13px. Pass 2's normalization moved the class but deliberately did not rule the collision: the
+swap was size-preserving, and whether the header's secondary line is body-sized on purpose or should
+join the meta role is a relationship question, not a mechanical one. Still open, and still worth
+ruling explicitly because of the name collision.

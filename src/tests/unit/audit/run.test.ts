@@ -53,10 +53,15 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 }
 
 describe('the static rule registry', () => {
-  // Task 7 ships the contract, not the rules. Tasks 9a and 9b add modules to this registry
-  // without touching run.ts.
-  it('starts empty', () => {
-    expect(staticRules()).toEqual([]);
+  // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules are
+  // the first modules to register, without touching run.ts.
+  it('carries the four markup-family rules Task 9a registered', () => {
+    expect(staticRules().map((rule) => rule.id)).toEqual([
+      'no-uncompiled-class',
+      'type-scale',
+      'gap-scale',
+      'stock-default-hazards',
+    ]);
   });
 
   it('hands back a fresh array each call', () => {
@@ -88,11 +93,14 @@ describe('runStatic', () => {
     expect(report.suppressed).toEqual([]);
   });
 
-  it('runs clean with the shipped registry, which holds no rules yet', () => {
+  it('runs the shipped registry, which now flags this fixture tree\'s uncompiled classes', () => {
+    // Task 9a's first rule to register: type-label and card never compile into the fixture
+    // sheet above, which only defines type-body. A clean tree is proven by rules.test.ts's
+    // fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
-    expect(report.findings).toEqual([]);
-    expect(report.ruleIds).toEqual([]);
-    expect(exitCodeFor(report)).toBe(0);
+    expect(report.ruleIds).toEqual(['no-uncompiled-class', 'type-scale', 'gap-scale', 'stock-default-hazards']);
+    expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
+    expect(exitCodeFor(report)).toBe(1);
   });
 
   it('fails naming the sheet path when the built stylesheet is missing', () => {

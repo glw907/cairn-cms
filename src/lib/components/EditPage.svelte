@@ -2350,7 +2350,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {#if !zen && narrow}
   <div
     data-testid="cairn-edit-actionbar"
-    class="cairn-edit-actionbar fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
   >
     <button
       bind:this={publishButton}
@@ -2594,3 +2594,30 @@ persistent "?" carries Markdown help, design-arc D2).
   </dialog>
 {/if}
 {/key}
+
+<style>
+  /* Naming hooks with no visual role of their own: each element's real styling rides on the
+     Tailwind utilities already in its class attribute. Each rule carries only an inert custom
+     property, never read anywhere, since an empty ruleset both fails svelte-check's own lint and
+     (were it `all: revert` instead) would sit unlayered and outrank the sibling Tailwind
+     utilities the cascade layers otherwise protect. This is a co-located, self-documenting
+     declaration of the class name, replacing a JSON allowlist entry a rename would silently
+     orphan. */
+  .cairn-save-state,
+  .cairn-feedback,
+  .cairn-preview-frame,
+  .cairn-zen-chip {
+    --cairn-naming-hook: true;
+  }
+
+  /* EditorToolbar.svelte's own .menu-divider carries the identical naming hook and reason. */
+  .menu-divider {
+    --cairn-naming-hook: true;
+  }
+
+  /* The zen-mode toggle's own naming hook; it also happens to be the unrelated localStorage
+     preference key of the same name (coincidence, not a dependency). */
+  .cairn-editor-zen {
+    --cairn-naming-hook: true;
+  }
+</style>

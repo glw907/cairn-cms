@@ -23,6 +23,30 @@ export interface ClassToken {
   end: number;
   /** 1-based line of `start`. */
   line: number;
+  /**
+   * The start offset of the element or component node that owns this token's `class` attribute.
+   * A co-occurrence rule (does this element also carry `popover`, does it also carry
+   * `rounded-box`) groups tokens by this key rather than by source proximity, which a nested
+   * child's own class attribute would otherwise pollute.
+   */
+  elementStart: number;
+}
+
+/** One attribute or `class:` directive an element or component node carries. */
+export interface ElementAttribute {
+  /** The attribute name as written; a `class:` directive is recorded as `class:<name>`. */
+  name: string;
+  /**
+   * Whether the value is unconditionally on: a boolean shorthand (`disabled`) or a literal
+   * `true` (`disabled={true}`). A bound condition (`disabled={busy}`) is not, since it can read
+   * false at runtime; a rule that only cares whether a hazard is REACHABLE, not merely named,
+   * reads this rather than the attribute's raw presence.
+   */
+  hardcodedTrue: boolean;
+  start: number;
+  end: number;
+  /** 1-based line of `start`. */
+  line: number;
 }
 
 /** One template node's identity and source range, the unit a suppression directive attaches to. */
@@ -39,6 +63,8 @@ export interface SourceNode {
   startLine: number;
   /** 1-based line of `end`. */
   endLine: number;
+  /** The node's own attributes and `class:` directives, present on an element or component node. */
+  attributes?: ElementAttribute[];
 }
 
 /** A parsed component: its source, its template nodes in document order, and its class tokens. */
@@ -48,6 +74,14 @@ export interface ParsedComponent {
   source: string;
   nodes: SourceNode[];
   classTokens: ClassToken[];
+  /**
+   * Every class name the component's own scoped `<style>` block defines as a selector.
+   * Svelte-scoped to the component, not the admin sheet's job: a markup reference to one of
+   * these is never a compiled-sheet miss, the same exclusion `check-admin-css-classes.mjs`
+   * already drew by regex over the raw `<style>` text; this substrate reads it off the
+   * `svelte/compiler`'s own structured CSS AST instead.
+   */
+  styleClassNames: Set<string>;
 }
 
 // The svelte AST is walked structurally rather than through the published `AST` union. Two reasons:
@@ -235,6 +269,45 @@ function tokensInAttribute(attr: RawNode): RawToken[] {
   });
 }
 
+/** Whether an `Attribute` node's value is unconditionally on: a shorthand or a literal `true`. */
+function isHardcodedTrue(value: unknown): boolean {
+  if (value === true) return true;
+  if (value === null || typeof value !== 'object') return false;
+  const tag = value as RawNode;
+  if (tag.type !== 'ExpressionTag') return false;
+  const expr = tag.expression as RawNode | undefined;
+  return !!expr && expr.type === 'Literal' && expr.value === true;
+}
+
+/** One node's own attributes and `class:` directives, the substrate a co-occurrence rule reads. */
+function attributesOf(node: RawNode, starts: number[]): ElementAttribute[] {
+  if (!Array.isArray(node.attributes)) return [];
+  const out: ElementAttribute[] = [];
+  for (const attr of node.attributes) {
+    if (typeof attr.start !== 'number' || typeof attr.end !== 'number') continue;
+    if (attr.type === 'ClassDirective' && typeof attr.name === 'string') {
+      out.push({
+        name: `${CLASS_DIRECTIVE_PREFIX}${attr.name}`,
+        hardcodedTrue: false,
+        start: attr.start,
+        end: attr.end,
+        line: lineOfIndex(starts, attr.start),
+      });
+      continue;
+    }
+    if (attr.type === 'Attribute' && typeof attr.name === 'string') {
+      out.push({
+        name: attr.name,
+        hardcodedTrue: isHardcodedTrue(attr.value),
+        start: attr.start,
+        end: attr.end,
+        line: lineOfIndex(starts, attr.start),
+      });
+    }
+  }
+  return out;
+}
+
 /** Walk the template depth first, collecting node ranges and class tokens in document order. */
 function collect(
   node: RawNode,
@@ -248,6 +321,7 @@ function collect(
     typeof node.start === 'number' &&
     typeof node.end === 'number'
   ) {
+    const attributes = attributesOf(node, starts);
     nodes.push({
       type: node.type,
       name: node.name,
@@ -256,12 +330,14 @@ function collect(
       end: node.end,
       startLine: lineOfIndex(starts, node.start),
       endLine: lineOfIndex(starts, node.end),
+      attributes: attributes.length > 0 ? attributes : undefined,
     });
   }
   if (Array.isArray(node.attributes)) {
+    const elementStart = typeof node.start === 'number' ? node.start : -1;
     for (const attr of node.attributes) {
       for (const token of tokensInAttribute(attr)) {
-        tokens.push({ ...token, line: lineOfIndex(starts, token.start) });
+        tokens.push({ ...token, line: lineOfIndex(starts, token.start), elementStart });
       }
     }
   }
@@ -275,16 +351,34 @@ function collect(
   }
 }
 
+/** The class names a component's own scoped `<style>` block defines, read off the CSS AST. */
+function collectStyleClassNames(node: unknown, out: Set<string>): void {
+  if (!node || typeof node !== 'object') return;
+  const raw = node as RawNode;
+  if (raw.type === 'ClassSelector' && typeof raw.name === 'string') out.add(raw.name);
+  for (const key in raw) {
+    const value = raw[key];
+    if (Array.isArray(value)) {
+      for (const item of value) collectStyleClassNames(item, out);
+    } else if (value && typeof value === 'object') {
+      collectStyleClassNames(value, out);
+    }
+  }
+}
+
 /**
  * Parse one component into the substrate the static rules run on. A component that does not parse
  * throws naming the file, since a syntax error is a real defect rather than a file to skip.
  */
 export function parseComponent(file: string, source: string): ParsedComponent {
-  let root: { fragment?: RawNode };
+  let root: { fragment?: RawNode; css?: unknown };
   try {
     // The published AST union describes the same shape this module reads structurally; the cast
     // hands the walker its own narrow view rather than twenty per-node-type narrowings.
-    root = parse(source, { filename: file, modern: true }) as unknown as { fragment?: RawNode };
+    root = parse(source, { filename: file, modern: true }) as unknown as {
+      fragment?: RawNode;
+      css?: unknown;
+    };
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -292,5 +386,7 @@ export function parseComponent(file: string, source: string): ParsedComponent {
   const nodes: SourceNode[] = [];
   const classTokens: ClassToken[] = [];
   if (root.fragment) collect(root.fragment, starts, nodes, classTokens);
-  return { file, source, nodes, classTokens };
+  const styleClassNames = new Set<string>();
+  if (root.css) collectStyleClassNames(root.css, styleClassNames);
+  return { file, source, nodes, classTokens, styleClassNames };
 }

@@ -29,6 +29,8 @@ export interface SheetRule {
   declarations: { property: string; value: string }[];
   /** The class names the selector targets, unescaped, excluding anything it only negates. */
   classNames: string[];
+  /** The class names a `:not(...)` clause in the selector excludes, unescaped. */
+  negatedClassNames: string[];
 }
 
 /** The compiled admin stylesheet, queryable by class token. */
@@ -38,6 +40,14 @@ export interface CompiledSheet {
   has(className: string): boolean;
   /** Every declaration the exact class name resolves to, in sheet order. */
   declarations(className: string): SheetDeclaration[];
+  /**
+   * Whether the exact class name appears anywhere in the sheet, positively (`has`) or only as a
+   * `:not(...)` exclusion target. DaisyUI's own `.menu` rules exclude `.disabled` and
+   * `.menu-title` items from hover/focus purely through negation, with no rule ever declaring
+   * `.disabled` positively; a markup class used this way is acknowledged by the sheet even though
+   * it carries no declaration of its own.
+   */
+  mentions(className: string): boolean;
 }
 
 const IDENT_CHAR = /[A-Za-z0-9_-]/;
@@ -259,6 +269,39 @@ export function selectorClassNames(selector: string): string[] {
   return names;
 }
 
+/** The class names a selector's `:not(...)` clauses exclude, the mirror image of `selectorClassNames`. */
+export function negatedClassNames(selector: string): string[] {
+  const names: string[] = [];
+  let bracket = 0;
+  let i = 0;
+  while (i < selector.length) {
+    const ch = selector[i];
+    if (ch === '"' || ch === "'") {
+      i = skipString(selector, i);
+      continue;
+    }
+    if (ch === '[') {
+      bracket++;
+      i++;
+      continue;
+    }
+    if (ch === ']') {
+      bracket--;
+      i++;
+      continue;
+    }
+    if (bracket === 0 && ch === ':' && /^:not\(/i.test(selector.slice(i))) {
+      const openParen = i + 4;
+      const afterClose = skipParens(selector, openParen);
+      names.push(...selectorClassNames(selector.slice(openParen + 1, afterClose - 1)));
+      i = afterClose;
+      continue;
+    }
+    i++;
+  }
+  return names;
+}
+
 /** Walk a stylesheet's blocks, recursing through groups and collecting the style rules. */
 function collectRules(css: string, conditions: string[], out: SheetRule[]): void {
   let preludeStart = 0;
@@ -291,6 +334,7 @@ function collectRules(css: string, conditions: string[], out: SheetRule[]): void
           conditions,
           declarations: parseDeclarations(inner),
           classNames: prelude.startsWith('@') ? [] : selectorClassNames(prelude),
+          negatedClassNames: prelude.startsWith('@') ? [] : negatedClassNames(prelude),
         });
       }
       i = end + 1;
@@ -306,12 +350,14 @@ export function parseSheet(css: string): CompiledSheet {
   const rules: SheetRule[] = [];
   collectRules(css, [], rules);
   const index = new Map<string, SheetRule[]>();
+  const negatedIndex = new Set<string>();
   for (const rule of rules) {
     for (const name of new Set(rule.classNames)) {
       const bucket = index.get(name);
       if (bucket) bucket.push(rule);
       else index.set(name, [rule]);
     }
+    for (const name of rule.negatedClassNames) negatedIndex.add(name);
   }
   return {
     rules,
@@ -325,5 +371,6 @@ export function parseSheet(css: string): CompiledSheet {
           conditions: rule.conditions,
         }))
       ),
+    mentions: (className) => index.has(className) || negatedIndex.has(className),
   };
 }

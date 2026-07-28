@@ -151,8 +151,8 @@ dialog's a11y conventions.
                 <span class="flex min-w-0 flex-col items-start">
                   <span class="w-full truncate font-medium">{target.title}</span>
                   <span class="type-meta text-muted">
-                    {#if isSelected(target)}<span class="badge badge-ghost badge-sm mr-1">Selected</span>{/if}
-                    {#if target.draft}<span class="badge badge-ghost badge-sm mr-1">Draft</span>{/if}
+                    {#if isSelected(target)}<span class="badge badge-outline badge-sm mr-1">Selected</span>{/if}
+                    {#if target.draft}<span class="badge badge-outline badge-sm mr-1">Draft</span>{/if}
                     {#if target.date}{target.date}{/if}
                   </span>
                 </span>

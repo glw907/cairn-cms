@@ -82,6 +82,18 @@ describe('parseSheet', () => {
     expect(sheet.has('disabled')).toBe(false);
   });
 
+  // daisyUI's own `.menu` rules exclude `.disabled` and `.menu-title` items from hover/focus
+  // purely through `:not(...)` negation, with no rule anywhere declaring either class
+  // positively. `mentions` is the broader existence check a rule reads to recognize this as real,
+  // working daisyUI API rather than an uncompiled class.
+  it('mentions a class a selector only negates, unlike has', () => {
+    const sheet = parseSheet('.menu li:not(.menu-title, .disabled) { padding: 1px }');
+    expect(sheet.mentions('disabled')).toBe(true);
+    expect(sheet.mentions('menu-title')).toBe(true);
+    expect(sheet.mentions('menu')).toBe(true);
+    expect(sheet.mentions('nowhere')).toBe(false);
+  });
+
   it('reads through comments and quoted content without losing a rule', () => {
     const sheet = parseSheet(
       '/* .commented-out { color: red } */ .real::after { content: "} .fake {" } .after { color: blue }'

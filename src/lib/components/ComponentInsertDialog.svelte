@@ -473,3 +473,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     </form>
   </dialog>
 {/if}
+
+<style>
+  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts): the admin
+     preview reuses the exact class the embed-card glyph ships with on a public page, deliberately
+     outside the admin sheet since public render output stays design-agnostic. The glyph's fill
+     rides currentColor from the surrounding markup. The rule carries only an inert custom
+     property, never read anywhere, since an empty ruleset fails svelte-check's own lint. */
+  .ec-glyph {
+    --cairn-naming-hook: true;
+  }
+</style>

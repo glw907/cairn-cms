@@ -451,3 +451,13 @@ stays pinned at the row's right end, reachable at every width.
     <span class="sr-only">Markdown help</span>
   </button>
 </div>
+
+<style>
+  /* A naming hook distinguishing this custom divider <li> from daisyUI's own .divider; the line
+     itself is drawn by the accompanying Tailwind utilities in the same class attribute. The rule
+     carries only an inert custom property, never read anywhere, since an empty ruleset fails
+     svelte-check's own lint. EditPage.svelte's own .menu-divider carries the identical rule. */
+  .menu-divider {
+    --cairn-naming-hook: true;
+  }
+</style>

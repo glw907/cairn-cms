@@ -1525,7 +1525,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             aria-selected={picked}
             tabindex={i === activeIndex ? 0 : -1}
             aria-label="{asset.displayName}. {missing ? 'Needs alt text' : 'Described'}. {used > 0 ? `Found in ${used} ${used === 1 ? 'entry' : 'entries'}` : 'No references found'}."
-            class="group relative flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {picked ? 'ring-2 ring-primary/70' : selected?.hash === asset.hash ? 'ring-2 ring-primary/40' : ''}"
+            class="relative flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {picked ? 'ring-2 ring-primary/70' : selected?.hash === asset.hash ? 'ring-2 ring-primary/40' : ''}"
             onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
@@ -3127,3 +3127,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     </div>
   {/if}
 </dialog>
+
+<style>
+  /* A test-selector hook (CairnMediaLibrary.test.ts queries it directly); the visible name's own
+     styling rides on the Tailwind utilities in the same class attribute. The rule carries only an
+     inert custom property, never read anywhere, since an empty ruleset fails svelte-check's own
+     lint; this is a co-located declaration of the class name rather than an entry in a JSON
+     allowlist a rename would silently orphan. */
+  .cairn-ml-name {
+    --cairn-naming-hook: true;
+  }
+</style>

@@ -203,7 +203,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       {:else if newSlug}
         <span class="text-muted"
           >Stored as
-          <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{newSlug}</code>
+          <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
           &middot; editors see the name, posts keep the slug</span
         >
       {:else}

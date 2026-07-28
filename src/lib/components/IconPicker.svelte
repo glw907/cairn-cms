@@ -96,3 +96,15 @@ IconSet path data, matching the renderer's 256-unit viewBox.
     </button>
   {/each}
 </div>
+
+<style>
+  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
+     the admin preview matches the exact class the embed-card glyph ships with on a public page.
+     The glyph's fill rides currentColor from the surrounding markup; its real "home" is
+     deliberately outside the admin sheet, since public render output stays design-agnostic. The
+     rule carries only an inert custom property, never read anywhere, since an empty ruleset
+     fails svelte-check's own lint. */
+  .ec-glyph {
+    --cairn-naming-hook: true;
+  }
+</style>

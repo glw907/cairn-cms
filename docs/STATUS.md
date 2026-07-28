@@ -97,6 +97,23 @@ Assets trial. The principle-pages pass queues behind the initiative. When that r
 MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
 its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
 
+**A SIXTH DESIGN PRINCIPLE, ruled 2026-07-28 (Geoff).** The front-page ledger goes from five to six.
+The new claim is that cairn's design language is ENFORCED, not merely documented (the grammar tokens,
+the toolkit primitives, `cairn-audit`, the norms manifest, the standard shipped as a loadable skill),
+and the payoff is that a developer spends their effort on their own business logic rather than on
+building an admin interface. The honest form is LESS burdened, not free. "Build for agentic coding"
+was considered and rejected as the phrasing: it is an imperative where the other five are flat
+declaratives, and it keys the principle to a vocabulary that will move. Agentic coding is the payoff,
+not the premise; the acute case is that an enforced language keeps an agent from drifting off the
+rails when it implements or adds UI, which helps a human developer identically.
+
+This touches two queued passes. The principle-pages plan is AMENDED in place (six pages, `T1a`
+through `T1f`; full reasoning at the top of that file), and Pass 3 owns the README and front-page
+positioning that lands it. **The blocking dependency: the page will want to say cairn ships a Claude
+skill, and that is not true today.** There is no `skills/` directory and the package `files` array
+does not carry one; Pass 3 ships it. Do not publish the skills claim before it lands. The copy itself
+is unwritten by design, since front-page voice is a brainstorm sitting with Geoff, not execution work.
+
 **RED CI CLOSED 2026-07-28 (Pass 2 Task 0).** The six stale `admin-visual` baselines (office shell,
 media library, media detail panel, each in both schemes) regenerated on the CI renderer via `e2e.yml`'s
 `update_snapshots` dispatch and landed on `main` as `84abe955`. They had been stale since 2026-07-21

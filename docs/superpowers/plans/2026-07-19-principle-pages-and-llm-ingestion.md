@@ -12,7 +12,29 @@ design arc (cairn-pub Passes 2 through 4). Ready to execute in a fresh session.*
   describes, so the figure is honest.
 - Sequencing: **this pass first, Topo second** (token-efficiency call, reasoning in STATUS).
 
-Two dimensions, one pass. First: a purpose-built explanation page for each of the five core
+**AMENDED 2026-07-28 (Geoff): a SIXTH principle joins the ledger, so this pass plans for six
+pages, not five.** The claim is that cairn's design language is ENFORCED, not merely documented:
+the grammar tokens, the admin toolkit primitives, `cairn-audit` as a mechanical gate, the norms
+manifest, and the standard shipped as a loadable skill. The payoff is that a developer spends
+their effort on their own business logic instead of building an admin interface, and the honest
+form of that claim is LESS burdened, not free: they still write their own screens, inside a
+language that holds them.
+
+Two framings were considered and one was rejected. "Build for agentic coding" is out: it is an
+imperative aimed at the builder where the other five are flat declaratives read from the user's
+side, and it keys the principle to a trend vocabulary that will move. The enforcement framing is
+durable and describes what the three-pass design-infrastructure initiative actually built.
+Agentic coding is the payoff, not the premise. The rider that makes it worth stating at all:
+enforcement helps a human developer identically, but the AI case is the acute one, since an
+enforced language is what keeps an agent from drifting off the rails when it implements or adds
+UI.
+
+**Blocking dependency, do not publish early.** The page will want to say cairn ships its standard
+as a Claude skill. That is not true yet: there is no `skills/` directory and the package `files`
+array does not carry one. Design-infrastructure Pass 3 ships it. This pass may not make the skills
+claim before that lands, and the sixth page's disposition should be sequenced accordingly.
+
+Two dimensions, one pass. First: a purpose-built explanation page for each of the six core
 design principles, landed as first-class citizens of the docs. Second: cairn's docs made
 fully ingestable by an LLM, following current published practice.
 
@@ -23,13 +45,13 @@ exist. No page may justify itself by reference to the front-page ledger, and non
 add-on: each earns its slot in the explanation README on its own terms. The front page
 merely happens to link them (the existing micro-ctas retarget at the end of the pass).
 
-## Dimension 1: the five principle pages
+## Dimension 1: the six principle pages
 
 The principles integrate into the docs as first-class content that flows with and
 complements what exists (Geoff, 2026-07-19). They do NOT all have to sit in the same
 relative position, a principle page may absorb content from other pages or supplant a page
 outright, and adding them can trigger reorganizing the documentation where that produces
-the better tree. The unit of design is the docs as a whole, not five insertions.
+the better tree. The unit of design is the docs as a whole, not six insertions.
 
 **The disposition survey (the pass's first deliverable):** for each principle, map the
 existing coverage across the arms, then commit a disposition: a new page (and where it
@@ -115,7 +137,7 @@ the 2026 best-practice guides), verified live at execution time:
 1. T0: the disposition survey (main loop): per-principle dispositions, the reorganization
    proposal, the retired-URL list with its redirect-or-break call. Rides in the pass
    record; execution follows it.
-2. T1a through T1e: draft the five pages (main loop), each through the full register
+2. T1a through T1f: draft the six pages (main loop), each through the full register
    machinery; land per the survey's dispositions with each arm index updated in the same
    change, absorbed pages retired in the same change.
 3. T2 (implementer, cairn-cms): cross-links, nav, any redirect mechanism the survey called
@@ -123,7 +145,7 @@ the 2026 best-practice guides), verified live at execution time:
 4. T3 (implementer, cairn-pub): the three ingestion surfaces (`/llms.txt`,
    `/llms-full.txt`, per-page markdown endpoints) generated from the docs corpus, with
    tests asserting presence, shape, and the token ceiling.
-5. T4 (implementer, cairn-pub): retarget the five front-page micro-ctas per the survey's
+5. T4 (implementer, cairn-pub): retarget the six front-page micro-ctas per the survey's
    final page map.
 6. Verification: live fetch of every new endpoint, register spot-read of llms.txt's
    summary block, gates in both repos.
@@ -136,7 +158,7 @@ the 2026 best-practice guides), verified live at execution time:
 
 ## Acceptance for the whole pass
 
-- Five explanation pages live on cairn.pub, each passing the standalone test at review.
+- Six explanation pages live on cairn.pub, each passing the standalone test at review.
 - The front page's micro-ctas point at them.
 - `curl https://cairn.pub/llms.txt`, `/llms-full.txt`, and any `/docs/**.md` return valid
   markdown; the full file's token count is recorded and under the ceiling.

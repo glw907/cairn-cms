@@ -73,13 +73,13 @@ Main-loop work, not a dispatch (it is a workflow trigger plus an eyes-on read).
 - Modify (via CI): `examples/showcase/e2e/admin-visual.spec.ts-snapshots/` — the office
   shell, media library, and media detail images, light and dark (6 files).
 
-- [ ] **Step 1:** Trigger `e2e.yml` `workflow_dispatch` with `update_snapshots` on `main`.
-- [ ] **Step 2:** Read each regenerated image against the `0.90.x` design intent (STATUS
+- [x] **Step 1:** Trigger `e2e.yml` `workflow_dispatch` with `update_snapshots` on `main`.
+- [x] **Step 2:** Read each regenerated image against the `0.90.x` design intent (STATUS
   names the changes: ExpandableRow graduation, ListToolbar menu facet + flex-row
   recomposition + select sizing, StatusChip hairline border, OfficeList fixes). This
   blesses shipped work, so the read is a real design read, not a diff glance.
-- [ ] **Step 3:** Land the images on `main`, confirm the `e2e` workflow is green.
-- [ ] **Step 4:** Update STATUS's red-CI paragraph to closed; commit
+- [x] **Step 3:** Land the images on `main`, confirm the `e2e` workflow is green.
+- [x] **Step 4:** Update STATUS's red-CI paragraph to closed; commit
   (`test(e2e): regenerate the six 0.90.x admin-visual baselines`).
 
 ## Phase 1: the ruled normalization
@@ -98,23 +98,23 @@ Main-loop work, not a dispatch (it is a workflow trigger plus an eyes-on read).
   utility now declares `line-height: var(--tw-leading, var(--cairn-type-<role>--leading))`
   alongside its `font-size`. `GRAMMAR_TOKENS` lists the new names (Tasks 5, 9a consume it).
 
-- [ ] **Step 1: Measure before defining.** body takes `text-sm`'s 20px and title takes
+- [x] **Step 1: Measure before defining.** body takes `text-sm`'s 20px and title takes
   `text-2xl`'s 32px (ruled, spec section 13). For subtitle, meta, label, and chip, measure
   the dominant COMPUTED line-height at current call sites in the rendered admin; record
   the measurement table in the task commit message. A tie or a sub-two-site sample defers
   to the Tailwind named step nearest the role's size.
-- [ ] **Step 2: Failing tests first.** Extend `grammar-tokens.test.ts`: (a) every
+- [x] **Step 2: Failing tests first.** Extend `grammar-tokens.test.ts`: (a) every
   `GRAMMAR_TOKENS` name defined exactly once in the built sheet, outside theme blocks;
   (b) NEW, the reverse direction owed from the Pass 1 post-mortem: every
   `--cairn-type-*`/`--cairn-gap-*` custom property defined in the built sheet appears in
   `GRAMMAR_TOKENS`; (c) each `type-*` utility's compiled declarations set both
   `font-size` and a `line-height` that references `--tw-leading` (so `leading-*`
   composition survives).
-- [ ] **Step 3:** Define the tokens and utility changes, run to green, full gate.
-- [ ] **Step 4: Capture the drift yardstick.** Run the showcase `admin-visual` suite
+- [x] **Step 3:** Define the tokens and utility changes, run to green, full gate.
+- [x] **Step 4: Capture the drift yardstick.** Run the showcase `admin-visual` suite
   locally with snapshot updates into an UNCOMMITTED local reference directory (never the
   committed baselines). Tasks 3–5 compare against this set; it dies at Task 6's real regen.
-- [ ] **Step 5: Commit** (`feat(admin): type roles carry ruled leading`).
+- [x] **Step 5: Commit** (`feat(admin): type roles carry ruled leading`).
 
 ### Task 2: The heading-role probe (Geoff's pick)
 
@@ -122,14 +122,14 @@ Main-loop work plus one async Geoff read; run it EARLY so the pick lands before 
 needs it. Per design-iteration-economics: this is a probe, reviewed on Geoff's own time
 while Tasks 3, 4, 7, 8 proceed.
 
-- [ ] **Step 1:** From the running showcase, capture side-by-side crops of the two live
+- [x] **Step 1:** From the running showcase, capture side-by-side crops of the two live
   candidate recipes at real call sites: 16px semibold (`RenameDialog`/`EntryPicker`/
   `EditPage` panel headings) and 18px display-bold (`CairnMediaLibrary` dialog headings),
   light and dark, plus each recipe mocked into the OTHER family's context.
-- [ ] **Step 2:** Deliver the labeled crops to Geoff with a one-line recommendation and
+- [x] **Step 2:** Deliver the labeled crops to Geoff with a one-line recommendation and
   the consequence of each pick (which family visually changes). No build waits on the
   reply except Task 5.
-- [ ] **Step 3:** Record the pick in the deviations ledger's rulings section and the spec
+- [x] **Step 3:** Record the pick in the deviations ledger's rulings section and the spec
   section 13 (size, weight, font family, leading); commit
   (`docs(spec): ratify the heading-role recipe`).
 
@@ -143,12 +143,12 @@ Deterministic substitution per the Pass 1 method note: a pure string replacement
 by grep, run in the main loop or one dispatch, never a fan-out. With Task 1's ruled
 leading equal to the named steps' own, these swaps are pixel-identical.
 
-- [ ] **Step 1:** Substitute; verify by grep that zero `text-sm`/`text-2xl` class tokens
+- [x] **Step 1:** Substitute; verify by grep that zero `text-sm`/`text-2xl` class tokens
   remain in admin markup (word-boundary matching, the ledger's counting lesson).
-- [ ] **Step 2:** Compare a fresh local render against Task 1's captured reference: these
+- [x] **Step 2:** Compare a fresh local render against Task 1's captured reference: these
   two swaps must move NOTHING relative to it (Task 1's leading drift is already inside
   the reference; any new delta means the substitution is wrong).
-- [ ] **Step 3:** Full gate, commit (`refactor(admin): named type steps onto their roles`).
+- [x] **Step 3:** Full gate, commit (`refactor(admin): named type steps onto their roles`).
 
 ### Task 4: The 12px resolution
 
@@ -163,10 +163,10 @@ method). Dispatch with these criteria: a site expressing the label relationship
 to `type-meta` (13px). A site fitting neither cleanly goes to `type-meta` and is listed
 in the dispatch report for main-loop review.
 
-- [ ] **Step 1:** Produce the per-site decision table (file:line, old class, chosen role,
+- [x] **Step 1:** Produce the per-site decision table (file:line, old class, chosen role,
   relationship named) BEFORE editing; main loop reviews the table, then the edits apply.
-- [ ] **Step 2:** Grep-zero: no `text-xs` or `text-[0.75rem]` tokens remain in admin markup.
-- [ ] **Step 3:** Full gate (`admin-visual` expected red from here until Task 6; every
+- [x] **Step 2:** Grep-zero: no `text-xs` or `text-[0.75rem]` tokens remain in admin markup.
+- [x] **Step 3:** Full gate (`admin-visual` expected red from here until Task 6; every
   behavioral spec green). Commit (`refactor(admin): resolve the 12px sites onto meta and label`).
 
 ### Task 5: The heading unification, one-offs, and ratified exceptions
@@ -181,41 +181,60 @@ Blocked on Task 2's pick. **Files:** the `text-base font-semibold` family (19 si
 - Produces: `--cairn-type-heading`, `--cairn-type-heading--leading`, utility
   `type-heading` (in the safelist), per Task 2's ratified recipe.
 
-- [ ] **Step 1:** Define the heading token/utility per the pick, extending the Task 1
+- [x] **Step 1:** Define the heading token/utility per the pick, extending the Task 1
   tests (they enumerate from `GRAMMAR_TOKENS`, so the new role rides the same assertions).
-- [ ] **Step 2:** Migrate both heading families onto `type-heading`; the losing family
+- [x] **Step 2:** Migrate both heading families onto `type-heading`; the losing family
   changes appearance by ruling. The 17px and 18px one-offs (`CairnMediaLibrary:1769`,
   `EditPage:1842`) resolve to `type-heading` or `type-subtitle` by the same relationship
   judgment, recorded in the decision table.
-- [ ] **Step 3:** The slips: `ComponentInsertDialog:368` (11.2px) → `type-label`;
+- [x] **Step 3:** The slips: `ComponentInsertDialog:368` (11.2px) → `type-label`;
   `CairnMediaLibrary:1982` (9.6px) → `type-chip`.
-- [ ] **Step 4:** Exceptions: the three wordmark sites and the EditPage document title
+- [x] **Step 4:** Exceptions: the three wordmark sites and the EditPage document title
   keep their values and gain the suppression directive in the Task 8 syntax
   (`cairn-audit-disable-next-line type-scale -- <reason>`), reasons naming the K4 keming
   fix and the editor-canvas ruling. Decide the stat numbers (resolve to `type-heading` or
   ratify as a fourth exception) by eye against the rendered stats strip; record either way
   in the ledger.
-- [ ] **Step 5:** Grep-zero for `text-base`, `text-lg`, `text-xl`, `text-3xl` as
+- [x] **Step 5:** Grep-zero for `text-base`, `text-lg`, `text-xl`, `text-3xl` as
   font-size tokens in admin markup (word-boundary; `text-base-content` etc. are color
   utilities and stay). Full gate; commit (`feat(admin): the heading role lands; type scale complete`).
 
 ### Task 6: One regeneration, the eyes-on read, and the docs that must not lie
 
-- [ ] **Step 1:** Regenerate ALL `admin-visual` baselines once via the CI canonical
+- [x] **Step 1:** Regenerate ALL `admin-visual` baselines once via the CI canonical
   renderer (`e2e.yml` `update_snapshots` against the worktree branch).
-- [ ] **Step 2:** Main-loop eyes-on read of every regenerated image against intent;
+- [x] **Step 2:** Main-loop eyes-on read of every regenerated image against intent;
   before/after strips of the most-changed screens (media library, EditPage, dialogs) go
   to Geoff, batched with anything else owed him at that point.
-- [ ] **Step 3:** Retire the resolved ledger entries (type sections collapse to a
+- [x] **Step 3:** Retire the resolved ledger entries (type sections collapse to a
   ratified-history note; spacing sections stay open for Pass 3); update
   `docs/reference/admin-grammar-tokens.md` (seven roles, leading column, the exception
   list, the `--tw-leading` composition note) and `docs/internal/admin-design-system.md`
   recipes (the Pass 1 post-mortem's stale-recipe lesson: no recipe may still prescribe a
   migrated literal or the losing heading recipe).
-- [ ] **Step 4:** Full gate including the now-green `admin-visual` suite; commit
+- [x] **Step 4:** Full gate including the now-green `admin-visual` suite; commit
   (`test(e2e): regenerate baselines for the ruled normalization`).
 
 ## Phase 2: cairn-audit, static mode
+
+> **PHASE 1 COMPLETE, 2026-07-28.** Tasks 0 through 6 landed. Task 0 merged to `main`
+> (`640b48d2`); Tasks 1 through 6 are on `design-infra-pass-2-enforcement`, unmerged. The type
+> scale is closed: seven roles each carrying a ruled leading, 119 twelve-pixel sites resolved,
+> 129 named steps migrated, the heading role ratified at 18px/700/display, five counted
+> exceptions, and one baseline regeneration read by eye. Everything below is untouched.
+>
+> Three findings from Phase 1 that bind the tasks below:
+>
+> 1. **Task 8's suppression semantics are amended** (see the amendment in Task 8): "next line"
+>    must mean the next AST node, not the next physical line. Cairn's own tree already contains
+>    a multi-line-element exception site that a line-literal parser would score as two errors.
+> 2. **Task 9a's `type-scale` rule must know about `text-base-content` and friends.** A word
+>    boundary alone matches `text-base` inside the daisyUI COLOR utilities. This has now caused
+>    a miscount twice in this initiative.
+> 3. **The audit's static scan scope must include `src/lib/admin-fields`**, the third public
+>    surface that renders inside the admin theme. It was missing from the stylesheet scan roots
+>    and from `check:admin-css-classes` until Phase 1 added it, and the omission had already
+>    silently broken a shipped class.
 
 ### Task 7: The audit skeleton and the two resolution substrates
 

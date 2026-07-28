@@ -15,39 +15,56 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Task 15's landing)
+## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 16 in flight)
 
-**Phases 1 through 4 of Pass 2 are COMPLETE (Tasks 0 to 14). Task 15 was IN FLIGHT as a workflow
-when the session closed. Tasks 16 to 18 are untouched.** Plan:
+**Phases 1 through 5 are complete through Task 15 (Tasks 0 to 15). Task 16 is IN FLIGHT as a
+workflow. Tasks 17 and 18 are untouched.** Plan:
 `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked through
-Task 14, with the Phase 2 and Phase 3 notes appended to it.
+Task 15, with the Phase 2, Phase 3, and Task 15 amendments appended to it.
 
 **Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume design-infrastructure
-Pass 2. Task 15 ran as a workflow whose result needs reviewing before Task 16; check the
-`design-infra-pass-2-enforcement` worktree's git log first, then continue per cairn-pass." The
-worktree exists at `.claude/worktrees/design-infra-pass-2` with its showcase deps installed
-against it, so no setup is owed. Do NOT re-run Phases 1 through 4.
+Pass 2. Task 16 ran as workflow `wf_939ea2af-b9a`; check the `design-infra-pass-2-enforcement`
+worktree's git log first, then continue per cairn-pass." The worktree at
+`.claude/worktrees/design-infra-pass-2` has its showcase deps installed against it, so no setup is
+owed. Do NOT re-run Tasks 0 through 15.
 
-**FIRST ACTIONS, in this order, before any new dispatch:**
+**Task 15 LANDED and is fully verified**, as `c14c2f03` (rebased onto `001e817b`). The gate was
+re-run in the main loop rather than trusted from the report: `check` 1503 files 0 errors 0 warnings,
+`npm test` 351 files / 4235 tests exit 0, `check:comments`, `check:reference`,
+`check:reference:signatures`, `check:docs`, `check:package`, `check:surface`, `check:version` all
+green. Diff reviewed clean: only Task 15's checkbox ticked, CHANGELOG under `## Unreleased` with no
+version, no forward claims about Task 16's rules, no scratch files.
 
-1. **Check whether the Task 15 workflow committed.** It was run ID `wf_c98bf0ab-fe8`, thirteen
-   agents: six rule builders, six adversarial refuters, one integrator that wires the registry,
-   graduates the two gates, runs the full gate, and commits. If the worktree has an uncommitted or
-   half-applied state, the recovery is `Workflow({scriptPath, resumeFromRunId: 'wf_c98bf0ab-fe8'})`,
-   whose completed agents replay from cache. Read the run's `journal.jsonl` before assuming a cached
-   result was non-empty.
-2. **Read the regenerated `admin-visual` baselines with your own eyes.** Ten were red on purpose from
-   Task 12's ruled header change, and a CI `update_snapshots` dispatch was fired against the branch
-   at the session close (run `30388014415`). Regeneration blesses whatever renders, so the read is a
-   real design read: the intended delta is the tightened `PageHeader` stack (the UA-margin fix) and
-   the meta line dropping from 14px to 13px. Anything else in the diff is a defect, not a baseline.
-3. **Review the Task 15 integrator's own-tree rule findings.** Cairn's admin is the audit's first
-   honest consumer, so real findings there are results, not failures, and they feed Task 17's
-   calibration.
+**The Task 15 headline, worth carrying into every later rule.** Six agents built the rules and six
+refuted them, each required to demonstrate a miss with a runnable input. All six were refuted. The
+shared cause: three rules parsed computed colors with an `rgb()`-only regex against a palette that
+is `oklch` end to end, so they could not fire against the shipped admin at all, and
+`chip-ground-collision` passed the very `badge-ghost`-on-zebra collision named in its own header.
+The engine that exists because regexes fail open had built three rules on a regex. Second lesson:
+all six shipped green under `page.evaluate` test doubles and two threw `ReferenceError` on every
+real page, having never once executed in a browser. Rendered rules are now proven against real
+Chromium in `src/tests/unit/audit/rules/rendered/browser-regressions.test.ts`.
 
-**Where the work sits.** `main` is at `cda70f30`, pushed. The pass branch
-`design-infra-pass-2-enforcement` is pushed through `87c2e0dc` (Task 14), and anything the Task 15
-workflow committed sits on top of that. Both trees were clean at the session close.
+**TWO RULINGS OWED BY GEOFF, both feeding Task 17's calibration, neither blocking Task 16:**
+
+1. **The 44x44 question, large.** The rendered run against cairn's own admin returns 160 errors, 138
+   of them `touch-targets`, because the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px
+   toolbar controls, essentially none of which clear 44x44 at 390. Every class was spot-checked as a
+   real finding, not a rule bug, and no admin markup was touched. Either the admin meets that bar or
+   the bar is wrong for a dense desk interface. This is a design ruling, not a task's call.
+2. **`chip-ground-collision` gates at error tier on an unratified number.** Spec 6.3 set no
+   threshold; the builder borrowed `1.5` from the graduating `interactive-contrast` probe on a shared
+   "not accidentally camouflaged" rationale and flagged it for confirmation.
+
+**Where the work sits.** `main` is at `cda70f30`. The pass branch `design-infra-pass-2-enforcement`
+is pushed through `001e817b`; `c14c2f03` (Task 15) is committed locally and NOT yet pushed, with
+Task 16's workflow committing on top of it.
+
+**Two process notes from this session.** Tasks 14 and 15 both shipped without `code-simplifier`,
+because a subagent cannot dispatch another agent; the Task 16 workflow carries a simplifier stage
+covering both. And the Task 15 workflow's transcripts split across two session directories after a
+`/clear`, so a guard watching only the launching session's directory misreads a live agent as
+stalled; watch both.
 
 **TWO CARRIED RISKS, do not lose:**
 

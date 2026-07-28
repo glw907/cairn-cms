@@ -82,6 +82,15 @@ export interface ParsedComponent {
    * `svelte/compiler`'s own structured CSS AST instead.
    */
   styleClassNames: Set<string>;
+  /**
+   * The component's own scoped `<style>` block: its raw CSS text and the offset its first
+   * character sits at in `source`. Absent when the component carries no `<style>` block. The
+   * CSS-family static rules (token-colors, grammar-boundary, focus-parity, motion-band,
+   * reduced-motion) parse this text with `sheet.ts`'s own selector/declaration parser and add
+   * this offset back onto every position it returns, so a finding's line points at the actual
+   * CSS in the component's source rather than at an offset local to the extracted text.
+   */
+  styleBlock?: { source: string; start: number };
 }
 
 // The svelte AST is walked structurally rather than through the published `AST` union. Two reasons:
@@ -366,18 +375,23 @@ function collectStyleClassNames(node: unknown, out: Set<string>): void {
   }
 }
 
+/** The shape of svelte/compiler's own `css` root node this module reads: the raw text span. */
+interface RawStyle {
+  content?: { start?: number; end?: number };
+}
+
 /**
  * Parse one component into the substrate the static rules run on. A component that does not parse
  * throws naming the file, since a syntax error is a real defect rather than a file to skip.
  */
 export function parseComponent(file: string, source: string): ParsedComponent {
-  let root: { fragment?: RawNode; css?: unknown };
+  let root: { fragment?: RawNode; css?: RawStyle };
   try {
     // The published AST union describes the same shape this module reads structurally; the cast
     // hands the walker its own narrow view rather than twenty per-node-type narrowings.
     root = parse(source, { filename: file, modern: true }) as unknown as {
       fragment?: RawNode;
-      css?: unknown;
+      css?: RawStyle;
     };
   } catch (err) {
     throw new Error(`${file}: ${err instanceof Error ? err.message : String(err)}`);
@@ -388,5 +402,10 @@ export function parseComponent(file: string, source: string): ParsedComponent {
   if (root.fragment) collect(root.fragment, starts, nodes, classTokens);
   const styleClassNames = new Set<string>();
   if (root.css) collectStyleClassNames(root.css, styleClassNames);
-  return { file, source, nodes, classTokens, styleClassNames };
+  const content = root.css?.content;
+  const styleBlock =
+    typeof content?.start === 'number' && typeof content?.end === 'number'
+      ? { source: source.slice(content.start, content.end), start: content.start }
+      : undefined;
+  return { file, source, nodes, classTokens, styleClassNames, styleBlock };
 }

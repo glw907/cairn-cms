@@ -58,6 +58,10 @@ export default [
       // require-throws-type is a JSDoc rule that wants `@throws {Type}`, which TSDoc rejects as a
       // malformed inline tag (tsdoc/syntax). The charter mandates TSDoc, so @throws stays prose.
       'jsdoc/require-throws-type': 'off',
+      // The same conflict as require-throws-type above, for a generator's yielded value: JSDoc's
+      // require-yields wants an `@yields` tag, and TSDoc's own tag set does not define one. A
+      // generator function describes what it yields in prose instead.
+      'jsdoc/require-yields': 'off',
     },
   },
 ];

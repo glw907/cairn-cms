@@ -11,7 +11,7 @@ import { CONFIG_FILE } from './config.js';
 import type { Dirent } from 'node:fs';
 import type { AuditConfig } from './config.js';
 import type { ParsedComponent } from './markup.js';
-import type { AuditReport, Finding, StaticRule } from './types.js';
+import type { AuditReport, CssSource, Finding, StaticRule } from './types.js';
 
 /** Every `.svelte` file under a directory, recursively, as paths relative to the audited root. */
 function componentPaths(root: string, dir: string): string[] {
@@ -43,6 +43,14 @@ function parseAll(config: AuditConfig): ParsedComponent[] {
   return files;
 }
 
+/** The standalone CSS files `config.staticCssFiles` names, read once for the whole run. */
+function loadCssFiles(config: AuditConfig): CssSource[] {
+  return config.staticCssFiles.map((path) => ({
+    file: path,
+    source: readFileSync(resolve(config.root, path), 'utf8'),
+  }));
+}
+
 function byPosition(a: Finding, b: Finding): number {
   return a.file === b.file ? a.line - b.line : a.file.localeCompare(b.file);
 }
@@ -63,8 +71,9 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   }
   const sheet = parseSheet(css);
   const files = parseAll(config);
-  const raised = rules.flatMap((rule) => rule.check({ files, sheet, config }));
-  const split = applySuppressions(raised, files);
+  const cssFiles = loadCssFiles(config);
+  const raised = rules.flatMap((rule) => rule.check({ files, sheet, config, cssFiles }));
+  const split = applySuppressions(raised, [...files, ...cssFiles]);
   return {
     findings: [...split.findings].sort(byPosition),
     suppressed: [...split.suppressed].sort(byPosition),

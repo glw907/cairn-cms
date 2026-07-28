@@ -53,14 +53,20 @@ function probeRule(seen: StaticRuleContext[]): StaticRule {
 }
 
 describe('the static rule registry', () => {
-  // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules are
-  // the first modules to register, without touching run.ts.
-  it('carries the four markup-family rules Task 9a registered', () => {
+  // Task 7 shipped the contract with an empty registry; Task 9a's four markup-family rules and
+  // Task 9b's five CSS-family rules are the modules that have registered since, without touching
+  // run.ts.
+  it('carries the nine static rules Tasks 9a and 9b registered', () => {
     expect(staticRules().map((rule) => rule.id)).toEqual([
       'no-uncompiled-class',
       'type-scale',
       'gap-scale',
       'stock-default-hazards',
+      'token-colors',
+      'grammar-boundary',
+      'focus-parity',
+      'motion-band',
+      'reduced-motion',
     ]);
   });
 
@@ -95,10 +101,21 @@ describe('runStatic', () => {
 
   it('runs the shipped registry, which now flags this fixture tree\'s uncompiled classes', () => {
     // Task 9a's first rule to register: type-label and card never compile into the fixture
-    // sheet above, which only defines type-body. A clean tree is proven by rules.test.ts's
-    // fixtures, not by this generic wiring test.
+    // sheet above, which only defines type-body. Neither fixture component carries a <style>
+    // block, so the CSS-family rules Task 9b added have nothing to scan here; a clean tree is
+    // proven by each rule's own fixtures, not by this generic wiring test.
     const report = runStatic(loadConfig(root));
-    expect(report.ruleIds).toEqual(['no-uncompiled-class', 'type-scale', 'gap-scale', 'stock-default-hazards']);
+    expect(report.ruleIds).toEqual([
+      'no-uncompiled-class',
+      'type-scale',
+      'gap-scale',
+      'stock-default-hazards',
+      'token-colors',
+      'grammar-boundary',
+      'focus-parity',
+      'motion-band',
+      'reduced-motion',
+    ]);
     expect(report.findings.map((f) => f.ruleId)).toEqual(['no-uncompiled-class', 'no-uncompiled-class']);
     expect(exitCodeFor(report)).toBe(1);
   });

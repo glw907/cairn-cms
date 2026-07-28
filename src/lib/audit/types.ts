@@ -29,11 +29,24 @@ export interface Finding {
   message: string;
 }
 
+/** One standalone CSS file the config names for the CSS-family static rules to scan. */
+export interface CssSource {
+  /** Path as the report prints it, relative to the audited root. */
+  file: string;
+  source: string;
+}
+
 /** Everything a static rule may read, assembled once per run. */
 export interface StaticRuleContext {
   files: ParsedComponent[];
   sheet: CompiledSheet;
   config: AuditConfig;
+  /**
+   * Standalone CSS files `config.staticCssFiles` names, outside any component. Optional: Task 7's
+   * markup-family rules never read it, so their fixture contexts stay unchanged; the CSS-family
+   * rules (Task 9b) default it to an empty list when a caller omits it.
+   */
+  cssFiles?: CssSource[];
 }
 
 /** A static rule: an id, a tier, and a pure check over the run's context. */

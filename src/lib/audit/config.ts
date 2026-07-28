@@ -41,6 +41,14 @@ export interface AuditConfig {
   root: string;
   /** Directories the static scan reads components from, recursively. */
   staticScope: string[];
+  /**
+   * Standalone CSS files (paths relative to `root`) the CSS-family static rules also scan,
+   * alongside every component's own scoped `<style>` block. Empty by default: a component's
+   * `<style>` block is the only CSS surface an audited tree carries until a consumer names one
+   * explicitly, since the built admin sheet these rules would otherwise sweep in is the grammar
+   * and palette's own declaration site, not a site re-tuning or redeclaring it.
+   */
+  staticCssFiles: string[];
   /** The built admin stylesheet the class tokens resolve against. */
   sheetPath: string;
   /** The pages rendered mode visits. */
@@ -100,6 +108,7 @@ export function resolveConfig(
   return {
     root,
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
+    staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     sheetPath:
       (file.sheet as string | undefined) ??
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ??

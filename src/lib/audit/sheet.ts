@@ -31,6 +31,16 @@ export interface SheetRule {
   classNames: string[];
   /** The class names a `:not(...)` clause in the selector excludes, unescaped. */
   negatedClassNames: string[];
+  /**
+   * Character offset of the selector's first non-whitespace, non-comment character in the CSS
+   * text `parseSheet` was given. Meaningless for the compiled admin sheet (Task 9a's rules
+   * resolve position through a markup class token instead), but load-bearing for the CSS-family
+   * rules (Task 9b), which parse a component's own `<style>` block or a standalone consumer CSS
+   * file and have no class token to anchor a finding to.
+   */
+  start: number;
+  /** Character offset just past the selector text, at the rule's opening brace. */
+  end: number;
 }
 
 /** The compiled admin stylesheet, queryable by class token. */
@@ -302,8 +312,37 @@ export function negatedClassNames(selector: string): string[] {
   return names;
 }
 
-/** Walk a stylesheet's blocks, recursing through groups and collecting the style rules. */
-function collectRules(css: string, conditions: string[], out: SheetRule[]): void {
+/**
+ * The offset span of a prelude's meaningful text: leading/trailing whitespace and comments
+ * excluded, so a rule's reported position points at the selector itself rather than at
+ * whatever blank line or doc comment happens to precede it.
+ */
+function trimmedSpan(css: string, from: number, to: number): { start: number; end: number } {
+  let start = from;
+  while (start < to) {
+    if (css[start] === '/' && css[start + 1] === '*') {
+      start = Math.min(skipComment(css, start), to);
+      continue;
+    }
+    if (/\s/.test(css[start])) {
+      start++;
+      continue;
+    }
+    break;
+  }
+  let end = to;
+  while (end > start && /\s/.test(css[end - 1])) end--;
+  return { start, end };
+}
+
+/**
+ * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
+ * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
+ * call's own `css` starts at: a nested `@media` block recurses over its own inner substring
+ * (offset 0 in that substring), and every rule's `start`/`end` needs to read against the ONE
+ * source `parseSheet`'s caller handed it, not against whichever nesting level produced it.
+ */
+function collectRules(css: string, conditions: string[], out: SheetRule[], baseOffset: number): void {
   let preludeStart = 0;
   let i = 0;
   while (i < css.length) {
@@ -323,11 +362,12 @@ function collectRules(css: string, conditions: string[], out: SheetRule[]): void
     }
     if (ch === '{') {
       const prelude = stripComments(css.slice(preludeStart, i)).trim();
+      const { start: preludeStartTrimmed, end: preludeEndTrimmed } = trimmedSpan(css, preludeStart, i);
       const { end, nested } = scanBlock(css, i);
       const inner = css.slice(i + 1, end);
       if (nested) {
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
-        collectRules(inner, inherited, out);
+        collectRules(inner, inherited, out, baseOffset + i + 1);
       } else {
         out.push({
           selector: prelude,
@@ -335,6 +375,8 @@ function collectRules(css: string, conditions: string[], out: SheetRule[]): void
           declarations: parseDeclarations(inner),
           classNames: prelude.startsWith('@') ? [] : selectorClassNames(prelude),
           negatedClassNames: prelude.startsWith('@') ? [] : negatedClassNames(prelude),
+          start: baseOffset + preludeStartTrimmed,
+          end: baseOffset + preludeEndTrimmed,
         });
       }
       i = end + 1;
@@ -345,10 +387,51 @@ function collectRules(css: string, conditions: string[], out: SheetRule[]): void
   }
 }
 
+/**
+ * The individual selectors a comma-separated selector list names, trimmed and with parentheses
+ * and bracket groups (`:not(...)`, `:global(...)`, an attribute selector) kept intact so a comma
+ * inside one of those never splits a single selector in two. The CSS-family static rules use
+ * this to compare one alternative of a selector list (a `:hover` clause, say) against another
+ * rule's own list, so a shared selector's `:hover`/`:focus-visible` pairing can live in either
+ * rule's own alternative rather than needing to repeat the whole list on both sides.
+ */
+export function splitSelectorList(selector: string): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let start = 0;
+  let i = 0;
+  while (i < selector.length) {
+    const ch = selector[i];
+    if (ch === '"' || ch === "'") {
+      i = skipString(selector, i);
+      continue;
+    }
+    if (ch === '(' || ch === '[') {
+      depth++;
+      i++;
+      continue;
+    }
+    if (ch === ')' || ch === ']') {
+      depth = Math.max(0, depth - 1);
+      i++;
+      continue;
+    }
+    if (ch === ',' && depth === 0) {
+      parts.push(selector.slice(start, i));
+      i++;
+      start = i;
+      continue;
+    }
+    i++;
+  }
+  parts.push(selector.slice(start));
+  return parts.map((part) => part.trim()).filter((part) => part.length > 0);
+}
+
 /** Index a compiled stylesheet for exact class-token lookup. */
 export function parseSheet(css: string): CompiledSheet {
   const rules: SheetRule[] = [];
-  collectRules(css, [], rules);
+  collectRules(css, [], rules, 0);
   const index = new Map<string, SheetRule[]>();
   const negatedIndex = new Set<string>();
   for (const rule of rules) {

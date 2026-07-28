@@ -36,8 +36,12 @@ normalization migration lands and the baselines regenerate.
   ratified named exceptions. The 11.2px and 9.6px slips resolve onto label and chip. The
   17px and 18px one-offs resolve onto the heading role or subtitle at migration judgment.
 - **New heading role:** the scale admits a seventh role between subtitle and title for
-  dialog/panel headings, unifying the 16px-semibold and 18px-display-bold families; size and
-  recipe settled in-pass from side-by-side rendered candidates.
+  dialog/panel headings, unifying the 16px-semibold and 18px-display-bold families. **Settled
+  2026-07-28: 18px, weight 700, `--font-display` (Bricolage Grotesque), leading 28px.** The
+  display-bold family wins, so its thirteen sites do not move; the 16px-semibold dialog family
+  migrates onto the role and changes appearance by ruling. Evidence and reasoning are in the spec's
+  section 13. `type-heading` carries size and leading only; the weight and the face stay a component
+  recipe.
 - **Section 4 (spacing) is not blocked and not ruled:** the audit's `gap-scale` rule targets
   off-scale literals, and named Tailwind steps resolve to the spacing scale, so these
   entries stay open vocabulary questions for Pass 3.

@@ -5,6 +5,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseComponent } from './markup.js';
 import { parseSheet } from './sheet.js';
+import { applySuppressions } from './suppress.js';
 import { staticRules } from './rules/static/index.js';
 import { CONFIG_FILE } from './config.js';
 import type { Dirent } from 'node:fs';
@@ -62,10 +63,11 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   }
   const sheet = parseSheet(css);
   const files = parseAll(config);
-  const findings = rules.flatMap((rule) => rule.check({ files, sheet, config }));
+  const raised = rules.flatMap((rule) => rule.check({ files, sheet, config }));
+  const split = applySuppressions(raised, files);
   return {
-    findings: [...findings].sort(byPosition),
-    suppressed: [],
+    findings: [...split.findings].sort(byPosition),
+    suppressed: [...split.suppressed].sort(byPosition),
     filesScanned: files.length,
     ruleIds: rules.map((rule) => rule.id),
   };

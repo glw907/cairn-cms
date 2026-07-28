@@ -39,6 +39,99 @@ describe('parseComponent class tokens', () => {
     expect(tokens('<div class={`text-${size} btn`}></div>')).toEqual(['btn']);
   });
 
+  // The interpolation half of a template literal used to contribute nothing at all, so the same
+  // expression audited in a mixed attribute (`class="card {...}"`) and silently escaped inside a
+  // template literal. Both forms name the same classes and both are read.
+  it('reads a template-literal interpolation the way it reads a mixed attribute', () => {
+    const source = "<div class={`card ${big ? 'text-[30px]' : 'p-[13px]'}`}></div>";
+    expect(tokens(source)).toEqual(['card', 'text-[30px]', 'p-[13px]']);
+  });
+
+  it('drops an interpolation glued to a neighbouring segment, the way it drops a glued segment', () => {
+    const source = '<div class={`text-${size}px btn`}></div>';
+    expect(tokens(source)).toEqual(['btn']);
+  });
+
+  // The script half of the substrate. A class named in the component's own script is as local and
+  // as resolvable as one written in the attribute; leaving it unread let a class that compiles
+  // nowhere ship inside a helper string with every markup rule reading the file as clean.
+  it('resolves a class string a top-level const declares', () => {
+    const source = [
+      '<script>',
+      "  const cardClass = 'card p-[13px]';",
+      '</script>',
+      '<div class={cardClass}></div>',
+    ].join('\n');
+    expect(tokens(source)).toEqual(['card', 'p-[13px]']);
+  });
+
+  it('resolves the strings a top-level helper function returns', () => {
+    const source = [
+      '<script>',
+      '  function ftrToggleClass(pressed) {',
+      "    return `ftr-toggle ${pressed ? 'text-[30px]' : 'text-muted'}`;",
+      '  }',
+      '</script>',
+      '<button class={ftrToggleClass(true)}></button>',
+    ].join('\n');
+    expect(tokens(source)).toEqual(['ftr-toggle', 'text-[30px]', 'text-muted']);
+  });
+
+  it('resolves a $derived.by binding through its own returns', () => {
+    const source = [
+      '<script>',
+      '  const statusBadge = $derived.by(() => {',
+      "    if (status === 'Edited') return 'badge-warning';",
+      "    return 'badge-ghost';",
+      '  });',
+      '</script>',
+      '<span class="badge badge-sm {statusBadge}">x</span>',
+    ].join('\n');
+    expect(tokens(source)).toEqual(['badge', 'badge-sm', 'badge-warning', 'badge-ghost']);
+  });
+
+  it('counts one script string once however many elements use it', () => {
+    const source = [
+      '<script>',
+      "  const cardClass = 'card';",
+      '</script>',
+      '<div class={cardClass}></div>',
+      '<div class={cardClass}></div>',
+    ].join('\n');
+    expect(tokens(source)).toEqual(['card']);
+  });
+
+  it('never resolves a name the file does not declare, or one a parameter shadows', () => {
+    const source = [
+      '<script>',
+      "  const cls = 'outer-class';",
+      '  function shadowed(cls) { return cls; }',
+      '  let { incoming } = $props();',
+      '</script>',
+      '<div class={shadowed(incoming)}></div>',
+      '<div class={incoming}></div>',
+    ].join('\n');
+    expect(tokens(source)).toEqual([]);
+  });
+
+  it('does not loop on a binding that refers to itself', () => {
+    const source = [
+      '<script>',
+      '  const a = b;',
+      '  const b = a;',
+      '</script>',
+      '<div class={a}></div>',
+    ].join('\n');
+    expect(tokens(source)).toEqual([]);
+  });
+
+  // A spread whose object literal is written right here names its classes in this file; only a
+  // spread of a value from somewhere else (`{...rest}`) is genuinely unresolvable.
+  it('reads the class property of an inline spread object', () => {
+    const source = "<div {...{ class: 'p-[13px] cairn-nonexistent-class' }}></div>";
+    expect(tokens(source)).toEqual(['p-[13px]', 'cairn-nonexistent-class']);
+  });
+
   it('reads a class: directive name', () => {
     expect(tokens('<div class="dropdown" class:dropdown-open={open}></div>')).toEqual([
       'dropdown',

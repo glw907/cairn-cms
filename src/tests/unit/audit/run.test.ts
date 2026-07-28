@@ -120,6 +120,26 @@ describe('runStatic', () => {
     expect(exitCodeFor(report)).toBe(1);
   });
 
+  // The silent green the spec rejected the ESLint route over, reproduced by one transposed letter
+  // in a consumer's own config: nothing is scanned, no rule can raise anything, and the exit code
+  // reads as a clean audit.
+  it('fails naming a configured scan directory the tree does not have', () => {
+    const configPath = join(root, 'typo.json');
+    writeFileSync(configPath, JSON.stringify({ static: { scope: ['src/lib/componets'] } }));
+    expect(() => runStatic(loadConfig(root, configPath))).toThrow(/src\/lib\/componets/);
+  });
+
+  it('fails when the scan matched no file at all, rather than reporting a clean run', () => {
+    const empty = mkdtempSync(join(tmpdir(), 'cairn-audit-empty-'));
+    try {
+      mkdirSync(join(empty, 'dist/components'), { recursive: true });
+      writeFileSync(join(empty, 'dist/components/cairn-admin.css'), '.type-body { font-size: 1rem }');
+      expect(() => runStatic(loadConfig(empty))).toThrow(/matched no files/);
+    } finally {
+      rmSync(empty, { recursive: true, force: true });
+    }
+  });
+
   it('fails naming the sheet path when the built stylesheet is missing', () => {
     const bare = mkdtempSync(join(tmpdir(), 'cairn-audit-bare-'));
     try {

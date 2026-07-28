@@ -29,6 +29,17 @@ describe('motion-band: transition: all', () => {
   it('passes a transition naming its properties explicitly', () => {
     expect(check(component('.card { transition: border-color 200ms ease; }'))).toEqual([]);
   });
+
+  // Nesting a child inside a scoped rule used to hide the parent's own declarations from every
+  // CSS-family rule, this one included.
+  it('reads a rule that nests a child alongside its own transition', () => {
+    const findings = check(
+      component('.card { transition: all 900ms ease; &:hover { opacity: 1 } }')
+    );
+    expect(findings).toHaveLength(2);
+    expect(findings.some((f) => f.message.includes('all'))).toBe(true);
+    expect(findings.some((f) => f.message.includes('900ms'))).toBe(true);
+  });
 });
 
 describe('motion-band: the duration band', () => {

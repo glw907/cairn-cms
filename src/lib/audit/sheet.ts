@@ -336,6 +336,47 @@ function trimmedSpan(css: string, from: number, to: number): { start: number; en
 }
 
 /**
+ * A block's own declaration text, with every nested block and the prelude that opened it removed.
+ * A style rule that nests a child still declares its own properties, and dropping them made an
+ * entire rule invisible to every CSS-family check: standard nesting is legal and idiomatic in the
+ * hand-authored surfaces those rules read, a component's scoped `<style>` block and a consumer's
+ * own CSS file.
+ */
+function ownDeclarationText(css: string): string {
+  let out = '';
+  let segment = '';
+  let i = 0;
+  while (i < css.length) {
+    const ch = css[i];
+    if (ch === '/' && css[i + 1] === '*') {
+      i = skipComment(css, i);
+      continue;
+    }
+    if (ch === '"' || ch === "'") {
+      const end = skipString(css, i);
+      segment += css.slice(i, end);
+      i = end;
+      continue;
+    }
+    if (ch === '{') {
+      // The text since the last `;` was this nested block's prelude, never a declaration.
+      segment = '';
+      i = scanBlock(css, i).end + 1;
+      continue;
+    }
+    if (ch === ';') {
+      out += `${segment};`;
+      segment = '';
+      i++;
+      continue;
+    }
+    segment += ch;
+    i++;
+  }
+  return out + segment;
+}
+
+/**
  * Walk a stylesheet's blocks, recursing through groups and collecting the style rules.
  * `baseOffset` is the position, in the top-level string `parseSheet` was called with, that this
  * call's own `css` starts at: a nested `@media` block recurses over its own inner substring
@@ -367,6 +408,23 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
       const inner = css.slice(i + 1, end);
       if (nested) {
         const inherited = prelude.startsWith('@') ? [...conditions, prelude] : conditions;
+        if (!prelude.startsWith('@')) {
+          // A nested style rule's own declarations, before its children. The children recurse with
+          // their selectors as written, `&` unresolved: a rule comparing selector text compares
+          // within one nesting level, which is the level an author writes the pairing at.
+          const declarations = parseDeclarations(ownDeclarationText(inner));
+          if (declarations.length > 0) {
+            out.push({
+              selector: prelude,
+              conditions,
+              declarations,
+              classNames: selectorClassNames(prelude),
+              negatedClassNames: negatedClassNames(prelude),
+              start: baseOffset + preludeStartTrimmed,
+              end: baseOffset + preludeEndTrimmed,
+            });
+          }
+        }
         collectRules(inner, inherited, out, baseOffset + i + 1);
       } else {
         out.push({

@@ -254,6 +254,38 @@ describe('applySuppressions', () => {
     expect(split.suppressed).toHaveLength(1);
   });
 
+  // The orphan-on-rename case, in the shape an ordinary refactor leaves behind: the element the
+  // directive annotated is deleted, the directive is not. It must read as dead rather than walking
+  // out of its own parent and silently covering the next element in the file.
+  it('never reaches past its own parent to the next element in the file', () => {
+    const file = fixture([
+      '<div>',
+      `  <!-- cairn-audit-disable-next-line type-scale -- ${REASON} -->`,
+      '</div>',
+      '<h2 class="text-[1.375rem]">an unrelated heading, outside the div</h2>',
+    ]);
+    const split = applySuppressions([findingAt(file, 'text-[1.375rem]')], [file]);
+    expect(split.suppressed).toEqual([]);
+    expect(split.findings.map((f) => f.ruleId).sort()).toEqual(['suppression', 'type-scale']);
+    expect(split.findings.find((f) => f.ruleId === 'suppression')?.message).toMatch(/dead/);
+  });
+
+  it('still covers a sibling that follows it inside the same parent', () => {
+    const file = fixture([
+      '<div>',
+      `  <!-- cairn-audit-disable-next-line type-scale -- ${REASON} -->`,
+      '  <span class="text-[1.125rem]">Title</span>',
+      '</div>',
+      '<h2 class="text-[1.375rem]">an unrelated heading, outside the div</h2>',
+    ]);
+    const split = applySuppressions(
+      [findingAt(file, 'text-[1.125rem]'), findingAt(file, 'text-[1.375rem]')],
+      [file]
+    );
+    expect(split.suppressed.map((f) => f.line)).toEqual([3]);
+    expect(split.findings.map((f) => f.line)).toEqual([5]);
+  });
+
   it('never suppresses its own findings', () => {
     // A directive naming `suppression` would silence the dead-directive and missing-reason errors,
     // which is the one hole that would make every other guarantee optional.

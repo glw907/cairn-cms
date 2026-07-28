@@ -8,26 +8,33 @@
 // viewport unit, a `calc()`, an `env()`) is expressing geometry the spacing scale has no vocabulary
 // for at all, a safe-area inset or a viewport-relative offset rather than a spacing relationship,
 // so it falls outside this rule's remit rather than failing it.
+//
+// The utility is read off the token's variant base and its value off the COMPILED declaration, not
+// off the bracket text: `sm:mt-[7px]` and `mt-[7px]` produce the same margin, and reading the
+// source text also read `.4375rem`, `+7px`, and `7Px` as values the scale has no vocabulary for
+// when the sheet had already normalized all three onto the grid the rule measures.
+import { compiledValues, utilityBase } from './utility.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const HALF_STEP_REM = 0.125;
 
 const BRACKET_UTILITY =
   /^-?(m|mx|my|mt|mb|ms|me|ml|mr|p|px|py|pt|pb|ps|pe|pl|pr|gap|gap-x|gap-y)-\[(.+)\]$/;
-const PLAIN_LENGTH = /^(-?\d+(?:\.\d+)?)(rem|px)$/;
+const PLAIN_LENGTH = /^([+-]?(?:\d+(?:\.\d+)?|\.\d+))(rem|px)$/i;
 const GAP_ROLE_VAR = /^var\(\s*(--cairn-gap-(?:label|control|group|section))\s*\)$/;
 const GAP_PROPERTIES = new Set(['gap', 'gap-x', 'gap-y']);
+const SPACING_PROPERTY = /^(margin|padding|gap|row-gap|column-gap)/;
 
 /**
- * Whether a bracket utility's raw value already resolves to a ratified scale. A value that is not
- * a plain rem/px length (a `calc()`, an `env()`, a viewport unit) is outside this rule's remit and
+ * Whether a bracket utility's value already resolves to a ratified scale. A value that is not a
+ * plain rem/px length (a `calc()`, an `env()`, a viewport unit) is outside this rule's remit and
  * reads as resolved, not as a violation of a scale it was never expressed in.
  */
 function resolvesToScale(property: string, value: string): boolean {
   if (GAP_PROPERTIES.has(property) && GAP_ROLE_VAR.test(value)) return true;
   const length = PLAIN_LENGTH.exec(value);
   if (!length) return true;
-  const rem = length[2] === 'px' ? Number(length[1]) / 16 : Number(length[1]);
+  const rem = length[2].toLowerCase() === 'px' ? Number(length[1]) / 16 : Number(length[1]);
   const steps = rem / HALF_STEP_REM;
   return Math.abs(steps - Math.round(steps)) < 1e-6;
 }
@@ -39,10 +46,14 @@ export const gapScale: StaticRule = {
     const findings: Finding[] = [];
     for (const file of ctx.files) {
       for (const token of file.classTokens) {
-        const match = BRACKET_UTILITY.exec(token.value);
+        const match = BRACKET_UTILITY.exec(utilityBase(token.value));
         if (!match) continue;
-        const [, property, value] = match;
-        if (resolvesToScale(property, value)) continue;
+        const [, property, literal] = match;
+        // The bracket text is the fallback for a class the audited sheet never compiled (a
+        // consumer building its own stylesheet), never the preferred reading.
+        const compiled = compiledValues(ctx, token.value, (name) => SPACING_PROPERTY.test(name));
+        const values = compiled.length > 0 ? compiled : [literal];
+        if (values.every((value) => resolvesToScale(property, value))) continue;
         findings.push({
           ruleId: 'gap-scale',
           tier: 'error',

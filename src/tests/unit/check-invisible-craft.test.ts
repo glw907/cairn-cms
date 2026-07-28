@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { scopeReport } from '../../../scripts/check-invisible-craft.mjs';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { SCAN_SCOPE, scopeReport } from '../../../scripts/check-invisible-craft.mjs';
 import type { AuditReport } from '../../lib/audit/types.js';
 
 // The rule fixtures for motion-band, gap-scale, and token-colors (the three rules this gate
@@ -7,6 +9,28 @@ import type { AuditReport } from '../../lib/audit/types.js';
 // src/tests/unit/audit/rules/. What is specific to this gate, and worth pinning here, is the
 // wrapper's own restriction logic: a full audit report's findings and suppressions narrowed to
 // exactly the rule ids this gate owns, never touching a rule outside that set.
+// The graduation's other half: a gate that runs the right rules over less ground than it used to
+// is still a coverage regression, and this one silently stopped walking the showcase when it
+// inherited the engine's consumer-shaped default scope.
+describe('SCAN_SCOPE', () => {
+  it('keeps walking the showcase roots the pre-graduation gate walked', () => {
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/chassis');
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/routes');
+  });
+
+  it('keeps walking the admin surfaces', () => {
+    expect(SCAN_SCOPE).toContain('src/lib/components');
+    expect(SCAN_SCOPE).toContain('src/lib/admin-toolkit');
+    expect(SCAN_SCOPE).toContain('src/lib/admin-fields');
+  });
+
+  it('names only directories the tree actually has, so a rename fails loudly', () => {
+    for (const dir of SCAN_SCOPE) {
+      expect(existsSync(resolve(process.cwd(), dir)), dir).toBe(true);
+    }
+  });
+});
+
 describe('scopeReport', () => {
   const report: AuditReport = {
     findings: [

@@ -12,6 +12,13 @@ const SHEET = parseSheet(
     '.text-base { font-size: 1rem }',
     '.text-base-content { color: var(--color-base-content) }',
     '.text-\\[1\\.875rem\\] { font-size: 1.875rem }',
+    // The escaped selectors Tailwind emits for a variant-prefixed and an arbitrary-property
+    // utility. The sheet resolves them like any other class; only the rule's own prefilter used
+    // to discard them before the lookup ran.
+    '@media (width >= 96rem) { .\\32 xl\\:text-sm { font-size: var(--text-sm) } }',
+    '@media (width >= 40rem) { .sm\\:text-\\[13px\\] { font-size: 13px } }',
+    '.\\[font-size\\:1\\.375rem\\] { font-size: 1.375rem }',
+    '.\\[text-underline-offset\\:2px\\] { text-underline-offset: 2px }',
   ].join(' ')
 );
 
@@ -50,6 +57,31 @@ describe('type-scale', () => {
     const sheet = parseSheet('.text-\\[var\\(--cairn-type-heading\\)\\] { font-size: var(--cairn-type-heading) }');
     const file = parseComponent('Fixture.svelte', '<span class="text-[var(--cairn-type-heading)]">x</span>\n');
     expect(typeScale.check({ files: [file], sheet, config: CONFIG })).toEqual([]);
+  });
+
+  // A responsive type size is an in-distribution idiom in the admin, and the sheet resolves it to
+  // the same declaration as its unprefixed form; only the rule's start-anchored prefilter made it
+  // invisible.
+  it('flags a size utility behind a variant prefix, which resolves identically', () => {
+    const file = parseComponent('Fixture.svelte', '<p class="2xl:text-sm">x</p>\n');
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('2xl:text-sm');
+  });
+
+  it('flags an arbitrary size behind a variant prefix', () => {
+    const file = parseComponent('Fixture.svelte', '<div class="sm:text-[13px]"></div>\n');
+    expect(check(file)).toHaveLength(1);
+  });
+
+  it('flags the arbitrary-property form, which sets font-size with no namespace at all', () => {
+    const file = parseComponent('Fixture.svelte', '<span class="[font-size:1.375rem]">x</span>\n');
+    expect(check(file)).toHaveLength(1);
+  });
+
+  it('passes an arbitrary property that sets something other than font-size', () => {
+    const file = parseComponent('Fixture.svelte', '<a class="[text-underline-offset:2px]">x</a>\n');
+    expect(check(file)).toEqual([]);
   });
 
   it('is suppressed by a directive naming the rule, and counted', () => {

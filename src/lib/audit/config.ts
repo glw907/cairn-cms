@@ -42,6 +42,13 @@ export interface AuditConfig {
   /** Directories the static scan reads components from, recursively. */
   staticScope: string[];
   /**
+   * Whether the config file named `staticScope` itself. A default path a given tree does not have
+   * is the normal case, since the default spans a library and a consumer site; a path a consumer
+   * wrote down and misspelled is a typo, and a typo that quietly narrows the audit to nothing is
+   * the silent-green failure this engine exists to avoid.
+   */
+  staticScopeFromConfig: boolean;
+  /**
    * Standalone CSS files (paths relative to `root`) the CSS-family static rules also scan,
    * alongside every component's own scoped `<style>` block. Empty by default: a component's
    * `<style>` block is the only CSS surface an audited tree carries until a consumer names one
@@ -108,6 +115,7 @@ export function resolveConfig(
   return {
     root,
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
+    staticScopeFromConfig: staticSection.scope !== undefined,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
     sheetPath:
       (file.sheet as string | undefined) ??

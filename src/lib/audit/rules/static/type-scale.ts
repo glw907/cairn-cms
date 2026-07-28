@@ -14,7 +14,12 @@
 // modifiers), a system that has nothing to do with the admin's seven-role text-content scale;
 // resolving every class with ANY font-size declaration flagged all of them as violations the first
 // time this rule ran against cairn's own tree.
+//
+// The namespace is read off the token's utility base, never the raw token: `2xl:text-sm` and
+// `text-sm` compile to the same font-size declaration, and anchoring the prefilter at the start of
+// the whole token let every variant-prefixed size utility through untouched.
 import { GRAMMAR_TOKENS } from '../../../design/grammar-tokens.js';
+import { utilityBase } from './utility.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 // The grammar inventory carries both a role's size token and its paired `--leading` token; only
@@ -25,6 +30,9 @@ const TYPE_SIZE_TOKENS = new Set(
 
 const FONT_SIZE_TOKEN_REF = /var\(\s*(--cairn-type-[a-z-]+?)\s*(?:,[^)]*)?\)/;
 const TEXT_SIZING_TOKEN = /^(text|type)-/;
+// The arbitrary-property form (`[font-size:1.375rem]`) names its property rather than a namespace,
+// so it is read too and filtered on the declaration it actually compiles to, the same as the rest.
+const ARBITRARY_PROPERTY = /^\[[^\]:]+:/;
 
 export const typeScale: StaticRule = {
   id: 'type-scale',
@@ -33,7 +41,8 @@ export const typeScale: StaticRule = {
     const findings: Finding[] = [];
     for (const file of ctx.files) {
       for (const token of file.classTokens) {
-        if (!TEXT_SIZING_TOKEN.test(token.value)) continue;
+        const base = utilityBase(token.value);
+        if (!TEXT_SIZING_TOKEN.test(base) && !ARBITRARY_PROPERTY.test(base)) continue;
         for (const decl of ctx.sheet.declarations(token.value)) {
           if (decl.property !== 'font-size') continue;
           const match = FONT_SIZE_TOKEN_REF.exec(decl.value);

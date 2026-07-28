@@ -6,13 +6,35 @@ import { applySuppressions } from '../../../../lib/audit/suppress.js';
 import { gapScale } from '../../../../lib/audit/rules/static/gap-scale.js';
 import type { ParsedComponent } from '../../../../lib/audit/markup.js';
 
-// gap-scale reads only the class tokens themselves; it never resolves through the sheet, so an
-// empty sheet exercises it fully.
+// A class the audited sheet never compiled falls back to its own bracket text, so an empty sheet
+// still exercises the rule's scale arithmetic in full.
 const SHEET = parseSheet('');
 const CONFIG = resolveConfig('/site', null, () => true);
 
+// The compiled form of the same utilities, with the escaped selectors Tailwind emits and the
+// normalized values Lightning CSS writes: a leading zero dropped, a sign dropped, a unit lowercased.
+const COMPILED = parseSheet(
+  [
+    '.mt-\\[7px\\] { margin-top: 7px }',
+    '@media (width >= 40rem) { .sm\\:mt-\\[7px\\] { margin-top: 7px } }',
+    '.hover\\:mt-\\[7px\\]:hover { margin-top: 7px }',
+    '.mt-\\[0\\.4375rem\\] { margin-top: .4375rem }',
+    '.mt-\\[\\.4375rem\\] { margin-top: .4375rem }',
+    '.p-\\[7px\\] { padding: 7px }',
+    '.p-\\[\\+7px\\] { padding: 7px }',
+    '.gap-\\[7Px\\] { gap: 7px }',
+    '@media (width >= 40rem) { .sm\\:mt-\\[12vh\\] { margin-top: 12vh } }',
+  ].join(' ')
+);
+
 function check(...files: ParsedComponent[]) {
   return gapScale.check({ files, sheet: SHEET, config: CONFIG });
+}
+
+/** The same check against the compiled sheet, the substrate a real run resolves through. */
+function checkCompiled(source: string) {
+  const file = parseComponent('Fixture.svelte', source);
+  return gapScale.check({ files: [file], sheet: COMPILED, config: CONFIG });
 }
 
 describe('gap-scale', () => {
@@ -67,6 +89,28 @@ describe('gap-scale', () => {
       '<div class="pb-[calc(0.5rem+env(safe-area-inset-bottom))]"></div>\n'
     );
     expect(check(file)).toEqual([]);
+  });
+
+  // A variant prefix changes when a declaration applies, never what it declares, and the sheet
+  // resolves all three of these to the same margin.
+  it('flags a bracket literal behind a responsive or state variant', () => {
+    expect(checkCompiled('<div class="mt-[7px]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="sm:mt-[7px]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="hover:mt-[7px]"></div>\n')).toHaveLength(1);
+  });
+
+  it('still reads a variant-prefixed value outside the scale remit as outside it', () => {
+    expect(checkCompiled('<div class="sm:mt-[12vh]"></div>\n')).toEqual([]);
+  });
+
+  // Notation, not value: each of these compiles byte-identically to a literal the rule already
+  // flags, and reading the source text instead of the compiled declaration let the notation pass.
+  it('flags a near-miss notation the sheet normalizes onto the same value', () => {
+    expect(checkCompiled('<div class="mt-[0.4375rem]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="mt-[.4375rem]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="p-[7px]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="p-[+7px]"></div>\n')).toHaveLength(1);
+    expect(checkCompiled('<div class="gap-[7Px]"></div>\n')).toHaveLength(1);
   });
 
   it('is suppressed by a directive naming the rule, and counted', () => {

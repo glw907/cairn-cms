@@ -42,6 +42,21 @@ describe('grammar-boundary', () => {
     expect(check(component('.card { font-size: var(--cairn-type-body); }'))).toEqual([]);
   });
 
+  // A consumer CSS file is hand-authored, where standard nesting is legal and idiomatic. One
+  // nested child used to take the whole parent rule out of this check, which is the entire
+  // ratified palette/grammar boundary over consumer CSS.
+  it('reads a nested consumer CSS rule declaring a grammar token', () => {
+    const cssFiles = [
+      {
+        file: 'src/app.css',
+        source: '.brand {\n  --cairn-gap-group: 40px;\n  color: #ff0000;\n  .inner { padding: 1rem }\n}\n',
+      },
+    ];
+    const findings = grammarBoundary.check({ files: [], sheet: SHEET, config: CONFIG, cssFiles });
+    expect(findings.map((f) => f.ruleId)).toEqual(['grammar-boundary']);
+    expect(findings[0].message).toContain('--cairn-gap-group');
+  });
+
   it('is suppressed by a directive naming the rule, and counted', () => {
     const file = parseComponent(
       'Fixture.svelte',

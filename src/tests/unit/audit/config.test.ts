@@ -64,6 +64,12 @@ describe('resolveConfig', () => {
     ]);
   });
 
+  it('records whether the scan scope came from the config or from the defaults', () => {
+    expect(resolveConfig('/site', null, sheetHere).staticScopeFromConfig).toBe(false);
+    const configured = resolveConfig('/site', { static: { scope: ['src/x'] } }, sheetHere);
+    expect(configured.staticScopeFromConfig).toBe(true);
+  });
+
   it('rejects a scan scope that is not a list of paths', () => {
     expect(() => resolveConfig('/site', { static: { scope: 'src' } }, sheetHere)).toThrow(
       /static\.scope/

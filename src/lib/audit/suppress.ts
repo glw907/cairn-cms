@@ -170,12 +170,25 @@ function nextLineRange(source: string, from: number): Range | null {
   return null;
 }
 
-/** The source range a directive covers, or null when nothing follows it. */
+/**
+ * The source range a directive covers, or null when nothing follows it. An HTML-form directive
+ * never reaches past its own parent: `nodes` is a flat document-order list, so a directive whose
+ * parent holds nothing after it would otherwise walk out of that parent and attach to whatever
+ * element comes next in the file. That is the orphan-on-rename failure the JSON allowlists were
+ * replaced to end, and it is silent both ways, silencing an unrelated finding while the directive
+ * that no longer covers anything still reads as live.
+ */
 function targetRange(directive: Directive, source: SuppressionSource): Range | null {
   if (directive.form === 'html' && source.nodes) {
+    const comment = source.nodes.find(
+      (candidate) => candidate.type === 'Comment' && candidate.start === directive.start
+    );
+    const limit = comment?.parentEnd ?? Number.MAX_SAFE_INTEGER;
     const node = source.nodes.find(
       (candidate) =>
-        candidate.startLine > directive.line && !TRANSPARENT_NODE_TYPES.has(candidate.type)
+        candidate.startLine > directive.line &&
+        candidate.start < limit &&
+        !TRANSPARENT_NODE_TYPES.has(candidate.type)
     );
     return node ? { start: node.start, end: node.end } : null;
   }

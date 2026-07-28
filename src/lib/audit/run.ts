@@ -1,7 +1,7 @@
 // cairn-audit's static runner: assemble the substrates once, hand every registered rule the same
 // context, and return one report. The runner reads the filesystem; the rules do not, which is what
 // keeps the rule core pure and testable against fixtures.
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { parseComponent } from './markup.js';
 import { parseSheet } from './sheet.js';
@@ -34,6 +34,12 @@ function parseAll(config: AuditConfig): ParsedComponent[] {
   const seen = new Set<string>();
   const files: ParsedComponent[] = [];
   for (const dir of config.staticScope) {
+    // A configured scan path is a promise the tree holds that directory. Honoring a misspelled one
+    // as an empty scan is the silent green the spec rejected the ESLint route over: nothing was
+    // audited and the exit code says everything passed.
+    if (config.staticScopeFromConfig && !existsSync(resolve(config.root, dir))) {
+      throw new Error(`${dir}: the configured static scan scope does not exist (${CONFIG_FILE}, static.scope)`);
+    }
     for (const path of componentPaths(config.root, dir)) {
       if (seen.has(path)) continue;
       seen.add(path);
@@ -72,6 +78,11 @@ export function runStatic(config: AuditConfig, rules: StaticRule[] = staticRules
   const sheet = parseSheet(css);
   const files = parseAll(config);
   const cssFiles = loadCssFiles(config);
+  if (files.length === 0 && cssFiles.length === 0) {
+    throw new Error(
+      `the static scan matched no files under ${config.staticScope.join(', ')}. Name the scan scope in ${CONFIG_FILE} (static.scope).`
+    );
+  }
   const raised = rules.flatMap((rule) => rule.check({ files, sheet, config, cssFiles }));
   const split = applySuppressions(raised, [...files, ...cssFiles]);
   return {

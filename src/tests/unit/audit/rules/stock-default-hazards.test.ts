@@ -23,6 +23,28 @@ describe('stock-default-hazards: badge-ghost', () => {
     expect(findings[0].message).toContain('badge-ghost');
   });
 
+  // The shape the hazard actually ships in: the class name is chosen in the script and
+  // interpolated into the attribute, which used to contribute no class token at all, so the
+  // rule's flagship hazard read as absent from a tree that carried it.
+  it('flags a ghost badge a script binding names and the markup interpolates', () => {
+    const file = parseComponent(
+      'Fixture.svelte',
+      [
+        '<script>',
+        '  const statusBadge = $derived.by(() => {',
+        "    if (status === 'Edited') return 'badge-warning';",
+        "    return 'badge-ghost';",
+        '  });',
+        '</script>',
+        '<span class="badge badge-sm font-medium shrink-0 {statusBadge}">{status}</span>',
+        '',
+      ].join('\n')
+    );
+    const findings = check(file);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('badge-ghost');
+  });
+
   it('passes the sanctioned badge-outline recipe', () => {
     const file = parseComponent('Fixture.svelte', '<span class="badge badge-outline">New</span>\n');
     expect(check(file)).toEqual([]);

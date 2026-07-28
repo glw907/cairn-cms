@@ -19,13 +19,32 @@
 // scope, but it deliberately is not (it is the grammar's own token declaration site, the same
 // exclusion `grammar-boundary` draws for the same file).
 //
+// The scan scope is this gate's own, named here rather than inherited from the engine's consumer
+// defaults, because a graduation may not shrink the ground the gate covered. The engine's default
+// scope is a consumer site's admin surfaces; this gate also owns the showcase chassis and routes,
+// which the pre-graduation gate walked and the default scope does not name. Two roots the old gate
+// walked are deliberately absent, each for a reason on record: `examples/showcase/src/theme` (the
+// showcase theme's own palette declaration site plus its ratified 650ms carousel crossfade, the
+// same trivial-failure exclusion `cairn-admin.css` already carries) and `.ts` modules with an
+// embedded style string (outside the engine's CSS-family substrate). Every named root must exist,
+// so a rename fails the gate rather than quietly narrowing it.
+//
 // Wired as `npm run check:invisible-craft`.
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
 const RULE_IDS = ['gap-scale', 'token-colors', 'motion-band'];
+/** The directories this gate audits, every one of which must exist in the tree. */
+export const SCAN_SCOPE = [
+  'src/lib/components',
+  'src/lib/admin-toolkit',
+  'src/lib/admin-fields',
+  'examples/showcase/src/chassis',
+  'examples/showcase/src/routes',
+];
 
 /** @typedef {import('../src/lib/audit/types.js').AuditReport} AuditReport */
 /** @typedef {import('../src/lib/audit/types.js').Finding} Finding */
@@ -52,8 +71,11 @@ export function scopeReport(report, ruleIds) {
 
 async function main() {
   try {
-    const { exitCodeFor, formatReport, loadConfig, runStatic } = await import('../dist/audit/index.js');
-    const report = scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS);
+    const { exitCodeFor, formatReport, resolveConfig, runStatic } = await import('../dist/audit/index.js');
+    const config = resolveConfig(ROOT, { static: { scope: SCAN_SCOPE } }, (candidate) =>
+      existsSync(resolve(ROOT, candidate))
+    );
+    const report = scopeReport(runStatic(config), RULE_IDS);
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

@@ -497,7 +497,7 @@ persistent "?" carries Markdown help, design-arc D2).
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 type-meta font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 type-meta font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's

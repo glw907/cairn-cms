@@ -116,6 +116,45 @@ describe('parseSheet', () => {
     ]);
   });
 
+  // Standard CSS nesting is legal and idiomatic in the hand-authored surfaces the CSS-family
+  // rules read, a component's scoped <style> block and a consumer's own CSS file. A parent whose
+  // own declarations vanished the moment it nested a child took the entire rule out of every one
+  // of those checks.
+  it('keeps a nested parent rule own declarations, and its children', () => {
+    const sheet = parseSheet(
+      '.brand { --cairn-gap-group: 40px; color: #ff0000; .inner { padding: 1rem } }'
+    );
+    expect(sheet.declarations('brand')).toEqual([
+      { property: '--cairn-gap-group', value: '40px', selector: '.brand', conditions: [] },
+      { property: 'color', value: '#ff0000', selector: '.brand', conditions: [] },
+    ]);
+    expect(sheet.declarations('inner')).toEqual([
+      { property: 'padding', value: '1rem', selector: '.inner', conditions: [] },
+    ]);
+  });
+
+  it('keeps a parent whose child is an ampersand rule', () => {
+    const sheet = parseSheet(
+      '.card { color: #ffffff; transition: all 900ms ease; &:hover { opacity: 1 } }'
+    );
+    expect(sheet.declarations('card').map((d) => `${d.property}: ${d.value}`)).toEqual([
+      'color: #ffffff',
+      'transition: all 900ms ease',
+    ]);
+    expect(sheet.rules.map((rule) => rule.selector)).toEqual(['.card', '&:hover']);
+  });
+
+  it('positions a nested parent rule at its own selector', () => {
+    const css = '.outer {\n  color: red;\n  .inner { padding: 1rem }\n}';
+    const [outer] = parseSheet(css).rules;
+    expect(css.slice(outer.start, outer.end)).toBe('.outer');
+  });
+
+  it('leaves a grouping rule with no declarations of its own out of the rule list', () => {
+    const sheet = parseSheet('.group { .child { color: red } }');
+    expect(sheet.rules.map((rule) => rule.selector)).toEqual(['.child']);
+  });
+
   it('keeps a declaration value that carries its own colons and parentheses intact', () => {
     const sheet = parseSheet(
       '.bg-tile { background: url("data:image/svg+xml;base64,AA"); color: color-mix(in oklab, red 50%, blue) }'

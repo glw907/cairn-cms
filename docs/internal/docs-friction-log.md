@@ -79,3 +79,14 @@ findings start fresh below this line.
   existing `e2e` workflow, which already builds and serves the showcase, so the marginal cost is one
   step rather than a second browser job. Left unshipped here because the plan scopes the gate to
   CI/publish and a per-PR norms failure would block work on an advisory-tier artifact.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 14)** The rendered harness's
+  `'menu-open'` interaction state is a first pass, not a proven one: `applyState` clicks the first
+  `[aria-haspopup="menu"]`/`[aria-haspopup="true"]` element it finds, a guess at "the conventional
+  menu trigger" that has never run against the showcase's real dropdown or command-palette markup
+  (co-located as a `WATCH:` comment in `src/lib/audit/rendered.ts`). Tasks 15 and 16 are the first
+  real consumers of the state; whichever of their rules needs it first should confirm the selector
+  against real markup or correct it, rather than the mechanism shipping unverified indefinitely.
+  Also worth a future ruling: `cairn-audit --rendered`'s CLI flag still declines to run (the
+  placeholder message from the skeleton commit), deliberately left that way since the shipped rule
+  registry is empty; whichever of Tasks 15/16 first registers a real rule should also decide whether
+  wiring the flag happens then or waits for the full eleven.

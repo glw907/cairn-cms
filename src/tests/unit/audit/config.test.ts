@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_PALETTE_CSS_FILES,
+  DEFAULT_RENDERED_PAGES,
   DEFAULT_SHEET_CANDIDATES,
   DEFAULT_STATIC_SCOPE,
   parseArgs,
@@ -30,6 +31,13 @@ describe('DEFAULT_PALETTE_CSS_FILES', () => {
   });
 });
 
+describe('DEFAULT_RENDERED_PAGES', () => {
+  it('carries the core admin routes rendered mode visits absent a configured page list', () => {
+    expect(DEFAULT_RENDERED_PAGES).toContain('/admin/posts');
+    expect(DEFAULT_RENDERED_PAGES).toContain('/admin/login');
+  });
+});
+
 describe('resolveConfig', () => {
   const sheetHere = (path: string) => path === DEFAULT_SHEET_CANDIDATES[0];
 
@@ -40,7 +48,7 @@ describe('resolveConfig', () => {
     expect(config.sheetPath).toBe(DEFAULT_SHEET_CANDIDATES[0]);
     expect(config.staticCssFiles).toEqual([]);
     expect(config.paletteCssFiles).toEqual(DEFAULT_PALETTE_CSS_FILES);
-    expect(config.renderedPages).toEqual([]);
+    expect(config.renderedPages).toEqual(DEFAULT_RENDERED_PAGES);
     expect(config.renderedAllowlist).toEqual([]);
   });
 

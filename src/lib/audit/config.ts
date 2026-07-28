@@ -39,6 +39,19 @@ export const DEFAULT_SHEET_CANDIDATES = [
 // (`static.paletteFiles`) to keep its own palette declaration outside `token-colors` too.
 export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/components/cairn-admin.css'];
 
+// The core admin routes rendered mode visits absent a configured page list. Mirrors the norms
+// generator's own page set (scripts/generate-norms-manifest.mjs): both are "the core admin routes"
+// in the same sense, and `/admin` is deliberately absent from both since it renders the same office
+// as `/admin/posts`, so including it would double a route rather than add one.
+export const DEFAULT_RENDERED_PAGES = [
+  '/admin/posts',
+  '/admin/pages',
+  '/admin/vocabulary',
+  '/admin/media',
+  '/admin/editors',
+  '/admin/login',
+];
+
 /** One rendered-mode exemption. A live-page finding has no source line to co-locate a comment on. */
 export interface RenderedAllowlistEntry {
   page: string;
@@ -140,7 +153,7 @@ export function resolveConfig(
       (file.sheet as string | undefined) ??
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ??
       DEFAULT_SHEET_CANDIDATES[0],
-    renderedPages: asPathList(renderedSection.pages, 'rendered.pages', []),
+    renderedPages: asPathList(renderedSection.pages, 'rendered.pages', DEFAULT_RENDERED_PAGES),
     renderedAllowlist: asAllowlist(renderedSection.allowlist, 'rendered.allowlist'),
   };
 }

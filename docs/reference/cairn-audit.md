@@ -11,6 +11,42 @@ npx cairn-audit norms <selector-or-role> # look up a measured norm
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
 the installed package, so it needs no config, no built stylesheet, and no browser.
 
+## Rendered mode
+
+Rendered mode checks the admin as it actually renders: computed contrast, computed touch-target
+size, and the other measurements a source-only static rule can't reach. `cairn-audit --rendered`
+currently declines to run, since the rule set it checks against hasn't shipped yet. This section
+documents the harness contract those rules build on.
+
+The harness never starts a server. It reads `BASE_URL` (default `http://localhost:4173`) and fails
+naming the URL it tried when nothing answers there, the same contract the norms generator follows.
+Playwright loads as a dynamic import from the consuming project's own install, printing
+`npm i -D playwright && npx playwright install chromium` when it is absent, so a project that never
+runs rendered mode takes no browser dependency.
+
+Every configured page renders under both themes, always: a rule that only holds in one color scheme
+is exactly the failure mode this exists to catch. The page list defaults to the core admin routes
+and is overridable in `cairn-audit.config.json`'s `rendered.pages`. A rendered rule can also declare
+an interaction state beyond a page's rest render, an open menu or a keyboard focus-visible pass, so
+it only pays for the capture it actually reads from.
+
+A live-page finding has no source line a suppression comment could sit beside, so rendered mode
+exempts by a page+selector+reason JSON allowlist instead, in `rendered.allowlist`:
+
+```json
+{
+  "rendered": {
+    "allowlist": [
+      { "page": "/admin/posts", "selector": ".legacy-badge", "reason": "ships in the next pass" }
+    ]
+  }
+}
+```
+
+An allowlist entry whose selector matches nothing the run actually visited reports as a stale entry
+rather than doing nothing silently, the same reasoning that requires every static suppression to
+carry a reason.
+
 ## The norms query
 
 The package ships a norms manifest: the admin's measured design norms as data. A generator renders

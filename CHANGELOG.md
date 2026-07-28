@@ -41,8 +41,23 @@
   (`var(--cairn-card-border)`, a `color-mix` formula) rather than a resolved Warm Stone value, so a
   re-tuned palette invalidates nothing. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
 
-No consumer action is required for the entries above. Every change is internal to the admin's own
-CSS and components; no exported type, prop, or route contract changed.
+- `cairn-audit`'s rendered mode has a working harness. It renders every configured admin page in
+  both themes, always, since a rendered rule can pass one theme and fail the other; it never starts
+  a server (BASE_URL must already answer, or the run fails naming the URL it tried), and it imports
+  Playwright dynamically from the consumer's own install, printing a one-line
+  `npm i -D playwright && npx playwright install chromium` instruction when it is absent. A rule
+  declares which interaction states it reads from (a rest render, an open menu, a keyboard
+  focus-visible pass), so a rule that never needs a menu-open pass never pays for one. Exemptions
+  live in a page+selector+reason JSON allowlist (`rendered.allowlist` in
+  `cairn-audit.config.json`), the same reason-required discipline the static suppression comments
+  carry; an allowlist entry whose selector matches nothing the run actually visited is reported as
+  a stale entry rather than silently doing nothing, the same fail-loud discipline every other part
+  of the engine holds. The rule registry itself ships empty (`runRendered` refuses to run against
+  an empty one rather than reporting a false-clean pass): the eleven rendered rules spec 6.3
+  defines land in the remainder of this pass. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
+
+No consumer action is required for the entries above. No exported type, prop, or route contract
+changed.
 
 ### Fixed
 

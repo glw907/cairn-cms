@@ -471,7 +471,7 @@ Dispatch with `model: opus` (band extraction and provenance logic are novel).
   page+selector+reason JSON allowlist; interaction-state captures (an open menu, a
   focus-visible pass) available to rules.
 
-- [ ] Fixture-test the contract failures (no BASE_URL, no Playwright, allowlist match),
+- [x] Fixture-test the contract failures (no BASE_URL, no Playwright, allowlist match),
   implement, full gate, commit.
 
 ### Task 15: The six error-tier rendered rules, and the two probe graduations

@@ -155,7 +155,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.error}
-    <div class="alert alert-error mt-3 text-sm">{data.error}</div>
+    <div class="alert alert-error mt-3 type-body">{data.error}</div>
   {/if}
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and

@@ -1114,5 +1114,5 @@ through the adapter's render. Swapping the editor stays a one-file change.
 
 <div bind:this={host}></div>
 {#if !mounted}
-  <textarea class="textarea min-h-[50vh] w-full font-mono text-sm" bind:value aria-label="Markdown source"></textarea>
+  <textarea class="textarea min-h-[50vh] w-full font-mono type-body" bind:value aria-label="Markdown source"></textarea>
 {/if}

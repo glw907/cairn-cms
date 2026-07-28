@@ -60,7 +60,7 @@ literal token in `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-sta
   {/if}
   <div class="space-y-1">
     <svelte:element this={headingLevel} class="font-semibold text-base-content">{heading}</svelte:element>
-    <p class="mx-auto max-w-[40ch] text-sm text-muted">{message}</p>
+    <p class="mx-auto max-w-[40ch] type-body text-muted">{message}</p>
   </div>
   {#if action}{@render action()}{/if}
 </div>

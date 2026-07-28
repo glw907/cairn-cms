@@ -70,7 +70,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
     </div>
 
     {#if blocked}
-      <p class="mb-2 text-sm">
+      <p class="mb-2 type-body">
         {#if inboundKind === 'include'}
           This {noun} is included by {inboundLinks.length} {entryNoun}. Remove the include first, then delete
           again.
@@ -90,7 +90,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
         <button type="button" class="btn btn-sm" onclick={close}>Close</button>
       </div>
     {:else}
-      <p class="mb-3 text-sm">This cannot be undone.{#if pending} Unpublished edits to this entry are discarded too.{/if}</p>
+      <p class="mb-3 type-body">This cannot be undone.{#if pending} Unpublished edits to this entry are discarded too.{/if}</p>
       <form method="POST" action="?/delete" class="flex justify-end gap-2" onsubmit={() => onsubmitting?.()}>
         <CsrfField />
         <input type="hidden" name="concept" value={conceptId} />

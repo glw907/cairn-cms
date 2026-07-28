@@ -447,7 +447,7 @@ stays pinned at the row's right end, reachable at every width.
     aria-haspopup="dialog"
     onclick={() => onHelp?.()}
   >
-    <span aria-hidden="true" class="text-sm font-semibold">?</span>
+    <span aria-hidden="true" class="type-body font-semibold">?</span>
     <span class="sr-only">Markdown help</span>
   </button>
 </div>

@@ -1461,7 +1461,7 @@ persistent "?" carries Markdown help, design-arc D2).
         >
           <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
         </a>
-        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{data.title}</span>
+        <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
         <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {status}
@@ -1666,7 +1666,7 @@ persistent "?" carries Markdown help, design-arc D2).
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
-  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
+  <div class="cairn-feedback alert alert-success mb-4 type-body transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
     {flash}
   </div>
 {/if}
@@ -1674,20 +1674,20 @@ persistent "?" carries Markdown help, design-arc D2).
      quiet links beside the publish-success strip, never their own alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
 {#if data.publishedFlash && data.publishActions.length}
-  <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+  <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
     {#each data.publishActions as action (action.label)}
       <a class="link link-primary" href={action.href}>{action.label}</a>
     {/each}
   </div>
 {/if}
 {#if data.error}
-  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 type-body">{data.error}</div>
 {/if}
 {#if formError}
-  <div class="alert alert-error mb-4 text-sm">{formError}</div>
+  <div class="alert alert-error mb-4 type-body">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
-  <div class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
@@ -1704,7 +1704,7 @@ persistent "?" carries Markdown help, design-arc D2).
   </div>
 {/if}
 {#if visibleBrokenLinks.length}
-  <div class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
@@ -1729,7 +1729,7 @@ persistent "?" carries Markdown help, design-arc D2).
      never reordered, so the index is a stable key here. -->
 {#snippet advisoryNotices(notices: RenderNotice[])}
   {#each notices as notice, i (i)}
-    <div class="alert alert-warning mb-4 flex-col items-start text-sm">
+    <div class="alert alert-warning mb-4 flex-col items-start type-body">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -1794,16 +1794,16 @@ persistent "?" carries Markdown help, design-arc D2).
 <div role="status">
   {@render advisoryNotices(renderNotices)}
   {#if fragmentBlastRadiusLine}
-    <p class="mb-4 text-sm text-muted">{fragmentBlastRadiusLine}</p>
+    <p class="mb-4 type-body text-muted">{fragmentBlastRadiusLine}</p>
   {/if}
 </div>
 {#if draftWarning}
-  <div class="alert alert-warning mb-4 text-sm">
+  <div class="alert alert-warning mb-4 type-body">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
   </div>
 {/if}
 {#if referenceWarning}
-  <div class="alert alert-warning mb-4 text-sm">
+  <div class="alert alert-warning mb-4 type-body">
     Saved. Note: this page references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
   </div>
 {/if}
@@ -2092,9 +2092,9 @@ persistent "?" carries Markdown help, design-arc D2).
             {/if}
             <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
               {#if previewFailed}
-                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">The preview could not render this content.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center type-body text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}
-                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">Nothing to preview yet.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center type-body text-muted">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
                      scripts and handlers); the empty sandbox is belt and braces on top. The
@@ -2282,7 +2282,7 @@ persistent "?" carries Markdown help, design-arc D2).
       <legend class={eyebrowClass}>Visibility</legend>
         <label class="label cursor-pointer justify-start gap-2">
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
-          <span class="text-sm">Hidden</span>
+          <span class="type-body">Hidden</span>
         </label>
         <p class="text-xs text-muted">Hidden entries stay off the site's lists and feeds, even when published.</p>
       </fieldset>
@@ -2513,7 +2513,7 @@ persistent "?" carries Markdown help, design-arc D2).
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
       <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
-      <p class="max-w-prose text-sm text-muted">
+      <p class="max-w-prose type-body text-muted">
         Claude is reading your draft for a light copy-edit. You will review each change before it is applied.
       </p>
       <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
@@ -2532,7 +2532,7 @@ persistent "?" carries Markdown help, design-arc D2).
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
-      <p class="max-w-prose text-sm text-muted">Tidy read your text and found nothing to change.</p>
+      <p class="max-w-prose type-body text-muted">Tidy read your text and found nothing to change.</p>
       <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyNoopDialog?.close()}>Close</button>
     </div>
   </dialog>
@@ -2549,7 +2549,7 @@ persistent "?" carries Markdown help, design-arc D2).
   >
     <div class="modal-box flex flex-col gap-3">
       <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
-      <p class="text-sm text-muted">{tidyMessage}</p>
+      <p class="type-body text-muted">{tidyMessage}</p>
       <div class="flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
       </div>
@@ -2576,9 +2576,9 @@ persistent "?" carries Markdown help, design-arc D2).
         <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => discardDialog?.close()}>✕</button>
       </div>
       {#if data.published}
-        <p class="mb-3 text-sm">This restores the live version. The changes cannot be recovered.</p>
+        <p class="mb-3 type-body">This restores the live version. The changes cannot be recovered.</p>
       {:else}
-        <p class="mb-3 text-sm">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
+        <p class="mb-3 type-body">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
       {/if}
       <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => (leaving = true)}>
         <CsrfField />

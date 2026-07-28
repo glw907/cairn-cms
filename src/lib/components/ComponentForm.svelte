@@ -232,11 +232,11 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           checked={asBool(name)}
           onchange={(e) => (working.attributes[name] = e.currentTarget.checked)}
         />
-        <span class="text-sm">{field.label}</span>
+        <span class="type-body">{field.label}</span>
       </label>
     {:else if field.type === 'select'}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <select
           class="select"
           aria-required={field.required ? 'true' : undefined}
@@ -255,7 +255,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </label>
     {:else if field.type === 'icon' && icons}
       <div class="flex flex-col gap-1">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <IconPicker
           {icons}
           label={field.label}
@@ -266,7 +266,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </div>
     {:else}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
           type={inputType(field.type)}
@@ -288,7 +288,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
   {#each flatSlots as slot (slot.name)}
     {#if slot.kind === 'markdown'}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <textarea
           class="textarea"
           aria-required={slot.required ? 'true' : undefined}
@@ -305,7 +305,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </label>
     {:else}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
           aria-required={slot.required ? 'true' : undefined}
@@ -327,7 +327,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     {@const items = slotItems(slot.name)}
     {@const ids = slotIds(slot.name)}
     <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2">
-      <legend class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
+      <legend class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. The visible row tag derives from itemLabel, falling back to the indexed label. -->
       {#each ids as id, i (id)}
         {@const label = rowLabel(slot, items[i] ?? '', i)}

@@ -77,7 +77,7 @@ matches the Details fieldset/legend recipe so it reads as one of the panel's gro
 </script>
 
 <fieldset class="m-0 flex min-w-0 flex-col gap-3 border-0 p-0">
-  <legend class="text-sm font-medium">{legend}</legend>
+  <legend class="type-body font-medium">{legend}</legend>
   {#each leaves as [leafKey, leaf] (leafKey)}
     <FieldInput
       field={{ ...leaf, name: leafKey }}

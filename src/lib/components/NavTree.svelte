@@ -118,10 +118,10 @@ title the menu's own declared label; the sortable-list card below stays untouche
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if data.saved}
-  <div role="status" class="alert alert-success mb-4 text-sm">Navigation saved.</div>
+  <div role="status" class="alert alert-success mb-4 type-body">Navigation saved.</div>
 {/if}
 {#if data.error}
-  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 type-body">{data.error}</div>
 {/if}
 
 <form method="POST" action="?/save">

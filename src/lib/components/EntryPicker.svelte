@@ -134,7 +134,7 @@ dialog's a11y conventions.
     {#if groups.length === 0}
       <!-- emptyText names the next step for a host with nothing to offer ("publish a fragment
            first"), which is wrong advice when a search merely filtered a full list to nothing. -->
-      <p class="text-sm text-muted">{targets.length === 0 ? emptyText : noMatchText}</p>
+      <p class="type-body text-muted">{targets.length === 0 ? emptyText : noMatchText}</p>
     {:else}
       {#each groups as group (group.concept)}
         <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>

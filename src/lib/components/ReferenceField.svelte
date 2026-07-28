@@ -72,7 +72,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
 
 {#if field.type === 'array'}
   <fieldset class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-    <legend class="text-sm font-medium">{field.label}</legend>
+    <legend class="type-body font-medium">{field.label}</legend>
     {#if ids.length}
       <ul class="flex flex-wrap gap-2">
         {#each ids as id (id)}
@@ -105,7 +105,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
   />
 {:else}
   <div class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <button type="button" class="btn btn-sm btn-ghost justify-start" aria-haspopup="dialog" aria-label={field.label} onclick={() => picker?.open()}>
       {#if singleId}{titleFor(singleId)}{:else}<span class="text-muted">Choose {field.label}</span>{/if}
     </button>

@@ -38,11 +38,11 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
 
     {#if data.error || !data.token}
       <h1 class="mb-2 text-lg font-semibold">This link didn’t work</h1>
-      <div role="alert" class="alert alert-error text-sm">This sign-in link is invalid or expired.</div>
+      <div role="alert" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
     {:else}
       <h1 class="text-lg font-semibold">Almost there</h1>
-      <p class="mt-1 mb-5 text-sm text-muted">Confirm to finish signing in to {data.siteName}.</p>
+      <p class="mt-1 mb-5 type-body text-muted">Confirm to finish signing in to {data.siteName}.</p>
       <form method="POST" action="?/confirm">
         <input type="hidden" name="token" value={data.token} />
         <CsrfField token={data.csrf} />

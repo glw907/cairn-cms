@@ -93,7 +93,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if lifecycleError}
-  <div class="alert alert-error mb-4 text-sm">{lifecycleError}</div>
+  <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}
 
 <div class="mb-4 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -159,15 +159,15 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
 <form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Name</span>
+    <span class="type-body font-medium">Name</span>
     <input class="input" name="name" aria-label="Name" autocomplete="off" required />
   </label>
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Email</span>
+    <span class="type-body font-medium">Email</span>
     <input class="input" type="email" name="email" aria-label="Email" autocomplete="off" required />
   </label>
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Role</span>
+    <span class="type-body font-medium">Role</span>
     <select class="select" name="role" aria-label="Role">
       {#each data.vocabulary as entry (entry.role)}
         <option value={entry.role} selected={entry.role === 'editor'}>{roleOptionLabel(entry)}</option>

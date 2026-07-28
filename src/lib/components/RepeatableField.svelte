@@ -202,7 +202,7 @@ whose `oninput` bubbles. An always-mounted polite live region announces add and 
 </script>
 
 <fieldset bind:this={root} class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-  <legend class="text-sm font-medium">{rowLabel}</legend>
+  <legend class="type-body font-medium">{rowLabel}</legend>
 
   {#if rows.length}
     <ul class="flex flex-col gap-2">

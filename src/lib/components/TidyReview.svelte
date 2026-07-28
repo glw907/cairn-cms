@@ -309,7 +309,7 @@ must never make, so no such count exists.
 
     <!-- the bulk bar: the live tally (role=status, bulk-only) + Accept fixes / Reject all -->
     <div class="flex items-center gap-3 border-b border-[var(--cairn-card-border)] bg-base-200 px-4 py-2.5">
-      <span class="inline-flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="tidy-tally">
+      <span class="inline-flex flex-wrap items-center gap-2 type-body text-muted" data-testid="tidy-tally">
         <span class="inline-flex items-center gap-1 font-semibold text-base-content">
           <CheckIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{keptCount}</span> kept
         </span>

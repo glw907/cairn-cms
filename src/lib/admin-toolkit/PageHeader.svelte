@@ -56,8 +56,8 @@ constraint `StatusChip.svelte`'s own header comment documents.
     {#if eyebrow}
       <span class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{eyebrow}</span>
     {/if}
-    <h1 class="page-h1 text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
-    {#if meta}<p class="text-sm text-muted">{meta}</p>{/if}
+    <h1 class="page-h1 type-title font-bold font-[family-name:var(--font-display)]">{title}</h1>
+    {#if meta}<p class="type-body text-muted">{meta}</p>{/if}
   </div>
   {#if action}{@render action()}{/if}
 </header>

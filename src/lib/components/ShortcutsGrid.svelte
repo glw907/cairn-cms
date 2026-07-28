@@ -8,7 +8,7 @@ editor-shortcuts source. The host wraps it with its own heading and any closing 
   import { editorShortcuts } from './editor-shortcuts.js';
 </script>
 
-<div class="grid grid-cols-1 gap-x-8 gap-y-1 text-sm sm:grid-cols-2">
+<div class="grid grid-cols-1 gap-x-8 gap-y-1 type-body sm:grid-cols-2">
   {#each editorShortcuts as row (row.label)}
     <div class="flex items-baseline justify-between gap-4">
       <span>{row.label}</span>

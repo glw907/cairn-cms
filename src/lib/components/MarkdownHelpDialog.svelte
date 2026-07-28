@@ -39,9 +39,9 @@ open(), so the component renders no trigger of its own.
         {/each}
       </tbody>
     </table>
-    <h3 class="mt-4 mb-2 text-sm font-semibold">Keyboard shortcuts</h3>
+    <h3 class="mt-4 mb-2 type-body font-semibold">Keyboard shortcuts</h3>
     <ShortcutsGrid />
-    <p class="mt-3 text-sm">
+    <p class="mt-3 type-body">
       Lines starting with <code>:::</code> are layout blocks. Edit the text inside them and leave
       the <code>:::</code> lines alone.
     </p>

@@ -91,7 +91,7 @@ own name.
 
 <form class="flex flex-col gap-group" onsubmit={submit}>
   <div class="flex flex-col gap-1">
-    <label for="cairn-figure-caption" class="text-sm font-medium">Caption</label>
+    <label for="cairn-figure-caption" class="type-body font-medium">Caption</label>
     <input
       id="cairn-figure-caption"
       class="input w-full"
@@ -107,7 +107,7 @@ own name.
 
   <!-- The alt-status row: the image's alt state the host derives. Described or Needs alt, the latter
        in the warning ink with a glyph so the state never rides hue alone (WCAG 1.4.1). -->
-  <div class="flex items-center gap-2 text-sm">
+  <div class="flex items-center gap-2 type-body">
     <span class="font-medium" aria-hidden="true">Alt text</span>
     {#if decorative}
       <span
@@ -157,7 +157,7 @@ own name.
   </div>
 
   <div class="flex flex-col gap-1">
-    <span id="cairn-figure-placement-label" class="text-sm font-medium">Placement</span>
+    <span id="cairn-figure-placement-label" class="type-body font-medium">Placement</span>
     <!-- The segmented control: one bordered group, borderless segments, the active one tinted with a
          check glyph. A roving-tabindex radiogroup, so arrow keys move and select and one Tab stop
          reaches the group. -->

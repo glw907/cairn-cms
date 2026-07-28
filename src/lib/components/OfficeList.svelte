@@ -36,8 +36,8 @@ supplies its own `<table>` (or any content) inside.
          this stack's own gap-0.5 intent into a ~32px rendered gap. Zeroed here and replaced
          with an explicit mt-1 (4px) on the subtitle only, so the eyebrow sits flush above the
          title and the subtitle sits a deliberate 4px below it. -->
-    <h1 class="m-0 text-2xl font-bold font-[family-name:var(--font-display)]">{title}</h1>
-    {#if subtitle}<p class="m-0 mt-1 text-sm text-muted">{subtitle}</p>{/if}
+    <h1 class="m-0 type-title font-bold font-[family-name:var(--font-display)]">{title}</h1>
+    {#if subtitle}<p class="m-0 mt-1 type-body text-muted">{subtitle}</p>{/if}
   </div>
   {#if action}
     <!-- The flex row default (stretch) pulls the action full-width below `sm`; pin it to its

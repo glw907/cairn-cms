@@ -1422,13 +1422,13 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
      keeps its styling without a role. The strip never steals focus. -->
 <div class="sr-only" aria-live="polite">{flashMessage}</div>
 {#if flashMessage}
-  <div class="alert alert-success mb-4 text-sm">{flashMessage}</div>
+  <div class="alert alert-success mb-4 type-body">{flashMessage}</div>
 {/if}
 {#if data.flashError}
-  <div role="alert" class="alert alert-error mb-4 text-sm">{data.flashError}</div>
+  <div role="alert" class="alert alert-error mb-4 type-body">{data.flashError}</div>
 {/if}
 {#if data.error}
-  <div role="alert" class="alert alert-warning mb-4 text-sm">{data.error}</div>
+  <div role="alert" class="alert alert-warning mb-4 type-body">{data.error}</div>
 {/if}
 
 {#if data.assets.length === 0}
@@ -1506,7 +1506,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <!-- A filter or search narrowed the set to zero; the assets exist, none match. -->
     <div role="status" class="flex flex-col items-center gap-3 px-6 py-14 text-center">
       <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
-      <p class="text-sm text-muted">No media match this filter.</p>
+      <p class="type-body text-muted">No media match this filter.</p>
     </div>
   {:else if density === 'grid'}
     <!-- The grid: a roving-tabindex multiselectable listbox of tiles. One tabstop; arrows move the
@@ -1663,7 +1663,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
                   <StatusChip tone="warning" label="no references found" size="xs" />
                 {/if}
               </td>
-              <td class="w-24 text-right text-sm tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
+              <td class="w-24 text-right type-body tabular-nums text-muted">{formatCivilDate(asset.createdAt, { intlOptions: { month: 'short', day: 'numeric' } })}</td>
               <td class="w-12 text-right">
                 <button type="button" class="btn btn-ghost btn-sm text-base-content/60 hover:text-base-content focus-visible:text-base-content" aria-label="Delete {asset.displayName}" onclick={() => requestDelete(asset)}>
                   <Trash2Icon class="h-4 w-4" />
@@ -1720,7 +1720,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          polite region carries "Showing N of M". -->
     <div class="sr-only" role="status" aria-live="polite">Showing {visible.length} of {sorted.length} {sorted.length === 1 ? 'image' : 'images'}.</div>
     <div class="mt-4 flex flex-col items-center gap-2">
-      <span class="text-sm text-muted">Showing {visible.length} of {sorted.length}</span>
+      <span class="type-body text-muted">Showing {visible.length} of {sorted.length}</span>
       {#if hasMore}
         <button type="button" class="btn btn-sm" onclick={loadMore}>Load more</button>
       {/if}
@@ -1803,14 +1803,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <input type="hidden" name="alt" value={submittedAlt} />
           <label class="flex cursor-pointer items-center gap-2">
             <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="describe" bind:group={altMode} />
-            <span class="text-sm">Describe it</span>
+            <span class="type-body">Describe it</span>
           </label>
           {#if altMode === 'describe'}
             <textarea class="textarea textarea-sm ml-6 w-[calc(100%-1.5rem)]" aria-label="Alt text description" rows="2" bind:value={altText}></textarea>
           {/if}
           <label class="flex cursor-pointer items-center gap-2">
             <input type="radio" class="radio radio-sm" name="cairn-ml-alt-mode" value="decorative" bind:group={altMode} />
-            <span class="text-sm">Decorative</span>
+            <span class="type-body">Decorative</span>
           </label>
         </fieldset>
 
@@ -2077,7 +2077,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             </span>
             <span class="flex min-w-0 flex-col gap-0.5">
               <span class="type-chip font-semibold uppercase tracking-[0.06em] text-muted">Replacing</span>
-              <span class="text-sm font-semibold">{asset.displayName}</span>
+              <span class="type-body font-semibold">{asset.displayName}</span>
               <span class="font-[family-name:var(--font-editor)] text-[0.75rem] text-muted tabular-nums">
                 {#if dimensions(asset)}{dimensions(asset)}<span class="px-1" aria-hidden="true">&middot;</span>{/if}{formatBytes(asset.bytes)}
               </span>

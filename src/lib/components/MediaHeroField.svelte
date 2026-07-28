@@ -383,7 +383,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
 <div class="flex flex-col gap-1">
   {#if hasHero}
     <!-- The resting row: one row at sibling weight, then the caption preview beneath. -->
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <div class="flex flex-col gap-1.5">
       <div class="flex items-center gap-2.5">
         <img
@@ -437,7 +437,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     </div>
   {:else}
     <!-- The empty state: a slim labeled dropzone plus one plain unify line. -->
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <button
       type="button"
       class="flex w-full items-center gap-2.5 rounded-field border border-dashed border-base-300 bg-base-100 px-3 py-2.5 text-left transition-colors hover:border-[color-mix(in_oklab,var(--color-primary)_45%,transparent)] hover:bg-[color-mix(in_oklab,var(--color-primary)_4%,transparent)] focus-visible:border-[color-mix(in_oklab,var(--color-primary)_70%,transparent)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[color-mix(in_oklab,var(--color-primary)_70%,transparent)]"
@@ -488,11 +488,11 @@ popover's runUpload but resolves to this field, not an editor placeholder.
     {#if upload.kind === 'uploading'}
       <div class="flex flex-col items-center gap-3 py-8" role="status">
         <span class="loading loading-spinner loading-md text-[var(--color-primary)]"></span>
-        <p class="text-sm text-muted">Adding your image…</p>
+        <p class="type-body text-muted">Adding your image…</p>
       </div>
     {:else if upload.kind === 'failed'}
       <div class="flex flex-col gap-2" role="alert">
-        <p class="text-sm">{upload.message}</p>
+        <p class="type-body">{upload.message}</p>
         <div class="flex justify-end gap-2">
           <button type="button" class="btn btn-ghost btn-sm" onclick={replace}>Back</button>
           <button type="button" class="btn btn-primary btn-sm" onclick={upload.retry}>Retry</button>
@@ -517,7 +517,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
              (<name>.src/.alt/.caption), so it is ignored on submit and never reaches the frontmatter.
              Insert is never disabled for a missing alt. -->
         <fieldset class="flex flex-col gap-2" role="radiogroup" aria-label="Alt text" aria-describedby={altNoteId}>
-          <legend class="text-sm font-medium">Alt text</legend>
+          <legend class="type-body font-medium">Alt text</legend>
           <div class="flex gap-2">
             <label class="flex flex-1 cursor-pointer items-center gap-1.5 rounded-field border px-2.5 py-1.5 type-meta {workAltMode === 'describe' ? 'border-[color-mix(in_oklab,var(--color-primary)_55%,transparent)] bg-[color-mix(in_oklab,var(--color-primary)_8%,transparent)] font-semibold text-[var(--color-primary)]' : 'border-base-300'}">
               <input type="radio" class="radio radio-xs" name="cairn-hero-alt-{uid}" value="describe" bind:group={workAltMode} />
@@ -543,7 +543,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </fieldset>
 
         <label class="flex flex-col gap-label">
-          <span class="text-sm font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
+          <span class="type-body font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
           <input class="input input-sm w-full" bind:value={workCaption} aria-label="Caption" />
           <span class="text-xs text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
         </label>
@@ -564,7 +564,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
           <span class="text-[var(--color-primary)]" aria-hidden="true">
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
           </span>
-          <span class="text-sm font-medium text-base-content">Drop an image, or upload</span>
+          <span class="type-body font-medium text-base-content">Drop an image, or upload</span>
           <span class="text-xs">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
           <button type="button" class="btn btn-primary btn-sm mt-1" onclick={() => fileInput?.click()}>Choose a file</button>
           <input

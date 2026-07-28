@@ -334,10 +334,10 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.saved}
-    <div role="status" class="alert alert-success mt-4 text-sm">Tidy settings saved.</div>
+    <div role="status" class="alert alert-success mt-4 type-body">Tidy settings saved.</div>
   {/if}
   {#if data.error}
-    <div class="alert alert-error mt-4 text-sm">{data.error}</div>
+    <div class="alert alert-error mt-4 type-body">{data.error}</div>
   {/if}
 
   <!-- DEVELOPER TIER, read-only: the three deploy-time facts the editor depends on, model included as
@@ -586,7 +586,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
            accent reservation, 2026-07-15). -->
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="text-xl font-bold tracking-tight">Tidy’s key isn’t working</div>
-      <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
+      <div class="max-w-[50ch] type-body leading-relaxed text-muted">
         Tidy is turned on and a key is set, but Anthropic isn’t accepting it. It may have been
         revoked or was never valid. Until it’s fixed, editors won’t see the Tidy control at all.
       </div>
@@ -612,7 +612,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
     <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-base-content/[0.06] text-muted"><SparklesIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="text-xl font-bold tracking-tight">Tidy is not set up yet</div>
-      <div class="max-w-[50ch] text-sm leading-relaxed text-muted">
+      <div class="max-w-[50ch] type-body leading-relaxed text-muted">
         Tidy uses Claude to copy-edit your drafts, so it sends your writing to Anthropic and costs a
         little per use. That makes it a developer setup, not a switch in here. Once it is on, this page
         is where you choose what it can change.

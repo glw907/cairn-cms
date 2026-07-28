@@ -9,27 +9,14 @@
 // own job is to override the SAME selector's duration, so proving the selector is named inside a
 // guard is the whole contract, regardless of which properties that guard's own rule resets.
 import { splitSelectorList } from '../../sheet.js';
-import { cssScopeRules } from './css-scope.js';
-import { lineAt } from '../../markup.js';
-import type { SheetRule } from '../../sheet.js';
+import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';
+import { isMotionProperty, isReducedMotionGuarded } from './motion.js';
+import type { CssScopeRule } from './css-scope.js';
 import type { Finding, StaticRule } from '../../types.js';
 
-const MOTION_PROPERTY = /^(transition|transition-duration|animation|animation-duration)$/;
-const REDUCED_MOTION_CONDITION = /prefers-reduced-motion/;
-
-function isReducedMotionGuarded(conditions: string[]): boolean {
-  return conditions.some((condition) => REDUCED_MOTION_CONDITION.test(condition));
-}
-
-/** A selector alternative, whitespace-normalized so combinator formatting never breaks a match. */
-function normalize(selector: string): string {
-  return selector.replace(/\s+/g, ' ').trim();
-}
-
+/** One selector alternative that carries motion, with the CSS rule it was declared on. */
 interface BearingSite {
-  file: string;
-  source: string;
-  rule: SheetRule;
+  scope: CssScopeRule;
   selector: string;
 }
 
@@ -39,31 +26,27 @@ export const reducedMotion: StaticRule = {
   check(ctx) {
     const guardedByFile = new Map<string, Set<string>>();
     const bearing: BearingSite[] = [];
-    for (const { file, source, rule } of cssScopeRules(ctx)) {
-      const selectors = splitSelectorList(rule.selector).map(normalize);
-      if (isReducedMotionGuarded(rule.conditions)) {
-        const known = guardedByFile.get(file) ?? new Set<string>();
-        for (const selector of selectors) known.add(selector);
-        guardedByFile.set(file, known);
+    for (const scope of cssScopeRules(ctx)) {
+      const selectors = splitSelectorList(scope.rule.selector).map(normalizeSelector);
+      if (isReducedMotionGuarded(scope.rule.conditions)) {
+        const guarded = selectorsFor(guardedByFile, scope.file);
+        for (const selector of selectors) guarded.add(selector);
         continue;
       }
-      const bearsMotion = rule.declarations.some(
-        (decl) => MOTION_PROPERTY.test(decl.property) && decl.value.trim() !== 'none'
+      const bearsMotion = scope.rule.declarations.some(
+        (decl) => isMotionProperty(decl.property) && decl.value.trim() !== 'none'
       );
       if (!bearsMotion) continue;
-      for (const selector of selectors) bearing.push({ file, source, rule, selector });
+      for (const selector of selectors) bearing.push({ scope, selector });
     }
 
     const findings: Finding[] = [];
     for (const site of bearing) {
-      if (guardedByFile.get(site.file)?.has(site.selector)) continue;
+      if (guardedByFile.get(site.scope.file)?.has(site.selector)) continue;
       findings.push({
         ruleId: 'reduced-motion',
         tier: 'error',
-        file: site.file,
-        line: lineAt(site.source, site.rule.start),
-        start: site.rule.start,
-        end: site.rule.end,
+        ...cssRulePosition(site.scope),
         message: `selector "${site.selector}" carries a transition/animation with no matching rule inside a prefers-reduced-motion guard`,
       });
     }

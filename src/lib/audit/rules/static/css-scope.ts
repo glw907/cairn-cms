@@ -10,8 +10,9 @@
 // every other CSS-family rule legitimately polices, so only the one rule whose hazard model the
 // declaration site trips, token-colors, filters it out of its own check.
 import { parseSheet } from '../../sheet.js';
+import { lineAt } from '../../markup.js';
 import type { SheetRule } from '../../sheet.js';
-import type { StaticRuleContext } from '../../types.js';
+import type { Finding, StaticRuleContext } from '../../types.js';
 
 /** One CSS rule found in the CSS-family scope, positioned against the file it came from. */
 export interface CssScopeRule {
@@ -46,4 +47,36 @@ export function* cssScopeRules(ctx: StaticRuleContext): Generator<CssScopeRule> 
       yield { file: cssFile.file, source: cssFile.source, rule };
     }
   }
+}
+
+/**
+ * Where a CSS-family finding points: the rule's own selector, never the declaration inside it. The
+ * selector is the construct an author edits and the construct a suppression directive sits above,
+ * so every rule in the family reports one rule at one place no matter which declaration tripped it.
+ */
+export function cssRulePosition(scope: CssScopeRule): Pick<Finding, 'file' | 'line' | 'start' | 'end'> {
+  return {
+    file: scope.file,
+    line: lineAt(scope.source, scope.rule.start),
+    start: scope.rule.start,
+    end: scope.rule.end,
+  };
+}
+
+/** A selector alternative with its whitespace collapsed, so combinator formatting never breaks a match. */
+export function normalizeSelector(selector: string): string {
+  return selector.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The selector set a file has accumulated so far, created on first use. The pairing rules
+ * (focus-parity, reduced-motion) look for a partner selector in the SAME source, so each builds
+ * one set per file as it walks the scope.
+ */
+export function selectorsFor(byFile: Map<string, Set<string>>, file: string): Set<string> {
+  const known = byFile.get(file);
+  if (known) return known;
+  const created = new Set<string>();
+  byFile.set(file, created);
+  return created;
 }

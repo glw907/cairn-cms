@@ -15,8 +15,7 @@
 // values get written down. `cairn-admin.css`'s own exclusion (previously by construction, never
 // named as a consumer CSS file at all) and a site's own theme file now share this one named list,
 // rather than the rule inventing a filename special case for the second one.
-import { cssScopeRules } from './css-scope.js';
-import { lineAt } from '../../markup.js';
+import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 // The CSS Color Module 4 named-color keywords, lowercase, minus `transparent` and `currentcolor`
@@ -63,7 +62,7 @@ const OKLAB_ARGS = /\boklab\(([^)]*)\)/i;
 const HSL_ARGS = /\bhsla?\(([^)]*)\)/i;
 
 function isZero(token: string | undefined): boolean {
-  return token !== undefined && Number.isFinite(parseFloat(token)) && parseFloat(token) === 0;
+  return token !== undefined && parseFloat(token) === 0;
 }
 
 /** Whether a value expresses a color function with zero chroma or saturation: a bare gray. */
@@ -96,18 +95,15 @@ export const tokenColors: StaticRule = {
   check(ctx) {
     const paletteSites = new Set(ctx.config.paletteCssFiles);
     const findings: Finding[] = [];
-    for (const { file, source, rule } of cssScopeRules(ctx)) {
-      if (paletteSites.has(file)) continue;
-      for (const decl of rule.declarations) {
+    for (const scope of cssScopeRules(ctx)) {
+      if (paletteSites.has(scope.file)) continue;
+      for (const decl of scope.rule.declarations) {
         const hazard = hazardIn(decl.value);
         if (!hazard) continue;
         findings.push({
           ruleId: 'token-colors',
           tier: 'error',
-          file,
-          line: lineAt(source, rule.start),
-          start: rule.start,
-          end: rule.end,
+          ...cssRulePosition(scope),
           message: `"${decl.property}: ${decl.value}" carries ${hazard}, never a palette token`,
         });
       }

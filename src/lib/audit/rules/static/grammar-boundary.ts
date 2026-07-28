@@ -11,8 +11,7 @@
 // declaration site and a palette declaration site are different concepts that happen to coincide
 // in this one file.)
 import { GRAMMAR_TOKENS } from '../../../design/grammar-tokens.js';
-import { cssScopeRules } from './css-scope.js';
-import { lineAt } from '../../markup.js';
+import { cssRulePosition, cssScopeRules } from './css-scope.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const GRAMMAR_TOKEN_NAMES = new Set(GRAMMAR_TOKENS);
@@ -22,16 +21,13 @@ export const grammarBoundary: StaticRule = {
   tier: 'error',
   check(ctx) {
     const findings: Finding[] = [];
-    for (const { file, source, rule } of cssScopeRules(ctx)) {
-      for (const decl of rule.declarations) {
+    for (const scope of cssScopeRules(ctx)) {
+      for (const decl of scope.rule.declarations) {
         if (!GRAMMAR_TOKEN_NAMES.has(decl.property)) continue;
         findings.push({
           ruleId: 'grammar-boundary',
           tier: 'error',
-          file,
-          line: lineAt(source, rule.start),
-          start: rule.start,
-          end: rule.end,
+          ...cssRulePosition(scope),
           message: `"${decl.property}" redeclares a grammar token; re-tune a --color-* palette token instead`,
         });
       }

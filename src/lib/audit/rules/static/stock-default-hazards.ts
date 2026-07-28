@@ -5,7 +5,7 @@
 // hazards depend on which OTHER attributes or classes an element carries, not on one class token in
 // isolation, so this rule groups `classTokens` by their owning element (`elementStart`) and reads
 // each element's own `attributes` off its `SourceNode`.
-import type { ParsedComponent, SourceNode } from '../../markup.js';
+import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const BADGE_GHOST_MESSAGE =
@@ -46,7 +46,11 @@ function nodeAt(file: ParsedComponent, start: number): SourceNode | undefined {
 }
 
 /** The first class token on an element matching the given name, for the finding's position. */
-function tokenNamed(file: ParsedComponent, elementStart: number, name: string) {
+function tokenNamed(
+  file: ParsedComponent,
+  elementStart: number,
+  name: string
+): ClassToken | undefined {
   return file.classTokens.find(
     (token) => token.elementStart === elementStart && token.value === name
   );

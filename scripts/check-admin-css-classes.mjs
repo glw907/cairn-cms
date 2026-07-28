@@ -17,38 +17,16 @@
 // Wired as `npm run check:admin-css-classes`.
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { scopeReport } from './audit-gate.mjs';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const RULE_ID = 'no-uncompiled-class';
-
-/** @typedef {import('../src/lib/audit/types.js').AuditReport} AuditReport */
-/** @typedef {import('../src/lib/audit/types.js').Finding} Finding */
-
-/**
- * Restrict a full audit report to one rule's own findings. A directive naming a rule this gate
- * does not own must never read as dead just because this gate did not ask for that rule, so the
- * restriction happens here, after `runStatic` has already resolved every suppression against the
- * full rule set, never by handing `runStatic` a narrowed rule list itself.
- * @param {AuditReport} report
- * @param {string} ruleId the rule id this gate owns
- * @returns {AuditReport}
- */
-export function scopeReport(report, ruleId) {
-  /** @param {Finding} finding */
-  const owns = (finding) => finding.ruleId === ruleId;
-  return {
-    findings: report.findings.filter(owns),
-    suppressed: report.suppressed.filter(owns),
-    filesScanned: report.filesScanned,
-    ruleIds: report.ruleIds.filter((id) => id === ruleId),
-  };
-}
+const RULE_IDS = ['no-uncompiled-class'];
 
 async function main() {
   try {
     const { exitCodeFor, formatReport, loadConfig, runStatic } = await import('../dist/audit/index.js');
-    const report = scopeReport(runStatic(loadConfig(ROOT)), RULE_ID);
+    const report = scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS);
     console.log(formatReport(report));
     process.exitCode = exitCodeFor(report);
   } catch (err) {

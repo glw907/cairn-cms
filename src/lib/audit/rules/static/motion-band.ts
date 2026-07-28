@@ -5,20 +5,14 @@
 // declaration inside a `prefers-reduced-motion: reduce` guard is exempt: that guard's whole job is
 // to collapse a transition toward zero for a reduced-motion reader, so a near-instant duration
 // there is the fix this rule polices FOR, never a violation of it.
-import { cssScopeRules } from './css-scope.js';
-import { lineAt } from '../../markup.js';
+import { cssRulePosition, cssScopeRules } from './css-scope.js';
+import { isMotionProperty, isReducedMotionGuarded } from './motion.js';
 import type { Finding, StaticRule } from '../../types.js';
 
-const MOTION_PROPERTY = /^(transition|transition-duration|animation|animation-duration)$/;
 const ALL_PROPERTY = /^(transition|transition-property)$/;
 const DURATION = /(-?\d+(?:\.\d+)?)(m?s)\b/g;
-const REDUCED_MOTION_CONDITION = /prefers-reduced-motion/;
 const BAND_MIN_MS = 150;
 const BAND_MAX_MS = 250;
-
-function isReducedMotionGuarded(conditions: string[]): boolean {
-  return conditions.some((condition) => REDUCED_MOTION_CONDITION.test(condition));
-}
 
 /** Every duration a value names, in milliseconds. */
 function durationsIn(value: string): number[] {
@@ -41,30 +35,24 @@ export const motionBand: StaticRule = {
   tier: 'error',
   check(ctx) {
     const findings: Finding[] = [];
-    for (const { file, source, rule } of cssScopeRules(ctx)) {
-      if (isReducedMotionGuarded(rule.conditions)) continue;
-      for (const decl of rule.declarations) {
-        const at = {
-          file,
-          line: lineAt(source, rule.start),
-          start: rule.start,
-          end: rule.end,
-        };
+    for (const scope of cssScopeRules(ctx)) {
+      if (isReducedMotionGuarded(scope.rule.conditions)) continue;
+      for (const decl of scope.rule.declarations) {
         if (transitionsAll(decl.property, decl.value)) {
           findings.push({
             ruleId: 'motion-band',
             tier: 'error',
-            ...at,
+            ...cssRulePosition(scope),
             message: `"${decl.property}: ${decl.value}" transitions "all", which re-animates every property a future edit adds`,
           });
         }
-        if (!MOTION_PROPERTY.test(decl.property)) continue;
+        if (!isMotionProperty(decl.property)) continue;
         for (const ms of durationsIn(decl.value)) {
           if (ms >= BAND_MIN_MS && ms <= BAND_MAX_MS) continue;
           findings.push({
             ruleId: 'motion-band',
             tier: 'error',
-            ...at,
+            ...cssRulePosition(scope),
             message: `"${decl.property}: ${decl.value}" carries a ${ms}ms duration outside the ${BAND_MIN_MS}-${BAND_MAX_MS}ms motion band`,
           });
         }

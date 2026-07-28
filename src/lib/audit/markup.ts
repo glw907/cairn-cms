@@ -409,19 +409,12 @@ function tokensInExpression(node: RawNode | null | undefined, res: Resolution): 
       ];
     case 'LogicalExpression':
       // `cond && 'btn-active'` puts the guard on the left; `a || b` and `a ?? b` are both values.
-      return node.operator === '&&'
-        ? tokensInExpression(child('right'), res)
-        : [
-            ...tokensInExpression(child('left'), res),
-            ...tokensInExpression(child('right'), res),
-          ];
+      if (node.operator === '&&') return tokensInExpression(child('right'), res);
+      return [...tokensInExpression(child('left'), res), ...tokensInExpression(child('right'), res)];
     case 'BinaryExpression':
-      return node.operator === '+'
-        ? [
-            ...tokensInExpression(child('left'), res),
-            ...tokensInExpression(child('right'), res),
-          ]
-        : [];
+      // Concatenation joins two halves of a class string; every other operator is a comparison.
+      if (node.operator !== '+') return [];
+      return [...tokensInExpression(child('left'), res), ...tokensInExpression(child('right'), res)];
     case 'TSAsExpression':
     case 'TSNonNullExpression':
     case 'ParenthesizedExpression':

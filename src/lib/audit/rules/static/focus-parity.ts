@@ -14,15 +14,16 @@
 // keyboard affordance is the engine's own blanket `:focus-visible` outline ring (cairn-admin.css),
 // a real but different-shaped guarantee a markup-level token scan would over-report against.
 import { splitSelectorList } from '../../sheet.js';
-import { cssScopeRules } from './css-scope.js';
-import { lineAt } from '../../markup.js';
+import { cssRulePosition, cssScopeRules, normalizeSelector, selectorsFor } from './css-scope.js';
+import type { CssScopeRule } from './css-scope.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const HOVER = ':hover';
 
-/** A selector alternative, whitespace-normalized so combinator formatting never breaks a match. */
-function normalize(selector: string): string {
-  return selector.replace(/\s+/g, ' ').trim();
+/** One selector alternative that carries `:hover`, with the CSS rule it was declared on. */
+interface HoverSite {
+  scope: CssScopeRule;
+  selector: string;
 }
 
 export const focusParity: StaticRule = {
@@ -30,32 +31,26 @@ export const focusParity: StaticRule = {
   tier: 'error',
   check(ctx) {
     const knownByFile = new Map<string, Set<string>>();
-    const hoverSites: { file: string; source: string; start: number; end: number; selector: string }[] = [];
-    for (const { file, source, rule } of cssScopeRules(ctx)) {
-      const known = knownByFile.get(file) ?? new Set<string>();
-      for (const raw of splitSelectorList(rule.selector)) {
-        const selector = normalize(raw);
+    const hoverSites: HoverSite[] = [];
+    for (const scope of cssScopeRules(ctx)) {
+      const known = selectorsFor(knownByFile, scope.file);
+      for (const raw of splitSelectorList(scope.rule.selector)) {
+        const selector = normalizeSelector(raw);
         known.add(selector);
-        if (selector.includes(HOVER)) {
-          hoverSites.push({ file, source, start: rule.start, end: rule.end, selector });
-        }
+        if (selector.includes(HOVER)) hoverSites.push({ scope, selector });
       }
-      knownByFile.set(file, known);
     }
 
     const findings: Finding[] = [];
     for (const site of hoverSites) {
-      const known = knownByFile.get(site.file)!;
+      const known = selectorsFor(knownByFile, site.scope.file);
       const focusVisible = site.selector.split(HOVER).join(':focus-visible');
       const focusWithin = site.selector.split(HOVER).join(':focus-within');
       if (known.has(focusVisible) || known.has(focusWithin)) continue;
       findings.push({
         ruleId: 'focus-parity',
         tier: 'error',
-        file: site.file,
-        line: lineAt(site.source, site.start),
-        start: site.start,
-        end: site.end,
+        ...cssRulePosition(site.scope),
         message: `selector "${site.selector}" carries :hover with no matching :focus-visible (or :focus-within) selector in the same source`,
       });
     }

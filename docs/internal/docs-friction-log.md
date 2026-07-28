@@ -70,3 +70,12 @@ findings start fresh below this line.
   as cairn's own value, since reweighting every field label to 600 sitewide would move pixels well
   beyond this task's ratified header-line changes. Whether cairn's field labels should bump to match
   ASC's literal number is an open question for a future ruling, not shipped here.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 13)** The norms manifest is
+  committed and freshness-checked, but the check needs a browser and a running showcase preview, so
+  it is publish-gated rather than a per-push gate (spec 6.4 explicitly keeps it out of the `check:*`
+  hot path). The consequence is a staleness window: a change to the admin's rendered appearance
+  leaves the shipped manifest wrong until someone runs `npm run norms:generate`, and nothing says so
+  until a release. The cheap tightening, if the window ever bites, is to run `norms:check` in the
+  existing `e2e` workflow, which already builds and serves the showcase, so the marginal cost is one
+  step rather than a second browser job. Left unshipped here because the plan scopes the gate to
+  CI/publish and a per-PR norms failure would block work on an advisory-tier artifact.

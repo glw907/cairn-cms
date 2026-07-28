@@ -1,0 +1,1445 @@
+{
+  "precision": {
+    "lengthPx": 0.5,
+    "ratio": 0.05
+  },
+  "minObservationSites": 2,
+  "pages": [
+    "/admin/editors",
+    "/admin/login",
+    "/admin/media",
+    "/admin/pages",
+    "/admin/posts",
+    "/admin/vocabulary"
+  ],
+  "themes": [
+    "cairn-admin",
+    "cairn-admin-dark"
+  ],
+  "roles": [
+    {
+      "id": "button-ghost",
+      "family": "control",
+      "selector": ".btn.btn-ghost",
+      "description": "The quiet button: chrome actions, toolbar controls, and row affordances."
+    },
+    {
+      "id": "button-primary",
+      "family": "control",
+      "selector": ".btn.btn-primary",
+      "description": "The primary action button, the one accent-filled control on a surface."
+    },
+    {
+      "id": "card",
+      "family": "container",
+      "selector": ".card-shell",
+      "description": "The floating card surface: the list table, the editor panes, the auth card."
+    },
+    {
+      "id": "eyebrow",
+      "family": "text",
+      "selector": ".type-label",
+      "description": "The eyebrow: sidebar group headers, column labels, and section legends."
+    },
+    {
+      "id": "icon",
+      "family": "icon",
+      "selector": "svg.lucide",
+      "description": "An inline lucide glyph."
+    },
+    {
+      "id": "input-text",
+      "family": "control",
+      "selector": "input.input",
+      "description": "A single-line text input."
+    },
+    {
+      "id": "nav-item",
+      "family": "text",
+      "selector": "nav[aria-label=\"Site content\"] .menu a",
+      "description": "A sidebar navigation item."
+    },
+    {
+      "id": "page-title",
+      "family": "text",
+      "selector": "h1.page-h1",
+      "description": "The page heading in PageHeader's title slot."
+    },
+    {
+      "id": "select",
+      "family": "control",
+      "selector": "select.select",
+      "description": "A native select control."
+    },
+    {
+      "id": "status-chip",
+      "family": "control",
+      "selector": ".status-chip",
+      "description": "The publish-state pill, the admin's chip metric."
+    },
+    {
+      "id": "table-cell",
+      "family": "text",
+      "selector": "table.table td",
+      "description": "An office table body cell."
+    },
+    {
+      "id": "table-header-cell",
+      "family": "text",
+      "selector": "table.table th",
+      "description": "An office table column label."
+    }
+  ],
+  "entries": [
+    {
+      "role": "button-ghost",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--btn-bg)"
+        ]
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--btn-border)"
+        ]
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          10
+        ],
+        "min": 10,
+        "max": 10
+      },
+      "observations": 30,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "color-mix(in oklab, var(--color-base-content) 60%, transparent)",
+          "color-mix(in oklch, var(--color-base-content) 20%, #0000)",
+          "var(--btn-fg)",
+          "var(--btn-rest-fg,var(--btn-color,var(--color-base-content,currentColor)))",
+          "var(--color-base-content)",
+          "var(--color-error)"
+        ]
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          11,
+          12,
+          14
+        ],
+        "min": 11,
+        "max": 14
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          23,
+          24,
+          30.5,
+          32,
+          40
+        ],
+        "min": 23,
+        "max": 40
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "padding-block",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "padding-block-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.05,
+          0.1
+        ],
+        "min": 0.05,
+        "max": 0.1
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "padding-inline",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          0,
+          8,
+          12
+        ],
+        "min": 0,
+        "max": 12
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-ghost",
+      "property": "padding-inline-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0,
+          0.75,
+          1
+        ],
+        "min": 0,
+        "max": 1
+      },
+      "observations": 30,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--btn-bg)"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--btn-border)"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          10
+        ],
+        "min": 10,
+        "max": 10
+      },
+      "observations": 11,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--btn-fg)"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          14
+        ],
+        "min": 12,
+        "max": 14
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          30.5,
+          32,
+          40
+        ],
+        "min": 30.5,
+        "max": 40
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "padding-block",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "padding-block-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.05,
+          0.1
+        ],
+        "min": 0.05,
+        "max": 0.1
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "padding-inline",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          16
+        ],
+        "min": 12,
+        "max": 16
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "button-primary",
+      "property": "padding-inline-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          1,
+          1.15
+        ],
+        "min": 1,
+        "max": 1.15
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "card",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-base-100)"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "card",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--cairn-card-border)"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": [
+        "open-question"
+      ]
+    },
+    {
+      "role": "card",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          16
+        ],
+        "min": 16,
+        "max": 16
+      },
+      "observations": 14,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "card",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "card",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 14,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "eyebrow",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "inherit",
+          "var(--color-muted)",
+          "var(--color-subtle)"
+        ]
+      },
+      "observations": 32,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "eyebrow",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          11
+        ],
+        "min": 11,
+        "max": 11
+      },
+      "observations": 37,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "eyebrow",
+      "property": "font-weight",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "400",
+          "500",
+          "600"
+        ]
+      },
+      "observations": 37,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "eyebrow",
+      "property": "letter-spacing",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "0.88px",
+          "normal"
+        ]
+      },
+      "observations": 37,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "eyebrow",
+      "property": "line-height",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "14px"
+        ]
+      },
+      "observations": 37,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "icon",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-muted)",
+          "var(--color-subtle)"
+        ]
+      },
+      "observations": 68,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "icon",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          13.5,
+          14,
+          15,
+          16,
+          19,
+          20,
+          28
+        ],
+        "min": 12,
+        "max": 28
+      },
+      "observations": 183,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "icon",
+      "property": "width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          13.5,
+          14,
+          14.5,
+          15,
+          15.5,
+          16,
+          19,
+          20,
+          28
+        ],
+        "min": 12,
+        "max": 28
+      },
+      "observations": 183,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-base-100)"
+        ]
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          10
+        ],
+        "min": 10,
+        "max": 10
+      },
+      "observations": 12,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          14
+        ],
+        "min": 12,
+        "max": 14
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          32,
+          38,
+          40
+        ],
+        "min": 32,
+        "max": 40
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "padding-block",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          0,
+          1
+        ],
+        "min": 0,
+        "max": 1
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "padding-block-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0,
+          0.05,
+          0.1
+        ],
+        "min": 0,
+        "max": 0.1
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "padding-inline",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12
+        ],
+        "min": 12,
+        "max": 12
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
+      "property": "padding-inline-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.85,
+          1
+        ],
+        "min": 0.85,
+        "max": 1
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "nav-item",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "inherit",
+          "var(--color-primary)",
+          "var(--color-subtle)"
+        ]
+      },
+      "observations": 50,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "nav-item",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          15
+        ],
+        "min": 15,
+        "max": 15
+      },
+      "observations": 50,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "nav-item",
+      "property": "font-weight",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "500",
+          "600"
+        ]
+      },
+      "observations": 50,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "nav-item",
+      "property": "letter-spacing",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "0.075px"
+        ]
+      },
+      "observations": 50,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "nav-item",
+      "property": "line-height",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "19px"
+        ]
+      },
+      "observations": 50,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "page-title",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          24
+        ],
+        "min": 24,
+        "max": 24
+      },
+      "observations": 5,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "page-title",
+      "property": "font-weight",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "700"
+        ]
+      },
+      "observations": 5,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "page-title",
+      "property": "letter-spacing",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "normal"
+        ]
+      },
+      "observations": 5,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "page-title",
+      "property": "line-height",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "32px"
+        ]
+      },
+      "observations": 5,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-base-100)"
+        ]
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          10
+        ],
+        "min": 10,
+        "max": 10
+      },
+      "observations": 3,
+      "provenance": "ratified",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          14
+        ],
+        "min": 12,
+        "max": 14
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          32,
+          40
+        ],
+        "min": 32,
+        "max": 40
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "padding-block",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          3,
+          3.5
+        ],
+        "min": 3,
+        "max": 3.5
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "padding-block-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.25
+        ],
+        "min": 0.25,
+        "max": 0.25
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "padding-inline",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12
+        ],
+        "min": 12,
+        "max": 12
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "padding-inline-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.85,
+          1
+        ],
+        "min": 0.85,
+        "max": 1
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "background-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--badge-bg)"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "border-color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "color-mix(currentcolor 35%, transparent)",
+          "currentcolor"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "border-radius",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          8
+        ],
+        "min": 8,
+        "max": 8
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "border-style",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "solid"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "border-width",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          1
+        ],
+        "min": 1,
+        "max": 1
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--badge-color)",
+          "var(--badge-fg)"
+        ]
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          10
+        ],
+        "min": 10,
+        "max": 10
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "height",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          16
+        ],
+        "min": 16,
+        "max": 16
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "padding-block",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          0
+        ],
+        "min": 0,
+        "max": 0
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "padding-block-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0
+        ],
+        "min": 0,
+        "max": 0
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "padding-inline",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          7
+        ],
+        "min": 7,
+        "max": 7
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "status-chip",
+      "property": "padding-inline-to-font-size",
+      "band": {
+        "kind": "ratio",
+        "values": [
+          0.7
+        ],
+        "min": 0.7,
+        "max": 0.7
+      },
+      "observations": 14,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-cell",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-muted)"
+        ]
+      },
+      "observations": 6,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-cell",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          12,
+          15
+        ],
+        "min": 12,
+        "max": 15
+      },
+      "observations": 35,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-cell",
+      "property": "font-weight",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "400",
+          "500"
+        ]
+      },
+      "observations": 35,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-cell",
+      "property": "letter-spacing",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "normal"
+        ]
+      },
+      "observations": 35,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-cell",
+      "property": "line-height",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "19px",
+          "normal"
+        ]
+      },
+      "observations": 35,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-header-cell",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "var(--color-muted)"
+        ]
+      },
+      "observations": 5,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-header-cell",
+      "property": "font-size",
+      "band": {
+        "kind": "length",
+        "unit": "px",
+        "values": [
+          11,
+          14
+        ],
+        "min": 11,
+        "max": 14
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-header-cell",
+      "property": "font-weight",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "600",
+          "700"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-header-cell",
+      "property": "letter-spacing",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "0.88px",
+          "normal"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "table-header-cell",
+      "property": "line-height",
+      "band": {
+        "kind": "keyword",
+        "values": [
+          "14px",
+          "normal"
+        ]
+      },
+      "observations": 11,
+      "provenance": "observed",
+      "flags": []
+    }
+  ]
+}

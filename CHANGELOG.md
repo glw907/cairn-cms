@@ -30,6 +30,17 @@
   cairn's own admin components migrate every verbatim shell site onto the new utilities,
   pixel-identically. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
 
+- The package now ships a norms manifest: the admin's measured design norms as data, derived by
+  rendering the admin screens in both themes and reading the computed styles of twelve semantic
+  roles. `npx cairn-audit norms <selector-or-role>` answers from it, so a developer or an agent
+  building a new admin surface reads a measured control height, padding ratio, border treatment,
+  radius, or type recipe instead of inferring one from a screenshot. Each entry states the band, how
+  many distinct element sites it rests on, whether a ratified decision settles it, and every caveat:
+  an entry an open design question governs is flagged and never reads as settled, a band resting on
+  one site says so, and a palette-dependent property is stored as a relationship
+  (`var(--cairn-card-border)`, a `color-mix` formula) rather than a resolved Warm Stone value, so a
+  re-tuned palette invalidates nothing. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
+
 No consumer action is required for the entries above. Every change is internal to the admin's own
 CSS and components; no exported type, prop, or route contract changed.
 

@@ -164,34 +164,58 @@ export function loadConfig(root: string, configPath?: string): AuditConfig {
   return resolveConfig(root, raw, (candidate) => existsSync(resolve(root, candidate)));
 }
 
-/** The bin's parsed argv. */
-export interface AuditArgs {
+/** The flags both invocations share. */
+interface AuditFlags {
   rendered: boolean;
   config?: string;
 }
 
-const USAGE = 'Usage: cairn-audit [--rendered] [--config <path>]';
+/**
+ * The bin's parsed argv. A union rather than an optional `term`, so the `norms` branch reaches its
+ * term without a cast and a future subcommand cannot forget its own argument.
+ */
+export type AuditArgs =
+  | ({ command: 'audit' } & AuditFlags)
+  | ({ command: 'norms'; term: string } & AuditFlags);
 
-/** Parse the bin's argv (long flags only). Throws with a usage line on anything unexpected. */
+const USAGE = [
+  'Usage: cairn-audit [--rendered] [--config <path>]',
+  '       cairn-audit norms <selector-or-role>',
+].join('\n');
+
+/**
+ * Parse the bin's argv: one optional leading subcommand, then long flags. Throws with a usage line
+ * on anything unexpected, since a mistyped argument that silently ran the default audit would
+ * report a clean tree for a question nobody asked.
+ */
 export function parseArgs(argv: string[]): AuditArgs {
-  const args: AuditArgs = { rendered: false };
-  for (let i = 0; i < argv.length; ) {
-    const flag = argv[i];
+  let term: string | undefined;
+  let rest = argv;
+  if (rest[0] === 'norms') {
+    term = rest[1];
+    if (term === undefined || term.startsWith('--')) {
+      throw new Error(`norms needs a selector or role\n${USAGE}`);
+    }
+    rest = rest.slice(2);
+  }
+  const flags: AuditFlags = { rendered: false };
+  for (let i = 0; i < rest.length; ) {
+    const flag = rest[i];
     if (flag === '--rendered') {
-      args.rendered = true;
+      flags.rendered = true;
       i += 1;
       continue;
     }
     if (flag === '--config') {
-      const value = argv[i + 1];
+      const value = rest[i + 1];
       if (value === undefined || value.startsWith('--')) {
         throw new Error(`--config needs a value\n${USAGE}`);
       }
-      args.config = value;
+      flags.config = value;
       i += 2;
       continue;
     }
     throw new Error(`unknown argument ${flag}\n${USAGE}`);
   }
-  return args;
+  return term === undefined ? { command: 'audit', ...flags } : { command: 'norms', term, ...flags };
 }

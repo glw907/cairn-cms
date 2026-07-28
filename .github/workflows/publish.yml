@@ -20,7 +20,50 @@ permissions:
   id-token: write # required for OIDC trusted publishing
 
 jobs:
+  # The norms manifest ships in the package, so a cut cannot ship a stale one. This job renders the
+  # admin screens and compares a fresh generation against the committed manifest.
+  #
+  # It lives here, gating the publish, rather than in the `check:*` family that test.yml runs. Those
+  # scripts invoke `npm run package` on every call and run on every push; a browser render inside
+  # that hot path would add latency and flake to every gate for a file that only matters at a cut
+  # (spec section 6.4). Regenerating is `npm run norms:generate` against the same preview server.
+  norms:
+    name: Norms manifest freshness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          # Node 22 LTS, matching test.yml and e2e.yml, so the render runs on the toolchain the
+          # rest of CI proves.
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The showcase lockfile is committed and installed with `npm ci`, the same convention e2e.yml
+      # follows, so the rendered admin is the exact build a developer reproduces locally.
+      - run: npm ci --prefix examples/showcase
+      # Chromium for the ROOT playwright, which is what the generator imports; the version is
+      # pinned by the root lockfile, and the manifest's numbers are only reproducible against a
+      # pinned engine.
+      - run: npx playwright install --with-deps chromium
+      - run: VITE_CAIRN_E2E=1 npm --prefix examples/showcase run build
+      - name: Serve the showcase admin
+        run: |
+          # Detached, with its output redirected: a background process still holding the step's
+          # stdout keeps the step from ever finishing.
+          CAIRN_DEV_BACKEND=1 nohup npm --prefix examples/showcase run preview -- --port 4173 \
+            > /tmp/showcase-preview.log 2>&1 &
+          for _ in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:4173/admin/posts && exit 0
+            sleep 2
+          done
+          echo "the showcase preview never answered at http://localhost:4173"
+          cat /tmp/showcase-preview.log
+          exit 1
+      - run: npm run norms:check
+
   publish:
+    needs: norms
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

@@ -48,6 +48,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.
 - [The `cairn-doctor` CLI](./doctor.md): the setup preflight that checks a site's local config, Cloudflare account, and GitHub App.
 - [The `cairn-media-seed` CLI](./cli-cairn-media-seed.md): seeds local R2 state from a deployed site's media library, for design iteration against `vite dev` with no deploy.
+- [The `cairn-audit` CLI](./cairn-audit.md): the design-language audit, and the norms query that answers a measured norm from the shipped manifest.
 - [Log events](./log-events.md): the structured diagnostic events cairn emits, and their fields.
 
 Two pages here are not export-keyed, since they document an internal contract rather than a

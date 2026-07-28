@@ -49,6 +49,8 @@
     "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/check-touch-targets.mjs",
     "test:reskin": "node scripts/reskin-fixture.mjs",
+    "norms:generate": "npm run package && node scripts/generate-norms-manifest.mjs",
+    "norms:check": "npm run package && node scripts/generate-norms-manifest.mjs --check",
     "lint": "eslint src/lib",
     "check:comments": "bash scripts/check-comments.sh",
     "check:dev-package": "node scripts/check-dev-package.mjs",

@@ -104,15 +104,19 @@ describe('resolveConfig', () => {
 
 describe('parseArgs', () => {
   it('reads a bare invocation as the static audit', () => {
-    expect(parseArgs([])).toEqual({ rendered: false });
+    expect(parseArgs([])).toEqual({ command: 'audit', rendered: false });
   });
 
   it('reads --rendered', () => {
-    expect(parseArgs(['--rendered'])).toEqual({ rendered: true });
+    expect(parseArgs(['--rendered'])).toEqual({ command: 'audit', rendered: true });
   });
 
   it('reads --config with its path', () => {
-    expect(parseArgs(['--config', 'audit.json'])).toEqual({ rendered: false, config: 'audit.json' });
+    expect(parseArgs(['--config', 'audit.json'])).toEqual({
+      command: 'audit',
+      rendered: false,
+      config: 'audit.json',
+    });
   });
 
   it('rejects an unknown flag with a usage line', () => {
@@ -121,5 +125,20 @@ describe('parseArgs', () => {
 
   it('rejects --config without a value', () => {
     expect(() => parseArgs(['--config'])).toThrow(/--config/);
+  });
+
+  it('reads the norms subcommand and its term', () => {
+    expect(parseArgs(['norms', '.btn.btn-primary'])).toEqual({
+      command: 'norms',
+      term: '.btn.btn-primary',
+      rendered: false,
+    });
+  });
+
+  // A flag standing where the term belongs is a typo, not a term. Accepting it would run a query
+  // for the literal string `--rendered` and report that no role matches it.
+  it('rejects the norms subcommand with no term', () => {
+    expect(() => parseArgs(['norms'])).toThrow(/norms needs a selector or role/);
+    expect(() => parseArgs(['norms', '--rendered'])).toThrow(/norms needs a selector or role/);
   });
 });

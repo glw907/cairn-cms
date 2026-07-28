@@ -57,33 +57,45 @@
   letter-spacing: 0.005em;
 }
 
-/* The grammar-token role utilities (design infrastructure Pass 1): the authoring interface for the
-   --cairn-type-* and --cairn-gap-* tokens in cairn-admin.css. A component writes a named role
-   (type-body, gap-control), never a pixel value or a bracketed var() wrapper. Each type-* utility
-   sets font-size ONLY: a survey of the 66 markup sites at the 11px label size found only 24
-   uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label would match
-   about 14 sites and strand the other 52. Size-only matches all 66; the eyebrow's weight, case, and
-   tracking stay a documented component recipe (docs/internal/admin-design-system.md), and color
-   stays palette, not grammar, so it stays a separate text-muted/text-subtle class on the element. A
-   component <style> block references var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS
-   is not markup; markup uses only these named utilities. */
+/* The grammar-token role utilities (design infrastructure Pass 1, leading added Pass 2): the
+   authoring interface for the --cairn-type-* and --cairn-gap-* tokens in cairn-admin.css. A
+   component writes a named role (type-body, gap-control), never a pixel value or a bracketed
+   var() wrapper. Each type-* utility sets font-size AND line-height (Pass 2 ruling, spec section
+   13): font-size alone left each role's leading to whatever line-height the surrounding markup
+   happened to pass down, so one role rendered at several different leadings across the admin. The
+   line-height declaration reads `--tw-leading` first, the same custom property Tailwind's own
+   named text-* steps read, so a component that also writes an explicit `leading-*` class still
+   wins regardless of the two rules' relative order in the compiled sheet. Weight, case, and
+   tracking stay OUT of a role: a survey of the 66 markup sites at the 11px label size found only
+   24 uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label would
+   match about 14 sites and strand the other 52. They belong to a documented component recipe
+   (docs/internal/admin-design-system.md), and color stays palette, not grammar, so it stays a
+   separate text-muted/text-subtle class on the element. A component <style> block references
+   var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not markup; markup uses only
+   these named utilities. */
 @utility type-title {
   font-size: var(--cairn-type-title);
+  line-height: var(--tw-leading, var(--cairn-type-title--leading));
 }
 @utility type-subtitle {
   font-size: var(--cairn-type-subtitle);
+  line-height: var(--tw-leading, var(--cairn-type-subtitle--leading));
 }
 @utility type-body {
   font-size: var(--cairn-type-body);
+  line-height: var(--tw-leading, var(--cairn-type-body--leading));
 }
 @utility type-meta {
   font-size: var(--cairn-type-meta);
+  line-height: var(--tw-leading, var(--cairn-type-meta--leading));
 }
 @utility type-label {
   font-size: var(--cairn-type-label);
+  line-height: var(--tw-leading, var(--cairn-type-label--leading));
 }
 @utility type-chip {
   font-size: var(--cairn-type-chip);
+  line-height: var(--tw-leading, var(--cairn-type-chip--leading));
 }
 
 /* The four spacing-role utilities, for flex/grid containers. Checked against Tailwind's own numeric

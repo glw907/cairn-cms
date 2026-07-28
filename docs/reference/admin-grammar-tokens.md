@@ -1,22 +1,24 @@
 # Reference: admin grammar tokens
 
-The admin's structural type and spacing vocabulary: ten CSS custom properties declared once in
-`cairn-admin.css`, outside the light and dark theme blocks, plus the named utility classes that
-are the only supported way to reach them from markup. A grammar token names a relationship rather
-than a color: a heading's role, a control-to-control gap. The same value holds in both themes.
+The admin's structural type and spacing vocabulary: sixteen CSS custom properties declared once
+in `cairn-admin.css`, outside the light and dark theme blocks, plus the ten named utility classes
+that are the only supported way to reach them from markup. A grammar token names a relationship
+rather than a color: a heading's role, a control-to-control gap. The same value holds in both
+themes.
 
 ## The token inventory
 
-Six `--cairn-type-*` roles, each a `font-size`:
+Six `--cairn-type-*` roles. Each pairs a `font-size` token with a `--leading` token that carries
+the role's `line-height`:
 
-| Token | Value |
-|---|---|
-| `--cairn-type-title` | `1.5rem` |
-| `--cairn-type-subtitle` | `0.9375rem` |
-| `--cairn-type-body` | `0.875rem` |
-| `--cairn-type-meta` | `0.8125rem` |
-| `--cairn-type-label` | `0.6875rem` |
-| `--cairn-type-chip` | `0.625rem` |
+| Role | `font-size` token | Value | `line-height` token | Value |
+|---|---|---|---|---|
+| Title | `--cairn-type-title` | `1.5rem` | `--cairn-type-title--leading` | `2rem` |
+| Subtitle | `--cairn-type-subtitle` | `0.9375rem` | `--cairn-type-subtitle--leading` | `1.1875rem` |
+| Body | `--cairn-type-body` | `0.875rem` | `--cairn-type-body--leading` | `1.25rem` |
+| Meta | `--cairn-type-meta` | `0.8125rem` | `--cairn-type-meta--leading` | `1.0625rem` |
+| Label | `--cairn-type-label` | `0.6875rem` | `--cairn-type-label--leading` | `0.875rem` |
+| Chip | `--cairn-type-chip` | `0.625rem` | `--cairn-type-chip--leading` | `0.8125rem` |
 
 Four `--cairn-gap-*` roles, each a `gap`:
 
@@ -30,25 +32,31 @@ Four `--cairn-gap-*` roles, each a `gap`:
 ## The role utilities
 
 Markup writes one of these ten named utilities, never a pixel value and never a bracketed
-`var()` wrapper. Each sets exactly one CSS property from its token and nothing else:
+`var()` wrapper. Each `type-*` utility sets `font-size` and `line-height` from its paired tokens,
+and each `gap-*` utility sets `gap`. Neither sets anything else:
 
 | Utility | Property | Token |
 |---|---|---|
-| `type-title` | `font-size` | `--cairn-type-title` |
-| `type-subtitle` | `font-size` | `--cairn-type-subtitle` |
-| `type-body` | `font-size` | `--cairn-type-body` |
-| `type-meta` | `font-size` | `--cairn-type-meta` |
-| `type-label` | `font-size` | `--cairn-type-label` |
-| `type-chip` | `font-size` | `--cairn-type-chip` |
+| `type-title` | `font-size`, `line-height` | `--cairn-type-title`, `--cairn-type-title--leading` |
+| `type-subtitle` | `font-size`, `line-height` | `--cairn-type-subtitle`, `--cairn-type-subtitle--leading` |
+| `type-body` | `font-size`, `line-height` | `--cairn-type-body`, `--cairn-type-body--leading` |
+| `type-meta` | `font-size`, `line-height` | `--cairn-type-meta`, `--cairn-type-meta--leading` |
+| `type-label` | `font-size`, `line-height` | `--cairn-type-label`, `--cairn-type-label--leading` |
+| `type-chip` | `font-size`, `line-height` | `--cairn-type-chip`, `--cairn-type-chip--leading` |
 | `gap-control` | `gap` | `--cairn-gap-control` |
 | `gap-label` | `gap` | `--cairn-gap-label` |
 | `gap-group` | `gap` | `--cairn-gap-group` |
 | `gap-section` | `gap` | `--cairn-gap-section` |
 
-A type role is a size, not a recipe. Weight, case, tracking, and color are never part of a type
-role: they belong to the component recipes in the admin design system (the eyebrow, the nav
-item, the wordmark), and color is a palette choice, so it stays a separate `text-muted` or
-`text-subtle` class on the element.
+A `type-*` utility's `line-height` declaration reads `var(--tw-leading, ...)`, the same custom
+property that Tailwind's own named `text-*` steps (`text-sm`, `text-2xl`, and so on) read. So an
+element that also carries an explicit `leading-*` utility keeps that leading, whichever of the two
+rules compiles later in the sheet.
+
+A type role is a size paired with its own leading, not a full recipe. Weight, case, tracking, and
+color are never part of a type role: they belong to the component recipes in the admin design
+system (the eyebrow, the nav item, the wordmark), and color is a palette choice, so it stays a
+separate `text-muted` or `text-subtle` class on the element.
 
 ## Where each form belongs
 
@@ -81,9 +89,8 @@ Every role utility ships in the compiled sheet, whether or not cairn's own scree
 markup call site inside the engine today: `type-title`, and `gap-control`, which the toolbar's
 scoped styles reach through its token instead. Both are still yours to write.
 
-`type-title` is empty for a specific reason. The engine's 24px text still uses Tailwind's built-in
-`text-2xl`, which sets both `font-size` and `line-height`, while a role utility sets `font-size`
-only. Swapping one for the other would drop that step's `line-height` and change the rendered
-layout, so those call sites wait on a line-height ruling for the type roles. The same reasoning
-covers most of the engine's 14px text, which stays on `text-sm`; `type-body` does have call sites,
-migrated from bracketed literals rather than from a named step.
+`type-title` and `type-body` carry the same `font-size` and `line-height` as the Tailwind named
+steps they replace, `text-2xl` and `text-sm`, so swapping either step for its role changes no
+rendered pixel. The engine's 24px text and most of its 14px text still write `text-2xl` and
+`text-sm` directly. Migrating those call sites is separate work. `type-body` does have call sites
+today, migrated from bracketed literals rather than from a named step.

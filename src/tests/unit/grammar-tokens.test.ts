@@ -75,6 +75,42 @@ describe('grammar tokens', () => {
     }
   });
 
+  // The Pass 2 ruling (spec section 13): body and title take the named Tailwind steps they
+  // replace (text-sm's 20px, text-2xl's 32px); subtitle, meta, label, and chip are the dominant
+  // computed line-height measured at their live call sites.
+  it('matches the ruled type-role leading scale', () => {
+    const leadingScale: Record<string, number> = {
+      '--cairn-type-title--leading': 2,
+      '--cairn-type-subtitle--leading': 1.1875,
+      '--cairn-type-body--leading': 1.25,
+      '--cairn-type-meta--leading': 1.0625,
+      '--cairn-type-label--leading': 0.875,
+      '--cairn-type-chip--leading': 0.8125,
+    };
+    for (const [name, expected] of Object.entries(leadingScale)) {
+      expect(declaredRem(name), `expected ${name} to be ${expected}rem`).toBe(expected);
+    }
+  });
+
+  // The reverse direction, owed from the Pass 1 post-mortem. GRAMMAR_TOKENS is the single
+  // inventory the audit rule, the docs page, and this file all read, so a token added to the CSS
+  // but never added to the inventory would silently escape all three. The lookahead is what makes
+  // this a declaration scan: a `var(--cairn-type-body)` reference is followed by `)`, only a
+  // declaration by `:`.
+  it('lists every --cairn-type-* and --cairn-gap-* property the compiled sheet declares', () => {
+    const declaredNames = new Set<string>();
+    for (const match of css.matchAll(/--cairn-(?:type|gap)-[a-zA-Z0-9-]+(?=:)/g)) {
+      declaredNames.add(match[0]);
+    }
+    expect(
+      declaredNames.size,
+      'expected to find declared --cairn-type-*/--cairn-gap-* properties',
+    ).toBeGreaterThan(0);
+    for (const name of declaredNames) {
+      expect(GRAMMAR_TOKENS, `expected GRAMMAR_TOKENS to list ${name}`).toContain(name);
+    }
+  });
+
   // Brace-matched rather than regexed: a theme block holds nested rules, so a match to the first
   // closing brace would stop inside one and read a truncated body.
   function themeBlockBody(selector: string): string {
@@ -110,9 +146,10 @@ describe('grammar tokens', () => {
 
 // CONTRACT: the role utilities are the authoring interface for the grammar tokens above. A
 // component writes a named role (type-body, gap-control), never a pixel value or a bracketed
-// var() wrapper. Each type-* utility carries font-size ONLY (no weight, case, tracking, or color;
-// see the block comment in scripts/admin-css.input.css for why a full recipe would strand most of
-// the 66 real call sites), and each gap-* utility carries gap only.
+// var() wrapper. A type-* utility carries font-size and its role's ruled line-height; a gap-*
+// utility carries gap. Neither carries anything more, and in particular no weight, case, tracking,
+// or color (the block comment in scripts/admin-css.input.css has why a full recipe would strand
+// most of the 66 real call sites).
 describe('grammar-token role utilities', () => {
   const typeUtilities: Record<string, string> = {
     'type-title': '--cairn-type-title',
@@ -152,11 +189,18 @@ describe('grammar-token role utilities', () => {
     }
   });
 
-  it("sets each type-* utility's font-size from its grammar token, and nothing else", () => {
+  // The line-height declaration reads --tw-leading first, the same custom property Tailwind's own
+  // named text-* steps read, so an explicit leading-* class on the same element still composes
+  // regardless of the two rules' relative order in the compiled sheet. Asserting the whole
+  // declaration text, indirection included, is what stops a later edit from collapsing it to a
+  // bare var(--cairn-type-<role>--leading) and silently killing that composition.
+  it("sets each type-* utility's font-size and ruled line-height, and nothing else", () => {
     for (const [className, tokenName] of Object.entries(typeUtilities)) {
       const body = ruleBody(className);
       expect(body, `expected a rule body for .${className}`).not.toBeNull();
-      expect(body).toBe(`font-size: var(${tokenName});`);
+      expect(body).toBe(
+        `font-size: var(${tokenName}); line-height: var(--tw-leading, var(${tokenName}--leading));`,
+      );
     }
   });
 

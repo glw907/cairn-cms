@@ -46,13 +46,24 @@
    inside CairnAdminShell's themed wrapper and reference the token bare. */
 :root {
   /* The six-role type scale: title, the T4 chrome scale (nav items, table cells, card-row
-     titles), body, meta, label (the eyebrow recipe), and chip. */
+     titles), body, meta, label (the eyebrow recipe), and chip. Each role also carries a paired
+     leading token (Pass 2 ruling, spec section 13): body and title take the named Tailwind steps
+     they replace (text-sm's 20px, text-2xl's 32px); subtitle, meta, label, and chip are the
+     dominant computed line-height measured at their live call sites. The role utilities in
+     scripts/admin-css.input.css set a role's two tokens together; that file's block comment
+     carries the `--tw-leading` indirection they compose through. */
   --cairn-type-title: 1.5rem;
+  --cairn-type-title--leading: 2rem;
   --cairn-type-subtitle: 0.9375rem;
+  --cairn-type-subtitle--leading: 1.1875rem;
   --cairn-type-body: 0.875rem;
+  --cairn-type-body--leading: 1.25rem;
   --cairn-type-meta: 0.8125rem;
+  --cairn-type-meta--leading: 1.0625rem;
   --cairn-type-label: 0.6875rem;
+  --cairn-type-label--leading: 0.875rem;
   --cairn-type-chip: 0.625rem;
+  --cairn-type-chip--leading: 0.8125rem;
 
   /* The four spacing roles, named for the relationship they mark rather than their pixel value:
      label-to-control, control-to-control, field-to-field within a group, and section-to-section. */

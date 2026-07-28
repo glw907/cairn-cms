@@ -248,24 +248,25 @@ Recipes:
 
 ## Grammar tokens
 
-The design-infrastructure Pass 1 layer beneath the recipes above: ten CSS custom properties
-(`--cairn-type-title/subtitle/body/meta/label/chip`, `--cairn-gap-label/control/group/section`)
-declared once in `cairn-admin.css`, outside both theme roots, since a structural role does not
-change with the palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth
-inventory; the reference page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is
-the versioned contract a site reads, and this section is where an agent extending the admin meets
-the same vocabulary alongside the component recipes above and below it.
+The design-infrastructure layer beneath the recipes above: sixteen CSS custom properties
+(`--cairn-type-title/subtitle/body/meta/label/chip`, each with a paired
+`--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
+`cairn-admin.css`, outside both theme roots, since a structural role does not change with the
+palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory; the reference
+page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is the versioned contract a
+site reads, and this section is where an agent extending the admin meets the same vocabulary
+alongside the component recipes above and below it.
 
 - **Markup writes the role utility, never the token or a pixel value.** Ten named utilities in
   `scripts/admin-css.input.css` (`type-title`, `type-subtitle`, `type-body`, `type-meta`,
   `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`) are the only
-  supported way to reach a grammar token from a template. Each sets exactly one property
-  (`font-size` or `gap`) and nothing else.
-- **A type role is a size, not a recipe.** Weight, case, tracking, and color stay with the
-  component recipes above (the eyebrow's uppercase and tracking, the nav item's weight swap, the
-  wordmark's own sizing) rather than folding into the role utility. Color is a palette choice, so
-  it stays a separate `text-muted` / `text-subtle` class on the element, the same rule the Tokens
-  section states for those two utilities.
+  supported way to reach a grammar token from a template. A `type-*` utility sets `font-size` and
+  the role's ruled `line-height`; a `gap-*` utility sets `gap`. Neither sets anything else.
+- **A type role is a size and its leading, not a recipe.** Weight, case, tracking, and color stay
+  with the component recipes above (the eyebrow's uppercase and tracking, the nav item's weight
+  swap, the wordmark's own sizing) rather than folding into the role utility. Color is a palette
+  choice, so it stays a separate `text-muted` / `text-subtle` class on the element, the same rule
+  the Tokens section states for those two utilities.
 - **A component `<style>` block references the token directly.** `font-size:
   var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
   not markup.
@@ -279,12 +280,12 @@ the same vocabulary alongside the component recipes above and below it.
   (a heading's size, a gap's relationship) and holds across light and dark; palette
   (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
   re-tuned palette.
-- **Two roles have no markup call site yet, for different reasons.** `type-title` awaits a
-  line-height ruling: the `text-2xl` it would replace sets `line-height` too, so the swap is not
-  pixel-identical. `gap-control` is reached only through its token, from the toolbar's scoped
-  styles. `type-body` is NOT in this pair; it has live call sites, migrated from bracketed
-  literals. Both roles still ship in the compiled sheet, so either is yours to write. See the
-  reference page's current-state note and
+- **Two roles have no markup call site yet, for different reasons.** `type-title` matches
+  `text-2xl` on both `font-size` and `line-height`, so the swap it was waiting on is
+  pixel-identical and only the migration remains. `gap-control` is reached only through its token,
+  from the toolbar's scoped styles. `type-body` is NOT in this pair; it has live call sites,
+  migrated from bracketed literals. Both roles still ship in the compiled sheet, so either is yours
+  to write. See the reference page's current-state note and
   `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
   off-scale call sites this pass measured but did not resolve.
 

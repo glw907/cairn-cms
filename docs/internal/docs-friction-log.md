@@ -63,3 +63,10 @@ findings start fresh below this line.
   compares it against `GRAMMAR_TOKENS.length` plus a hard-coded container-role count, so a future
   addition fails a test instead of leaving a stale number in two places. Left as a candidate rather
   than shipped here, since Task 11 is scoped to the two new utilities, not a new test substrate.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 12)** Writing the form-row/label
+  register surfaced a one-step weight delta from ASC's own two-level label ruling: ASC's individual
+  field label is weight 600, and every individual-field label already in cairn's admin (a dozen-plus
+  call sites, predating this ruling) is `font-medium` (500). The register documented here keeps 500
+  as cairn's own value, since reweighting every field label to 600 sitewide would move pixels well
+  beyond this task's ratified header-line changes. Whether cairn's field labels should bump to match
+  ASC's literal number is an open question for a future ruling, not shipped here.

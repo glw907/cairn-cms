@@ -237,6 +237,26 @@ Recipes:
 - Eyebrow (sidebar group headers and table column labels):
   `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
   utility; the weight, case, and tracking are this recipe's own.
+- **Form-row/label register, three levels (Pass 2 Task 12).** ASC's own two-level label ruling
+  (`decisions.md`, "Form field labels, two-level register", 2026-07-16), translated to cairn's
+  grammar layer, plus the inline-label shape ASC's ruling does not name:
+  - **Group or section legend:** the Eyebrow recipe above, on a `<legend>` that groups several
+    controls under one name (`EditPage`'s Visibility/Address/Included-in sidebar panels,
+    `ConceptList`'s table column headers). Keeps the uppercase, tracked, muted register.
+  - **Individual field label,** its own line above one control: sentence case, `font-medium`, no
+    `text-muted` (base-content ink), no tracking, no uppercase, no display face. Recipe:
+    `type-body font-medium`, or `type-meta font-medium` when the label sits inside an
+    already-compact panel running its whole scale at the meta role (`CairnMediaLibrary`'s
+    asset-detail rename form). Already the established recipe at every individual-field call site
+    across `ConceptList`, `ManageEditors`, `FieldInput`, `RenameDialog`, `WebLinkDialog`,
+    `LoginPage`, `MediaHeroField`, `ObjectGroupField`, `ComponentForm`, `MediaCaptureCard`, and
+    `ReferenceField`. ASC's own ruling specifies weight 600; cairn's established weight for this
+    tier is one step lighter (`font-medium`, 500) and is already consistent everywhere a field
+    label appears, so this recipe keeps that value rather than reweighting the whole admin, which
+    would move pixels well beyond a single field's own label.
+  - **Inline control-adjacent label,** on one line beside its control rather than above it:
+    `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
+    `admin-fields` subpath's `FieldLabel` recipe (`SelectField` and `TextField` both wrap it).
 - Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
   table cells share it via `table type-subtitle`.

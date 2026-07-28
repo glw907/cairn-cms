@@ -30,8 +30,20 @@
   cairn's own admin components migrate every verbatim shell site onto the new utilities,
   pixel-identically. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
 
-No consumer action is required. Every change here is internal to the admin's own CSS and
-components; no exported type, prop, or route contract changed.
+No consumer action is required for the entries above. Every change is internal to the admin's own
+CSS and components; no exported type, prop, or route contract changed.
+
+### Fixed
+
+- `PageHeader` (`@glw907/cairn-cms/admin-toolkit`) no longer leaks its default `<h1>`/`<p>` margins
+  past its own `gap-0.5` heading-stack intent. `OfficeList`, the component `PageHeader`'s own doc
+  calls itself "the shape, generalized", carried this UA-margin fix already; `PageHeader` had not
+  received it at graduation, so its title-to-meta gap rendered at roughly 58px instead of the
+  intended 4px. The `meta` prop also now renders at the meta type role (13px, matching its own
+  prop name) rather than the body role (14px), so it reads at the same size as a screen's own
+  `ListToolbar` count line when both appear together. **Consumers must:** expect the header stack
+  on any screen mounting `PageHeader` to render visibly tighter (a shorter title-to-meta gap) and
+  its `meta` line one step smaller; no prop or type changed.
 
 ## 0.90.1
 

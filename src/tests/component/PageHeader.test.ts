@@ -33,6 +33,20 @@ describe('PageHeader', () => {
     expect(withMeta.container.querySelector('header p')?.textContent).toBe('128 images · 4 need alt text');
   });
 
+  it('zeroes the h1/p UA margins and sets the meta role, matching OfficeList', () => {
+    // Ruling 1 (Pass 2 Task 12): PageHeader ports OfficeList's own UA-margin fix, so the
+    // eyebrow-title-meta stack renders the ruled 4px gap rather than a leaked ~58px one.
+    // Ruling 2: the meta line joins the meta type role (13px), not the body role (14px).
+    const withMeta = render(PageHeader, { title: 'Media library', meta: '128 images' });
+    const h1 = withMeta.container.querySelector('h1')!;
+    const meta = withMeta.container.querySelector('header p')!;
+    expect(h1.classList.contains('m-0')).toBe(true);
+    expect(meta.classList.contains('m-0')).toBe(true);
+    expect(meta.classList.contains('mt-1')).toBe(true);
+    expect(meta.classList.contains('type-meta')).toBe(true);
+    expect(meta.classList.contains('type-body')).toBe(false);
+  });
+
   it('omits the action slot when not given, and renders it top-right when given', () => {
     const bare = render(PageHeader, { title: 'Posts' });
     expect(bare.container.querySelector('button')).toBeNull();

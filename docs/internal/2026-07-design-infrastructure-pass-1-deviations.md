@@ -125,12 +125,33 @@ uses `padding: 1rem` on a full-width cell, which is padding, not indentation. On
 the plan's two-site floor, so no indentation token was defined. It stays a candidate: a second
 indented surface makes the role real.
 
-**PageHeader's `meta` prop renders at 14px, one step off the meta role.** `PageHeader.svelte:60`
-now writes `type-body text-muted` for the line the component itself calls meta, while the meta role
-is 13px. Pass 2's normalization moved the class but deliberately did not rule the collision: the
-swap was size-preserving, and whether the header's secondary line is body-sized on purpose or should
-join the meta role is a relationship question, not a mechanical one. Still open, and still worth
-ruling explicitly because of the name collision.
+**RESOLVED 2026-07-28 (Pass 2 Task 12): PageHeader's `meta` prop joins the meta role.** The line
+now writes `type-meta`, so a screen mounting both `PageHeader`'s meta line and `ListToolbar`'s own
+count line reads the two at the same 13px rather than the meta-named line rendering one step
+larger. The same task also ported `OfficeList`'s UA-margin fix (zeroed `<h1>`/`<p>` margins, a
+deliberate `mt-1`) onto `PageHeader`, which had not received it at graduation; the title-to-meta
+gap tightens from a leaked ~58px to the intended 4px. Both changes move the header line on every
+screen mounting `PageHeader`; the `admin-visual` baselines regenerate on CI to match.
+
+**PageHeader adoption is complete; the filed gap closed 2026-07-28 (Pass 2 Task 12).** Every
+top-level admin screen that hand-rolled header anatomy before the toolkit organization pass now
+mounts `PageHeader`: `CairnTidySettings`, `HelpHome`, `ManageEditors`, `ConceptList`,
+`CairnMediaLibrary`, `VocabularyAdmin`, and `NavTree` (seven call sites; an earlier survey counted
+`WelcomeView` among the adopters, which a fresh grep for `<PageHeader` disproved). Five deliberate
+non-adopters remain and none should migrate: `ConfirmPage` and `LoginPage` (centered auth cards,
+not admin page headers), `OfficeList` (it IS a header component, `PageHeader`'s own doc calls
+itself that shape generalized), `EditPage`'s `sr-only` document title (the desk route's title is
+never visually rendered), and `WelcomeView` (its own header comment already documents rendering no
+`PageHeader`, using `EmptyState`'s `headingLevel="h1"` as the page's only heading since there is
+nothing else on the screen). A later pass should not re-open this gap.
+
+**Destination-picker: deferred, not extracted (Pass 2 Task 12).** The plan's Step 3 assumed a
+pattern to extract from the harvest finding, but exactly one implementation exists
+(`aksailingclub-org`'s Move… dialog on the club-admin classes screen) and zero cairn call sites.
+Extracting a primitive from a single consumer-side instance is the speculative generalization the
+plan's own global constraints forbid, and this repo's graduation bar is a second consumer (the
+`ExpandableRow` precedent). TRIGGER for revisiting: a second destination-picker call site appears,
+either a cairn admin screen that needs one or a second ASC surface.
 
 **`AdminTable`'s in-card empty-notice cell carries no type role, deliberately.** The recipe (Pass 2
 Task 11, Finding 10) says a caller's `empty` snippet passes bare content and the table owns

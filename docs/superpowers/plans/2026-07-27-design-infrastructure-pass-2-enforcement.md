@@ -360,29 +360,71 @@ and empty-notice evidence), and cairn's `docs/internal/admin-design-system.md`.
 evidence supports), the four sites carrying the verbatim shell string, the three
 empty-notice reinventions; reference page for any new export.
 
-- [ ] **Step 1:** Locate the four verbatim shell sites and three empty-notice sites by
+- [x] **Step 1:** Locate the four verbatim shell sites and three empty-notice sites by
   grep; extract the leanest shared form (a component only if the markup genuinely
   repeats; a documented recipe plus class contract if a component would be ceremony).
-- [ ] **Step 2:** Migrate the sites; `admin-visual` must not move (this phase is
+- [x] **Step 2:** Migrate the sites; `admin-visual` must not move (this phase is
   post-regen; extraction is pixel-identical by definition).
-- [ ] **Step 3:** Full gate, reference page if a new export shipped; commit.
+- [x] **Step 3:** Full gate, reference page if a new export shipped; commit.
+
+**Landed** as `b617219e` (plus `2fb0e8c7`, two role-utility count corrections). The leanest
+form was NOT a component: the repeated string lands on `<div>`, `<form>`, `<details>`, `<a>`,
+and `<span>` alike, so a wrapper component would have served almost none of the sites. It
+shipped as two safelisted `@utility` container roles, `card-shell` and `card-shadow`, with the
+declarations derived from the compiled sheet rather than hand-typed and a no-drift test
+comparing resolved property maps. 25 sites migrated, 17 with the shadow and 8 without (all
+eight are `CairnMediaLibrary` nested surfaces). `admin-visual` held at 18/18 with zero movement.
+The empty-notice half closed as documentation: `AdminTable` already owns that register in its
+own scoped CSS, and pinning a type role would have moved `ConceptList`'s empty state, so the
+size question went to the ledger instead.
 
 ### Task 12: form-row register, PageHeader adoption, destination-picker
 
 **Files:** per the evidence trail above; plus `PageHeader.svelte:60` (the `meta`-prop
 size collision from the ledger's structural findings).
 
-- [ ] **Step 1:** Write the form-row/label register contract from ASC's two-level label
+- [x] **Step 1:** Write the form-row/label register contract from ASC's two-level label
   ruling and the ClassForm label-wrap debt; encode it as toolkit structure or a
   documented recipe, whichever is leanest.
-- [ ] **Step 2:** PageHeader adoption sweep (the filed gap: screens still hand-rolling
+- [x] **Step 2:** PageHeader adoption sweep (the filed gap: screens still hand-rolling
   header anatomy adopt it) and the `meta`-prop ruling: EITHER the header's secondary line
   is body-sized on purpose (rename the prop's documented register) or it joins
   `type-meta`; decide by eye against rendered screens, record in the ledger.
-- [ ] **Step 3:** Destination-picker: extract the pattern per its harvest finding, same
-  leanest-form test as Task 11.
-- [ ] **Step 4:** Full gate; snapshots regenerate ONLY if Step 2's ruling moves the
+- [~] **Step 3:** Destination-picker: extract the pattern per its harvest finding, same
+  leanest-form test as Task 11. **DEFERRED, not built** (see below).
+- [x] **Step 4:** Full gate; snapshots regenerate ONLY if Step 2's ruling moves the
   header line, folded into the same eyes-on discipline as Task 6; commit.
+
+**Landed** as `34c2a5b5` (plus `40f6f3f9`, three stale scan-scope comments). Four rulings:
+
+1. **A defect this task did not go looking for.** `PageHeader` never received the UA-margin
+   fix `OfficeList` documents and carries, though its own doc calls itself that component's
+   shape generalized, so its `gap-0.5` intent rendered as a roughly 58px title-to-meta gap.
+   Ported verbatim, with a regression test confirmed red against the pre-fix markup. This is
+   the second graduation-drift instance on record (Classes harvest finding 1 was the first):
+   a component that says it generalizes another may have dropped the original's fixes, and
+   the phrase "shape, generalized" is not evidence that it did not.
+2. **The `meta` prop joins `type-meta`,** decided by eye against the media-library baseline,
+   where the header's 14px meta line sat directly above `ListToolbar`'s own 13px count line.
+   The prop is not renamed.
+3. **Destination-picker deferred.** It has exactly one implementation in existence
+   (aksailingclub-org's Move… dialog) and zero call sites in cairn, so extracting it would be
+   the speculative generalization this plan's global constraints forbid, against a repo whose
+   documented graduation bar is a second consumer. Recorded in the ledger with its trigger.
+4. **PageHeader adoption was already complete.** Seven components mount it (not the eight the
+   dispatch claimed; `WelcomeView` uses `EmptyState` with `headingLevel="h1"` instead), and
+   the five non-adopters are all deliberate. The filed gap closed during the 0.90.x work.
+
+**CARRIED, do not lose: ten `admin-visual` baselines are red and owed a regeneration.** Rulings
+1 and 2 move the header line on every screen mounting `PageHeader` (office shell, vocabulary,
+editors, media library, media detail, each in both schemes). They were deliberately NOT
+regenerated here. Baselines regenerate on CI, the canonical renderer, so the regen needs the
+branch pushed plus an `e2e.yml` `update_snapshots` dispatch, and it batches to the pass end for
+two reasons: one push at the boundary rather than mid-plan, and Task 15's probe graduations may
+move pixels again, which would make an early regen wasted work. Until then `admin-visual` is
+expected red and every OTHER showcase spec must stay green at every commit, the same discipline
+Phase 1 ran between Tasks 1 and 6. The eyes-on read at regeneration is the main loop's, not an
+implementer's.
 
 ## Phase 4: the norms manifest
 

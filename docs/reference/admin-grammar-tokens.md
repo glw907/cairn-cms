@@ -1,10 +1,13 @@
 # Reference: admin grammar tokens
 
 The admin's structural type and spacing vocabulary: eighteen CSS custom properties declared once
-in `cairn-admin.css`, outside the light and dark theme blocks, plus the thirteen named utility
-classes that are the only supported way to reach them from markup, eleven grammar roles (type and
-gap) and two container roles. A grammar token names a relationship rather than a color: a
-heading's role, a control-to-control gap. The same value holds in both themes.
+in `cairn-admin.css`, outside the light and dark theme blocks, plus the eleven named grammar role
+utilities that are the only supported way to reach them from markup. A grammar token names a
+relationship rather than a color: a heading's role, a control-to-control gap. The same value holds
+in both themes.
+
+Two further utilities, the container roles, close this page's set at thirteen. They name a card
+surface rather than a grammar token, so they read from the palette and DaisyUI layers instead.
 
 ## The token inventory
 

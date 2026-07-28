@@ -26,7 +26,7 @@
   `shadow-[var(--cairn-shadow)]`). `card-shell` carries the shell's radius, hairline border, and
   fill; `card-shadow` carries its elevation, kept separate because a surface already nested inside
   a shadowed container takes `card-shell` alone. Both ship in the compiled admin stylesheet
-  regardless of cairn's own usage, the same safelist discipline as the ten grammar role utilities.
+  regardless of cairn's own usage, the same safelist discipline as the eleven grammar role utilities.
   cairn's own admin components migrate every verbatim shell site onto the new utilities,
   pixel-identically. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
 

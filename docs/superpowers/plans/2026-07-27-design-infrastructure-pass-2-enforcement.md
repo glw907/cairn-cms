@@ -255,17 +255,17 @@ Novel correctness-critical core: dispatch with `model: opus`.
   findings with file:line, rule id, tier, and the suppression count; exit nonzero iff
   unsuppressed error-tier findings exist. Tasks 8–10 and 15–17 consume these exact names.
 
-- [ ] **Step 1: Fixture tests first.** `markup.ts` must extract class tokens from the
+- [x] **Step 1: Fixture tests first.** `markup.ts` must extract class tokens from the
   three idioms the adversarial review proved regexes fail open on: single-quoted
   attributes, array classes, object classes (Svelte 5), plus template-literal and
   `class:` directives; and must NOT match prose ("the white background" fixture).
   `sheet.ts` resolves a class token to its declarations from a compiled CSS string.
-- [ ] **Step 2:** Implement; config loading (consumer file: static scan scope defaulting
+- [x] **Step 2:** Implement; config loading (consumer file: static scan scope defaulting
   to admin routes plus imported components, rendered page list, rendered allowlist);
   wire `bin.ts` with `--rendered` reserved (clear "not yet available" until Task 15).
-- [ ] **Step 3:** `npm run check:package` green (publint/attw see the new bin); a smoke
+- [x] **Step 3:** `npm run check:package` green (publint/attw see the new bin); a smoke
   run of `npx cairn-audit` against cairn's own tree executes with zero rules registered.
-- [ ] **Step 4:** Full gate; commit (`feat(audit): cairn-audit skeleton and substrates`).
+- [x] **Step 4:** Full gate; commit (`feat(audit): cairn-audit skeleton and substrates`).
 
 ### Task 8: The suppression idiom
 
@@ -289,9 +289,9 @@ that node's source range. This is cheap on the `svelte/compiler` substrate and i
 on a regex one, which is a point in favor of the substrate the spec already chose. Fixture
 tests must cover the multi-line-element case explicitly, using this exact site's shape.
 
-- [ ] **Step 1:** Fixture tests: suppressed finding drops from exit-code math but counts;
+- [x] **Step 1:** Fixture tests: suppressed finding drops from exit-code math but counts;
   missing reason errors; dead directive errors; rule-id mismatch does not suppress.
-- [ ] **Step 2:** Implement into `run.ts`'s finding pipeline; full gate; commit
+- [x] **Step 2:** Implement into `run.ts`'s finding pipeline; full gate; commit
   (`feat(audit): counted, reasoned suppressions`).
 
 ### Task 9a: Static rules, markup family
@@ -309,11 +309,11 @@ gap-role or spacing-scale tokens; named Tailwind steps pass. `stock-default-haza
 card borders; each finding's message cites the refuted alternative on record in
 `admin-design-system.md`.
 
-- [ ] **Step 1:** Fixtures first, then implementations.
-- [ ] **Step 2:** Run against cairn's own tree: exactly the ratified-exception
+- [x] **Step 1:** Fixtures first, then implementations.
+- [x] **Step 2:** Run against cairn's own tree: exactly the ratified-exception
   suppressions fire, nothing else. Any other finding is either a real miss from Phase 1
   (fix it) or a rule false positive (fix the rule); record which, per finding.
-- [ ] **Step 3:** Full gate; commit (`feat(audit): the four markup-family static rules`).
+- [x] **Step 3:** Full gate; commit (`feat(audit): the four markup-family static rules`).
 
 ### Task 9b: Static rules, CSS family
 
@@ -327,10 +327,10 @@ selector carries a matching `:focus-visible`. `motion-band` — durations 150–
 `transition: all`. `reduced-motion` — every transition-bearing selector covered by a
 `prefers-reduced-motion` guard.
 
-- [ ] **Step 1:** Fixtures first, then implementations; scope is component `<style>`
+- [x] **Step 1:** Fixtures first, then implementations; scope is component `<style>`
   blocks plus consumer CSS files named by the config scan scope.
-- [ ] **Step 2:** Same own-tree discipline as Task 9a Step 2.
-- [ ] **Step 3:** Full gate; commit (`feat(audit): the five CSS-family static rules`).
+- [x] **Step 2:** Same own-tree discipline as Task 9a Step 2.
+- [x] **Step 3:** Full gate; commit (`feat(audit): the five CSS-family static rules`).
 
 ### Task 10: Graduate the two static repo gates
 
@@ -341,12 +341,12 @@ selector carries a matching `:focus-visible`. `motion-band` — durations 150–
   `admin-css-classes-allowlist.json` entries into co-located suppression directives or
   rule config, whichever each entry actually is.
 
-- [ ] **Step 1: No-drift proof.** Run old and new on the same tree; diff the findings.
+- [x] **Step 1: No-drift proof.** Run old and new on the same tree; diff the findings.
   Every delta must be a documented regex false positive/negative dying, listed in the
   commit message.
-- [ ] **Step 2:** Wrappers land; `npm run check:invisible-craft` and
+- [x] **Step 2:** Wrappers land; `npm run check:invisible-craft` and
   `check:admin-css-classes` keep their names and their places in CI.
-- [ ] **Step 3:** Full gate; commit (`refactor(gates): static gates graduate into cairn-audit`).
+- [x] **Step 3:** Full gate; commit (`refactor(gates): static gates graduate into cairn-audit`).
 
 ## Phase 3: primitives gap-closure
 
@@ -500,3 +500,108 @@ Main-loop orchestrated (it is measurement, not build).
   reviewer fan-out per `cairn-pass` (svelte-reviewer, cloudflare-workers-reviewer,
   daisyui-a11y-reviewer at minimum; web-auth-security-reviewer only if auth-adjacent
   files moved); post-mortem appended here; merge per `cairn-pass` ritual; no publish.
+
+---
+
+## Phase 2 post-mortem (2026-07-28)
+
+Phase 2 is complete. `cairn-audit` exists as a packaged bin with nine static rules, a counted
+suppression idiom, and two graduated repo gates. Eight commits, `dcb41778` through `2b63c282`.
+
+### What was built
+
+| Commit | Task | What landed |
+| --- | --- | --- |
+| `dcb41778` | 7 | Skeleton on the `cairn-doctor` bin shape, plus both resolution substrates |
+| `6ae4ecb3` | 8 | Suppressions: reasons required, dead-directive detection, next-AST-node resolution |
+| `8ff91c7c` | 9a | `no-uncompiled-class`, `type-scale`, `gap-scale`, `stock-default-hazards` |
+| `eee3aca9` | 9b | `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`, `reduced-motion` |
+| `d8ab3957` | 10 | `check:invisible-craft` and `check:admin-css-classes` become thin wrappers |
+| `4eac48a0` | verify | Eleven demonstrated fail-open cases closed at the substrate |
+| `dccd3c36` | 10 fix | Theme scan root restored behind a first-class palette-site rule |
+| `ab25e6a8` | simplify | Three seam duplications collapsed, byte-identical audit output |
+| `2b63c282` | watches | The two deliberate coverage gaps co-located as `WATCH:` notes |
+
+The engine's own-tree run is the honest acceptance evidence: `1 error, 0 advisories, 5 suppressed`,
+where the five are exactly the ratified `type-scale` exceptions and the one error is a real design
+defect (below), not a rule bug.
+
+### The adversarial verify earned its cost, and that is the finding
+
+Three read-only lenses ran against the finished engine, each required to DEMONSTRATE a miss with a
+runnable input rather than report a theory. They returned 13 findings, and several were live in
+cairn's own tree rather than synthetic:
+
+- Class strings built in a component's `<script>` were unreachable in principle, because the walk
+  only visited `root.fragment`. That blind spot is the only reason `ftr-toggle`, a class styled
+  nowhere, had been shipping green.
+- Every rule prefilter anchored at the start of the RAW class token, so `text-sm` was audited while
+  `2xl:text-sm` was not. The engine's own reason for existing is that regexes fail open, and it had
+  reproduced the failure one layer up.
+- `gap-scale` never consulted the sheet at all. It matched bracket text, so `mt-[.4375rem]` passed
+  while byte-identical `mt-[0.4375rem]` failed.
+- Standard CSS nesting hid an entire rule's declarations from all four CSS-family rules.
+- A typo in a configured scan path produced a clean, exit-0 audit.
+
+Eleven were fixed at the substrate with the reviewer's demonstrated input as the regression fixture.
+Two were correctly refused by the implementer as ratified-contract changes rather than implementation
+bugs, and are carried below.
+
+**Method note worth keeping.** Requiring a demonstrated input is what made this cheap to act on: no
+finding needed re-litigation, and the fold agent could treat all 13 as real. The lens split (markup
+idioms / sheet plus suppressions / an independent audit of the own-tree-clean claim) mattered too.
+The third lens is what caught that the graduated gate had quietly dropped scan roots, which neither
+code-reading lens would have found.
+
+### The graduation nearly shipped narrower than what it replaced
+
+Task 10's constraint was that graduation is behavior-preserving and every finding delta must be a
+documented regex false positive dying. Two violations surfaced, one closed and one carried:
+
+1. **Closed.** The wrapper had dropped `examples/showcase/src/{chassis,routes,theme}`. The first two
+   restored clean. `theme` needed a ruling, taken at the main loop: a theme's palette declaration
+   site is where literal colors are DEFINED, so `token-colors` cannot meaningfully apply to it, and
+   `cairn-admin.css` was already exempt for exactly that reason by construction. That exemption is
+   now a first-class named concept (`AuditConfig.paletteCssFiles`) that both files flow through,
+   rather than two separate special cases. The Carousel's 650ms crossfade migrated from the deleted
+   budget JSON to a co-located directive, which is spec 6.1's stated replacement path, so the
+   exception is counted rather than invisible.
+2. **Carried.** The old gate walked `/\.(svelte|ts|css)$/` for achromatic colors. The new engine
+   scans component `<style>` blocks and named `.css` files only. So `preview-doc.ts`'s `#fff`, a
+   RATIFIED budget entry with a written reason, did not migrate to a directive: it stopped being
+   seen. This is the orphaned-allowlist failure spec 6.1 warns about, arriving via graduation
+   instead of rename. Closing it needs a substrate extension for `.ts`-embedded style strings.
+
+### Carried into Phase 3 and Task 17
+
+1. **`badge-ghost` on EditPage's Published pill (`EditPage.svelte:989`), for Geoff.** The tree
+   patched around its own refuted alternative with a PINNED unlayered CSS rule (allowlisted in
+   `custom-surface-budget.json`) to stop the pill vanishing in dark, while `StatusChip.svelte:15`
+   records `badge-ghost` as refuted. A naive swap to `badge-outline` is wrong on its own (StatusChip
+   demotes the outline's border or it reads as a button), it moves pixels, and it leaves the pinned
+   rule dead, whose removal needs a custom-surface budget change. Design work, not a substrate fix.
+2. **Suppression range semantics.** A directive covers the next construct AND its children, so one
+   above a large wrapper silences that rule for everything inside. The only non-arbitrary alternative
+   ("the next construct's own header") would make a directive above an `@media` or `{#if}` dead. Both
+   satisfy cairn's five live exceptions. A consumer-visible semantics choice, so it wants Task 17's
+   evidence rather than a guess. Suppressions are counted and printed, so the case is loud.
+3. **`.ts`-embedded styles unaudited**, above. `WATCH:` note at `preview-doc.ts:99`.
+4. **`stock-default-hazards` reads raw token values** while `type-scale` and `gap-scale` read
+   `utilityBase()`, so `sm:badge-ghost` slips past. Routing it through WIDENS the rule and may
+   surface real findings, which makes it a rule-design call. `WATCH:` note at the rule.
+
+### Process notes
+
+- **Two executors nearly raced one worktree.** A `code-simplifier` dispatch went 6 hours without
+  writing to its transcript; the main loop read that as death and re-dispatched. The second agent
+  detected the contention, made zero edits, and stood down, which is the doctrine's verify-not-
+  duplicate recovery working. The diagnostic was the defect: transcript mtime cannot distinguish a
+  dead agent from one inside a long gate run. The signal that would have been correct is whether a
+  process still holds the worktree. Banked in the runaway-guard memory.
+- **The runaway guard false-alarmed twice** on healthy work because it was armed at journal-idle
+  25min plus 900KB, against defaults the guard memory already warned about. Measured cairn numbers
+  are now in that memory: an implementer clearing the full gate runs 18 to 30 minutes and produces a
+  0.4 to 1.1MB transcript, and a serial workflow's journal is silent for each task's whole duration.
+- **No implementer could run `code-simplifier`.** `cairn-implementer`'s toolset has no agent
+  dispatch, so all five did manual passes and the real agent ran once at the end, from the main loop.
+  Worth knowing when planning a pass: the simplifier is a main-loop step, not a per-task one.

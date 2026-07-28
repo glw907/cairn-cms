@@ -292,7 +292,7 @@ must never make, so no such count exists.
         <SparklesIcon class="size-5" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
-        <div id="cairn-tidy-title" class="text-lg font-bold leading-tight">Review tidy</div>
+        <div id="cairn-tidy-title" class="type-heading font-bold font-[family-name:var(--font-display)] leading-tight">Review tidy</div>
         <div class="mt-0.5 flex flex-wrap items-center gap-2 type-meta text-muted">
           <span><b class="text-base-content">{hunks.length} {hunks.length === 1 ? 'change' : 'changes'}</b> to <b class="text-base-content">{title}</b></span>
           <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 type-label font-semibold">{model}</span>

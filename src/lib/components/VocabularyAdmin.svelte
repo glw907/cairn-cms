@@ -216,7 +216,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
        (count), and a trailing delete. -->
   <section class="mt-5">
     <div class="mb-2.5 flex items-center gap-2 px-0.5">
-      <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+      <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         Your tags
         <span
           class="rounded-full bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
@@ -314,7 +314,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {#if seedCandidates.length > 0}
     <section class="mt-5">
       <div class="mb-2.5 px-0.5">
-        <h2 class="text-lg font-bold tracking-tight">Already on your posts</h2>
+        <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Already on your posts</h2>
         <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">
           These tags are in use but not in your list yet. Add the ones you want editors to keep
           picking.

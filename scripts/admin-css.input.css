@@ -20,14 +20,22 @@
    PageHeader/StatusChip use. check:admin-css-classes guards this scan root the same way it guards
    the safelist below. */
 @source "../src/lib/admin-toolkit/**/*.{svelte,ts,js}";
-/* The ten grammar role utilities are safelisted, not scanned. A Tailwind `@utility` is tree-shaken,
-   so a role with no internal call site would never reach the shipped sheet: `type-title` and
-   `gap-control` were both absent until this line went in. They are a DOCUMENTED PUBLIC INTERFACE
+/* The admin-fields subpath (FieldLabel, TextField, SelectField) is the third public surface that
+   renders inside the admin theme, and it was missing here for the same reason admin-toolkit was.
+   It went unnoticed because every class it used also appeared under src/lib/components, so it rode
+   along on someone else's scan. The Pass 2 type normalization ended that free ride: removing the
+   last scanned `text-sm` stopped Tailwind compiling the rule, and FieldLabel's own `text-sm` would
+   have shipped resolving to nothing. Scanning the directory is the structural fix; the class itself
+   also moved to a safelisted role utility. */
+@source "../src/lib/admin-fields/**/*.{svelte,ts,js}";
+/* The eleven grammar role utilities are safelisted, not scanned. A Tailwind `@utility` is
+   tree-shaken, so a role with no internal call site would never reach the shipped sheet: `type-title`
+   and `gap-control` were both absent until this line went in. They are a DOCUMENTED PUBLIC INTERFACE
    (docs/reference/admin-grammar-tokens.md), and a consumer's own Tailwind build never sees the
    `@utility` definitions below, only this compiled sheet, so a role a consumer is told to write must
-   ship whether or not cairn's own screens happen to use it. grammar-tokens.test.ts asserts all ten
+   ship whether or not cairn's own screens happen to use it. grammar-tokens.test.ts asserts all eleven
    against the plain build for that reason. */
-@source inline("type-title type-subtitle type-body type-meta type-label type-chip gap-control gap-label gap-group gap-section");
+@source inline("type-title type-heading type-subtitle type-body type-meta type-label type-chip gap-control gap-label gap-group gap-section");
 @import "../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an
@@ -65,10 +73,11 @@
    happened to pass down, so one role rendered at several different leadings across the admin. The
    line-height declaration reads `--tw-leading` first, the same custom property Tailwind's own
    named text-* steps read, so a component that also writes an explicit `leading-*` class still
-   wins regardless of the two rules' relative order in the compiled sheet. Weight, case, and
-   tracking stay OUT of a role: a survey of the 66 markup sites at the 11px label size found only
-   24 uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label would
-   match about 14 sites and strand the other 52. They belong to a documented component recipe
+   wins regardless of the two rules' relative order in the compiled sheet. Weight, case, tracking,
+   and font family stay OUT of a role: a survey of the 66 markup sites at the 11px label size found
+   only 24 uppercase and 14 carrying the eyebrow's 0.08em tracking, so a full-recipe type-label
+   would match about 14 sites and strand the other 52, and type-heading's display face is a
+   dialog-header choice, not a property of 18px text. They belong to a documented component recipe
    (docs/internal/admin-design-system.md), and color stays palette, not grammar, so it stays a
    separate text-muted/text-subtle class on the element. A component <style> block references
    var(--cairn-type-*) / var(--cairn-gap-*) directly, since CSS is not markup; markup uses only
@@ -76,6 +85,10 @@
 @utility type-title {
   font-size: var(--cairn-type-title);
   line-height: var(--tw-leading, var(--cairn-type-title--leading));
+}
+@utility type-heading {
+  font-size: var(--cairn-type-heading);
+  line-height: var(--tw-leading, var(--cairn-type-heading--leading));
 }
 @utility type-subtitle {
   font-size: var(--cairn-type-subtitle);

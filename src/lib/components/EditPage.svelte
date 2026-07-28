@@ -1839,9 +1839,11 @@ persistent "?" carries Markdown help, design-arc D2).
            mirrors that geometry (the editor face at the prose size, the measure, auto margins).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
+      <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
       <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+        <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
-          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
+          class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
           value={str(data.frontmatter.title)}
           placeholder={titleField.label}
@@ -2445,7 +2447,7 @@ persistent "?" carries Markdown help, design-arc D2).
 >
   <div class="modal-box max-w-sm">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 text-base font-semibold">
+      <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         <ImageIcon class="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
         {figurePrefill?.mode === 'edit' ? 'Edit figure' : 'Wrap in a figure'}
       </h2>
@@ -2512,7 +2514,7 @@ persistent "?" carries Markdown help, design-arc D2).
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
-      <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
+      <h2 id="cairn-tidy-working-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Tidying your text</h2>
       <p class="max-w-prose type-body text-muted">
         Claude is reading your draft for a light copy-edit. You will review each change before it is applied.
       </p>
@@ -2531,7 +2533,7 @@ persistent "?" carries Markdown help, design-arc D2).
     onclose={() => (tidyNoop = false)}
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
-      <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
+      <h2 id="cairn-tidy-noop-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Nothing to fix</h2>
       <p class="max-w-prose type-body text-muted">Tidy read your text and found nothing to change.</p>
       <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyNoopDialog?.close()}>Close</button>
     </div>
@@ -2548,7 +2550,7 @@ persistent "?" carries Markdown help, design-arc D2).
     onclose={() => (tidyMessage = null)}
   >
     <div class="modal-box flex flex-col gap-3">
-      <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
+      <h2 id="cairn-tidy-message-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy could not run</h2>
       <p class="type-body text-muted">{tidyMessage}</p>
       <div class="flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
@@ -2572,7 +2574,7 @@ persistent "?" carries Markdown help, design-arc D2).
   <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">
-        <h2 id="cairn-discard-dialog-title" class="text-base font-semibold">Discard the unpublished changes?</h2>
+        <h2 id="cairn-discard-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Discard the unpublished changes?</h2>
         <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => discardDialog?.close()}>✕</button>
       </div>
       {#if data.published}

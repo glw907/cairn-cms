@@ -406,7 +406,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <section class="mb-6">
         <div class="mb-3 flex items-end gap-3 px-0.5">
           <div class="min-w-0 flex-1">
-            <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Fixes
               <span role="status" aria-live="polite">
                 <StatusChip tone="neutral" label={conv.fixes ? 'On' : 'Off'} size="sm" />
@@ -453,7 +453,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       <section class="mb-6">
         <div class="mb-3 flex items-end gap-3 px-0.5">
           <div class="min-w-0 flex-1">
-            <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+            <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
               Style conventions
               <span role="status" aria-live="polite">
                 <StatusChip tone="neutral" label={`${styleOnCount} on`} size="sm" />
@@ -585,7 +585,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
            it reads amber (needs-attention), never the reserved destructive red (the design arc's
            accent reservation, 2026-07-15). -->
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_oklab,var(--cairn-warning-ink)_12%,transparent)] text-[var(--cairn-warning-ink)]"><TriangleAlertIcon class="h-6 w-6" aria-hidden="true" /></span>
-      <div class="text-xl font-bold tracking-tight">Tidy’s key isn’t working</div>
+      <div class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy’s key isn’t working</div>
       <div class="max-w-[50ch] type-body leading-relaxed text-muted">
         Tidy is turned on and a key is set, but Anthropic isn’t accepting it. It may have been
         revoked or was never valid. Until it’s fixed, editors won’t see the Tidy control at all.
@@ -611,7 +611,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
          deploy-time task and who does it, with no disabled controls in the tab order. -->
     <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-base-content/[0.06] text-muted"><SparklesIcon class="h-6 w-6" aria-hidden="true" /></span>
-      <div class="text-xl font-bold tracking-tight">Tidy is not set up yet</div>
+      <div class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy is not set up yet</div>
       <div class="max-w-[50ch] type-body leading-relaxed text-muted">
         Tidy uses Claude to copy-edit your drafts, so it sends your writing to Anthropic and costs a
         little per use. That makes it a developer setup, not a switch in here. Once it is on, this page

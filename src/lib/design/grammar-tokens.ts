@@ -16,6 +16,8 @@
 export const GRAMMAR_TOKENS: readonly string[] = [
   '--cairn-type-title',
   '--cairn-type-title--leading',
+  '--cairn-type-heading',
+  '--cairn-type-heading--leading',
   '--cairn-type-subtitle',
   '--cairn-type-subtitle--leading',
   '--cairn-type-body',

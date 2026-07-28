@@ -109,8 +109,9 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
         {@const isSelf = editor.email === data.self}
         <tr>
           <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
-               primary identifying cell, so it reads text-base font-medium over the 15px meta. -->
-          <td class="pl-6 py-2 text-base font-medium">{editor.displayName}</td>
+               primary identifying cell, so it alone carries type-subtitle at font-medium; the
+               other cells stay at the table's own type. -->
+          <td class="pl-6 py-2 type-subtitle font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>
             <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'badge-ghost'}">{editor.role}</span>

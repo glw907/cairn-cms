@@ -47,6 +47,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 {#snippet brand()}
   <div class="flex items-center gap-2">
     <CairnLogo class="h-8 w-8 text-primary" />
+    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
     <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
   </div>
 {/snippet}
@@ -67,7 +68,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         >
           <MailCheckIcon class="h-6 w-6" />
         </div>
-        <h1 class="mt-5 text-xl font-semibold tracking-tight">Check your email</h1>
+        <h1 class="mt-5 type-heading font-bold font-[family-name:var(--font-display)]">Check your email</h1>
         <p class="mt-2 type-body leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
@@ -88,7 +89,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
       </div>
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
-      <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {data.siteName}</h1>
       <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       {#if form?.status === 'send_error'}
         <div role="alert" class="alert alert-warning mb-3 type-body">

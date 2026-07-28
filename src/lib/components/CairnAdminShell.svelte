@@ -723,7 +723,7 @@ discriminant, not the fields, gates the chrome).
           <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-shell-publish-all-title">
             <div class="modal-box">
               <div class="mb-3 flex items-center justify-between">
-                <h2 id="cairn-shell-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
+                <h2 id="cairn-shell-publish-all-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Publish the whole site?</h2>
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
               </div>
               <p class="type-body">Every entry below goes live in one step.</p>
@@ -769,6 +769,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
+            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px type-chip font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>

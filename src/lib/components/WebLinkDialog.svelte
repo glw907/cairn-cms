@@ -65,7 +65,7 @@ and opened by the host's Ctrl/Cmd+K shortcut through the exported open().
 <dialog class="modal" aria-labelledby="cairn-web-link-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-web-link-dialog-title" class="text-base font-semibold">Add a web link</h2>
+      <h2 id="cairn-web-link-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Add a web link</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <form onsubmit={submit} class="flex flex-col gap-3">

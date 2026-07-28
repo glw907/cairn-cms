@@ -23,7 +23,7 @@ open(), so the component renders no trigger of its own.
 <dialog class="modal" aria-labelledby="cairn-markdown-help-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-markdown-help-title" class="text-base font-semibold">Markdown help</h2>
+      <h2 id="cairn-markdown-help-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Markdown help</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
     <table class="table table-sm">

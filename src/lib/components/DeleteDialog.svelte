@@ -65,7 +65,7 @@ Built on a native <dialog>, following the LinkPicker a11y conventions.
 <dialog class="modal" role="alertdialog" aria-modal="true" aria-labelledby="cairn-delete-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-delete-dialog-title" class="text-base font-semibold">Delete this {label.toLowerCase()}?</h2>
+      <h2 id="cairn-delete-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Delete this {label.toLowerCase()}?</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
 

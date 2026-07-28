@@ -258,6 +258,18 @@ Novel correctness-critical core: dispatch with `model: opus`.
   directive is itself an error-tier finding); dead-directive detection (a directive whose
   next line raises no matching finding is an error); the report's loud total.
 
+**AMENDED 2026-07-28, discovered while writing the five ratified exceptions in Task 5.**
+"Next line" must mean the next ELEMENT, not the next physical line. Three of the five
+exception sites are single-line elements where the two readings agree, but the EditPage
+document title is a multi-line element: the directive sits above `<input`, whose `class`
+attribute lands two lines further down. A line-literal parser scores that as a DEAD
+directive AND leaves the real finding unsuppressed, turning a correctly annotated site
+into two errors. So the resolution rule is: a directive attaches to the first AST node
+beginning on or after the following line, and suppresses matching findings anywhere in
+that node's source range. This is cheap on the `svelte/compiler` substrate and impossible
+on a regex one, which is a point in favor of the substrate the spec already chose. Fixture
+tests must cover the multi-line-element case explicitly, using this exact site's shape.
+
 - [ ] **Step 1:** Fixture tests: suppressed finding drops from exit-code math but counts;
   missing reason errors; dead directive errors; rule-id mismatch does not suppress.
 - [ ] **Step 2:** Implement into `run.ts`'s finding pipeline; full gate; commit

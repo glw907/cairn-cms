@@ -375,7 +375,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                    title-status-date, so the summary line stays off the office list and the
                    Hidden tag sits inline beside the title. -->
               <div class="flex items-center gap-2">
-                <a class="truncate text-base font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                <a class="truncate type-subtitle font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish chip. -->
@@ -444,7 +444,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 <dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {createNoun}</h2>
+      <h2 id="cairn-create-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">New {createNoun}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
     <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">

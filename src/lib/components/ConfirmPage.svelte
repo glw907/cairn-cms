@@ -33,15 +33,16 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
   <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 text-center shadow-[var(--cairn-shadow)]">
     <div class="mb-6 flex items-center justify-center gap-2">
       <CairnLogo class="h-8 w-8 text-primary" />
+      <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
       <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
     </div>
 
     {#if data.error || !data.token}
-      <h1 class="mb-2 text-lg font-semibold">This link didn’t work</h1>
+      <h1 class="mb-2 type-heading font-bold font-[family-name:var(--font-display)]">This link didn’t work</h1>
       <div role="alert" class="alert alert-error type-body">This sign-in link is invalid or expired.</div>
       <a href="/admin/login" class="btn btn-ghost btn-sm mt-4">Request a new link</a>
     {:else}
-      <h1 class="text-lg font-semibold">Almost there</h1>
+      <h1 class="type-heading font-bold font-[family-name:var(--font-display)]">Almost there</h1>
       <p class="mt-1 mb-5 type-body text-muted">Confirm to finish signing in to {data.siteName}.</p>
       <form method="POST" action="?/confirm">
         <input type="hidden" name="token" value={data.token} />

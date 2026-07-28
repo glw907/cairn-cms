@@ -118,7 +118,7 @@ dialog's a11y conventions.
 <dialog class="modal" aria-labelledby={titleId} bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id={titleId} class="text-base font-semibold">{dialogHeading}</h2>
+      <h2 id={titleId} class="type-heading font-bold font-[family-name:var(--font-display)]">{dialogHeading}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
     </div>
 

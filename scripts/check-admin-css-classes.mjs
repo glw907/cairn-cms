@@ -23,7 +23,12 @@ import { stripComments } from './check-invisible-craft.mjs';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-const SCAN_DIRS = ['src/lib/admin-toolkit', 'src/lib/components'];
+// Every public surface that renders inside the admin theme. admin-fields joined late: its classes
+// all happened to appear under src/lib/components too, so it rode along on that scan until the Pass
+// 2 type normalization removed the last scanned `text-sm` and FieldLabel's own copy was left
+// resolving to nothing. A directory that renders admin markup belongs here even when it looks
+// covered, because "covered by coincidence" is what this gate exists to catch.
+const SCAN_DIRS = ['src/lib/admin-toolkit', 'src/lib/admin-fields', 'src/lib/components'];
 const COMPILED_SHEET = 'dist/components/cairn-admin.css';
 const ALLOWLIST_PATH = 'scripts/admin-css-classes-allowlist.json';
 

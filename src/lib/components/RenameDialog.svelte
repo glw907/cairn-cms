@@ -66,7 +66,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
 <dialog class="modal" aria-labelledby="cairn-rename-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-rename-dialog-title" class="text-base font-semibold">
+      <h2 id="cairn-rename-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
         {routable ? `Change this ${label.toLowerCase()} URL` : `Rename this ${label.toLowerCase()}`}
       </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>

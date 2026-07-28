@@ -19,7 +19,7 @@ to match. `SelectField` and `TextField` both wrap it internally.
   let { label, children }: Props = $props();
 </script>
 
-<label class="flex items-center gap-1.5 text-sm">
+<label class="flex items-center gap-1.5 type-body">
   <span class="text-muted">{label}</span>
   {@render children()}
 </label>

@@ -338,9 +338,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         <div class="min-w-0 flex-1">
           {#if picked}
             <div class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
-            <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold">{picked.label}</h2>
+            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">{picked.label}</h2>
           {:else}
-            <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
+            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Insert a component</h2>
           {/if}
         </div>
         <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={close}>✕</button>
@@ -365,7 +365,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                        keystroke, so a screen reader read "Settling"/"Settled" aloud on each edit. The
                        incomplete and render-failed conditions reach assistive tech through the
                        per-field role="alert" errors and the failed panel text, so nothing is lost. -->
-                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 text-[0.7rem] text-muted">
+                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 type-label text-muted">
                     {#if formIncomplete}
                       Incomplete
                     {:else if previewState === 'failed'}

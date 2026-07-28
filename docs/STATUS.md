@@ -50,20 +50,19 @@ Assets trial. The principle-pages pass queues behind the initiative. When that r
 MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
 its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
 
-**RED CI, PRE-EXISTING, OWED — now Task 0 of the Pass 2 plan.** The `e2e` workflow has been
-failing on `main` since 2026-07-24, through the `0.90.0` and `0.90.1` cuts. Six `admin-visual`
-baselines are stale: the office shell, the media library, and the media detail panel, each in both
-schemes. They were last regenerated 2026-07-21 (`bff6ee46`), and `0.90.0` (ExpandableRow graduation,
-the ListToolbar menu facet and its flex-row recomposition, StatusChip's border, OfficeList) plus
-`0.90.1` (ListToolbar select sizing) changed exactly those screens without regenerating. Local and CI
-renderers agree, so this is not a renderer artifact; the images are out of date.
+**RED CI CLOSED 2026-07-28 (Pass 2 Task 0).** The six stale `admin-visual` baselines (office shell,
+media library, media detail panel, each in both schemes) regenerated on the CI renderer via `e2e.yml`'s
+`update_snapshots` dispatch and landed on `main` as `84abe955`. They had been stale since 2026-07-21
+(`bff6ee46`): `0.90.0` (ExpandableRow graduation, the ListToolbar menu facet and its flex-row
+recomposition, StatusChip's border, OfficeList) and `0.90.1` (ListToolbar select sizing) changed exactly
+those screens without regenerating, and `e2e` had been red on `main` since 2026-07-24, through both cuts.
 
-Pass 1 did not cause it and is not implicated: its drift proof compared pre-migration to
-post-migration on one renderer and showed zero drift twice, and the same six fail on unmodified
-`main`. The fix is `e2e.yml`'s `workflow_dispatch` with `update_snapshots` ticked, but that blesses
-whatever currently renders, so read the six regenerated images against the `0.90.x` design intent
-before accepting them. Until it is done, `e2e` stays red and cannot gate anything, which is itself
-the risk: the next real visual regression will hide in an already-red job.
+Regeneration blesses whatever renders, so all six got a main-loop eyes-on read against the `0.90.x`
+design intent before landing. The only delta is the intended one: the `ListToolbar` recomposes onto a
+single flex row, the search input grows to fill it, the facet groups right-align, and the content below
+settles up about 2px. No regression in either scheme. One observation carried, not a defect: with a
+single facet group the media library's search input stretches to roughly 630px, which is wide for a
+search field, and it is a register question for the Task 12 toolbar work rather than a `0.90.x` bug.
 
 **v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
 coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and

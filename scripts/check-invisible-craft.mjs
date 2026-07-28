@@ -1,231 +1,67 @@
-// cairn-cms: the invisible-craft gate. Banks three mechanical rules from the 2026-07-15 admin
-// polish rubric (docs/internal/2026-07-15-admin-resolved-polish-brief.md) as standing floors over
-// src/lib/components and the showcase's own template tree (SCAN_DIRS below): (1)
-// TRANSITION-DURATION BAND, every transition/animation duration (a Tailwind `duration-<n>`/
-// `duration-[<n>ms]`/`duration-[<n>s]` utility, or a literal `<n>ms`/`<n>s` inside a
-// `transition`/`animation` CSS declaration, including the EditorView.theme object syntax the
-// CodeMirror modules use) sits in [150, 250]ms unless allowlisted; (2) SPACING-BRACKET ALLOWLIST,
-// an arbitrary-value Tailwind spacing bracket in component markup (padding, margin, gap, or inset
-// utilities) is allowlisted by exact file+token, everything else free-floating off the 4/8px scale
-// is a finding; (3) NO ACHROMATIC COLORS, no pure-achromatic `oklch(n% 0 0)`, no `#000`/`#fff` hex,
-// no bare `black`/`white` keyword in a style value (`transparent` and `currentColor` are fine).
-// Each rule's exceptions live by exact file+token+reason in scripts/invisible-craft-budget.json
-// beside this file, the same allowlist idiom check-custom-surface.mjs uses for its own budget.
+// cairn-cms: the invisible-craft gate, graduated into the packaged cairn-audit engine's
+// motion-band, gap-scale, and token-colors static rules
+// (src/lib/audit/rules/static/{motion-band,gap-scale,token-colors}.ts). The regex substrate this
+// gate used to carry (a hand-rolled comment stripper plus five duration/bracket/color patterns)
+// is gone; svelte/compiler and the built-sheet resolver are the substrate now, exercised by the
+// audit's own fixture suite
+// (src/tests/unit/audit/rules/{motion-band,gap-scale,token-colors}.test.ts).
+//
+// The budget this gate used to read from scripts/invisible-craft-budget.json is gone too, its
+// eleven entries each resolved one of three ways in the graduation's no-drift proof (see the
+// graduation commit for the full accounting): a genuine false positive the new rules' own
+// scale/remit computation now recognizes as compliant, needing no suppression at all
+// (MediaHeroField's `pl-[3.875rem]`, CairnAdminShell's `mt-[12vh]`, EditPage's safe-area
+// `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`); a site outside the graduated engine's audited
+// scope (the showcase demo tree, never part of cairn's own tree; `preview-doc.ts`'s embedded
+// iframe-srcdoc string, a `.ts` module rather than a `.svelte` component or a named CSS file); or
+// `cairn-admin.css`'s own two reduced-motion-guarded durations, which motion-band's reduced-motion
+// exemption would recognize as compliant were that file in the graduated engine's CSS-family
+// scope, but it deliberately is not (it is the grammar's own token declaration site, the same
+// exclusion `grammar-boundary` draws for the same file).
+//
 // Wired as `npm run check:invisible-craft`.
-import { readFileSync } from 'node:fs';
-import { resolve, relative } from 'node:path';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { walk } from './walk-files.mjs';
 import { repoRoot } from './repo-root.mjs';
 
 const ROOT = repoRoot(import.meta.url);
-// The admin components plus the showcase's own template tree (its public-facing chrome, the
-// chassis it composes from, and the theme layer a site re-skins): every surface a reader or an
-// editor actually sees, and so every surface the rubric's three rules apply to.
-const SCAN_DIRS = [
-  'src/lib/components',
-  'src/lib/admin-toolkit',
-  'examples/showcase/src/chassis',
-  'examples/showcase/src/theme',
-  'examples/showcase/src/routes',
-];
-const DURATION_MIN = 150;
-const DURATION_MAX = 250;
+const RULE_IDS = ['gap-scale', 'token-colors', 'motion-band'];
+
+/** @typedef {import('../src/lib/audit/types.js').AuditReport} AuditReport */
+/** @typedef {import('../src/lib/audit/types.js').Finding} Finding */
 
 /**
- * The source with every comment blanked to whitespace: HTML `<!-- -->`, block `/* *\/`, and line
- * `//` (a `scheme://` URL is left alone, so a doc comment mentioning a link is not mis-stripped).
- * Blanking (not deleting) keeps every line and column number accurate for the reported hits.
- * @param {string} source
- * @returns {string}
+ * Restrict a full audit report to this gate's own rule ids. A directive naming a rule this gate
+ * does not own must never read as dead just because this gate did not ask for that rule, so the
+ * restriction happens here, after `runStatic` has already resolved every suppression against the
+ * full rule set, never by handing `runStatic` a narrowed rule list itself.
+ * @param {AuditReport} report
+ * @param {string[]} ruleIds the rule ids this gate owns
+ * @returns {AuditReport}
  */
-export function stripComments(source) {
-  let out = source.replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ' '));
-  out = out.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ' '));
-  out = out.replace(/(?<!:)\/\/[^\n]*/g, (m) => m.replace(/[^\n]/g, ' '));
-  return out;
+export function scopeReport(report, ruleIds) {
+  /** @param {Finding} finding */
+  const owns = (finding) => ruleIds.includes(finding.ruleId);
+  return {
+    findings: report.findings.filter(owns),
+    suppressed: report.suppressed.filter(owns),
+    filesScanned: report.filesScanned,
+    ruleIds: report.ruleIds.filter((id) => ruleIds.includes(id)),
+  };
 }
 
-/**
- * The 1-based line number of a character offset in a source string.
- * @param {string} source
- * @param {number} index
- * @returns {number}
- */
-function lineOf(source, index) {
-  return source.slice(0, index).split('\n').length;
-}
-
-// The bracket form admits either CSS time unit; the template tree (examples/showcase's chassis,
-// theme, and route components) writes every duration in `s`, never `ms`.
-const DURATION_BRACKET = /duration-\[(\d+(?:\.\d+)?)(ms|s)\]/g;
-const DURATION_NUMERIC = /duration-(\d+)\b(?!\.)/g;
-// A plain CSS declaration on one line, ending in `;` (the `.css` file and `<style>` block form).
-const DURATION_DECL_UNQUOTED = /\b(?:transition|animation)(?:-duration)?\s*:\s*([^;{}\n]*);/g;
-// The CodeMirror `EditorView.theme` object form: a quoted string value (the `.ts`/`.svelte` form).
-const DURATION_DECL_QUOTED = /\b(?:transition|animation)(?:-duration)?\s*:\s*(['"])((?:(?!\1)[^\n])*)\1/g;
-// A CSS time literal inside a declaration value: digits followed by `ms` or the bare `s` unit.
-// `ms` is tried first in the alternation so a `200ms` literal is read whole rather than as a
-// wandering `s`; toMs converts a matched `s` literal to milliseconds for the band check.
-const DURATION_TOKEN = /(\d+(?:\.\d+)?)(ms|s)\b/g;
-
-/**
- * A CSS time value in milliseconds, converting a bare `s` literal.
- * @param {number} value
- * @param {string} unit `'ms'` or `'s'`
- * @returns {number}
- */
-function toMs(value, unit) {
-  return unit === 's' ? value * 1000 : value;
-}
-
-/**
- * Every transition/animation duration in a (comment-stripped) source, in or out of the
- * [150, 250]ms band. Each hit carries a `token`, the exact allowlist key: the matched Tailwind
- * utility text for a `duration-*` class, or the trimmed declaration text for a literal duration.
- * @param {string} source
- * @returns {{ line: number, ms: number, token: string }[]}
- */
-export function durationHits(source) {
-  /** @type {{ line: number, ms: number, token: string }[]} */
-  const hits = [];
-  for (const m of source.matchAll(DURATION_BRACKET)) {
-    hits.push({ line: lineOf(source, m.index), ms: toMs(Number(m[1]), m[2]), token: m[0] });
+async function main() {
+  try {
+    const { exitCodeFor, formatReport, loadConfig, runStatic } = await import('../dist/audit/index.js');
+    const report = scopeReport(runStatic(loadConfig(ROOT)), RULE_IDS);
+    console.log(formatReport(report));
+    process.exitCode = exitCodeFor(report);
+  } catch (err) {
+    console.error(`check-invisible-craft: ${err instanceof Error ? err.message : String(err)}`);
+    process.exitCode = 2;
   }
-  for (const m of source.matchAll(DURATION_NUMERIC)) {
-    hits.push({ line: lineOf(source, m.index), ms: Number(m[1]), token: m[0] });
-  }
-  for (const m of source.matchAll(DURATION_DECL_UNQUOTED)) {
-    const token = m[0].trim();
-    const line = lineOf(source, m.index);
-    for (const dm of m[1].matchAll(DURATION_TOKEN)) hits.push({ line, ms: toMs(Number(dm[1]), dm[2]), token });
-  }
-  for (const m of source.matchAll(DURATION_DECL_QUOTED)) {
-    const token = m[0].trim();
-    const line = lineOf(source, m.index);
-    for (const dm of m[2].matchAll(DURATION_TOKEN)) hits.push({ line, ms: toMs(Number(dm[1]), dm[2]), token });
-  }
-  return hits;
 }
 
-// Padding, margin, gap, and inset-family utilities. Deliberately excludes `duration-`, `max-w-`,
-// `min-w-`, `text-`, and color brackets: this rule is spacing only.
-const SPACING_BRACKET =
-  /\b(?:gap-x|gap-y|gap|p|px|py|pt|pb|pl|pr|m|mx|my|mt|mb|ml|mr|top|bottom|left|right|inset)-\[[^\]]*\]/g;
-
-/**
- * Every arbitrary-value spacing bracket in a (comment-stripped) `.svelte` markup source. A
- * comment naming a retired or example bracket (documenting why it was removed, say) must never
- * itself count as a hit, the same posture durationHits and achromaticColorHits already take.
- * @param {string} source
- * @returns {{ line: number, token: string }[]}
- */
-export function spacingBracketHits(source) {
-  return [...source.matchAll(SPACING_BRACKET)].map((m) => ({ line: lineOf(source, m.index), token: m[0] }));
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main();
 }
-
-const OKLCH_ACHROMATIC = /oklch\(\s*[\d.]+%[\s,]+0[\s,]+0(?=[\s,)/])/g;
-const HEX_ACHROMATIC = /#(?:000000|000|ffffff|fff)\b/gi;
-// `white-space` is a CSS property name, not a color value; excluded by the negative lookahead.
-const ACHROMATIC_KEYWORD = /\b(?:black|white)\b(?!-space)/g;
-
-/**
- * Every achromatic color value in a (comment-stripped) source: a pure-achromatic `oklch(n% 0 0)`,
- * a `#000`/`#fff` hex, or a bare `black`/`white` keyword.
- * @param {string} source
- * @returns {{ line: number, token: string }[]}
- */
-export function achromaticColorHits(source) {
-  /** @type {{ line: number, token: string }[]} */
-  const hits = [];
-  for (const m of source.matchAll(OKLCH_ACHROMATIC)) hits.push({ line: lineOf(source, m.index), token: m[0] });
-  for (const m of source.matchAll(HEX_ACHROMATIC)) hits.push({ line: lineOf(source, m.index), token: m[0] });
-  for (const m of source.matchAll(ACHROMATIC_KEYWORD)) hits.push({ line: lineOf(source, m.index), token: m[0] });
-  return hits;
-}
-
-/**
- * Every file matching the given extensions across the scanned tree (SCAN_DIRS), as
- * `{ path, source }` pairs (`path` relative to the repo root, forward-slashed).
- * @param {(name: string) => boolean} keep
- * @returns {{ path: string, source: string }[]}
- */
-function componentFiles(keep) {
-  return SCAN_DIRS.flatMap((dir) =>
-    walk(resolve(ROOT, dir), keep).map((file) => ({
-      path: relative(ROOT, file).split('\\').join('/'),
-      source: readFileSync(file, 'utf8'),
-    })),
-  );
-}
-
-/**
- * Whether an allowlist covers a hit, by exact file+token.
- * @param {{ file: string, token: string }[]} allowlist
- * @param {string} file
- * @param {string} token
- * @returns {boolean}
- */
-function isAllowed(allowlist, file, token) {
-  return allowlist.some((entry) => entry.file === file && entry.token === token);
-}
-
-/**
- * Run all three rules against the current tree.
- * @param {{ durations: {file: string, token: string, reason: string}[], spacingBrackets: {file: string, token: string, reason: string}[], achromaticColors: {file: string, token: string, reason: string}[] }} budget
- * @returns {{ pass: boolean, summary: string[], failures: string[] }}
- */
-export function evaluate(budget) {
-  const summary = [];
-  const failures = [];
-
-  let durationChecked = 0;
-  for (const { path, source } of componentFiles((n) => /\.(svelte|ts|css)$/.test(n))) {
-    const stripped = stripComments(source);
-    for (const hit of durationHits(stripped)) {
-      durationChecked++;
-      if (hit.ms >= DURATION_MIN && hit.ms <= DURATION_MAX) continue;
-      if (isAllowed(budget.durations, path, hit.token)) continue;
-      failures.push(`duration out of [${DURATION_MIN}, ${DURATION_MAX}]ms: ${hit.ms}ms in ${path}:${hit.line} (${hit.token})`);
-    }
-  }
-  summary.push(`transition-duration band: ${durationChecked} duration(s) scanned`);
-
-  let spacingChecked = 0;
-  for (const { path, source } of componentFiles((n) => n.endsWith('.svelte'))) {
-    for (const hit of spacingBracketHits(stripComments(source))) {
-      spacingChecked++;
-      if (isAllowed(budget.spacingBrackets, path, hit.token)) continue;
-      failures.push(`unallowlisted spacing bracket: ${hit.token} in ${path}:${hit.line}`);
-    }
-  }
-  summary.push(`spacing-bracket allowlist: ${spacingChecked} bracket(s) scanned`);
-
-  let colorChecked = 0;
-  for (const { path, source } of componentFiles((n) => /\.(svelte|ts|css)$/.test(n))) {
-    const stripped = stripComments(source);
-    for (const hit of achromaticColorHits(stripped)) {
-      colorChecked++;
-      if (isAllowed(budget.achromaticColors, path, hit.token)) continue;
-      failures.push(`achromatic color value: ${hit.token} in ${path}:${hit.line}`);
-    }
-  }
-  summary.push(`achromatic colors: ${colorChecked} value(s) scanned`);
-
-  return { pass: failures.length === 0, summary, failures };
-}
-
-function main() {
-  const budget = JSON.parse(readFileSync(resolve(ROOT, 'scripts/invisible-craft-budget.json'), 'utf8'));
-  const { pass, summary, failures } = evaluate(budget);
-  for (const line of summary) console.log(`invisible-craft: ${line}`);
-  if (pass) {
-    console.log('invisible-craft: PASS');
-    process.exit(0);
-  }
-  console.error('invisible-craft: FAIL');
-  for (const f of failures) console.error(`  ${f}`);
-  process.exit(1);
-}
-
-if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();

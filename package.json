@@ -44,7 +44,7 @@
     "check:custom-surface": "npm run package && node scripts/check-custom-surface.mjs",
     "check:chassis-boundary": "node scripts/check-chassis-boundary.mjs",
     "check:cm-internals": "node scripts/check-cm-internals.mjs",
-    "check:invisible-craft": "node scripts/check-invisible-craft.mjs",
+    "check:invisible-craft": "npm run package && node scripts/check-invisible-craft.mjs",
     "check:admin-css-classes": "npm run package && node scripts/check-admin-css-classes.mjs",
     "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/check-touch-targets.mjs",

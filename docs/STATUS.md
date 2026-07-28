@@ -15,58 +15,71 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Phase 2)
+## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Phase 3)
 
-**Phase 1 of Pass 2 is COMPLETE. Phases 2 through 5 (Tasks 7 to 18) are untouched.** Plan:
-`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, whose Phase 2
-header carries the three Phase 1 findings that constrain the remaining work. Tasks 0 to 6 are
-ticked in the plan.
+**Phases 1 and 2 of Pass 2 are COMPLETE. Phases 3 through 5 (Tasks 11 to 18) are untouched.**
+Plan: `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. Tasks 0
+to 10 are ticked, and the Phase 2 post-mortem is appended to that file. Read it before Phase 3;
+it carries the four items below with their evidence.
 
 **Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume the
-design-infrastructure Pass 2 plan at Phase 2 (Task 7), task by task per cairn-pass. Phase 1 is
-complete on the `design-infra-pass-2-enforcement` worktree." The worktree already exists at
-`.claude/worktrees/design-infra-pass-2` with its showcase deps installed against it, so no
-setup is owed. Do NOT re-run Phase 1.
+design-infrastructure Pass 2 plan at Phase 3 (Task 11), task by task per cairn-pass. Phases 1
+and 2 are complete on the `design-infra-pass-2-enforcement` worktree." The worktree already
+exists at `.claude/worktrees/design-infra-pass-2` with its showcase deps installed against it,
+so no setup is owed. Do NOT re-run Phase 1 or Phase 2.
 
-**Where the work sits.** Task 0 merged to `main` (`640b48d2`). Tasks 1 to 6 are on
-`design-infra-pass-2-enforcement`, pushed and unmerged, eight commits. The branch is green:
-`e2e` passes by `workflow_dispatch` (the workflows only auto-run on `main` and pull requests, so
-a branch run needs the dispatch or a PR).
+**Where the work sits.** Task 0 merged to `main` (`640b48d2`). Tasks 1 to 10 are on
+`design-infra-pass-2-enforcement`, unmerged, sixteen commits, tree clean at `ecb7194c`. The
+Phase 2 commits are NOT yet pushed. Branch CI needs a `workflow_dispatch` or a PR, since the
+workflows only auto-run on `main` and pull requests.
 
-**What Phase 1 closed.** The admin type scale is complete and every font size resolves to a
-role. Seven roles, each carrying a ruled leading token behind a `--tw-leading` override; 119
-twelve-pixel sites resolved per-site onto meta and label; 129 named Tailwind steps migrated
-pixel-identically; the heading role ratified at 18px, weight 700, Bricolage, leading 28px; five
-counted exceptions (three wordmark sites, two editor-canvas sites); one baseline regeneration
-read by eye. `admin-visual` is green again on the new baselines.
+**What Phase 2 closed.** `cairn-audit` ships as a packaged bin (`"cairn-audit":
+"./dist/audit/bin.js"`) with nine static rules, a counted suppression idiom, and the two static
+repo gates graduated into it as thin wrappers. The substrates are `svelte/compiler` markup
+parsing and built-sheet resolution, never regexes. The engine's own-tree run is the acceptance
+evidence: `1 error, 0 advisories, 5 suppressed`, where the five are exactly the ratified
+`type-scale` exceptions and the one error is a real design defect (carry-forward 1).
 
-**Three findings that bind Phase 2**, all recorded in the plan and the docs:
+An adversarial verify pass (three read-only lenses, each required to demonstrate a miss with a
+runnable input) returned 13 findings against the finished engine, several live in cairn's own
+tree rather than synthetic: class strings built in a component's `<script>` were unreachable in
+principle, every rule prefilter anchored at the start of the raw token so `2xl:text-sm` escaped,
+`gap-scale` never consulted the sheet at all, CSS nesting hid whole rules, and a typo in a
+configured scan path produced a clean exit-0 audit. Eleven were fixed at the substrate with the
+demonstrated input as the regression fixture. That the audit engine had reproduced the very
+fail-open failure it exists to prevent is the pass's headline lesson.
 
-1. **The suppression idiom is amended.** "Disable next line" must resolve to the next AST node,
-   not the next physical line. Cairn's own tree already has a multi-line-element exception that a
-   line-literal parser would score as a dead directive PLUS an unsuppressed finding. Task 8's
-   fixtures must cover it.
-2. **`type-scale` must not confuse `text-base` with `text-base-content`.** A plain word boundary
-   matches the size token inside the daisyUI COLOR utilities. This has caused two miscounts in
-   this initiative already.
-3. **The static scan scope must include `src/lib/admin-fields`.** It is the third public surface
-   rendering inside the admin theme, and it was in neither the stylesheet scan roots nor
-   `check:admin-css-classes` until Phase 1 added it. The omission had already silently broken a
-   shipped class.
+**Four items carried into Phase 3 and Task 17**, full detail in the post-mortem:
+
+1. **FOR GEOFF, a design call: `badge-ghost` on EditPage's Published pill**
+   (`EditPage.svelte:989`). cairn's tree patched around its own refuted alternative with a
+   PINNED unlayered CSS rule to stop the pill vanishing in dark, while `StatusChip.svelte:15`
+   records `badge-ghost` as refuted. A naive swap to `badge-outline` is wrong on its own, moves
+   pixels, and leaves the pinned rule dead. This is why `npx cairn-audit` exits 1 on cairn's own
+   tree, honestly.
+2. **Suppression range semantics.** A directive covers the next construct AND its children. The
+   only non-arbitrary alternative would make a directive above an `@media` or `{#if}` dead. Both
+   satisfy cairn's five live exceptions, so it wants Task 17's evidence, not a guess.
+3. **`.ts`-embedded styles are unaudited.** The old gate walked `.ts`; the new CSS-family rules
+   do not, so `preview-doc.ts`'s RATIFIED `#fff` budget entry did not migrate to a directive, it
+   stopped being seen. `WATCH:` note co-located at `preview-doc.ts:99`.
+4. **`stock-default-hazards` reads raw token values** while `type-scale` and `gap-scale` read
+   `utilityBase()`, so `sm:badge-ghost` slips past. Routing it through widens the rule, so it is
+   a rule-design call. `WATCH:` note at the rule.
 
 **Still owed at pass end (Task 18), do not lose:** the `## Unreleased` changelog window carries
 NO `<!-- release-size: minor -->` marker, so `check:version` currently sizes it as a patch. Pass
-1 added new public surface, so that is wrong and Task 18 must fix it. No release is due until the
-initiative boundary after Pass 3 (spec section 10).
+1 added new public surface and Pass 2 adds a new bin, so that is wrong and Task 18 must fix it.
+No release is due until the initiative boundary after Pass 3 (spec section 10).
 
-**Two lessons Phase 1 earned, worth carrying into any migration pass.** A bracketed arbitrary size
-(`text-[1.875rem]`) sets `font-size` alone while a named step (`text-3xl`) also sets `line-height`,
-so converting between them silently changes leading; that bit the editor's document title while the
-visual gate was deliberately red and could not catch it. And a migration can break a surface it
-never edits: removing the last scanned `text-sm` stopped Tailwind compiling that rule, and
-`src/lib/admin-fields`, a public export subpath outside the scan roots, still used it. Both were
-found by a fresh context reading for meaning, not by a gate, which is the same pattern the Pass 1
-post-mortem recorded.
+**A lesson Phase 1 earned, still binding on any migration pass.** A bracketed arbitrary size
+(`text-[1.875rem]`) sets `font-size` alone while a named step (`text-3xl`) also sets
+`line-height`, so converting between them silently changes leading. And a migration can break a
+surface it never edits: removing the last scanned `text-sm` stopped Tailwind compiling that
+rule, and `src/lib/admin-fields`, a public export subpath outside the scan roots, still used it.
+Both were found by a fresh context reading for meaning, not by a gate. Phase 2 repeated the
+pattern exactly: every one of its 13 fail-opens came from an adversarial reader, none from the
+green gates.
 
 **PASS 1 (GRAMMAR TOKENS) LANDED 2026-07-27, unpublished on `main`.** Seven commits
 (`ddf0afbd`..`6b3a5138`): ten grammar tokens (`--cairn-type-*` x6, `--cairn-gap-*` x4) declared once

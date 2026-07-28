@@ -15,20 +15,32 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 17 is next)
+## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 16b is next)
 
-**Tasks 0 through 16 are COMPLETE and verified. Task 17 (calibration) is next, then Task 18.**
-Plan: `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked
-through Task 16.
+**Tasks 0 through 16 are COMPLETE and verified. Task 16b (Geoff's four rulings) is next, THEN Task
+17 (calibration), then Task 18.** Plan:
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked through
+Task 16, with Task 16b written into it in full.
 
 **Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume design-infrastructure
-Pass 2 at Task 17 (calibration) per cairn-pass; the worktree is
-`.claude/worktrees/design-infra-pass-2`, clean at `ba7f401d`." The worktree has its showcase deps
+Pass 2 at Task 16b, the four rulings recorded in the plan, per cairn-pass; the worktree is
+`.claude/worktrees/design-infra-pass-2`, clean at `80041424`." The worktree has its showcase deps
 installed against it, so no setup is owed. Do NOT re-run Tasks 0 through 16.
 
-**Branch state:** `ba7f401d` (the dark-theme fix) on `4cacfd5f` (Task 16) on `c14c2f03` (Task 15)
-on `001e817b`. Everything from `c14c2f03` up is committed locally and NOT pushed. Tree clean, no
-preview servers left running.
+**ALL FOUR RULINGS ARE RULED, none open.** They are written out with their reasoning as Task 16b in
+the plan file, which is the authority; the summary is that `touch-targets` drops to WCAG 2.2 AA's
+24x24, the `--cairn-card-border` hairline is ratified and suppressed, `chip-ground-collision`'s 1.5
+floor is ratified, and `weight-budget`'s content region narrows to exclude chrome. Task 16b
+implements them; Task 17 then calibrates against the ruled engine rather than a moving one.
+
+**Branch state:** `80041424` (Task 16b written into the plan) on `ba7f401d` (the dark-theme fix) on
+`4cacfd5f` (Task 16) on `c14c2f03` (Task 15) on `001e817b`. Everything from `c14c2f03` up is
+committed locally and NOT pushed. Tree clean, no preview servers left running.
+
+**A launch-order trap proven today:** a workflow launched just before a context clear keeps running,
+but its completion notification lands in the CLEARED session and never reaches the new one, and its
+agent transcripts split across both session directories so a guard watching only one misreads a live
+agent as stalled. Launch a workflow AFTER the clear, from the session that will review it.
 
 **Task 17 needs a running preview server** (the rendered audit never starts one):
 `cd examples/showcase && CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173`, then
@@ -42,12 +54,12 @@ answers on 4173.
 
 | rule | tier | count | note |
 | --- | --- | --- | --- |
-| `touch-targets` | error | 138 | the 44x44 ruling below |
+| `touch-targets` | error | 138 | at the OLD 44x44 bar; ruling 1 drops it to 24x24 |
 | `chip-ground-collision` | error | 16 | 8 light + 8 dark, restored by `ba7f401d` |
 | `viewport-overflow` | error | 4 | media toolbar segmented control at 320 |
 | `one-filled-action` | error | 2 | two accent fills on vocabulary |
 | `focus-renders`, `interactive-contrast` | error | 0 | clean |
-| `border-contrast` | advisory | 326 | the open hairline question, at scale |
+| `border-contrast` | advisory | 326 | the hairline, now ratified by ruling 3 |
 | `weight-budget` | advisory | 10 | five routes x two themes at exactly 3 weights |
 | `screen-anatomy` | advisory | 2 | |
 | `relational-spacing`, `norms-bands` | advisory | 0 | |
@@ -96,29 +108,31 @@ beside them. When a pass changes a shared substrate, diff the MEASURED OUTPUT of
 consumes it, per theme, and treat an unexplained movement as a defect until explained. Phase 1 and
 Phase 2 each earned the same lesson in a different costume.
 
-**FIVE RULINGS OWED BY GEOFF, all feeding Task 17's calibration:**
+**THE RULINGS, ALL ANSWERED 2026-07-28 (Geoff).** Four were ruled and are now Task 16b in the plan
+file; the fifth is still open and is the only one outstanding. The context that produced each
+question is kept below because Task 17 will want the evidence, not just the verdict.
 
-1. **The 44x44 question, large.** The rendered run against cairn's own admin returns 160 errors, 138
+1. **RULED: 24x24, WCAG 2.2 AA.** (The 44x44 question.) The rendered run against cairn's own admin returns 160 errors, 138
    of them `touch-targets`, because the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px
    toolbar controls, essentially none of which clear 44x44 at 390. Every class was spot-checked as a
    real finding, not a rule bug, and no admin markup was touched. Either the admin meets that bar or
    the bar is wrong for a dense desk interface. This is a design ruling, not a task's call.
-2. **`chip-ground-collision` gates at error tier on an unratified number.** Spec 6.3 set no
+2. **RULED: 1.5 is ratified, with the reasoning recorded.** Spec 6.3 set no
    threshold; the builder borrowed `1.5` from the graduating `interactive-contrast` probe on a shared
    "not accidentally camouflaged" rationale and flagged it for confirmation. Note the floor is now
    load-bearing in a way it was not: the dark regression turned on the measured ratio landing at
    1.514 against it.
-3. **`border-contrast` fires 326 advisories, the single largest class.** This is the already-open
+3. **RULED: the hairline is ratified and suppressed.** This is the already-open
    `--cairn-card-border` hairline question (1.11:1 light, 1.43:1 dark against WCAG 1.4.11's 3:1)
    measured across the whole admin. The rule reports without gating until ruled. A one-token ruling
    clears most of the advisory volume; leaving it open means Task 17 calibrates around a rule whose
    findings are all known-and-accepted.
-4. **Does the 2-weight budget survive contact with cairn's own recipes?** `weight-budget` reports 10
+4. **RULED: narrow the region to exclude chrome.** `weight-budget` reports 10
    advisories, five routes x two themes, every one at exactly THREE weights, all of it
    toolbar/pagination/eyebrow chrome living inside `<main>`. Spec 6.3 already refuted the per-route
    form for this reason and scoped the rule to a content region. The question is whether the region
    definition is now right, or whether cairn's chrome legitimately needs a third weight.
-5. **`screen-anatomy`'s affirmative half is deliberately NOT implemented.** "The primary action sits
+5. **STILL OPEN, the only one.** `screen-anatomy`'s affirmative half is deliberately NOT implemented. "The primary action sits
    in the header slot" is mechanically unfalsifiable without knowing whether a screen HAS a primary
    action, so implementing it would fire on every screen legitimately without one. Currently the rule
    checks only the negative half. Ruling needed on whether that half is dropped, made

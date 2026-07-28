@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { SCAN_SCOPE, scopeReport } from '../../../scripts/check-invisible-craft.mjs';
+import { CSS_FILES, SCAN_SCOPE, scopeReport } from '../../../scripts/check-invisible-craft.mjs';
 import type { AuditReport } from '../../lib/audit/types.js';
 
 // The rule fixtures for motion-band, gap-scale, and token-colors (the three rules this gate
@@ -16,6 +16,7 @@ describe('SCAN_SCOPE', () => {
   it('keeps walking the showcase roots the pre-graduation gate walked', () => {
     expect(SCAN_SCOPE).toContain('examples/showcase/src/chassis');
     expect(SCAN_SCOPE).toContain('examples/showcase/src/routes');
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/theme');
   });
 
   it('keeps walking the admin surfaces', () => {
@@ -27,6 +28,21 @@ describe('SCAN_SCOPE', () => {
   it('names only directories the tree actually has, so a rename fails loudly', () => {
     for (const dir of SCAN_SCOPE) {
       expect(existsSync(resolve(process.cwd(), dir)), dir).toBe(true);
+    }
+  });
+});
+
+// The declared-palette-site concept (config.ts's paletteCssFiles) only protects a file this gate
+// actually names as a consumer CSS file; a rename here that CSS_FILES does not track would go
+// back to being unscanned entirely, the same silent narrowing SCAN_SCOPE guards against above.
+describe('CSS_FILES', () => {
+  it('names the showcase theme\'s own palette declaration site', () => {
+    expect(CSS_FILES).toContain('examples/showcase/src/theme/theme.css');
+  });
+
+  it('names only files the tree actually has, so a rename fails loudly', () => {
+    for (const file of CSS_FILES) {
+      expect(existsSync(resolve(process.cwd(), file)), file).toBe(true);
     }
   });
 });

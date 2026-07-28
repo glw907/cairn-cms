@@ -12,22 +12,21 @@
 // scale/remit computation now recognizes as compliant, needing no suppression at all
 // (MediaHeroField's `pl-[3.875rem]`, CairnAdminShell's `mt-[12vh]`, EditPage's safe-area
 // `pb-[calc(0.5rem+env(safe-area-inset-bottom))]`); a site outside the graduated engine's audited
-// scope (the showcase demo tree, never part of cairn's own tree; `preview-doc.ts`'s embedded
-// iframe-srcdoc string, a `.ts` module rather than a `.svelte` component or a named CSS file); or
-// `cairn-admin.css`'s own two reduced-motion-guarded durations, which motion-band's reduced-motion
-// exemption would recognize as compliant were that file in the graduated engine's CSS-family
-// scope, but it deliberately is not (it is the grammar's own token declaration site, the same
-// exclusion `grammar-boundary` draws for the same file).
+// scope (`preview-doc.ts`'s embedded iframe-srcdoc string, a `.ts` module rather than a `.svelte`
+// component or a named CSS file); the showcase theme's own ratified 650ms carousel crossfade,
+// migrated to a co-located `cairn-audit-disable-next-line motion-band` directive at the site
+// (Spec 6.1's replacement for a budget-file entry); or the showcase theme's own achromatic
+// `--color-base-*` ladder and `--cairn-shadow` color-mix blacks, resolved by naming `theme.css` in
+// `paletteFiles` below, the same declared-palette-site exclusion `cairn-admin.css` already carries
+// from `token-colors` (config.ts's `DEFAULT_PALETTE_CSS_FILES`).
 //
 // The scan scope is this gate's own, named here rather than inherited from the engine's consumer
 // defaults, because a graduation may not shrink the ground the gate covered. The engine's default
-// scope is a consumer site's admin surfaces; this gate also owns the showcase chassis and routes,
-// which the pre-graduation gate walked and the default scope does not name. Two roots the old gate
-// walked are deliberately absent, each for a reason on record: `examples/showcase/src/theme` (the
-// showcase theme's own palette declaration site plus its ratified 650ms carousel crossfade, the
-// same trivial-failure exclusion `cairn-admin.css` already carries) and `.ts` modules with an
-// embedded style string (outside the engine's CSS-family substrate). Every named root must exist,
-// so a rename fails the gate rather than quietly narrowing it.
+// scope is a consumer site's admin surfaces; this gate also owns the showcase chassis, routes, and
+// theme, which the pre-graduation gate walked and the default scope does not name. One root the old
+// gate walked is deliberately absent: `.ts` modules with an embedded style string (outside the
+// engine's CSS-family substrate). Every named root must exist, so a rename fails the gate rather
+// than quietly narrowing it.
 //
 // Wired as `npm run check:invisible-craft`.
 import { existsSync } from 'node:fs';
@@ -44,7 +43,16 @@ export const SCAN_SCOPE = [
   'src/lib/admin-fields',
   'examples/showcase/src/chassis',
   'examples/showcase/src/routes',
+  'examples/showcase/src/theme',
 ];
+/**
+ * Standalone CSS files this gate's CSS-family rules scan, beyond a component's own scoped
+ * `<style>` block. `theme.css` is Waymark's own palette declaration site (the achromatic
+ * `--color-base-*` ladder and the `--cairn-shadow` color-mix blacks are the point, not a hazard),
+ * so `main` also passes it as a declared palette site (`static.paletteFiles`), which excludes it
+ * from `token-colors` while every other CSS-family rule still scans it.
+ */
+export const CSS_FILES = ['examples/showcase/src/theme/theme.css'];
 
 /** @typedef {import('../src/lib/audit/types.js').AuditReport} AuditReport */
 /** @typedef {import('../src/lib/audit/types.js').Finding} Finding */
@@ -71,9 +79,19 @@ export function scopeReport(report, ruleIds) {
 
 async function main() {
   try {
-    const { exitCodeFor, formatReport, resolveConfig, runStatic } = await import('../dist/audit/index.js');
-    const config = resolveConfig(ROOT, { static: { scope: SCAN_SCOPE } }, (candidate) =>
-      existsSync(resolve(ROOT, candidate))
+    const { DEFAULT_PALETTE_CSS_FILES, exitCodeFor, formatReport, resolveConfig, runStatic } = await import(
+      '../dist/audit/index.js'
+    );
+    const config = resolveConfig(
+      ROOT,
+      {
+        static: {
+          scope: SCAN_SCOPE,
+          cssFiles: CSS_FILES,
+          paletteFiles: [...DEFAULT_PALETTE_CSS_FILES, ...CSS_FILES],
+        },
+      },
+      (candidate) => existsSync(resolve(ROOT, candidate))
     );
     const report = scopeReport(runStatic(config), RULE_IDS);
     console.log(formatReport(report));

@@ -4,6 +4,11 @@
 // position (offset into the FULL file source, not the extracted style-block text) a Finding and
 // the suppression idiom both need. A rule's own check() never touches the filesystem or re-parses
 // CSS text itself; it reads this one generator and stays a pure function of the run's context.
+//
+// This generator does not itself know about a declared palette site (`config.paletteCssFiles`,
+// config.ts): a palette declaration site still carries real structure (a transition, a selector)
+// every other CSS-family rule legitimately polices, so only the one rule whose hazard model the
+// declaration site trips, token-colors, filters it out of its own check.
 import { parseSheet } from '../../sheet.js';
 import type { SheetRule } from '../../sheet.js';
 import type { StaticRuleContext } from '../../types.js';

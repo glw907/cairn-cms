@@ -5,7 +5,11 @@
 // holds across light and dark by construction. The engine's own cairn-admin.css is the one
 // legitimate declaration site and is deliberately outside the CSS-family scope (see css-scope.ts):
 // this rule only ever sees a component's own scoped <style> block or a consumer-named CSS file,
-// so a clean run never has to special-case its own source of truth.
+// and cairn-admin.css is never named as one, so a clean run never has to special-case its own
+// source of truth. (It is also named in `config.paletteCssFiles`, config.ts, the declared-palette-
+// site list token-colors consults; the two exclusions are independent, since a grammar
+// declaration site and a palette declaration site are different concepts that happen to coincide
+// in this one file.)
 import { GRAMMAR_TOKENS } from '../../../design/grammar-tokens.js';
 import { cssScopeRules } from './css-scope.js';
 import { lineAt } from '../../markup.js';

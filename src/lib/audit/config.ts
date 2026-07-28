@@ -28,6 +28,17 @@ export const DEFAULT_SHEET_CANDIDATES = [
   'node_modules/@glw907/cairn-cms/dist/components/cairn-admin.css',
 ];
 
+// Declared palette declaration sites: the one CSS file per tree whose whole job is DEFINING the
+// literal values a palette resolves to. `token-colors` (rules/static/token-colors.ts), the rule
+// that polices a raw color literal bypassing the palette, cannot meaningfully apply to the
+// declaration site itself, so it reads this list and skips every file named here, rather than
+// carrying its own filename special case. Every other CSS-family rule still scans a file named
+// here when `staticCssFiles` also names it: a declaration site carries real structure (a
+// selector, a transition) those rules legitimately police. `cairn-admin.css` is the engine's own
+// declaration site and so the one default; a site names its own theme file the same way
+// (`static.paletteFiles`) to keep its own palette declaration outside `token-colors` too.
+export const DEFAULT_PALETTE_CSS_FILES = ['src/lib/components/cairn-admin.css'];
+
 /** One rendered-mode exemption. A live-page finding has no source line to co-locate a comment on. */
 export interface RenderedAllowlistEntry {
   page: string;
@@ -52,10 +63,17 @@ export interface AuditConfig {
    * Standalone CSS files (paths relative to `root`) the CSS-family static rules also scan,
    * alongside every component's own scoped `<style>` block. Empty by default: a component's
    * `<style>` block is the only CSS surface an audited tree carries until a consumer names one
-   * explicitly, since the built admin sheet these rules would otherwise sweep in is the grammar
-   * and palette's own declaration site, not a site re-tuning or redeclaring it.
+   * explicitly. Naming a declared palette site here too (see `paletteCssFiles`) is fine: only
+   * `token-colors` skips it, so the rest of the CSS-family scan still covers it.
    */
   staticCssFiles: string[];
+  /**
+   * Declared palette declaration sites (paths relative to `root`) `token-colors`
+   * (rules/static/token-colors.ts) never flags, since a raw color literal is the whole point of a
+   * palette's own declaration site rather than a hazard. Defaults to the engine's own admin
+   * stylesheet; a site names its own theme file here too.
+   */
+  paletteCssFiles: string[];
   /** The built admin stylesheet the class tokens resolve against. */
   sheetPath: string;
   /** The pages rendered mode visits. */
@@ -117,6 +135,7 @@ export function resolveConfig(
     staticScope: asPathList(staticSection.scope, 'static.scope', DEFAULT_STATIC_SCOPE),
     staticScopeFromConfig: staticSection.scope !== undefined,
     staticCssFiles: asPathList(staticSection.cssFiles, 'static.cssFiles', []),
+    paletteCssFiles: asPathList(staticSection.paletteFiles, 'static.paletteFiles', DEFAULT_PALETTE_CSS_FILES),
     sheetPath:
       (file.sheet as string | undefined) ??
       DEFAULT_SHEET_CANDIDATES.find((candidate) => sheetExists(candidate)) ??

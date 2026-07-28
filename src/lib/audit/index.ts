@@ -3,7 +3,15 @@
 // stays free to combine those modules; it carries no logic of its own.
 export { runStatic } from './run.js';
 export { formatReport, exitCodeFor } from './report.js';
-export { CONFIG_FILE, DEFAULT_SHEET_CANDIDATES, DEFAULT_STATIC_SCOPE, loadConfig, parseArgs, resolveConfig } from './config.js';
+export {
+  CONFIG_FILE,
+  DEFAULT_PALETTE_CSS_FILES,
+  DEFAULT_SHEET_CANDIDATES,
+  DEFAULT_STATIC_SCOPE,
+  loadConfig,
+  parseArgs,
+  resolveConfig,
+} from './config.js';
 export { lineAt, parseComponent } from './markup.js';
 export { negatedClassNames, parseSheet, selectorClassNames } from './sheet.js';
 export { applySuppressions, parseDirectives, DIRECTIVE_MARKER, SUPPRESSION_RULE_ID } from './suppress.js';

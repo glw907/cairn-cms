@@ -9,6 +9,12 @@
 // `transparent` and `currentColor` are excluded from the named-color set: both are CSS keywords a
 // declaration reaches for constantly (a color-mix fade, an inherited ink), and neither names a
 // color choice the palette could have supplied instead.
+//
+// A declared palette declaration site (`config.paletteCssFiles`, config.ts) never trips this rule
+// either, for the same reason a raw literal is fine there: the site IS where the palette's literal
+// values get written down. `cairn-admin.css`'s own exclusion (previously by construction, never
+// named as a consumer CSS file at all) and a site's own theme file now share this one named list,
+// rather than the rule inventing a filename special case for the second one.
 import { cssScopeRules } from './css-scope.js';
 import { lineAt } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
@@ -88,8 +94,10 @@ export const tokenColors: StaticRule = {
   id: 'token-colors',
   tier: 'error',
   check(ctx) {
+    const paletteSites = new Set(ctx.config.paletteCssFiles);
     const findings: Finding[] = [];
     for (const { file, source, rule } of cssScopeRules(ctx)) {
+      if (paletteSites.has(file)) continue;
       for (const decl of rule.declarations) {
         const hazard = hazardIn(decl.value);
         if (!hazard) continue;

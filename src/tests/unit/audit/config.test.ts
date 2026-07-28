@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  DEFAULT_PALETTE_CSS_FILES,
   DEFAULT_SHEET_CANDIDATES,
   DEFAULT_STATIC_SCOPE,
   parseArgs,
@@ -21,6 +22,14 @@ describe('DEFAULT_STATIC_SCOPE', () => {
   });
 });
 
+describe('DEFAULT_PALETTE_CSS_FILES', () => {
+  // The engine's own admin stylesheet is the declared palette (and grammar) declaration site;
+  // token-colors reads this list rather than carrying its own filename special case for it.
+  it('names the admin stylesheet as the engine\'s one declared palette site', () => {
+    expect(DEFAULT_PALETTE_CSS_FILES).toContain('src/lib/components/cairn-admin.css');
+  });
+});
+
 describe('resolveConfig', () => {
   const sheetHere = (path: string) => path === DEFAULT_SHEET_CANDIDATES[0];
 
@@ -29,8 +38,19 @@ describe('resolveConfig', () => {
     expect(config.root).toBe('/site');
     expect(config.staticScope).toEqual(DEFAULT_STATIC_SCOPE);
     expect(config.sheetPath).toBe(DEFAULT_SHEET_CANDIDATES[0]);
+    expect(config.staticCssFiles).toEqual([]);
+    expect(config.paletteCssFiles).toEqual(DEFAULT_PALETTE_CSS_FILES);
     expect(config.renderedPages).toEqual([]);
     expect(config.renderedAllowlist).toEqual([]);
+  });
+
+  it('takes a declared palette site list from the config file, replacing the default', () => {
+    const config = resolveConfig(
+      '/site',
+      { static: { paletteFiles: ['src/theme/theme.css'] } },
+      sheetHere
+    );
+    expect(config.paletteCssFiles).toEqual(['src/theme/theme.css']);
   });
 
   it('falls back to the installed package sheet when the local build is absent', () => {

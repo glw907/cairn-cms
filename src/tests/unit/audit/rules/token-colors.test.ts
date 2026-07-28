@@ -88,3 +88,23 @@ describe('token-colors: achromatics and their keywords', () => {
     expect(split.suppressed.map((f) => f.ruleId)).toEqual(['token-colors']);
   });
 });
+
+describe('token-colors: declared palette sites', () => {
+  // A theme's own stylesheet is where the palette's literal values get written down; the rule
+  // that stops a consumer BYPASSING the palette cannot meaningfully apply to the site that
+  // DECLARES it. config.paletteCssFiles names such a file once, so the exemption never falls to a
+  // hardcoded filename check inside the rule itself.
+  it('never flags a raw literal in a file named in config.paletteCssFiles', () => {
+    const config = resolveConfig('/site', { static: { paletteFiles: ['src/theme/theme.css'] } }, () => true);
+    const cssFiles = [{ file: 'src/theme/theme.css', source: ':root { --color-base-100: oklch(98% 0 0); }' }];
+    const findings = tokenColors.check({ files: [], sheet: SHEET, config, cssFiles });
+    expect(findings).toEqual([]);
+  });
+
+  it('still flags the same raw literal in a file config.paletteCssFiles does not name', () => {
+    const config = resolveConfig('/site', { static: { paletteFiles: ['src/theme/theme.css'] } }, () => true);
+    const cssFiles = [{ file: 'src/app.css', source: ':root { --color-base-100: oklch(98% 0 0); }' }];
+    const findings = tokenColors.check({ files: [], sheet: SHEET, config, cssFiles });
+    expect(findings).toHaveLength(1);
+  });
+});

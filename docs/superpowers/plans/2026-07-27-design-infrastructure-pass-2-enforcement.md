@@ -579,6 +579,43 @@ paints it. The rejection is preserved as a test.
 Every demonstrated input is a regression fixture in
 `src/tests/unit/audit/rules/rendered/advisory-refutations.test.ts`, real Chromium throughout.
 
+### Task 16b: The four rulings (ADDED 2026-07-28, Geoff)
+
+Task 16's rendered baseline put four design questions in front of Geoff, and calibrating against
+rules that are about to change would be waste, so the rulings land BEFORE Task 17 measures. All
+four are ruled; none is open.
+
+**Ruling 1, `touch-targets` enforces 24x24, not 44x44.** Spec 6.3 set 44x44, which is WCAG 2.2
+AAA (2.5.5); the AA bar (2.5.8) is 24x24, and AA is the conformance level cairn can honestly
+claim. The admin runs `btn-sm` 32px, `btn-xs` 24px, and 30px toolbar controls, so nearly all 138
+findings clear and `btn-xs` sits exactly on the line. The rule keeps catching anything genuinely
+too small. Watch the second-order effect: the graduated allowlist rows were written against the
+44px bar, so some will go inert and the stale-allowlist detector will fire on them. Remove a row
+that no longer names a real exception rather than leaving it to rot.
+
+**Ruling 2, the `--cairn-card-border` hairline is RATIFIED and suppressed.** It measures 1.11:1
+light and 1.43:1 dark against WCAG 1.4.11's 3:1, and it stays: the look is deliberate. Record it
+as a ratified exception carrying its measurement and reason, so the 326 advisories stop drowning
+the tier. The rule must still catch every OTHER boundary; a blanket disable is the wrong shape,
+and the suppression has to be specific enough that a genuinely bad border elsewhere still reports.
+
+**Ruling 3, the `chip-ground-collision` floor of 1.5 is RATIFIED.** Spec 6.3 named no number and a
+builder borrowed it from `interactive-contrast`. The shared rationale is correct and is now on the
+record: both rules test "not accidentally camouflaged", not a legibility standard, which is
+`border-contrast`'s different job. The measured admin collisions sit at 1.01 to 1.12, far below it.
+Write the reasoning into the rule's TSDoc and the reference page so the next agent does not
+re-litigate it. The number is load-bearing: the dark regression turned on a measured 1.514.
+
+**Ruling 4, `weight-budget`'s content region EXCLUDES chrome.** All 10 advisories are
+toolbar, pagination, and eyebrow chrome that happens to live inside `<main>`. Two weights per
+region stays the claim; the region definition was too wide. Narrowing it to actual body content
+tests what the rule actually asserts and is expected to take the 10 toward zero. State the chrome
+definition explicitly in the TSDoc; if narrowing cannot be done defensibly, say so rather than
+inventing a heuristic.
+
+- [ ] Implement the four rulings, each with a real-Chromium fixture, adversarially verified;
+      update the reference page and the deviations ledger; full gate; commit.
+
 ### Task 17: Calibration, the promotion evidence base
 
 Main-loop orchestrated (it is measurement, not build).

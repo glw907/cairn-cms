@@ -282,7 +282,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error text-xs">{errors[name]}</span>{/if}
+    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error type-meta">{errors[name]}</span>{/if}
   {/each}
 
   {#each flatSlots as slot (slot.name)}
@@ -320,7 +320,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
+    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
   {/each}
 
   {#each repeatableSlots as slot (slot.name)}
@@ -332,7 +332,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       {#each ids as id, i (id)}
         {@const label = rowLabel(slot, items[i] ?? '', i)}
         <div class="flex items-center gap-2">
-          <span class="flex-none text-xs text-muted">{label}</span>
+          <span class="flex-none type-label text-muted">{label}</span>
           <input
             class="input input-sm flex-1"
             aria-label={`${slot.label} ${i + 1}`}
@@ -342,7 +342,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
-      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
+      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}
 

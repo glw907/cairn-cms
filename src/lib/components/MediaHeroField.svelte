@@ -423,14 +423,14 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </button>
       </div>
       {#if committedCaption.trim() !== ''}
-        <p class="pl-[3.875rem] text-xs text-muted">{committedCaption}</p>
+        <p class="pl-[3.875rem] type-meta text-muted">{committedCaption}</p>
       {:else}
-        <p class="pl-[3.875rem] text-xs text-muted opacity-80">No caption</p>
+        <p class="pl-[3.875rem] type-meta text-muted opacity-80">No caption</p>
       {/if}
       {#if committedStatus === 'decorative' && committedCaption.trim() !== ''}
         <!-- The one state worth a gentle note: a decorative hero with a caption. A soft inline line,
              never a block. (Defensive; the resting empty-caption branch above usually wins.) -->
-        <p class="pl-[3.875rem] text-xs text-muted">
+        <p class="pl-[3.875rem] type-meta text-muted">
           This hero is marked decorative, so screen readers skip it; the caption still shows to everyone.
         </p>
       {/if}
@@ -507,8 +507,8 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         </div>
         <!-- Replace and Remove are quiet text controls beneath the preview, never floated on it. -->
         <div class="flex gap-3.5">
-          <button type="button" class="bg-transparent p-0 text-xs font-medium text-[var(--color-primary)] underline underline-offset-2" onclick={replace}>Replace</button>
-          <button type="button" class="bg-transparent p-0 text-xs font-medium text-muted underline underline-offset-2" onclick={remove}>Remove</button>
+          <button type="button" class="bg-transparent p-0 type-meta font-medium text-[var(--color-primary)] underline underline-offset-2" onclick={replace}>Replace</button>
+          <button type="button" class="bg-transparent p-0 type-meta font-medium text-muted underline underline-offset-2" onclick={remove}>Remove</button>
         </div>
 
         <!-- Alt as a describe-or-decorative radiogroup (the MediaCaptureCard model). The radios share a
@@ -537,7 +537,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
               bind:value={workAltText}
             />
           {/if}
-          <p id={altNoteId} class="text-xs text-muted">
+          <p id={altNoteId} class="type-meta text-muted">
             A short description for screen readers. You can save without it and add it later.
           </p>
         </fieldset>
@@ -545,7 +545,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
         <label class="flex flex-col gap-label">
           <span class="type-body font-medium">Caption <span class="font-normal text-muted">(optional)</span></span>
           <input class="input input-sm w-full" bind:value={workCaption} aria-label="Caption" />
-          <span class="text-xs text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
+          <span class="type-meta text-muted">Shown under the hero if the template uses it. This is not the alt text.</span>
         </label>
 
         <p class="type-label leading-snug text-muted">
@@ -565,7 +565,7 @@ popover's runUpload but resolves to this field, not an editor placeholder.
             <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></svg>
           </span>
           <span class="type-body font-medium text-base-content">Drop an image, or upload</span>
-          <span class="text-xs">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
+          <span class="type-meta">PNG, JPEG, WebP, or HEIC. We convert HEIC for you.</span>
           <button type="button" class="btn btn-primary btn-sm mt-1" onclick={() => fileInput?.click()}>Choose a file</button>
           <input
             bind:this={fileInput}

@@ -79,13 +79,13 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
         <span class="type-body font-medium">{routable ? 'Address' : 'Name'}</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
-      <p class="text-xs text-muted">
+      <p class="type-meta text-muted">
         {#if routable}
           Links from other pages update automatically, so nothing breaks. The new address will be
-          <code class="text-xs">{nextSlug}</code>.
+          <code class="type-meta">{nextSlug}</code>.
         {:else}
           Entries that include this {label.toLowerCase()} update automatically, so nothing breaks. The
-          new name will be <code class="text-xs">{nextSlug}</code>.
+          new name will be <code class="type-meta">{nextSlug}</code>.
         {/if}
       </p>
       <div class="flex justify-end gap-2">

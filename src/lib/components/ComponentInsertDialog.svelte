@@ -385,7 +385,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                        outer rounded-box (1rem) panel, so the inner radius is 1rem minus 12px. -->
                   <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
                     <p class="type-body font-medium">Fill the required fields to preview this.</p>
-                    <p class="flex flex-wrap justify-center gap-1.5 text-xs">
+                    <p class="flex flex-wrap justify-center gap-1.5 type-label">
                       {#each emptyRequired as label (label)}
                         <span class="rounded border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
                       {/each}
@@ -395,7 +395,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
                   <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
                     <p class="type-body font-semibold">Preview could not render</p>
-                    <p class="text-xs text-muted">Your settings are kept. You can still insert and check it on the page.</p>
+                    <p class="type-meta text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
                   <div class="flex min-h-64 flex-1 overflow-hidden rounded border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -455,8 +455,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                         {/if}
                         <span class="flex flex-col items-start gap-0.5">
                           <span data-testid="cairn-pk-row-label" class="type-body font-medium">{def.label}</span>
-                          {#if def.description}<span class="text-xs text-muted">{def.description}</span>{/if}
-                          {#if def.use}<span class="text-xs text-subtle">{def.use}</span>{/if}
+                          {#if def.description}<span class="type-meta text-muted">{def.description}</span>{/if}
+                          {#if def.use}<span class="type-meta text-subtle">{def.use}</span>{/if}
                         </span>
                       </button>
                     </li>

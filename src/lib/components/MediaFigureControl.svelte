@@ -100,7 +100,7 @@ own name.
       aria-describedby="cairn-figure-caption-hint"
       bind:value={captionValue}
     />
-    <p id="cairn-figure-caption-hint" class="text-xs text-muted">
+    <p id="cairn-figure-caption-hint" class="type-meta text-muted">
       Shown under the image, for everyone. This is not the alt text.
     </p>
   </div>
@@ -174,7 +174,7 @@ own name.
           role="radio"
           aria-checked={pressed}
           tabindex={index === activeIndex ? 0 : -1}
-          class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal {index > 0
+          class="inline-flex items-center gap-1 px-2.5 py-1 type-meta font-normal {index > 0
             ? 'border-l border-[var(--cairn-card-border)]'
             : ''} {pressed
             ? 'bg-primary/10 text-primary font-medium ring-1 ring-inset ring-primary/35'
@@ -200,7 +200,7 @@ own name.
         </button>
       {/each}
     </div>
-    <p class="text-xs text-muted">
+    <p class="type-meta text-muted">
       Center suits an image narrower than the text column. Measure keeps it at the column width.
     </p>
   </div>
@@ -230,7 +230,7 @@ own name.
         <line x1="12" y1="9" x2="12" y2="13" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
-      <p class="m-0 text-xs leading-relaxed">
+      <p class="m-0 type-meta leading-relaxed">
         A decorative image is hidden from screen readers, but this one has a caption. Describe it, or
         remove the caption.
       </p>

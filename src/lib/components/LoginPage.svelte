@@ -123,6 +123,6 @@ the allowlist, so the page never leaks membership (spec §7.1).
     {/if}
   </div>
 
-  <p class="text-xs text-muted">Powered by Cairn</p>
+  <p class="type-meta text-muted">Powered by Cairn</p>
   </div>
 </div>

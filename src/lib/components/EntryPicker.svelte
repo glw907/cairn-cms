@@ -137,7 +137,7 @@ dialog's a11y conventions.
       <p class="type-body text-muted">{targets.length === 0 ? emptyText : noMatchText}</p>
     {:else}
       {#each groups as group (group.concept)}
-        <h3 class="mt-2 mb-1 text-xs font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>
+        <h3 class="mt-2 mb-1 type-label font-semibold tracking-wide text-muted uppercase">{group.heading}</h3>
         <ul class="menu w-full">
           {#each group.items as target (`${target.concept}/${target.id}`)}
             <li class:disabled={isSelected(target)}>
@@ -150,7 +150,7 @@ dialog's a11y conventions.
               >
                 <span class="flex min-w-0 flex-col items-start">
                   <span class="w-full truncate font-medium">{target.title}</span>
-                  <span class="text-xs text-muted">
+                  <span class="type-meta text-muted">
                     {#if isSelected(target)}<span class="badge badge-ghost badge-sm mr-1">Selected</span>{/if}
                     {#if target.draft}<span class="badge badge-ghost badge-sm mr-1">Draft</span>{/if}
                     {#if target.date}{target.date}{/if}

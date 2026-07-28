@@ -314,14 +314,14 @@ bespoke (ruling 7): a single-use control, not a repeated device.
   // on/off toggle speaks through weight and a neutral wash instead (the design arc's accent
   // reservation, 2026-07-15).
   function onoffClass(on: boolean): string {
-    return `inline-flex h-[30px] items-center gap-1.5 rounded-lg border px-2.5 text-xs font-semibold ${
+    return `inline-flex h-[30px] items-center gap-1.5 rounded-lg border px-2.5 type-meta font-semibold ${
       on
         ? `border-base-content/20 ${segmentTintClass(true)}`
         : 'border-[var(--cairn-card-border)] bg-base-100 text-muted hover:border-primary/35 hover:text-base-content'
     }`;
   }
   function segClass(on: boolean): string {
-    return `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs ${on ? segmentTintClass(on) : 'text-muted hover:bg-base-content/[0.06]'}`;
+    return `inline-flex items-center gap-1.5 px-3 py-1.5 type-meta ${on ? segmentTintClass(on) : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
 </script>
 
@@ -349,7 +349,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </span>
       <div class="min-w-0 flex-1">
         <div class="type-meta font-semibold">Tidy is set up for this site</div>
-        <div class="mt-0.5 text-xs leading-relaxed text-muted">
+        <div class="mt-0.5 type-meta leading-relaxed text-muted">
           Your developer turned tidy on and chose how it runs. You cannot change these here.
         </div>
         <!-- Below sm each row stacks (label above value, label muted); at sm+ the label sits
@@ -379,7 +379,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
         </div>
         <div class="mt-3 border-t border-dashed border-[var(--cairn-card-border)] pt-2.5">
           <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-          <div class="mt-1 text-xs leading-relaxed text-muted">
+          <div class="mt-1 type-meta leading-relaxed text-muted">
             Tidy is on (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled</code>), the key is stored as an Anthropic Worker secret (<code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code>), and the model is <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{data.model}</code>. Switch to <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">claude-haiku-4-5</code> for a cheaper, faster run.
           </div>
         </div>
@@ -416,7 +416,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Plain errors, not style choices. On by default. Leave them on unless you have a reason not to.</p>
           </div>
           <div class="flex flex-none items-center gap-1">
-            <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
+            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
           </div>
         </div>
         <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -463,11 +463,11 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">Optional. No style convention applies until you turn one on. Turn one on to choose how it should read everywhere.</p>
           </div>
           <div class="flex flex-none items-center gap-1">
-            <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOn}>Turn all on</button>
-            <span class="text-xs text-muted opacity-40" aria-hidden="true">&middot;</span>
-            <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOff}>Turn all off</button>
-            <span class="text-xs text-muted opacity-40" aria-hidden="true">&middot;</span>
-            <button type="button" class="px-0.5 py-1 text-xs text-muted underline underline-offset-2 hover:text-primary" onclick={resetSafeDefault}>Reset to typos only</button>
+            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOn}>Turn all on</button>
+            <span class="type-meta text-muted opacity-40" aria-hidden="true">&middot;</span>
+            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={styleAllOff}>Turn all off</button>
+            <span class="type-meta text-muted opacity-40" aria-hidden="true">&middot;</span>
+            <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={resetSafeDefault}>Reset to typos only</button>
           </div>
         </div>
         <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -568,7 +568,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
 
       <div class="flex items-center gap-3 pt-4">
-        <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
+        <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
           <ArrowRightIcon class="h-3.5 w-3.5 flex-none" aria-hidden="true" />Saving applies your choices for every editor on this site.
         </span>
         <button type="submit" class="btn btn-primary btn-sm">Save changes</button>
@@ -602,7 +602,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
       <div class="w-full max-w-md text-left">
         <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-        <div class="mt-1 text-xs leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page or run <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">cairn-doctor</code> to confirm it again.</div>
+        <div class="mt-1 type-meta leading-relaxed text-muted">Verify or rotate the secret with <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">wrangler secret put ANTHROPIC_API_KEY</code>, then reload this page or run <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">cairn-doctor</code> to confirm it again.</div>
       </div>
     </div>
   {:else}
@@ -633,7 +633,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
       </div>
       <div class="w-full max-w-md text-left">
         <span class="inline-flex items-center gap-1.5 type-chip font-semibold uppercase tracking-wide text-muted"><CodeIcon class="h-3 w-3" aria-hidden="true" />For your developer</span>
-        <div class="mt-1 text-xs leading-relaxed text-muted">Set <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
+        <div class="mt-1 type-meta leading-relaxed text-muted">Set <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">tidy.enabled: true</code> in the site config and add the Anthropic key as the <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">ANTHROPIC_API_KEY</code> Worker secret. The setup guide has the steps.</div>
       </div>
       <div class="mt-1 flex max-w-lg items-center gap-2.5 rounded-xl border border-[var(--cairn-card-border)] bg-base-200 p-3 type-meta text-muted">
         <CheckIcon class="h-4 w-4 flex-none text-muted" aria-hidden="true" />

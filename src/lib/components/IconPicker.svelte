@@ -92,7 +92,7 @@ IconSet path data, matching the renderer's 256-unit viewBox.
       <svg class="ec-glyph" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" width="16" height="16">
         <path d={icons[name]} />
       </svg>
-      <span class="text-xs">{name}</span>
+      <span class="type-label">{name}</span>
     </button>
   {/each}
 </div>

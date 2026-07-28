@@ -877,8 +877,8 @@ discriminant, not the fields, gates the chrome).
             </div>
             <div class="min-w-0 flex-1">
               <div class="truncate type-body font-medium">{data.user.displayName}</div>
-              <div class="truncate text-xs text-muted">{data.user.email}</div>
-              <div class="text-xs capitalize text-subtle">{data.user.role}</div>
+              <div class="truncate type-meta text-muted">{data.user.email}</div>
+              <div class="type-label capitalize text-subtle">{data.user.role}</div>
             </div>
           </div>
           <!-- Logout posts to the absolute /admin catch-all, so the shell signs out from every

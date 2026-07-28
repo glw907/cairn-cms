@@ -219,7 +219,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
         Your tags
         <span
-          class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted"
+          class="rounded-full bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
           >{working.length}</span
         >
       </h2>
@@ -353,7 +353,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   <form method="POST" action="?/saveVocabulary" class="mt-6 flex items-center gap-3 pt-4">
     <CsrfField />
     <input type="hidden" name="vocabulary" value={vocabularyJson} />
-    <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
+    <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
       Saving commits your tag list to the site config, so every editor shares it.
     </span>
     <button type="submit" class="btn btn-primary btn-sm">Save changes</button>

@@ -51,6 +51,6 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
     {/if}
   </div>
 
-  <p class="text-xs text-muted">Powered by Cairn</p>
+  <p class="type-meta text-muted">Powered by Cairn</p>
   </div>
 </div>

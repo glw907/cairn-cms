@@ -242,7 +242,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
             <!-- A non-blocking flag, never a block: the orphan stays a checked, removable option so
                  an untouched save preserves it and unchecking it drops it. Warning ink, not the fill
                  tone, so the small label clears the contrast floor on the light surface. -->
-            <span class="text-xs text-[var(--cairn-warning-ink)]">not in your tag list</span>
+            <span class="type-label text-[var(--cairn-warning-ink)]">not in your tag list</span>
           {/if}
         </label>
       {/each}

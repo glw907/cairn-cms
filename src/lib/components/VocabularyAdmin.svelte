@@ -121,8 +121,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   const seedCandidates = $derived(data.unlisted.filter((u) => !existingValues.has(u.value)));
 
   // The card recipe shared by the add and list cards.
-  const cardClass =
-    'rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]';
+  const cardClass = 'card-shell card-shadow';
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on

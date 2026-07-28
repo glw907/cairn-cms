@@ -1,10 +1,10 @@
 # Reference: admin grammar tokens
 
 The admin's structural type and spacing vocabulary: eighteen CSS custom properties declared once
-in `cairn-admin.css`, outside the light and dark theme blocks, plus the eleven named utility classes
-that are the only supported way to reach them from markup. A grammar token names a relationship
-rather than a color: a heading's role, a control-to-control gap. The same value holds in both
-themes.
+in `cairn-admin.css`, outside the light and dark theme blocks, plus the thirteen named utility
+classes that are the only supported way to reach them from markup, eleven grammar roles (type and
+gap) and two container roles. A grammar token names a relationship rather than a color: a
+heading's role, a control-to-control gap. The same value holds in both themes.
 
 ## The token inventory
 
@@ -59,6 +59,28 @@ A type role is a size paired with its own leading, not a full recipe. Weight, ca
 color are never part of a type role: they belong to the component recipes in the admin design
 system (the eyebrow, the nav item, the wordmark), and color is a palette choice, so it stays a
 separate `text-muted` or `text-subtle` class on the element.
+
+## Container roles
+
+Two utilities cover the repeated card-shell markup string. Unlike a type or gap role, a container
+role is not one property: it is the small set of properties that always travel together on a
+surface.
+
+| Utility | Property | Token |
+|---|---|---|
+| `card-shell` | `border-radius`, `border-style`, `border-width`, `border-color`, `background-color` | `--radius-box` (DaisyUI), `--cairn-card-border`, `--color-base-100` |
+| `card-shadow` | `box-shadow` | `--cairn-shadow` |
+
+`card-shell` is the universal surface: the shell's radius, its 1px hairline border, and its fill.
+`card-shadow` is its elevation, kept as a separate utility because the split is real: a nested
+surface inside an already-shadowed container (the media library's picked tiles, its row-link
+cards) takes `card-shell` alone, since a shadow on a surface already inside a shadowed one reads
+as a stray outline rather than elevation. Markup composes `overflow-*` and its own padding
+directly. Neither role sets them, because they differ per call site.
+
+A component writes `card-shell` and, where the surface floats free, `card-shadow`, never the
+bracketed `var()` form the roles replace (`border-[var(--cairn-card-border)]`,
+`shadow-[var(--cairn-shadow)]`), for the same reason a type role replaces a bracketed font-size.
 
 ## Where each form belongs
 

@@ -28,14 +28,14 @@
    have shipped resolving to nothing. Scanning the directory is the structural fix; the class itself
    also moved to a safelisted role utility. */
 @source "../src/lib/admin-fields/**/*.{svelte,ts,js}";
-/* The eleven grammar role utilities are safelisted, not scanned. A Tailwind `@utility` is
-   tree-shaken, so a role with no internal call site would never reach the shipped sheet: `type-title`
-   and `gap-control` were both absent until this line went in. They are a DOCUMENTED PUBLIC INTERFACE
-   (docs/reference/admin-grammar-tokens.md), and a consumer's own Tailwind build never sees the
-   `@utility` definitions below, only this compiled sheet, so a role a consumer is told to write must
-   ship whether or not cairn's own screens happen to use it. grammar-tokens.test.ts asserts all eleven
-   against the plain build for that reason. */
-@source inline("type-title type-heading type-subtitle type-body type-meta type-label type-chip gap-control gap-label gap-group gap-section");
+/* The thirteen grammar and container role utilities are safelisted, not scanned. A Tailwind
+   `@utility` is tree-shaken, so a role with no internal call site would never reach the shipped
+   sheet: `type-title` and `gap-control` were both absent until this line went in. They are a
+   DOCUMENTED PUBLIC INTERFACE (docs/reference/admin-grammar-tokens.md), and a consumer's own
+   Tailwind build never sees the `@utility` definitions below, only this compiled sheet, so a role
+   a consumer is told to write must ship whether or not cairn's own screens happen to use it.
+   grammar-tokens.test.ts asserts all thirteen against the plain build for that reason. */
+@source inline("type-title type-heading type-subtitle type-body type-meta type-label type-chip gap-control gap-label gap-group gap-section card-shell card-shadow");
 @import "../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an
@@ -126,4 +126,30 @@
 }
 @utility gap-section {
   gap: var(--cairn-gap-section);
+}
+
+/* The two container-role utilities (Pass 2 Task 11): the authoring interface for the repeated
+   card-shell markup string, `rounded-box border border-[var(--cairn-card-border)] bg-base-100`,
+   optionally followed by `shadow-[var(--cairn-shadow)]`. Unlike the type/gap roles above, a
+   container role is not one property but the small set of properties that always travel together
+   on a surface; here, the shell's radius, hairline border, and fill. The split between the two
+   utilities is real, not stylistic: in cairn's own tree every nested surface inside
+   CairnMediaLibrary carries card-shell without card-shadow, since a shadow on a surface already
+   inside a shadowed container reads as a stray outline rather than elevation. A component writes
+   `overflow-*` and its own padding directly; those differ per call site and are not part of either
+   role. The declarations below are copied verbatim from the compiled sheet's own `rounded-box`,
+   `border`, `border-[var(--cairn-card-border)]`, `bg-base-100`, and `shadow-[var(--cairn-shadow)]`
+   rules (grammar-tokens.test.ts holds the no-drift proof against the same compiled sheet), never
+   hand-approximated, since a hand-typed border-radius or box-shadow value is exactly the drift this
+   role exists to prevent. */
+@utility card-shell {
+  border-radius: var(--radius-box);
+  border-style: var(--tw-border-style);
+  border-width: 1px;
+  border-color: var(--cairn-card-border);
+  background-color: var(--color-base-100);
+}
+@utility card-shadow {
+  --tw-shadow: var(--cairn-shadow);
+  box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
 }

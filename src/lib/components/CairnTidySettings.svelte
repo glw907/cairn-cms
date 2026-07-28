@@ -419,7 +419,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={conv.fixes ? fixesAllOff : fixesAllOn}>{conv.fixes ? 'Turn off' : 'Turn on'}</button>
           </div>
         </div>
-        <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <div class="overflow-hidden card-shell card-shadow">
           <div class="flex items-center gap-4 p-3.5 {conv.fixes ? '' : 'opacity-60'}">
             <div class="min-w-0 flex-1">
               <div class="type-subtitle font-semibold leading-snug {conv.fixes ? '' : 'text-muted'}">Spelling, grammar, doubled words, spacing, capitals, end punctuation</div>
@@ -470,7 +470,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
             <button type="button" class="px-0.5 py-1 type-meta text-muted underline underline-offset-2 hover:text-primary" onclick={resetSafeDefault}>Reset to typos only</button>
           </div>
         </div>
-        <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <div class="overflow-hidden card-shell card-shadow">
           {#each styleRows as row, ri (row.key)}
             {@const on = rowOn(row.key)}
             <div class="flex gap-4 p-3.5 {ri > 0 ? 'border-t border-[var(--cairn-card-border)]' : ''} {on && row.variants ? 'items-start' : 'items-center'}">
@@ -520,7 +520,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
 
       <!-- ADVANCED (default off, gated behind a disclosure, with a short risk note) -->
       <section class="mb-6">
-        <details class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+        <details class="overflow-hidden card-shell card-shadow">
           <summary class="flex cursor-pointer list-none items-center gap-3 p-3.5">
             <span class="inline-flex h-7 w-7 flex-none items-center justify-center rounded-lg bg-base-content/[0.06] text-muted"><SettingsIcon class="h-4 w-4" aria-hidden="true" /></span>
             <span class="min-w-0 flex-1">
@@ -580,7 +580,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
          below: both deploy-time steps are done, so this names the actual problem (truthful
          visibility applied to the settings screen, not just the edit-page Tidy button) instead of
          re-showing an unchecked "add a key" checklist for a key that is already there. -->
-    <div role="region" aria-label="Tidy’s key isn’t working" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+    <div role="region" aria-label="Tidy’s key isn’t working" class="mt-6 flex flex-col items-center gap-3 card-shell p-10 text-center card-shadow">
       <!-- A broken key needs the developer's attention; it is not a destructive confirmation, so
            it reads amber (needs-attention), never the reserved destructive red (the design arc's
            accent reservation, 2026-07-15). -->
@@ -609,7 +609,7 @@ bespoke (ruling 7): a single-use control, not a repeated device.
     <!-- THE VISIBILITY GATE: tidy NOT enabled by the developer, or no key present yet. The
          convention list is absent, not disabled. One honest labelled region names the
          deploy-time task and who does it, with no disabled controls in the tab order. -->
-    <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-10 text-center shadow-[var(--cairn-shadow)]">
+    <div role="region" aria-label="Tidy is not set up" class="mt-6 flex flex-col items-center gap-3 card-shell p-10 text-center card-shadow">
       <span class="inline-flex h-12 w-12 items-center justify-center rounded-full bg-base-content/[0.06] text-muted"><SparklesIcon class="h-6 w-6" aria-hidden="true" /></span>
       <div class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy is not set up yet</div>
       <div class="max-w-[50ch] type-body leading-relaxed text-muted">

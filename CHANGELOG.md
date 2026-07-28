@@ -20,6 +20,15 @@
 - The palette/grammar boundary is now a documented contract: a site re-tunes the palette tokens
   (`--color-*`) to its own brand and never redeclares a grammar token, since grammar names
   structure and palette is the brand layer.
+- Two container role utilities, `card-shell` and `card-shadow`, are the supported replacement for
+  hand-copying the admin's card-shell class string
+  (`rounded-box border border-[var(--cairn-card-border)] bg-base-100`, optionally with
+  `shadow-[var(--cairn-shadow)]`). `card-shell` carries the shell's radius, hairline border, and
+  fill; `card-shadow` carries its elevation, kept separate because a surface already nested inside
+  a shadowed container takes `card-shell` alone. Both ship in the compiled admin stylesheet
+  regardless of cairn's own usage, the same safelist discipline as the ten grammar role utilities.
+  cairn's own admin components migrate every verbatim shell site onto the new utilities,
+  pixel-identically. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
 
 No consumer action is required. Every change here is internal to the admin's own CSS and
 components; no exported type, prop, or route contract changed.

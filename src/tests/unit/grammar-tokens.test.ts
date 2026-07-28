@@ -222,3 +222,80 @@ describe('grammar-token role utilities', () => {
     expect(body).not.toContain('--cairn-gap');
   });
 });
+
+// CONTRACT: card-shell and card-shadow are the two container-role utilities (Pass 2 Task 11), the
+// authoring interface for the repeated card-shell markup string. They are declared as ordinary
+// `@utility` bodies, so their properties can drift from the utilities they replace the same way any
+// hand-maintained CSS can; the no-drift proof below is what keeps that impossible rather than merely
+// unlikely. Container roles are distinct from the type/gap roles above: they group properties that
+// always travel together on a SURFACE (a card's border, radius, and fill), not a text or spacing
+// role, and they deliberately exclude `overflow-*` and padding, which differ per call site.
+describe('container role utilities (card-shell, card-shadow)', () => {
+  // A source class name can carry Tailwind's bracket/paren arbitrary-value syntax
+  // (`border-[var(--cairn-card-border)]`), which the compiler CSS-escapes in the compiled
+  // selector (`.border-\[var\(--cairn-card-border\)\]`). Reconstruct that escaped selector text
+  // first, then regex-escape the whole thing, backslashes included, for literal use in the RegExp;
+  // the unescaped regex in the block above would otherwise read the brackets and parens as regex
+  // metacharacters rather than literal text.
+  function ruleBodyExact(className: string): string | null {
+    const cssEscapedSelector = className.replace(/[[\]()]/g, '\\$&');
+    const regexSafe = cssEscapedSelector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = css.match(new RegExp(`\\.${regexSafe}\\s*\\{([^}]*)\\}`));
+    if (!match) return null;
+    return match[1].replace(/\s+/g, ' ').trim();
+  }
+
+  // Parses a rule body's `prop: value;` pairs into a map, last declaration wins on a duplicate
+  // property (mirrors the cascade within one rule, and Tailwind's own rounded-box output declares
+  // border-radius twice with the same value). This is what makes the no-drift proof compare
+  // resolved property/value pairs rather than raw declaration text or declaration order.
+  function declarationMap(body: string): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const declaration of body.split(';')) {
+      const trimmed = declaration.trim();
+      if (!trimmed) continue;
+      const colon = trimmed.indexOf(':');
+      if (colon < 0) continue;
+      map.set(trimmed.slice(0, colon).trim(), trimmed.slice(colon + 1).trim());
+    }
+    return map;
+  }
+
+  function mergedDeclarations(...classNames: string[]): Map<string, string> {
+    const merged = new Map<string, string>();
+    for (const className of classNames) {
+      const body = ruleBodyExact(className);
+      expect(body, `expected a rule body for .${className}`).not.toBeNull();
+      for (const [property, value] of declarationMap(body!)) {
+        merged.set(property, value);
+      }
+    }
+    return merged;
+  }
+
+  it('ships card-shell and card-shadow in the sheet a consumer gets (the safelist proof)', () => {
+    expect(ruleBodyExact('card-shell'), 'expected a rule body for .card-shell').not.toBeNull();
+    expect(ruleBodyExact('card-shadow'), 'expected a rule body for .card-shadow').not.toBeNull();
+  });
+
+  it('card-shell resolves to the same declarations as the four utilities it replaces', () => {
+    const shellBody = ruleBodyExact('card-shell');
+    expect(shellBody, 'expected a rule body for .card-shell').not.toBeNull();
+    const shellDeclarations = declarationMap(shellBody!);
+    const expected = mergedDeclarations(
+      'rounded-box',
+      'border',
+      'border-[var(--cairn-card-border)]',
+      'bg-base-100',
+    );
+    expect(shellDeclarations).toEqual(expected);
+  });
+
+  it('card-shadow resolves to the same declarations as the elevation utility it replaces', () => {
+    const shadowBody = ruleBodyExact('card-shadow');
+    expect(shadowBody, 'expected a rule body for .card-shadow').not.toBeNull();
+    const shadowDeclarations = declarationMap(shadowBody!);
+    const expected = mergedDeclarations('shadow-[var(--cairn-shadow)]');
+    expect(shadowDeclarations).toEqual(expected);
+  });
+});

@@ -30,7 +30,7 @@ in a hidden field and consumes nothing; only the explicit POST verifies (spec §
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
-  <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 text-center shadow-[var(--cairn-shadow)]">
+  <div class="w-full max-w-sm card-shell p-7 text-center card-shadow">
     <div class="mb-6 flex items-center justify-center gap-2">
       <CairnLogo class="h-8 w-8 text-primary" />
       <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->

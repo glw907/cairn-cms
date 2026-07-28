@@ -156,7 +156,7 @@ describe('EditPage', () => {
     const pane = screen.container.querySelector('#cairn-pane-preview');
     expect(pane).not.toBeNull();
     // The pane sits inside the editor card frame, below the toolbar, not in a stacked card.
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     expect(card.contains(pane)).toBe(true);
   });
 
@@ -1096,7 +1096,7 @@ describe('EditPage', () => {
     const screen = render(EditPage, postProps());
     const toolbar = screen.container.querySelector('[role="toolbar"]');
     expect(toolbar).not.toBeNull();
-    const card = toolbar!.closest('.rounded-box');
+    const card = toolbar!.closest('.card-shell');
     expect(card).not.toBeNull();
     expect(card!.querySelector('input[name="body"]')).not.toBeNull();
   });
@@ -1173,7 +1173,7 @@ describe('EditPage', () => {
     // CodeMirror dispatch -> hidden-input mirror) without simulating a CodeMirror selection.
     const screen = render(EditPage, postProps({ body: 'plain prose' }));
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const event = new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true });
     card.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
@@ -1186,7 +1186,7 @@ describe('EditPage', () => {
   // for the save-state indicator to acknowledge the change.
   async function makeDirty(screen: ReturnType<typeof render>) {
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     card.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
     await expect
       .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')
@@ -1411,7 +1411,7 @@ describe('EditPage', () => {
   it('opens the web link dialog on Ctrl+K inside the editor card', async () => {
     const screen = render(EditPage, postProps());
     await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true, cancelable: true });
     card.dispatchEvent(event);
     expect(event.defaultPrevented).toBe(true);
@@ -1437,7 +1437,7 @@ describe('EditPage', () => {
     it(`dispatches its format on ${name} inside the editor card`, async () => {
       const screen = render(EditPage, postProps({ body: 'plain prose' }));
       await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-      const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+      const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
       const event = new KeyboardEvent('keydown', { ...init, bubbles: true, cancelable: true });
       card.dispatchEvent(event);
       expect(event.defaultPrevented).toBe(true);
@@ -1799,7 +1799,7 @@ describe('EditPage', () => {
     expect(title).not.toBeNull();
     expect(title!.value).toBe('Hello');
     expect(title!.required).toBe(true);
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     expect(title!.compareDocumentPosition(card) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(screen.container.querySelector('aside input[name="title"]')).toBeNull();
   });
@@ -2029,7 +2029,7 @@ describe('EditPage', () => {
 
   it('shows the word count in the editor card footer', async () => {
     const screen = render(EditPage, postProps({ body: '' }));
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     const count = screen.getByText('0 words');
     await expect.element(count).toBeInTheDocument();
     expect(card.contains(count.element())).toBe(true);
@@ -2090,7 +2090,7 @@ describe('EditPage', () => {
     expect(count()?.getAttribute('aria-hidden')).toBe('true');
     await expect.poll(() => count()?.textContent, COLD_START).toBe('1 to review');
     // The count sits inside the same footer strip as the word count, not off in its own region.
-    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+    const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
     expect(card.contains(count()!)).toBe(true);
   });
 

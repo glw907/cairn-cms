@@ -96,7 +96,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}
 
-<div class="mb-4 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+<div class="mb-4 overflow-hidden card-shell card-shadow">
   <AdminTable density="sm" rowCount={data.editors.length}>
     {#snippet header()}
       <th scope="col" class="{col} pl-6">Name</th>
@@ -157,7 +157,7 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   </AdminTable>
 </div>
 
-<form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/addEditor" class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-label">
     <span class="type-body font-medium">Name</span>

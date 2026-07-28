@@ -304,8 +304,14 @@ alongside the component recipes above and below it.
 
 ## Component recipes
 
-- **Floating card:** `rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]`.
-  Use for the list table, the editor panes, the auth card. Do not use a flat `base-300` border.
+- **Floating card:** `card-shell card-shadow`, the two container-role utilities (Pass 2 Task 11) for
+  the shell's radius, hairline border, and fill plus its elevation. Use for the list table, the
+  editor panes, the auth card. A nested surface inside an already-shadowed container (the media
+  library's picked tiles, its row-link cards) takes `card-shell` alone; a shadow on a surface
+  already inside a shadowed one reads as a stray outline rather than elevation, not the raised
+  read the token is for. A component composes its own `overflow-*` and padding; neither role sets
+  them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
+  replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
@@ -343,6 +349,12 @@ alongside the component recipes above and below it.
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
   (the office list with no entries), the state drops the list card and centers on the content area so a
   first-run office reads as composed, not as a small box hugging the top of a tall page.
+- **In-card empty notice (Finding 10, Pass 2 Task 11):** a filtered-to-zero state (a search or filter
+  narrowing a non-empty list to nothing) is `AdminTable`'s own `empty` snippet, never a hand-rolled
+  sibling. The register is `AdminTable`'s to own, in its scoped CSS: centered text, padding, the
+  muted color, and normal wrapping. A caller's snippet passes bare content, typically one `<p>`, and
+  adds no size, color, or alignment class of its own. See [the admin-toolkit reference
+  page](../reference/admin-toolkit.md#admintable) for the exact contract.
 - **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
   for the title and the header's ink New button (the ONE create affordance on a populated list, the
   old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),

@@ -1525,7 +1525,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             aria-selected={picked}
             tabindex={i === activeIndex ? 0 : -1}
             aria-label="{asset.displayName}. {missing ? 'Needs alt text' : 'Described'}. {used > 0 ? `Found in ${used} ${used === 1 ? 'entry' : 'entries'}` : 'No references found'}."
-            class="relative flex cursor-pointer flex-col overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {picked ? 'ring-2 ring-primary/70' : selected?.hash === asset.hash ? 'ring-2 ring-primary/40' : ''}"
+            class="relative flex cursor-pointer flex-col overflow-hidden card-shell outline-hidden transition-shadow focus-visible:ring-2 focus-visible:ring-primary/70 {picked ? 'ring-2 ring-primary/70' : selected?.hash === asset.hash ? 'ring-2 ring-primary/40' : ''}"
             onclick={(e) => openAsset(asset, e.currentTarget)}
             onkeydown={(e) => onGridKeydown(e, i)}
           >
@@ -1597,7 +1597,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
          pattern for a selectable table. The earlier role="grid" + aria-multiselectable promised grid
          keyboard navigation (arrow cell moves, roving tabindex) the table never implemented, so it
          is dropped: a plain table with a checkbox column is honest and fully usable. -->
-    <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+    <div class="overflow-hidden card-shell card-shadow">
       <AdminTable density="sm" rowCount={visible.length}>
         {#snippet header()}
           <!-- Frame zone (the column-header row) carries the office band grammar (design arc
@@ -1690,7 +1690,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     <div
       role="region"
       aria-label="Selection actions"
-      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-4 py-3 shadow-[var(--cairn-shadow)]"
+      class="sticky bottom-3.5 z-20 mx-auto mt-4 flex w-full max-w-[640px] items-center gap-3.5 card-shell px-4 py-3 card-shadow"
     >
       <span class="shrink-0 type-subtitle font-bold tabular-nums">{selectedCount}</span>
       <span class="min-w-0 type-meta leading-snug text-muted">
@@ -1845,7 +1845,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each publishedRows(asset.hash) as entry (entry.concept + '/' + entry.id)}
                   <li>
-                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 card-shell px-2.5 py-2 no-underline hover:border-primary/40">
                       <FileTextIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <span class="min-w-0 flex-1 truncate type-meta font-medium">{entry.title}</span>
                       <ChevronRightIcon class="h-3.5 w-3.5 flex-none text-muted opacity-60" aria-hidden="true" />
@@ -1861,7 +1861,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <ul class="flex list-none flex-col gap-1 p-0">
                 {#each branchRows(asset.hash) as entry (entry.concept + '/' + entry.id + branchNameOf(entry))}
                   <li>
-                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 rounded-box border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-2 no-underline hover:border-primary/40">
+                    <a href="/admin/{entry.concept}/{entry.id}" class="flex items-center gap-2.5 card-shell px-2.5 py-2 no-underline hover:border-primary/40">
                       <FileTextIcon class="h-3.5 w-3.5 flex-none text-muted" aria-hidden="true" />
                       <span class="flex min-w-0 flex-1 flex-col">
                         <span class="truncate type-meta font-medium">{entry.title}</span>
@@ -2068,7 +2068,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
              the dropzone, so the author never loses it. Cancel is the initial focus; no apply yet. -->
         <div class="flex flex-col gap-3">
           <div class="flex items-center gap-3 rounded-box border border-[var(--cairn-card-border)] bg-base-200/60 p-3">
-            <span class="flex h-12 w-12 flex-none items-center justify-center overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+            <span class="flex h-12 w-12 flex-none items-center justify-center overflow-hidden card-shell">
               {#if brokenHashes.has(asset.hash)}
                 <ImageOffIcon class="h-5 w-5 text-subtle" aria-hidden="true" />
               {:else}
@@ -2145,7 +2145,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <span class={headerLabel}>Published entries that will be repointed</span>
               <span class="type-meta tabular-nums text-muted">{replaceEntries.length}</span>
             </div>
-            <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+            <div class="card-shell">
               <ul bind:this={replaceEntriesList} id="cairn-ml-replace-entries" class="flex max-h-56 list-none flex-col gap-1 overflow-y-auto p-2">
                 {#each replaceVisibleEntries as entry, i (entry.concept + '/' + entry.id)}
                   <!-- The first row past the cap is a script-only focus target for "Show all" (tabindex
@@ -2325,7 +2325,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
           <div class="flex flex-col gap-3">
             <!-- WILL FILL: every row's honest (no alt) -> default alt, always applied. -->
             {#if altFillRows.length > 0}
-              <div class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+              <div class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-primary/10 text-primary" aria-hidden="true">
                     <CheckIcon class="h-3.5 w-3.5" />
@@ -2382,7 +2382,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <!-- HAS CUSTOM ALT: one bucket-level opt-in (a real native checkbox). Before it is checked,
                  each row shows its existing alt plain and "kept"; checking flips to was -> default. -->
             {#if altCustomRows.length > 0}
-              <div data-cairn-alt-custom class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100">
+              <div data-cairn-alt-custom class="overflow-hidden card-shell">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-[var(--cairn-warning-ink)]/10 text-[var(--cairn-warning-ink)]" aria-hidden="true">
                     <MegaphoneIcon class="h-3.5 w-3.5" />
@@ -2441,7 +2441,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
 
             <!-- DECORATIVE HERO, SKIPPED: listed, muted, never an input. -->
             {#if altSkipRows.length > 0}
-              <div data-cairn-alt-skip class="overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 opacity-90">
+              <div data-cairn-alt-skip class="overflow-hidden card-shell opacity-90">
                 <div class="flex items-center gap-2.5 p-3">
                   <span class="flex h-[26px] w-[26px] flex-none items-center justify-center rounded-md bg-base-content/[0.07] text-muted" aria-hidden="true">
                     <ImageOffIcon class="h-3.5 w-3.5" />

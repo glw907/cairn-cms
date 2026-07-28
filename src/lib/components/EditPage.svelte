@@ -1856,7 +1856,7 @@ persistent "?" carries Markdown help, design-arc D2).
          reads as a single object. The card carries the formatting shortcuts for everything in it. -->
     <div
       bind:this={editorCard}
-      class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]"
+      class="card-shell overflow-hidden card-shadow"
       class:cairn-editor-zen={zen}
       role="group"
       aria-label="Editor"
@@ -2092,7 +2092,7 @@ persistent "?" carries Markdown help, design-arc D2).
                 Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.
               </p>
             {/if}
-            <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
+            <div class="card-shell overflow-hidden card-shadow">
               {#if previewFailed}
                 <p class="flex h-[70vh] items-center justify-center p-4 text-center type-body text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}

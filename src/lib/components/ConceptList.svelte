@@ -334,7 +334,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   {/snippet}
   <EmptyState heading={`No ${data.label.toLowerCase()} yet`} message="Stack your first one and it will show up here." action={emptyAction} />
 {:else}
-  <div class="mb-2 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+  <div class="mb-2 overflow-hidden card-shell card-shadow">
     <AdminTable density="sm" rowCount={pageRows.length}>
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are

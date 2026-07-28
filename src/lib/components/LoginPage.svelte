@@ -56,7 +56,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
-  <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
+  <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if (form?.status === 'sent' || form?.sent) && !dismissed}
       <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
            instruction. The fallback help sits in a gentle inset note below. -->

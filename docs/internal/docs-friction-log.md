@@ -52,3 +52,14 @@ findings start fresh below this line.
   chassis-nav pass just rewrote the tutorial's Milestone 7 off the same client-import pattern
   for nav. The guide should teach the registry-split shape the showcase models. Filed into
   ROADMAP (Next).
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 11)** Documenting the card-shell
+  container role surfaced that the safelist mechanism (`@source inline(...)` in
+  `scripts/admin-css.input.css`) has no test guarding its own comment against drift: the "eleven
+  grammar role utilities" count in that file's comment, and the matching count in
+  `docs/reference/admin-grammar-tokens.md`, are both prose a human has to remember to bump by hand
+  every time a role utility is added, the same class of failure `grammar-tokens.test.ts` already
+  catches for the safelisted CLASSES themselves but not for the two comments that state the count.
+  A low-cost fix: a unit assertion that parses the `@source inline(...)` line's own token count and
+  compares it against `GRAMMAR_TOKENS.length` plus a hard-coded container-role count, so a future
+  addition fails a test instead of leaving a stale number in two places. Left as a candidate rather
+  than shipped here, since Task 11 is scoped to the two new utilities, not a new test substrate.

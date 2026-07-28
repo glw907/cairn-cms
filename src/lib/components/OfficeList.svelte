@@ -46,6 +46,6 @@ supplies its own `<table>` (or any content) inside.
   {/if}
 </header>
 
-<div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-x-auto shadow-[var(--cairn-shadow)]">
+<div class="card-shell overflow-x-auto card-shadow">
   {@render children()}
 </div>

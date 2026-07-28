@@ -131,3 +131,13 @@ is 13px. Pass 2's normalization moved the class but deliberately did not rule th
 swap was size-preserving, and whether the header's secondary line is body-sized on purpose or should
 join the meta role is a relationship question, not a mechanical one. Still open, and still worth
 ruling explicitly because of the name collision.
+
+**`AdminTable`'s in-card empty-notice cell carries no type role, deliberately.** The recipe (Pass 2
+Task 11, Finding 10) says a caller's `empty` snippet passes bare content and the table owns
+centering, padding, muted color, and wrapping. Today's real call sites (`ConceptList`,
+`CairnMediaLibrary`) add `type-body` to their own `<p>` anyway, and `AdminTable`'s own scoped CSS
+sets no `font-size` at all, so the cell inherits `table-sm`'s size. Pinning `type-body` (14px) onto
+the cell itself would move `ConceptList`'s empty state under Phase 3's pixel-identity contract, so
+the register stayed unpinned rather than resolved. Left open for Task 12 or the Task 17 calibration:
+either the call sites drop their own `type-body` and the cell's inherited size becomes the ruled
+answer, or the cell earns a named role and the two call sites lose their redundant class.

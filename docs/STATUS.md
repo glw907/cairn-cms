@@ -15,24 +15,58 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-27: EXECUTE design-infrastructure Pass 2, enforcement)
+## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Phase 2)
 
-**The Pass 2 plan is written and committed:**
-`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. The two
-owed design decisions plus a third the brainstorm's measurement surfaced are RATIFIED and
-recorded in the spec's new section 13 (Amendments) and the deviations ledger's rulings
-section: (1) type roles carry a ruled leading behind a `--tw-leading` override; (2) no 12px
-step, the 120 sites resolve onto meta/label per-site; (3) a seventh heading role is
-admitted between subtitle and title, recipe picked by Geoff from the Task 2 probe, with the
-wordmark and EditPage document title as ratified named exceptions. Pixel-freeze ends
-deliberately: acceptance criterion 2 is amended (one regen at Task 6, eyes-on read).
+**Phase 1 of Pass 2 is COMPLETE. Phases 2 through 5 (Tasks 7 to 18) are untouched.** Plan:
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, whose Phase 2
+header carries the three Phase 1 findings that constrain the remaining work. Tasks 0 to 6 are
+ticked in the plan.
 
-**Execute in a fresh Opus 5 session** (Fable planning sitting ended at plan approval).
-Resume prompt: "Execute the design-infrastructure Pass 2 plan at
-docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md, task by
-task per cairn-pass" from `~/Projects/cairn-cms`. Task 0 (the stale-baseline regen below)
-runs on `main` BEFORE the worktree; Task 2's heading probe goes to Geoff EARLY so his pick
-lands before Task 5 needs it.
+**Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume the
+design-infrastructure Pass 2 plan at Phase 2 (Task 7), task by task per cairn-pass. Phase 1 is
+complete on the `design-infra-pass-2-enforcement` worktree." The worktree already exists at
+`.claude/worktrees/design-infra-pass-2` with its showcase deps installed against it, so no
+setup is owed. Do NOT re-run Phase 1.
+
+**Where the work sits.** Task 0 merged to `main` (`640b48d2`). Tasks 1 to 6 are on
+`design-infra-pass-2-enforcement`, pushed and unmerged, eight commits. The branch is green:
+`e2e` passes by `workflow_dispatch` (the workflows only auto-run on `main` and pull requests, so
+a branch run needs the dispatch or a PR).
+
+**What Phase 1 closed.** The admin type scale is complete and every font size resolves to a
+role. Seven roles, each carrying a ruled leading token behind a `--tw-leading` override; 119
+twelve-pixel sites resolved per-site onto meta and label; 129 named Tailwind steps migrated
+pixel-identically; the heading role ratified at 18px, weight 700, Bricolage, leading 28px; five
+counted exceptions (three wordmark sites, two editor-canvas sites); one baseline regeneration
+read by eye. `admin-visual` is green again on the new baselines.
+
+**Three findings that bind Phase 2**, all recorded in the plan and the docs:
+
+1. **The suppression idiom is amended.** "Disable next line" must resolve to the next AST node,
+   not the next physical line. Cairn's own tree already has a multi-line-element exception that a
+   line-literal parser would score as a dead directive PLUS an unsuppressed finding. Task 8's
+   fixtures must cover it.
+2. **`type-scale` must not confuse `text-base` with `text-base-content`.** A plain word boundary
+   matches the size token inside the daisyUI COLOR utilities. This has caused two miscounts in
+   this initiative already.
+3. **The static scan scope must include `src/lib/admin-fields`.** It is the third public surface
+   rendering inside the admin theme, and it was in neither the stylesheet scan roots nor
+   `check:admin-css-classes` until Phase 1 added it. The omission had already silently broken a
+   shipped class.
+
+**Still owed at pass end (Task 18), do not lose:** the `## Unreleased` changelog window carries
+NO `<!-- release-size: minor -->` marker, so `check:version` currently sizes it as a patch. Pass
+1 added new public surface, so that is wrong and Task 18 must fix it. No release is due until the
+initiative boundary after Pass 3 (spec section 10).
+
+**Two lessons Phase 1 earned, worth carrying into any migration pass.** A bracketed arbitrary size
+(`text-[1.875rem]`) sets `font-size` alone while a named step (`text-3xl`) also sets `line-height`,
+so converting between them silently changes leading; that bit the editor's document title while the
+visual gate was deliberately red and could not catch it. And a migration can break a surface it
+never edits: removing the last scanned `text-sm` stopped Tailwind compiling that rule, and
+`src/lib/admin-fields`, a public export subpath outside the scan roots, still used it. Both were
+found by a fresh context reading for meaning, not by a gate, which is the same pattern the Pass 1
+post-mortem recorded.
 
 **PASS 1 (GRAMMAR TOKENS) LANDED 2026-07-27, unpublished on `main`.** Seven commits
 (`ddf0afbd`..`6b3a5138`): ten grammar tokens (`--cairn-type-*` x6, `--cairn-gap-*` x4) declared once

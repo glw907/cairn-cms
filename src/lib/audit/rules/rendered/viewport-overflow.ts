@@ -106,21 +106,16 @@ function findOverflowOrigins(): OverflowOrigin[] {
       !boxOrigins.some((origin) => el.contains(origin))
   );
 
+  // One finding per distinct signature, box origins first: several elements sharing a signature
+  // repeat one layout fact, and a box origin names it more precisely than a content one.
   const findings = new Map<string, OverflowOrigin>();
-  for (const el of boxOrigins) {
+  function record(el: Element, kind: OverflowOrigin['kind'], right: number): void {
     const key = signature(el);
-    if (findings.has(key)) continue;
-    findings.set(key, { selector: key, right: Math.round(el.getBoundingClientRect().right), kind: 'box' });
+    if (findings.has(key)) return;
+    findings.set(key, { selector: key, right: Math.round(right), kind });
   }
-  for (const el of contentOrigins) {
-    const key = signature(el);
-    if (findings.has(key)) continue;
-    findings.set(key, {
-      selector: key,
-      right: Math.round(el.getBoundingClientRect().left + el.scrollWidth),
-      kind: 'content',
-    });
-  }
+  for (const el of boxOrigins) record(el, 'box', el.getBoundingClientRect().right);
+  for (const el of contentOrigins) record(el, 'content', el.getBoundingClientRect().left + el.scrollWidth);
   return [...findings.values()];
 }
 

@@ -3,14 +3,20 @@
 // refuses to run against an empty registry rather than reporting a silently clean audit, so this
 // list is what turns the rendered harness on.
 //
-// The six error-tier rules spec 6.3 defines are registered. Task 16's five advisory rules join
-// them here.
+// Eleven rules are registered: the six error-tier rules spec 6.3 defines, then the five advisory
+// ones (`border-contrast`, `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`),
+// which report and never reach the exit code.
+import { borderContrast } from './border-contrast.js';
 import { chipGroundCollision } from './chip-ground-collision.js';
 import { focusRenders } from './focus-renders.js';
 import { interactiveContrast } from './interactive-contrast.js';
+import { normsBands } from './norms-bands.js';
 import { oneFilledAction } from './one-filled-action.js';
+import { relationalSpacing } from './relational-spacing.js';
+import { screenAnatomy } from './screen-anatomy.js';
 import { touchTargets } from './touch-targets.js';
 import { viewportOverflow } from './viewport-overflow.js';
+import { weightBudget } from './weight-budget.js';
 import type { RenderedRule } from '../../rendered.js';
 
 /**
@@ -18,5 +24,17 @@ import type { RenderedRule } from '../../rendered.js';
  * filtering mutates nothing shared.
  */
 export function renderedRules(): RenderedRule[] {
-  return [oneFilledAction, focusRenders, interactiveContrast, touchTargets, viewportOverflow, chipGroundCollision];
+  return [
+    oneFilledAction,
+    focusRenders,
+    interactiveContrast,
+    touchTargets,
+    viewportOverflow,
+    chipGroundCollision,
+    borderContrast,
+    weightBudget,
+    normsBands,
+    screenAnatomy,
+    relationalSpacing,
+  ];
 }

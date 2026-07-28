@@ -40,7 +40,7 @@ outside 2xx, which also catches a page path that names no route.
 
 ### The rules
 
-All six are error tier and exit the command nonzero.
+Eleven rules run. The first six are error tier and exit the command nonzero.
 
 | ID | What it checks |
 |---|---|
@@ -50,6 +50,17 @@ All six are error tier and exit the command nonzero.
 | `touch-targets` | Every tap target renders at least 44x44 CSS px at a 390px viewport, measured on the effective hit rectangle, so a control widened by a `::before` inset expansion clears the floor it already meets |
 | `viewport-overflow` | Nothing renders wider than the viewport at 390 and at 320. Both an element whose own box clears the viewport and an element whose content, an unbreakable string or a bleeding pseudo-element, is wider than its box |
 | `chip-ground-collision` | A chip's own painted fill reads as distinct from the background behind it. A chip is daisyUI's `.badge` or any element that renders as one, and a chip with no fill of its own, the `badge-outline` recipe, is exempt |
+
+The other five are advisory. They report and never change the exit code, because each one measures a
+compositional question that a legitimately novel component can answer differently on purpose.
+
+| ID | What it checks |
+|---|---|
+| `border-contrast` | A rendered border reads at 3:1 (WCAG 1.4.11) against at least one of the two surfaces it separates. Adjacency is measured by hit-testing the pixel beyond each edge, not by walking the DOM, so an overlaid badge is judged against what it sits on. The stroke composites over the element's own fill first, which is where `background-clip: border-box` paints it |
+| `weight-budget` | At most two distinct font-weights per content region. A region is the text inside `<main>`, or inside an open dialog layer, split at each visible heading; a heading's own weight is chrome and never spends the budget. Weights count on the hundreds ladder, so a variable-font ramp reads as one weight |
+| `norms-bands` | A component's control heights, paddings, padding-to-type ratios, radii, and border treatments against the bands the [norms manifest](#the-norms-query) observed. An entry the manifest flags `open-question` or `ratified-drift` is treated as unbanded: a number that is not settled ground truth is not a reference to measure against |
+| `screen-anatomy` | An office screen carries one `<h1>` inside PageHeader's `<header>`, renders a `.card-shell` region, and keeps its accent- and ink-filled actions in the header slot or inside the card. Desk routes are exempt, read from the drawer class the admin shell projects at SSR rather than from path depth |
+| `relational-spacing` | The `--cairn-gap-*` scale matches the relationship the markup renders: a nested rhythm never opens wider than the rhythm containing it (per axis), a label sits the gap-label distance above its control, and same-level siblings sit at one gap |
 
 Every rule that compares two colors resolves them by painting each one on a canvas in the page and
 reading the sRGB bytes back, rather than parsing color syntax. A themed admin computes to whatever
@@ -76,11 +87,23 @@ exempts by a page+selector+reason JSON allowlist instead, in `rendered.allowlist
 ```
 
 The `selector` is the signature a rule reports a finding under: a tag, then its id if it carries
-one, then up to four of its classes. Suppressed findings are counted and printed, never hidden.
+one, then up to four of its classes, each escaped so a Tailwind class such as `lg:ml-56` stays a
+valid CSS selector. Suppressed findings are counted and printed, never hidden.
 
-An allowlist entry whose selector matches nothing the run actually visited reports as a stale entry
-rather than doing nothing silently, the same reasoning that requires every static suppression to
-carry a reason.
+An entry may also name the rule it exempts:
+
+```json
+{ "page": "/admin/posts", "selector": ".legacy-badge", "reason": "ships in the next pass", "rule": "border-contrast" }
+```
+
+Name it when you exempt an advisory finding. An allowlist entry whose selector matches nothing the
+run visited reports as a stale entry rather than doing nothing silently, and a stale entry is
+reported at the tier of the rule it names. Without `rule`, a stale entry is an error, which is right
+for a suppressed error-tier finding and would turn a suppressed advisory one into a gate the next
+time the selector churns.
+
+An entry whose selector the browser refuses to parse reports separately, and always advisory:
+unreadable is a different claim from stale, and the run says which one it is.
 
 ## The norms query
 

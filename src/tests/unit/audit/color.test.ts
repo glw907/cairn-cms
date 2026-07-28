@@ -88,11 +88,35 @@ describe('ground resolution', () => {
     expect(contrastRatio(ground.color, opaque(246, 244, 242))).toBeLessThan(1.1);
   });
 
-  it('scales an inner layer by an ancestor opacity too', () => {
+  // A ground is always opaque, because it always resolves onto the canvas. A half-transparent
+  // ancestor over white paints mid grey, and that is what a border or a chip is measured against.
+  // The demonstrated defect: `relativeLuminance` discards alpha, so returning the half-alpha black
+  // this chain composites to made a black border on it read at contrast 1.00 where the painted
+  // pixels measure 5.24.
+  it('scales an inner layer by an ancestor opacity and resolves the result onto the canvas', () => {
     const half = resolveGround([layer(1), layer(0.5)], [{ r: 0, g: 0, b: 0, a: 0 }, opaque(0, 0, 0)]);
     expect(half.kind).toBe('resolved');
     if (half.kind !== 'resolved') return;
-    expect(half.color.a).toBeCloseTo(0.5, 5);
+    expect(half.color.a).toBe(1);
+    expect(half.color.r).toBeCloseTo(127.5, 1);
+    expect(contrastRatio(half.color, opaque(0, 0, 0))).toBeCloseTo(5.24, 1);
+  });
+
+  // The canvas is not white under `color-scheme: dark`, and assuming it was reported an invisible
+  // near-black panel on a near-black canvas (1.09 painted) as clean, because nothing in the chain
+  // painted and the chain resolved to white.
+  it('resolves an unpainted chain onto the canvas the caller names', () => {
+    const dark = resolveGround([layer(), layer()], [null, null], { canvas: opaque(18, 18, 18) });
+    expect(dark).toEqual({ kind: 'resolved', color: opaque(18, 18, 18) });
+  });
+
+  // The wording defect: a caller that already dropped the element's own layer had a gradient on the
+  // immediate PARENT reported as one the element paints on itself.
+  it('names an ancestor, not the element, when the caller already dropped the element layer', () => {
+    const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }], { firstLayerIs: 'ancestor' });
+    expect(ground.kind).toBe('indeterminate');
+    if (ground.kind !== 'indeterminate') return;
+    expect(ground.reason).toContain('ancestor');
   });
 
   // The demonstrated defect: a gradient band keeps `background-color: rgba(0, 0, 0, 0)`, so a

@@ -67,6 +67,31 @@
   to compare against, reports an advisory finding naming what it could not read rather than
   skipping silently. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
 
+- The five advisory rendered rules spec 6.3 defines are registered, completing the rendered rule
+  set at eleven: `border-contrast` (a border reads at 3:1 against at least one of the two surfaces
+  it separates), `weight-budget` (at most two distinct font-weights per content region),
+  `norms-bands` (a component's geometry against the bands the norms manifest observed),
+  `screen-anatomy` (one PageHeader h1, content in the card region, no accent-filled action buried
+  outside both), and `relational-spacing` (the `--cairn-gap-*` scale matches the relationship the
+  markup renders). Advisory means advisory: none of the five can change the process exit code,
+  through its own findings, through a selector the browser cannot parse, through a stale
+  suppression, or through a throw inside a rule.
+
+- Rendered rules share one set of in-page measurement helpers rather than each carrying a copy, so
+  "is this visible" and "what selector names this element" mean one thing across the rule set. An
+  element the visually-hidden recipe clips is no longer counted as rendered, an element under an
+  ancestor `opacity: 0` is no longer measured, and every reported selector is escaped, so a
+  Tailwind class such as `lg:ml-56` stays a valid CSS selector the allowlist can match on.
+
+- A rendered allowlist entry may name the rule it exempts (`"rule": "border-contrast"`). A stale
+  entry is then reported at that rule's own tier, so suppressing an advisory finding cannot gate
+  the build when the selector later churns. An entry whose selector the browser refuses to parse
+  reports separately and always advisory, since unreadable is a different claim from stale.
+
+- A rendered rule that throws reports a finding at its own tier instead of aborting the run. A rule
+  that reads a file inside its check (`norms-bands` reads the shipped manifest) could otherwise
+  take an entire audit to exit code 2 on a substrate condition in a consumer install.
+
 No consumer action is required for the entries above. No exported type, prop, or route contract
 changed.
 

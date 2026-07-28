@@ -532,7 +532,52 @@ weight-budget (two weights per content REGION, not route); border-contrast (1.4.
 3:1, report-only while the hairline question is open on Geoff's queue); norms-bands
 (measurements inside manifest bands, single-observation bands reported as such).
 
-- [ ] Fixtures, implement, verify NONE can affect exit codes, full gate, commit.
+- [x] Fixtures, implement, verify NONE can affect exit codes, full gate, commit.
+
+#### Amendment: what the refutation round taught (2026-07-28)
+
+All five rules were built, then each was adversarially refuted against real Chromium driving the
+running showcase admin. Every one was REFUTED: 39 findings across the five. The build-then-refute
+shape paid for itself, and four lessons generalize beyond Task 16.
+
+1. **Every rule independently reinvented "is this visible" and "name this element", and every copy
+   was wrong in a different way.** An `sr-only` element counted as a rendered heading in one rule
+   and spent a typographic budget in another; an ancestor `opacity: 0` was invisible to one rule's
+   visibility test and visible to its own ground arithmetic; four rules emitted unescaped Tailwind
+   class signatures that `querySelectorAll` refuses. These are one substrate defect wearing five
+   costumes. The fix is one set of measurement helpers installed on the page
+   (`ensurePageHelpers`), which the serializer permits because a rule reaches them through a global
+   rather than a closure. Any later rendered rule should reach for them first.
+
+2. **"Advisory" is a claim about a whole system, not a field on a finding.** All five carried
+   `tier: 'advisory'` on every finding and all five could still reach the exit code, by four
+   distinct paths: an unparseable selector reading as a stale allowlist entry (error tier), a stale
+   entry for a suppressed advisory finding gating on a class churn, a prose string used where a CSS
+   selector belongs, and a rule reading a file inside `check` and taking the run to exit 2 on a
+   throw. The exit criterion is now a proof over all four paths, not an assertion that
+   `tier === 'advisory'`.
+
+3. **A rule and the reference it measures against must see the same population.** `norms-bands`
+   applied a stricter visibility filter than the manifest generator did, so it audited a subset of
+   the elements its own bands were derived from, and on two routes audited zero of the roles it
+   exists for. The band's own minimum came from an element the rule refused to look at. Whenever a
+   rule checks live measurement against generated data, the candidacy predicate is part of the
+   contract.
+
+4. **A skip is a claim, and the honest ones are narrow.** The silent-skip count was the largest
+   single category: a negative gap discarding a whole sibling group, an asymmetric grid gap
+   dropping the box, a gradient fill dropping a candidate, an open dialog discarding `<main>`. Each
+   was defended in a file header as abstention. The distinction that survives adjudication is
+   between "this shape carries no claim" (a wrap boundary, a horizontal caption row the design
+   system never speaks to), which is scope and belongs in the header, and "I could not read this"
+   (an unresolvable fill, an empty region, a viewport that cannot be borrowed), which is a finding.
+
+One refutation was REJECTED on measurement: a sub-pixel `border-width: 0.05px` was reported as a
+false positive on the reasoning that it renders nothing, and Chromium computes it as `1px` and
+paints it. The rejection is preserved as a test.
+
+Every demonstrated input is a regression fixture in
+`src/tests/unit/audit/rules/rendered/advisory-refutations.test.ts`, real Chromium throughout.
 
 ### Task 17: Calibration, the promotion evidence base
 

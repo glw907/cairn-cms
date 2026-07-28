@@ -13,7 +13,7 @@
 // `playwright` because it is cairn's own build tool pinned by cairn's own lockfile; do not
 // "harmonize" the two import styles, they serve different trees on purpose.
 import { renderedRules } from './rules/rendered/index.js';
-import type { Rgba } from './color.js';
+import type { PaintLayer, Rgba } from './color.js';
 import type { AuditConfig, RenderedAllowlistEntry } from './config.js';
 import type { AuditReport, Finding, Tier } from './types.js';
 
@@ -123,47 +123,87 @@ export interface RenderedPageVisit {
    * not a survey of the whole page.
    */
   selectorsSeen: Set<string>;
+  /**
+   * Selectors the browser refused to parse, so no staleness verdict is possible either way.
+   * Optional: a caller assembling a visit by hand (a unit test, a consumer driving the resolver
+   * directly) has nothing to record here.
+   */
+  selectorsUnprobeable?: Set<string>;
 }
 
 const STALE_ALLOWLIST_RULE_ID = 'rendered-allowlist-stale';
+const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered-allowlist-unprobeable';
+
+/**
+ * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
+ * every position is zero; this is the one place that fact is written down.
+ */
+function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' | 'message'>): Finding {
+  return { ...finding, line: 0, start: 0, end: 0 };
+}
 
 function toFinding(rf: ResolvedRenderedFinding): Finding {
-  return {
+  return positionless({
     ruleId: rf.ruleId,
     tier: rf.tier,
     file: `${rf.page} [${rf.theme}, ${rf.state}]`,
-    line: 0,
-    start: 0,
-    end: 0,
     message: `${rf.selector}: ${rf.message}`,
-  };
+  });
 }
 
-function staleFinding(entry: RenderedAllowlistEntry): Finding {
-  return {
+function staleFinding(entry: RenderedAllowlistEntry, tier: Tier): Finding {
+  return positionless({
     ruleId: STALE_ALLOWLIST_RULE_ID,
-    tier: 'error',
+    tier,
     file: entry.page,
-    line: 0,
-    start: 0,
-    end: 0,
     message:
       `the rendered allowlist names ${entry.selector} on ${entry.page}, but nothing there matched it in ` +
       `any captured theme or state. A stale entry is how a real finding disappears: fix the selector or ` +
       `remove the entry. (reason on file: ${entry.reason})`,
-  };
+  });
+}
+
+/**
+ * The finding an allowlist entry raises when the browser could not parse its selector at all. A
+ * refused selector is not evidence of staleness, so reporting it as one both misnames the problem
+ * and, because the staleness finding gates, lets an ADVISORY rule reach the exit code: an
+ * adversarial pass demonstrated exactly that, allowlisting an advisory finding whose selector
+ * carried a Tailwind variant class (`div.flex.lg:ml-56`) and getting `exit 1`. This one is
+ * advisory, so no suppression a developer writes can turn a non-gating rule into a gating one.
+ */
+function unprobeableFinding(entry: RenderedAllowlistEntry): Finding {
+  return positionless({
+    ruleId: UNPROBEABLE_ALLOWLIST_RULE_ID,
+    tier: 'advisory',
+    file: entry.page,
+    message:
+      `the rendered allowlist names ${entry.selector} on ${entry.page}, but the browser refused to parse it ` +
+      `as a CSS selector, so neither a match nor a staleness verdict is possible. Escape the selector ` +
+      `(CSS.escape covers Tailwind's \`:\` and \`[]\` class syntax) so the entry can be checked. ` +
+      `(reason on file: ${entry.reason})`,
+  });
 }
 
 /**
  * Resolve raw rendered findings against the allowlist: an exact page+selector match suppresses, and
- * every allowlist entry that never matched anything the run actually visited becomes its own error
- * finding rather than silently doing nothing. This is a pure function over already-collected data,
- * so the allowlist contract is testable without a browser.
+ * every allowlist entry that never matched anything the run actually visited becomes its own
+ * finding rather than silently doing nothing. An entry whose selector the browser refused to parse
+ * is reported separately and advisory, since "unreadable" is a different claim from "stale" (see
+ * {@link unprobeableFinding}).
+ *
+ * A stale entry is reported at the tier of the rule it names, which `ruleTiers` supplies, and at
+ * `error` when it names none. Without that, suppressing an ADVISORY finding gated the build the
+ * moment its selector churned, which is the one path by which a non-gating rule could reach the
+ * exit code.
+ *
+ * This is a pure function over already-collected data, so the allowlist contract is testable
+ * without a browser.
  */
 export function resolveRenderedFindings(
   raw: ResolvedRenderedFinding[],
   visits: RenderedPageVisit[],
-  allowlist: RenderedAllowlistEntry[]
+  allowlist: RenderedAllowlistEntry[],
+  ruleTiers: Map<string, Tier> = new Map()
 ): { findings: Finding[]; suppressed: Finding[] } {
   const findings: Finding[] = [];
   const suppressed: Finding[] = [];
@@ -173,7 +213,12 @@ export function resolveRenderedFindings(
   }
   for (const entry of allowlist) {
     const visit = visits.find((candidate) => candidate.page === entry.page);
-    if (!visit || !visit.selectorsSeen.has(entry.selector)) findings.push(staleFinding(entry));
+    if (visit?.selectorsSeen.has(entry.selector)) continue;
+    findings.push(
+      visit?.selectorsUnprobeable?.has(entry.selector)
+        ? unprobeableFinding(entry)
+        : staleFinding(entry, (entry.rule === undefined ? undefined : ruleTiers.get(entry.rule)) ?? 'error')
+    );
   }
   return { findings, suppressed };
 }
@@ -311,11 +356,12 @@ function resolveColorsInPage(colors: string[]): ([number, number, number, number
   const canvas = document.createElement('canvas');
   canvas.width = 1;
   canvas.height = 1;
-  const ctx = canvas.getContext('2d', { willReadFrequently: true });
-  if (!ctx) return colors.map(() => null);
-  const context = ctx;
+  const context = canvas.getContext('2d', { willReadFrequently: true });
+  if (!context) return colors.map(() => null);
 
-  function paintOver(backdrop: string, color: string): number[] {
+  // Bound after the null check rather than declared as a hoisted `function`, so the narrowing on
+  // `context` reaches inside it and no second alias binding is needed to carry it.
+  const paintOver = (backdrop: string, color: string): number[] => {
     context.globalCompositeOperation = 'copy';
     context.fillStyle = backdrop;
     context.fillRect(0, 0, 1, 1);
@@ -323,7 +369,7 @@ function resolveColorsInPage(colors: string[]): ([number, number, number, number
     context.fillStyle = color;
     context.fillRect(0, 0, 1, 1);
     return Array.from(context.getImageData(0, 0, 1, 1).data);
-  }
+  };
 
   return colors.map((raw) => {
     if (!raw) return null;
@@ -349,24 +395,169 @@ function resolveColorsInPage(colors: string[]): ([number, number, number, number
 }
 
 /**
- * Whether each of `selectors` matches at least one element on the current page. Playwright
+ * Whether each of `selectors` matches, misses, or cannot be parsed on the current page. Playwright
  * serializes this into the page, so it stays self-contained: no references outside its own body.
+ *
+ * The third verdict is the point. Folding "the browser refused this string" into "nothing matched"
+ * is what let a rendered allowlist entry mint a gating staleness finding for a selector that was
+ * never checkable in the first place.
  */
-function probeSelectors(selectors: string[]): boolean[] {
+function probeSelectors(selectors: string[]): ('matched' | 'absent' | 'unprobeable')[] {
   return selectors.map((selector) => {
     try {
-      return document.querySelectorAll(selector).length > 0;
+      return document.querySelectorAll(selector).length > 0 ? 'matched' : 'absent';
     } catch {
-      return false;
+      return 'unprobeable';
     }
   });
 }
 
 /**
+ * The measurement helpers every rendered rule shares, installed on the page rather than closed
+ * over. A function handed to `page.evaluate` is serialized by source and cannot reference anything
+ * outside its own body, which is why five rules each grew their own copy of "is this visible" and
+ * "name this element"; the copies then drifted, and an adversarial pass demonstrated the drift as
+ * shipped defects (an `sr-only` heading counted as a rendered heading, an unescaped Tailwind class
+ * signature that no `querySelectorAll` could parse). Installing one implementation on `window` and
+ * calling it from inside each rule's own evaluate keeps the definition single without reintroducing
+ * the closure the serializer forbids.
+ */
+export interface CairnAuditPageHelpers {
+  /**
+   * A valid CSS selector naming `el`: its tag, its id, and up to four of its classes, every
+   * identifier escaped. Tailwind's own class syntax (`lg:ml-56`, `max-w-[30%]`) is not a legal
+   * identifier unescaped, and an unescaped signature throws inside `querySelectorAll`.
+   */
+  signature(el: Element): string;
+  /**
+   * Whether `el` renders to a sighted user: it and every ancestor pass `display`, `visibility`,
+   * and cumulative `opacity`, it is not inside a screen-reader-only container, and it occupies a
+   * box (measured through a Range, so `display: contents` and inline text still count).
+   */
+  isVisible(el: Element): boolean;
+  /** Whether `el` carries the visually-hidden recipe (a clipped 1px box), on its own or by ancestry. */
+  isScreenReaderOnly(el: Element): boolean;
+  /** `el`'s own paint layer, then each ancestor's up to the document root. */
+  paintLayers(el: Element): PaintLayer[];
+  /** The color the browser paints where nothing in the document ever paints, as a CSS string. */
+  canvasColor(): string;
+}
+
+declare global {
+  var __cairnAudit: CairnAuditPageHelpers | undefined;
+}
+
+/**
+ * Runs inside the page, installing {@link CairnAuditPageHelpers} on `window` once. Playwright
+ * serializes this by source, so every helper is declared inside this function's own body.
+ */
+function installPageHelpers(): void {
+  if (globalThis.__cairnAudit) return;
+
+  function escapeIdentifier(value: string): string {
+    return typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value;
+  }
+
+  function signature(el: Element): string {
+    const tag = el.tagName.toLowerCase();
+    const id = el.id ? `#${escapeIdentifier(el.id)}` : '';
+    const classes = Array.from(el.classList)
+      .slice(0, 4)
+      .map((name) => `.${escapeIdentifier(name)}`)
+      .join('');
+    return `${tag}${id}${classes}`;
+  }
+
+  function isScreenReaderOnly(el: Element): boolean {
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      const rect = node.getBoundingClientRect();
+      const tiny = rect.width <= 1.5 && rect.height <= 1.5;
+      if (!tiny) continue;
+      // The visually-hidden recipe in every form the ecosystem ships it: Tailwind's `sr-only`
+      // clips a 1px absolutely-positioned box, and the older `clip-path: inset(50%)` variant
+      // collapses it the same way. Either one, on a 1px box, means "read aloud, never painted".
+      const clipped =
+        style.clip === 'rect(0px, 0px, 0px, 0px)' ||
+        style.clipPath.startsWith('inset(50%') ||
+        (style.overflow === 'hidden' && (style.position === 'absolute' || style.position === 'fixed'));
+      if (clipped) return true;
+    }
+    return false;
+  }
+
+  function isVisible(el: Element): boolean {
+    let cumulativeOpacity = 1;
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') return false;
+      if (style.contentVisibility === 'hidden') return false;
+      const opacity = Number(style.opacity);
+      cumulativeOpacity *= Number.isFinite(opacity) ? opacity : 1;
+      if (cumulativeOpacity <= 0) return false;
+    }
+    if (isScreenReaderOnly(el)) return false;
+    const rect = el.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return true;
+    // A `display: contents` box and a bare inline both report a zero own-rect while their text
+    // paints normally, so the fallback measures the content itself rather than the element's box.
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const contents = range.getBoundingClientRect();
+    range.detach();
+    return contents.width > 0 && contents.height > 0;
+  }
+
+  function paintLayers(el: Element): PaintLayer[] {
+    const layers: PaintLayer[] = [];
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      const style = getComputedStyle(node);
+      layers.push({
+        backgroundColor: style.backgroundColor,
+        opacity: Number(style.opacity),
+        hasImage: style.backgroundImage !== 'none',
+      });
+    }
+    return layers;
+  }
+
+  function canvasColor(): string {
+    // CSS propagates the root element's background to the canvas, and `<body>`'s when the root
+    // declares none. That is not a detail: a hit test just outside an element whose top margin
+    // collapsed out of `<body>` returns the root, whose own computed background is transparent,
+    // so a page with a black body read as a white canvas.
+    const rootStyle = getComputedStyle(document.documentElement);
+    if (rootStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') return rootStyle.backgroundColor;
+    if (document.body) {
+      const bodyStyle = getComputedStyle(document.body);
+      if (bodyStyle.backgroundColor !== 'rgba(0, 0, 0, 0)') return bodyStyle.backgroundColor;
+    }
+    // Where nothing paints at all, the canvas follows the used color-scheme, not white by default.
+    // A rule that assumed white read a near-black panel on a dark canvas as high contrast.
+    // Chromium's dark canvas is #121212, measured off a rendered page.
+    const tokens = rootStyle.colorScheme.trim().split(/\s+/).filter(Boolean);
+    const allowsDark = tokens.includes('dark');
+    const allowsLight = tokens.includes('light') || tokens.includes('normal') || tokens.length === 0;
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return allowsDark && (!allowsLight || prefersDark) ? '#121212' : '#ffffff';
+  }
+
+  globalThis.__cairnAudit = { signature, isVisible, isScreenReaderOnly, paintLayers, canvasColor };
+}
+
+/**
+ * Install {@link CairnAuditPageHelpers} on `page` if it does not already carry them. Idempotent and
+ * cheap, so a rule calls it at the top of its own `check` rather than trusting the runner: that
+ * keeps a rule driven directly by a unit test working the same way it works under `runRendered`.
+ */
+export async function ensurePageHelpers(page: RenderedPage): Promise<void> {
+  await page.evaluate(installPageHelpers);
+}
+
+/**
  * Run the rendered audit: every configured page, both themes, every interaction state the
- * registered rules declare. `rules` defaults to the shipped registry (empty until Tasks 15 and 16
- * register the eleven rendered rules) and is injectable the same way `runStatic` injects its rule
- * set; `deps` substitutes the BASE_URL and Playwright checks for a test.
+ * registered rules declare. `rules` defaults to the shipped registry and is injectable the same way
+ * `runStatic` injects its rule set; `deps` substitutes the BASE_URL and Playwright checks for a test.
  *
  * Throws rather than returning a clean report on every shape of silent-green this harness exists to
  * rule out: no rules registered, no pages configured, BASE_URL not answering, Playwright missing, or
@@ -418,17 +609,36 @@ export async function runRendered(
               }
               const reached = await applyState(state, page);
               if (!reached) continue;
+              await ensurePageHelpers(page);
 
               if (relevantAllowlist.length > 0 && visit) {
                 const present = await page.evaluate(probeSelectors, relevantAllowlist.map((entry) => entry.selector));
+                visit.selectorsUnprobeable ??= new Set<string>();
                 relevantAllowlist.forEach((entry, index) => {
-                  if (present[index]) visit.selectorsSeen.add(entry.selector);
+                  if (present[index] === 'matched') visit.selectorsSeen.add(entry.selector);
+                  else if (present[index] === 'unprobeable') visit.selectorsUnprobeable?.add(entry.selector);
                 });
               }
 
               for (const rule of rules) {
                 if (!(rule.states ?? ['rest']).includes(state)) continue;
-                const found = await rule.check({ page, pagePath, theme, state, config });
+                // A rule that throws reports at its OWN tier rather than aborting the run with exit
+                // 2. An advisory rule taking the whole process down on a substrate condition (a
+                // pruned manifest in a consumer install) is the leak this pass's exit criterion
+                // forbids, and an error-tier rule still gates through the finding it raises here.
+                let found: RenderedFinding[];
+                try {
+                  found = await rule.check({ page, pagePath, theme, state, config });
+                } catch (err) {
+                  found = [
+                    {
+                      ruleId: rule.id,
+                      tier: rule.tier,
+                      selector: 'html',
+                      message: `the rule threw while checking this page: ${err instanceof Error ? err.message : String(err)}`,
+                    },
+                  ];
+                }
                 for (const f of found) raw.push({ ...f, page: pagePath, theme, state });
               }
             } finally {
@@ -444,7 +654,12 @@ export async function runRendered(
     await browser.close();
   }
 
-  const { findings, suppressed } = resolveRenderedFindings(raw, visits, config.renderedAllowlist);
+  const { findings, suppressed } = resolveRenderedFindings(
+    raw,
+    visits,
+    config.renderedAllowlist,
+    new Map(rules.map((rule) => [rule.id, rule.tier]))
+  );
   const byPosition = (a: Finding, b: Finding) => (a.file === b.file ? 0 : a.file.localeCompare(b.file));
   return {
     findings: [...findings].sort(byPosition),

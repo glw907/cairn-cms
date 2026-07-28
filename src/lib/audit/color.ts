@@ -10,7 +10,7 @@
 // to the browser's own canvas and reads the sRGB bytes back, so any color the page can paint
 // (oklch, oklab, lab, color(), color-mix, a named keyword) arrives here already normalized. This
 // module therefore only composites and measures; it never parses.
-import type { Tier } from './types.js';
+import type { RenderedFinding } from './rendered.js';
 
 /** A color already normalized to sRGB, alpha in 0..1. Never a parsed CSS string. */
 export interface Rgba {
@@ -49,8 +49,9 @@ export function relativeLuminance(c: Rgba): number {
 
 /** WCAG 2.x contrast ratio, order-independent. */
 export function contrastRatio(a: Rgba, b: Rgba): number {
-  const [hi, lo] = [relativeLuminance(a), relativeLuminance(b)].sort((x, y) => y - x);
-  return (hi + 0.05) / (lo + 0.05);
+  const first = relativeLuminance(a);
+  const second = relativeLuminance(b);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }
 
 /** A color as a finding message prints it. */
@@ -79,6 +80,22 @@ export interface PaintLayer {
   hasImage: boolean;
 }
 
+/** How a caller's layer chain differs from the default whole-chain, self-first reading. */
+export interface GroundOptions {
+  /**
+   * The color the page's canvas paints where nothing in the chain does. Defaults to opaque white,
+   * which is only right on a light canvas: a page under `color-scheme: dark` paints a near-black
+   * canvas, and assuming white there reported an invisible dark-on-dark panel as clean.
+   */
+  canvas?: Rgba;
+  /**
+   * What `layers[0]` is, which only changes how an indeterminate ground is worded. A caller that
+   * already dropped the element's own layer passes `'ancestor'`, so a gradient on the immediate
+   * parent is not reported as one the element paints on itself.
+   */
+  firstLayerIs?: 'self' | 'ancestor';
+}
+
 /** What a background chain resolved to, or why it could not be resolved. */
 export type GroundResolution =
   | { kind: 'resolved'; color: Rgba }
@@ -105,13 +122,19 @@ export type GroundResolution =
  * the color under it is an approximation of what paints; that is a bounded and stated limit rather
  * than a silent one.
  */
-export function resolveGround(layers: PaintLayer[], colors: (Rgba | null)[]): GroundResolution {
+export function resolveGround(
+  layers: PaintLayer[],
+  colors: (Rgba | null)[],
+  options: GroundOptions = {}
+): GroundResolution {
+  const canvas = options.canvas ?? OPAQUE_WHITE;
+  const firstIsSelf = options.firstLayerIs !== 'ancestor';
   const imaged = layers.findIndex((layer, index) => layer.hasImage && (colors[index]?.a ?? 0) === 0);
   if (imaged >= 0) {
     return {
       kind: 'indeterminate',
       reason:
-        imaged === 0
+        imaged === 0 && firstIsSelf
           ? 'the element paints its own background-image over no color at all'
           : 'an ancestor paints a background-image over no color at all, so no single ground color exists to measure against',
     };
@@ -132,7 +155,11 @@ export function resolveGround(layers: PaintLayer[], colors: (Rgba | null)[]): Gr
     if (alpha <= 0) continue;
     ground = composite({ ...color, a: alpha }, ground);
   }
-  return { kind: 'resolved', color: ground.a === 0 ? OPAQUE_WHITE : ground };
+  // The chain always resolves onto the canvas, so a ground is opaque by construction. Returning a
+  // partly transparent ground let `contrastRatio` measure a color no user ever sees:
+  // `relativeLuminance` discards alpha, so a 50%-black panel over white read as pure black, and a
+  // black border on it reported 1.00 where the painted pixels measure 5.24.
+  return { kind: 'resolved', color: composite(ground, canvas) };
 }
 
 /**
@@ -140,12 +167,7 @@ export function resolveGround(layers: PaintLayer[], colors: (Rgba | null)[]): Gr
  * not be made, which is a different claim from "this is wrong", but reporting nothing at all would
  * be the silent pass the audit exists to rule out.
  */
-export function indeterminateFinding(ruleId: string, selector: string, reason: string): {
-  ruleId: string;
-  tier: Tier;
-  selector: string;
-  message: string;
-} {
+export function indeterminateFinding(ruleId: string, selector: string, reason: string): RenderedFinding {
   return {
     ruleId,
     tier: 'advisory',

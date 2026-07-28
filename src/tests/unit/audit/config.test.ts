@@ -108,6 +108,18 @@ describe('resolveConfig', () => {
     const raw = { rendered: { allowlist: [{ page: '/admin', selector: '.legacy' }] } };
     expect(() => resolveConfig('/site', raw, sheetHere)).toThrow(/reason/);
   });
+
+  // Naming the rule is how suppressing an ADVISORY finding stays non-gating when its selector
+  // later churns: the staleness finding is then raised at that rule's own tier.
+  it('carries an allowlist entry\'s optional rule id, and rejects a non-string one', () => {
+    const raw = {
+      rendered: { allowlist: [{ page: '/admin', selector: '.legacy', reason: 'held', rule: 'border-contrast' }] },
+    };
+    expect(resolveConfig('/site', raw, sheetHere).renderedAllowlist[0].rule).toBe('border-contrast');
+
+    const bad = { rendered: { allowlist: [{ page: '/admin', selector: '.legacy', reason: 'held', rule: 7 }] } };
+    expect(() => resolveConfig('/site', bad, sheetHere)).toThrow(/rule/);
+  });
 });
 
 describe('parseArgs', () => {

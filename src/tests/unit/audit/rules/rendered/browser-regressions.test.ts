@@ -14,13 +14,17 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { resolveConfig } from '../../../../../lib/audit/config.js';
+import { exitCodeFor } from '../../../../../lib/audit/report.js';
 import { renderedRules } from '../../../../../lib/audit/rules/rendered/index.js';
+import { borderContrast } from '../../../../../lib/audit/rules/rendered/border-contrast.js';
 import { chipGroundCollision } from '../../../../../lib/audit/rules/rendered/chip-ground-collision.js';
 import { focusRenders } from '../../../../../lib/audit/rules/rendered/focus-renders.js';
 import { interactiveContrast } from '../../../../../lib/audit/rules/rendered/interactive-contrast.js';
 import { oneFilledAction } from '../../../../../lib/audit/rules/rendered/one-filled-action.js';
+import { relationalSpacing } from '../../../../../lib/audit/rules/rendered/relational-spacing.js';
 import { touchTargets } from '../../../../../lib/audit/rules/rendered/touch-targets.js';
 import { viewportOverflow } from '../../../../../lib/audit/rules/rendered/viewport-overflow.js';
+import { weightBudget } from '../../../../../lib/audit/rules/rendered/weight-budget.js';
 import type { RenderedFinding, RenderedPage, RenderedRule } from '../../../../../lib/audit/rendered.js';
 
 let browser: Browser;
@@ -635,14 +639,455 @@ describe('chip-ground-collision against a real browser', () => {
   });
 });
 
+describe('border-contrast against a real browser', () => {
+  // The ratified --cairn-card-border hairline, at its real light-theme oklch value, against the
+  // real base-200 ambient the admin's cards sit on. This is the exact case spec 6.3 names: the
+  // rule fires here by design, and the ratio this test asserts is the same 1.11:1 the design
+  // question on the owner's queue is measured against, reproduced against real Chromium rather
+  // than taken on faith.
+  it('catches the ratified light-theme hairline at its documented 1.11:1', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
+         <div class="card-shell" style="background-color:oklch(99% 0.004 75);
+              border:1px solid oklch(93% 0.008 75);border-radius:12px;padding:16px;
+              width:200px;height:80px">Card</div>
+       </body>`
+    );
+    expect(selectors(findings)).toEqual(['div.card-shell']);
+    const ratio = Number(findings[0].message.match(/contrast (\d+\.\d+)/)?.[1]);
+    expect(ratio).toBeCloseTo(1.11, 1);
+  });
+
+  // The dark-theme half of the same ratified hairline, at its own documented 1.43:1.
+  it('catches the ratified dark-theme hairline at its documented 1.43:1', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:oklch(15.5% 0.009 75)">
+         <div class="card-shell" style="background-color:oklch(24% 0.01 75);
+              border:1px solid oklch(30% 0.014 75);border-radius:12px;padding:16px;
+              width:200px;height:80px">Card</div>
+       </body>`
+    );
+    expect(selectors(findings)).toEqual(['div.card-shell']);
+    const ratio = Number(findings[0].message.match(/contrast (\d+\.\d+)/)?.[1]);
+    expect(ratio).toBeCloseTo(1.43, 1);
+  });
+
+  // Proof the rule discriminates rather than flagging every border: cairn's own --color-primary
+  // token at full strength (not mixed down toward the hairline the way a hover state uses it)
+  // clears the floor by a wide margin.
+  it('passes a border toned with cairn\'s own --color-primary token at full strength', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
+         <div style="background-color:oklch(99% 0.004 75);border:2px solid oklch(52% 0.2 293);
+              border-radius:12px;padding:16px;width:200px;height:80px">Selected</div>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // A border painted fully transparent (the common zero-shift spacer trick: reserve the box a
+  // hover border will later occupy) is not a rendered boundary at all, so flagging it at ratio
+  // ~1 would be a false positive on a component that paints no edge on purpose.
+  it('does not flag a border painted fully transparent', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:#ffffff">
+         <div style="border:1px solid transparent;padding:8px;width:100px;height:40px">Spacer</div>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // A gradient ancestor has no single background-color to composite into a ground, the same gap
+  // interactive-contrast and chip-ground-collision report rather than walk past.
+  it('reports an unmeasurable ground rather than walking past a gradient ancestor', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<style>
+         .band { background-image: linear-gradient(90deg, #1c1917, #292524); padding: 24px; }
+       </style>
+       <body style="margin:0"><div class="band">
+         <div class="chip" style="background-color:#ffffff;border:1px solid #e5e5e5;
+              width:80px;height:24px">x</div>
+       </div></body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('background-image');
+  });
+
+  // Sides sharing one color are one boundary and report once; a side painted in a genuinely
+  // different, passing color is not swept into the same finding just because it shares an
+  // element with a failing one.
+  it('reports only the sides whose own color fails, not the whole element', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
+         <div style="background-color:oklch(99% 0.004 75);border-style:solid;border-width:1px;
+              border-top-color:oklch(52% 0.2 293);border-right-color:oklch(93% 0.008 75);
+              border-bottom-color:oklch(93% 0.008 75);border-left-color:oklch(93% 0.008 75);
+              padding:16px;width:200px;height:80px">Mixed</div>
+       </body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toMatch(/right\/bottom\/left|right|bottom|left/);
+    expect(findings[0].message).not.toContain('top/right');
+  });
+});
+
+describe('weight-budget against a real browser', () => {
+  // The defect this rule exists for: three font-weights doing no structural work in one content
+  // region, nothing here excused by heading, nav, or landmark boundaries.
+  it('catches three unstructured font-weights inside one main region', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body><main>
+         <p style="font-weight:400">Ordinary paragraph text explaining the field below.</p>
+         <label style="font-weight:500">Display name</label>
+         <strong style="font-weight:700">Warning: this action cannot be undone.</strong>
+       </main></body>`
+    );
+    expect(findings).toHaveLength(1);
+    // The selector is a real CSS selector, not the region LABEL. The label was reported here at
+    // first, and `probeSelectors` throws on `main (before any heading)`, so allowlisting this
+    // advisory finding minted an error-tier staleness finding and took the run to exit code 1.
+    expect(findings[0]).toMatchObject({ ruleId: 'weight-budget', tier: 'advisory', selector: 'main' });
+    expect(findings[0].message).toContain('main (before any heading)');
+    expect(findings[0].message).toContain('3 distinct font-weights');
+  });
+
+  // The money case: cairn's own flagship screens legitimately run 400/500/600/700 across body,
+  // nav, eyebrows, and heading chrome, which refutes the route-level form of this rule. Here the
+  // page heading is 700, the eyebrow is 600, and the body is 400, three weights on the page, but
+  // the heading is chrome (excluded from the region it opens) so only 600 and 400 spend the
+  // region's budget.
+  it('passes cairn\'s own sanctioned recipe: a bold page heading over an eyebrow and body', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body><div data-theme="cairn-admin"><main>
+         <h1 style="font-weight:700">Posts</h1>
+         <p style="font-weight:600" class="eyebrow">Recently updated</p>
+         <p style="font-weight:400">A list of every post on this site.</p>
+       </main></div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // Nav lives outside <main> in this admin's own shell (a sibling, never a descendant), so its
+  // weights structurally cannot reach main's tally. Two weights sit in nav (500, 600) and one sits
+  // in main (400): if nav were wrongly folded in, that is three distinct weights and a violation;
+  // scoped correctly to main alone, it is one weight.
+  it('never counts nav\'s own weights toward main\'s budget', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body>
+         <nav>
+           <a style="font-weight:500">Posts</a>
+           <a style="font-weight:600" aria-current="page">Pages</a>
+         </nav>
+         <main><p style="font-weight:400">Body copy only, nothing else in here.</p></main>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // An open dialog is its own content region, standing alone the way one-filled-action's own
+  // surface partition treats a layer: while the dialog is open, its content is judged
+  // independently of main, not merged with it. Both main and the dialog carry three weights that
+  // would violate on their own; if the scan folded both together (or scanned main instead of the
+  // dialog), this would report on main too, or report a six-weight combined region. It reports on
+  // the dialog alone.
+  it('treats an open dialog as its own region, independent of main underneath it', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body><main>
+         <p style="font-weight:400">Body copy that would trip the floor on its own.</p>
+         <label style="font-weight:500">Field label.</label>
+         <strong style="font-weight:700">Random bold emphasis.</strong>
+       </main>
+       <dialog open>
+         <h2 style="font-weight:700">Rename</h2>
+         <label style="font-weight:500">New name</label>
+         <p style="font-weight:400">Body copy.</p>
+         <strong style="font-weight:600">A bold aside.</strong>
+       </dialog>
+       </body>`
+    );
+    // Both regions are judged. The first cut let the dialog REPLACE main, and an adversarial pass
+    // showed the cost on the real admin: opening any picker on /admin/posts took main's own
+    // four-weight violation from reported to silent, and a 10x10 `role="dialog"` div anywhere on
+    // the page did the same. "Standing alone" means not merged into main's tally, not that main
+    // stops being measured.
+    expect(findings).toHaveLength(2);
+    expect(findings.map((finding) => finding.selector)).toEqual(['main', 'h2']);
+    expect(findings[1].message).toContain('dialog');
+    expect(findings[1].message).toContain('Rename');
+  });
+
+  // The fail-loud case: this admin's own login screen renders outside CairnAdminShell and carries
+  // no <main> landmark at all, so this rule has no content region to identify. Reporting nothing
+  // would read as "measured, and clean", the exact silent-pass shape the whole pass exists to rule
+  // out, so the absence of a landmark is itself the finding.
+  it('says so, rather than reporting clean, when no main landmark and no open dialog exist', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body><div class="card-shell"><h1 style="font-weight:700">Sign in</h1>
+         <p style="font-weight:400">Check your email for a link.</p>
+       </div></body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('no <main> landmark');
+  });
+
+  it('never lets an advisory finding change the exit-code verdict', async () => {
+    const findings = await findingsFor(
+      weightBudget,
+      `<body><main>
+         <p style="font-weight:400">Body copy.</p>
+         <label style="font-weight:500">Label.</label>
+         <strong style="font-weight:700">Emphasis.</strong>
+       </main></body>`
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);
+    const report = {
+      findings: findings.map((finding) => ({ ...finding, file: '/fixture', line: 0, start: 0, end: 0 })),
+      suppressed: [],
+      filesScanned: 1,
+      ruleIds: [weightBudget.id],
+    };
+    expect(exitCodeFor(report)).toBe(0);
+  });
+});
+
+// The admin's own grammar-token declaration (cairn-admin.css's plain :root rule), reproduced
+// exactly so these fixtures measure against the same four values a real admin page would.
+const GAP_TOKENS = `
+  <style>
+    :root {
+      --cairn-gap-label: 0.25rem;
+      --cairn-gap-control: 0.5rem;
+      --cairn-gap-group: 1rem;
+      --cairn-gap-section: 1.5rem;
+    }
+  </style>`;
+
+describe('relational-spacing against a real browser', () => {
+  // The built admin sheet scopes the grammar tokens' :root rule down to
+  // `[data-theme='cairn-admin'/-dark']` at compile time, so a page shaped like the real admin
+  // (the theme wrapper nested inside body, matching CairnAdminShell's own markup) resolves nothing
+  // for a scratch element parented on document.body: this is the same scoper one-filled-action's
+  // own regression fixture demonstrates for --color-primary, reproduced here for the gap tokens.
+  it('resolves the gap tokens through the real admin shape, wrapper nested inside body', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS.replace(':root', "[data-theme='cairn-admin']")}<body><div data-theme="cairn-admin">
+         <div class="fieldset-group" style="display:flex;flex-direction:column;gap:16px">
+           <div style="height:20px">Row A</div>
+           <div class="inner-section" style="display:flex;flex-direction:column;gap:24px">
+             <div style="height:20px">Inner 1</div>
+             <div style="height:20px">Inner 2</div>
+           </div>
+         </div>
+       </div></body>`
+    );
+    expect(selectors(findings)).toEqual(['div.inner-section']);
+  });
+
+  // The headline contract: a nested rhythm should never open wider than the rhythm containing it.
+  // EditPage's own real shape nests a gap-label fieldset inside a gap-section wrapper; this is the
+  // inversion of that, a gap-section rhythm one level deeper than the gap-group wrapping it.
+  it('flags a nested rhythm that opens wider than the container holding it', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <div class="fieldset-group" style="display:flex;flex-direction:column;gap:16px">
+           <div style="height:20px;background:#ccc">Row A</div>
+           <div class="inner-section" style="display:flex;flex-direction:column;gap:24px">
+             <div style="height:20px;background:#ccc">Inner 1</div>
+             <div style="height:20px;background:#ccc">Inner 2</div>
+           </div>
+         </div>
+       </body>`
+    );
+    expect(selectors(findings)).toEqual(['div.inner-section']);
+    expect(findings[0].message).toContain('gap-section');
+    expect(findings[0].message).toContain('gap-group');
+  });
+
+  // daisyUI's own `.input` sets `display:inline-flex; gap:.5rem` for its internal icon slot, an
+  // implementation detail of one leaf control that coincidentally lands on gap-control's own 8px.
+  // Against the real shipped admin, every text field's `.input` inside its `label.gap-label`
+  // wrapper read as a spurious "gap-control rhythm nested inside gap-label", a widget's own chrome
+  // standing in for a layout relationship that was never asserted.
+  it("does not read a form control's own internal icon-slot gap as a nested layout region", async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <label style="display:flex;flex-direction:column;gap:4px">
+           <span>Title</span>
+           <input class="input" type="text" style="display:inline-flex;gap:8px;align-items:center">
+         </label>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // The sanctioned recipe EditPage.svelte actually ships: a gap-section wrapper holding a
+  // gap-label fieldset directly, no gap-group tier in between. Skipping a tier is not a
+  // violation; the check compares measured pixels, not an asserted adjacency.
+  it('passes the sanctioned section-then-label nesting with no group tier in between', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <div style="display:flex;flex-direction:column;gap:24px">
+           <fieldset style="display:flex;flex-direction:column;gap:4px;border:0;margin:0;padding:0">
+             <legend>Group</legend>
+             <div style="height:10px">Field</div>
+             <div style="height:10px">Field2</div>
+           </fieldset>
+         </div>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // FieldInput's own shape (label wraps a text span and its control), but with the wrong specific
+  // token: gap-control's 8px instead of gap-label's 4px. gap-scale alone cannot catch this, since
+  // gap-control is a valid token; only the RELATIONSHIP, that a label sits at label-gap from its
+  // control, tells the two apart.
+  it('flags a label sitting at control-gap distance from its control, not label-gap', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <label class="field-title" style="display:flex;flex-direction:column;gap:8px">
+           <span>Title</span>
+           <input type="text">
+         </label>
+       </body>`
+    );
+    expect(selectors(findings)).toEqual(['label.field-title']);
+    expect(findings[0].message).toContain('8px');
+    expect(findings[0].message).toContain('gap-control');
+    expect(findings[0].message).toContain('4px');
+  });
+
+  // CairnAdminShell's own drawer-content shape: exactly two painted children (a topbar, a routed
+  // page), the second of which contains a search input many nodes deep. Matching a control
+  // ANYWHERE inside the second slot read the whole topbar's aggregated text as a "label" sitting
+  // 0px from a control it has nothing to do with, against the real shipped admin.
+  it('does not read a whole shell region as a label because a search input sits deep inside it', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <div class="drawer-content" style="display:flex;flex-direction:column">
+           <div class="topbar">Waymark <button>Search or jump to… &#8984;K</button> Publish site</div>
+           <main>
+             <div class="toolbar"><div class="search-wrap"><input type="search" placeholder="Search"></div></div>
+             <p>Posts</p>
+           </main>
+         </div>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // Three same-signature rows under one parent that relies on per-child margin instead of the
+  // parent's own gap: the third row's margin breaks the otherwise-uniform 8px rhythm.
+  it("flags a same-level sibling whose own margin breaks the group's uniform gap", async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <div style="display:flex;flex-direction:column">
+           <div class="field-row" style="height:20px;margin-bottom:8px">Row 1</div>
+           <div class="field-row" style="height:20px;margin-bottom:8px">Row 2</div>
+           <div class="field-row" style="height:20px;margin-bottom:24px">Row 3</div>
+           <div class="field-row" style="height:20px">Row 4</div>
+         </div>
+       </body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(selectors(findings)).toEqual(['div.field-row']);
+    expect(findings[0].message).toContain('24px');
+    expect(findings[0].message).toContain('8px');
+  });
+
+  // cairn's own composite recipe (CairnMediaLibrary's gap-group form holding gap-label fields,
+  // each shaped like FieldInput's label): all three heuristics read this cleanly at once, so the
+  // rule is not "everything fails" against markup built the way the grammar actually recommends.
+  it("passes cairn's own gap-group form of gap-label fields across every heuristic at once", async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <form style="display:flex;flex-direction:column;gap:16px">
+           <label class="form-field" style="display:flex;flex-direction:column;gap:4px">
+             <span>Title</span><input type="text">
+           </label>
+           <label class="form-field" style="display:flex;flex-direction:column;gap:4px">
+             <span>Slug</span><input type="text">
+           </label>
+           <label class="form-field" style="display:flex;flex-direction:column;gap:4px">
+             <span>Summary</span><input type="text">
+           </label>
+         </form>
+       </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // Reporting nothing because the page never declares the tokens this rule measures against is the
+  // exact failure shape the rest of this family already guards against for their own reference
+  // values, so the absence is stated rather than swallowed here too.
+  it('says so, rather than reporting clean, when the page declares none of the four gap tokens', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `<body style="margin:0"><div style="display:flex;gap:8px">
+         <div>A</div><div>B</div>
+       </div></body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('could not resolve');
+  });
+
+  it('never lets a finding change the exit-code verdict', async () => {
+    const findings = await findingsFor(
+      relationalSpacing,
+      `${GAP_TOKENS}<body style="margin:0">
+         <div style="display:flex;flex-direction:column;gap:16px">
+           <div style="height:20px">Row A</div>
+           <div class="inner-section" style="display:flex;flex-direction:column;gap:24px">
+             <div style="height:20px">Inner 1</div>
+             <div style="height:20px">Inner 2</div>
+           </div>
+         </div>
+       </body>`
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);
+    const report = {
+      findings: findings.map((finding) => ({ ...finding, file: '/fixture', line: 0, start: 0, end: 0 })),
+      suppressed: [],
+      filesScanned: 1,
+      ruleIds: [relationalSpacing.id],
+    };
+    expect(exitCodeFor(report)).toBe(0);
+  });
+});
+
 // Playwright serializes an in-page function by source, so module scope does not travel with it. Two
 // of the six rules referenced module-level bindings from inside `page.evaluate` and threw
 // `ReferenceError` on every real page, which no test double could have caught because a double
 // never serializes anything. This runs every REGISTERED rule against a real page for exactly that
 // reason, so the next rule to make the same mistake fails here rather than in a consumer's run.
 describe('the registry', () => {
-  it('registers the six error-tier rules spec 6.3 defines', () => {
-    expect(renderedRules().map((rule) => rule.id)).toEqual([
+  it('registers the six error-tier rules spec 6.3 defines, plus border-contrast advisory', () => {
+    const rules = renderedRules();
+    expect(rules.filter((rule) => rule.tier === 'error').map((rule) => rule.id)).toEqual([
       'one-filled-action',
       'focus-renders',
       'interactive-contrast',
@@ -650,7 +1095,32 @@ describe('the registry', () => {
       'viewport-overflow',
       'chip-ground-collision',
     ]);
-    expect(renderedRules().every((rule) => rule.tier === 'error')).toBe(true);
+    expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('border-contrast');
+    expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('weight-budget');
+    expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('screen-anatomy');
+    expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('relational-spacing');
+  });
+
+  it('never lets an advisory finding change the exit-code verdict', async () => {
+    const findings = await findingsFor(
+      borderContrast,
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
+         <div style="background-color:oklch(99% 0.004 75);border:1px solid oklch(93% 0.008 75);
+              padding:16px;width:200px;height:80px">Card</div>
+       </body>`
+    );
+    // The ratified hairline, so this is guaranteed non-empty; the point is what tier it carries.
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);
+    // The exit-criterion proof, not just a tier label: run the same findings through the bin's
+    // own gating function and confirm they leave the verdict at zero.
+    const report = {
+      findings: findings.map((finding) => ({ ...finding, file: '/fixture', line: 0, start: 0, end: 0 })),
+      suppressed: [],
+      filesScanned: 1,
+      ruleIds: [borderContrast.id],
+    };
+    expect(exitCodeFor(report)).toBe(0);
   });
 
   it('executes every registered rule against a real page without a serialization failure', async () => {

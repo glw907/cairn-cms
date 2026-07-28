@@ -100,12 +100,12 @@ function readFocusedStop(depth: number): FocusStop | null {
   // A frame or a shadow root reports the CONTAINER as the active element, never the descendant a
   // user is actually on, so judging the container's own paint would flag a deliberate tab stop
   // (EditPage's sandboxed preview iframe) for a style that was never the indicator.
-  const unreadable =
-    el.tagName === 'IFRAME'
-      ? 'focus moved into a frame, whose indicator renders inside a document this rule cannot read'
-      : el.shadowRoot
-        ? 'focus moved into a shadow root, whose indicator renders on a node this rule cannot read'
-        : '';
+  let unreadable = '';
+  if (el.tagName === 'IFRAME') {
+    unreadable = 'focus moved into a frame, whose indicator renders inside a document this rule cannot read';
+  } else if (el.shadowRoot) {
+    unreadable = 'focus moved into a shadow root, whose indicator renders on a node this rule cannot read';
+  }
   return {
     id: chain[0].id,
     selector: `${el.tagName.toLowerCase()}${idPart}${classes ? `.${classes}` : ''}`,

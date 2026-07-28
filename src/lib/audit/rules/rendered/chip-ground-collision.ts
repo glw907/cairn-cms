@@ -149,13 +149,15 @@ export const chipGroundCollision: RenderedRule = {
       cursor += candidate.layers.length;
 
       const own = resolveGround(candidate.layers.slice(0, 1), colors.slice(0, 1));
-      const ground = resolveGround(candidate.layers.slice(1), colors.slice(1));
-      const indeterminate = own.kind === 'indeterminate' ? own : ground.kind === 'indeterminate' ? ground : null;
-      if (indeterminate) {
-        findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, indeterminate.reason));
+      if (own.kind === 'indeterminate') {
+        findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, own.reason));
         continue;
       }
-      if (own.kind !== 'resolved' || ground.kind !== 'resolved') continue;
+      const ground = resolveGround(candidate.layers.slice(1), colors.slice(1));
+      if (ground.kind === 'indeterminate') {
+        findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, ground.reason));
+        continue;
+      }
       // A chip with no fill of its own shows the ground straight through, which is what
       // `badge-outline` is for. `resolveGround` reports opaque white where nothing ever painted,
       // so the unresolved color, not the returned one, is what answers "was there a fill at all".

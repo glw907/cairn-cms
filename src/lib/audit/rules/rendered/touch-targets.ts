@@ -74,12 +74,11 @@ function findSmallTouchTargets(targetMin: number): SmallTarget[] {
     const [top, right, bottom, left] = offsets.map((value) => Number.parseFloat(value));
     // A negative offset reaches outward, a positive one inward; `Math.min`/`Math.max` against the
     // element's own edges is what refuses to let an inward inset shrink the measured target.
-    return new DOMRect(
-      Math.min(own.left + left, own.left),
-      Math.min(own.top + top, own.top),
-      Math.max(own.right - right, own.right) - Math.min(own.left + left, own.left),
-      Math.max(own.bottom - bottom, own.bottom) - Math.min(own.top + top, own.top)
-    );
+    const hitLeft = Math.min(own.left + left, own.left);
+    const hitTop = Math.min(own.top + top, own.top);
+    const hitRight = Math.max(own.right - right, own.right);
+    const hitBottom = Math.max(own.bottom - bottom, own.bottom);
+    return new DOMRect(hitLeft, hitTop, hitRight - hitLeft, hitBottom - hitTop);
   }
 
   const findings = new Map<string, SmallTarget>();

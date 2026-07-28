@@ -119,19 +119,29 @@ describe('fail-loud shapes that need no browser at all', () => {
  * same "structural type, cast the dynamic import" idiom the module itself uses for the real
  * Playwright import.
  */
-function fakeBrowser(page: { status?: number; hasMenuTrigger?: boolean; matchedSelectors?: Set<string> }): {
+function fakeBrowser(page: {
+  status?: number;
+  hasMenuTrigger?: boolean;
+  matchedSelectors?: Set<string>;
+  unprobeableSelectors?: Set<string>;
+}): {
   chromium: { launch: () => Promise<RenderedBrowser> };
 } {
   const status = page.status ?? 200;
   const hasMenuTrigger = page.hasMenuTrigger ?? false;
   const matchedSelectors = page.matchedSelectors ?? new Set<string>();
+  const unprobeableSelectors = page.unprobeableSelectors ?? new Set<string>();
 
   const fakePage = {
     async goto() {
       return { status: () => status };
     },
     async evaluate(_fn: unknown, arg?: unknown) {
-      if (Array.isArray(arg)) return (arg as string[]).map((selector) => matchedSelectors.has(selector));
+      if (Array.isArray(arg)) {
+        return (arg as string[]).map((selector) =>
+          unprobeableSelectors.has(selector) ? 'unprobeable' : matchedSelectors.has(selector) ? 'matched' : 'absent'
+        );
+      }
       return hasMenuTrigger;
     },
     keyboard: { press: async () => {} },

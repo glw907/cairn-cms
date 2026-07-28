@@ -57,6 +57,13 @@ export interface RenderedAllowlistEntry {
   page: string;
   selector: string;
   reason: string;
+  /**
+   * The rule this exemption is for. Optional, and worth naming: a stale entry is reported at the
+   * named rule's own tier, so suppressing an ADVISORY finding cannot later gate the build when the
+   * selector churns. Without it, a stale entry is an error, which is right for a suppressed
+   * error-tier finding and wrong for an advisory one.
+   */
+  rule?: string;
 }
 
 /** A resolved run configuration: defaults filled, paths still relative to `root`. */
@@ -122,10 +129,14 @@ function asAllowlist(value: unknown, field: string): RenderedAllowlistEntry[] {
   };
   return value.map((entry) => {
     const row = asRecord(entry, field);
+    if (row.rule !== undefined && (typeof row.rule !== 'string' || row.rule === '')) {
+      fail(`each ${field} entry's rule must be a rule id`);
+    }
     return {
       page: required(row, 'page'),
       selector: required(row, 'selector'),
       reason: required(row, 'reason'),
+      ...(row.rule === undefined ? {} : { rule: row.rule as string }),
     };
   });
 }

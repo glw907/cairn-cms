@@ -162,3 +162,28 @@ the cell itself would move `ConceptList`'s empty state under Phase 3's pixel-ide
 the register stayed unpinned rather than resolved. Left open for Task 12 or the Task 17 calibration:
 either the call sites drop their own `type-body` and the cell's inherited size becomes the ruled
 answer, or the cell earns a named role and the two call sites lose their redundant class.
+
+**Two findings the norms manifest surfaced on its first generation (Pass 2 Task 13).** Neither was
+fixed there; both are recorded because the manifest is the only thing that has ever seen them, and a
+subagent report is not a durable home.
+
+1. **Icons are being flexed, not sized.** Across 183 observation sites the `icon` role's `width`
+   takes ten distinct values (12, 13.5, 14, 14.5, 15, 15.5, 16, 19, 20, 28) and its `height` eight
+   (the same set without 14.5 and 15.5). Sub-pixel members, and width carrying two more values than
+   height, are the signature of an icon squeezed by a flex container rather than sized by its own
+   rule, which usually means a missing `flex-none` on an icon inside a flex row. This is a real
+   craft defect at real scale, invisible to every gate and to the eye, and it is the first thing the
+   manifest paid for. Fixing it moves pixels across many screens, so it wants its own task with a
+   baseline regeneration, not a drive-by. Candidate for an advisory rendered rule in Task 16 (icon
+   dimensions off the ruled set) once the ruled set exists.
+2. **`status-chip` renders an 8px corner radius where the design system says badges take
+   `--radius-field` (10px).** Task 13's `RATIFIED_NORMS` table deliberately left the chip `observed`
+   rather than asserting a ratification it would then have to report as drift. The open question is
+   which side is wrong: the doc's claim that `--radius-field` covers "inputs, buttons, badges", or
+   the chip's own value. A one-token ruling settles it.
+
+**`table-cell` mixes two type sizes and two leading kinds,** also from the first generation: `font-size`
+spans 12 and 15px across 35 sites and `line-height` resolves to `['19px', 'normal']`. The `normal`
+members are why Task 13 modeled leading as a keyword vocabulary rather than a length band. Whether a
+table cell should carry a named type role at all is a Task 17 calibration question, and it is adjacent
+to the empty-notice register question directly above.

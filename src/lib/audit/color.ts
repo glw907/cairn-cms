@@ -80,14 +80,21 @@ export interface PaintLayer {
   hasImage: boolean;
 }
 
-/** How a caller's layer chain differs from the default whole-chain, self-first reading. */
+/** What is behind a caller's layer chain, and how the chain's first entry should be read. */
 export interface GroundOptions {
   /**
-   * The color the page's canvas paints where nothing in the chain does. Defaults to opaque white,
-   * which is only right on a light canvas: a page under `color-scheme: dark` paints a near-black
-   * canvas, and assuming white there reported an invisible dark-on-dark panel as clean.
+   * The color already painted behind `layers`, which the chain composites onto and which fills in
+   * wherever the chain paints nothing. Required, and the caller has to name the real backdrop:
+   * every silent default here has shipped as a fail-open. Assuming opaque white read an invisible
+   * dark-on-dark panel as clean under `color-scheme: dark`, and it also erased a translucent chip's
+   * true color when the chain was the chip's own single layer.
+   *
+   * For a whole-element chain (the element's own layer through the document root) this is the page
+   * canvas, which the shared page helpers' `canvasColor` reads off the live page. For a
+   * single-layer chain holding one element's own fill, it is that element's already-resolved
+   * ground, which makes the returned color the pixels that element actually paints.
    */
-  canvas?: Rgba;
+  canvas: Rgba;
   /**
    * What `layers[0]` is, which only changes how an indeterminate ground is worded. A caller that
    * already dropped the element's own layer passes `'ancestor'`, so a gradient on the immediate
@@ -114,6 +121,13 @@ export type GroundResolution =
  * `background-color: rgba(0, 0, 0, 0)`, so a color-only walk steps straight past a solid surface to
  * the white underneath and calls invisible text clean. Skipping that layer loses the whole ground.
  *
+ * `options.canvas` is what the chain resolves onto, and it is required rather than defaulted: the
+ * result is the color a user sees, so a caller that does not know what is behind the chain cannot
+ * ask this question honestly. A chip rule that let the canvas default to white got its own
+ * translucent fill back lightened by that white, which cleared the collision floor and hid two real
+ * dark-theme collisions while the light-theme half kept firing (white being close enough to a light
+ * ground to leave the answer intact).
+ *
  * A layer that paints an image over a color it DOES contribute is resolved normally, because the
  * color composites and the walk continues from there rather than from nothing. daisyUI v5 paints
  * `--btn-noise` over every `.btn`, so the stricter reading (any image at all) reports an
@@ -125,9 +139,9 @@ export type GroundResolution =
 export function resolveGround(
   layers: PaintLayer[],
   colors: (Rgba | null)[],
-  options: GroundOptions = {}
+  options: GroundOptions
 ): GroundResolution {
-  const canvas = options.canvas ?? OPAQUE_WHITE;
+  const canvas = options.canvas;
   const firstIsSelf = options.firstLayerIs !== 'ancestor';
   const imaged = layers.findIndex((layer, index) => layer.hasImage && (colors[index]?.a ?? 0) === 0);
   if (imaged >= 0) {
@@ -155,8 +169,8 @@ export function resolveGround(
     if (alpha <= 0) continue;
     ground = composite({ ...color, a: alpha }, ground);
   }
-  // The chain always resolves onto the canvas, so a ground is opaque by construction. Returning a
-  // partly transparent ground let `contrastRatio` measure a color no user ever sees:
+  // The chain always resolves onto the caller's backdrop, so a ground is opaque by construction.
+  // Returning a partly transparent ground let `contrastRatio` measure a color no user ever sees:
   // `relativeLuminance` discards alpha, so a 50%-black panel over white read as pure black, and a
   // black border on it reported 1.00 where the painted pixels measure 5.24.
   return { kind: 'resolved', color: composite(ground, canvas) };

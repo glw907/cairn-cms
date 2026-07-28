@@ -578,6 +578,27 @@ describe('chip-ground-collision against a real browser', () => {
     expect(selectors(findings)).toEqual(['span.badge']);
   });
 
+  // The dark half of this rule went silent for a whole commit: resolving the chip's own translucent
+  // fill against an assumed white canvas handed back a lightened chip, which cleared the floor at a
+  // manufactured 1.51 where the painted pixels measure 1.11. The values are /admin/media's, read off
+  // the running admin: a 90%-alpha oklab fill on the dark media card. The light-theme twin of the
+  // same chip kept firing throughout, because white is close enough to a light ground to leave the
+  // verdict intact, which is exactly how one theme's fail-open hid behind the other's green.
+  it('catches a translucent chip on a dark card, not the same chip lightened by the canvas', async () => {
+    const findings = await findingsFor(
+      chipGroundCollision,
+      `<body style="background-color: oklch(14% 0.008 75)">
+         <div style="background-color: oklch(14% 0.008 75); padding: 24px; position: relative">
+           <span class="absolute right-2 top-2 inline-flex"
+                 style="background-color: oklab(0.24 0.00258819 0.00965926 / 0.9);
+                        border-radius: 9999px; padding: 1px 6px; font: 10px system-ui">image</span>
+         </div>
+       </body>`
+    );
+    expect(selectors(findings)).toEqual(['span.absolute.right-2.top-2.inline-flex']);
+    expect(findings[0]?.message).toContain('contrast 1.1');
+  });
+
   // Seven shipped sites render a filled rounded-full pill with no daisyUI badge class, so a
   // class-name selector missed cairn's own chips. A chip is now a rendered shape.
   it('catches a filled pill that carries no badge class', async () => {

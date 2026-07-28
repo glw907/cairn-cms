@@ -65,16 +65,16 @@ describe('ground resolution', () => {
   it('composites nearest-first layers from the outermost inward', () => {
     // A transparent element over a white card over a dark page resolves to the card, not the page.
     const layers = [layer(), layer(), layer()];
-    const ground = resolveGround(layers, [
-      { r: 0, g: 0, b: 0, a: 0 },
-      opaque(255, 255, 255),
-      opaque(20, 20, 20),
-    ]);
+    const ground = resolveGround(
+      layers,
+      [{ r: 0, g: 0, b: 0, a: 0 }, opaque(255, 255, 255), opaque(20, 20, 20)],
+      { canvas: OPAQUE_WHITE }
+    );
     expect(ground).toEqual({ kind: 'resolved', color: opaque(255, 255, 255) });
   });
 
-  it('falls back to opaque white when nothing in the chain ever painted', () => {
-    const ground = resolveGround([layer(), layer()], [null, { r: 0, g: 0, b: 0, a: 0 }]);
+  it('resolves to the backdrop the caller names when nothing in the chain ever painted', () => {
+    const ground = resolveGround([layer(), layer()], [null, { r: 0, g: 0, b: 0, a: 0 }], { canvas: OPAQUE_WHITE });
     expect(ground).toEqual({ kind: 'resolved', color: OPAQUE_WHITE });
   });
 
@@ -82,7 +82,9 @@ describe('ground resolution', () => {
   // row, and reading `opacity` only as an is-it-exactly-zero visibility test scored it as an opaque
   // fill.
   it('scales a layer alpha by its own opacity', () => {
-    const ground = resolveGround([layer(0.04), layer()], [opaque(90, 60, 200), opaque(246, 244, 242)]);
+    const ground = resolveGround([layer(0.04), layer()], [opaque(90, 60, 200), opaque(246, 244, 242)], {
+      canvas: OPAQUE_WHITE,
+    });
     expect(ground.kind).toBe('resolved');
     if (ground.kind !== 'resolved') return;
     expect(contrastRatio(ground.color, opaque(246, 244, 242))).toBeLessThan(1.1);
@@ -94,7 +96,9 @@ describe('ground resolution', () => {
   // this chain composites to made a black border on it read at contrast 1.00 where the painted
   // pixels measure 5.24.
   it('scales an inner layer by an ancestor opacity and resolves the result onto the canvas', () => {
-    const half = resolveGround([layer(1), layer(0.5)], [{ r: 0, g: 0, b: 0, a: 0 }, opaque(0, 0, 0)]);
+    const half = resolveGround([layer(1), layer(0.5)], [{ r: 0, g: 0, b: 0, a: 0 }, opaque(0, 0, 0)], {
+      canvas: OPAQUE_WHITE,
+    });
     expect(half.kind).toBe('resolved');
     if (half.kind !== 'resolved') return;
     expect(half.color.a).toBe(1);
@@ -113,7 +117,10 @@ describe('ground resolution', () => {
   // The wording defect: a caller that already dropped the element's own layer had a gradient on the
   // immediate PARENT reported as one the element paints on itself.
   it('names an ancestor, not the element, when the caller already dropped the element layer', () => {
-    const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }], { firstLayerIs: 'ancestor' });
+    const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }], {
+      canvas: OPAQUE_WHITE,
+      firstLayerIs: 'ancestor',
+    });
     expect(ground.kind).toBe('indeterminate');
     if (ground.kind !== 'indeterminate') return;
     expect(ground.reason).toContain('ancestor');
@@ -124,14 +131,21 @@ describe('ground resolution', () => {
   // invisible text as clean. Reporting that the ground cannot be measured is the honest answer;
   // guessing white is the fail-open.
   it('refuses to resolve a chain whose image layer paints over no color at all', () => {
-    const ground = resolveGround([layer(), layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }, { r: 0, g: 0, b: 0, a: 0 }]);
+    const ground = resolveGround(
+      [layer(), layer(1, true)],
+      [
+        { r: 0, g: 0, b: 0, a: 0 },
+        { r: 0, g: 0, b: 0, a: 0 },
+      ],
+      { canvas: OPAQUE_WHITE }
+    );
     expect(ground.kind).toBe('indeterminate');
     if (ground.kind !== 'indeterminate') return;
     expect(ground.reason).toContain('ancestor');
   });
 
   it('names the element itself when the element is what paints the image', () => {
-    const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }]);
+    const ground = resolveGround([layer(1, true)], [{ r: 0, g: 0, b: 0, a: 0 }], { canvas: OPAQUE_WHITE });
     expect(ground.kind).toBe('indeterminate');
     if (ground.kind !== 'indeterminate') return;
     expect(ground.reason).toContain('own background-image');
@@ -141,7 +155,7 @@ describe('ground resolution', () => {
   // would report an unresolvable ground on every button in the admin and bury the real case. An
   // image over an opaque color resolves to that color.
   it('resolves an image layer that paints over a color it contributes', () => {
-    const ground = resolveGround([layer(1, true)], [opaque(115, 88, 200)]);
+    const ground = resolveGround([layer(1, true)], [opaque(115, 88, 200)], { canvas: OPAQUE_WHITE });
     expect(ground).toEqual({ kind: 'resolved', color: opaque(115, 88, 200) });
   });
 });

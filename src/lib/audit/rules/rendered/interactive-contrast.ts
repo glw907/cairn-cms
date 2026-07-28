@@ -42,7 +42,13 @@
 // tag-plus-classes fingerprint silently collapsed into whichever was visited last. This rule
 // reports every matching candidate instead, since collapsing findings is a second, unrelated
 // judgment call it has no evidence to make well.
-import { resolveColors, type RenderedFinding, type RenderedRule, type RenderedRuleContext } from '../../rendered.js';
+import {
+  ensurePageHelpers,
+  resolveColors,
+  type RenderedFinding,
+  type RenderedRule,
+  type RenderedRuleContext,
+} from '../../rendered.js';
 import {
   composite,
   contrastRatio,
@@ -59,6 +65,13 @@ import {
  * necessarily legible" bar.
  */
 const RATIO_FLOOR = 1.5;
+
+/** Every candidate on the page, with the one canvas color all of their chains resolve onto. */
+interface ContrastReading {
+  /** `null` when the shared page helpers are not installed, which leaves the canvas unmeasured. */
+  canvas: string | null;
+  candidates: ContrastCandidate[];
+}
 
 /** One candidate's raw paint data, read in-browser and left unparsed. */
 interface ContrastCandidate {
@@ -81,8 +94,9 @@ interface ContrastCandidate {
  * cannot see. Form controls carry no text nodes at all, so they are collected separately from their
  * own value or placeholder.
  */
-function readContrastCandidates(): ContrastCandidate[] {
+function readContrastCandidates(): ContrastReading {
   const INTERACTIVE = 'a, button, [role="button"], input, select, textarea, summary';
+  const helpers = globalThis.__cairnAudit;
 
   function signature(el: Element): string {
     const cls =
@@ -165,7 +179,7 @@ function readContrastCandidates(): ContrastCandidate[] {
     });
   }
 
-  return candidates;
+  return { canvas: helpers ? helpers.canvasColor() : null, candidates };
 }
 
 /**
@@ -179,14 +193,34 @@ export const interactiveContrast: RenderedRule = {
   id: 'interactive-contrast',
   tier: 'error',
   async check(ctx: RenderedRuleContext): Promise<RenderedFinding[]> {
-    const candidates = await ctx.page.evaluate(readContrastCandidates);
+    await ensurePageHelpers(ctx.page);
+    const reading = await ctx.page.evaluate(readContrastCandidates);
+    const candidates = reading.candidates;
     if (candidates.length === 0) return [];
 
-    const flat = candidates.flatMap((candidate) => [candidate.color, ...candidate.layers.map((l) => l.backgroundColor)]);
+    // The canvas leads the batch so it is normalized the same way every layer color is. It is what
+    // the chains resolve onto, and it is measured rather than assumed: a chain that paints nothing
+    // of its own sits on a near-black canvas under `color-scheme: dark`, where assuming white
+    // reports dark-on-dark text as high contrast.
+    const flat = [
+      reading.canvas ?? '',
+      ...candidates.flatMap((candidate) => [candidate.color, ...candidate.layers.map((l) => l.backgroundColor)]),
+    ];
     const resolved = await resolveColors(ctx.page, flat);
+    const canvas = resolved[0];
+    if (!canvas) {
+      return [
+        indeterminateFinding(
+          'interactive-contrast',
+          'html',
+          `the page canvas color could not be read (${reading.canvas ?? 'the shared page helpers are not installed'}), ` +
+            `so no control on this page has a known backdrop to resolve against`
+        ),
+      ];
+    }
 
     const findings: RenderedFinding[] = [];
-    let cursor = 0;
+    let cursor = 1;
     for (const candidate of candidates) {
       const fg = resolved[cursor];
       const layerColors = resolved.slice(cursor + 1, cursor + 1 + candidate.layers.length);
@@ -204,7 +238,7 @@ export const interactiveContrast: RenderedRule = {
         continue;
       }
 
-      const ground = resolveGround(candidate.layers, layerColors);
+      const ground = resolveGround(candidate.layers, layerColors, { canvas });
       if (ground.kind === 'indeterminate') {
         findings.push(indeterminateFinding('interactive-contrast', candidate.selector, ground.reason));
         continue;

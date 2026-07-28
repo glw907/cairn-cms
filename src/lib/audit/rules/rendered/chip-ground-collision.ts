@@ -14,7 +14,7 @@
 // the advisory `border-contrast` rule); this rule only ever compares a chip's own FILL against its
 // ground, so a filled-but-see-through chip is skipped rather than flagged.
 //
-// Three failures an adversarial pass demonstrated, all closed here and all fixture-covered in
+// Four failures demonstrated against the real admin, all closed here and all fixture-covered in
 // browser-regressions.test.ts:
 //
 //  1. The color parser matched `rgb()` only, and the built admin sheet contains zero `rgb()`
@@ -30,18 +30,24 @@
 //     chip carrying no daisyUI badge class at all. "Chip" is now a RENDERED shape rather than a
 //     class name, which is the same reason this rule reads paint instead of markup: a pill-radius,
 //     chip-height, filled, text-carrying element is a chip whatever it is called.
+//  4. The chip's own translucent fill was resolved against an assumed white canvas rather than
+//     against the ground it paints on, so a 90%-alpha chip came back lightened by that white. Under
+//     a light ground the assumption is close enough to leave the verdict intact, which is why the
+//     light half kept firing while both real dark-theme collisions on /admin/media and
+//     /admin/vocabulary went silent at a manufactured 1.51 against a true 1.11. The backdrop is now
+//     required by `resolveGround` rather than defaulted, and the chip's fill resolves onto its own
+//     ground.
 //
 // Only the `rest` state is read (no interaction reveals or hides a chip's own background), so no
 // `states` field is declared; the runner's default `['rest']` already covers this rule.
-import { resolveColors, type RenderedFinding, type RenderedRule, type RenderedRuleContext } from '../../rendered.js';
 import {
-  composite,
-  contrastRatio,
-  describeColor,
-  indeterminateFinding,
-  resolveGround,
-  type PaintLayer,
-} from '../../color.js';
+  ensurePageHelpers,
+  resolveColors,
+  type RenderedFinding,
+  type RenderedRule,
+  type RenderedRuleContext,
+} from '../../rendered.js';
+import { contrastRatio, describeColor, indeterminateFinding, resolveGround, type PaintLayer } from '../../color.js';
 
 /**
  * Below this contrast ratio, a chip's composited fill and the ground behind it are close enough
@@ -62,6 +68,13 @@ interface ChipGroundCandidate {
   layers: PaintLayer[];
 }
 
+/** Every chip on the page, with the one canvas color all of their chains resolve onto. */
+interface ChipGroundReading {
+  /** `null` when the shared page helpers are not installed, which leaves the canvas unmeasured. */
+  canvas: string | null;
+  chips: ChipGroundCandidate[];
+}
+
 /**
  * Runs inside the page. Playwright serializes this by source, so it stays self-contained: every
  * helper is nested and no constant is referenced from module scope.
@@ -72,8 +85,9 @@ interface ChipGroundCandidate {
  * rule at all, and it is what reaches the seven filled `rounded-full` pills the admin ships with no
  * badge class.
  */
-function readChipGrounds(): ChipGroundCandidate[] {
+function readChipGrounds(): ChipGroundReading {
   const CHIP_MAX_HEIGHT = 32;
+  const helpers = globalThis.__cairnAudit;
 
   function isPainted(el: Element): boolean {
     const style = getComputedStyle(el);
@@ -110,19 +124,19 @@ function readChipGrounds(): ChipGroundCandidate[] {
     return layers;
   }
 
-  const results: ChipGroundCandidate[] = [];
+  const chips: ChipGroundCandidate[] = [];
   for (const el of document.querySelectorAll('*')) {
     if (!isPainted(el)) continue;
     const style = getComputedStyle(el);
     const isChip = el.classList.contains('badge') || (isPillShaped(el, style) && (el.textContent ?? '').trim() !== '');
     if (!isChip) continue;
     const classes = Array.from(el.classList).slice(0, 4).join('.');
-    results.push({
+    chips.push({
       selector: `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${classes ? `.${classes}` : ''}`,
       layers: layersFor(el),
     });
   }
-  return results;
+  return { canvas: helpers ? helpers.canvasColor() : null, chips };
 }
 
 /**
@@ -136,35 +150,62 @@ export const chipGroundCollision: RenderedRule = {
   id: 'chip-ground-collision',
   tier: 'error',
   async check(ctx: RenderedRuleContext): Promise<RenderedFinding[]> {
-    const candidates = await ctx.page.evaluate(readChipGrounds);
-    if (candidates.length === 0) return [];
+    await ensurePageHelpers(ctx.page);
+    const reading = await ctx.page.evaluate(readChipGrounds);
+    if (reading.chips.length === 0) return [];
 
-    const flat = candidates.flatMap((candidate) => candidate.layers.map((layer) => layer.backgroundColor));
+    // The canvas leads the batch so it goes through the same normalizer as every layer color, and
+    // an unreadable canvas is reported rather than replaced by a guess: assuming white is the
+    // defect this rule is recovering from.
+    const flat = [
+      reading.canvas ?? '',
+      ...reading.chips.flatMap((candidate) => candidate.layers.map((layer) => layer.backgroundColor)),
+    ];
     const resolved = await resolveColors(ctx.page, flat);
+    const canvas = resolved[0];
+    if (!canvas) {
+      return [
+        indeterminateFinding(
+          'chip-ground-collision',
+          'html',
+          `the page canvas color could not be read (${reading.canvas ?? 'the shared page helpers are not installed'}), ` +
+            `so no chip on this page has a known backdrop to resolve against`
+        ),
+      ];
+    }
 
     const findings: RenderedFinding[] = [];
-    let cursor = 0;
-    for (const candidate of candidates) {
+    let cursor = 1;
+    for (const candidate of reading.chips) {
       const colors = resolved.slice(cursor, cursor + candidate.layers.length);
       cursor += candidate.layers.length;
 
-      const own = resolveGround(candidate.layers.slice(0, 1), colors.slice(0, 1));
+      // The ground comes first because the chip's own fill resolves ONTO it. Resolving that fill
+      // against the page canvas instead handed back the chip lightened by an assumed white, which
+      // is only harmless when the ground is itself near-white: in dark theme it lifted a 1.11
+      // collision to a passing 1.51 and reported the chip clean.
+      const ground = resolveGround(candidate.layers.slice(1), colors.slice(1), {
+        canvas,
+        firstLayerIs: 'ancestor',
+      });
+      const backdrop = ground.kind === 'resolved' ? ground.color : canvas;
+      const own = resolveGround(candidate.layers.slice(0, 1), colors.slice(0, 1), { canvas: backdrop });
+      // The chip's own layer is reported first when both are unmeasurable, so a gradient the chip
+      // paints on itself is named as its own rather than as an ancestor's.
       if (own.kind === 'indeterminate') {
         findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, own.reason));
         continue;
       }
-      const ground = resolveGround(candidate.layers.slice(1), colors.slice(1));
       if (ground.kind === 'indeterminate') {
         findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, ground.reason));
         continue;
       }
       // A chip with no fill of its own shows the ground straight through, which is what
-      // `badge-outline` is for. `resolveGround` reports opaque white where nothing ever painted,
-      // so the unresolved color, not the returned one, is what answers "was there a fill at all".
+      // `badge-outline` is for. `own.color` is the ground itself in that case, so the unresolved
+      // alpha, not the returned color, is what answers "was there a fill at all".
       if ((colors[0]?.a ?? 0) * candidate.layers[0].opacity < NO_FILL_ALPHA) continue;
 
-      const chip = composite(own.color, ground.color);
-      const ratio = contrastRatio(chip, ground.color);
+      const ratio = contrastRatio(own.color, ground.color);
       if (ratio >= RATIO_FLOOR) continue;
 
       findings.push({
@@ -172,7 +213,7 @@ export const chipGroundCollision: RenderedRule = {
         tier: 'error',
         selector: candidate.selector,
         message:
-          `chip background ${describeColor(chip)} reads as indistinguishable from its row ` +
+          `chip background ${describeColor(own.color)} reads as indistinguishable from its row ` +
           `background ${describeColor(ground.color)} (contrast ${ratio.toFixed(2)}, floor ${RATIO_FLOOR})`,
       });
     }

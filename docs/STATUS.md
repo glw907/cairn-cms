@@ -15,23 +15,54 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Phase 3)
+## Immediate next action (2026-07-28: RESUME design-infrastructure Pass 2 at Task 15's landing)
 
-**Phases 1 and 2 of Pass 2 are COMPLETE. Phases 3 through 5 (Tasks 11 to 18) are untouched.**
-Plan: `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. Tasks 0
-to 10 are ticked, and the Phase 2 post-mortem is appended to that file. Read it before Phase 3;
-it carries the four items below with their evidence.
+**Phases 1 through 4 of Pass 2 are COMPLETE (Tasks 0 to 14). Task 15 was IN FLIGHT as a workflow
+when the session closed. Tasks 16 to 18 are untouched.** Plan:
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked through
+Task 14, with the Phase 2 and Phase 3 notes appended to it.
 
-**Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume the
-design-infrastructure Pass 2 plan at Phase 3 (Task 11), task by task per cairn-pass. Phases 1
-and 2 are complete on the `design-infra-pass-2-enforcement` worktree." The worktree already
-exists at `.claude/worktrees/design-infra-pass-2` with its showcase deps installed against it,
-so no setup is owed. Do NOT re-run Phase 1 or Phase 2.
+**Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume design-infrastructure
+Pass 2. Task 15 ran as a workflow whose result needs reviewing before Task 16; check the
+`design-infra-pass-2-enforcement` worktree's git log first, then continue per cairn-pass." The
+worktree exists at `.claude/worktrees/design-infra-pass-2` with its showcase deps installed
+against it, so no setup is owed. Do NOT re-run Phases 1 through 4.
 
-**Where the work sits.** Task 0 merged to `main` (`640b48d2`). Tasks 1 to 10 are on
-`design-infra-pass-2-enforcement`, unmerged, sixteen commits, tree clean at `ecb7194c`. The
-Phase 2 commits are NOT yet pushed. Branch CI needs a `workflow_dispatch` or a PR, since the
-workflows only auto-run on `main` and pull requests.
+**FIRST ACTIONS, in this order, before any new dispatch:**
+
+1. **Check whether the Task 15 workflow committed.** It was run ID `wf_c98bf0ab-fe8`, thirteen
+   agents: six rule builders, six adversarial refuters, one integrator that wires the registry,
+   graduates the two gates, runs the full gate, and commits. If the worktree has an uncommitted or
+   half-applied state, the recovery is `Workflow({scriptPath, resumeFromRunId: 'wf_c98bf0ab-fe8'})`,
+   whose completed agents replay from cache. Read the run's `journal.jsonl` before assuming a cached
+   result was non-empty.
+2. **Read the regenerated `admin-visual` baselines with your own eyes.** Ten were red on purpose from
+   Task 12's ruled header change, and a CI `update_snapshots` dispatch was fired against the branch
+   at the session close (run `30388014415`). Regeneration blesses whatever renders, so the read is a
+   real design read: the intended delta is the tightened `PageHeader` stack (the UA-margin fix) and
+   the meta line dropping from 14px to 13px. Anything else in the diff is a defect, not a baseline.
+3. **Review the Task 15 integrator's own-tree rule findings.** Cairn's admin is the audit's first
+   honest consumer, so real findings there are results, not failures, and they feed Task 17's
+   calibration.
+
+**Where the work sits.** `main` is at `cda70f30`, pushed. The pass branch
+`design-infra-pass-2-enforcement` is pushed through `87c2e0dc` (Task 14), and anything the Task 15
+workflow committed sits on top of that. Both trees were clean at the session close.
+
+**TWO CARRIED RISKS, do not lose:**
+
+- **`publish` now depends on a CI job that has never run on CI.** Task 13 added a `norms` job to
+  `publish.yml` that `publish` needs, so a stale manifest cannot ship. Generation is deterministic
+  locally across preview-server restarts, but the residual risk is font fallback differing between
+  the workstation and `ubuntu-latest`, and it would surface at a release rather than before one.
+  `publish.yml` does carry `workflow_dispatch`, but dispatching it would attempt a real npm publish,
+  so it is NOT a safe way to rehearse the job. Two options at Task 18: split the norms job into its
+  own dispatchable workflow so it can be proven independently, or accept that the first cut proves
+  it and know the remedy is `npm run norms:generate` plus a recommit. The release is not due until
+  the initiative boundary after Pass 3, so there is time.
+- **The `## Unreleased` window still carries NO `<!-- release-size: minor -->` marker**, so
+  `check:version` sizes it as a patch. Pass 1 added public surface and Pass 2 adds a bin, so that is
+  wrong and Task 18 must fix it.
 
 **What Phase 2 closed.** `cairn-audit` ships as a packaged bin (`"cairn-audit":
 "./dist/audit/bin.js"`) with nine static rules, a counted suppression idiom, and the two static
@@ -67,10 +98,45 @@ fail-open failure it exists to prevent is the pass's headline lesson.
    `utilityBase()`, so `sm:badge-ghost` slips past. Routing it through widens the rule, so it is
    a rule-design call. `WATCH:` note at the rule.
 
-**Still owed at pass end (Task 18), do not lose:** the `## Unreleased` changelog window carries
-NO `<!-- release-size: minor -->` marker, so `check:version` currently sizes it as a patch. Pass
-1 added new public surface and Pass 2 adds a new bin, so that is wrong and Task 18 must fix it.
-No release is due until the initiative boundary after Pass 3 (spec section 10).
+(The release-size marker that used to be recorded here is now carried risk 2 in the
+immediate-next-action section above, so it lives in one place rather than two. No release is due
+until the initiative boundary after Pass 3, spec section 10.)
+
+**What Phases 3 and 4 closed (2026-07-28).**
+
+- **Task 11:** `card-shell` and `card-shadow` ship as two safelisted `@utility` container roles, NOT
+  as a `CardShell.svelte`. The repeated shell string lands on `<div>`, `<form>`, `<details>`, `<a>`,
+  and `<span>` alike, so a wrapper component would have served almost none of the 25 migrated sites,
+  and spec section 4 already bans the bracketed `var()` wrappers it replaces. Declarations were
+  derived from the compiled sheet with a no-drift test comparing resolved property maps.
+  `admin-visual` held at 18/18. The in-card empty-notice half closed as documentation, since
+  `AdminTable` already owns that register in scoped CSS.
+- **Task 12:** `PageHeader` never received the UA-margin fix `OfficeList` documents and carries,
+  despite its own doc calling itself that component's shape generalized, so its `gap-0.5` intent
+  rendered as a roughly 58px title-to-meta gap. Ported, with a regression test confirmed red first.
+  The `meta` prop also joins `type-meta`, ruled by eye against the media-library baseline where a
+  14px header meta line sat above a 13px toolbar count line. **The destination-picker was DEFERRED,
+  not built**, on one existing implementation and zero cairn call sites; trigger recorded in the
+  ledger. PageHeader adoption turned out already complete (seven mounts, five deliberate
+  non-adopters).
+- **Task 13:** the norms manifest generates deterministically, 88 entries across 12 roles, 11
+  ratified and 77 observed, with all three disciplines fixture-proven and the open
+  `--cairn-card-border` question flagged rather than quietly canonized as a norm.
+- **Task 14:** the rendered harness lands with its fail-loud contracts fixture-tested, including the
+  stale-allowlist case, and the interaction-state seam where a rule declares the states it reads.
+
+**Graduation drift is now a repeatable pattern, not an incident.** Task 12's `PageHeader` defect is
+the second instance on record (Classes harvest finding 1 was the first): a component that says it
+generalizes another may have silently dropped the original's fixes. The phrase "the X shape,
+generalized" is not evidence that the fixes came along. Both instances were found by a fresh context
+reading for meaning, neither by a gate.
+
+**Three findings the norms manifest surfaced on its first generation**, full detail in the
+deviations ledger: icons are being flexed rather than sized (ten distinct widths across 183 sites,
+with sub-pixel members, the signature of a missing `flex-none`); `status-chip` renders an 8px radius
+against a design system that says badges take `--radius-field` (10px); and `table-cell` mixes two
+type sizes and two leading kinds. The icon one is a real defect at real scale that no gate and no eye
+had caught, and it wants its own task with a baseline regeneration rather than a drive-by fix.
 
 **A lesson Phase 1 earned, still binding on any migration pass.** A bracketed arbitrary size
 (`text-[1.875rem]`) sets `font-size` alone while a named step (`text-3xl`) also sets

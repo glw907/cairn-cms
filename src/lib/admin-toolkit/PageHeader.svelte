@@ -25,18 +25,19 @@ Props stay data-plus-slots throughout: `eyebrow`/`title`/`meta` are plain string
 a snippet the caller fully authors, so this component carries no domain knowledge of what an
 eyebrow names or what an action does.
 
-Typography and layout classes only, no daisyUI component class. Because `src/lib/admin-toolkit`
-sits outside `scripts/admin-css.input.css`'s own `@source` scan, every utility class here is one
-already compiled from the identical literal token in a scanned `src/lib/components/*.svelte`
-file (the eyebrow and page-heading recipes documented in `docs/internal/admin-design-system.md`,
-already carried by `OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm
-value); this component introduces no new Tailwind utility token of its own. The h1's even-line-rag
-balancing (absorbed from `HelpHome.svelte`'s own sentence-length masthead title, so a long title's
-line rags evenly rather than leaving a lone last word) is a `text-wrap: balance` rule in this
-component's own scoped `<style>` below, not a Tailwind utility class: `/admin/**` routes load only
-the precompiled `cairn-admin.css`, and this component lives outside its `@source` scan, so an
-arbitrary utility class (`text-balance` included) never reaches the shipped sheet, exactly the
-constraint `StatusChip.svelte`'s own header comment documents.
+Typography and layout classes only, no daisyUI component class. The classes here come from the
+eyebrow and page-heading recipes in `docs/internal/admin-design-system.md`, already carried by
+`OfficeList.svelte`'s header and `ConceptList.svelte`'s own `mb-10` rhythm value.
+
+A scan-scope note this comment used to state the other way round: `src/lib/admin-toolkit` is
+INSIDE `scripts/admin-css.input.css`'s `@source` roots, so a utility class used only here does
+compile into the shipped sheet. It was outside when this component was minted on 2026-07-20, and
+joined the roots a day later in `c21ac3b8` once the gap was found. The h1's even-line-rag balancing
+(absorbed from `HelpHome.svelte`'s own sentence-length masthead title, so a long title's line rags
+evenly rather than leaving a lone last word) is a `text-wrap: balance` rule in the scoped `<style>`
+below, written that way under the old constraint. It stays scoped because scoped CSS ships
+regardless of the scan and the rule is settled, not because `text-balance` would fail to compile
+today.
 -->
 <script lang="ts">
   import type { Snippet } from 'svelte';

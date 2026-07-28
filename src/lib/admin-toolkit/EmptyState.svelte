@@ -21,9 +21,11 @@ the default `<p>`, while a screen that renders this component as its ONLY conten
 `PageHeader` of its own (`WelcomeView`, the none-capability landing), passes `'h1'` so the page
 still carries a real heading in its accessible tree.
 
-Typography and layout classes only, no daisyUI component class, per the same `@source`-scan note
-`PageHeader` documents: every utility token here is one already compiled from the identical
-literal token in `ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-state markup.
+Typography and layout classes only, no daisyUI component class. The tokens here match
+`ConceptList.svelte`'s and `WelcomeView.svelte`'s own empty-state markup, which is where this
+recipe was lifted from. See the scan-scope note on `PageHeader` for why an older version of this
+comment framed that as a compile constraint: `src/lib/admin-toolkit` is inside the `@source` roots
+now, so a class used only here compiles.
 -->
 <script module lang="ts">
   /** The heading's own element. Defaults to `'p'`, the original contract; pass `'h1'`/`'h2'`/`'h3'`

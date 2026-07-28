@@ -15,18 +15,42 @@ version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev lo
 library's own development proves changes against `examples/showcase`.
 
 
-## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 16 in flight)
+## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 17 is next)
 
-**Phases 1 through 5 are complete through Task 15 (Tasks 0 to 15). Task 16 is IN FLIGHT as a
-workflow. Tasks 17 and 18 are untouched.** Plan:
-`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked through
-Task 15, with the Phase 2, Phase 3, and Task 15 amendments appended to it.
+**Tasks 0 through 16 are COMPLETE and verified. Task 17 (calibration) is next, then Task 18.**
+Plan: `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked
+through Task 16.
 
 **Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume design-infrastructure
-Pass 2. Task 16 ran as workflow `wf_939ea2af-b9a`; check the `design-infra-pass-2-enforcement`
-worktree's git log first, then continue per cairn-pass." The worktree at
-`.claude/worktrees/design-infra-pass-2` has its showcase deps installed against it, so no setup is
-owed. Do NOT re-run Tasks 0 through 15.
+Pass 2 at Task 17 (calibration) per cairn-pass; the worktree is
+`.claude/worktrees/design-infra-pass-2`, clean at `ba7f401d`." The worktree has its showcase deps
+installed against it, so no setup is owed. Do NOT re-run Tasks 0 through 16.
+
+**Branch state:** `ba7f401d` (the dark-theme fix) on `4cacfd5f` (Task 16) on `c14c2f03` (Task 15)
+on `001e817b`. Everything from `c14c2f03` up is committed locally and NOT pushed. Tree clean, no
+preview servers left running.
+
+**Task 17 needs a running preview server** (the rendered audit never starts one):
+`cd examples/showcase && CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173`, then
+`npx cairn-audit --rendered` from the worktree root. Run `npm run package` after ANY edit to
+`src/lib/audit`, since the bin runs from `dist` and will otherwise measure stale bytes. Kill the
+server afterward: a survivor makes the `BASE_URL contract` test fail, because it asserts nothing
+answers on 4173.
+
+**The verified rendered baseline Task 17 calibrates against** (six admin routes, both themes,
+`160 errors, 338 advisories, 0 suppressed`, exit 1). Main-loop measured, not reported:
+
+| rule | tier | count | note |
+| --- | --- | --- | --- |
+| `touch-targets` | error | 138 | the 44x44 ruling below |
+| `chip-ground-collision` | error | 16 | 8 light + 8 dark, restored by `ba7f401d` |
+| `viewport-overflow` | error | 4 | media toolbar segmented control at 320 |
+| `one-filled-action` | error | 2 | two accent fills on vocabulary |
+| `focus-renders`, `interactive-contrast` | error | 0 | clean |
+| `border-contrast` | advisory | 326 | the open hairline question, at scale |
+| `weight-budget` | advisory | 10 | five routes x two themes at exactly 3 weights |
+| `screen-anatomy` | advisory | 2 | |
+| `relational-spacing`, `norms-bands` | advisory | 0 | |
 
 **Task 15 LANDED and is fully verified**, as `c14c2f03` (rebased onto `001e817b`). The gate was
 re-run in the main loop rather than trusted from the report: `check` 1503 files 0 errors 0 warnings,
@@ -45,7 +69,34 @@ all six shipped green under `page.evaluate` test doubles and two threw `Referenc
 real page, having never once executed in a browser. Rendered rules are now proven against real
 Chromium in `src/tests/unit/audit/rules/rendered/browser-regressions.test.ts`.
 
-**TWO RULINGS OWED BY GEOFF, both feeding Task 17's calibration, neither blocking Task 16:**
+**TASK 16 LANDED (`4cacfd5f`), and a REGRESSION IT INTRODUCED WAS CAUGHT AND FIXED (`ba7f401d`).**
+The five advisory rules shipped, all five refuted on first build. Its best product was the
+advisory-cannot-gate proof: Task 15 had proved that property one way, and Task 16 found FOUR more
+paths by which an advisory finding could still reach the exit code (a rule that throws, an
+unparseable allowlist selector, a stale entry reported at the wrong tier, and a rule emitting prose
+where a selector belonged). All four are closed and proved in real Chromium.
+
+**The regression, and how it was caught.** Task 16's rendered error count moved 160 to 152 and its
+commit never accounted for the delta. The whole delta was one rule: `chip-ground-collision` went
+from 8 light + 8 dark findings to 8 light + ZERO dark, so two real defects (chips at contrast 1.11
+and 1.12 against their own ground, invisible to a human) stopped being seen. Not a tier demotion:
+zero lines in dark at any tier. Root cause: Task 16 gave `resolveGround` an always-opaque tail whose
+`canvas` DEFAULTED to opaque white, so the chip's own fill came back pre-flattened onto an assumed
+white page. In light that assumption is nearly true and perturbs the answer by 0.007, so findings
+still fired; in dark it pushed the ratio to 1.514 against a 1.5 floor, one hundredth over, and the
+rule returned early. The fix makes `GroundOptions.canvas` REQUIRED, so a caller that does not know
+what is behind the chain cannot silently assume white, and it closed the same latent bug in
+`interactive-contrast` (loaded but not yet firing).
+
+**THE METHOD LESSON, now three passes deep and worth generalizing.** No gate caught this; a COUNT
+DELTA did. Eleven of eleven rendered rules were refuted on first build across Tasks 15 and 16, and
+this defect additionally survived five refuters, an Opus integrator, a simplifier, and a finalizer,
+because every one of them was looking at the advisory rules while an error-tier rule went half-blind
+beside them. When a pass changes a shared substrate, diff the MEASURED OUTPUT of every rule that
+consumes it, per theme, and treat an unexplained movement as a defect until explained. Phase 1 and
+Phase 2 each earned the same lesson in a different costume.
+
+**FIVE RULINGS OWED BY GEOFF, all feeding Task 17's calibration:**
 
 1. **The 44x44 question, large.** The rendered run against cairn's own admin returns 160 errors, 138
    of them `touch-targets`, because the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px
@@ -54,7 +105,24 @@ Chromium in `src/tests/unit/audit/rules/rendered/browser-regressions.test.ts`.
    the bar is wrong for a dense desk interface. This is a design ruling, not a task's call.
 2. **`chip-ground-collision` gates at error tier on an unratified number.** Spec 6.3 set no
    threshold; the builder borrowed `1.5` from the graduating `interactive-contrast` probe on a shared
-   "not accidentally camouflaged" rationale and flagged it for confirmation.
+   "not accidentally camouflaged" rationale and flagged it for confirmation. Note the floor is now
+   load-bearing in a way it was not: the dark regression turned on the measured ratio landing at
+   1.514 against it.
+3. **`border-contrast` fires 326 advisories, the single largest class.** This is the already-open
+   `--cairn-card-border` hairline question (1.11:1 light, 1.43:1 dark against WCAG 1.4.11's 3:1)
+   measured across the whole admin. The rule reports without gating until ruled. A one-token ruling
+   clears most of the advisory volume; leaving it open means Task 17 calibrates around a rule whose
+   findings are all known-and-accepted.
+4. **Does the 2-weight budget survive contact with cairn's own recipes?** `weight-budget` reports 10
+   advisories, five routes x two themes, every one at exactly THREE weights, all of it
+   toolbar/pagination/eyebrow chrome living inside `<main>`. Spec 6.3 already refuted the per-route
+   form for this reason and scoped the rule to a content region. The question is whether the region
+   definition is now right, or whether cairn's chrome legitimately needs a third weight.
+5. **`screen-anatomy`'s affirmative half is deliberately NOT implemented.** "The primary action sits
+   in the header slot" is mechanically unfalsifiable without knowing whether a screen HAS a primary
+   action, so implementing it would fire on every screen legitimately without one. Currently the rule
+   checks only the negative half. Ruling needed on whether that half is dropped, made
+   config-declared, or left to the grader.
 
 **Where the work sits.** `main` is at `cda70f30`. The pass branch `design-infra-pass-2-enforcement`
 is pushed through `001e817b`; `c14c2f03` (Task 15) is committed locally and NOT yet pushed, with

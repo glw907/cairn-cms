@@ -52,9 +52,20 @@
   `cairn-audit.config.json`), the same reason-required discipline the static suppression comments
   carry; an allowlist entry whose selector matches nothing the run actually visited is reported as
   a stale entry rather than silently doing nothing, the same fail-loud discipline every other part
-  of the engine holds. The rule registry itself ships empty (`runRendered` refuses to run against
-  an empty one rather than reporting a false-clean pass): the eleven rendered rules spec 6.3
-  defines land in the remainder of this pass. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
+  of the engine holds. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
+
+- `npx cairn-audit --rendered` runs, and the six error-tier rendered rules spec 6.3 defines are
+  registered: `one-filled-action` (at most one accent-filled control per surface),
+  `focus-renders` (every tab stop renders a focus indicator), `interactive-contrast` (interactive
+  text against its own composited background at a ratio of at least 1.5), `touch-targets` (44x44
+  CSS px at a 390px viewport, aware of a `::before` inset hit-area expansion), `viewport-overflow`
+  (nothing wider than the viewport at 390 and at 320), and `chip-ground-collision` (a chip's fill
+  distinguishable from the background behind it). A rendered rule that compares two colors resolves
+  them by painting each on a canvas in the page and reading the sRGB bytes back rather than parsing
+  color syntax, so a themed admin in any color space (cairn's own palette is `oklch` end to end)
+  measures correctly. A rule that cannot make its measurement, a gradient leaves no single ground
+  to compare against, reports an advisory finding naming what it could not read rather than
+  skipping silently. See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
 
 No consumer action is required for the entries above. No exported type, prop, or route contract
 changed.

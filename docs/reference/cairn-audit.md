@@ -5,6 +5,7 @@ puts it on the project's path.
 
 ```bash
 npx cairn-audit                          # run the static rules over the admin surfaces
+npx cairn-audit --rendered               # run the rendered rules against a running admin
 npx cairn-audit norms <selector-or-role> # look up a measured norm
 ```
 
@@ -14,21 +15,52 @@ the installed package, so it needs no config, no built stylesheet, and no browse
 ## Rendered mode
 
 Rendered mode checks the admin as it actually renders: computed contrast, computed touch-target
-size, and the other measurements a source-only static rule can't reach. `cairn-audit --rendered`
-currently declines to run, since the rule set it checks against hasn't shipped yet. This section
-documents the harness contract those rules build on.
+size, and the other measurements a source-only static rule can't reach.
 
-The harness never starts a server. It reads `BASE_URL` (default `http://localhost:4173`) and fails
-naming the URL it tried when nothing answers there, the same contract the norms generator follows.
-Playwright loads as a dynamic import from the consuming project's own install, printing
-`npm i -D playwright && npx playwright install chromium` when it is absent, so a project that never
-runs rendered mode takes no browser dependency.
+Start the site first. The harness never starts a server. It reads `BASE_URL` (default
+`http://localhost:4173`) and fails naming the URL it tried when nothing answers there, the same
+contract the norms generator follows. Playwright loads as a dynamic import from the consuming
+project's own install, printing `npm i -D playwright && npx playwright install chromium` when it is
+absent, so a project that never runs rendered mode takes no browser dependency.
+
+```bash
+npm run build && npm run preview -- --port 4173   # in another shell
+npx cairn-audit --rendered
+```
 
 Every configured page renders under both themes, always: a rule that only holds in one color scheme
 is exactly the failure mode this exists to catch. The page list defaults to the core admin routes
 and is overridable in `cairn-audit.config.json`'s `rendered.pages`. A rendered rule can also declare
 an interaction state beyond a page's rest render, an open menu or a keyboard focus-visible pass, so
 it only pays for the capture it actually reads from.
+
+The run fails rather than reporting clean on every shape of silent green: no rules registered, no
+pages configured, `BASE_URL` not answering, Playwright absent, or any configured page rendering
+outside 2xx, which also catches a page path that names no route.
+
+### The rules
+
+All six are error tier and exit the command nonzero.
+
+| ID | What it checks |
+|---|---|
+| `one-filled-action` | At most one accent-filled control per surface. A surface is the topmost open layer, a dialog winning over the page beneath it, partitioned further by the landmarks that layer carries. "Filled" means the accent, read from the live computed background, so the sanctioned ink fills are exempt by construction rather than by name |
+| `focus-renders` | Every tab stop renders a focus indicator. The rule tabs through the whole page and compares each stop's focused paint against that same element's resting paint, so a real outline, a `box-shadow` ring, and a ring an ancestor renders through `:focus-within` all count, and a decorative shadow the element already carries doesn't |
+| `interactive-contrast` | Interactive text reads against its own composited background at a ratio of at least 1.5. This isn't a legibility floor. The bar is that a control isn't camouflaged against its own ground. Disabled controls are exempt |
+| `touch-targets` | Every tap target renders at least 44x44 CSS px at a 390px viewport, measured on the effective hit rectangle, so a control widened by a `::before` inset expansion clears the floor it already meets |
+| `viewport-overflow` | Nothing renders wider than the viewport at 390 and at 320. Both an element whose own box clears the viewport and an element whose content, an unbreakable string or a bleeding pseudo-element, is wider than its box |
+| `chip-ground-collision` | A chip's own painted fill reads as distinct from the background behind it. A chip is daisyUI's `.badge` or any element that renders as one, and a chip with no fill of its own, the `badge-outline` recipe, is exempt |
+
+Every rule that compares two colors resolves them by painting each one on a canvas in the page and
+reading the sRGB bytes back, rather than parsing color syntax. A themed admin computes to whatever
+color space its palette is authored in, and cairn's own is `oklch` end to end, so a parser is the
+one component in this pipeline guaranteed to be wrong about a real value.
+
+Where a rule can't make its measurement, a gradient with no color under it leaves no single ground
+to compare against, it reports an advisory finding naming what it couldn't read. That's deliberately
+not silence: a check that skips itself is the failure mode the audit exists to rule out.
+
+### The allowlist
 
 A live-page finding has no source line a suppression comment could sit beside, so rendered mode
 exempts by a page+selector+reason JSON allowlist instead, in `rendered.allowlist`:
@@ -42,6 +74,9 @@ exempts by a page+selector+reason JSON allowlist instead, in `rendered.allowlist
   }
 }
 ```
+
+The `selector` is the signature a rule reports a finding under: a tag, then its id if it carries
+one, then up to four of its classes. Suppressed findings are counted and printed, never hidden.
 
 An allowlist entry whose selector matches nothing the run actually visited reports as a stale entry
 rather than doing nothing silently, the same reasoning that requires every static suppression to

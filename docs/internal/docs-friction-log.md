@@ -90,3 +90,29 @@ findings start fresh below this line.
   placeholder message from the skeleton commit), deliberately left that way since the shipped rule
   registry is empty; whichever of Tasks 15/16 first registers a real rule should also decide whether
   wiring the flag happens then or waits for the full eleven.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 15)** Both Task 14 carry-forwards
+  above are closed here, so they need no further tracking: `applyState`'s `'menu-open'` selector was
+  confirmed against the admin's real markup and corrected (every dialog trigger in the admin declares
+  `aria-haspopup="dialog"`, which the menu-only selector could not reach, so the entire dialog surface
+  was structurally outside every rendered rule while the run reported those pages clean), and the
+  `--rendered` flag is wired now that the registry carries six real rules.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 15)** The rendered allowlist entry
+  shape (`{page, selector, reason}`, ratified at Task 14) carries no rule id, so an entry written to
+  exempt one rule silences every rule that reports the same selector on the same page. The two
+  graduated gates make this concrete: `check-touch-targets`'s five rows name button selectors that
+  `interactive-contrast` and `chip-ground-collision` could equally report. Nothing has collided yet,
+  and adding an optional `rule` field is cheap, but it is a consumer-visible shape change and belongs
+  to Task 17's evidence rather than a guess here.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 15)** A real 44px miss on the
+  showcase theme, carried rather than ruled: the tag-filter chips on `/` render 43.78px wide against
+  the floor, a padding-math shortfall the touch-targets graduation surfaced. It is suppressed with
+  that reason in `scripts/check-touch-targets.mjs`'s allowlist so the finding stays counted and
+  printed. Closing it moves the `site-visual` baselines, so it belongs to a theme pass.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 15)** The rendered audit's first
+  honest own-tree run reports 160 errors across the six admin routes in both themes, and 138 of them
+  are `touch-targets`: the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px toolbar
+  controls, essentially none of which clear 44x44 at a 390px viewport. That is a real design question
+  the audit surfaced rather than a rule defect (spot-checked against the rendered admin), and it is
+  too large to answer inside the task that found it. It wants a ruling: either the admin's compact
+  control scale grows at small viewports, or `touch-targets` is scoped to something narrower than
+  every control on the page. Task 17's calibration is where the evidence for that choice lands.

@@ -13,6 +13,7 @@
 // `playwright` because it is cairn's own build tool pinned by cairn's own lockfile; do not
 // "harmonize" the two import styles, they serve different trees on purpose.
 import { renderedRules } from './rules/rendered/index.js';
+import type { Rgba } from './color.js';
 import type { AuditConfig, RenderedAllowlistEntry } from './config.js';
 import type { AuditReport, Finding, Tier } from './types.js';
 
@@ -37,11 +38,19 @@ const THEME_COOKIE_VALUE: Record<Theme, 'cairn-admin' | 'cairn-admin-dark'> = {
 // executes in, so its exact installed version and type shape are not guaranteed, the same reasoning
 // that governs carta-md's dynamic import elsewhere in this codebase.
 
-/** The live browser page a rendered rule reads from. */
+/**
+ * The live browser page a rendered rule reads from. Viewport control is part of the surface rather
+ * than a rule's private cast: two v1 rules (`touch-targets`, `viewport-overflow`) check a floor
+ * that is only meaningful at a stated width, and both independently reached past a narrower
+ * interface to Playwright's own method, which is the signal that the width belongs here.
+ */
 export interface RenderedPage {
   goto(url: string, options?: { waitUntil?: string; timeout?: number }): Promise<{ status(): number } | null>;
   evaluate<T, Arg = undefined>(fn: (arg: Arg) => T, arg?: Arg): Promise<T>;
   keyboard: { press(key: string): Promise<void> };
+  /** The page's current viewport, or `null` when it inherits the context's. */
+  viewportSize(): { width: number; height: number } | null;
+  setViewportSize(size: { width: number; height: number }): Promise<void>;
   close(): Promise<void>;
 }
 
@@ -244,14 +253,98 @@ async function applyState(state: InteractionState, page: RenderedPage): Promise<
     await page.keyboard.press('Tab');
     return true;
   }
-  // WATCH: this selector is a first pass at "the conventional menu trigger" and has not been proven
-  // against the showcase yet. Tasks 15/16, whose rules are the first real consumers of 'menu-open',
-  // should confirm or refine it against the admin's actual dropdown/command-palette markup.
+  // Refined at Task 15 against the admin's real markup, resolving Task 14's WATCH. Every dialog
+  // trigger in the admin (the entry, link, fragment, media, and reference pickers, the rename and
+  // web-link dialogs) declares `aria-haspopup="dialog"`, which the original menu-only selector
+  // could not reach, so the whole dialog surface was structurally outside every rendered rule while
+  // the run reported those pages clean. The state still means "the conventional popup trigger is
+  // open"; what widened is which triggers count as conventional.
   return page.evaluate(() => {
-    const trigger = document.querySelector<HTMLElement>('[aria-haspopup="menu"], [aria-haspopup="true"]');
-    if (!trigger) return false;
-    trigger.click();
+    const triggers = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        '[aria-haspopup="menu"], [aria-haspopup="dialog"], [aria-haspopup="listbox"], [aria-haspopup="true"]'
+      )
+    ).filter((el) => {
+      const style = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    });
+    if (triggers.length === 0) return false;
+    triggers[0].click();
     return true;
+  });
+}
+
+/**
+ * Normalize CSS color strings to sRGB by asking the browser to paint them, rather than parsing
+ * color syntax in Node.
+ *
+ * Every rendered rule that compares two colors reads them off `getComputedStyle`, and Chromium
+ * serializes a computed color in the AUTHOR's color space: cairn's admin palette is oklch, and
+ * Tailwind's opacity modifier compiles to `color-mix(in oklab, ...)`, so a computed background
+ * arrives as `oklch(0.965 0.006 75)` or `oklab(0.26 0.0036 0.0135 / 0.08)`. Three rules shipped
+ * with an `rgb()`-only regex, and an adversarial pass demonstrated all three reporting clean
+ * against the shipped admin because every candidate failed to parse and was skipped. Painting the
+ * string onto a canvas hands the question to the one component that cannot be wrong about it.
+ *
+ * The alpha channel is recovered exactly rather than read back premultiplied: each color is
+ * painted twice, over opaque white and over opaque black, and the distance between the two results
+ * is `255 * (1 - alpha)` on every channel. A string the browser refuses resolves to `null`, which a
+ * caller reports rather than treats as a pass.
+ */
+export async function resolveColors(page: RenderedPage, colors: string[]): Promise<(Rgba | null)[]> {
+  if (colors.length === 0) return [];
+  const unique = [...new Set(colors)];
+  const resolved = await page.evaluate(resolveColorsInPage, unique);
+  const byInput = new Map(unique.map((color, index) => [color, resolved[index]]));
+  return colors.map((color) => {
+    const entry = byInput.get(color);
+    return entry ? { r: entry[0], g: entry[1], b: entry[2], a: entry[3] } : null;
+  });
+}
+
+/**
+ * Runs inside the page. Playwright serializes this by source, so it stays self-contained: no
+ * references outside its own body, the same discipline `probeSelectors` follows.
+ */
+function resolveColorsInPage(colors: string[]): ([number, number, number, number] | null)[] {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  if (!ctx) return colors.map(() => null);
+  const context = ctx;
+
+  function paintOver(backdrop: string, color: string): number[] {
+    context.globalCompositeOperation = 'copy';
+    context.fillStyle = backdrop;
+    context.fillRect(0, 0, 1, 1);
+    context.globalCompositeOperation = 'source-over';
+    context.fillStyle = color;
+    context.fillRect(0, 0, 1, 1);
+    return Array.from(context.getImageData(0, 0, 1, 1).data);
+  }
+
+  return colors.map((raw) => {
+    if (!raw) return null;
+    // An invalid value leaves `fillStyle` at whatever it already held, so two different sentinels
+    // separate "the browser refused this string" from "this string really is black or white".
+    context.fillStyle = '#000000';
+    context.fillStyle = raw;
+    const asBlack = context.fillStyle;
+    context.fillStyle = '#ffffff';
+    context.fillStyle = raw;
+    const asWhite = context.fillStyle;
+    if (asBlack === '#000000' && asWhite === '#ffffff') return null;
+
+    const overWhite = paintOver('#ffffff', raw);
+    const overBlack = paintOver('#000000', raw);
+    let alpha = 0;
+    for (let i = 0; i < 3; i += 1) alpha += 1 - (overWhite[i] - overBlack[i]) / 255;
+    alpha = Math.min(1, Math.max(0, alpha / 3));
+    if (alpha <= 0) return [0, 0, 0, 0];
+    const channel = (value: number) => Math.min(255, Math.max(0, value / alpha));
+    return [channel(overBlack[0]), channel(overBlack[1]), channel(overBlack[2]), alpha];
   });
 }
 

@@ -490,8 +490,34 @@ ink fills exempt. `focus-renders` — keyboard focus produces a real computed ou
 `viewport-overflow` — nothing wider than the viewport at 390 AND 320.
 `chip-ground-collision` — chip background distinguishable from its row background.
 
-- [ ] Fixtures first (showcase pages are the live fixtures), implement, no-drift proof
+- [x] Fixtures first (showcase pages are the live fixtures), implement, no-drift proof
   for the two graduations, own-tree clean run both themes, full gate, commit.
+
+**AMENDED 2026-07-28, at the adversarial verify.** The six rules were built by six agents
+and each was refuted by a second agent hunting fail-opens, with a demonstrated runnable
+input required for every finding. All six were refuted, and the fold closed every
+demonstrated defect at the substrate. Two lessons the plan should carry forward.
+
+First, the shared cause. Three rules parsed computed colors with an `rgb()`-only regex
+against a palette that is `oklch` end to end, so they could not fire against the shipped
+admin at all: the `badge-ghost`-on-zebra collision named in `chip-ground-collision`'s own
+header passed it with zero findings. Colors now resolve by painting them on a canvas in
+the page (`resolveColors` in `rendered.ts`, arithmetic in `color.ts`), so the browser
+answers the question. This is the Phase 2 lesson one layer down: the engine that exists
+because regexes fail open had built three rules on a regex.
+
+Second, the test shape. Every one of the six shipped green under a `page.evaluate` test
+double, so no in-page function ever executed: two threw `ReferenceError` on every real
+page and had never run against a browser. Unit doubles cannot prove a rendered rule. The
+suite is now `src/tests/unit/audit/rules/rendered/browser-regressions.test.ts`, real
+Chromium, every demonstrated input preserved as a fixture, plus a smoke case that
+executes every REGISTERED rule against a real page so the next serialization mistake
+fails there. Task 16's five advisory rules follow the same shape.
+
+**The `--rendered` decision Task 14 deferred:** wired. `bin.ts` runs `runRendered` under
+the flag, and the placeholder message is gone. `runRendered` already throws on every
+shape of silent green, so a rendered run that cannot start exits 2 with the reason rather
+than printing an empty, reassuring report.
 
 ### Task 16: The five advisory rendered rules
 

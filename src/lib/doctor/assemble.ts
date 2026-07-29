@@ -39,8 +39,10 @@ export interface DoctorArgs {
    *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run).
    */
   probe?: string | true;
-  /** Install or refresh the packaged admin-screens skill into `.claude/skills/` before the
-   *  checks run. Bare flag; absent when --fix never appeared. */
+  /**
+   * Install or refresh the packaged admin-screens skill into `.claude/skills/` before the
+   *  checks run. Bare flag; absent when --fix never appeared.
+   */
   fix?: boolean;
 }
 

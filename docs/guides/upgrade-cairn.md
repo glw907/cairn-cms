@@ -26,8 +26,8 @@ version; a version with no `Consumers must:` list is a drop-in bump.
 
 ## Adopt the admin type grammar
 
-When you cross the release that ships the admin grammar tokens (its CHANGELOG entry names
-the grammar layer), your custom admin screens keep rendering exactly as they did.
+When you cross `0.91.0`, the release that ships the admin grammar tokens, your custom
+admin screens keep rendering exactly as they did.
 `npx cairn-audit`'s static `type-scale` rule starts reporting named Tailwind steps
 (`text-sm`, `text-xs`, bracketed sizes) in your admin markup, and most of those reports
 are a mechanical rename with zero visual change. On the first consumer admin measured, 265

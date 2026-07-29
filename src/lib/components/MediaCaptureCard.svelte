@@ -88,10 +88,10 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
       class="h-16 w-16 flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"
     />
     <label class="flex flex-1 flex-col gap-label">
-      <span class="flex items-center gap-2 text-sm font-medium">
+      <span class="flex items-center gap-2 type-body font-medium">
         Name
         {#if proposed !== null}
-          <span class="badge badge-ghost badge-sm">Suggested</span>
+          <span class="badge badge-outline badge-sm">Suggested</span>
         {/if}
       </span>
       <input
@@ -110,14 +110,14 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
     aria-required="true"
     aria-describedby="cairn-capture-alt-note"
   >
-    <legend class="text-sm font-medium">Alt text</legend>
-    <p id="cairn-capture-alt-note" class="text-xs text-muted">
+    <legend class="type-body font-medium">Alt text</legend>
+    <p id="cairn-capture-alt-note" class="type-meta text-muted">
       Describe the image for screen readers, or mark it decorative. You can insert without alt text
       and add it later.
     </p>
     <label class="flex cursor-pointer items-center gap-2">
       <input type="radio" class="radio radio-sm" name="cairn-capture-alt" value="describe" bind:group={altMode} />
-      <span class="text-sm">Write a description</span>
+      <span class="type-body">Write a description</span>
     </label>
     {#if altMode === 'describe'}
       <input
@@ -129,7 +129,7 @@ left-blank cases, and a separate decorative flag distinguishes them for the host
     {/if}
     <label class="flex cursor-pointer items-center gap-2">
       <input type="radio" class="radio radio-sm" name="cairn-capture-alt" value="decorative" bind:group={altMode} />
-      <span class="text-sm">Mark as decorative</span>
+      <span class="type-body">Mark as decorative</span>
     </label>
   </fieldset>
 

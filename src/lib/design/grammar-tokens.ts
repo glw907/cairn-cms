@@ -9,16 +9,25 @@
 
 /**
  * Every grammar-token custom property name currently defined, including the leading `--`. The
- * `--cairn-type-*` entries are the ruled type-role scale, title through chip; the `--cairn-gap-*`
- * entries are the ruled spacing-role scale, label through section.
+ * `--cairn-type-*` entries are the ruled type-role scale, title through chip, each paired with a
+ * `--leading` token carrying that role's ruled line-height; the `--cairn-gap-*` entries are the
+ * ruled spacing-role scale, label through section.
  */
 export const GRAMMAR_TOKENS: readonly string[] = [
   '--cairn-type-title',
+  '--cairn-type-title--leading',
+  '--cairn-type-heading',
+  '--cairn-type-heading--leading',
   '--cairn-type-subtitle',
+  '--cairn-type-subtitle--leading',
   '--cairn-type-body',
+  '--cairn-type-body--leading',
   '--cairn-type-meta',
+  '--cairn-type-meta--leading',
   '--cairn-type-label',
+  '--cairn-type-label--leading',
   '--cairn-type-chip',
+  '--cairn-type-chip--leading',
   '--cairn-gap-label',
   '--cairn-gap-control',
   '--cairn-gap-group',

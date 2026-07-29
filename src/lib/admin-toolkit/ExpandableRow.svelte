@@ -128,8 +128,14 @@ verified against zebra stripes in both themes):**
      happens to match the trigger cell (this component's own `<td>`, a direct child of the same
      `<tr>`), but its transparent-based mix is wrong for a `position: sticky` cell -- it would let
      content scrolling underneath show through -- so the trigger cell gets its own higher-specificity,
-     opaque rules below, which win over this one. */
-  .toolkit-expandable-row-summary:hover > :global(td) {
+     opaque rules below, which win over this one.
+
+     `:focus-within` pairs the same wash with a keyboard tab onto the trigger button below (the
+     row itself carries no tabindex; the button is the one real focus target, per this
+     component's own contract), so a keyboard user sees the same row highlight a mouse hover
+     gives (cairn-audit's focus-parity rule). */
+  .toolkit-expandable-row-summary:hover > :global(td),
+  .toolkit-expandable-row-summary:focus-within > :global(td) {
     background-color: color-mix(in oklab, var(--color-base-content) 5%, transparent);
   }
 
@@ -165,12 +171,20 @@ verified against zebra stripes in both themes):**
      the zebra ancestor and `:nth-child(2n)` (0,5,2), which is the only combination in this file
      that outranks the zebra-parity rule immediately above (0,4,2) -- without it, hovering an even
      row left the pinned trigger cell showing its plain zebra color while every other cell in the
-     row washed, the seam a review pass caught. */
-  .toolkit-expandable-row-summary:hover .toolkit-expandable-row-trigger-cell {
+     row washed, the seam a review pass caught.
+
+     Each rule's own `:focus-within` counterpart is the same fix as the base wash above: the
+     trigger button living inside this cell is the row's one real focus target, so tabbing onto
+     it reads as the same tint a mouse hover gives. */
+  .toolkit-expandable-row-summary:hover .toolkit-expandable-row-trigger-cell,
+  .toolkit-expandable-row-summary:focus-within .toolkit-expandable-row-trigger-cell {
     background-color: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
   }
   :global(.table-zebra tbody)
     tr.toolkit-expandable-row-summary:hover:nth-child(2n)
+    .toolkit-expandable-row-trigger-cell,
+  :global(.table-zebra tbody)
+    tr.toolkit-expandable-row-summary:focus-within:nth-child(2n)
     .toolkit-expandable-row-trigger-cell {
     background-color: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-200));
   }

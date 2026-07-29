@@ -92,7 +92,19 @@ IconSet path data, matching the renderer's 256-unit viewBox.
       <svg class="ec-glyph" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true" width="16" height="16">
         <path d={icons[name]} />
       </svg>
-      <span class="text-xs">{name}</span>
+      <span class="type-label">{name}</span>
     </button>
   {/each}
 </div>
+
+<style>
+  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
+     the admin preview matches the exact class the embed-card glyph ships with on a public page.
+     The glyph's fill rides currentColor from the surrounding markup; its real "home" is
+     deliberately outside the admin sheet, since public render output stays design-agnostic. The
+     rule carries only an inert custom property, never read anywhere, since an empty ruleset
+     fails svelte-check's own lint. */
+  .ec-glyph {
+    --cairn-naming-hook: true;
+  }
+</style>

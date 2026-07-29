@@ -8,7 +8,7 @@ import { GRAMMAR_TOKENS } from '../../lib/design/grammar-tokens.js';
 // package` ships. An earlier draft scanned a probe fixture to defeat tree-shaking, which proved the
 // utility DEFINITIONS were correct while saying nothing about what reaches a consumer; the role
 // utilities are a documented public interface, so the input's `@source inline(...)` safelist now
-// carries all ten into the shipped sheet and this file asserts against that sheet.
+// carries all eleven into the shipped sheet and this file asserts against that sheet.
 //
 // Keep this to ONE buildAdminCss() call. @tailwindcss/postcss caches its compiler per `from` path
 // across calls within one process (keyed on disk mtime, not on the in-memory input string), so a
@@ -52,6 +52,7 @@ describe('grammar tokens', () => {
   it('matches the locked type-role scale', () => {
     const typeScale: Record<string, number> = {
       '--cairn-type-title': 1.5,
+      '--cairn-type-heading': 1.125,
       '--cairn-type-subtitle': 0.9375,
       '--cairn-type-body': 0.875,
       '--cairn-type-meta': 0.8125,
@@ -72,6 +73,43 @@ describe('grammar tokens', () => {
     };
     for (const [name, expected] of Object.entries(gapScale)) {
       expect(declaredRem(name), `expected ${name} to be ${expected}rem`).toBe(expected);
+    }
+  });
+
+  // The Pass 2 ruling (spec section 13): body, title, and heading take the named Tailwind steps
+  // they replace (text-sm's 20px, text-2xl's 32px, text-lg's 28px); subtitle, meta, label, and
+  // chip are the dominant computed line-height measured at their live call sites.
+  it('matches the ruled type-role leading scale', () => {
+    const leadingScale: Record<string, number> = {
+      '--cairn-type-title--leading': 2,
+      '--cairn-type-heading--leading': 1.75,
+      '--cairn-type-subtitle--leading': 1.1875,
+      '--cairn-type-body--leading': 1.25,
+      '--cairn-type-meta--leading': 1.0625,
+      '--cairn-type-label--leading': 0.875,
+      '--cairn-type-chip--leading': 0.8125,
+    };
+    for (const [name, expected] of Object.entries(leadingScale)) {
+      expect(declaredRem(name), `expected ${name} to be ${expected}rem`).toBe(expected);
+    }
+  });
+
+  // The reverse direction, owed from the Pass 1 post-mortem. GRAMMAR_TOKENS is the single
+  // inventory the audit rule, the docs page, and this file all read, so a token added to the CSS
+  // but never added to the inventory would silently escape all three. The lookahead is what makes
+  // this a declaration scan: a `var(--cairn-type-body)` reference is followed by `)`, only a
+  // declaration by `:`.
+  it('lists every --cairn-type-* and --cairn-gap-* property the compiled sheet declares', () => {
+    const declaredNames = new Set<string>();
+    for (const match of css.matchAll(/--cairn-(?:type|gap)-[a-zA-Z0-9-]+(?=:)/g)) {
+      declaredNames.add(match[0]);
+    }
+    expect(
+      declaredNames.size,
+      'expected to find declared --cairn-type-*/--cairn-gap-* properties',
+    ).toBeGreaterThan(0);
+    for (const name of declaredNames) {
+      expect(GRAMMAR_TOKENS, `expected GRAMMAR_TOKENS to list ${name}`).toContain(name);
     }
   });
 
@@ -110,12 +148,14 @@ describe('grammar tokens', () => {
 
 // CONTRACT: the role utilities are the authoring interface for the grammar tokens above. A
 // component writes a named role (type-body, gap-control), never a pixel value or a bracketed
-// var() wrapper. Each type-* utility carries font-size ONLY (no weight, case, tracking, or color;
-// see the block comment in scripts/admin-css.input.css for why a full recipe would strand most of
-// the 66 real call sites), and each gap-* utility carries gap only.
+// var() wrapper. A type-* utility carries font-size and its role's ruled line-height; a gap-*
+// utility carries gap. Neither carries anything more, and in particular no weight, case, tracking,
+// font family, or color (the block comment in scripts/admin-css.input.css has why a full recipe
+// would strand most of the 66 real call sites).
 describe('grammar-token role utilities', () => {
   const typeUtilities: Record<string, string> = {
     'type-title': '--cairn-type-title',
+    'type-heading': '--cairn-type-heading',
     'type-subtitle': '--cairn-type-subtitle',
     'type-body': '--cairn-type-body',
     'type-meta': '--cairn-type-meta',
@@ -152,11 +192,18 @@ describe('grammar-token role utilities', () => {
     }
   });
 
-  it("sets each type-* utility's font-size from its grammar token, and nothing else", () => {
+  // The line-height declaration reads --tw-leading first, the same custom property Tailwind's own
+  // named text-* steps read, so an explicit leading-* class on the same element still composes
+  // regardless of the two rules' relative order in the compiled sheet. Asserting the whole
+  // declaration text, indirection included, is what stops a later edit from collapsing it to a
+  // bare var(--cairn-type-<role>--leading) and silently killing that composition.
+  it("sets each type-* utility's font-size and ruled line-height, and nothing else", () => {
     for (const [className, tokenName] of Object.entries(typeUtilities)) {
       const body = ruleBody(className);
       expect(body, `expected a rule body for .${className}`).not.toBeNull();
-      expect(body).toBe(`font-size: var(${tokenName});`);
+      expect(body).toBe(
+        `font-size: var(${tokenName}); line-height: var(--tw-leading, var(${tokenName}--leading));`,
+      );
     }
   });
 
@@ -173,5 +220,82 @@ describe('grammar-token role utilities', () => {
     expect(body, 'expected .gap-2 to compile in the sheet').not.toBeNull();
     // Tailwind's numeric gap-2 resolves against its own spacing scale, never a --cairn-gap-* token.
     expect(body).not.toContain('--cairn-gap');
+  });
+});
+
+// CONTRACT: card-shell and card-shadow are the two container-role utilities (Pass 2 Task 11), the
+// authoring interface for the repeated card-shell markup string. They are declared as ordinary
+// `@utility` bodies, so their properties can drift from the utilities they replace the same way any
+// hand-maintained CSS can; the no-drift proof below is what keeps that impossible rather than merely
+// unlikely. Container roles are distinct from the type/gap roles above: they group properties that
+// always travel together on a SURFACE (a card's border, radius, and fill), not a text or spacing
+// role, and they deliberately exclude `overflow-*` and padding, which differ per call site.
+describe('container role utilities (card-shell, card-shadow)', () => {
+  // A source class name can carry Tailwind's bracket/paren arbitrary-value syntax
+  // (`border-[var(--cairn-card-border)]`), which the compiler CSS-escapes in the compiled
+  // selector (`.border-\[var\(--cairn-card-border\)\]`). Reconstruct that escaped selector text
+  // first, then regex-escape the whole thing, backslashes included, for literal use in the RegExp;
+  // the unescaped regex in the block above would otherwise read the brackets and parens as regex
+  // metacharacters rather than literal text.
+  function ruleBodyExact(className: string): string | null {
+    const cssEscapedSelector = className.replace(/[[\]()]/g, '\\$&');
+    const regexSafe = cssEscapedSelector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const match = css.match(new RegExp(`\\.${regexSafe}\\s*\\{([^}]*)\\}`));
+    if (!match) return null;
+    return match[1].replace(/\s+/g, ' ').trim();
+  }
+
+  // Parses a rule body's `prop: value;` pairs into a map, last declaration wins on a duplicate
+  // property (mirrors the cascade within one rule, and Tailwind's own rounded-box output declares
+  // border-radius twice with the same value). This is what makes the no-drift proof compare
+  // resolved property/value pairs rather than raw declaration text or declaration order.
+  function declarationMap(body: string): Map<string, string> {
+    const map = new Map<string, string>();
+    for (const declaration of body.split(';')) {
+      const trimmed = declaration.trim();
+      if (!trimmed) continue;
+      const colon = trimmed.indexOf(':');
+      if (colon < 0) continue;
+      map.set(trimmed.slice(0, colon).trim(), trimmed.slice(colon + 1).trim());
+    }
+    return map;
+  }
+
+  function mergedDeclarations(...classNames: string[]): Map<string, string> {
+    const merged = new Map<string, string>();
+    for (const className of classNames) {
+      const body = ruleBodyExact(className);
+      expect(body, `expected a rule body for .${className}`).not.toBeNull();
+      for (const [property, value] of declarationMap(body!)) {
+        merged.set(property, value);
+      }
+    }
+    return merged;
+  }
+
+  it('ships card-shell and card-shadow in the sheet a consumer gets (the safelist proof)', () => {
+    expect(ruleBodyExact('card-shell'), 'expected a rule body for .card-shell').not.toBeNull();
+    expect(ruleBodyExact('card-shadow'), 'expected a rule body for .card-shadow').not.toBeNull();
+  });
+
+  it('card-shell resolves to the same declarations as the four utilities it replaces', () => {
+    const shellBody = ruleBodyExact('card-shell');
+    expect(shellBody, 'expected a rule body for .card-shell').not.toBeNull();
+    const shellDeclarations = declarationMap(shellBody!);
+    const expected = mergedDeclarations(
+      'rounded-box',
+      'border',
+      'border-[var(--cairn-card-border)]',
+      'bg-base-100',
+    );
+    expect(shellDeclarations).toEqual(expected);
+  });
+
+  it('card-shadow resolves to the same declarations as the elevation utility it replaces', () => {
+    const shadowBody = ruleBodyExact('card-shadow');
+    expect(shadowBody, 'expected a rule body for .card-shadow').not.toBeNull();
+    const shadowDeclarations = declarationMap(shadowBody!);
+    const expected = mergedDeclarations('shadow-[var(--cairn-shadow)]');
+    expect(shadowDeclarations).toEqual(expected);
   });
 });

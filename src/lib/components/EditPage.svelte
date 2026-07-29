@@ -486,18 +486,18 @@ persistent "?" carries Markdown help, design-arc D2).
   // shrink a segment until its own label wraps mid-word.
   // Both footer-strip helpers below carry tracking-small-semibold on their pressed (semibold)
   // state: the E3 tracking scale keys to a piece of text's measured optical size + weight, and
-  // this footer's text-xs (12px) segment/toggle labels sit in the <= 13px semibold band once
+  // this footer's type-meta (13px) segment/toggle labels sit in the <= 13px semibold band once
   // pressed (design arc 2026-07-15). The pressed wash and hairline itself is the shared
   // segmentTintClass grammar (segmented-control.ts); each helper composes it with its own layout
   // and hover classes rather than restating the tint literally, so a future tune of the tint
   // reaches this footer too.
   function segButtonClass(pressed: boolean): string {
-    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 text-xs font-normal ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted hover:bg-base-content/[0.06]'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap px-2.5 py-1 type-meta font-normal ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted hover:bg-base-content/[0.06]'}`;
   }
   // A standalone writing-mode toggle (the mockup's .ftr-toggle): rounded, transparent until hover,
   // check-and-tint when pressed. Same shrink-0/whitespace-nowrap discipline as segButtonClass.
   function ftrToggleClass(pressed: boolean): string {
-    return `ftr-toggle inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-xs font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
+    return `inline-flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 type-meta font-normal hover:bg-base-content/[0.06] ${pressed ? `${segmentTintClass(pressed)} tracking-small-semibold` : 'text-muted'}`;
   }
   const activeDevice = $derived(previewDevice(device));
   // The iframe document around the rendered html: the site's stylesheets from the adapter's
@@ -1461,7 +1461,7 @@ persistent "?" carries Markdown help, design-arc D2).
         >
           <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
         </a>
-        <span class="min-w-0 flex-1 truncate text-sm font-semibold">{data.title}</span>
+        <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
         <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {status}
@@ -1479,7 +1479,7 @@ persistent "?" carries Markdown help, design-arc D2).
         <!-- The save-state indicator eases in and out; the admin sheet's prefers-reduced-motion rule
              squashes the transition for editors who asked for that. -->
         <span
-          class="cairn-save-state flex items-center gap-1.5 text-xs text-muted transition-opacity duration-[250ms]"
+          class="cairn-save-state flex items-center gap-1.5 type-meta text-muted transition-opacity duration-[250ms]"
           class:opacity-0={!saveState}
           aria-live="off"
         >
@@ -1490,7 +1490,7 @@ persistent "?" carries Markdown help, design-arc D2).
           <!-- The session-level Undo tidy (graft 6): surfaced right after Apply, dismissed on the next
                edit. Ordinary editor Undo covers it mechanically (the apply is one history entry); this
                chip names it so the author knows the whole tidy is one move back. -->
-          <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 text-xs text-muted" data-testid="tidy-undo-chip">
+          <span class="flex items-center gap-2 border-l border-[var(--cairn-card-border)] pl-3 type-meta text-muted" data-testid="tidy-undo-chip">
             <span class="inline-flex items-center gap-1 font-semibold text-[var(--color-positive-ink)]">Tidy applied</span>
             <button type="button" class="underline decoration-[color-mix(in_oklab,currentColor_40%,transparent)] underline-offset-2 hover:text-primary" onclick={undoTidy}>Undo tidy</button>
           </span>
@@ -1666,7 +1666,7 @@ persistent "?" carries Markdown help, design-arc D2).
 <!-- The feedback strip slides in directly under the one header band: @starting-style drives the
      entry, so the motion is pure CSS and the admin sheet's prefers-reduced-motion rule squashes it. -->
 {#if flash}
-  <div class="cairn-feedback alert alert-success mb-4 text-sm transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
+  <div class="cairn-feedback alert alert-success mb-4 type-body transition-all duration-[250ms] starting:-translate-y-2 starting:opacity-0">
     {flash}
   </div>
 {/if}
@@ -1674,20 +1674,20 @@ persistent "?" carries Markdown help, design-arc D2).
      quiet links beside the publish-success strip, never their own alert. They render only alongside
      publishedFlash, so a mid-edit reload of a previously published entry never shows a stale set. -->
 {#if data.publishedFlash && data.publishActions.length}
-  <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+  <div class="mb-4 flex flex-wrap items-center gap-x-4 gap-y-1 type-body">
     {#each data.publishActions as action (action.label)}
       <a class="link link-primary" href={action.href}>{action.label}</a>
     {/each}
   </div>
 {/if}
 {#if data.error}
-  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 type-body">{data.error}</div>
 {/if}
 {#if formError}
-  <div class="alert alert-error mb-4 text-sm">{formError}</div>
+  <div class="alert alert-error mb-4 type-body">{formError}</div>
 {/if}
 {#if deleteRefusedLinks.length}
-  <div class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     {#if deleteRefusedByInclusion}
       <p>{deleteRefusedLinks.length} {deleteRefusedLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
@@ -1704,12 +1704,12 @@ persistent "?" carries Markdown help, design-arc D2).
   </div>
 {/if}
 {#if visibleBrokenLinks.length}
-  <div class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p>This page links to {visibleBrokenLinks.length === 1 ? 'a page' : 'pages'} that no longer {visibleBrokenLinks.length === 1 ? 'exists' : 'exist'}. Remove the broken {visibleBrokenLinks.length === 1 ? 'link' : 'links'} and save again.</p>
     <ul class="mt-1 w-full">
       {#each visibleBrokenLinks as href (href)}
         <li class="flex items-center justify-between gap-2">
-          <code class="text-xs">{href}</code>
+          <code class="type-meta">{href}</code>
           <button type="button" class="btn btn-xs" onclick={() => removeBrokenLink(href)}>Remove link</button>
         </li>
       {/each}
@@ -1729,7 +1729,7 @@ persistent "?" carries Markdown help, design-arc D2).
      never reordered, so the index is a stable key here. -->
 {#snippet advisoryNotices(notices: RenderNotice[])}
   {#each notices as notice, i (i)}
-    <div class="alert alert-warning mb-4 flex-col items-start text-sm">
+    <div class="alert alert-warning mb-4 flex-col items-start type-body">
       <p class="flex items-center gap-2 font-medium">
         <svg class="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
@@ -1747,9 +1747,9 @@ persistent "?" carries Markdown help, design-arc D2).
                 <!-- A body needs-alt row labels with its source reference in a code span; a hero row
                      and any future labelled row use a plain label. -->
                 {#if row.rowCode}
-                  <code class="text-xs">{row.rowLabel}</code>
+                  <code class="type-meta">{row.rowLabel}</code>
                 {:else}
-                  <span class="text-xs font-medium">{row.rowLabel}</span>
+                  <span class="type-meta font-medium">{row.rowLabel}</span>
                 {/if}
               {/if}
               {#if row.href}
@@ -1794,16 +1794,16 @@ persistent "?" carries Markdown help, design-arc D2).
 <div role="status">
   {@render advisoryNotices(renderNotices)}
   {#if fragmentBlastRadiusLine}
-    <p class="mb-4 text-sm text-muted">{fragmentBlastRadiusLine}</p>
+    <p class="mb-4 type-body text-muted">{fragmentBlastRadiusLine}</p>
   {/if}
 </div>
 {#if draftWarning}
-  <div class="alert alert-warning mb-4 text-sm">
+  <div class="alert alert-warning mb-4 type-body">
     Saved. Note: this page links to unpublished {draftWarning.includes(',') ? 'pages' : 'a page'} ({draftWarning}), which will 404 until published.
   </div>
 {/if}
 {#if referenceWarning}
-  <div class="alert alert-warning mb-4 text-sm">
+  <div class="alert alert-warning mb-4 type-body">
     Saved. Note: this page references {referenceWarning.includes(',') ? 'entries' : 'an entry'} ({referenceWarning}) not yet published, which the build will flag until published.
   </div>
 {/if}
@@ -1839,9 +1839,11 @@ persistent "?" carries Markdown help, design-arc D2).
            mirrors that geometry (the editor face at the prose size, the measure, auto margins).
            Under focus mode the title eases back with the rest of the context unless it holds
            focus itself. -->
+      <!-- cairn-audit-disable-next-line type-scale -- the editor's own prose canvas wrapper, in the editor mono face, not an admin heading; its 18px happens to equal type-heading's size, but adopting the role here would silently retag the editor's body text as a heading and change its line spacing to 28px. -->
       <div class={surface === 'prose' ? 'mb-4 mx-auto w-full max-w-[72ch] px-5 text-[1.125rem] font-[family-name:var(--font-editor,ui-monospace,monospace)]' : 'mb-4 w-full px-5'}>
+        <!-- cairn-audit-disable-next-line type-scale -- the editor canvas sets its own type scale for the document title, deliberately larger than the admin chrome's type-heading. -->
         <input
-          class="cairn-doc-title w-full border-0 bg-transparent text-3xl font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
+          class="cairn-doc-title w-full border-0 bg-transparent text-[1.875rem]/[2.25rem] font-bold font-[family-name:var(--font-display)] placeholder:text-muted {focusMode ? 'cairn-doc-title-dim' : ''}"
           name="title"
           value={str(data.frontmatter.title)}
           placeholder={titleField.label}
@@ -1854,7 +1856,7 @@ persistent "?" carries Markdown help, design-arc D2).
          reads as a single object. The card carries the formatting shortcuts for everything in it. -->
     <div
       bind:this={editorCard}
-      class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]"
+      class="card-shell overflow-hidden card-shadow"
       class:cairn-editor-zen={zen}
       role="group"
       aria-label="Editor"
@@ -2016,7 +2018,7 @@ persistent "?" carries Markdown help, design-arc D2).
           {@render moreToggle('Zen', zen, () => { setZen(!zen); closeMenu(); })}
           {@render moreDivider()}
           <li class="sm:hidden">
-            <span class="pointer-events-none px-3 py-1.5 text-xs text-muted tabular-nums">{wordLabel}</span>
+            <span class="pointer-events-none px-3 py-1.5 type-meta text-muted tabular-nums">{wordLabel}</span>
           </li>
         {/snippet}
       </EditorToolbar>
@@ -2086,15 +2088,15 @@ persistent "?" carries Markdown help, design-arc D2).
               </p>
             {/if}
             {#if !data.preview}
-              <p class="mb-2 text-xs text-muted">
+              <p class="mb-2 type-meta text-muted">
                 Preview shows unstyled markup until the adapter's preview option names the site's stylesheets.
               </p>
             {/if}
-            <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 overflow-hidden shadow-[var(--cairn-shadow)]">
+            <div class="card-shell overflow-hidden card-shadow">
               {#if previewFailed}
-                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">The preview could not render this content.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center type-body text-muted">The preview could not render this content.</p>
               {:else if !previewHtml}
-                <p class="flex h-[70vh] items-center justify-center p-4 text-center text-sm text-muted">Nothing to preview yet.</p>
+                <p class="flex h-[70vh] items-center justify-center p-4 text-center type-body text-muted">Nothing to preview yet.</p>
               {:else}
                 <!-- The site's render pipeline already sanitized the html (the floor strips
                      scripts and handlers); the empty sandbox is belt and braces on top. The
@@ -2131,7 +2133,7 @@ persistent "?" carries Markdown help, design-arc D2).
       {#if !zen && !narrow}
       <div
         data-testid="cairn-editor-footer"
-        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 text-xs text-muted"
+        class="flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 border-t border-[var(--cairn-card-border)] px-3 py-1 type-meta text-muted"
       >
         <span class="flex shrink-0 items-center gap-1.5">
           <span class="tabular-nums">{wordLabel}</span>
@@ -2282,15 +2284,15 @@ persistent "?" carries Markdown help, design-arc D2).
       <legend class={eyebrowClass}>Visibility</legend>
         <label class="label cursor-pointer justify-start gap-2">
           <input class="checkbox checkbox-sm" type="checkbox" name="draft" checked={data.frontmatter.draft === true} />
-          <span class="text-sm">Hidden</span>
+          <span class="type-body">Hidden</span>
         </label>
-        <p class="text-xs text-muted">Hidden entries stay off the site's lists and feeds, even when published.</p>
+        <p class="type-meta text-muted">Hidden entries stay off the site's lists and feeds, even when published.</p>
       </fieldset>
       {/if}
       <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
       <legend class={eyebrowClass}>{data.routable ? 'Address' : 'Name'}</legend>
         <div class="flex items-center justify-between gap-2">
-          <code class="min-w-0 break-all text-xs text-muted">{data.routable ? `/${data.slug}` : data.slug}</code>
+          <code class="min-w-0 break-all type-meta text-muted">{data.routable ? `/${data.slug}` : data.slug}</code>
           <button
             type="button"
             class="btn btn-ghost btn-sm shrink-0"
@@ -2309,18 +2311,18 @@ persistent "?" carries Markdown help, design-arc D2).
         <fieldset class="m-0 flex min-w-0 flex-col gap-label border-0 p-0">
           <legend class={eyebrowClass}>Included in</legend>
           {#if data.inboundLinks.length}
-            <p class="text-xs text-muted">
+            <p class="type-meta text-muted">
               Included in {data.inboundLinks.length} {data.inboundLinks.length === 1 ? 'entry' : 'entries'}.
             </p>
             <ul class="flex flex-col gap-1">
               {#each data.inboundLinks as link (link.concept + '/' + link.id)}
                 <li>
-                  <a class="link text-xs" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
+                  <a class="link type-meta" href={`/admin/${link.concept}/${link.id}`}>{link.title}</a>
                 </li>
               {/each}
             </ul>
           {:else}
-            <p class="text-xs text-muted">Not included anywhere yet.</p>
+            <p class="type-meta text-muted">Not included anywhere yet.</p>
           {/if}
         </fieldset>
       {/if}
@@ -2348,7 +2350,7 @@ persistent "?" carries Markdown help, design-arc D2).
 {#if !zen && narrow}
   <div
     data-testid="cairn-edit-actionbar"
-    class="cairn-edit-actionbar fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
+    class="fixed inset-x-0 bottom-0 z-40 flex items-center gap-2 border-t border-[var(--cairn-card-border)] bg-base-100 px-3 pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]"
   >
     <button
       bind:this={publishButton}
@@ -2376,7 +2378,7 @@ persistent "?" carries Markdown help, design-arc D2).
      save-state span mirrors the band's, so the warning dot flips with `dirty` live; the Exit button
      restores the chrome, with the Esc hint as the secondary cue. It renders only under zen. -->
 {#if zen}
-  <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 text-xs text-muted shadow-[var(--cairn-shadow)]">
+  <div class="cairn-zen-chip fixed right-4.5 top-3.5 z-40 flex items-center gap-2 rounded-xl border border-[var(--cairn-card-border)] bg-base-100 px-2.5 py-1.5 type-meta text-muted shadow-[var(--cairn-shadow)]">
     <span class="cairn-save-state flex items-center gap-1.5" aria-live="off">
       {#if dirty}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-warning" aria-hidden="true"></span>{:else}<span class="h-1.5 w-1.5 shrink-0 rounded-full bg-success" aria-hidden="true"></span>{/if}
       {dirty ? 'Unsaved changes' : 'Saved'}
@@ -2445,7 +2447,7 @@ persistent "?" carries Markdown help, design-arc D2).
 >
   <div class="modal-box max-w-sm">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 text-base font-semibold">
+      <h2 id="cairn-figure-dialog-title" class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         <ImageIcon class="h-4 w-4 text-[var(--color-accent)]" aria-hidden="true" />
         {figurePrefill?.mode === 'edit' ? 'Edit figure' : 'Wrap in a figure'}
       </h2>
@@ -2512,8 +2514,8 @@ persistent "?" carries Markdown help, design-arc D2).
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
       <span class="loading loading-spinner loading-lg text-primary" aria-hidden="true"></span>
-      <h2 id="cairn-tidy-working-title" class="text-base font-semibold">Tidying your text</h2>
-      <p class="max-w-prose text-sm text-muted">
+      <h2 id="cairn-tidy-working-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Tidying your text</h2>
+      <p class="max-w-prose type-body text-muted">
         Claude is reading your draft for a light copy-edit. You will review each change before it is applied.
       </p>
       <button type="button" class="btn btn-sm" onclick={() => tidyWorkingDialog?.close()}>Cancel</button>
@@ -2531,8 +2533,8 @@ persistent "?" carries Markdown help, design-arc D2).
     onclose={() => (tidyNoop = false)}
   >
     <div class="modal-box flex flex-col items-center gap-3 text-center">
-      <h2 id="cairn-tidy-noop-title" class="text-base font-semibold">Nothing to fix</h2>
-      <p class="max-w-prose text-sm text-muted">Tidy read your text and found nothing to change.</p>
+      <h2 id="cairn-tidy-noop-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Nothing to fix</h2>
+      <p class="max-w-prose type-body text-muted">Tidy read your text and found nothing to change.</p>
       <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyNoopDialog?.close()}>Close</button>
     </div>
   </dialog>
@@ -2548,8 +2550,8 @@ persistent "?" carries Markdown help, design-arc D2).
     onclose={() => (tidyMessage = null)}
   >
     <div class="modal-box flex flex-col gap-3">
-      <h2 id="cairn-tidy-message-title" class="text-base font-semibold">Tidy could not run</h2>
-      <p class="text-sm text-muted">{tidyMessage}</p>
+      <h2 id="cairn-tidy-message-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Tidy could not run</h2>
+      <p class="type-body text-muted">{tidyMessage}</p>
       <div class="flex justify-end">
         <button type="button" class="btn btn-sm btn-primary" onclick={() => tidyMessageDialog?.close()}>Close</button>
       </div>
@@ -2572,13 +2574,13 @@ persistent "?" carries Markdown help, design-arc D2).
   <dialog class="modal" aria-labelledby="cairn-discard-dialog-title" bind:this={discardDialog}>
     <div class="modal-box">
       <div class="mb-3 flex items-center justify-between">
-        <h2 id="cairn-discard-dialog-title" class="text-base font-semibold">Discard the unpublished changes?</h2>
+        <h2 id="cairn-discard-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Discard the unpublished changes?</h2>
         <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => discardDialog?.close()}>✕</button>
       </div>
       {#if data.published}
-        <p class="mb-3 text-sm">This restores the live version. The changes cannot be recovered.</p>
+        <p class="mb-3 type-body">This restores the live version. The changes cannot be recovered.</p>
       {:else}
-        <p class="mb-3 text-sm">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
+        <p class="mb-3 type-body">This entry has never been published, so discarding deletes it. Nothing can be recovered.</p>
       {/if}
       <form method="POST" action="?/discard" class="flex justify-end gap-2" onsubmit={() => (leaving = true)}>
         <CsrfField />
@@ -2592,3 +2594,30 @@ persistent "?" carries Markdown help, design-arc D2).
   </dialog>
 {/if}
 {/key}
+
+<style>
+  /* Naming hooks with no visual role of their own: each element's real styling rides on the
+     Tailwind utilities already in its class attribute. Each rule carries only an inert custom
+     property, never read anywhere, since an empty ruleset both fails svelte-check's own lint and
+     (were it `all: revert` instead) would sit unlayered and outrank the sibling Tailwind
+     utilities the cascade layers otherwise protect. This is a co-located, self-documenting
+     declaration of the class name, replacing a JSON allowlist entry a rename would silently
+     orphan. */
+  .cairn-save-state,
+  .cairn-feedback,
+  .cairn-preview-frame,
+  .cairn-zen-chip {
+    --cairn-naming-hook: true;
+  }
+
+  /* EditorToolbar.svelte's own .menu-divider carries the identical naming hook and reason. */
+  .menu-divider {
+    --cairn-naming-hook: true;
+  }
+
+  /* The zen-mode toggle's own naming hook; it also happens to be the unrelated localStorage
+     preference key of the same name (coincidence, not a dependency). */
+  .cairn-editor-zen {
+    --cairn-naming-hook: true;
+  }
+</style>

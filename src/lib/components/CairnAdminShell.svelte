@@ -591,7 +591,7 @@ discriminant, not the fields, gates the chrome).
                  (not the wrapper's own inline content), so a text-overflow rule on the wrapper
                  alone never renders one (audit finding). min-w-0 lets the flex-laid label shrink
                  past its content size so truncate can take effect. -->
-            <nav aria-label="Breadcrumb" class="breadcrumbs min-w-0 max-w-full p-0 text-sm">
+            <nav aria-label="Breadcrumb" class="breadcrumbs min-w-0 max-w-full p-0 type-body">
               <ul class="min-w-0">
                 {#each crumbs as crumb (crumb.href ?? crumb.label)}
                   <li class="min-w-0">
@@ -620,7 +620,7 @@ discriminant, not the fields, gates the chrome).
             <button
               type="button"
               onclick={openPalette}
-              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 text-sm text-muted transition-colors hover:bg-base-200 hover:text-base-content"
+              class="flex w-full max-w-md items-center gap-2 rounded-field border border-[var(--cairn-card-border)] bg-base-200/70 px-3 py-1.5 type-body text-muted transition-colors hover:bg-base-200 hover:text-base-content"
             >
               <SearchIcon class="h-4 w-4 shrink-0" aria-hidden="true" />
               <span class="truncate">Search or jump to&hellip;</span>
@@ -674,7 +674,7 @@ discriminant, not the fields, gates the chrome).
               type="text"
               aria-label="Search or jump to"
               placeholder="Search or jump to…"
-              class="w-full bg-transparent py-3.5 text-sm placeholder:text-muted"
+              class="w-full bg-transparent py-3.5 type-body placeholder:text-muted"
               onkeydown={(e) => {
                 if (e.key === 'Enter') {
                   e.preventDefault();
@@ -711,7 +711,7 @@ discriminant, not the fields, gates the chrome).
               {/each}
             </ul>
           {:else}
-            <p class="px-4 py-6 text-center text-sm text-muted">No matches for "{paletteQuery}".</p>
+            <p class="px-4 py-6 text-center type-body text-muted">No matches for "{paletteQuery}".</p>
           {/if}
         </div>
         <form method="dialog" class="modal-backdrop"><button tabindex="-1" aria-label="Close">close</button></form>
@@ -723,13 +723,13 @@ discriminant, not the fields, gates the chrome).
           <dialog bind:this={publishAllDialog} class="modal" aria-labelledby="cairn-shell-publish-all-title">
             <div class="modal-box">
               <div class="mb-3 flex items-center justify-between">
-                <h2 id="cairn-shell-publish-all-title" class="text-base font-semibold">Publish the whole site?</h2>
+                <h2 id="cairn-shell-publish-all-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Publish the whole site?</h2>
                 <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => publishAllDialog?.close()}>✕</button>
               </div>
-              <p class="text-sm">Every entry below goes live in one step.</p>
+              <p class="type-body">Every entry below goes live in one step.</p>
               {#each groups as group, i (group.label)}
                 <p id={`cairn-publish-group-${i}`} class="mt-3 type-label font-semibold uppercase tracking-[0.08em] text-muted">{group.label}</p>
-                <ul class="mt-1 text-sm" aria-labelledby={`cairn-publish-group-${i}`}>
+                <ul class="mt-1 type-body" aria-labelledby={`cairn-publish-group-${i}`}>
                   {#each group.ids as id (id)}
                     <li>{id}</li>
                   {/each}
@@ -769,6 +769,7 @@ discriminant, not the fields, gates the chrome).
             <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-primary text-primary-content shadow-sm">
               <CairnLogo class="h-5 w-5" />
             </span>
+            <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
             <span class="rounded-md border border-base-300 px-1.5 py-px type-chip font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
           </a>
@@ -872,13 +873,13 @@ discriminant, not the fields, gates the chrome).
           <div class="flex items-center gap-3">
             <div class="avatar avatar-placeholder">
               <div class="bg-neutral text-neutral-content w-9 rounded-full">
-                <span class="text-sm">{initials}</span>
+                <span class="type-body">{initials}</span>
               </div>
             </div>
             <div class="min-w-0 flex-1">
-              <div class="truncate text-sm font-medium">{data.user.displayName}</div>
-              <div class="truncate text-xs text-muted">{data.user.email}</div>
-              <div class="text-xs capitalize text-subtle">{data.user.role}</div>
+              <div class="truncate type-body font-medium">{data.user.displayName}</div>
+              <div class="truncate type-meta text-muted">{data.user.email}</div>
+              <div class="type-label capitalize text-subtle">{data.user.role}</div>
             </div>
           </div>
           <!-- Logout posts to the absolute /admin catch-all, so the shell signs out from every

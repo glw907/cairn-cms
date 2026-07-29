@@ -292,8 +292,8 @@ must never make, so no such count exists.
         <SparklesIcon class="size-5" aria-hidden="true" />
       </span>
       <div class="min-w-0 flex-1">
-        <div id="cairn-tidy-title" class="text-lg font-bold leading-tight">Review tidy</div>
-        <div class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
+        <div id="cairn-tidy-title" class="type-heading font-bold font-[family-name:var(--font-display)] leading-tight">Review tidy</div>
+        <div class="mt-0.5 flex flex-wrap items-center gap-2 type-meta text-muted">
           <span><b class="text-base-content">{hunks.length} {hunks.length === 1 ? 'change' : 'changes'}</b> to <b class="text-base-content">{title}</b></span>
           <span class="rounded-full border border-[var(--cairn-card-border)] px-2 py-0.5 type-label font-semibold">{model}</span>
         </div>
@@ -309,7 +309,7 @@ must never make, so no such count exists.
 
     <!-- the bulk bar: the live tally (role=status, bulk-only) + Accept fixes / Reject all -->
     <div class="flex items-center gap-3 border-b border-[var(--cairn-card-border)] bg-base-200 px-4 py-2.5">
-      <span class="inline-flex flex-wrap items-center gap-2 text-sm text-muted" data-testid="tidy-tally">
+      <span class="inline-flex flex-wrap items-center gap-2 type-body text-muted" data-testid="tidy-tally">
         <span class="inline-flex items-center gap-1 font-semibold text-base-content">
           <CheckIcon class="size-3" aria-hidden="true" /><span class="tabular-nums">{keptCount}</span> kept
         </span>
@@ -435,7 +435,7 @@ must never make, so no such count exists.
           {#if h.because}
             <!-- the mandatory because-line: names ONLY the config setting that authorized this hunk -->
             <div
-              class="flex items-start gap-2 border-t border-dashed border-[var(--cairn-card-border)] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_5%,transparent)] px-3 py-2 text-xs leading-snug text-subtle"
+              class="flex items-start gap-2 border-t border-dashed border-[var(--cairn-card-border)] bg-[color-mix(in_oklab,var(--cairn-warning-ink)_5%,transparent)] px-3 py-2 type-meta leading-snug text-subtle"
               data-testid="tidy-because"
             >
               <LightbulbIcon class="mt-px size-3 flex-none text-[var(--cairn-warning-ink)]" aria-hidden="true" />

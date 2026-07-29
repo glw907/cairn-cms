@@ -562,7 +562,10 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-decoration: none;
     transition: border-color 150ms ease, background-color 150ms ease;
   }
-  .step-act:hover {
+  /* :focus-visible pairs the same tint with a keyboard tab onto this link (cairn-audit's
+     focus-parity rule), so a keyboard user sees the same affordance a mouse hover gives. */
+  .step-act:hover,
+  .step-act:focus-visible {
     border-color: color-mix(in oklab, var(--color-primary) 40%, var(--cairn-card-border));
     background: color-mix(in oklab, var(--color-primary) 6%, transparent);
   }
@@ -610,7 +613,8 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-decoration: underline;
     text-underline-offset: 2px;
   }
-  .step-open:hover {
+  .step-open:hover,
+  .step-open:focus-visible {
     color: var(--color-base-content);
   }
 
@@ -633,7 +637,8 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-decoration: underline;
     text-underline-offset: 2px;
   }
-  .start-foot button:hover {
+  .start-foot button:hover,
+  .start-foot button:focus-visible {
     color: var(--color-base-content);
   }
 
@@ -651,7 +656,8 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     text-decoration: underline;
     text-underline-offset: 2px;
   }
-  .start-restore button:hover {
+  .start-restore button:hover,
+  .start-restore button:focus-visible {
     color: var(--color-base-content);
   }
 
@@ -781,7 +787,8 @@ eyebrow-plus-display sections that stay their own hand-written recipe this wave.
     white-space: nowrap;
     transition: border-color 150ms ease, color 150ms ease;
   }
-  .btn-quiet:hover {
+  .btn-quiet:hover,
+  .btn-quiet:focus-visible {
     border-color: color-mix(in oklab, var(--color-primary) 38%, var(--cairn-card-border));
     color: var(--color-primary);
   }

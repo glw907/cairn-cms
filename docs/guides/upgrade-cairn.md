@@ -49,6 +49,29 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: the `cairn-audit` design gate, and the type scale closes (non-breaking)
+
+A new bin, `cairn-audit`, audits an admin surface against cairn's design language. Static mode
+parses your components and the built admin stylesheet. Rendered mode drives Chromium against a
+running admin and measures what it actually paints. Six rendered rules gate and five report only.
+Run `npx cairn-audit` on your own admin routes, or skip it entirely: nothing in the engine calls
+it, and rendered mode takes a Playwright dependency only when you run it. See [The `cairn-audit`
+CLI](../reference/cairn-audit.md).
+
+The grammar token inventory grows to eighteen custom properties. Every type role now carries a
+paired `--cairn-type-<role>--leading` token, and a seventh role, `type-heading`, unifies the
+admin's two heading recipes. A `leading-*` utility still composes over a role. See [Admin grammar
+tokens](../reference/admin-grammar-tokens.md).
+
+`npx cairn-audit norms <role>` answers from a manifest of the admin's measured norms, so you can
+read a control height, a padding ratio, or a border treatment instead of inferring one from a
+screenshot.
+
+Consumers must: expect the header stack on any screen mounting `PageHeader` to render tighter, a
+shorter title-to-meta gap, and its `meta` line one step smaller. No prop, type, or route contract
+changed. If your own screens use the admin grammar tokens, nothing you wrote moves. The new
+leading tokens match the sizes the roles already rendered at.
+
 ## 0.90.1: ListToolbar select sizing and menu-facet disclosure/a11y (non-breaking)
 
 `ListToolbar`'s `'select'` facets now size to their own content instead of daisyUI's fixed

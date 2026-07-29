@@ -145,7 +145,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 </script>
 
 {#snippet fieldHint(hintName: string, text: string)}
-  <p id={`${hintName}-hint`} class="mt-1 text-sm text-muted">
+  <p id={`${hintName}-hint`} class="mt-1 type-body text-muted">
     {text}
   </p>
 {/snippet}
@@ -153,7 +153,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {#if field.type === 'textarea'}
   {@const f = field as NamedField & TextareaField}
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{f.label}</span>
+    <span class="type-body font-medium">{f.label}</span>
     <textarea class="textarea textarea-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} rows={f.rows ?? 3} required={f.required}>{str(frontmatter[f.name])}</textarea>
     {#if f.help}
       {@render fieldHint(hintBase, f.help)}
@@ -162,7 +162,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'number'}
   {@const f = field as NamedField & NumberField}
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{f.label}</span>
+    <span class="type-body font-medium">{f.label}</span>
     <input
       class="input input-sm"
       type="number"
@@ -182,7 +182,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
 {:else if field.type === 'select'}
   {@const f = field as NamedField & SelectField}
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{f.label}</span>
+    <span class="type-body font-medium">{f.label}</span>
     <select class="select select-sm" {name} aria-label={f.label} aria-describedby={f.help ? `${hintBase}-hint` : undefined} required={f.required}>
       <!-- A leading empty option submits '' (the key is dropped on save); a required select
            leaves it unselected so an unset value fails the required check with a clear message. -->
@@ -197,7 +197,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   </label>
 {:else if field.type === 'date'}
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <!-- A date field always carries a hint: the adapter's help when set, else the
          built-in publish-clarity default. So aria-describedby always points at the paragraph. -->
     <input class="input input-sm" type="date" {name} aria-label={field.label} aria-describedby={`${hintBase}-hint`} value={str(frontmatter[field.name])} required={field.required} />
@@ -207,7 +207,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   <div class="flex flex-col gap-1">
     <label class="label cursor-pointer justify-start gap-2">
       <input class="checkbox checkbox-sm" type="checkbox" {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} checked={frontmatter[field.name] === true} />
-      <span class="text-sm">{field.label}</span>
+      <span class="type-body">{field.label}</span>
     </label>
     {#if field.help}
       {@render fieldHint(hintBase, field.help)}
@@ -237,12 +237,12 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
             value={option}
             checked={selected.includes(option)}
           />
-          <span class="text-sm">{option}</span>
+          <span class="type-body">{option}</span>
           {#if orphan}
             <!-- A non-blocking flag, never a block: the orphan stays a checked, removable option so
                  an untouched save preserves it and unchecking it drops it. Warning ink, not the fill
                  tone, so the small label clears the contrast floor on the light surface. -->
-            <span class="text-xs text-[var(--cairn-warning-ink)]">not in your tag list</span>
+            <span class="type-label text-[var(--cairn-warning-ink)]">not in your tag list</span>
           {/if}
         </label>
       {/each}
@@ -252,7 +252,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   {@const f = field as NamedField & MultiselectField}
   {@const tagValue = ((frontmatter[f.name] ?? []) as string[]).join(', ')}
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{f.label}</span>
+    <span class="type-body font-medium">{f.label}</span>
     <input
       class="input input-sm"
       {name}
@@ -293,7 +293,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   <RepeatableField {field} {name} rows={(frontmatter[field.name] ?? []) as unknown[]} {markFieldsDirty} {mediaLibrary} {conceptId} {id} {heroFieldRefs} {targets} {onuploaded} {onheroneedsalt} {icons} />
 {:else if field.type === 'icon' && icons}
   <div class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <IconPicker
       {icons}
       label={field.label}
@@ -313,7 +313,7 @@ one-level nesting cap (the declaration guard) bounds so the recursion terminates
   <!-- The plain single-line text input arm: url, email, datetime, and the text fallback. They share
        one shape and differ only in the input type inputType() resolves. -->
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <input class="input input-sm" type={inputType(field.type)} {name} aria-label={field.label} aria-describedby={field.help ? `${hintBase}-hint` : undefined} value={str(frontmatter[field.name])} required={field.required} />
     {#if field.help}
       {@render fieldHint(hintBase, field.help)}

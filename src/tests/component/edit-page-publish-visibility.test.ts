@@ -60,7 +60,7 @@ function publishButton(screen: { container: HTMLElement }) {
 // acknowledge the change.
 async function makeDirty(screen: ReturnType<typeof render>) {
   await expect.poll(() => screen.container.querySelector('.cm-content')).not.toBeNull();
-  const card = screen.container.querySelector('[role="toolbar"]')!.closest('.rounded-box')!;
+  const card = screen.container.querySelector('[role="toolbar"]')!.closest('.card-shell')!;
   card.dispatchEvent(new KeyboardEvent('keydown', { key: 'b', ctrlKey: true, bubbles: true, cancelable: true }));
   await expect
     .poll(() => screen.container.querySelector('.cairn-save-state')?.textContent?.trim() ?? '')

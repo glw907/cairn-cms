@@ -22,8 +22,11 @@ both zebra stripes in both themes (22% sits at the visibility floor on the light
 survives).
 
 Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
-than a Tailwind utility string, since `/admin/**` routes load only cairn's precompiled admin CSS
-and an arbitrary utility never reaches it.
+than a Tailwind utility string. That was a hard constraint when this component was written, since
+`/admin/**` routes load only cairn's precompiled admin CSS and `src/lib/admin-toolkit` was outside
+the `@source` roots then. The directory joined those roots in `c21ac3b8`, so an arbitrary utility
+written here does compile now; the scoped rules stay because they are settled, and the constraint
+still binds a CONSUMER's own admin screen, which cairn never scans.
 
 The `sm` size keeps a `5rem` floor (comfortable next to a longer generic label, its first
 consumer's own household-standing context; a min-width-free "hugging" alternative was tried and

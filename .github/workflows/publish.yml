@@ -20,7 +20,15 @@ permissions:
   id-token: write # required for OIDC trusted publishing
 
 jobs:
+  # The norms manifest ships in the package, so a cut cannot ship a stale one. The check is defined
+  # once, in norms.yml, and called here so the publish still gates on it. Keeping it there rather
+  # than inline is what makes it rehearsable: norms.yml also carries `workflow_dispatch`, so the
+  # render can be proven on CI against any branch without this workflow attempting a real publish.
+  norms:
+    uses: ./.github/workflows/norms.yml
+
   publish:
+    needs: norms
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

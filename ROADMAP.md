@@ -2,7 +2,7 @@
 
 cairn-cms runs two production sites today, [ecxc.ski](https://ecxc.ski) (formerly ecnordic.ski) and
 [907.life](https://907.life). It is `0.x` and breaks between minor versions; the latest published
-release is `0.87.1`. The author is still working through the core-feature roadmap, and the project stays
+release is `0.90.1`. The author is still working through the core-feature roadmap, and the project stays
 closely held until that core lands.
 
 This roadmap is a direction, not a commitment. Priorities shift as the production sites surface needs,
@@ -163,6 +163,113 @@ the named human gates only):**
   review can interleave, with the two re-expressions as its field evidence.
 
 ## Next
+
+- **The admin defects `cairn-audit --rendered` found in cairn's own admin** (design infrastructure
+  Pass 2 calibration, 2026-07-28; measurements and per-finding classification in
+  `docs/internal/2026-07-design-infrastructure-audit-calibration.md`). Six admin routes in both
+  themes report 20 error-tier findings, so cairn's own admin exits 1 against the gate cairn now
+  ships. Nothing here is a rule defect; each was spot-checked against the rendered screen. Promote
+  the error-tier group whenever an admin design pass next opens, since a gate its own author's tree
+  fails is worth less than the runs it passes.
+  - **Error tier, `touch-targets` (10).** `/admin/media`'s per-card selection checkbox renders
+    20x20 with no associated label, inside a `span` that already reserves 24x24: the affordance is
+    drawn and the input just does not fill it, the cheapest fix in the set. The column sort button
+    on `/admin/posts` and `/admin/pages` renders 62x16, a 16px-tall tap target for a real sort
+    action. The row title link on the same two screens renders 19px tall inside a 49px row, so the
+    primary action of the row claims none of the 30px around it.
+  - **Error tier, `viewport-overflow` (4).** `/admin/media`'s segmented toolbar renders 335px wide
+    inside a 320px viewport with no containing scroller, taking `document.scrollWidth` to 351. The
+    page scrolls horizontally at 320, which the family responsive standard forbids outright.
+  - **Error tier, `chip-ground-collision` (4).** `/admin/media`'s "Not referenced" badge reads at
+    1.11 dark and 1.03 light against an empty thumbnail well: the pill borrows the thumbnail for
+    its ground, so a missing or broken image leaves it with no contrast at all, and six of seven
+    cards show a pill while the seventh shows bare text. `/admin/vocabulary`'s count pill reads 1.12
+    in both themes against the ratified 1.5 floor, so the "3" beside "Your tags" reads as a bare
+    numeral with odd spacing.
+  - **Error tier, `one-filled-action` plus `screen-anatomy` (2 plus 1), one underlying defect two
+    independent rules caught.** `/admin/vocabulary` renders two `btn-primary` controls, "Add tag"
+    inside its card and "Save changes" at the page bottom, and "Save changes" sits outside the
+    header and outside every `.card-shell` with no surface under it. Nothing on the screen says
+    which action is the page's primary one.
+  - **Advisory, `border-contrast` (132 of the 210 in three classes).** Form control boundaries
+    across the admin (`input.input`, `select.select`, the toolbar search field, the vocabulary
+    new-label input) read 1.49 light and 1.77 dark against WCAG 1.4.11's 3:1, 26 findings; this is
+    the criterion's core case and the most defensible accessibility finding in the corpus. The
+    segmented filter buttons carry daisyUI's stock `--btn-border`, a 5% darkening of the button's
+    own fill that reads 1.01 in dark, so adjacent segments have no visible division, 36 findings;
+    the right fix is probably removing the inert stroke rather than darkening it. Table row
+    dividers are `base-content` at 5% alpha, reading 1.10 light and 1.14 dark, 70 findings and the
+    largest single class in the corpus: a rule whose whole job is separating rows, doing almost
+    none of it.
+  - **Advisory, `weight-budget` (2, both true positives and the only two in the corpus).**
+    `/admin/login` renders no `<main>` landmark at all, a real landmark gap rather than an audit
+    inconvenience. `/admin/media`'s content region renders three font weights against the two-weight
+    budget, all three genuine card content: filename 500, reference badge 600, status-chip label
+    400. **Sequencing hazard, do not lose:** fixing the login landmark immediately creates two new
+    `screen-anatomy` false positives, because that rule's only working exemption today is an
+    accidental `if (!mainEl) return null`. Give `screen-anatomy` a positive scope predicate first.
+  - **Static, held open for Geoff.** `stock-default-hazards` reports `badge-ghost` at
+    `EditPage.svelte:989`. `StatusChip.svelte:15` already records `badge-ghost` as refuted, so the
+    engine and the component agree; this is a design call, not a defect to fix unilaterally.
+
+- **The rendered rules' own calibration follow-ups** (design infrastructure Pass 2, 2026-07-28;
+  evidence in the calibration doc above). All five advisory rules stay advisory, and the evidence
+  for promotion is not close, so what remains is repair rather than promotion.
+  `interactive-contrast` is a demotion candidate and the only one that gates: 3 findings on a
+  consumer home page, all false positives, and 0 on cairn's own tree. `border-contrast` is the most
+  repairable of the advisory five, but its exemption keys on the literal string
+  `--cairn-card-border`, which no consumer can reach structurally. `screen-anatomy` judges every
+  drawer-less page an office screen, so every consumer page in existence. `relational-spacing`'s
+  `--cairn-gap-*` tokens exist in no published build, so it can answer nothing against any released
+  engine, and no true positive has been demonstrated for it anywhere. `touch-targets` omits WCAG
+  2.5.8's spacing exception, which would exempt the 62x16 sort button at its measured 47px nearest
+  neighbour. `focus-renders` reported zero on both corpora and is unclassified rather than verified
+  clean; it needs a deliberate positive-control fixture.
+
+- **The rule repairs Task 18's review gate confirmed but deferred** (design infrastructure Pass 2,
+  2026-07-28). Six defects the gate found were fixed with fixtures; these six were confirmed and
+  left, each because closing it is a scope expansion or loosens a gating rule and deserves its own
+  adversarial pass rather than a gate-stage edit. Each is documented at the code, so a reader meets
+  it in context.
+  - `touch-targets` samples one 390px viewport, and SC 2.5.8 carries no viewport qualifier. Borrow
+    `viewport-overflow`'s width list; the cost of leaving it is a control that passes at 390 and
+    fails at 320 going unmeasured.
+  - `touch-targets` and `interactive-contrast` hold different definitions of a control. The first
+    misses `textarea`, `<area>`, the widget roles, and a `tabindex`-plus-handler custom control; the
+    second carries a wider list plus a `cursor: pointer` fallback. One shared selector in the page
+    helpers is the repair. Widening a gating rule's net changes the measured baseline, which is why
+    it is not taken here.
+  - `touch-targets` collapses findings per selector signature, so a count is a count of shapes.
+    `interactive-contrast` deliberately refuses the same idiom. Two error-tier rules disagreeing on
+    this means a developer cannot read either count as a remediation estimate.
+  - `chip-ground-collision`'s overlapping-painter test is a bounding-box intersection with no
+    paint-order reading, and daisyUI paints a background-image on every `.btn`, so any chip
+    overlapping a button or an icon downgrades from a gating error to an advisory. Narrowing it
+    loosens the downgrade path on a gating rule.
+  - `border-contrast`'s `RATIFIED_HAIRLINE_FLOOR` is a literal 1.15 sitting 0.04 under the pairing
+    its own doc calls invariant, so a consumer re-tune that softens the hairline more than roughly
+    4% re-reports every `.card-shell` on every page. Derive the floor from the page's own resolved
+    token pairing instead of pinning cairn's number, which also closes the consumer-reachability
+    asymmetry the friction log records.
+  - `resolveColors` returns `null` for both an empty string and a color the browser refused, so
+    `resolveGround` composites a refused color away as if the layer painted nothing. The repair is
+    separate sentinels at that boundary, the way `probeSelectors` already separates "nothing
+    matched" from "the browser refused this selector". Fixing it inside `resolveGround` is wrong and
+    two pinned fixtures in `color.test.ts` demonstrate it.
+  - `weight-budget`'s title-band clause exempts `PageHeader`'s whole caller-authored action slot,
+    and its heading test matches a heading anywhere in the header's subtree. Narrow the clause to
+    the heading's own flow.
+  - `derivedSides` forces two style recalcs plus a scroll per bordered element, run twice per page.
+    Batching the sentinel probe onto `documentElement` costs one recalc instead of N. Wall-clock
+    only, on a consumer's CI.
+
+- **A gate forbidding a raw control byte in a source file** (design infrastructure Pass 2,
+  2026-07-28). Two files in `src/lib` carried a raw NUL as a composite-key separator, which made
+  them binary to `grep` and to `file`, so every grep-based gate over `src/lib` skipped them
+  silently while reporting success. Both were rewritten to a unicode escape in `40cb6d77` and
+  nothing stops a third. The trigger is machine-detectable, so this is a test or a `check:*` script
+  rather than a note: scan the tracked source tree for a control byte outside tab, newline, and
+  carriage return, and fail naming the file and offset.
 
 - **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
   pass, 2026-07-19). The guide's root-layout snippet imports `{ cairn }` from `$lib/cairn.config`

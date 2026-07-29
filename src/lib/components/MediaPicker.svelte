@@ -184,7 +184,7 @@ while a site stores images only.
       onkeydown={onKeydown}
       type="text"
       role="combobox"
-      class="w-full border-0 bg-transparent p-0 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
+      class="w-full border-0 bg-transparent p-0 type-body outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
       placeholder="Search the media library"
       aria-label="Search the media library"
       aria-expanded={filtered.length > 0}
@@ -210,7 +210,7 @@ while a site stores images only.
   <ul id={listboxId} role="listbox" aria-label="Media library" class="flex max-h-72 flex-col gap-0.5 overflow-auto p-0">
     {#if filtered.length === 0}
       <li class="flex flex-col items-center gap-2 px-6 py-10 text-center">
-        <p class="text-sm text-muted">
+        <p class="type-body text-muted">
           {#if entries.length === 0}
             No images in the library yet.
           {:else}
@@ -240,11 +240,11 @@ while a site stores images only.
             class="h-10 w-10 flex-none rounded-box border border-[var(--cairn-card-border)] object-cover"
           />
           <span class="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span class="truncate text-sm font-medium">{entry.displayName || entry.slug || entry.hash}</span>
+            <span class="truncate type-body font-medium">{entry.displayName || entry.slug || entry.hash}</span>
             {#if entry.alt.trim() === ''}
               <!-- The needs-alt flag: a glyph plus a label, never hue alone (the spec a11y rule),
                    matching the Task 3 source-chip treatment. -->
-              <span class="inline-flex items-center gap-1 text-xs font-medium text-[var(--cairn-warning-ink)]">
+              <span class="inline-flex items-center gap-1 type-label font-medium text-[var(--cairn-warning-ink)]">
                 <span aria-hidden="true">&#9888;</span>
                 <span>Needs alt</span>
               </span>
@@ -255,3 +255,15 @@ while a site stores images only.
     {/if}
   </ul>
 </div>
+
+<style>
+  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts), reused here so
+     the admin preview matches the exact class the embed-card glyph ships with on a public page.
+     The glyph's fill rides currentColor from the surrounding markup; its real "home" is
+     deliberately outside the admin sheet, since public render output stays design-agnostic. The
+     rule carries only an inert custom property, never read anywhere, since an empty ruleset
+     fails svelte-check's own lint. */
+  .ec-glyph {
+    --cairn-naming-hook: true;
+  }
+</style>

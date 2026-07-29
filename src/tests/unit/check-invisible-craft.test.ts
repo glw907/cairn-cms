@@ -1,63 +1,46 @@
 import { describe, it, expect } from 'vitest';
-import { stripComments, spacingBracketHits, durationHits, achromaticColorHits } from '../../../scripts/check-invisible-craft.mjs';
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { CSS_FILES, SCAN_SCOPE } from '../../../scripts/check-invisible-craft.mjs';
 
-describe('spacingBracketHits', () => {
-  it('finds an unallowlisted bracket in live markup', () => {
-    const source = '<div class="mt-[13px]"></div>';
-    expect(spacingBracketHits(source)).toEqual([{ line: 1, token: 'mt-[13px]' }]);
+// The rule fixtures for motion-band, gap-scale, and token-colors (the three rules this gate
+// graduated into) already carry their own exhaustive behavioral coverage under
+// src/tests/unit/audit/rules/, and the wrapper's shared report restriction is pinned at
+// src/tests/unit/audit-gate.test.ts. What is specific to this gate is the ground it walks: a gate
+// that runs the right rules over less ground than it used to is still a coverage regression, and
+// this one silently stopped walking the showcase when it inherited the engine's consumer-shaped
+// default scope.
+describe('SCAN_SCOPE', () => {
+  it('keeps walking the showcase roots the pre-graduation gate walked', () => {
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/chassis');
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/routes');
+    expect(SCAN_SCOPE).toContain('examples/showcase/src/theme');
   });
 
-  // Regression: the spacing rule used to scan raw source, unlike its two sibling rules
-  // (durationHits, achromaticColorHits), which both scan comment-stripped source. A doc comment
-  // that merely NAMES a retired or example bracket (explaining why py-[5px] was removed, say)
-  // must never itself count as a hit; only stripComments(source) guarantees that.
-  it('ignores a spacing bracket that appears only inside a comment', () => {
-    const source = [
-      '<!-- retired py-[5px] in favor of the 4/8px scale -->',
-      '<script>',
-      '  // was gap-[10px] before the F3 pass',
-      '</script>',
-      '<div class="gap-2"></div>',
-    ].join('\n');
-    expect(spacingBracketHits(stripComments(source))).toEqual([]);
-    // The raw source DOES carry the tokens; the caller must strip comments first, exactly as
-    // evaluate() now does.
-    expect(spacingBracketHits(source).length).toBeGreaterThan(0);
+  it('keeps walking the admin surfaces', () => {
+    expect(SCAN_SCOPE).toContain('src/lib/components');
+    expect(SCAN_SCOPE).toContain('src/lib/admin-toolkit');
+    expect(SCAN_SCOPE).toContain('src/lib/admin-fields');
   });
 
-  it('still finds a live bracket alongside an unrelated comment', () => {
-    const source = ['<!-- some doc comment -->', '<div class="p-[3px]"></div>'].join('\n');
-    expect(spacingBracketHits(stripComments(source))).toEqual([{ line: 2, token: 'p-[3px]' }]);
-  });
-});
-
-// stripComments itself, and its interplay with the other two rules, are already covered by the
-// existing scripted gate; this just pins that durationHits/achromaticColorHits keep working
-// against a comment-stripped source the same way spacingBracketHits now does.
-describe('durationHits and achromaticColorHits share the comment-stripped posture', () => {
-  it('ignores a duration or an achromatic color mentioned only in a comment', () => {
-    const source = ['/* transition: color 999ms; */', '/* #000 was here */', 'a { color: red; }'].join('\n');
-    expect(durationHits(stripComments(source))).toEqual([]);
-    expect(achromaticColorHits(stripComments(source))).toEqual([]);
+  it('names only directories the tree actually has, so a rename fails loudly', () => {
+    for (const dir of SCAN_SCOPE) {
+      expect(existsSync(resolve(process.cwd(), dir)), dir).toBe(true);
+    }
   });
 });
 
-// Regression: the template tree (examples/showcase's chassis, theme, and route components) writes
-// every transition/animation duration in CSS's `s` unit, never `ms`; the rule used to recognize only
-// `ms`, so every one of those durations passed the band check by silently never being seen at all.
-describe('durationHits recognizes the seconds unit', () => {
-  it('reads a plain CSS declaration duration in seconds and converts to ms', () => {
-    const source = 'a { transition: color 0.15s; }';
-    expect(durationHits(source)).toEqual([{ line: 1, ms: 150, token: 'transition: color 0.15s;' }]);
+// The declared-palette-site concept (config.ts's paletteCssFiles) only protects a file this gate
+// actually names as a consumer CSS file; a rename here that CSS_FILES does not track would go
+// back to being unscanned entirely, the same silent narrowing SCAN_SCOPE guards against above.
+describe('CSS_FILES', () => {
+  it('names the showcase theme\'s own palette declaration site', () => {
+    expect(CSS_FILES).toContain('examples/showcase/src/theme/theme.css');
   });
 
-  it('reads a Tailwind duration-[<n>s] bracket and converts to ms', () => {
-    const source = '<div class="duration-[0.2s]"></div>';
-    expect(durationHits(source)).toEqual([{ line: 1, ms: 200, token: 'duration-[0.2s]' }]);
-  });
-
-  it('flags a seconds duration outside the band the same way an ms one would be flagged', () => {
-    const source = 'a { transition: color 0.5s; }';
-    expect(durationHits(source)).toEqual([{ line: 1, ms: 500, token: 'transition: color 0.5s;' }]);
+  it('names only files the tree actually has, so a rename fails loudly', () => {
+    for (const file of CSS_FILES) {
+      expect(existsSync(resolve(process.cwd(), file)), file).toBe(true);
+    }
   });
 });

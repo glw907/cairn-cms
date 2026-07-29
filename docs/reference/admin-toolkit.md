@@ -289,6 +289,12 @@ into the packaged `cairn-admin.css`.
 </AdminTable>
 ```
 
+**The in-card empty-notice recipe.** `empty` takes bare content, typically one `<p>`, as the
+preceding example shows. The table's own scoped CSS (`.toolkit-admin-table-empty-row td`) already
+owns the register: centered text, `2.5rem`/`1rem` padding, the muted color, and normal (not
+single-line) wrapping. A caller adds no size, color, or alignment class of its own; a call site
+that does is reinventing a register `AdminTable` already carries.
+
 ### `ListToolbar`
 
 Stability tier: Extension API.

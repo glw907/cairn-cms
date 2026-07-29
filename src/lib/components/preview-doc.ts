@@ -96,6 +96,12 @@ export function buildPreviewDoc(html: string, preview: ResolvedPreview | null): 
     '<meta charset="utf-8">',
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     '<base target="_blank">',
+    // WATCH: this #fff was a ratified entry in the pre-graduation invisible-craft budget
+    // ("pure-white fallback ground for the preview iframe body"). cairn-audit's CSS-family
+    // rules scan component <style> blocks and named .css files only, never a style string
+    // embedded in a .ts file, so the exception did not migrate to a directive: it stopped
+    // being seen at all. Closing it needs a substrate extension, and until then any embedded
+    // style in a .ts file is unaudited. Recorded 2026-07-28.
     '<style>body{margin:0;background:#fff}</style>',
     FRAGMENT_BOUNDARY_STYLE,
     links,

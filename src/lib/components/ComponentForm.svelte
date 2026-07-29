@@ -232,11 +232,11 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
           checked={asBool(name)}
           onchange={(e) => (working.attributes[name] = e.currentTarget.checked)}
         />
-        <span class="text-sm">{field.label}</span>
+        <span class="type-body">{field.label}</span>
       </label>
     {:else if field.type === 'select'}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <select
           class="select"
           aria-required={field.required ? 'true' : undefined}
@@ -255,7 +255,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </label>
     {:else if field.type === 'icon' && icons}
       <div class="flex flex-col gap-1">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <IconPicker
           {icons}
           label={field.label}
@@ -266,7 +266,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </div>
     {:else}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{field.label}{#if field.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
           type={inputType(field.type)}
@@ -282,13 +282,13 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error text-xs">{errors[name]}</span>{/if}
+    {#if errors[name]}<span id={`err-${name}`} role="alert" class="text-error type-meta">{errors[name]}</span>{/if}
   {/each}
 
   {#each flatSlots as slot (slot.name)}
     {#if slot.kind === 'markdown'}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <textarea
           class="textarea"
           aria-required={slot.required ? 'true' : undefined}
@@ -305,7 +305,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
       </label>
     {:else}
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
+        <span class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</span>
         <input
           class="input"
           aria-required={slot.required ? 'true' : undefined}
@@ -320,19 +320,19 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         />
       </label>
     {/if}
-    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
+    {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
   {/each}
 
   {#each repeatableSlots as slot (slot.name)}
     {@const items = slotItems(slot.name)}
     {@const ids = slotIds(slot.name)}
     <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2">
-      <legend class="text-sm font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
+      <legend class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. The visible row tag derives from itemLabel, falling back to the indexed label. -->
       {#each ids as id, i (id)}
         {@const label = rowLabel(slot, items[i] ?? '', i)}
         <div class="flex items-center gap-2">
-          <span class="flex-none text-xs text-muted">{label}</span>
+          <span class="flex-none type-label text-muted">{label}</span>
           <input
             class="input input-sm flex-1"
             aria-label={`${slot.label} ${i + 1}`}
@@ -342,7 +342,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
         </div>
       {/each}
       <button type="button" class="btn btn-sm self-start" onclick={() => addItem(slot.name)}>Add item</button>
-      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error text-xs">{errors[slot.name]}</span>{/if}
+      {#if errors[slot.name]}<span id={`err-${slot.name}`} role="alert" class="text-error type-meta">{errors[slot.name]}</span>{/if}
     </fieldset>
   {/each}
 

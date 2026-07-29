@@ -121,6 +121,7 @@ transition.
     box-shadow: var(--cairn-shadow);
     background: var(--color-base-200);
   }
+  /* cairn-audit-disable-next-line motion-band -- ratified deliberate crossfade, well outside the micro-interaction band this rule targets; not a slip */
   .frame img {
     position: absolute;
     inset: 0;

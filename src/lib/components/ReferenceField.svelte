@@ -72,11 +72,11 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
 
 {#if field.type === 'array'}
   <fieldset class="m-0 flex min-w-0 flex-col gap-2 border-0 p-0">
-    <legend class="text-sm font-medium">{field.label}</legend>
+    <legend class="type-body font-medium">{field.label}</legend>
     {#if ids.length}
       <ul class="flex flex-wrap gap-2">
         {#each ids as id (id)}
-          <li class="badge badge-ghost max-w-[16rem] gap-1">
+          <li class="badge badge-outline max-w-[16rem] gap-1">
             <span class="min-w-0 truncate">{titleFor(id)}</span>
             <button type="button" class="btn btn-ghost btn-xs btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label={`Remove ${titleFor(id)}`} onclick={() => remove(id)}>
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12" /></svg>
@@ -105,7 +105,7 @@ component owns the cardinality, the chips, and the hidden inputs the form submit
   />
 {:else}
   <div class="flex flex-col gap-1">
-    <span class="text-sm font-medium">{field.label}</span>
+    <span class="type-body font-medium">{field.label}</span>
     <button type="button" class="btn btn-sm btn-ghost justify-start" aria-haspopup="dialog" aria-label={field.label} onclick={() => picker?.open()}>
       {#if singleId}{titleFor(singleId)}{:else}<span class="text-muted">Choose {field.label}</span>{/if}
     </button>

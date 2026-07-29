@@ -91,7 +91,7 @@ own name.
 
 <form class="flex flex-col gap-group" onsubmit={submit}>
   <div class="flex flex-col gap-1">
-    <label for="cairn-figure-caption" class="text-sm font-medium">Caption</label>
+    <label for="cairn-figure-caption" class="type-body font-medium">Caption</label>
     <input
       id="cairn-figure-caption"
       class="input w-full"
@@ -100,14 +100,14 @@ own name.
       aria-describedby="cairn-figure-caption-hint"
       bind:value={captionValue}
     />
-    <p id="cairn-figure-caption-hint" class="text-xs text-muted">
+    <p id="cairn-figure-caption-hint" class="type-meta text-muted">
       Shown under the image, for everyone. This is not the alt text.
     </p>
   </div>
 
   <!-- The alt-status row: the image's alt state the host derives. Described or Needs alt, the latter
        in the warning ink with a glyph so the state never rides hue alone (WCAG 1.4.1). -->
-  <div class="flex items-center gap-2 text-sm">
+  <div class="flex items-center gap-2 type-body">
     <span class="font-medium" aria-hidden="true">Alt text</span>
     {#if decorative}
       <span
@@ -157,7 +157,7 @@ own name.
   </div>
 
   <div class="flex flex-col gap-1">
-    <span id="cairn-figure-placement-label" class="text-sm font-medium">Placement</span>
+    <span id="cairn-figure-placement-label" class="type-body font-medium">Placement</span>
     <!-- The segmented control: one bordered group, borderless segments, the active one tinted with a
          check glyph. A roving-tabindex radiogroup, so arrow keys move and select and one Tab stop
          reaches the group. -->
@@ -174,7 +174,7 @@ own name.
           role="radio"
           aria-checked={pressed}
           tabindex={index === activeIndex ? 0 : -1}
-          class="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-normal {index > 0
+          class="inline-flex items-center gap-1 px-2.5 py-1 type-meta font-normal {index > 0
             ? 'border-l border-[var(--cairn-card-border)]'
             : ''} {pressed
             ? 'bg-primary/10 text-primary font-medium ring-1 ring-inset ring-primary/35'
@@ -200,7 +200,7 @@ own name.
         </button>
       {/each}
     </div>
-    <p class="text-xs text-muted">
+    <p class="type-meta text-muted">
       Center suits an image narrower than the text column. Measure keeps it at the column width.
     </p>
   </div>
@@ -230,7 +230,7 @@ own name.
         <line x1="12" y1="9" x2="12" y2="13" />
         <line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
-      <p class="m-0 text-xs leading-relaxed">
+      <p class="m-0 type-meta leading-relaxed">
         A decorative image is hidden from screen readers, but this one has a caption. Describe it, or
         remove the caption.
       </p>

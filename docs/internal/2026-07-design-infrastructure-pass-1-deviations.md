@@ -16,7 +16,8 @@ this file did.
 
 ## The ruled scale, for reference
 
-Type: title 24px, subtitle 15px, body 14px, meta 13px, label 11px, chip 10px.
+Type, after Pass 2 admitted the heading role: title 24px, heading 18px, subtitle 15px, body 14px,
+meta 13px, label 11px, chip 10px. Each carries a paired leading token.
 Spacing: label 4px, control 8px, group 16px, section 24px.
 
 ## Ratified rulings (2026-07-27, Pass 2 brainstorm)
@@ -36,80 +37,54 @@ normalization migration lands and the baselines regenerate.
   ratified named exceptions. The 11.2px and 9.6px slips resolve onto label and chip. The
   17px and 18px one-offs resolve onto the heading role or subtitle at migration judgment.
 - **New heading role:** the scale admits a seventh role between subtitle and title for
-  dialog/panel headings, unifying the 16px-semibold and 18px-display-bold families; size and
-  recipe settled in-pass from side-by-side rendered candidates.
+  dialog/panel headings, unifying the 16px-semibold and 18px-display-bold families. **Settled
+  2026-07-28: 18px, weight 700, `--font-display` (Bricolage Grotesque), leading 28px.** The
+  display-bold family wins, so its thirteen sites do not move; the 16px-semibold dialog family
+  migrates onto the role and changes appearance by ruling. Evidence and reasoning are in the spec's
+  section 13. `type-heading` carries size and leading only; the weight and the face stay a component
+  recipe.
 - **Section 4 (spacing) is not blocked and not ruled:** the audit's `gap-scale` rule targets
   off-scale literals, and named Tailwind steps resolve to the spacing scale, so these
   entries stay open vocabulary questions for Pass 3.
 
-## 1. The 12px step: in live use, absent from the scale
+## Type sections 1 through 3: RESOLVED, retired 2026-07-28
 
-The largest single finding. 12px is the admin's most-used size with no role, spread across the whole
-surface rather than isolated to one screen.
+Pass 2's normalization applied the ratified rulings and every type entry this file catalogued now
+has a role or a ratified exception. The sections are collapsed to this note rather than kept as a
+to-do list that reads as open.
 
-| Form | Count | Concentration |
-|---|---|---|
-| `text-xs` | 80 | EditPage 17, CairnTidySettings 13, CairnMediaLibrary 11, MediaHeroField 8 |
-| `text-[0.75rem]` | 40 | CairnMediaLibrary 39, ShortcutsGrid 1 |
+What the ledger held, and where each entry went:
 
-Nearest roles: meta (13px) above, label (11px) below. The question for Pass 2 or 3 is whether the
-scale admits a seventh step or whether these 120 sites resolve upward and downward onto meta and
-label. Rule it as design, not cleanup. 120 sites is not an accident, and both neighbors are one
-pixel away, which is exactly the interval a six-role scale is supposed to make unnecessary.
+- **The 12px step, 119 sites** (recorded here as 120; one was prose inside a code comment). No
+  seventh step was admitted. The sites resolved per-site onto `type-meta` (109) and `type-label`
+  (10) by the relationship each expressed. Two rulings settled the cases a first pass split
+  inconsistently: a control's own caption is meta, following `ListToolbar`, the toolkit's canonical
+  segmented control; and a list-row value beside an action is meta, because a URL, slug, branch
+  name, or file key is content rather than a label naming something else.
+- **The named Tailwind steps, blocked on a line-height ruling.** The ruling landed: every role
+  carries a paired leading token. `text-sm` (127 sites) and `text-2xl` (2) moved pixel-identically
+  onto body and title, proven by comparing a full local render against a reference captured right
+  after the leading landed. `text-base`, `text-lg`, `text-xl`, and `text-3xl` resolved onto the new
+  heading role, onto subtitle, or onto the exception list.
+- **The one-off literals.** The 11.2px and 9.6px slips resolved onto label and chip, as suspected.
+  The 17px panel title joined the heading role. The three wordmark sites and the editor's document
+  title became ratified exceptions with counted directives. The 18px editor prose surface became a
+  fifth exception, newly ratified: the ledger had filed it as resolving onto subtitle, but reading
+  the markup showed it is the editor's own canvas wrapper, whose 18px merely coincides with the
+  heading role's.
 
-## 2. Named Tailwind steps: blocked on a line-height ruling
+Two lessons this file earned, both worth carrying:
 
-These sites are not off-scale by accident. They are blocked by a mechanical coupling, and it is why
-`type-title` ships with no markup call site at all. `type-body` is a different case: it migrated from
-bracketed literals only, never from `text-sm`, so it has three live call sites in
-`CairnMediaLibrary.svelte` and the 127 `text-sm` sites below are still owed to it.
+**Counting is where this initiative keeps slipping.** Three separate miscounts, none in the row
+data and all in a hand-tallied summary: the fourfold `text-base` overstatement this file's first
+draft carried, the 120-versus-119 comment site, and a 19-versus-16 label tally during the
+migration. The row-level work has been right every time. Trust the rows, recount the summary.
 
-In the compiled sheet a named step sets two properties:
-
-```
-.text-sm { font-size: var(--text-sm); line-height: var(--tw-leading, var(--text-sm--line-height)); }
-.text-\[0\.8125rem\] { font-size: .8125rem; }
-```
-
-An arbitrary bracketed value sets font-size only, so a font-size-only role utility replaces it
-pixel-identically. Replacing a named step with the same utility would drop that step's line-height
-and change the rendered layout, which Pass 1's contract forbids.
-
-| Utility | Size | Count | Role it would map to |
-|---|---|---|---|
-| `text-sm` | 14px | 127 | body |
-| `text-base` | 16px | 19 | none |
-| `text-2xl` | 24px | 2 | title |
-| `text-lg` | 18px | 22 | none |
-| `text-xl` | 20px | 6 | none |
-| `text-3xl` | 30px | 1 | none |
-
-Two separate rulings are owed. For `text-sm` and `text-2xl`, whether the role utilities carry a
-ruled line-height per role, which would let 129 sites migrate and would make the type roles a
-complete recipe rather than a size alone. For 16px, 18px, 20px, and 30px, the same
-seventh-step question as section 1, one size at a time.
-
-## 3. One-off literals
-
-Seven sites across five values, three of them the brand wordmark at 22px.
-
-| Site | Value | Nearest role |
-|---|---|---|
-| `CairnAdminShell.svelte:772` | 22px | title (24px) |
-| `ConfirmPage.svelte:36` | 22px | title (24px) |
-| `LoginPage.svelte:50` | 22px | title (24px) |
-| `EditPage.svelte:1842` | 18px | subtitle (15px) |
-| `CairnMediaLibrary.svelte:1769` | 17px | subtitle (15px) |
-| `ComponentInsertDialog.svelte:368` | 11.2px | label (11px) |
-| `CairnMediaLibrary.svelte:1982` | 9.6px | chip (10px) |
-
-The three 22px sites are the brand wordmark, and they are deliberate: the K4 keming fix (design arc
-2026-07-15) raised the wordmark from `text-xl font-bold tracking-[-0.01em]` because the rn pair
-merged and "Cairn" read "Caim". `docs/internal/admin-design-system.md` documents the recipe. Treat
-them as a ratified exception, not debt.
-
-The 11.2px and 9.6px sites sit a fraction off a role they almost certainly meant. They are the two
-entries in this file most likely to be simple slips.
+**A migration can break a surface it never touches.** Removing the last scanned `text-sm` stopped
+Tailwind compiling that rule, and `src/lib/admin-fields`, a public export subpath, still used it
+and had never been in the stylesheet's scan roots. It had ridden along on another directory's scan.
+The fix was structural, not local: the directory joined both the scan roots and
+`check:admin-css-classes`.
 
 ## 4. Spacing values with no role
 
@@ -150,7 +125,133 @@ uses `padding: 1rem` on a full-width cell, which is padding, not indentation. On
 the plan's two-site floor, so no indentation token was defined. It stays a candidate: a second
 indented surface makes the role real.
 
-**PageHeader's `meta` prop renders at 14px, one step off the meta role.** `PageHeader.svelte:60`
-uses `text-sm text-muted` for the line the component itself calls meta, while the meta role is 13px.
-Both readings are defensible, that the header's secondary line is body-sized on purpose, or that it
-should join the meta role, and the name collision makes it worth ruling explicitly.
+**RESOLVED 2026-07-28 (Pass 2 Task 12): PageHeader's `meta` prop joins the meta role.** The line
+now writes `type-meta`, so a screen mounting both `PageHeader`'s meta line and `ListToolbar`'s own
+count line reads the two at the same 13px rather than the meta-named line rendering one step
+larger. The same task also ported `OfficeList`'s UA-margin fix (zeroed `<h1>`/`<p>` margins, a
+deliberate `mt-1`) onto `PageHeader`, which had not received it at graduation; the title-to-meta
+gap tightens from a leaked ~58px to the intended 4px. Both changes move the header line on every
+screen mounting `PageHeader`; the `admin-visual` baselines regenerate on CI to match.
+
+**PageHeader adoption is complete; the filed gap closed 2026-07-28 (Pass 2 Task 12).** Every
+top-level admin screen that hand-rolled header anatomy before the toolkit organization pass now
+mounts `PageHeader`: `CairnTidySettings`, `HelpHome`, `ManageEditors`, `ConceptList`,
+`CairnMediaLibrary`, `VocabularyAdmin`, and `NavTree` (seven call sites; an earlier survey counted
+`WelcomeView` among the adopters, which a fresh grep for `<PageHeader` disproved). Five deliberate
+non-adopters remain and none should migrate: `ConfirmPage` and `LoginPage` (centered auth cards,
+not admin page headers), `OfficeList` (it IS a header component, `PageHeader`'s own doc calls
+itself that shape generalized), `EditPage`'s `sr-only` document title (the desk route's title is
+never visually rendered), and `WelcomeView` (its own header comment already documents rendering no
+`PageHeader`, using `EmptyState`'s `headingLevel="h1"` as the page's only heading since there is
+nothing else on the screen). A later pass should not re-open this gap.
+
+**Destination-picker: deferred, not extracted (Pass 2 Task 12).** The plan's Step 3 assumed a
+pattern to extract from the harvest finding, but exactly one implementation exists
+(`aksailingclub-org`'s Move… dialog on the club-admin classes screen) and zero cairn call sites.
+Extracting a primitive from a single consumer-side instance is the speculative generalization the
+plan's own global constraints forbid, and this repo's graduation bar is a second consumer (the
+`ExpandableRow` precedent). TRIGGER for revisiting: a second destination-picker call site appears,
+either a cairn admin screen that needs one or a second ASC surface.
+
+**`AdminTable`'s in-card empty-notice cell carries no type role, deliberately.** The recipe (Pass 2
+Task 11, Finding 10) says a caller's `empty` snippet passes bare content and the table owns
+centering, padding, muted color, and wrapping. Today's real call sites (`ConceptList`,
+`CairnMediaLibrary`) add `type-body` to their own `<p>` anyway, and `AdminTable`'s own scoped CSS
+sets no `font-size` at all, so the cell inherits `table-sm`'s size. Pinning `type-body` (14px) onto
+the cell itself would move `ConceptList`'s empty state under Phase 3's pixel-identity contract, so
+the register stayed unpinned rather than resolved. Left open for Task 12 or the Task 17 calibration:
+either the call sites drop their own `type-body` and the cell's inherited size becomes the ruled
+answer, or the cell earns a named role and the two call sites lose their redundant class.
+
+**Two findings the norms manifest surfaced on its first generation (Pass 2 Task 13).** Neither was
+fixed there; both are recorded because the manifest is the only thing that has ever seen them, and a
+subagent report is not a durable home.
+
+1. **Icons are being flexed, not sized.** Across 183 observation sites the `icon` role's `width`
+   takes ten distinct values (12, 13.5, 14, 14.5, 15, 15.5, 16, 19, 20, 28) and its `height` eight
+   (the same set without 14.5 and 15.5). Sub-pixel members, and width carrying two more values than
+   height, are the signature of an icon squeezed by a flex container rather than sized by its own
+   rule, which usually means a missing `flex-none` on an icon inside a flex row. This is a real
+   craft defect at real scale, invisible to every gate and to the eye, and it is the first thing the
+   manifest paid for. Fixing it moves pixels across many screens, so it wants its own task with a
+   baseline regeneration, not a drive-by. Candidate for an advisory rendered rule in Task 16 (icon
+   dimensions off the ruled set) once the ruled set exists.
+2. **`status-chip` renders an 8px corner radius where the design system says badges take
+   `--radius-field` (10px).** Task 13's `RATIFIED_NORMS` table deliberately left the chip `observed`
+   rather than asserting a ratification it would then have to report as drift. The open question is
+   which side is wrong: the doc's claim that `--radius-field` covers "inputs, buttons, badges", or
+   the chip's own value. A one-token ruling settles it.
+
+**`table-cell` mixes two type sizes and two leading kinds,** also from the first generation: `font-size`
+spans 12 and 15px across 35 sites and `line-height` resolves to `['19px', 'normal']`. The `normal`
+members are why Task 13 modeled leading as a keyword vocabulary rather than a length band. Whether a
+table cell should carry a named type role at all is a Task 17 calibration question, and it is adjacent
+to the empty-notice register question directly above.
+
+## 6. Ratified rulings (2026-07-28, Pass 2 Task 16b)
+
+Four questions the rendered audit raised against cairn's own admin, ruled by Geoff and applied to the
+rules in the same task. These are recorded deviations now, not open questions: each one names a
+number the audit will not re-litigate, and the first entry is a measured value that stays below a
+standard's floor on purpose. Canonical record: the plan
+(`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, Task 16b).
+
+**Ruling 1: `touch-targets` enforces 24x24, not 44x44.** Spec 6.3 set 44x44, which is WCAG 2.2's AAA
+criterion 2.5.5 (Target Size Enhanced). The bar cairn can honestly claim is AA, whose own target-size
+criterion is 2.5.8 (Target Size Minimum) at 24x24. At 44x44 the rule raised 138 error-tier findings
+against the shipped admin: `btn-sm` runs 32px, `btn-xs` runs 24px, several toolbar controls run 30px,
+and the admin's own design treats none of them as a defect. At 24x24 nearly all clear and `btn-xs`
+sits exactly on the line, so its 24px measurement has to pass rather than fail. The rule also now
+measures the ACTIVATION REGION rather than the painted box, which is 2.5.8's own wording: the
+control's box unioned with a qualifying `::before` inset expansion, plus every label the platform
+reports as activating it. That closed an error-tier false positive on the label-wrapped checkbox
+(EditPage's "Hidden" toggle, FieldInput's boolean field, five more sites), where the input paints
+20x20 inside a 342x34 label that toggles it.
+
+**Ruling 2: the `--cairn-card-border` hairline is RATIFIED, and is the deviation this file records.**
+Measured against real Chromium: **1.11:1 in light and 1.43:1 in dark** against the ambient beside it,
+and **1.19 light / 1.20 dark** against the card's own fill. WCAG 1.4.11's non-text floor is 3:1, so
+the hairline sits well under it, and it stays as designed. The quiet edge is deliberate. What the
+ruling does NOT license is silence: `border-contrast` still constructs the finding, still carries the
+measurement, and routes it to the report's suppressed list with the ruling printed beside it, so
+every run counts what it let through. The exemption is bounded twice. It applies only where the
+border is PAINTED THROUGH `--cairn-card-border` (proved in-page by substituting a sentinel for the
+token and seeing which computed colors follow, never by comparing color values), and only while the
+boundary still reads at 1.15 or better, just under the invariant card-fill pairing. A byte-equality
+cut failed both bounds: `cairn-admin.css` declares `--color-base-300` and `--cairn-card-border` with
+identical bytes in the same dark block (lines 268 and 381), so it swallowed every `border-base-300`
+boundary in the dark theme, including the shell's CMS pill and the media library's clear-selection
+button, under a printed reason naming a ruling that was never made about them. The norms manifest
+carries the ruling too: `card`/`border-color` moved from `OPEN_DESIGN_QUESTIONS` to `RATIFIED_NORMS`
+and the committed manifest reads `ratified` with no `open-question` flag.
+
+**Ruling 3: `chip-ground-collision`'s 1.5 floor is RATIFIED.** Spec 6.3 named no number; a builder
+borrowed `interactive-contrast`'s probe-derived floor, and Geoff confirmed the borrow rather than
+leaving it open. The shared rationale, so neither rule re-argues it: both test "not accidentally
+camouflaged", never legibility. Legibility is `border-contrast`'s separate job at WCAG 1.4.11's 3:1,
+and 1.5 sits under that number and under the text floors (4.5 normal, 3.0 large) by design. The
+admin's own measured collisions run 1.01 to 1.12, so the floor is not a close call in practice. The
+number is load-bearing all the same: an always-opaque canvas default manufactured a 1.514 against
+this exact line and took two real collisions out of the report while every other gate stayed green.
+
+**Ruling 4: `weight-budget` measures body content with chrome excluded.** The rule's claim is
+unchanged (two weights per content region); its region boundary narrows to what it was always meant
+to test. All ten advisories the rendered baseline raised against the admin, five routes times two
+themes and every one at exactly three weights, were toolbar, pagination, and column-header furniture
+rather than a three-weight passage of prose or data. Chrome is text inside `<nav>` or
+`[role="navigation"]`; `<button>`, `[role="button"]`, or `<summary>`; a `<header>` or
+`[role="banner"]` that contains the heading it introduces; and `<thead>` or `[role="columnheader"]`.
+Each shape is named by an HTML tag or the ARIA role that means the same thing, never by a class, so a
+rewritten component stays covered where a renamed one would not. Two limits are stated rather than
+papered over: a `<button>` used as a row WRAPPER takes its whole content out of the rule's reach
+(CairnMediaLibrary does this; ConceptList uses an `<a>` and every weight counts), and an
+`<a class="btn">` spends the budget where the `<button class="btn">` beside it does not. Both are
+fixtured so neither drifts unnoticed.
+
+**One behavior change beyond the rulings: `chip-ground-collision` stops asserting a collision it
+cannot measure.** `CairnMediaLibrary` renders its usage chip as an absolutely positioned sibling of
+the thumbnail `<img>`, so the rule composited the card fill behind the thumbnail and reported a
+constant 1.06 error on a chip that measures 12.98 against the image it actually sits on. A painter
+outside the chip's own ancestor chain now makes the ground indeterminate, which reports as an
+advisory naming what it could not read. "Cannot measure this ground" is a different claim from "this
+collides", and only one of them was true.

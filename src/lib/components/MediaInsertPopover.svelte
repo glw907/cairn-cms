@@ -350,7 +350,7 @@ rule). The CSRF token is read from the admin context.
     onkeydown={onKeydown}
   >
     <div class="mb-2 flex items-center justify-between gap-2">
-      <h2 class="text-sm font-semibold">Insert image</h2>
+      <h2 class="type-body font-semibold">Insert image</h2>
       <button type="button" class="btn btn-ghost btn-xs" aria-label="Close" onclick={close}>✕</button>
     </div>
 
@@ -358,7 +358,7 @@ rule). The CSRF token is read from the admin context.
       <!-- role="alert" (assertive): the upload failed mid-flight after the capture card unmounted, so
            the state transition must announce. Focus moves to Close (the $effect above). -->
       <div class="flex flex-col gap-2" data-testid="cairn-media-expired" role="alert">
-        <p class="text-sm">Your session has expired. Please sign in again to add an image.</p>
+        <p class="type-body">Your session has expired. Please sign in again to add an image.</p>
         <div class="flex justify-end">
           <button bind:this={expiredCloseButton} type="button" class="btn btn-sm" onclick={close}>Close</button>
         </div>
@@ -366,7 +366,7 @@ rule). The CSRF token is read from the admin context.
     {:else if status.kind === 'failed'}
       <!-- role="alert" (assertive): a failure must interrupt. Focus moves to Retry (the $effect). -->
       <div class="flex flex-col gap-2" data-testid="cairn-media-failed" role="alert">
-        <p class="text-sm">{status.card.message}</p>
+        <p class="type-body">{status.card.message}</p>
         <div class="flex justify-end gap-2">
           <button type="button" class="btn btn-ghost btn-sm" onclick={close}>Cancel</button>
           <button bind:this={retryButton} type="button" class="btn btn-primary btn-sm" onclick={status.retry}>Retry</button>
@@ -376,7 +376,7 @@ rule). The CSRF token is read from the admin context.
       <!-- role="status" (polite): a reuse is a success note, not an interruption. Focus moves to
            Done so the keyboard user lands on the one action. -->
       <div class="flex flex-col gap-2" data-testid="cairn-media-reused" role="status">
-        <p class="text-sm">Reused an existing image.</p>
+        <p class="type-body">Reused an existing image.</p>
         <div class="flex justify-end">
           <button bind:this={reusedDoneButton} type="button" class="btn btn-primary btn-sm" onclick={close}>Done</button>
         </div>
@@ -403,7 +403,7 @@ rule). The CSRF token is read from the admin context.
             onchange={onChosenFile}
           />
         </div>
-        <p class="text-center text-xs text-muted">or reuse an image</p>
+        <p class="text-center type-meta text-muted">or reuse an image</p>
         <MediaPicker {library} onselect={onPick} />
       </div>
     {/if}

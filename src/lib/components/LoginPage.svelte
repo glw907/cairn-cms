@@ -47,6 +47,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
 {#snippet brand()}
   <div class="flex items-center gap-2">
     <CairnLogo class="h-8 w-8 text-primary" />
+    <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
     <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
   </div>
 {/snippet}
@@ -55,7 +56,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
      level in (a class on the theme element itself would not match). -->
 <div data-theme={data.theme ?? 'cairn-admin'} bind:this={rootEl}>
   <div class="flex min-h-screen flex-col items-center justify-center gap-section bg-base-200 p-4 text-base-content">
-  <div class="w-full max-w-sm rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-7 shadow-[var(--cairn-shadow)]">
+  <div class="w-full max-w-sm card-shell p-7 card-shadow">
     {#if (form?.status === 'sent' || form?.sent) && !dismissed}
       <!-- The confirmation is a centered moment: brand, then the mail mark, heading, and one line of
            instruction. The fallback help sits in a gentle inset note below. -->
@@ -67,8 +68,8 @@ the allowlist, so the page never leaks membership (spec §7.1).
         >
           <MailCheckIcon class="h-6 w-6" />
         </div>
-        <h1 class="mt-5 text-xl font-semibold tracking-tight">Check your email</h1>
-        <p class="mt-2 text-sm leading-relaxed text-muted">
+        <h1 class="mt-5 type-heading font-bold font-[family-name:var(--font-display)]">Check your email</h1>
+        <p class="mt-2 type-body leading-relaxed text-muted">
           We sent a sign-in link to your inbox. Open it within 10 minutes to finish signing in.
         </p>
         <div class="mt-6 flex w-full items-start gap-2.5 rounded-[var(--radius-field)] bg-base-content/[0.04] p-3.5 text-left">
@@ -80,7 +81,7 @@ the allowlist, so the page never leaks membership (spec §7.1).
         </div>
         <button
           type="button"
-          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 text-sm font-medium text-primary hover:underline"
+          class="mt-5 cursor-pointer appearance-none border-none bg-transparent p-0 type-body font-medium text-primary hover:underline"
           onclick={() => (dismissed = true)}
         >
           Use a different email
@@ -88,26 +89,26 @@ the allowlist, so the page never leaks membership (spec §7.1).
       </div>
     {:else}
       <div class="mb-6 flex justify-center">{@render brand()}</div>
-      <h1 class="text-center text-lg font-semibold">Sign in to {data.siteName}</h1>
-      <p class="mt-1 mb-5 text-center text-sm text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
+      <h1 class="text-center type-heading font-bold font-[family-name:var(--font-display)]">Sign in to {data.siteName}</h1>
+      <p class="mt-1 mb-5 text-center type-body text-muted">Enter your email. We’ll send a one-time sign-in link.</p>
       {#if form?.status === 'send_error'}
-        <div role="alert" class="alert alert-warning mb-3 text-sm">
+        <div role="alert" class="alert alert-warning mb-3 type-body">
           We’re having trouble sending sign-in links right now. Please contact the site owner.
         </div>
       {:else if form?.status === 'throttled'}
-        <div role="status" class="alert mb-3 text-sm">
+        <div role="status" class="alert mb-3 type-body">
           You requested a link recently. Check your inbox, or wait a minute and try again.
         </div>
       {/if}
       <!-- A fresh action result supersedes the GET-time error, so a resubmit into a throttle or a
            send failure never shows the stale expired-link alert alongside the new state. -->
       {#if data.error && !form?.status}
-        <div role="alert" class="alert alert-error mb-3 text-sm">That link expired. Request a new one below.</div>
+        <div role="alert" class="alert alert-error mb-3 type-body">That link expired. Request a new one below.</div>
       {/if}
       <form method="POST" action="?/request" class="flex flex-col gap-3">
         <CsrfField token={data.csrf} />
         <label class="flex flex-col gap-label">
-          <span class="text-sm font-medium">Email</span>
+          <span class="type-body font-medium">Email</span>
           <input
             type="email"
             name="email"
@@ -123,6 +124,6 @@ the allowlist, so the page never leaks membership (spec §7.1).
     {/if}
   </div>
 
-  <p class="text-xs text-muted">Powered by Cairn</p>
+  <p class="type-meta text-muted">Powered by Cairn</p>
   </div>
 </div>

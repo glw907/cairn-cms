@@ -338,9 +338,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         <div class="min-w-0 flex-1">
           {#if picked}
             <div class="type-label font-semibold uppercase tracking-[0.08em] text-muted">{editing ? 'Edit' : 'Insert'}{#if picked.group}&nbsp;&rsaquo;&nbsp;{picked.group}{/if}</div>
-            <h2 id="cairn-insert-dialog-title" class="font-[family-name:var(--font-display)] text-lg font-bold">{picked.label}</h2>
+            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">{picked.label}</h2>
           {:else}
-            <h2 id="cairn-insert-dialog-title" class="text-base font-semibold">Insert a component</h2>
+            <h2 id="cairn-insert-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">Insert a component</h2>
           {/if}
         </div>
         <button type="button" class="btn btn-ghost btn-sm btn-square max-sm:min-h-11 max-sm:min-w-11" aria-label="Close" onclick={close}>✕</button>
@@ -365,7 +365,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                        keystroke, so a screen reader read "Settling"/"Settled" aloud on each edit. The
                        incomplete and render-failed conditions reach assistive tech through the
                        per-field role="alert" errors and the failed panel text, so nothing is lost. -->
-                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 text-[0.7rem] text-muted">
+                  <span data-testid="cairn-pk-settle" class="inline-flex items-center gap-1.5 type-label text-muted">
                     {#if formIncomplete}
                       Incomplete
                     {:else if previewState === 'failed'}
@@ -384,8 +384,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                   <!-- rounded not rounded-box: nested at this panel's p-3 (12px) inset inside the
                        outer rounded-box (1rem) panel, so the inner radius is 1rem minus 12px. -->
                   <div class="flex flex-1 flex-col items-center justify-center gap-2 rounded border border-dashed border-[var(--cairn-card-border)] p-6 text-center">
-                    <p class="text-sm font-medium">Fill the required fields to preview this.</p>
-                    <p class="flex flex-wrap justify-center gap-1.5 text-xs">
+                    <p class="type-body font-medium">Fill the required fields to preview this.</p>
+                    <p class="flex flex-wrap justify-center gap-1.5 type-label">
                       {#each emptyRequired as label (label)}
                         <span class="rounded border border-dashed border-[color-mix(in_oklab,var(--color-error)_55%,var(--cairn-card-border))] px-2 py-0.5 font-medium text-error">{label} needed</span>
                       {/each}
@@ -394,8 +394,8 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                 {:else if previewState === 'failed'}
                   <!-- The render threw. Say so and keep the form intact; the editor can still insert. -->
                   <div data-testid="cairn-pk-preview-failed" class="flex flex-1 flex-col items-center justify-center gap-1.5 rounded border border-[color-mix(in_oklab,var(--color-error)_35%,var(--cairn-card-border))] bg-[color-mix(in_oklab,var(--color-error)_5%,transparent)] p-5 text-center text-error">
-                    <p class="text-sm font-semibold">Preview could not render</p>
-                    <p class="text-xs text-muted">Your settings are kept. You can still insert and check it on the page.</p>
+                    <p class="type-body font-semibold">Preview could not render</p>
+                    <p class="type-meta text-muted">Your settings are kept. You can still insert and check it on the page.</p>
                   </div>
                 {:else}
                   <div class="flex min-h-64 flex-1 overflow-hidden rounded border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
@@ -415,7 +415,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
             <svg class="ec-glyph h-4 w-4 text-muted" viewBox="0 0 256 256" fill="currentColor" aria-hidden="true"><path d="M229.7 218.3 179.6 168.2A92.2 92.2 0 1 0 168.2 179.6l50.1 50.1a8 8 0 0 0 11.4-11.4ZM40 112a72 72 0 1 1 72 72 72.1 72.1 0 0 1-72-72Z" /></svg>
             <input
               type="search"
-              class="w-full border-0 bg-transparent p-0 text-sm outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
+              class="w-full border-0 bg-transparent p-0 type-body outline-hidden focus-visible:ring-2 focus-visible:ring-primary/70 placeholder:text-muted"
               placeholder="Search components"
               aria-label="Search components"
               bind:value={query}
@@ -431,7 +431,7 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
         {#if filtered.length === 0}
           <!-- The query matched nothing. The components exist; none match. Offer the way back. -->
           <div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-            <p class="text-sm text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
+            <p class="type-body text-muted">No components match <span class="font-medium text-base-content">“{query.trim()}”</span>.</p>
             <button type="button" class="type-meta font-medium text-primary underline [text-underline-offset:2px]" onclick={() => (query = '')}>Clear search</button>
           </div>
         {:else}
@@ -454,9 +454,9 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
                           </span>
                         {/if}
                         <span class="flex flex-col items-start gap-0.5">
-                          <span data-testid="cairn-pk-row-label" class="text-sm font-medium">{def.label}</span>
-                          {#if def.description}<span class="text-xs text-muted">{def.description}</span>{/if}
-                          {#if def.use}<span class="text-xs text-subtle">{def.use}</span>{/if}
+                          <span data-testid="cairn-pk-row-label" class="type-body font-medium">{def.label}</span>
+                          {#if def.description}<span class="type-meta text-muted">{def.description}</span>{/if}
+                          {#if def.use}<span class="type-meta text-subtle">{def.use}</span>{/if}
                         </span>
                       </button>
                     </li>
@@ -473,3 +473,14 @@ trapping and Escape, following the dropdown's a11y conventions used elsewhere in
     </form>
   </dialog>
 {/if}
+
+<style>
+  /* ec-glyph is the public render pipeline's own class (src/lib/render/glyph.ts): the admin
+     preview reuses the exact class the embed-card glyph ships with on a public page, deliberately
+     outside the admin sheet since public render output stays design-agnostic. The glyph's fill
+     rides currentColor from the surrounding markup. The rule carries only an inert custom
+     property, never read anywhere, since an empty ruleset fails svelte-check's own lint. */
+  .ec-glyph {
+    --cairn-naming-hook: true;
+  }
+</style>

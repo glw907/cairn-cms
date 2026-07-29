@@ -661,7 +661,10 @@ reflows its neighboring characters.
     border-top-right-radius: var(--radius-field);
     border-bottom-right-radius: var(--radius-field);
   }
-  .toolkit-toolbar-facet-clear:hover {
+  /* :focus-visible pairs the same tint with a keyboard tab onto this button, so a keyboard user
+     sees the same affordance a mouse hover gives (cairn-audit's focus-parity rule). */
+  .toolkit-toolbar-facet-clear:hover,
+  .toolkit-toolbar-facet-clear:focus-visible {
     background: color-mix(in oklab, var(--color-primary) 12%, transparent);
   }
 

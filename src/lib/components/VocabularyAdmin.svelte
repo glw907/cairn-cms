@@ -121,8 +121,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   const seedCandidates = $derived(data.unlisted.filter((u) => !existingValues.has(u.value)));
 
   // The card recipe shared by the add and list cards.
-  const cardClass =
-    'rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]';
+  const cardClass = 'card-shell card-shadow';
 
   // The polite live region's text re-announces only when it changes, so a repeated identical error
   // (a second save failing the same way) would otherwise go silent. An invisible nonce flips on
@@ -155,7 +154,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
 
   <div class="sr-only" aria-live="polite">{liveError}</div>
   {#if data.error}
-    <div class="alert alert-error mt-3 text-sm">{data.error}</div>
+    <div class="alert alert-error mt-3 type-body">{data.error}</div>
   {/if}
 
   <!-- THE MUTATION ANNOUNCEMENT, always present so assistive tech re-announces every add, remove, and
@@ -203,7 +202,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
       {:else if newSlug}
         <span class="text-muted"
           >Stored as
-          <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono text-[0.9em]">{newSlug}</code>
+          <code class="rounded bg-[var(--cairn-code-chip)] px-1 font-mono">{newSlug}</code>
           &middot; editors see the name, posts keep the slug</span
         >
       {:else}
@@ -216,10 +215,10 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
        (count), and a trailing delete. -->
   <section class="mt-5">
     <div class="mb-2.5 flex items-center gap-2 px-0.5">
-      <h2 class="flex items-center gap-2 text-lg font-bold tracking-tight">
+      <h2 class="flex items-center gap-2 type-heading font-bold font-[family-name:var(--font-display)]">
         Your tags
         <span
-          class="rounded-full bg-base-content/[0.06] px-2 py-0.5 text-xs font-semibold tabular-nums text-muted"
+          class="rounded-full bg-base-content/[0.06] px-2 py-0.5 type-meta font-semibold tabular-nums text-muted"
           >{working.length}</span
         >
       </h2>
@@ -314,7 +313,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   {#if seedCandidates.length > 0}
     <section class="mt-5">
       <div class="mb-2.5 px-0.5">
-        <h2 class="text-lg font-bold tracking-tight">Already on your posts</h2>
+        <h2 class="type-heading font-bold font-[family-name:var(--font-display)]">Already on your posts</h2>
         <p class="mt-1 max-w-prose type-meta leading-relaxed text-muted">
           These tags are in use but not in your list yet. Add the ones you want editors to keep
           picking.
@@ -353,7 +352,7 @@ editable grid of rename inputs and guarded deletes, not a data table, so it does
   <form method="POST" action="?/saveVocabulary" class="mt-6 flex items-center gap-3 pt-4">
     <CsrfField />
     <input type="hidden" name="vocabulary" value={vocabularyJson} />
-    <span class="flex min-w-0 flex-1 items-center gap-1.5 text-xs leading-snug text-muted">
+    <span class="flex min-w-0 flex-1 items-center gap-1.5 type-meta leading-snug text-muted">
       Saving commits your tag list to the site config, so every editor shares it.
     </span>
     <button type="submit" class="btn btn-primary btn-sm">Save changes</button>

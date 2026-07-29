@@ -463,11 +463,30 @@ measurement of the unruled named steps. Three rulings amend section 4:
 3. **One heading role, plus named exceptions.** The scale admits a seventh role between
    subtitle (15px) and title (24px) for dialog and panel headings, unifying the two
    competing recipes the measurement found (16px semibold across the admin; 18px
-   display-bold in the media library). The winning size and recipe is a taste call settled
-   in-pass from side-by-side rendered candidates. The brand wordmark (22px, the K4 keming
+   display-bold in the media library). The brand wordmark (22px, the K4 keming
    fix) and the EditPage document title (30px, an editor-canvas special) are ratified named
    exceptions the audit knows about; the media library's three 20px stat numbers resolve or
    join the exception list at migration.
+
+   **Settled 2026-07-28 from the Task 2 rendered probe: the heading role is 18px, weight
+   700, in `--font-display` (Bricolage Grotesque), with a 28px leading.** The probe rendered
+   both candidates at real call sites in both schemes, and each mocked into the other
+   family's context. The 16px semibold recipe reads as a large label rather than a heading.
+   In the create dialog it sits so close to the field label beneath it that the dialog opens
+   with almost no hierarchy, and mocked into the media library it lets the 36px icon tile
+   outweigh the heading, so a decision dialog reads as a notice. The display face at 18px
+   and weight 700 opens a real step above the 13px meta line in both contexts.
+
+   The 28px leading is the measured value at the winning family's own sites rather than a
+   derived one, so those thirteen sites stay pixel-identical and only the losing family
+   moves. Its ratio (1.56) is looser than the title role's (1.33). That is a coherence
+   question the scale can revisit if a later pass rules leading ratios as a family, and it
+   is recorded here rather than silently harmonized, because this pass forbids inventing a
+   token value.
+
+   Consistent with the Pass 1 ruling that a role utility carries structure only,
+   `type-heading` sets size and leading and nothing else. Weight and font family stay a
+   component recipe, the same way the eyebrow's case and tracking do.
 
 **Consequence for acceptance criterion 2.** Pixel identity was Pass 1's proof device, not a
 standing vow. Pass 2's normalization applies these rulings, which moves pixels deliberately:

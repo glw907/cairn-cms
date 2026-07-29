@@ -13,6 +13,13 @@ import type { SelectFieldOption } from '@glw907/cairn-cms/admin-fields';
 The TypeScript types in `src/lib/admin-fields` are the source of truth, and the export-coverage
 gate checks every name here against them.
 
+`FieldLabel` renders the inline, control-adjacent register: the label sits beside its control on
+one line, muted. This is one of three label registers the admin design system distinguishes. A
+custom field built outside this subpath that instead wants the label on its own line preceding the
+control (a register `SelectField` and `TextField` don't offer) follows the individual-field-label
+recipe documented in
+[the admin design system's form-row/label register](../internal/admin-design-system.md#type).
+
 ---
 
 ### `SelectField`

@@ -237,6 +237,26 @@ Recipes:
 - Eyebrow (sidebar group headers and table column labels):
   `type-label font-semibold uppercase tracking-[0.08em] text-muted`. The size comes from the role
   utility; the weight, case, and tracking are this recipe's own.
+- **Form-row/label register, three levels (Pass 2 Task 12).** ASC's own two-level label ruling
+  (`decisions.md`, "Form field labels, two-level register", 2026-07-16), translated to cairn's
+  grammar layer, plus the inline-label shape ASC's ruling does not name:
+  - **Group or section legend:** the Eyebrow recipe above, on a `<legend>` that groups several
+    controls under one name (`EditPage`'s Visibility/Address/Included-in sidebar panels,
+    `ConceptList`'s table column headers). Keeps the uppercase, tracked, muted register.
+  - **Individual field label,** its own line above one control: sentence case, `font-medium`, no
+    `text-muted` (base-content ink), no tracking, no uppercase, no display face. Recipe:
+    `type-body font-medium`, or `type-meta font-medium` when the label sits inside an
+    already-compact panel running its whole scale at the meta role (`CairnMediaLibrary`'s
+    asset-detail rename form). Already the established recipe at every individual-field call site
+    across `ConceptList`, `ManageEditors`, `FieldInput`, `RenameDialog`, `WebLinkDialog`,
+    `LoginPage`, `MediaHeroField`, `ObjectGroupField`, `ComponentForm`, `MediaCaptureCard`, and
+    `ReferenceField`. ASC's own ruling specifies weight 600; cairn's established weight for this
+    tier is one step lighter (`font-medium`, 500) and is already consistent everywhere a field
+    label appears, so this recipe keeps that value rather than reweighting the whole admin, which
+    would move pixels well beyond a single field's own label.
+  - **Inline control-adjacent label,** on one line beside its control rather than above it:
+    `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
+    `admin-fields` subpath's `FieldLabel` recipe (`SelectField` and `TextField` both wrap it).
 - Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
   table cells share it via `table type-subtitle`.
@@ -248,24 +268,31 @@ Recipes:
 
 ## Grammar tokens
 
-The design-infrastructure Pass 1 layer beneath the recipes above: ten CSS custom properties
-(`--cairn-type-title/subtitle/body/meta/label/chip`, `--cairn-gap-label/control/group/section`)
-declared once in `cairn-admin.css`, outside both theme roots, since a structural role does not
-change with the palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth
-inventory; the reference page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is
-the versioned contract a site reads, and this section is where an agent extending the admin meets
-the same vocabulary alongside the component recipes above and below it.
+The design-infrastructure layer beneath the recipes above: eighteen CSS custom properties
+(`--cairn-type-title/heading/subtitle/body/meta/label/chip`, each with a paired
+`--cairn-type-<role>--leading`, plus `--cairn-gap-label/control/group/section`) declared once in
+`cairn-admin.css`, outside both theme roots, since a structural role does not change with the
+palette. `src/lib/design/grammar-tokens.ts` is the single source-of-truth inventory; the reference
+page ([Admin grammar tokens](../reference/admin-grammar-tokens.md)) is the versioned contract a
+site reads, and this section is where an agent extending the admin meets the same vocabulary
+alongside the component recipes above and below it.
 
-- **Markup writes the role utility, never the token or a pixel value.** Ten named utilities in
-  `scripts/admin-css.input.css` (`type-title`, `type-subtitle`, `type-body`, `type-meta`,
-  `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`) are the only
-  supported way to reach a grammar token from a template. Each sets exactly one property
-  (`font-size` or `gap`) and nothing else.
-- **A type role is a size, not a recipe.** Weight, case, tracking, and color stay with the
-  component recipes above (the eyebrow's uppercase and tracking, the nav item's weight swap, the
-  wordmark's own sizing) rather than folding into the role utility. Color is a palette choice, so
-  it stays a separate `text-muted` / `text-subtle` class on the element, the same rule the Tokens
-  section states for those two utilities.
+- **Markup writes the role utility, never the token or a pixel value.** Eleven named utilities in
+  `scripts/admin-css.input.css` (`type-title`, `type-heading`, `type-subtitle`, `type-body`,
+  `type-meta`, `type-label`, `type-chip`, `gap-control`, `gap-label`, `gap-group`, `gap-section`)
+  are the only
+  supported way to reach a grammar token from a template. A `type-*` utility sets `font-size` and
+  the role's ruled `line-height`; a `gap-*` utility sets `gap`. Neither sets anything else.
+- **A type role is a size and its leading, not a recipe.** Weight, case, tracking, font family, and
+  color stay with the component recipes above (the eyebrow's uppercase and tracking, the nav item's
+  weight swap, the wordmark's own sizing) rather than folding into the role utility. Color is a
+  palette choice, so it stays a separate `text-muted` / `text-subtle` class on the element, the same
+  rule the Tokens section states for those two utilities.
+- **The heading recipe.** `type-heading` plus `font-bold` plus
+  `font-[family-name:var(--font-display)]` is the dialog and section heading, 18px in Bricolage.
+  Write all three; the role carries only the size and its leading. One deliberate partial use: the
+  media library's stat numerals take `type-heading` for its size and keep `tabular-nums` without the
+  display family, because a numeral is not prose.
 - **A component `<style>` block references the token directly.** `font-size:
   var(--cairn-type-meta)` or `gap: var(--cairn-gap-group)`, never the utility class, since CSS is
   not markup.
@@ -279,19 +306,32 @@ the same vocabulary alongside the component recipes above and below it.
   (a heading's size, a gap's relationship) and holds across light and dark; palette
   (`--color-*`) is the layer a site changes. The reference page states the acceptance test for a
   re-tuned palette.
-- **Two roles have no markup call site yet, for different reasons.** `type-title` awaits a
-  line-height ruling: the `text-2xl` it would replace sets `line-height` too, so the swap is not
-  pixel-identical. `gap-control` is reached only through its token, from the toolbar's scoped
-  styles. `type-body` is NOT in this pair; it has live call sites, migrated from bracketed
-  literals. Both roles still ship in the compiled sheet, so either is yours to write. See the
-  reference page's current-state note and
-  `docs/internal/2026-07-design-infrastructure-pass-1-deviations.md` for the full catalog of
-  off-scale call sites this pass measured but did not resolve.
+- **Every type role now has call sites, and every admin font size resolves to one**, with five
+  ratified exceptions carrying counted `cairn-audit-disable-next-line type-scale` directives: the
+  three wordmark sites and the editor canvas's two. `gap-control` remains reachable only through its
+  token, from the toolbar's scoped styles. The reference page lists the exceptions; the deviations
+  ledger (`docs/internal/2026-07-design-infrastructure-pass-1-deviations.md`) keeps the spacing
+  vocabulary questions, which are still open.
+- **Never convert between a named Tailwind step and a bracketed size casually.** A named step such
+  as `text-2xl` sets `font-size` and `line-height`; a bracketed `text-[1.5rem]` sets `font-size`
+  alone. Writing a bracketed value in place of a step silently drops the leading, which is how the
+  editor's document title lost 2.25rem during this migration. Use `text-[1.5rem]/[2rem]` when a
+  bracketed value genuinely needs both.
+- **A class used only outside the stylesheet's scan roots never compiles.** The roots are
+  `src/lib/components`, `src/lib/admin-toolkit`, and `src/lib/admin-fields`. A class used only in a
+  directory that is not scanned resolves to nothing at runtime rather than failing a build, so a new
+  admin-rendering directory joins both the `@source` list and `check:admin-css-classes`.
 
 ## Component recipes
 
-- **Floating card:** `rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]`.
-  Use for the list table, the editor panes, the auth card. Do not use a flat `base-300` border.
+- **Floating card:** `card-shell card-shadow`, the two container-role utilities (Pass 2 Task 11) for
+  the shell's radius, hairline border, and fill plus its elevation. Use for the list table, the
+  editor panes, the auth card. A nested surface inside an already-shadowed container (the media
+  library's picked tiles, its row-link cards) takes `card-shell` alone; a shadow on a surface
+  already inside a shadowed one reads as a stray outline rather than elevation, not the raised
+  read the token is for. A component composes its own `overflow-*` and padding; neither role sets
+  them. Do not use a flat `base-300` border, and do not write the bracketed `var()` form the roles
+  replace (`docs/reference/admin-grammar-tokens.md` has the full contract).
 - **Active nav item:** `bg-primary/10 font-semibold text-primary` plus `aria-current="page"`; inactive is
   `font-medium text-subtle`.
 - **Nav default (flat) and site-declared sections:** the zero-config sidebar renders every item, cairn's
@@ -329,6 +369,12 @@ the same vocabulary alongside the component recipes above and below it.
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty
   (the office list with no entries), the state drops the list card and centers on the content area so a
   first-run office reads as composed, not as a small box hugging the top of a tall page.
+- **In-card empty notice (Finding 10, Pass 2 Task 11):** a filtered-to-zero state (a search or filter
+  narrowing a non-empty list to nothing) is `AdminTable`'s own `empty` snippet, never a hand-rolled
+  sibling. The register is `AdminTable`'s to own, in its scoped CSS: centered text, padding, the
+  muted color, and normal wrapping. A caller's snippet passes bare content, typically one `<p>`, and
+  adds no size, color, or alignment class of its own. See [the admin-toolkit reference
+  page](../reference/admin-toolkit.md#admintable) for the exact contract.
 - **Office list (the concept list view):** `ConceptList` is built on the admin toolkit: `PageHeader`
   for the title and the header's ink New button (the ONE create affordance on a populated list, the
   old trailing foot row that duplicated it and read as a content row was removed 2026-07-15),

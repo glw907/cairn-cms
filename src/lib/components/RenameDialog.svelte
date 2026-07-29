@@ -66,7 +66,7 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
 <dialog class="modal" aria-labelledby="cairn-rename-dialog-title" bind:this={dialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-rename-dialog-title" class="text-base font-semibold">
+      <h2 id="cairn-rename-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">
         {routable ? `Change this ${label.toLowerCase()} URL` : `Rename this ${label.toLowerCase()}`}
       </h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={close}>✕</button>
@@ -76,16 +76,16 @@ a name rather than a URL, and its inbound edges are includes rather than links. 
       <input type="hidden" name="concept" value={conceptId} />
       <input type="hidden" name="id" value={id} />
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{routable ? 'Address' : 'Name'}</span>
+        <span class="type-body font-medium">{routable ? 'Address' : 'Name'}</span>
         <input class="input" name="slug" bind:value={nextSlug} bind:this={slugInput} autocomplete="off" />
       </label>
-      <p class="text-xs text-muted">
+      <p class="type-meta text-muted">
         {#if routable}
           Links from other pages update automatically, so nothing breaks. The new address will be
-          <code class="text-xs">{nextSlug}</code>.
+          <code class="type-meta">{nextSlug}</code>.
         {:else}
           Entries that include this {label.toLowerCase()} update automatically, so nothing breaks. The
-          new name will be <code class="text-xs">{nextSlug}</code>.
+          new name will be <code class="type-meta">{nextSlug}</code>.
         {/if}
       </p>
       <div class="flex justify-end gap-2">

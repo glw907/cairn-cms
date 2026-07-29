@@ -281,20 +281,20 @@ Filtering, sorting, and paging run over the loaded entries in component state.
      role element announces inconsistently and clobbers a repeat), so the message is announced once. -->
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if publishedAllMessage}
-  <div class="alert alert-success mb-4 text-sm">{publishedAllMessage}</div>
+  <div class="alert alert-success mb-4 type-body">{publishedAllMessage}</div>
 {/if}
 {#if data.formError}
-  <div class="alert alert-error mb-4 text-sm">{data.formError}</div>
+  <div class="alert alert-error mb-4 type-body">{data.formError}</div>
 {/if}
 {#if data.error}
-  <div class="alert alert-warning mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-warning mb-4 type-body">{data.error}</div>
 {/if}
 
 {#if deleteRefused}
   <!-- A `?/delete` was refused: name the blockers up front, matching the editor's refusal banner,
        so the author sees why without re-opening a dialog. The polite region above announces it, so
        the box itself carries no role or label (a bare div with an aria-label gets no accessible name). -->
-  <div class="alert alert-error mb-4 flex-col items-start text-sm">
+  <div class="alert alert-error mb-4 flex-col items-start type-body">
     <p class="font-medium">This {data.label.toLowerCase()} could not be deleted.</p>
     {#if deleteRefused.inboundKind === 'include'}
       <p>{deleteRefused.inboundLinks.length} {deleteRefused.inboundLinks.length === 1 ? 'entry includes' : 'entries include'} it. Remove the include first, then delete again.</p>
@@ -334,7 +334,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   {/snippet}
   <EmptyState heading={`No ${data.label.toLowerCase()} yet`} message="Stack your first one and it will show up here." action={emptyAction} />
 {:else}
-  <div class="mb-2 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+  <div class="mb-2 overflow-hidden card-shell card-shadow">
     <AdminTable density="sm" rowCount={pageRows.length}>
       {#snippet header()}
         <!-- Frame zones (the column-header row) carry the sidebar's gentle band so content rows are
@@ -375,7 +375,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                    title-status-date, so the summary line stays off the office list and the
                    Hidden tag sits inline beside the title. -->
               <div class="flex items-center gap-2">
-                <a class="truncate text-base font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                <a class="truncate type-subtitle font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish chip. -->
@@ -417,10 +417,10 @@ Filtering, sorting, and paging run over the loaded entries in component state.
         <div role="status" class="flex flex-col items-center gap-3">
           <SearchIcon class="h-8 w-8 text-subtle opacity-40" aria-hidden="true" />
           {#if query.trim()}
-            <p class="text-sm text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
+            <p class="type-body text-muted">No {data.label.toLowerCase()} match <span class="font-medium text-base-content">“{query}”</span>.</p>
             <button type="button" class="type-meta font-medium text-primary underline [text-underline-offset:2px]" onclick={clearSearch}>Clear search</button>
           {:else}
-            <p class="text-sm text-muted">No {data.label.toLowerCase()} match this filter.</p>
+            <p class="type-body text-muted">No {data.label.toLowerCase()} match this filter.</p>
           {/if}
         </div>
       {/snippet}
@@ -444,17 +444,17 @@ Filtering, sorting, and paging run over the loaded entries in component state.
 <dialog class="modal" aria-labelledby="cairn-create-dialog-title" bind:this={createDialog}>
   <div class="modal-box">
     <div class="mb-3 flex items-center justify-between">
-      <h2 id="cairn-create-dialog-title" class="text-base font-semibold">New {createNoun}</h2>
+      <h2 id="cairn-create-dialog-title" class="type-heading font-bold font-[family-name:var(--font-display)]">New {createNoun}</h2>
       <button type="button" class="btn btn-ghost btn-sm" aria-label="Close" onclick={() => createDialog?.close()}>✕</button>
     </div>
     <form method="POST" action="?/create" onsubmit={() => (creating = true)} class="flex flex-col gap-3">
       <CsrfField />
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">Title</span>
+        <span class="type-body font-medium">Title</span>
         <input class="input w-full" name="title" bind:value={title} required />
       </label>
       <label class="flex flex-col gap-label">
-        <span class="text-sm font-medium">{data.routable ? 'Address' : 'Name'}</span>
+        <span class="type-body font-medium">{data.routable ? 'Address' : 'Name'}</span>
         <input
           class="input w-full"
           name="slug"
@@ -465,7 +465,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
       </label>
       {#if data.dated}
         <label class="flex flex-col gap-label">
-          <span class="text-sm font-medium">Date</span>
+          <span class="type-body font-medium">Date</span>
           <input class="input w-full" type="date" name="date" value={dateDefault} />
         </label>
       {/if}

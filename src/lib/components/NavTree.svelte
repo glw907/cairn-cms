@@ -118,10 +118,10 @@ title the menu's own declared label; the sortable-list card below stays untouche
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if data.saved}
-  <div role="status" class="alert alert-success mb-4 text-sm">Navigation saved.</div>
+  <div role="status" class="alert alert-success mb-4 type-body">Navigation saved.</div>
 {/if}
 {#if data.error}
-  <div class="alert alert-error mb-4 text-sm">{data.error}</div>
+  <div class="alert alert-error mb-4 type-body">{data.error}</div>
 {/if}
 
 <form method="POST" action="?/save">
@@ -132,7 +132,7 @@ title the menu's own declared label; the sortable-list card below stays untouche
     <button type="button" class="btn btn-sm" onclick={addRow}>Add item</button>
   </div>
 
-  <div class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 p-2 shadow-[var(--cairn-shadow)]" style="min-height:2.5rem">
+  <div class="card-shell p-2 card-shadow" style="min-height:2.5rem">
     <SortableList.Root ondragend={handleDragEnd} aria-label="Navigation items">
       {#each rows as row, index (row.id)}
         <SortableList.Item id={row.id} {index} aria-label={`${row.label || 'Untitled'}, level ${row.depth + 1}`}>

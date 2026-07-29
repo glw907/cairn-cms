@@ -93,10 +93,10 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
 
 <div class="sr-only" aria-live="polite">{liveError}</div>
 {#if lifecycleError}
-  <div class="alert alert-error mb-4 text-sm">{lifecycleError}</div>
+  <div class="alert alert-error mb-4 type-body">{lifecycleError}</div>
 {/if}
 
-<div class="mb-4 overflow-hidden rounded-box border border-[var(--cairn-card-border)] bg-base-100 shadow-[var(--cairn-shadow)]">
+<div class="mb-4 overflow-hidden card-shell card-shadow">
   <AdminTable density="sm" rowCount={data.editors.length}>
     {#snippet header()}
       <th scope="col" class="{col} pl-6">Name</th>
@@ -109,11 +109,12 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
         {@const isSelf = editor.email === data.self}
         <tr>
           <!-- Title rank (design arc 2026-07-15, propagated from ConceptList): Name is the row's
-               primary identifying cell, so it reads text-base font-medium over the 15px meta. -->
-          <td class="pl-6 py-2 text-base font-medium">{editor.displayName}</td>
+               primary identifying cell, so it alone carries type-subtitle at font-medium; the
+               other cells stay at the table's own type. -->
+          <td class="pl-6 py-2 type-subtitle font-medium">{editor.displayName}</td>
           <td>{editor.email}</td>
           <td>
-            <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'badge-ghost'}">{editor.role}</span>
+            <span class="badge {capabilityFor(editor.role) === 'owner' ? 'badge-primary' : 'badge-outline'}">{editor.role}</span>
           </td>
           <td class="flex justify-end gap-2">
             {#if isDefaultVocabulary}
@@ -156,18 +157,18 @@ adoption map): it names an identity, not a stateful standing, so `StatusChip` do
   </AdminTable>
 </div>
 
-<form method="POST" action="?/addEditor" class="rounded-box border border-[var(--cairn-card-border)] bg-base-100 grid gap-3 p-4 shadow-[var(--cairn-shadow)] sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
+<form method="POST" action="?/addEditor" class="card-shell grid gap-3 p-4 card-shadow sm:grid-cols-[1fr_1fr_auto_auto] sm:items-end">
   <CsrfField />
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Name</span>
+    <span class="type-body font-medium">Name</span>
     <input class="input" name="name" aria-label="Name" autocomplete="off" required />
   </label>
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Email</span>
+    <span class="type-body font-medium">Email</span>
     <input class="input" type="email" name="email" aria-label="Email" autocomplete="off" required />
   </label>
   <label class="flex flex-col gap-label">
-    <span class="text-sm font-medium">Role</span>
+    <span class="type-body font-medium">Role</span>
     <select class="select" name="role" aria-label="Role">
       {#each data.vocabulary as entry (entry.role)}
         <option value={entry.role} selected={entry.role === 'editor'}>{roleOptionLabel(entry)}</option>

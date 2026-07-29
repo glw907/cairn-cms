@@ -122,6 +122,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Pagination`: Component<Props, {}, "">
 - `STATUS_CHIP_DOT_CLASS`: { neutral: string; info: string; success: string; warning: string; danger: string }
 - `StatusChip`: Component<Props, {}, "">
+- `StatusChipRegister`: "bounded" | "quiet"
 - `StatusChipSize`: "xs" | "sm"
 - `StatusChipTone`: "neutral" | "info" | "success" | "warning" | "danger"
 

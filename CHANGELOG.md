@@ -209,6 +209,13 @@ changed.
   `ListToolbar` count line when both appear together. **Consumers must:** expect the header stack
   on any screen mounting `PageHeader` to render visibly tighter (a shorter title-to-meta gap) and
   its `meta` line one step smaller; no prop or type changed.
+- `cairn-audit --rendered`'s `chip-ground-collision` demotes from error to advisory (design
+  infrastructure Pass 3, corpus C, 2026-07-28): the formula has no chroma term and cannot see hue,
+  which produced 24 false errors of 40 on the first consumer admin it measured, so as coded it
+  could not serve as a consumer gate. The formula itself is unchanged; a chroma-aware repair is
+  filed in ROADMAP and re-promotes the rule on re-measured evidence. **Consumers must:** expect a
+  `chip-ground-collision` finding to no longer fail `cairn-audit --rendered`'s exit code; it still
+  reports.
 
 ## 0.90.1
 

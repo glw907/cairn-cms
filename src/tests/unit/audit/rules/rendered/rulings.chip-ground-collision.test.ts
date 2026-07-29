@@ -14,6 +14,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { resolveConfig } from '../../../../../lib/audit/config.js';
+import { exitCodeFor } from '../../../../../lib/audit/report.js';
 import { chipGroundCollision } from '../../../../../lib/audit/rules/rendered/chip-ground-collision.js';
 import type { RenderedFinding, RenderedPage, RenderedRule } from '../../../../../lib/audit/rendered.js';
 
@@ -161,6 +162,36 @@ describe('chip-ground-collision: a ground the ancestor chain does not carry', ()
        </body>`
     );
     expect(selectors(findings)).toEqual(['span.cairn-usage-chip']);
-    expect(findings[0].tier).toBe('error');
+    // Task 3 (ruling 3, corpus C, 2026-07-28): the rule itself demoted to advisory, so its own
+    // collision findings now carry that tier too.
+    expect(findings[0].tier).toBe('advisory');
+  });
+});
+
+// Task 3 (ruling 3, corpus C, 2026-07-28): chip-ground-collision demotes to advisory pending its
+// chroma-aware repair (24 false errors of 40 on the first consumer admin it measured, the
+// luminance-only formula cannot see hue). The demotion is a tier change only, so a run whose only
+// findings are chip-ground findings must exit 0 through every path a finding can reach the report.
+describe('chip-ground-collision demoted to advisory (Task 3, ruling 3)', () => {
+  it('reports the rule at advisory tier', () => {
+    expect(chipGroundCollision.tier).toBe('advisory');
+  });
+
+  it('exits 0 for a real collision, even the worst case (identical fill and ground)', async () => {
+    const findings = await findingsFor(
+      chipGroundCollision,
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75)">
+         <span class="badge" style="${CHIP_STYLE} background-color:oklch(96.5% 0.006 75)">Draft</span>
+       </body>`
+    );
+    expect(findings.length).toBeGreaterThan(0);
+    expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);
+    const report = {
+      findings: findings.map((finding) => ({ ...finding, file: '/fixture', line: 0, start: 0, end: 0 })),
+      suppressed: [],
+      filesScanned: 1,
+      ruleIds: [chipGroundCollision.id],
+    };
+    expect(exitCodeFor(report)).toBe(0);
   });
 });

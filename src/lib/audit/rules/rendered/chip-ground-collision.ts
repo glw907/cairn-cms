@@ -237,15 +237,24 @@ function readChipGrounds(): ChipGroundReading {
 /**
  * A chip's own painted background must not be camouflaged against whatever it sits on. At 1.5:1 two
  * surfaces are not distinct, only not identical, so "not camouflaged" is the verb throughout and
- * "distinct" is the overstatement it replaced. Error tier: a
- * false negative ships a chip that reads as blank against its row (the StatusChip evidence line,
- * `badge-ghost` melting into a zebra stripe), and a false positive would flag the correct
- * `badge-outline` pattern (see the file header), so a chip with no fill of its own is skipped
- * rather than compared.
+ * "distinct" is the overstatement it replaced. A false negative ships a chip that reads as blank
+ * against its row (the StatusChip evidence line, `badge-ghost` melting into a zebra stripe), and a
+ * false positive would flag the correct `badge-outline` pattern (see the file header), so a chip
+ * with no fill of its own is skipped rather than compared.
+ *
+ * DEMOTED TO ADVISORY (Task 3, ruling 3, corpus C, Geoff 2026-07-28): the formula produced 24 false
+ * errors of 40 on the first consumer admin it measured, because it has no chroma term and cannot
+ * see hue, so a hue-distinct chip a sighted user reads as plainly bounded still flags. As coded it
+ * cannot serve as a consumer gate. This is a tier change only; the formula is untouched, and the
+ * chroma-aware repair is filed in ROADMAP behind its own adversarial pass (per the Pass 2
+ * discipline: a gating rule's repair earns its own pass rather than a gate-stage patch). Sequencing
+ * also argued for demoting first: ruling 1 moved the rule's own domain (the chip recipe StatusChip
+ * ships), and repairing the formula before that recipe settled would have fit it twice. The
+ * repair re-promotes this rule to error on re-measured evidence.
  */
 export const chipGroundCollision: RenderedRule = {
   id: 'chip-ground-collision',
-  tier: 'error',
+  tier: 'advisory',
   async check(ctx: RenderedRuleContext): Promise<RenderedFinding[]> {
     await ensurePageHelpers(ctx.page);
     const reading = await ctx.page.evaluate(readChipGrounds);
@@ -318,7 +327,7 @@ export const chipGroundCollision: RenderedRule = {
 
       findings.push({
         ruleId: 'chip-ground-collision',
-        tier: 'error',
+        tier: chipGroundCollision.tier,
         selector: candidate.selector,
         message:
           `chip background ${describeColor(own.color)} reads as indistinguishable from its row ` +

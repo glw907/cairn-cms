@@ -1114,7 +1114,9 @@ describe('relational-spacing against a real browser', () => {
 // never serializes anything. This runs every REGISTERED rule against a real page for exactly that
 // reason, so the next rule to make the same mistake fails here rather than in a consumer's run.
 describe('the registry', () => {
-  it('registers the six error-tier rules spec 6.3 defines, plus border-contrast advisory', () => {
+  // Task 3 (ruling 3, corpus C, 2026-07-28): chip-ground-collision demotes to advisory pending its
+  // chroma-aware repair (ROADMAP), so the registry now carries five error-tier rules, not six.
+  it('registers the five error-tier rules, plus chip-ground-collision and border-contrast advisory', () => {
     const rules = renderedRules();
     expect(rules.filter((rule) => rule.tier === 'error').map((rule) => rule.id)).toEqual([
       'one-filled-action',
@@ -1122,8 +1124,10 @@ describe('the registry', () => {
       'interactive-contrast',
       'touch-targets',
       'viewport-overflow',
-      'chip-ground-collision',
     ]);
+    expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain(
+      'chip-ground-collision'
+    );
     expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('border-contrast');
     expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('weight-budget');
     expect(rules.filter((rule) => rule.tier === 'advisory').map((rule) => rule.id)).toContain('screen-anatomy');

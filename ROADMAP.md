@@ -164,33 +164,21 @@ the named human gates only):**
 
 ## Next
 
-- **The admin defects `cairn-audit --rendered` found in cairn's own admin** (design infrastructure
-  Pass 2 calibration, 2026-07-28; measurements and per-finding classification in
-  `docs/internal/2026-07-design-infrastructure-audit-calibration.md`). Six admin routes in both
-  themes report 20 error-tier findings, so cairn's own admin exits 1 against the gate cairn now
-  ships. Nothing here is a rule defect; each was spot-checked against the rendered screen. Promote
-  the error-tier group whenever an admin design pass next opens, since a gate its own author's tree
-  fails is worth less than the runs it passes.
-  - **Error tier, `touch-targets` (10).** `/admin/media`'s per-card selection checkbox renders
-    20x20 with no associated label, inside a `span` that already reserves 24x24: the affordance is
-    drawn and the input just does not fill it, the cheapest fix in the set. The column sort button
-    on `/admin/posts` and `/admin/pages` renders 62x16, a 16px-tall tap target for a real sort
-    action. The row title link on the same two screens renders 19px tall inside a 49px row, so the
-    primary action of the row claims none of the 30px around it.
-  - **Error tier, `viewport-overflow` (4).** `/admin/media`'s segmented toolbar renders 335px wide
-    inside a 320px viewport with no containing scroller, taking `document.scrollWidth` to 351. The
-    page scrolls horizontally at 320, which the family responsive standard forbids outright.
-  - **Error tier, `chip-ground-collision` (4).** `/admin/media`'s "Not referenced" badge reads at
-    1.11 dark and 1.03 light against an empty thumbnail well: the pill borrows the thumbnail for
-    its ground, so a missing or broken image leaves it with no contrast at all, and six of seven
-    cards show a pill while the seventh shows bare text. `/admin/vocabulary`'s count pill reads 1.12
-    in both themes against the ratified 1.5 floor, so the "3" beside "Your tags" reads as a bare
-    numeral with odd spacing.
-  - **Error tier, `one-filled-action` plus `screen-anatomy` (2 plus 1), one underlying defect two
-    independent rules caught.** `/admin/vocabulary` renders two `btn-primary` controls, "Add tag"
-    inside its card and "Save changes" at the page bottom, and "Save changes" sits outside the
-    header and outside every `.card-shell` with no surface under it. Nothing on the screen says
-    which action is the page's primary one.
+- **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The four
+  error-tier defect groups Pass 2 calibration found against six admin routes in both themes
+  (measurements in `docs/internal/2026-07-design-infrastructure-audit-calibration.md`) are resolved:
+  `touch-targets` and `viewport-overflow` were fixed at the code (`fix(admin): clear the audit's
+  own-tree error tier`, `8d3e532f`: an outward `::before` hit-area expansion on ConceptList's sort
+  buttons, real padding on the row-title link, the default `.checkbox` size on Media's selection
+  boxes, and a shrinkable `flex: 0 1 auto` on ListToolbar's segmented filter group);
+  `one-filled-action`/`screen-anatomy`'s VocabularyAdmin pair was fixed in the same commit (outlining
+  the card-local "Add tag" so only "Save changes" reads as the page's filled action); and
+  `chip-ground-collision` demoted to advisory rather than being repaired (see the calibration
+  follow-ups entry below). `npx cairn-audit --rendered` over the default route list, both themes,
+  now reports zero error-tier findings with no new suppressions. The `badge-ghost` design call
+  (`stock-default-hazards` at `EditPage.svelte:989`, formerly held open for Geoff) is also resolved:
+  StatusChip's two ratified chip registers replace it across cairn's own tree. The advisory-tier
+  debt this pass did not touch stands unchanged:
   - **Advisory, `border-contrast` (132 of the 210 in three classes).** Form control boundaries
     across the admin (`input.input`, `select.select`, the toolbar search field, the vocabulary
     new-label input) read 1.49 light and 1.77 dark against WCAG 1.4.11's 3:1, 26 findings; this is
@@ -208,13 +196,11 @@ the named human gates only):**
     400. **Sequencing hazard, do not lose:** fixing the login landmark immediately creates two new
     `screen-anatomy` false positives, because that rule's only working exemption today is an
     accidental `if (!mainEl) return null`. Give `screen-anatomy` a positive scope predicate first.
-  - **Static, held open for Geoff.** `stock-default-hazards` reports `badge-ghost` at
-    `EditPage.svelte:989`. `StatusChip.svelte:15` already records `badge-ghost` as refuted, so the
-    engine and the component agree; this is a design call, not a defect to fix unilaterally.
 
 - **The rendered rules' own calibration follow-ups** (design infrastructure Pass 2, 2026-07-28;
-  evidence in the calibration doc above). All five advisory rules stay advisory, and the evidence
-  for promotion is not close, so what remains is repair rather than promotion.
+  evidence in the calibration doc above). All six advisory rules stay advisory (`chip-ground-collision`
+  joined the group this pass, demoted in from error tier; see below), and the evidence for promotion
+  is not close, so what remains is repair rather than promotion.
   `interactive-contrast` is a demotion candidate and the only one that gates: 3 findings on a
   consumer home page, all false positives, and 0 on cairn's own tree. `border-contrast` is the most
   repairable of the advisory five, but its exemption keys on the literal string
@@ -269,28 +255,62 @@ the named human gates only):**
   as the entry above: each is confirmed, classified, and adversarially verified, and each waits
   for its own pass rather than a gate-stage patch. Engine defects the audit caught in cairn
   itself: LoginPage renders no `<main>`/`<header>` landmark (already tracked above; corpus C
-  re-confirmed it as the rule's only cairn-origin weight-budget error); ConceptList's table-sort
-  buttons render 62x16px against the 24x24 floor; ListToolbar's segmented control overflows the
-  320/390 viewports (wraps its buttons but not its own box); CairnAdminShell's "CMS" pill paints
-  a raw `border-base-300` instead of the ratified `--cairn-card-border`; StatusChip's own
-  `badge-outline` recipe reads 2.1 to 2.8 against the rule's 3:1 floor; the daisyUI stock table,
+  re-confirmed it as the rule's only cairn-origin weight-budget error); the daisyUI stock table,
   input, and button hairlines cairn's bundle ships produce 864 true `border-contrast` advisories
   on one consumer (re-tune the stock borders or extend token-derived exemptions to them; this is
-  the named blocker on `border-contrast` promotion). Rule and harness repairs:
+  the named blocker on `border-contrast` promotion). (ConceptList's sort targets, ListToolbar's
+  320/390 overflow, the CMS pill's raw border, and StatusChip's own contrast floor are all fixed;
+  see the error-tier entry and the CHANGELOG's `## Unreleased` window.) Rule and harness repairs:
   `chip-ground-collision`'s contrast has no chroma term, so hue-distinct chips flag (24 false
-  errors on ASC; repair-or-demote is flagged for Geoff in STATUS); `norms-bands` measures inside
-  closed `dialog.modal` boxes (scale .95 artifact) and trips on UA button-vs-anchor default
-  padding; the norms manifest generator passes `size='xs'` to StatusChip so the bands never saw
-  the component's `sm` default; rendered mode has no post-hydration page-identity guard, so a
-  page that hydrates into other chrome is measured silently (the two ASC edit desks were; the
-  guard needs a design that keeps deliberate public-page audits legal); RULING 2's exemption
-  floor strands the light-theme kbd chip at 1.143 against its 1.15 floor. (design infrastructure Pass 2,
-  2026-07-28). Two files in `src/lib` carried a raw NUL as a composite-key separator, which made
+  errors on ASC; **resolved 2026-07-29: demoted to advisory**; the chroma-aware repair (a distance
+  formula that can see hue, plus a recalibrated floor) stays filed here, unbuilt);
+  `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
+  button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
+  so the bands never saw the component's `sm` default; rendered mode's missing post-hydration
+  page-identity guard (the ASC edit desks were measured silently after hydrating into other
+  chrome) is shipped (`fix(audit): rendered mode refuses pages that lose their identity after
+  hydration`, `6fcb405d`); RULING 2's exemption floor strands the light-theme kbd chip at 1.143
+  against its 1.15 floor. (design infrastructure Pass 2, 2026-07-28). Two files in `src/lib`
+  carried a raw NUL as a composite-key separator, which made
   them binary to `grep` and to `file`, so every grep-based gate over `src/lib` skipped them
   silently while reporting success. Both were rewritten to a unicode escape in `40cb6d77` and
   nothing stops a third. The trigger is machine-detectable, so this is a test or a `check:*` script
   rather than a note: scan the tracked source tree for a control byte outside tab, newline, and
   carriage return, and fail naming the file and offset.
+
+- **The static audit's sheet parser desyncs on a backslash-escaped quote in a selector** (design
+  infrastructure Pass 3, 2026-07-29; `b1634490`). Tailwind's `before:content-['']` utility compiles
+  to an escaped-quote selector that `src/lib/audit/sheet.ts` (`collectRules`, `scanBlock`,
+  `stripComments`, `ownDeclarationText`) reads as a string opener, dropping every rule after it in
+  the built sheet; one such utility on `ConceptList` desynced the whole parse and produced 247 false
+  static errors against files the task never touched. The Task 5 fix worked around it (dropped the
+  utility, since `before:` already emits `content: var(--tw-content)` for free), rather than fixing
+  the parser; the repair itself is unbuilt and runs behind its own adversarial pass, the standing
+  discipline for a rule/harness repair.
+- **DX: a `type-scale` finding could name the matching grammar role, closing the loop toward a
+  rename codemod** (design infrastructure Pass 3, 2026-07-29). The upgrade guide's rename recipe
+  (`docs/guides/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar
+  tokens](./docs/reference/admin-grammar-tokens.md) by hand; if the `type-scale` rule instead named
+  the role whose size the reported class resolves to, step 2 of that recipe becomes automatic, and a
+  codemod that rewrites the class in place becomes buildable on top. **Flag for Geoff:** decide
+  whether the codemod ships before the release that makes the rename recipe live, or after.
+- **DX decisions for Geoff, pre-release** (design infrastructure Pass 3, 2026-07-29). Two open calls
+  on the packaged skill's delivery mechanism, neither a defect: (1) `cairn-doctor --fix` overwrites a
+  consumer's local edits to the installed skill silently (`installSkill` always copies the packaged
+  tree over `.claude/skills/cairn-admin-screens/` with no diff or confirmation); decide whether that
+  is the right default before the mechanism has real consumers. (2) `--fix` is a generic flag name
+  now carrying a second, unrelated responsibility (installing/refreshing the skill, alongside its
+  original doctor-check auto-fix meaning); consider a rename while the surface is still unpublished.
+- **Small durability notes on the packaged skill, from the Task 6/7 review gates** (design
+  infrastructure Pass 3, 2026-07-29), each cheap to carry forward rather than fix now: skill
+  freshness (`src/lib/doctor/check-skill.ts`) compares the consumer's installed tree only at the
+  packaged tree's own current relative paths, so a future engine version that drops a reference file
+  cannot see (and cannot prune) a stale file still sitting in a consumer's `.claude/skills/`
+  directory; `skills/**/*.md` prose sits outside both `.vale.ini`'s scope (`docs/**/*.md` and
+  `README.md` only) and `check:docs`'s dead-link and arm-index gates, so its prose and its links are
+  unchecked by any repo gate; and `SKILL.md`'s cross-references into the reference docs resolve
+  through `node_modules/@glw907/cairn-cms/`, which is correct once installed but means the links are
+  necessarily relative to an install, not to this repo's own tree.
 
 - **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
   pass, 2026-07-19). The guide's root-layout snippet imports `{ cairn }` from `$lib/cairn.config`

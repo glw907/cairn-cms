@@ -138,6 +138,25 @@ The run fails rather than reporting clean on every shape of silent green: no rul
 pages configured, `BASE_URL` not answering, Playwright absent, or any configured page rendering
 outside 2xx, which also catches a page path that names no route.
 
+### The post-hydration page-identity guard
+
+The runner checks every page once, after its own hydration settles, against the identity its
+server-rendered response carried: the document title, and a signature of its `<main>`/`[role="main"]`
+landmark plus that landmark's first heading, captured from a dedicated no-JavaScript context so the
+baseline is genuinely what the server sent. Take a page whose settled DOM no longer matches: the run
+navigated to `/admin/edit/some-post` and the DOM that settled belongs to an unrelated 404 or a
+different route entirely. The runner reports that page unmeasurable rather than auditing it under
+the wrong page's identity: a `rendered-page-identity-mismatch` finding names the route and both
+identities, and no rule runs against that page in that theme. This is a harness finding, not a rule
+finding, and it gates the exit code at error tier, the same way a stale allowlist entry does: a
+route that hydrates into the wrong chrome is a defect worth fixing, not a compositional judgment
+call.
+
+The mechanism reads only `<title>`, `<main>`, and `[role="main"]`, none of them cairn-only markup,
+so a consumer's own custom route and cairn's shell-less login page (which renders no `<main>` at
+all) both stay auditable: a landmark of `null` on both the SSR and the hydrated side counts as
+agreement, not as evidence of a swap.
+
 ### Auditing an authenticated admin
 
 The admin routes rendered mode visits by default assume an unauthenticated request. Auditing a

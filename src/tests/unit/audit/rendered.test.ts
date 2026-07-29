@@ -3,6 +3,7 @@ import { resolveConfig } from '../../../lib/audit/config.js';
 import { resolveBaseUrl, resolveExtraCookies, resolveRenderedFindings, runRendered } from '../../../lib/audit/rendered.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import type {
+  PageIdentity,
   RenderedBrowser,
   RenderedContext,
   RenderedFinding,
@@ -145,6 +146,21 @@ describe('resolveRenderedFindings', () => {
     const { findings } = resolveRenderedFindings([], visits, allowlist);
     expect(findings[0].ruleId).toBe('rendered-allowlist-dead');
     expect(findings[0].tier).toBe('error');
+  });
+
+  // The page-identity guard's own withheld verdict: a page it refused was never probed at all, so
+  // an allowlist entry naming it is neither provably stale nor provably dead, even when its selector
+  // would have matched on an ordinary run.
+  it('withholds the verdict on a page the identity guard refused, even with a matching selector', () => {
+    const visits: RenderedPageVisit[] = [
+      { page: '/admin/edit/x', selectorsSeen: new Set(['.legacy']), identityRefused: true },
+    ];
+    const allowlist = [{ page: '/admin/edit/x', selector: '.legacy', reason: 'held' }];
+    const { findings } = resolveRenderedFindings([], visits, allowlist);
+    expect(findings).toHaveLength(1);
+    expect(findings[0].tier).toBe('advisory');
+    expect(findings[0].message).toContain('guard refused');
+    expect(exitCodeFor({ findings, suppressed: [], filesScanned: 1, ruleIds: ['probe'] })).toBe(0);
   });
 });
 
@@ -319,11 +335,23 @@ describe('fail-loud shapes that need no browser at all', () => {
  * same "structural type, cast the dynamic import" idiom the module itself uses for the real
  * Playwright import.
  */
+const DEFAULT_IDENTITY: PageIdentity = { title: 'Same title', landmark: null };
+
+/**
+ * A test double for Playwright's surface. `ssrIdentity`/`hydratedIdentity` drive the post-hydration
+ * page-identity guard: they default to the SAME value, so every test that doesn't care about the
+ * guard sees it agree with itself and never triggers a refusal. The guard's own SSR capture opens a
+ * SEPARATE `javaScriptEnabled: false` context (see `captureSsrIdentity`), which this fake routes to
+ * its own page/context pair carrying `ssrIdentity`, distinct from the normal one carrying
+ * `hydratedIdentity`.
+ */
 function fakeBrowser(page: {
   status?: number;
   hasMenuTrigger?: boolean;
   matchedSelectors?: Set<string>;
   unprobeableSelectors?: Set<string>;
+  ssrIdentity?: PageIdentity;
+  hydratedIdentity?: PageIdentity;
   /** Every `addCookies` call across every context this browser opens, in call order. */
   addCookiesCalls?: { name: string; value: string; url: string }[][];
 }): {
@@ -333,37 +361,54 @@ function fakeBrowser(page: {
   const hasMenuTrigger = page.hasMenuTrigger ?? false;
   const matchedSelectors = page.matchedSelectors ?? new Set<string>();
   const unprobeableSelectors = page.unprobeableSelectors ?? new Set<string>();
+  const ssrIdentity = page.ssrIdentity ?? DEFAULT_IDENTITY;
+  const hydratedIdentity = page.hydratedIdentity ?? DEFAULT_IDENTITY;
   const addCookiesCalls = page.addCookiesCalls ?? [];
 
-  const fakePage = {
-    async goto() {
-      return { status: () => status };
-    },
-    async evaluate(_fn: unknown, arg?: unknown) {
-      if (Array.isArray(arg)) {
-        return (arg as string[]).map((selector) =>
-          unprobeableSelectors.has(selector) ? 'unprobeable' : matchedSelectors.has(selector) ? 'matched' : 'absent'
-        );
-      }
-      return hasMenuTrigger;
-    },
-    keyboard: { press: async () => {} },
-    async close() {},
-  } as unknown as RenderedPage;
+  // Playwright serializes a page function by source and runs it in the browser, but this fake never
+  // leaves the Node process: the real function reference arrives in `evaluate`, so routing on its
+  // name is exact and needs no serialization double.
+  function makePage(identity: PageIdentity) {
+    return {
+      async goto() {
+        return { status: () => status };
+      },
+      async evaluate(fn: unknown, arg?: unknown) {
+        if (Array.isArray(arg)) {
+          return (arg as string[]).map((selector) =>
+            unprobeableSelectors.has(selector) ? 'unprobeable' : matchedSelectors.has(selector) ? 'matched' : 'absent'
+          );
+        }
+        if (typeof fn === 'function' && fn.name === 'capturePageIdentity') return identity;
+        if (typeof fn === 'function' && fn.name === 'waitForHydrationSettle') return undefined;
+        return hasMenuTrigger;
+      },
+      keyboard: { press: async () => {} },
+      async close() {},
+    } as unknown as RenderedPage;
+  }
 
-  const context = {
-    async addCookies(cookies: { name: string; value: string; url: string }[]) {
-      addCookiesCalls.push(cookies);
-    },
-    async newPage() {
-      return fakePage;
-    },
-    async close() {},
-  } as unknown as RenderedContext;
+  const fakePage = makePage(hydratedIdentity);
+  const ssrPage = makePage(ssrIdentity);
+
+  function makeContext(pageForContext: RenderedPage) {
+    return {
+      async addCookies(cookies: { name: string; value: string; url: string }[]) {
+        addCookiesCalls.push(cookies);
+      },
+      async newPage() {
+        return pageForContext;
+      },
+      async close() {},
+    } as unknown as RenderedContext;
+  }
+
+  const context = makeContext(fakePage);
+  const ssrContext = makeContext(ssrPage);
 
   const browser = {
-    async newContext() {
-      return context;
+    async newContext(options?: { javaScriptEnabled?: boolean }) {
+      return options?.javaScriptEnabled === false ? ssrContext : context;
     },
     async close() {},
   } as unknown as RenderedBrowser;
@@ -469,8 +514,11 @@ describe('runRendered against a fake browser', () => {
         loadPlaywright: async () => fakeBrowser({ addCookiesCalls }),
       });
 
-      // One context per theme (light, dark), each call carrying the theme cookie plus the extra one.
-      expect(addCookiesCalls).toHaveLength(2);
+      // One context per theme (light, dark) for the interactive run, plus one more per theme for the
+      // page-identity guard's own no-JS SSR capture (`captureSsrIdentity`), each call carrying the
+      // theme cookie plus the extra one: the guard's baseline needs the same session to see the real
+      // admin route rather than a login redirect.
+      expect(addCookiesCalls).toHaveLength(4);
       for (const cookies of addCookiesCalls) {
         expect(cookies).toEqual(
           expect.arrayContaining([
@@ -492,6 +540,93 @@ describe('runRendered against a fake browser', () => {
         })
       ).rejects.toThrow(/cairn-admin-theme/);
       expect(addCookiesCalls).toHaveLength(0);
+    });
+  });
+
+  // The ASC hydrated-404 shape: a page SSRs correct admin content, then a client-side swap lands
+  // the settled DOM in unrelated chrome. Before this guard, the harness measured the swapped page
+  // silently; these fixtures prove it refuses instead.
+  describe('the post-hydration page-identity guard', () => {
+    it('refuses a page whose settled DOM no longer matches its SSR identity, and skips its rules', async () => {
+      const config = configWith({ pages: ['/admin/edit/some-post'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () =>
+          fakeBrowser({
+            ssrIdentity: { title: 'Edit post · Cairn', landmark: 'main::Edit post' },
+            hydratedIdentity: { title: 'Not found', landmark: null },
+          }),
+      });
+
+      expect(rule.check).not.toHaveBeenCalled();
+      const finding = report.findings.find((f) => f.ruleId === 'rendered-page-identity-mismatch');
+      expect(finding).toBeDefined();
+      expect(finding?.tier).toBe('error');
+      expect(finding?.message).toContain('/admin/edit/some-post');
+      expect(finding?.message).toContain('Edit post');
+      expect(finding?.message).toContain('Not found');
+      expect(exitCodeFor(report)).toBe(1);
+    });
+
+    it('lets a page whose SSR and hydrated identity agree run rules normally', async () => {
+      const config = configWith({ pages: ['/admin/posts'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeBrowser({}),
+      });
+
+      expect(rule.check).toHaveBeenCalled();
+      expect(report.findings.some((f) => f.ruleId === 'rendered-page-identity-mismatch')).toBe(false);
+    });
+
+    // The login page renders no `<main>` on either side: `landmark: null` on both is agreement,
+    // never itself evidence of a swap, so the shell-less page stays auditable.
+    it('does not refuse a shell-less page that carries no landmark on either side', async () => {
+      const config = configWith({ pages: ['/admin/login'] });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () =>
+          fakeBrowser({
+            ssrIdentity: { title: 'Sign in · Cairn', landmark: null },
+            hydratedIdentity: { title: 'Sign in · Cairn', landmark: null },
+          }),
+      });
+
+      expect(rule.check).toHaveBeenCalled();
+      expect(report.findings.some((f) => f.ruleId === 'rendered-page-identity-mismatch')).toBe(false);
+    });
+
+    // A refused page was never really probed, so an allowlist entry naming it cannot be told stale
+    // from dead: the withheld-verdict path applies rather than the harsher staleness accusation.
+    it('withholds the allowlist verdict on a page the guard refused, rather than reporting it stale', async () => {
+      const config = configWith({
+        pages: ['/admin/edit/some-post'],
+        allowlist: [{ page: '/admin/edit/some-post', selector: '.legacy', reason: 'held' }],
+      });
+      const rule: RenderedRule = { id: 'rest-rule', tier: 'error', check: vi.fn(async () => []) };
+
+      const report = await runRendered(config, [rule], {
+        isReachable: async () => true,
+        loadPlaywright: async () =>
+          fakeBrowser({
+            ssrIdentity: { title: 'Edit post · Cairn', landmark: 'main::Edit post' },
+            hydratedIdentity: { title: 'Not found', landmark: null },
+          }),
+      });
+
+      expect(report.findings.some((f) => f.ruleId === 'rendered-allowlist-stale')).toBe(false);
+      // The withheld-verdict path shares `rendered-allowlist-dead`'s id (the same idiom
+      // `unreachedStateFinding` already uses), tiered advisory and worded as a withholding rather
+      // than an accusation.
+      const withheld = report.findings.find((f) => f.ruleId === 'rendered-allowlist-dead');
+      expect(withheld?.tier).toBe('advisory');
+      expect(withheld?.message).toContain('guard refused');
     });
   });
 });

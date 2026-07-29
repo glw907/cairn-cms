@@ -32,7 +32,34 @@ tier, and eleven rendered, five error and six advisory. Full descriptions live i
 differently on purpose; reported, never gating): `chip-ground-collision`, `border-contrast`,
 `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`.
 
-Two register rules the audit cannot check mechanically, because they need the builder's own
+## Screen anatomy
+
+`screen-anatomy` checks the negative half mechanically: one `PageHeader`, one `h1`, and no
+accent- or ink-filled action stray outside the header slot or the card region (desk routes are
+exempt; see [`docs/reference/cairn-audit.md`](../../docs/reference/cairn-audit.md)).
+
+The affirmative half is guidance, not a lint: **the primary action sits in the header slot.** The
+rule cannot enforce this because it cannot know whether a given screen has a primary action to
+place, and declaring one in config would put per-screen ceremony on every consumer to feed a
+single check. Hold it as the rule instead: when a screen has one deliberate primary action, it
+belongs in the header slot beside the `h1`, not trailing the content in a footer row below it (the
+traced defect this guards against: a duplicate New button once sat below `ConceptList`'s table,
+after the header already carried one). The annotated exemplars (`references/exemplar-list.md`,
+`references/exemplar-detail.md`) show the placement applied, and the grader prompt's checklist
+reads for it.
+
+## Component contracts
+
+A component's measured shape (control height, padding, border treatment, radius) is data, not
+prose to recall: `npx cairn-audit norms <role>` returns the measured band with its provenance,
+ratified against a written decision or observed-only. Query by role id (`button-primary`,
+`status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is in
+[`docs/reference/cairn-audit.md`](../../docs/reference/cairn-audit.md)) before inventing a
+height or a padding value from scratch.
+
+## Register rules
+
+Three register rules the audit cannot check mechanically, because they need the builder's own
 judgment about what the screen is for:
 
 - **One filled action, chosen deliberately.** `one-filled-action` catches a second accent fill;
@@ -42,6 +69,10 @@ judgment about what the screen is for:
   (`register="quiet"`) for a settled or put-away state that should recede rather than announce
   itself. Use quiet for the state a list mostly sits in (Published, Closed); reserve bounded for
   a state that needs attention (Draft, Overdue, Pending).
+- **Facet quietness.** A filter control is a "facet" in `ListToolbar`'s own vocabulary (its
+  `'menu'` display): quiet bordered-button chrome at rest, showing only its own name. It picks up
+  its applied treatment, a primary-tinted border and background, only once a value departs the
+  filter's default. A facet never competes with the surface's one filled action.
 
 ## The done-gate
 

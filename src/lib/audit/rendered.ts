@@ -178,15 +178,23 @@ function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' | 'messa
  * of a gating line needs to know a rule asked for silence and did not get it, and printing
  * `(exempt: ...)` beside a finding that gates would be a report contradicting itself.
  */
-function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true): Finding {
+function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true, allowlisted = false): Finding {
   // The exemption rides in the message rather than in a field of its own on `Finding`, because
   // the report's whole job with a suppressed line is to print it: an allowlisted finding's reason
   // lives in the config a reader can open, and a rule's own exception has no such file.
   let note = '';
   if (rf.exemption !== undefined) {
-    note = exemptionHonored
-      ? ` (exempt: ${rf.exemption})`
-      : ` (the rule claimed an exemption, refused because an error-tier finding gates: ${rf.exemption})`;
+    if (exemptionHonored) {
+      note = ` (exempt: ${rf.exemption})`;
+    } else if (allowlisted) {
+      // A refused exemption on a finding the ALLOWLIST then suppressed used to print "refused
+      // because an error-tier finding gates" from under the report's `Suppressed:` header, which is
+      // the report contradicting itself, the one thing this function exists to prevent. Where the
+      // line actually ends up decides which sentence it carries.
+      note = ` (the allowlist suppressed this; the rule's own exemption was refused, since an error-tier finding gates: ${rf.exemption})`;
+    } else {
+      note = ` (the rule claimed an exemption, refused because an error-tier finding gates: ${rf.exemption})`;
+    }
   }
   return positionless({
     ruleId: rf.ruleId,
@@ -314,9 +322,10 @@ export function resolveRenderedFindings(
     // finding that had just been raised and suppressed for it.
     const matches = allowlist.filter((candidate) => candidate.page === rf.page && candidate.selector === rf.selector);
     for (const entry of matches) spent.add(entry);
+    const allowlisted = matches.length > 0;
     const selfExempt = rf.exemption !== undefined && rf.tier !== 'error';
-    const destination = matches.length > 0 || selfExempt ? suppressed : findings;
-    destination.push(toFinding(rf, selfExempt));
+    const destination = allowlisted || selfExempt ? suppressed : findings;
+    destination.push(toFinding(rf, selfExempt, allowlisted));
   }
   for (const entry of allowlist) {
     if (spent.has(entry)) continue;

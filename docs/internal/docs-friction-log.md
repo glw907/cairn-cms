@@ -79,6 +79,13 @@ findings start fresh below this line.
   existing `e2e` workflow, which already builds and serves the showcase, so the marginal cost is one
   step rather than a second browser job. Left unshipped here because the plan scopes the gate to
   CI/publish and a per-PR norms failure would block work on an advisory-tier artifact.
+  **Task 18 rider:** the job had also never RUN, on any CI, since `publish.yml` was its only home
+  and dispatching that workflow attempts a real npm publish, so the first proof of it would have
+  arrived at a release. Task 18 extracted it to `.github/workflows/norms.yml` as a reusable
+  workflow carrying both `workflow_call` and `workflow_dispatch`; `publish.yml` calls it and still
+  gates on it, so there is one definition and the render is now rehearsable against any branch.
+  The staleness window this entry names is unchanged, and so is the e2e-workflow tightening it
+  proposes.
 - **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 14)** The rendered harness's
   `'menu-open'` interaction state is a first pass, not a proven one: `applyState` clicks the first
   `[aria-haspopup="menu"]`/`[aria-haspopup="true"]` element it finds, a guess at "the conventional
@@ -108,6 +115,42 @@ findings start fresh below this line.
   the floor, a padding-math shortfall the touch-targets graduation surfaced. It is suppressed with
   that reason in `scripts/check-touch-targets.mjs`'s allowlist so the finding stays counted and
   printed. Closing it moves the `site-visual` baselines, so it belongs to a theme pass.
+- **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 18)** `check:version` cannot see the
+  `## Unreleased` window at all, which is not what the pass assumed when it asked for the
+  `<!-- release-size: minor -->` marker to be confirmed. `checkVersion` matches only
+  `^## (\d+\.\d+\.\d+)` headings, so the top entry it sizes is the last PUBLISHED one, and the body
+  it scans for a marker runs from that heading to the previous one. A marker in the Unreleased
+  window is therefore inert: the gate reported `OK (patch)` for `0.90.1` both before and after the
+  marker landed. The marker is still right, and it now sits in the window, but it is a
+  forward-declaration nothing checks until the cut renames the heading, which is exactly the moment
+  the release doctrine wants to be cheap and mechanical. Verified by simulating the cut against the
+  exported `checkVersion`: with the marker `{ok: true, bump: 'minor'}`, without it the miss.
+  A cheap tightening, unshipped here because it changes a gate outside this pass's scope: have
+  `check-version.mjs` also read the `## Unreleased` window, assert it carries at most one marker,
+  and run the same size rule against a simulated cut so a missing marker fails on the pass that
+  earned it rather than on the release that trips over it.
+- **(developer, 2026-07-28, design infrastructure Pass 2, Task 18)** The upgrade guide keys its
+  entries by version, so an unreleased window is written under a `## Unreleased: <summary>` heading
+  that a human renames at the cut. Nothing checks the rename. A published guide could ship with an
+  `## Unreleased` heading above a section describing a version that has a number, and the failure
+  is silent and consumer-facing. The trigger is machine-detectable, so it wants a gate rather than a
+  note: assert that `docs/guides/upgrade-cairn.md` carries an `## Unreleased` heading if and only if
+  `CHANGELOG.md` does. `check:docs` is the natural home.
+- **(developer, 2026-07-28, design infrastructure Pass 2, Task 18)** The `cairn-audit` reference
+  page had grown task by task through rendered mode and the norms query while STATIC mode, which is
+  what the bare `npx cairn-audit` invocation runs, went undocumented: no rule list, no config file,
+  no suppression idiom. The page's own opening code block advertised the command with nothing behind
+  it. Closed here, so it needs no further tracking, but the shape is worth naming: a reference page
+  written incrementally alongside the tasks that add surface documents whatever the current task
+  touched, and the default path is the one no task ever touches.
+- **(developer, 2026-07-28, design infrastructure Pass 2, Task 18)** Documenting the rule-declared
+  exemption surfaced that the mechanism, as shipped, is reachable only by cairn. `border-contrast`'s
+  exemption keys on the literal custom-property name `--cairn-card-border`, so a consumer with an
+  equally ratified hairline of its own has no way to declare one; the only consumer-side authority
+  is the page+selector allowlist, entry by entry. The reference page now describes the exemption
+  honestly as a rule-owned mechanism, but the asymmetry is real, and it is the same shape the
+  calibration found from the measurement side (`docs/internal/2026-07-design-infrastructure-audit-calibration.md`,
+  section 5.1). Filed into ROADMAP (Next) with the other rule-repair follow-ups.
 - **(maintainer, 2026-07-28, design infrastructure Pass 2, Task 15)** The rendered audit's first
   honest own-tree run reports 160 errors across the six admin routes in both themes, and 138 of them
   are `touch-targets`: the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px toolbar

@@ -63,11 +63,13 @@ import {
  * close enough to read as camouflaged rather than merely low-contrast. RATIFIED (Task 16b ruling 3,
  * Geoff, 2026-07-28) alongside `chip-ground-collision`, which borrowed this exact number from the
  * graduated probe this rule itself graduates from. The shared rationale, now on the record so
- * neither rule re-litigates it: both test "not accidentally camouflaged," never a legibility
- * standard. Legibility is `border-contrast`'s different job, measured against WCAG 1.4.11's 3:1
- * non-text floor; this rule's 1.5 is deliberately looser than that number and looser still than the
- * WCAG text floors (4.5 normal, 3.0 large), because "camouflaged" and "legible" are different
- * claims.
+ * neither rule re-litigates it: both test "not accidentally camouflaged," and neither is a contrast
+ * standard. Legibility is WCAG 1.4.3 Contrast (Minimum), AA, at 4.5:1 for normal text and 3:1 for
+ * large, and NO rule in this engine measures it. Do not redirect a reader to `border-contrast` for
+ * it, which an earlier draft of this paragraph did: that rule measures a border stroke against the
+ * surfaces it separates and never measures text at all, so the redirect told a consumer a gap was
+ * covered. This 1.5 is deliberately looser than every one of those numbers, because "camouflaged"
+ * and "legible" are different claims and only the first one is being made.
  *
  * Treat this floor as load-bearing, not a rounding nicety: `chip-ground-collision`'s own
  * `RATIO_FLOOR` doc records how an always-opaque canvas default there manufactured a measured
@@ -251,19 +253,29 @@ export const interactiveContrast: RenderedRule = {
         continue;
       }
 
-      // WATCH: the ground carries every ancestor's `opacity` (`resolveGround` composites a subtree
-      // before dimming it), and this text color does not, so a control inside an `opacity-70`
-      // wrapper is measured as full-strength ink on a washed-out ground and reads as higher
-      // contrast than it paints. `border-contrast` and `chip-ground-collision` both closed the same
-      // shape at Task 16b; this rule is error tier and gates the run, so widening it belongs with
-      // Task 17's calibration corpus rather than beside a ruling. `cumulativeOpacity` in color.ts is
-      // the piece it needs.
       const ground = resolveGround(candidate.layers, layerColors, { canvas });
       if (ground.kind === 'indeterminate') {
         findings.push(indeterminateFinding('interactive-contrast', candidate.selector, ground.reason));
         continue;
       }
-      const ratio = contrastRatio(composite(fg, ground.color), ground.color);
+      // The ink is resolved as one more layer at the INSIDE of the same chain, rather than
+      // composited onto the finished ground. Both readings agree while every `opacity` in the chain
+      // is 1, and they diverge the moment one is not: `resolveGround` composites a subtree and dims
+      // the group once, so the ground already carries every ancestor's opacity while a separately
+      // composited `color` carries none. That measured full-strength ink on a washed-out ground and
+      // reported HIGHER contrast than the control paints, a false negative on a rule that gates.
+      // Task 18's review pass named it; `border-contrast` and `chip-ground-collision` closed the
+      // same shape earlier and this rule was the last of the three still carrying it.
+      const painted = resolveGround(
+        [{ backgroundColor: candidate.color, opacity: 1, hasImage: false }, ...candidate.layers],
+        [fg, ...layerColors],
+        { canvas }
+      );
+      if (painted.kind === 'indeterminate') {
+        findings.push(indeterminateFinding('interactive-contrast', candidate.selector, painted.reason));
+        continue;
+      }
+      const ratio = contrastRatio(painted.color, ground.color);
       if (ratio >= RATIO_FLOOR) continue;
 
       findings.push({

@@ -192,6 +192,104 @@ describe('border-contrast, Ruling 2: the derivation probe leaves the page as it 
   });
 });
 
+// Task 17's calibration pass refuted the identity probe on cairn's own admin. `/admin/media`'s
+// "Find orphaned files" button carries `border-[var(--cairn-card-border)]`, its stroke is byte-exact
+// to the token in both themes, and it reported four findings, because daisyUI's `.btn` transitions
+// `border-color` over 0.2s and `getComputedStyle` one synchronous tick after the substitution still
+// returns the transition's STARTING value. The two fixtures below are that measured input: the
+// markup is the button's own recipe reduced to what decides the question, and the transitioned case
+// is what regressed. Chromium's tell is a serialization flip to the interpolation space, so the
+// assertion is on the verdict rather than on any string.
+describe('border-contrast, Ruling 2: identity survives a transitioned border-color', () => {
+  /** The orphan-scan button's own recipe, reduced to what decides the question, under `transition`. */
+  function orphanScanButton(transition: string): string {
+    return `<body style="margin:0;background-color:oklch(96.5% 0.006 75);${LIGHT_TOKENS}">
+       <button class="orphan-scan" style="background-color:oklch(99% 0.004 75);
+            border:1px solid var(--cairn-card-border);border-radius:8px;padding:8px 12px;
+            transition:${transition}">Find orphaned files</button>
+     </body>`;
+  }
+
+  it('suppresses a hairline whose element transitions border-color', async () => {
+    const findings = await findingsFor(
+      orphanScanButton('color 0.2s, background-color 0.2s, border-color 0.2s'),
+      'light'
+    );
+    expect(reported(findings)).toEqual([]);
+    expect(selectors(exempted(findings))).toEqual(['button.orphan-scan']);
+  });
+
+  // The control: the same button without the transition was always suppressed, so the fixture above
+  // pins the difference rather than the shared half.
+  it('suppresses the same hairline with no transition declared', async () => {
+    const findings = await findingsFor(orphanScanButton('none'), 'light');
+    expect(reported(findings)).toEqual([]);
+    expect(selectors(exempted(findings))).toEqual(['button.orphan-scan']);
+  });
+
+  // The probe forces `transition-property: none` to read a settled color, so what it leaves behind
+  // is part of the same contract the restore fixture above holds it to.
+  it('restores a transition the element declared for itself', async () => {
+    const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
+    try {
+      await page.setContent(orphanScanButton('border-color 0.2s ease'), { waitUntil: 'load' });
+      const read = () =>
+        page.evaluate(() => {
+          const style = getComputedStyle(document.querySelector('button')!);
+          return [style.transitionProperty, style.transitionDuration, style.borderTopColor];
+        });
+      const before = await read();
+      await borderContrast.check({
+        page: page as unknown as RenderedPage,
+        pagePath: '/fixture',
+        theme: 'light',
+        state: 'rest',
+        config,
+      });
+      expect(await read()).toEqual(before);
+    } finally {
+      await page.close();
+    }
+  });
+});
+
+// Task 17's second adjudication, pinned as behavior: a `color-mix` that passes the token through is
+// NOT the ratified hairline. See `RATIFIED_SENTINEL`'s doc for the reasoning and for why the two
+// mix shapes fail on different checks.
+describe('border-contrast, Ruling 2: a color-mix-derived hairline is outside the exemption', () => {
+  // The dim shape, the media library's orphan-scan result rows and HelpHome's section rules. A
+  // weaker rendering of the ratified color is outside a ruling that ratified a measurement, on the
+  // same grounds the `opacity`-dimmed fixtures below already establish.
+  it('still reports a divider that dims the ratified token through color-mix', async () => {
+    const findings = await findingsFor(
+      `<body style="margin:0;background-color:oklch(99% 0.004 75);${LIGHT_TOKENS}">
+         <div class="row-dimmed" style="background-color:oklch(99% 0.004 75);height:40px;
+              border-bottom:1px solid color-mix(in oklab, var(--cairn-card-border) 70%, transparent)"></div>
+         <div class="row-under" style="background-color:oklch(99% 0.004 75);height:40px"></div>
+       </body>`,
+      'light'
+    );
+    expect(selectors(reported(findings))).toEqual(['div.row-dimmed']);
+    expect(exempted(findings)).toEqual([]);
+  });
+
+  // The blend shape, ComponentInsertDialog's failed-preview edge and TidyReview's warning one. It
+  // fails IDENTITY, which is the half that has to hold: the mix percentage is free to run up, and
+  // the token's presence in the expression never makes a tinted edge the thing Geoff ratified.
+  it('still reports a validation hairline that blends the token with an error color', async () => {
+    const findings = await findingsFor(
+      `<body style="margin:0;background-color:oklch(96.5% 0.006 75);${LIGHT_TOKENS};--color-error: oklch(88% 0.03 25)">
+         <div class="field-invalid" style="background-color:oklch(99% 0.004 75);
+              border:1px solid color-mix(in oklab, var(--color-error) 35%, var(--cairn-card-border));
+              border-radius:8px;width:200px;height:40px"></div>
+       </body>`,
+      'light'
+    );
+    expect(selectors(reported(findings))).toEqual(['div.field-invalid']);
+    expect(exempted(findings)).toEqual([]);
+  });
+});
+
 describe('border-contrast, Ruling 2: everything else still answers the measurement', () => {
   // The adversarial proof the ruling itself demands: a blanket disable would silence this neighbor
   // too. Same page, same ambient, a second card whose border is a visibly different, un-ratified

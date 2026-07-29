@@ -20,6 +20,15 @@
 // claim stays (two weights per body-content region); only the region's own boundary narrows to
 // what the rule was always meant to test.
 //
+// The definition is SHAPE-based, not component-based, which is the ruling's own instruction, so say
+// what that costs rather than claiming a component family is covered. `Pagination` renders its
+// item-range `role="status"` line and its "Rows per page" `<label><select>` in a plain `<div>`
+// OUTSIDE its `<nav aria-label="Pagination">`, and `ListToolbar`'s count line and filter labels sit
+// in plain divs too, so in both components only the parts wearing a chrome shape are chrome and the
+// rest still spends the budget. A future recomposition that moves weight out of a button and into a
+// sibling `<span>` silently re-fires the rule. That is the trade the ruling took over a
+// component-name match, not an oversight.
+//
 // CHROME, for this rule, is text inside one of the shapes below, each named by the PLATFORM's own
 // semantics (an HTML tag or the ARIA role that means the same thing), never a class name or a
 // component's own identity, so a rewritten component stays covered the same way a renamed one would
@@ -40,8 +49,11 @@
 //    facet menu trigger), every sort button on a table's own column header, a row's own delete
 //    action, `Pagination`'s own page buttons, and `CairnTidySettings`' own disclosure `<summary>`.
 //    This reverses the prior cut's stated position ("a button label ... is ordinary region
-//    content"); the reversal is Ruling 4 itself, and the axis is the one WCAG 4.1.2 already draws
-//    between a "user interface component" and static text.
+//    content"); the reversal is Ruling 4 itself, and the axis borrows the WCAG glossary's term
+//    "user interface component" to name one side of it. The term only, never a criterion: SC 4.1.2
+//    Name, Role, Value is a Level A requirement that a component's name, role, and value be
+//    programmatically determinable, it draws no line about typographic weight, and an earlier draft
+//    of this header cited it as though it did. The axis is cairn's own.
 //  - `<header>` and `[role="banner"]`, ONLY when it contains the heading it introduces. The
 //    page-header recipe (`PageHeader.svelte`, and `OfficeList.svelte`'s own pre-toolkit twin of it)
 //    wraps an optional eyebrow, the page's one `h1`, and an optional meta line in one `<header>`,
@@ -73,7 +85,17 @@
 //    user interface component under WCAG 4.1.2 too, but excluding every `<a>` would blind the rule
 //    to a list route's own titles, which are the content a reader came for, and telling a
 //    btn-styled anchor from a title link needs the class name this rule refuses to trust. Both
-//    behaviors are fixtured in `rulings.weight-budget.test.ts` so neither drifts unnoticed.
+//    behaviors are fixtured in `rulings.weight-budget.test.ts` so neither drifts unnoticed. A link
+//    is a user interface component in the glossary's sense too, the same borrowed term as above.
+//  - `PageHeader`'s ACTION SLOT is exempt, because it renders inside the same `<header>` as the
+//    `h1`. The slot is entirely caller-authored (`ConceptList` puts a create button there,
+//    `CairnMediaLibrary` an upload control, a consumer anything at all), so an arbitrary amount of
+//    markup is exempt by virtue of sitting in the title band, which is the unbounded hole the
+//    heading condition was introduced to bound. Inside that slot neither the `<a class="btn">` nor
+//    the `<button class="btn">` above spends the budget, so the limit named just above does not
+//    hold there. `querySelector(HEADING_SELECTOR)` also matches a heading anywhere in the header's
+//    subtree, so a `<header>` whose only heading sits in its trailing control still exempts
+//    everything. Narrowing the clause to the heading's own flow is the repair, filed in ROADMAP.
 //
 // A heading's OWN text is excluded from the region it opens, independent of whether the heading
 // also happens to sit inside a `<header>` (PageHeader's does; a bare `<h2>` mid-page does not).
@@ -209,13 +231,27 @@ function collectWeightCandidates(): WeightRegionScan {
   const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
   const isVisible = (el: Element) => (helpers ? helpers.isVisible(el) : true);
 
+  // Both tests are bounded to the subtree being walked. `closest` includes the element itself and
+  // walks past the walk root all the way to `<html>`, so a root that IS one of these shapes made
+  // every text node under it chrome and the region reported "rendered only chrome" instead of being
+  // measured. cairn's shell renders exactly that root: `CairnAdminShell` is a `<nav>` carrying
+  // `role="dialog"` below the persistent-sidebar breakpoint, and the layer selector picks a
+  // `[role="dialog"]` outside `<main>` as a second root, so the sidebar's own three-weight stack was
+  // structurally unmeasurable there. The 1280px default keeps the sidebar persistent so it never
+  // fired in cairn's own run; `touch-targets` resizes the shared page to 390, and a consumer's
+  // mobile-menu `<nav role="dialog">` hits it directly. The root, and anything above it, is context
+  // rather than chrome inside the region.
   /** Whether `el` sits inside chrome the user operates, which also stops a heading opening a region. */
-  const regionBlocking = (el: Element | null) => el !== null && el.closest(CONTROL_CHROME) !== null;
+  function regionBlocking(el: Element | null, root: Element): boolean {
+    if (el === null) return false;
+    const match = el.closest(CONTROL_CHROME);
+    return match !== null && match !== root && root.contains(match);
+  }
 
   /** Whether `el`'s text is chrome: operable furniture, or a title band introducing its own heading. */
-  function isChrome(el: Element): boolean {
-    if (regionBlocking(el)) return true;
-    for (let node: Element | null = el; node; node = node.parentElement) {
+  function isChrome(el: Element, root: Element): boolean {
+    if (regionBlocking(el, root)) return true;
+    for (let node: Element | null = el; node && node !== root; node = node.parentElement) {
       if (node.matches(TITLE_BAND) && node.querySelector(HEADING_SELECTOR) !== null) return true;
     }
     return false;
@@ -271,7 +307,7 @@ function collectWeightCandidates(): WeightRegionScan {
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as Element;
-        if (el.matches(HEADING_SELECTOR) && isVisible(el) && !regionBlocking(el)) {
+        if (el.matches(HEADING_SELECTOR) && isVisible(el) && !regionBlocking(el, root)) {
           regionIndex += 1;
           const headingSelector = signature(el);
           const headingName = (el.textContent ?? '').trim().slice(0, 40) || headingSelector;
@@ -291,7 +327,7 @@ function collectWeightCandidates(): WeightRegionScan {
       // other shapes the same way, by ancestor, so text nested arbitrarily deep inside a toolbar's
       // own control or a table's own header row is still caught, and it is COUNTED rather than
       // dropped so an all-chrome region can say what it is.
-      if (el.closest(HEADING_SELECTOR) || isChrome(el)) {
+      if (el.closest(HEADING_SELECTOR) || isChrome(el, root)) {
         chromeFound += 1;
         region.chrome += 1;
         continue;

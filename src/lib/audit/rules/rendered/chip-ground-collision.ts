@@ -1,5 +1,5 @@
-// cairn-audit's chip-ground-collision rule: a chip's own painted background has to read as
-// distinct from the background of whatever it sits on, the "badge-ghost melting into the zebra
+// cairn-audit's chip-ground-collision rule: a chip's own painted background must not be
+// CAMOUFLAGED against the background of whatever it sits on, the "badge-ghost melting into the zebra
 // stripe" failure StatusChip's own header comment documents and the static stock-default-hazards
 // rule catches only by class name (a rewritten equivalent could still collide). This rule proves
 // the actual rendered result instead of trusting a class name: it composites the chip's own
@@ -74,11 +74,18 @@ import {
  * number here, a builder borrowed this value from `interactive-contrast`'s own probe-derived floor,
  * and Geoff confirmed the borrow on review rather than leaving it as an open question. The shared
  * rationale, now on the record so neither rule re-litigates it: both rules test "not accidentally
- * camouflaged," never a legibility standard. Legibility is `border-contrast`'s different job,
- * measured against WCAG 1.4.11's 3:1 non-text floor; this rule's 1.5 sits well under that number
- * and never tries to clear it, the same way it sits under the WCAG text floors (4.5 normal, 3.0
- * large). The admin's own measured chip collisions run 1.01 to 1.12, far below every one of these
- * numbers, so in practice the floor is not a close call.
+ * camouflaged," and neither is a contrast standard. Legibility is WCAG 1.4.3 Contrast (Minimum),
+ * AA, at 4.5:1 for normal text and 3:1 for large, and NO rule in this engine measures it. Do not
+ * redirect a reader to `border-contrast` for it, which an earlier draft of this paragraph did: that
+ * rule measures a border stroke against the surfaces it separates and never measures text at all.
+ * This 1.5 sits well under every one of those numbers and never tries to clear one. The admin's own
+ * measured chip collisions run 1.01 to 1.12, far below all of them, so the floor is not a close call
+ * in practice.
+ *
+ * WHAT THIS RULE STILL DOES NOT PROVE about a chip, worth naming because the number invites the
+ * assumption: not its label's contrast against its own fill (1.4.3), and not its status cue, which
+ * engages 1.4.1 Use of Color (Level A) where hue alone carries the state and 1.4.11 Graphical
+ * Objects at 3:1 where the fill is what identifies it. None of the three is checked anywhere here.
  *
  * The number is LOAD-BEARING, not a rounding nicety, and this pass demonstrated why: the
  * always-opaque canvas default this file's header describes (closed by making
@@ -186,6 +193,17 @@ function readChipGrounds(): ChipGroundReading {
     painters.push({ el, rect: el.getBoundingClientRect(), what: 'an element painting a background-image' });
   }
 
+  // THE PAINTER SET IS WIDER THAN THE CASE IT WAS BUILT FOR, and every widening here turns a gating
+  // finding into a non-gating one, so state the breadth. daisyUI v5 paints `--btn-noise` as a
+  // background-image on every `.btn` (`color.ts` reads the same fact from the other side), so every
+  // button in the admin joins this list, as does every inline `<svg>` from `admin-icons.ts`. The
+  // test below is a 2D bounding-box intersection with no z-order or paint-order reading, so any chip
+  // whose box happens to intersect a button's or an icon's downgrades to an advisory "could not
+  // measure": a count badge positioned over a `.btn`, or a `join` group sharing a row band with one.
+  // Narrowing this (requiring the painter to sit earlier in paint order, or restricting the
+  // background-image half to elements whose own background-color is fully transparent) is a real
+  // repair and is filed in ROADMAP; it is not taken here because loosening a gating rule's downgrade
+  // path deserves its own adversarial pass rather than a gate-stage edit.
   function overlappingPainter(el: Element): string | null {
     const rect = el.getBoundingClientRect();
     for (const painter of painters) {
@@ -217,7 +235,9 @@ function readChipGrounds(): ChipGroundReading {
 }
 
 /**
- * A chip's own painted background must read as distinct from whatever it sits on. Error tier: a
+ * A chip's own painted background must not be camouflaged against whatever it sits on. At 1.5:1 two
+ * surfaces are not distinct, only not identical, so "not camouflaged" is the verb throughout and
+ * "distinct" is the overstatement it replaced. Error tier: a
  * false negative ships a chip that reads as blank against its row (the StatusChip evidence line,
  * `badge-ghost` melting into a zebra stripe), and a false positive would flag the correct
  * `badge-outline` pattern (see the file header), so a chip with no fill of its own is skipped

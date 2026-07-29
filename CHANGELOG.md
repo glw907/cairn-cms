@@ -1,5 +1,7 @@
 ## Unreleased
 
+<!-- release-size: minor -->
+
 ### Added
 
 - The admin's structural type and spacing scale is now named: ten CSS custom properties
@@ -20,6 +22,21 @@
 - The palette/grammar boundary is now a documented contract: a site re-tunes the palette tokens
   (`--color-*`) to its own brand and never redeclares a grammar token, since grammar names
   structure and palette is the brand layer.
+- The type scale closes at seven roles, each carrying a ruled line-height, and the grammar
+  inventory grows from ten custom properties to eighteen. Every type role gains a paired
+  `--cairn-type-<role>--leading` token, and a seventh role, `--cairn-type-heading` with its
+  `type-heading` utility (18px, bold, the display face), unifies the two heading recipes the admin
+  had been running side by side. Each `type-*` utility now declares
+  `line-height: var(--tw-leading, var(--cairn-type-<role>--leading))`, so a `leading-*` utility
+  still composes over a role rather than being overridden by it. cairn's own admin screens migrate
+  onto the closed scale: 129 named type steps, 120 twelve-pixel sites resolved onto `type-meta` or
+  `type-label` by the relationship each site expresses, both heading families onto `type-heading`,
+  and the stray 9.6px and 11.2px slips onto `type-chip` and `type-label`. Five sites keep a value
+  off the scale and each carries a counted suppression directive naming why: the three wordmark
+  sites (the K4 keming fix) and the editor canvas and its document title, which set the editor's
+  own type scale rather than the admin chrome's. The losing heading family and part of the
+  twelve-pixel set change size by ruling, so the `admin-visual` baselines were regenerated once on
+  CI and read by eye. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
 - Two container role utilities, `card-shell` and `card-shadow`, are the supported replacement for
   hand-copying the admin's card-shell class string
   (`rounded-box border border-[var(--cairn-card-border)] bg-base-100`, optionally with
@@ -29,6 +46,50 @@
   regardless of cairn's own usage, the same safelist discipline as the eleven grammar role utilities.
   cairn's own admin components migrate every verbatim shell site onto the new utilities,
   pixel-identically. See [Admin grammar tokens](./docs/reference/admin-grammar-tokens.md).
+
+- The package ships a new bin, `cairn-audit`, the design-language audit. An install puts it on the
+  project's path, and `npx cairn-audit` runs the static rules over the admin surfaces. The
+  substrate is `svelte/compiler` for markup and the built `cairn-admin.css` for resolution, never a
+  regex over source text: a class token is matched exactly, so `text-base` (the size utility) and
+  `text-base-content` (the daisyUI color utility) can never read as the same class, and a class
+  written as an array, an object, a template literal, or a `class:` directive is seen the same as
+  one written in a plain attribute. Configuration is one optional `cairn-audit.config.json` whose
+  every key defaults, so a site that has written no config still gets a meaningful run; a config
+  that names a scan path the tree does not have fails the run instead of quietly auditing less.
+  See [The `cairn-audit` CLI](./docs/reference/cairn-audit.md).
+
+- Nine static rules ship, all error tier. `no-uncompiled-class`: every markup class token compiles
+  into the built sheet or is a name the component's own `<style>` block defines. `type-scale`:
+  every font size a text-sizing token resolves to comes from a `--cairn-type-*` role.
+  `gap-scale`: an arbitrary margin, padding, or gap literal resolves to a `--cairn-gap-*` role or
+  lands on Tailwind's own spacing grid. `stock-default-hazards`: four stock daisyUI patterns
+  cairn's own recipes replace (`badge-ghost`, the focus-driven bare `.dropdown`, native `disabled`
+  on a guarded button, a flat `base-300` card border), each finding citing the refuted alternative
+  on record. `token-colors`: no raw hex, `rgb()`, named-color, or pure-achromatic literal outside a
+  declared palette site. `grammar-boundary`: consumer CSS never redeclares a grammar token.
+  `focus-parity`: every hand-authored `:hover` selector has a matching `:focus-visible` or
+  `:focus-within`. `motion-band`: every declared duration lands in the admin's 150 to 250ms band,
+  and `transition: all` never ships. `reduced-motion`: every motion-bearing selector is named again
+  inside a `prefers-reduced-motion: reduce` guard.
+
+- Suppression is a co-located, reasoned, counted comment:
+  `cairn-audit-disable-next-line <rule-id> -- <reason>`, in HTML, `//`, or `/* */` form. The reason
+  is required, a directive that silences nothing is itself a finding, and neither of those errors
+  can be suppressed in turn, so a build that passes by suppression reads as one. "Next line"
+  resolves to the next AST node rather than the next physical line, which is what makes a directive
+  above a multi-line element attach to that element's whole source range. This replaces the
+  file-plus-token JSON allowlists the repo's own gates carried, whose entries orphaned silently on
+  a rename and exempted a whole file at a time.
+
+- Two repo gates graduate onto the packaged engine and keep their names and their places in CI.
+  `npm run check:invisible-craft` now runs `motion-band`, `gap-scale`, and `token-colors`, and
+  `npm run check:admin-css-classes` runs `no-uncompiled-class`; both are thin wrappers, and the
+  hand-rolled comment strippers, brace-matched attribute scanners, and duration and color regexes
+  they carried are gone. Their two JSON side files go with them: every entry in
+  `admin-css-classes-allowlist.json` proved already dead, and each entry in
+  `invisible-craft-budget.json` resolved to a regex false positive the new rules recognize as
+  compliant, a site outside the audited scope, a declared palette file, or a co-located suppression
+  directive at the site itself.
 
 - The package now ships a norms manifest: the admin's measured design norms as data, derived by
   rendering the admin screens in both themes and reading the computed styles of twelve semantic
@@ -57,8 +118,8 @@
 - `npx cairn-audit --rendered` runs, and the six error-tier rendered rules spec 6.3 defines are
   registered: `one-filled-action` (at most one accent-filled control per surface),
   `focus-renders` (every tab stop renders a focus indicator), `interactive-contrast` (interactive
-  text against its own composited background at a ratio of at least 1.5), `touch-targets` (44x44
-  CSS px at a 390px viewport, aware of a `::before` inset hit-area expansion), `viewport-overflow`
+  text against its own composited background at a ratio of at least 1.5), `touch-targets` (a tap
+  target's activation region at a 390px viewport), `viewport-overflow`
   (nothing wider than the viewport at 390 and at 320), and `chip-ground-collision` (a chip's fill
   distinguishable from the background behind it). A rendered rule that compares two colors resolves
   them by painting each on a canvas in the page and reading the sRGB bytes back rather than parsing
@@ -91,6 +152,34 @@
 - A rendered rule that throws reports a finding at its own tier instead of aborting the run. A rule
   that reads a file inside its check (`norms-bands` reads the shipped manifest) could otherwise
   take an entire audit to exit code 2 on a substrate condition in a consumer install.
+
+- Four design rulings settle what three rendered rules enforce, each recorded in the rule's own
+  source and on the reference page so the reasoning does not have to be re-derived.
+  `touch-targets` enforces a 24x24 floor, the number WCAG 2.2 level AA's success criterion 2.5.8
+  sets, rather than AAA's 44x44, since AA is the conformance level cairn can honestly claim. The
+  rule is a strict superset of that criterion rather than an implementation of it, so a finding is a
+  house-bar failure and not on its own an AA failure; four of the criterion's five exceptions are
+  not evaluated, and each finding says so. It measures the activation region rather than the painted
+  box: the control's own box, a qualifying `::before` inset expansion, and every label the platform
+  reports as activating the control. The `--cairn-card-border` hairline is a ratified exception,
+  exempt at the rule rather than blanket disabled, so `border-contrast` still reports every other
+  boundary. `chip-ground-collision`'s floor of 1.5 is ratified, and it and `interactive-contrast`
+  share both the number and the reason: each tests that a control or a chip is not accidentally
+  camouflaged against its own ground, which is a different claim from legibility. Legibility is WCAG
+  1.4.3 Contrast (Minimum), at 4.5:1, and no rule in this engine measures it; the reference page now
+  states the engine's whole WCAG coverage boundary rather than leaving a reader to infer one.
+  `weight-budget`'s content region excludes chrome, and chrome is defined by HTML tag and the
+  equivalent ARIA role rather than by class, so a rewritten component stays covered.
+
+- A rendered rule can declare its own exemption, for a ratified exception no page+selector entry
+  names and no source-positioned comment can reach: a design token every recipe shares, on every
+  page. An exemption suppresses without silencing. The rule still constructs the finding, the
+  finding still carries its own measurement, and it reaches the report's suppressed list with the
+  ruling printed beside it. Only an advisory rule can exempt itself; on an error-tier finding the
+  run refuses the reason, prints the refusal, and the exit code stands, because a gate any rule
+  could quiet in one line is worth no more than the runs it passes. The allowlist gains the
+  matching honesty in the other direction: an entry whose selector still matches an element while
+  suppressing nothing reports as a dead entry, at the tier of the rule it names.
 
 No consumer action is required for the entries above. No exported type, prop, or route contract
 changed.

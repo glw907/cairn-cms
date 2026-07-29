@@ -458,7 +458,15 @@ describe('border-contrast: the refuted inputs', () => {
            <tr><td style="background:oklch(26% 0.014 75);color:#fff;height:60px">Row 2</td></tr>
          </tbody></table></body>`
     );
-    expect(messages(findings)).toEqual([expect.stringContaining('renders no visible boundary on either side')]);
+    // Asserted on the two MEASUREMENTS, not on a verdict about visibility. The message used to end
+    // "so it renders no visible boundary on either side", which the rule cannot demonstrate for
+    // every value under 3:1 (the admin's own form-control edges measure 1.49 and 1.77 and are
+    // plainly visible) and which contradicted the exemption clause printed beside it on a
+    // suppressed line. This fixture's 1.04 pair is the case the old wording was true for.
+    expect(messages(findings)).toEqual([
+      expect.stringContaining('reads at contrast 1.04 against the surface beside it'),
+    ]);
+    expect(messages(findings)[0]).toContain('both under the 3:1 house floor');
   });
 
   // `background-clip` defaults to `border-box`, so an element's own fill paints under its own
@@ -494,7 +502,7 @@ describe('border-contrast: the refuted inputs', () => {
       '/fixture',
       { colorScheme: 'dark' }
     );
-    expect(messages(findings)).toEqual([expect.stringContaining('renders no visible boundary on either side')]);
+    expect(messages(findings)).toEqual([expect.stringContaining('reads at contrast 1.09')]);
   });
 
   // `border-image` paints OVER `border-color`, so the computed color is not what renders: a

@@ -755,3 +755,216 @@ documented regex false positive dying. Two violations surfaced, one closed and o
 - **No implementer could run `code-simplifier`.** `cairn-implementer`'s toolset has no agent
   dispatch, so all five did manual passes and the real agent ran once at the end, from the main loop.
   Worth knowing when planning a pass: the simplifier is a main-loop step, not a per-task one.
+
+---
+
+## Phase 5 and whole-pass post-mortem (2026-07-28)
+
+Phase 5 is complete, and with it the pass. `cairn-audit` now has a rendered mode: eleven rules
+driving real Chromium against a running admin, six of them gating. Task 17 measured the whole engine
+against two corpora and Task 18 folded a review gate over the result.
+
+The headline is not the eleven rules. It is that four separate adversarial passes, run against the
+same four rules over two tasks, each found real defects, and a fifth pass at the very end found six
+more in the same code. An enforcement engine is unusually good at looking correct.
+
+### What was built
+
+| Commit | Task | What landed |
+| --- | --- | --- |
+| `87c2e0dc` | 14 | The rendered harness: page visits, themes, interaction states, the allowlist |
+| `001e817b` | 14 | Baseline regeneration for the harness's own admin changes |
+| `c14c2f03` | 15 | The six error-tier rules, and the two probe graduations |
+| `4cacfd5f` | 16 | The five advisory rules |
+| `ba7f401d` | 16 | Dark-theme detection restored in `chip-ground-collision` |
+| `80041424` | 16b | Geoff's four rulings recorded before calibration, not after |
+| `40cb6d77` | 16b | The four rulings implemented, plus counted rendered suppression |
+| `37bd1f43` | 16b | Plan tick |
+| uncommitted | 17 | The calibration doc, both corpora measured and classified |
+| uncommitted | 18 | Docs, changelog, roadmap, `norms.yml`, and the review gate's fixes |
+
+### What the calibration measured, and what it could not reach
+
+Corpus A is cairn's own admin: 6 routes times 2 themes. Corpus B is ASC, a live consumer site at
+HEAD `55578d78`, 10 pages times 2 themes, running the worktree engine by absolute path so the
+measurement was of this pass and not of published `0.90.1`.
+
+| Corpus | Tier | Findings | True positive | False positive | FP rate |
+| --- | --- | ---: | ---: | ---: | ---: |
+| A (cairn) | error | 20 | 20 | 0 | 0% |
+| A (cairn) | advisory | 214 | 172 | 42 | 19.6% |
+| B (ASC) | error | 39 | 36 | 3 | 7.7% |
+| B (ASC) | advisory | 283 | 2 | 281 | 99.3% |
+
+The 19.6% against 99.3% is the finding, and it is not flattering. The five compositional rules are
+roughly calibrated against the codebase their own authors wrote and close to useless against the
+first outside codebase they met. All five stay advisory; the evidence for promoting any of them is
+not close. The suppression numbers say the same thing from the other side: corpus A suppresses 130
+findings, corpus B suppresses 2, and both of those 2 are on `/admin/login`, which is cairn's own
+markup. No consumer-authored element is forgiven by any exemption the engine ships, because
+`border-contrast`'s exemption keys on the literal string `--cairn-card-border`.
+
+**What corpus B could not reach is the part that limits the evidence.** ASC's entire authenticated
+admin returns 303 to `/admin/login`, including its 31 custom admin routes under
+`src/routes/admin/club/**`. That is the exact corpus this task wanted: an extending developer's own
+markup rendering inside `CairnAdminShell`, drawer present, theme root mounted, gap tokens in scope.
+It is where the compositional rules are designed to apply and it is where they were never measured.
+ASC ships no dev-auth backend by design, and reaching it would have meant a D1 write into a live
+site or modifying the thing being measured. That gap is itself a finding: **a consumer cannot run
+`cairn-audit --rendered` against their own admin today** without hand-seeding a session row, and if
+they try, the redirect defect hands them a clean-looking report of the login screen measured six
+times.
+
+Nine of corpus B's ten pages are ASC's public marketing pages, so an objection that the admin rules
+were pointed at the wrong surface is fair on its face. It does not survive: `rendered.pages` is a
+documented consumer-owned config surface, and none of these rules carries any scope predicate. They
+do not decline, they assert, and they assert citing an internal cairn document the consumer has
+never seen.
+
+### The method lesson: eleven of eleven rules were refuted on first build
+
+Every rendered rule this pass shipped failed an adversarial pass before it was correct.
+
+- **Task 15**, six error-tier rules: refuted, with demonstrated inputs. `touch-targets`'s
+  `::before` expansion arithmetic was exactly backwards, inflating a 42px tab past the floor while
+  flagging the `.nav-caret` pattern the rule exists to understand. `findSmallTouchTargets`
+  referenced a module-scope constant inside a serialized page function and threw `ReferenceError` on
+  every real page, so it had never once executed against a browser while its tests passed.
+- **Task 16**, five advisory rules: refuted. `chip-ground-collision`'s color parser matched `rgb()`
+  only, against a built sheet containing zero `rgb()` background declarations and 82 oklch token
+  references, so the rule could not fire against the shipped admin at all.
+- **Task 16b**, the four rulings: four rules changed, four adversarial refutations run, 23
+  demonstrated findings returned, and **all four rules were refuted on the first build**. The
+  `resolveGround` canvas default manufactured a ratio of 1.514 against a 1.5 floor, one hundredth
+  over the line, and silently dropped two real dark-theme collisions while every other gate stayed
+  green.
+- **Task 18**, this gate: 27 findings from a fresh-context review of the finished engine, 2 of them
+  blocking. Six were confirmed code defects in the same four rules that had already survived three
+  adversarial passes.
+
+The pattern to carry: **a rendered rule's tests prove the rule agrees with itself.** Every one of
+these defects sat behind a green suite. What caught them was a reader required to produce a runnable
+input, or a measurement taken against real pixels. Budget for the refutation pass as part of building
+a rule, not as a review afterwards, and require the demonstrated input; not one of the 23 findings
+needed re-litigation because each arrived with its own proof.
+
+The counter-example is worth keeping too. This gate rejected one finding on measurement:
+`resolveGround` was reported as fail-open on a `null` layer color, and the proposed fix breaks two
+pinned fixtures in `color.test.ts` that use `null` to mean "this layer painted nothing", one of
+which exists to hold the dark-canvas defect closed. The underlying concern is real, since
+`resolveColors` overloads `null` for both an empty string and a color the browser refused, but the
+repair belongs at that boundary and not in `resolveGround`. Recorded at the code and in ROADMAP.
+
+### The defect a count delta caught, which no gate could have
+
+`border-contrast`'s derivation probe substitutes a sentinel for `--cairn-card-border` and reads back
+which border colors follow. On `/admin/media` it reported four findings against a button whose
+border demonstrably was painted through the token. The rule was blind to a CSS transition: daisyUI's
+`.btn` transitions `border-color` over 0.2s, so one synchronous tick after the substitution
+`getComputedStyle` still reports the old color and the sentinel never appears. The tell was a
+serialization flip from `oklch(0.93 0.008 75)` to `oklab(0.93 0.00207 0.00773)`, the same color
+re-expressed in the space Chromium interpolates in.
+
+Nothing in the gate could have found this. The suite was green, `check` was 0/0, and the rule's own
+fixtures passed, because every fixture set a border without a transition. What found it was a human
+question about a single finding's plausibility, and what confirmed the fix was the count moving:
+228 to 214 advisories, 116 to 130 suppressed, errors unchanged at 20 and byte-identical. Exactly 14
+findings moved, all `border-contrast`, all on `<button>` elements painted in the ratified token. Four
+are the button the adjudication was about; the other ten are the same latent defect on
+`CairnAdminShell`'s command-palette trigger, on 5 routes times 2 themes, which nobody went looking
+for.
+
+A second defect fell out of the fix and the existing restore fixture did catch it: restoring
+`transition-property` before the color had settled left the element animating 0.2s back from the
+sentinel, so the audit was repainting the page it was about to measure.
+
+This gate re-derived the 14-finding delta independently rather than accepting it, by disabling only
+the transition fix, repackaging, and re-running: the count returned to exactly 20 errors, 228
+advisories, 116 suppressed. That also proves Task 18's own six code fixes move no count on this
+corpus, which was the thing worth knowing.
+
+### Two source files were invisible to grep, and every grep-based gate reported success
+
+`src/lib/audit/norms.ts` and `src/lib/content/references.ts` each carried a raw NUL byte, used as a
+composite-key separator. Git, `grep`, and `file` all classify such a file as binary. Every
+grep-based gate over `src/lib` therefore skipped both files silently while reporting success, and
+`git show --stat` rendered `references.ts` as `Bin 8035 -> 8045 bytes` rather than as a diff.
+
+Both were rewritten to a unicode escape in `40cb6d77`, and a scan of HEAD confirms zero control
+bytes outside tab, newline, and carriage return anywhere in `src/lib`. Nothing stops a third. The
+trigger is machine-detectable, so ROADMAP carries it as a `check:*` script rather than a note, per
+this repo's own watch-item doctrine.
+
+The general shape is the one worth remembering: **a gate that scans files can be defeated by a file
+it declines to read, and it reports that as a pass.** This is the same failure family as the
+orphaned-allowlist entry and the typo'd scan path, both of which this pass also found.
+
+### The blocking finding: the engine misstated a standard
+
+The highest-severity item this gate folded was not a crash. Three source files, the reference page,
+and the CHANGELOG all carried the sentence that legibility "is `border-contrast`'s different job,
+measured against WCAG 1.4.11's 3:1 non-text floor". That is false twice. SC 1.4.11 is Non-text
+Contrast and cannot be a legibility standard under any reading; text legibility is SC 1.4.3 at
+4.5:1, which **no rule in this engine measures**. And `border-contrast` measures a border stroke
+against the surfaces it separates, so it is not the legibility check for anything.
+
+The consequence is specific. `interactive-contrast` sits exactly where a reader expects text
+contrast, it measures a control's computed `color` against its ground, it gates at 1.5, and the
+paragraph beside it said the real bar was covered elsewhere. The sentence told a consumer a gap was
+covered.
+
+Related and equally wrong in the other direction: SC 1.4.11 was asserted over every rendered border,
+including decorative ones. The criterion reaches user interface components and graphical objects, so
+a card hairline or a table row divider is neither. That framing had already propagated into shipped
+data: `norms.ts`'s provenance string, baked into `norms-manifest.json` and printed by
+`cairn-audit norms card` on every consumer install, recorded a WCAG failure about a boundary the
+criterion never reached. The same over-claim ran through `touch-targets`, which is presented as SC
+2.5.8 while enforcing a strict superset of it; the calibration's own numbers show 8 of its 10 errors
+on cairn's admin would clear the spacing exception alone.
+
+All of it is corrected: the floors are now stated as house bars that borrow a WCAG number, each
+finding message says so, and the reference page carries a coverage-boundary section naming what the
+engine does not check (1.4.3, 1.4.1, 2.4.11, 2.4.13) and pointing at the tools that do.
+
+**The lesson is proportional to the blast radius.** An engine that enforces is read as authoritative,
+and a citation inside it is not decoration. It ships to two production sites and prints into every
+consumer's console. Cite a standard only where the rule implements it, and where a rule borrows a
+number, say that it borrowed it.
+
+### Carried forward
+
+1. **`norms.yml` must be staged with `publish.yml` in the same commit.** Task 18 extracted the norms
+   job into a reusable workflow and pointed `publish.yml` at it. If `publish.yml` lands without
+   `norms.yml`, the release workflow fails to load at the moment `gh release create` fires the OIDC
+   publish, which by this repo's release doctrine is the worst possible place: the number is already
+   cut and immutable. Rehearse once with `gh workflow run norms.yml --ref <branch>`.
+2. **`check:version` cannot see the `## Unreleased` window at all**, so it reports `OK (patch)` and
+   the `<!-- release-size: minor -->` marker is inert until the cut renames the heading. Verified
+   here by simulating the cut against the exported `checkVersion`: with the marker `{ok: true, bump:
+   'minor'}`, without it the miss. The marker is correct and correctly placed. The gate that would
+   prove it does not exist yet, and the friction log carries the tightening.
+3. **Eight rule repairs**, confirmed by this gate and deliberately not taken, are in ROADMAP with
+   their costs: `touch-targets`'s single viewport and tag-shaped target net, the two error-tier rules
+   disagreeing about what a control is and about whether to collapse findings,
+   `chip-ground-collision`'s over-wide painter set, `border-contrast`'s literal ratified floor and
+   its per-element style recalcs, `weight-budget`'s PageHeader action-slot hole, and the
+   `resolveColors` null overload. Each is documented at the code, so a reader meets it in context.
+4. **20 error-tier findings against cairn's own admin**, all true positives, are in ROADMAP for the
+   next admin design pass. A gate its own author's tree fails is worth less than the runs it passes.
+   The sequencing hazard is recorded with them: fixing `/admin/login`'s missing `<main>` immediately
+   creates two `screen-anatomy` false positives, because that rule's only working exemption today is
+   an accidental `if (!mainEl) return null`.
+5. **`badge-ghost` at `EditPage.svelte:989`** is still open for Geoff, carried from Phase 2. The
+   engine and `StatusChip.svelte:15` agree it is refuted; it is a design call.
+
+### Process notes
+
+- **The pass shipped no release, correctly.** The window holds a new bin, eleven rendered rules, a
+  norms manifest, and a closed type scale, which is minor-sized, and the marker records that. Nothing
+  here is consumer-blocking, so it holds unpublished.
+- **The gate stage found more than the review fan-out that preceded it**, which suggests the
+  fan-out's value depends on running against a finished artifact rather than per-task. Six confirmed
+  code defects survived three prior adversarial passes and a full green suite.
+- **Two corpora is the minimum honest number, and this pass nearly shipped with one.** Every verdict
+  that matters in the calibration comes from the gap between them. The engine measured against its
+  own tree alone would have read as calibrated at 19.6% and been shipped as such.

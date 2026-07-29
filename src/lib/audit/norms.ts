@@ -277,7 +277,7 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
     property: 'border-color',
     values: ['var(--cairn-card-border)'],
     reference:
-      "docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md (Ruling 2, Task 16b): the --cairn-card-border hairline measures 1.11:1 light and 1.43:1 dark against WCAG 1.4.11's 3:1 floor and stays by design, a quiet edge deliberately below the floor",
+      'docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md (Ruling 2, Task 16b): the --cairn-card-border hairline measures 1.11 against the ambient beside it and 1.19 against the card\'s own fill in light, 1.43 and 1.20 in dark, and stays by design. The border-contrast rule applies a house floor of 3:1, the number WCAG 1.4.11 sets for a control-identifying boundary rather than for a card hairline, and exempts this one on the better of its two ratios against a ratified floor of 1.15',
   },
 ];
 

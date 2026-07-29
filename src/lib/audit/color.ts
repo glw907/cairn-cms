@@ -145,6 +145,15 @@ export type GroundResolution =
  * contributes no color at all. That is exactly the demonstrated fail-open: a gradient band keeps
  * `background-color: rgba(0, 0, 0, 0)`, so a color-only walk steps straight past a solid surface to
  * the white underneath and calls invisible text clean. Skipping that layer loses the whole ground.
+ * A `null` in `colors` is read as a layer that painted nothing, and it is worth knowing why that is
+ * not the whole truth. `resolveColors` returns `null` for BOTH an empty string and a string the
+ * browser refused, so a refused color composites away here exactly as an unpainted layer does, which
+ * is a residual fail-open of the family this doc describes. Task 18's review pass proposed making
+ * the null case indeterminate; that is wrong at this level, and two pinned fixtures in
+ * `color.test.ts` demonstrate it, since both pass `null` to mean "nothing painted" and one of them
+ * exists to hold the dark-canvas defect closed. The repair belongs at the `resolveColors` boundary,
+ * where the two facts can be told apart and given separate sentinels the way `probeSelectors`
+ * already separates "nothing matched" from "the browser refused this selector". Filed in ROADMAP.
  *
  * `options.canvas` is what the chain resolves onto, and it is required rather than defaulted: the
  * result is the color a user sees, so a caller that does not know what is behind the chain cannot

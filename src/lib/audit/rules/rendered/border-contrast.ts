@@ -1,5 +1,7 @@
-// cairn-audit's border-contrast rule: WCAG 1.4.11 non-text contrast (3:1) between a rendered
-// border and the surfaces it separates. Advisory, and deliberately report-only by ruling, not by
+// cairn-audit's border-contrast rule: a rendered border against the surfaces it separates, at a
+// house floor of 3:1 borrowed from WCAG 1.4.11 rather than an application of it (see
+// `RATIO_FLOOR`; the criterion reaches control-identifying boundaries and graphical objects, not
+// every card hairline). Advisory, and deliberately report-only by ruling, not by
 // accident: the ratified `--cairn-card-border` hairline measures 1.11:1 in light and 1.43:1 in dark
 // against the page's base-200 ambient (both numbers reproduced exactly by this rule's own fixtures
 // against real Chromium). RULING 2 (Task 16b, 2026-07-28) settled the question spec 6.3 raised: the
@@ -84,11 +86,22 @@ import {
 } from '../../color.js';
 
 /**
- * WCAG 1.4.11's non-text contrast floor for a UI component boundary. Not the 4.5:1 text floor and
- * not `chip-ground-collision`'s 1.5 "not camouflaged" bar: this rule proves the specific numeric
- * requirement the standard states for a graphical boundary, which is why it is the one rule in
- * this family allowed to cite a ratio below 3.0 as a plain, unqualified finding rather than a
- * softened one.
+ * The floor every rendered border is measured against. It is a HOUSE bar, borrowed from WCAG 1.4.11
+ * rather than an application of it, and the distinction is load-bearing enough that Task 18's
+ * review pass demanded it in writing.
+ *
+ * SC 1.4.11 Non-text Contrast (AA) requires 3:1 of two enumerated things: the visual information
+ * required to identify user interface components and their states, and the parts of a graphic
+ * required to understand the content. A card hairline between two surfaces and a table row divider
+ * are neither, so a finding on one is a design observation and never a conformance failure. This
+ * rule cannot tell the two populations apart from computed style alone, so it applies the number to
+ * every border and says which it is; the calibration singles out the form-control boundaries as the
+ * criterion's own core case
+ * (`docs/internal/2026-07-design-infrastructure-audit-calibration.md`).
+ *
+ * The bar this is NOT: 1.4.3 Contrast (Minimum)'s 4.5:1 text floor, which no rule in this engine
+ * measures, and `chip-ground-collision`'s 1.5 "not camouflaged" tripwire, which is not a standard
+ * at all.
  */
 const RATIO_FLOOR = 3;
 
@@ -119,6 +132,29 @@ const RATIFIED_TOKEN = '--cairn-card-border';
  * The value only has to be one no page paints and the browser serializes back unchanged. It is set
  * inline, read, and removed inside a single synchronous pass, so nothing a later rule measures ever
  * sees it.
+ *
+ * THE NAMED BOUNDARY OF THE EXEMPTION: equality with the sentinel, so a border that passes the
+ * token through `color-mix` is NOT derived and reports. Task 17 adjudicated this and the answer is
+ * that they correctly report. The two mix shapes the admin ships fail for different reasons, and
+ * the distinction is what makes the boundary defensible rather than arbitrary:
+ *
+ * - A mix that only DIMS the token, `color-mix(in oklab, var(--cairn-card-border) 70%, transparent)`
+ *   on the media library's orphan-scan result rows and HelpHome's section rules, renders the
+ *   ratified hairline quieter than ratified. Ruling 2 ratified a MEASUREMENT, so a weaker rendering
+ *   of the same color is outside it on the same grounds an `opacity`-dimmed hairline already is
+ *   (see {@link RATIFIED_HAIRLINE_FLOOR}). Admitting it to identity would only move the decision
+ *   onto the floor, which is where a dimmed hairline belongs anyway.
+ * - A mix that BLENDS the token with a DIFFERENT color, TidyReview's and CairnTidySettings'
+ *   `--cairn-warning-ink` edges, ComponentInsertDialog's `--color-error` one, and ListToolbar's and
+ *   HelpHome's `--color-primary` ones, is a different design element making a different claim.
+ *   Nobody ratified a warning-tinted or accent-tinted edge, and the mix percentage is free to run
+ *   up, at which point "mentions the token" would exempt a border painted essentially in error red.
+ *   Widening identity to any expression naming the token has no defensible stopping point.
+ *
+ * The measured population is the reason this stays cheap: NONE of these renders at rest on the six
+ * core admin routes rendered mode visits, in either theme, so the boundary costs zero findings
+ * today and exists to keep a future one honest. Neither shape is silenced, which is the direction
+ * this engine is supposed to fail in.
  */
 const RATIFIED_SENTINEL = 'rgb(1, 2, 3)';
 
@@ -129,13 +165,26 @@ const RATIFIED_SENTINEL = 'rgb(1, 2, 3)';
  * one of the two surfaces it separates, which is the rule's own verdict shape ({@link RATIO_FLOOR})
  * evaluated at the ratified number instead of WCAG's.
  *
- * The measured pairs, reproduced by `rulings.border-contrast.test.ts` against real Chromium: light
- * 1.11 against the ambient beside it and 1.19 against the card's own fill; dark 1.43 and 1.20 on a
- * base-100 ambient, 1.33 and 1.20 on base-200. The card-fill pairing is the invariant one, since it
- * is two tokens against each other rather than against whatever surface a card lands on, so the
- * floor sits just under it. A colour-only exemption had no such bound and silenced the token
- * rendered at contrast 1.00 on BOTH sides, which is the divider-between-identical-rows case this
- * file's own header names as the defect the geometric rewrite exists to catch.
+ * THE GATED QUANTITY IS `bestRatio`, the better of the two surfaces, never the outer one alone.
+ * Both numbers are printed and only one is compared, so say which: the measured pairs, reproduced by
+ * `rulings.border-contrast.test.ts` against real Chromium, are light 1.11 against the ambient beside
+ * it and 1.19 against the card's own fill; dark 1.43 and 1.20 on a base-100 ambient, 1.33 and 1.20
+ * on base-200. The exemption is gated on 1.19 and 1.20, not on 1.11. A reader who compares the
+ * headline 1.11 to this floor concludes the exemption fires on a boundary failing its own bound.
+ *
+ * The card-fill pairing is the invariant one, since it is two tokens against each other rather than
+ * against whatever surface a card lands on, so the floor sits just under it. A colour-only exemption
+ * had no such bound and silenced the token rendered at contrast 1.00 on BOTH sides, which is the
+ * divider-between-identical-rows case this file's own header names as the defect the geometric
+ * rewrite exists to catch.
+ *
+ * THE TOLERANCE THIS BUYS A CONSUMER IS NARROW, and narrower than the identity half beside it.
+ * Identity is palette-independent by design, so a Warm Stone re-tune that moves the hairline in
+ * OKLCH still qualifies; this floor is a literal, so a re-tune that softens the hairline more than
+ * roughly 4% against the card fill drops `bestRatio` under 1.15 and every `.card-shell` on every
+ * page reports again, which is the 135-finding population the ruling exists to quiet. Deriving the
+ * floor from the page's own resolved token pairing rather than pinning cairn's number is the repair,
+ * and it is filed with the other rule-repair follow-ups in ROADMAP.
  */
 const RATIFIED_HAIRLINE_FLOOR = 1.15;
 
@@ -148,7 +197,8 @@ const RATIFIED_HAIRLINE_FLOOR = 1.15;
 function ratifiedExemption(bestRatio: number): string {
   return (
     `RULING 2 (2026-07-28): painted in this page's own ${RATIFIED_TOKEN}, the ratified hairline, and still ` +
-    `separating its two surfaces at ${bestRatio.toFixed(2)} (ratified floor ${RATIFIED_HAIRLINE_FLOOR})`
+    `separating its two surfaces at ${bestRatio.toFixed(3)} against the better of them (ratified floor ` +
+    `${RATIFIED_HAIRLINE_FLOOR})`
   );
 }
 
@@ -258,12 +308,26 @@ function readBorderCandidates(probe: { token: string; sentinel: string }): Borde
    * sentinel for it on this element and seeing which computed border colors follow. The inline
    * declaration wins over anything the cascade put on the element and is restored before the
    * function returns, including the rare case of an element that carried its own inline value.
+   *
+   * `transition-property` is forced to `none` across the probe, and that is not hygiene, it is what
+   * makes the answer correct. A transition covering `border-color` makes `getComputedStyle` report
+   * the animation's CURRENT value, which one synchronous tick after the substitution is still the
+   * OLD color, so the sentinel never appears and a token-painted border reads as a literal. Task 17
+   * measured it on `/admin/media`: daisyUI's `.btn` transitions `border-color` over 0.2s, and the
+   * media library's `border-[var(--cairn-card-border)]` button reported four findings in the two
+   * themes while its border did follow the substitution 0.2s later. The tell in the raw value is a
+   * serialization flip, `oklch(0.93 0.008 75)` before and `oklab(0.93 0.00207 0.00773)` after: the
+   * same color, re-expressed in the space Chromium interpolates colors in. Restoring the token
+   * before `transition-property` keeps the restore from starting a transition of its own.
    */
   function derivedSides(el: Element, drawn: { side: BorderSide['side']; color: string }[]): boolean[] {
     const inline = (el as HTMLElement).style;
     if (!inline || typeof inline.setProperty !== 'function') return drawn.map(() => false);
     const priorValue = inline.getPropertyValue(probe.token);
     const priorPriority = inline.getPropertyPriority(probe.token);
+    const priorTransition = inline.getPropertyValue('transition-property');
+    const priorTransitionPriority = inline.getPropertyPriority('transition-property');
+    inline.setProperty('transition-property', 'none', 'important');
     inline.setProperty(probe.token, probe.sentinel, 'important');
     const probed = getComputedStyle(el);
     const bySide: Record<BorderSide['side'], string> = {
@@ -275,6 +339,14 @@ function readBorderCandidates(probe: { token: string; sentinel: string }): Borde
     const derived = drawn.map(({ side }) => bySide[side] === probe.sentinel);
     if (priorValue === '') inline.removeProperty(probe.token);
     else inline.setProperty(probe.token, priorValue, priorPriority);
+    // Settle the color back WHILE transitions are still off, then hand the element its transitions
+    // back. Reading a resolved value flushes the pending recalc, so the sentinel-to-original change
+    // is committed under `transition-property: none` and starts nothing. Restoring in the other
+    // order left the element animating 0.2s back from the sentinel, which is the audit repainting
+    // the page it is about to measure.
+    void probed.borderTopColor;
+    if (priorTransition === '') inline.removeProperty('transition-property');
+    else inline.setProperty('transition-property', priorTransition, priorTransitionPriority);
     return derived;
   }
 
@@ -381,12 +453,33 @@ export const borderContrast: RenderedRule = {
         else groups.set(key, { sides: [side.side], index });
       });
 
-      // `opacity` composites an element WITH its whole subtree, so an ancestor's dims this
-      // element's stroke and fill exactly as much as it dims the ground the outward sample already
-      // resolved through the same arithmetic. Reading only the element's own opacity left a
-      // full-strength stroke over a washed-out ground: a hairline under an 8%-opacity ancestor,
-      // which renders as a barely-there line, measured as if nothing had dimmed it.
-      const chainOpacity = cumulativeOpacity(candidate.inner);
+      // `opacity` composites an element WITH its whole subtree, so the element's own fill and its
+      // stroke are dimmed by its own opacity and again by every ancestor's. The backdrop measured
+      // against is sampled GEOMETRICALLY, from whatever paints beside the border, and a dimming
+      // ancestor the two chains SHARE is already inside that sample. Multiplying the whole chain in
+      // again applied that ancestor twice, thinning the element's paint AND lightening the backdrop
+      // it lands on, which is verbatim the per-layer failure `resolveGround`'s own doc describes.
+      //
+      // The two models cannot be reconciled from what this rule holds. "This fill over that
+      // geometric surface" is exact only while no shared ancestor dims, and a `PaintLayer` carries
+      // no element identity, so the shared ancestors cannot be found to divide their contribution
+      // back out. The element's own opacity is therefore applied, and a dimming ANCESTOR makes the
+      // measurement indeterminate rather than a number the rule cannot stand behind. That is the
+      // direction this engine fails in: a reported "could not measure" over a wrong ratio.
+      const ownOpacity = cumulativeOpacity(candidate.inner.slice(0, 1));
+      const ancestorOpacity = cumulativeOpacity(candidate.inner.slice(1));
+      if (ancestorOpacity < 1) {
+        findings.push(
+          indeterminateFinding(
+            'border-contrast',
+            candidate.selector,
+            `an ancestor renders this element at opacity ${ancestorOpacity.toFixed(2)}, which dims this border ` +
+              `and the surface beside it as one group, and the geometric sample of that surface already carries ` +
+              `the dimming, so the two cannot be composited into one honest ratio`
+          )
+        );
+        continue;
+      }
       for (const group of groups.values()) {
         const side = candidate.sides[group.index];
         const outer = grounds[group.index];
@@ -397,9 +490,10 @@ export const borderContrast: RenderedRule = {
         // The surface INSIDE the border is the element's own fill over whatever is behind it, which
         // is the surface the outward sample just measured. Resolving it against the DOM ancestor
         // chain instead is what scored an overlaid badge against the card behind its thumbnail. The
-        // fill carries the whole chain's opacity for the same reason the stroke does, so the layer
-        // handed to `resolveGround` is the element's own with `chainOpacity` substituted for its own.
-        const innerLayer = candidate.inner.slice(0, 1).map((layer) => ({ ...layer, opacity: chainOpacity }));
+        // fill carries the element's own opacity for the same reason the stroke does, and no more
+        // than that: an ancestor's dimming already reached this measurement through `outer.color`,
+        // and the guard above refused the case where it did.
+        const innerLayer = candidate.inner.slice(0, 1).map((layer) => ({ ...layer, opacity: ownOpacity }));
         const inner = resolveGround(innerLayer, innerColors.slice(0, 1), { canvas: outer.color });
         if (inner.kind === 'indeterminate') {
           findings.push(indeterminateFinding('border-contrast', candidate.selector, inner.reason));
@@ -417,7 +511,7 @@ export const borderContrast: RenderedRule = {
           );
           continue;
         }
-        const alpha = stroke.a * chainOpacity;
+        const alpha = stroke.a * ownOpacity;
         // A border painted at negligible alpha is not a rendered boundary to measure, the same
         // "no fill, nothing to collide with" reasoning chip-ground-collision applies to a chip
         // with a transparent background.
@@ -459,8 +553,9 @@ export const borderContrast: RenderedRule = {
             `${group.sides.join('/')} border ${describeColor(painted)} reads at contrast ${outerRatio.toFixed(2)} ` +
             `against the surface beside it ${describeColor(outer.color)}` +
             `${side.outerSampled ? '' : ' (its DOM ancestor: the adjacent surface could not be sampled)'}` +
-            `, and ${innerRatio.toFixed(2)} against its own fill ${describeColor(inner.color)}, so it renders no ` +
-            `visible boundary on either side (floor ${RATIO_FLOOR}, WCAG 1.4.11)`,
+            `, and ${innerRatio.toFixed(2)} against its own fill ${describeColor(inner.color)}, both under the ` +
+            `${RATIO_FLOOR}:1 house floor (WCAG 1.4.11's bar for a control-identifying boundary, applied here to ` +
+            `every rendered border)`,
         });
       }
     }

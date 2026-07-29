@@ -1,6 +1,8 @@
 // cairn-audit's touch-targets rule: every tap target (a link, button, form control, or
-// `[role="button"]`) renders at least 24x24 CSS px at a 390px viewport, WCAG 2.5.8's AA
-// target-size floor (Target Size Minimum). Graduates scripts/check-touch-targets.mjs and closes the
+// `[role="button"]`) renders at least 24x24 CSS px at a 390px viewport. That floor is DERIVED from
+// WCAG 2.2's SC 2.5.8, Target Size (Minimum), and is not an implementation of it: the rule enforces
+// a strict superset, so a red run is a house-bar failure and never, on its own, an AA failure. See
+// the exception list below for what is missing. Graduates scripts/check-touch-targets.mjs and closes the
 // one gap the source probe carried: that script measures only a control's own visual box, so a
 // control deliberately shrunk to its intended small size and widened only through an `::before`
 // inset hit area (the `.nav-caret` finding) reads as a violation the fix itself had already closed.
@@ -9,8 +11,9 @@
 // content, or one `pointer-events: none` strips of its own click-catching) still does.
 //
 // The floor is 24x24, not 44x44, by Geoff's ruling (Task 16b, ruling 1). Spec 6.3 originally set
-// 44x44, which is WCAG 2.2's AAA criterion (2.5.5, Target Size Enhanced); the bar cairn can honestly
-// claim is AA, and AA's own target-size criterion (2.5.8, Target Size Minimum) is 24x24. At 44x44
+// 44x44, which is WCAG 2.2's AAA criterion (2.5.5, Target Size (Enhanced)); the bar cairn can
+// honestly claim is AA, and AA's own target-size criterion (2.5.8, Target Size (Minimum)) is 24x24.
+// At 44x44
 // this rule raised 138 error-tier findings against cairn's own shipped admin: `btn-sm` runs 32px,
 // `btn-xs` runs 24px, and several toolbar controls run 30px, none of which the admin's own design
 // treats as a defect. At 24x24 nearly all of those clear, and `btn-xs` sits exactly on the line, so
@@ -18,8 +21,10 @@
 // rule keeps its whole job at the new number: it still catches anything genuinely too small, own
 // box or a fake `::before` expansion either one.
 //
-// THE TARGET IS THE ACTIVATION REGION, not the control's own painted box, which is WCAG 2.5.8's
-// own wording ("the region of the display that will accept a pointer action"). The plain box
+// THE TARGET IS THE ACTIVATION REGION, not the control's own painted box. That is the WCAG 2.2
+// glossary's definition of "target", which 2.5.8 links to ("region of the display that will accept
+// a pointer action"); the criterion's own sentence is only "the size of the target for pointer
+// inputs is at least 24 by 24 CSS pixels, except where". The plain box
 // reading raised an error-tier false positive on cairn's own shipped label-wrapped checkbox
 // (EditPage's "Hidden" toggle, FieldInput's boolean field, five more sites): the input paints 20x20
 // and the `<label>` around it is 342x34, clicking anywhere on that label toggles the box, so the
@@ -29,11 +34,48 @@
 // unioned with the control's own box where the two are contiguous. A control meets the floor when
 // any one of its regions does.
 //
-// WCAG 2.5.8's other named exceptions (user-agent controls, essential targets, and the spacing
-// exception for a target that does not intersect another's 24px circle) are NOT implemented; the
-// one that is, and the only one, is the inline exception, applied to a link that is a run of text
-// inside prose. It is narrowed to that: an icon-only inline link carries no sentence to be part of,
-// and the unnarrowed clause silently passed a 10x10 image link inside a `<p>`.
+// SC 2.5.8 HAS FIVE NAMED EXCEPTIONS AND THIS RULE IMPLEMENTS ONE, which is why the floor above is
+// a house bar rather than the criterion. In the criterion's own order: Spacing (an undersized target
+// is exempt when a 24px-diameter circle centred on it intersects no other target's circle),
+// Equivalent (the same function is reachable through another control on the page that does meet the
+// floor), Inline (a target in a sentence or block of text), User agent control, and Essential.
+//
+// Implemented: Inline, narrowed to a link that is a run of text inside prose. An icon-only inline
+// link carries no sentence to be part of, and the unnarrowed clause silently passed a 10x10 image
+// link inside a `<p>`.
+//
+// Not implemented: Spacing, User agent control, Essential. Spacing is the one most real admin
+// toolbars pass on, and the calibration measured its cost precisely: the sort button's nearest
+// target centre sits 47px away on both table shapes, clear of the 24px-circle test, so 8 of the 10
+// corpus-A errors this rule raises would not be 2.5.8 violations.
+//
+// Informally applied: Equivalent. `labelRegions` returns a label that does NOT touch its control as
+// its own region, and a control passes when any region clears the floor, so a 20x20 checkbox with a
+// 120x32 label parked across the page passes. Under the criterion that control's own target really
+// is 20x20 and conformance runs through Equivalent, where it is arguable whether an associated
+// label is "a different control" at all. This is a deliberate, stated narrowing rather than an
+// omission: a platform-associated label is the one case where the alternative control is named by
+// the platform instead of guessed at. The CONTIGUOUS half is not an exception at all, it is the
+// measurement, since a wrapping or adjacent label is part of the region that accepts the pointer
+// action.
+//
+// THREE MORE BOUNDS ON THE COVERAGE, all stated rather than closed, and all filed as rule-repair
+// follow-ups in ROADMAP:
+//
+//  - ONE VIEWPORT. `VIEWPORT` is 390x844 and nothing else is sampled. The criterion carries no
+//    viewport qualifier, so a control that renders 24px tall at 390 and 20px at 320, or a toolbar
+//    that reflows at a desktop width, fails the criterion where this rule never looks.
+//    `viewport-overflow` already sweeps 390 and 320 and is the cheapest place to borrow a width list.
+//  - THE TARGET NET IS TAG-SHAPED. The query below is `a, button, [role="button"], input, select,
+//    summary`, so `textarea`, `<area>`, the widget roles (`link`, `checkbox`, `switch`, `radio`,
+//    `tab`, `menuitem`, `option`), and a custom control carrying `tabindex` plus a pointer handler
+//    are all outside it. `interactive-contrast` uses a different, wider list plus a `cursor:
+//    pointer` fallback, so the two error-tier rules do not hold the same definition of a control.
+//    The repair is one shared selector in the page helpers.
+//  - FINDINGS COLLAPSE PER SIGNATURE. Twenty undersized rows sharing a class fingerprint report as
+//    one finding at the smallest measured height, so a count here is a count of SHAPES, not of
+//    elements, and it is not a remediation estimate. `interactive-contrast` deliberately refuses the
+//    same idiom, so the two rules disagree; that disagreement is real and unresolved.
 //
 // A measured rect a fraction of a pixel under 24 is layout snapping, not a design defect, so
 // `meetsFloor` allows exactly one Chromium layout quantum (1/64 CSS px, the LayoutUnit the engine
@@ -60,7 +102,7 @@
 // expansion rather than being read as pixels.
 import { ensurePageHelpers, type RenderedFinding, type RenderedRule, type RenderedRuleContext } from '../../rendered.js';
 
-/** WCAG 2.5.8's AA target-size floor, in CSS px on each axis. */
+/** The house target-size floor, in CSS px on each axis, taking its number from WCAG 2.5.8's AA bar. */
 const TARGET_MIN = 24;
 
 /**
@@ -126,6 +168,13 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
       if (style.display === 'none' || style.visibility === 'hidden' || style.pointerEvents === 'none') continue;
       const labelRect = label.getBoundingClientRect();
       if (labelRect.width <= 0 || labelRect.height <= 0) continue;
+      // A label parked off-canvas (the older `position: absolute; left: -9999px` visually-hidden
+      // idiom) has a real, full-size rect and reaches no pointer, so admitting it as a region
+      // silenced the rule for every control carrying one. The control's own box already runs
+      // through this same guard; the label half was simply missing. Nothing in cairn's own tree
+      // trips it (its `sr-only` is Tailwind's clip-based 1x1 recipe, which fails the floor anyway),
+      // and the rule ships to consumers writing their own admin routes.
+      if (isParkedOffCanvas(label, labelRect)) continue;
       regions.push(label.contains(el) || touches(labelRect, own) ? union(own, labelRect) : labelRect);
     }
     return regions;
@@ -185,23 +234,42 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
     if ((control as HTMLButtonElement).disabled || control.getAttribute('aria-disabled') === 'true') continue;
     const style = getComputedStyle(control);
     if (style.display === 'none' || style.visibility === 'hidden') continue;
+    // A control that accepts no pointer action is not a target under the glossary definition this
+    // rule's header quotes. `pointer-events: none` and an `inert` ancestor both say so outright, and
+    // the rule already honored `pointer-events` on a `::before` expansion and on a label while
+    // ignoring it on the control itself, which was an inconsistency rather than a position.
+    //
+    // `opacity: 0` is deliberately NOT here, against Task 18's review suggestion. A fully
+    // transparent element still hit-tests in CSS (that is exactly how daisyUI's own `.drawer-toggle`
+    // works), so exempting it would be a fail-open on a gating rule.
+    if (style.pointerEvents === 'none' || control.closest('[inert]')) continue;
     const own = control.getBoundingClientRect();
-    // A control clipped to a pixel is a screen-reader affordance, not a tap target: the visible
-    // control is the styled label beside it, and that label is measured on its own. cairn's own
-    // upload input is exactly this shape.
-    if (own.width <= 1 || own.height <= 1) continue;
+    // A control clipped to a pixel takes no pointer action on its own box. The visible affordance is
+    // a `<label>` the platform associates with it, and the criterion measures THAT region, so the
+    // labels are measured here instead of the control being dropped. The first build asserted the
+    // label "is measured on its own" while no label was ever a candidate, so cairn's own drawer
+    // trigger, a `btn btn-square` `<label>` over daisyUI's 0x0 `.drawer-toggle`, sat entirely
+    // outside the rule; it passes today only because that button happens to render 48px.
+    //
+    // A clipped control with NO label stays unmeasured, and that is a stated fail-open rather than a
+    // claim: whatever a pointer actually reaches is some element this rule cannot name from here,
+    // and reporting the 0x0 box would name the wrong one.
+    const clipped = own.width <= 1 || own.height <= 1;
+    const labels = labelRegions(control, own);
+    if (clipped && labels.length === 0) continue;
     // A control parked off-canvas at rest (a skip link revealed only on focus) takes no taps. The
     // graduated script tested that against the WINDOW, so on any page taller than one screenful it
     // silently exempted every control below the fold, which on the showcase styleguide is every
     // control there is: at a 390px viewport all eleven tap targets, the four the gate's own
     // allowlist names included, sat past `window.innerHeight` and were skipped before the floor was
     // ever applied. Document coordinates are what the guard always meant.
-    if (isParkedOffCanvas(control, own)) continue;
+    if (!clipped && isParkedOffCanvas(control, own)) continue;
     // WCAG 2.5.8's inline exception: a link inside running prose, where the line of text carries
     // the tappable area rather than the link glyph alone. A link with no text of its own is not in
     // a sentence and the exception does not reach it; without that narrowing an icon-only 10x10
     // image link inside a `<p>` passed silently.
     if (
+      !clipped &&
       style.display === 'inline' &&
       control.tagName === 'A' &&
       control.closest('article, .prose, p') &&
@@ -214,7 +282,7 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
     // `::before`), and each activating label. The control meets the floor when ANY of them does,
     // which is the criterion's own question, and the finding names the largest so a developer sees
     // the biggest thing the rule could find rather than the smallest.
-    const regions = [hitRect(control, own), ...labelRegions(control, own)];
+    const regions = clipped ? labels : [hitRect(control, own), ...labels];
     if (regions.some((region) => meetsFloor(region.width) && meetsFloor(region.height))) continue;
     const rect = regions.reduce((widest, region) =>
       region.width * region.height > widest.width * widest.height ? region : widest
@@ -235,9 +303,11 @@ function findSmallTouchTargets({ targetMin, tolerance }: { targetMin: number; to
 }
 
 /**
- * Every tap target must clear WCAG 2.5.8's AA 24x24 CSS px floor at a 390px viewport, measured on
- * the region that accepts the pointer action: the control's own box, an outward `::before` hit
- * area, and an activating label, whichever reach furthest. Error tier: a false negative here ships
+ * Every tap target must clear a 24x24 CSS px floor at a 390px viewport, measured on the region that
+ * accepts the pointer action: the control's own box, an outward `::before` hit area, and an
+ * activating label, whichever reach furthest. The number comes from WCAG 2.5.8 and the enforcement
+ * is a strict superset of that criterion, so a finding is a house-bar failure (file header). Error
+ * tier: a false negative here ships
  * a control a thumb cannot reliably hit, and a false positive (a control an already-expanded hit
  * area covers, a labelled checkbox whose label is the real target, or a rect layout snapping nudged
  * a fraction under the line) costs a developer real time chasing a floor that was never actually
@@ -264,7 +334,9 @@ export const touchTargets: RenderedRule = {
         selector: target.selector,
         message:
           `renders ${target.width}x${target.height}px against the ${TARGET_MIN}x${TARGET_MIN}px floor` +
-          `${target.text ? ` ("${target.text}")` : ''}`,
+          `${target.text ? ` ("${target.text}")` : ''}` +
+          `. cairn's floor, derived from WCAG 2.2 SC 2.5.8: its spacing, equivalent, user-agent, and ` +
+          `essential exceptions are not evaluated, so this is not on its own an AA failure`,
       }));
     } finally {
       if (original) await ctx.page.setViewportSize(original);

@@ -29,7 +29,15 @@ Four ways to close it, in order of how directly cairn can enforce them:
   (`type-title`, `type-heading`, `type-subtitle`, `type-body`, `type-meta`, `type-label`,
   `type-chip`), never a raw Tailwind step or a bracketed pixel value. Each role's own leading
   travels with it, so writing the utility is the complete recipe, not size alone.
-  `cairn-audit`'s `type-scale` is the backstop.
+  `cairn-audit`'s `type-scale` is the backstop. `type-label` names one specific level, the
+  eyebrow that titles a *group*: a section heading, a table column header, a fieldset's own
+  `<legend>`. An individual field's own label, the text naming one control rather than several,
+  is never this role; it takes `type-body font-medium` instead, sentence case, no tracking, no
+  uppercase. Stack a group's own title directly above one field's label set in the same eyebrow
+  role and the two collapse into a single repeated line with no readable subject; that collapse
+  is the tell that the wrong role was reused. The group title also wants the wider
+  `gap-section` gap beneath it, not the tighter `gap-label` distance a field keeps to its own
+  control, so the two levels stay legible even before a reader parses either line's words.
 - **Spacing.** Every margin, padding, or gap on an admin surface resolves to a `gap-*` role
   utility (`gap-label`, `gap-control`, `gap-group`, `gap-section`) or its matching
   `--cairn-gap-*` custom property inside a scoped style, never an arbitrary literal.
@@ -76,6 +84,25 @@ Four ways to close it, in order of how directly cairn can enforce them:
   vertical, not the equal padding a stock default reaches for. A text container whose content
   commonly ends in a descender (a word ending g, j, p, q, or y) wants a little more bottom
   padding than top, so the glyph does not visually sit low in its own box.
+- **A multi-element row declares its own narrow-width breakpoint; it never relies on
+  flex-shrink alone.** A header row (a heading beside a secondary link and a primary action) or
+  a toolbar row (a search field beside a filter) holds three or more elements at a wide
+  viewport, but a flex item's default `min-width` is `auto`, which refuses to shrink an item
+  below its own content width. Once the row's combined content no longer fits the narrow
+  viewport, the elements either collide with no gap between them, or a text child wraps
+  mid-phrase inside its own squeezed box, never a clean reflow. State a breakpoint (Tailwind's
+  `sm`, 640px, is the usual admin threshold) below which the row switches from a horizontal
+  `justify-between` arrangement to a stacked column, each element taking the row's own full
+  width with a `gap-group`-scale gap between them, and confirm the change by rendering the row
+  itself at the narrow width, not by reading the classes in isolation.
+- **A table wider than its narrow viewport stays inside its own card, never the page.** A
+  horizontal-scroll wrapper (`overflow-x-auto` on the table's immediate container) is necessary
+  but not sufficient: if anything between that wrapper and the surface's outer edge is itself a
+  flex or grid item, that ancestor's own default `min-width: auto` lets the wrapper's unshrunk
+  content push it, and the page along with it, wider than the viewport, defeating the scroll
+  container entirely. Render the surface at the narrow width and confirm the card's own border
+  closes inside the frame, with a scrollbar doing the work instead, before calling a table
+  handled.
 
 ## Before/after: only demonstrable
 
@@ -102,6 +129,15 @@ Four ways to close it, in order of how directly cairn can enforce them:
   unstyled default anywhere. The difference: "correct" is true of each part in isolation;
   "resolved" is true of the whole surface at once, and the whole-surface read is the one a
   reader actually experiences first.
+- **Narrow-width row collision.** *Assembled:* a header holding a heading, a secondary link,
+  and a primary button, or a toolbar holding a search field and a filter, kept in the same
+  single-row arrangement it uses at a wide viewport; at a narrow one the elements crowd
+  together with no gap, and a link's own text wraps mid-phrase onto a second line that drops
+  beside the heading's baseline, reading as one collided mass rather than three separate
+  controls. *Resolved:* the same row, stacked into a column below its own breakpoint, each
+  element at full width with a section-scale gap between them. The difference: a row is either
+  verified at the narrow width it will actually render at, or it is not; a class that merely
+  lets text wrap is not the same as a layout that reflows.
 
 ## Audit rule
 
@@ -116,7 +152,7 @@ name in working memory, not its formula.
 | A tap target's effective size | `touch-targets` |
 | Interactive text legible against its own background at rest | `interactive-contrast` |
 | One dominant filled action per surface | `one-filled-action` |
-| Nothing renders wider than its own viewport | `viewport-overflow` |
+| Nothing renders wider than its own viewport | `viewport-overflow` (the narrow-width numeric rules above are what to apply directly when the tool isn't run) |
 | A chip legible against its own row | `chip-ground-collision` (advisory) |
 | A boundary's contrast against what it separates | `border-contrast` (advisory; cairn's own hairline is itself still an open design question, so this one reports without gating today) |
 | A component's measured shape against precedent | `norms-bands` (advisory; query `cairn-audit norms <role>` rather than guessing a height or a padding value) |

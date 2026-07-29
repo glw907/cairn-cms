@@ -613,7 +613,7 @@ tests what the rule actually asserts and is expected to take the 10 toward zero.
 definition explicitly in the TSDoc; if narrowing cannot be done defensibly, say so rather than
 inventing a heuristic.
 
-- [ ] Implement the four rulings, each with a real-Chromium fixture, adversarially verified;
+- [x] Implement the four rulings, each with a real-Chromium fixture, adversarially verified;
       update the reference page and the deviations ledger; full gate; commit.
 
 ### Task 17: Calibration, the promotion evidence base

@@ -3,9 +3,11 @@
 // refuses to run against an empty registry rather than reporting a silently clean audit, so this
 // list is what turns the rendered harness on.
 //
-// Eleven rules are registered: the six error-tier rules spec 6.3 defines, then the five advisory
-// ones (`border-contrast`, `weight-budget`, `norms-bands`, `screen-anatomy`, `relational-spacing`),
-// which report and never reach the exit code.
+// Eleven rules are registered: five error-tier rules (`one-filled-action`, `focus-renders`,
+// `interactive-contrast`, `touch-targets`, `viewport-overflow`; `chip-ground-collision` demoted
+// out of this tier in design infrastructure Pass 3, pending its chroma repair, see ROADMAP), then
+// six advisory ones (`chip-ground-collision`, `border-contrast`, `weight-budget`, `norms-bands`,
+// `screen-anatomy`, `relational-spacing`), which report and never reach the exit code.
 import { borderContrast } from './border-contrast.js';
 import { chipGroundCollision } from './chip-ground-collision.js';
 import { focusRenders } from './focus-renders.js';

@@ -5,6 +5,9 @@ decision and the reasoning behind it. Several link out to the reference for the 
 
 - [Why cairn](./why-cairn.md): who cairn is for, why the stack is Cloudflare, SvelteKit, and
   DaisyUI, and why markdown over a WYSIWYG editor.
+- [Why the design language is enforced](./enforced-design.md): why the admin's design language
+  lives in tokens, norms, a packaged skill, and an audit rather than only in finished screens,
+  and what that does and doesn't buy you.
 - [Architecture](./architecture.md): what the engine owns and what your site owns, and what
   happens between a save and a redeployed page.
 - [The content model](./content-model.md): why content is a fixed set of concepts, how a URL is

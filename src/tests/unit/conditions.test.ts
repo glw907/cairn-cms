@@ -97,12 +97,22 @@ describe('condition registry', () => {
     expect(c.logEvent).toBeUndefined();
   });
 
-  it('pins the registry at nineteen entries', () => {
+  it('pins the registry at twenty entries', () => {
     // Sixteen through the admin.mount-incomplete addition, plus auth.unknown-role and
     // auth.email-not-normalized for the extensible-roles doctor checks, plus
-    // auth.role-wiring-missing for the double-wiring doctor check. Grow this count only with a
-    // registry change.
-    expect(allConditions()).toHaveLength(19);
+    // auth.role-wiring-missing for the double-wiring doctor check, plus
+    // skill.admin-screens-stale for the packaged skill's doctor delivery. Grow this count only
+    // with a registry change.
+    expect(allConditions()).toHaveLength(20);
+  });
+
+  it('resolves the skill-freshness condition (the packaged admin-screens skill delivery)', () => {
+    const c = condition('skill.admin-screens-stale');
+    expect(c.severity).toBe('warning');
+    expect(c.why).toMatch(/cairn-admin-screens/);
+    expect(c.remediation).toMatch(/cairn-doctor --fix/);
+    expect(c.docsAnchor).toBeUndefined();
+    expect(c.logEvent).toBeUndefined();
   });
 
   it('resolves the vocabulary and email-normalization conditions (extensible roles)', () => {

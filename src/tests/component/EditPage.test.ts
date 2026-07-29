@@ -891,7 +891,7 @@ describe('EditPage', () => {
 
   it('shows the Published badge when the live site matches', async () => {
     const screen = render(EditPage, postProps());
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-ghost');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .cairn-chip-quiet');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
@@ -1609,7 +1609,7 @@ describe('EditPage', () => {
     );
     const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
-    expect(header.querySelector('.badge-ghost')?.textContent?.trim()).toBe('Published');
+    expect(header.querySelector('.cairn-chip-quiet')?.textContent?.trim()).toBe('Published');
   });
 
   it('hosts the save-state indicator inside the header', async () => {
@@ -3116,6 +3116,9 @@ describe('EditPage', () => {
       const pill = band.querySelector<HTMLElement>('.badge')!;
       expect(pill.querySelector('svg')).not.toBeNull();
       expect(pill.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
+      // A bare span defaults to the generic role, which ARIA-in-HTML drops aria-label from; the
+      // pill needs a non-generic role for its accessible name to actually reach assistive tech.
+      expect(pill.getAttribute('role')).toBe('status');
     });
 
     for (const width of [320, 390]) {

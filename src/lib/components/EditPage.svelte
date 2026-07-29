@@ -983,10 +983,13 @@ persistent "?" carries Markdown help, design-arc D2).
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
+  // Edited and New are attention states and stay on the bounded-shaped daisyUI tone fills;
+  // Published is a settled, put-away state and takes the quiet chip register instead of the
+  // retired stock ghost badge (design infrastructure Pass 3, corpus C).
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
     if (status === 'New') return 'badge-info';
-    return 'badge-ghost';
+    return 'cairn-chip-quiet';
   });
 
   // The below-sm compact band (design-arc C1) has room for exactly one status pill, never the
@@ -1462,7 +1465,14 @@ persistent "?" carries Markdown help, design-arc D2).
           <ChevronLeftIcon class="h-4 w-4" aria-hidden="true" />
         </a>
         <span class="min-w-0 flex-1 truncate type-body font-semibold">{data.title}</span>
-        <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" aria-label={pillAriaLabel}>
+        <!-- `role="status"` gives this bare span a non-generic role so `aria-label` actually reaches
+             assistive tech: ARIA-in-HTML drops aria-label on a plain span's default `generic` role,
+             and the badge/status-dot markup below has no other element to carry the accessible
+             name. `status` is also the right semantics here (a live summary of transient document
+             state), unlike StatusChip's own sr-only-legend pattern, which fits a self-explanatory
+             visible label plus optional clarifying text rather than a name that must fully replace
+             three icon-only signals at once. -->
+        <span class="badge badge-sm font-medium gap-1 shrink-0 {statusBadge}" role="status" aria-label={pillAriaLabel}>
           {#if data.frontmatter.draft === true}<EyeOffIcon class="h-3 w-3" aria-hidden="true" />{/if}
           {status}
         </span>

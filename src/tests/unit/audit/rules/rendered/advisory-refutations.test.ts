@@ -74,7 +74,13 @@ function fakePlaywright(): { chromium: { launch: () => Promise<RenderedBrowser> 
     async goto() {
       return { status: () => 200 };
     },
-    async evaluate() {
+    async evaluate(fn?: unknown) {
+      // The post-hydration page-identity guard's SSR and settled captures both run through this
+      // same stub, so they must agree with each other rather than each defaulting to `undefined`,
+      // which `identitiesMatch` cannot destructure.
+      if (typeof fn === 'function' && fn.name === 'capturePageIdentity') {
+        return { title: 'fixture', landmark: null };
+      }
       return undefined;
     },
     keyboard: { press: async () => {} },

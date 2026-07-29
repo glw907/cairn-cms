@@ -13,10 +13,15 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DOC = 'docs/guides/cloudflare-readiness.md';
 const CONDITIONS_JS = 'dist/diagnostics/conditions.js';
 
-// Conditions deliberately absent from the checklist. Empty today: every registry entry points at
-// a section (the runtime-only conditions share the doc's closing "Runtime conditions" section).
-// An addition needs a comment naming why the doc cannot carry the condition.
-const ALLOWLIST = /** @type {Set<string>} */ (new Set());
+// Conditions deliberately absent from the checklist. An addition needs a comment naming why the
+// doc cannot carry the condition.
+const ALLOWLIST = /** @type {Set<string>} */ (
+  new Set([
+    // The packaged skill's install/freshness check is a cairn-doctor tooling nudge, not a
+    // Cloudflare deploy-readiness condition; docs/reference/doctor.md carries its guidance.
+    'skill.admin-screens-stale',
+  ])
+);
 
 /**
  * Compare the registry against the checklist text. Returns one problem line per offender: a

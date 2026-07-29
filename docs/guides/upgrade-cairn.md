@@ -24,6 +24,33 @@ version; a version with no `Consumers must:` list is a drop-in bump.
 5. **Run your own site's build and test gate** before you deploy. cairn's gates only exercise
    the package. They can't reach your adapter, your `render`, or your routes.
 
+## Adopt the admin type grammar
+
+When you cross the release that ships the admin grammar tokens (its CHANGELOG entry names
+the grammar layer), your custom admin screens keep rendering exactly as they did.
+`npx cairn-audit`'s static `type-scale` rule starts reporting named Tailwind steps
+(`text-sm`, `text-xs`, bracketed sizes) in your admin markup, and most of those reports
+are a mechanical rename with zero visual change. On the first consumer admin measured, 265
+of 298 findings were pure renames.
+
+1. **Run `npx cairn-audit`** over your site. Each `type-scale` finding names the class you
+   wrote and the size it resolves to: `class "text-sm" sets font-size to "0.875rem", which
+   resolves to no --cairn-type-* token`.
+2. **Match that size to a grammar role** in
+   [Admin grammar tokens](../reference/admin-grammar-tokens.md) and rename the class to
+   the role's utility. `0.875rem` is `--cairn-type-body`, so `text-sm` body copy becomes
+   `type-body`. A role renders at the same size and leading the named step did, so the
+   screen doesn't move. The grammar utilities are safelisted into cairn's shipped admin
+   sheet, so the renamed class resolves with no Tailwind configuration change on your
+   side.
+3. **Move an off-scale size onto a role.** Where no role carries the size a finding
+   reports, the text is off the scale. Decide what it is (body, meta, label) and move it
+   onto that role, or keep it deliberately and add a
+   [counted suppression directive](../reference/cairn-audit.md) with its reason. The
+   skill's derivation ladder covers the case where none of the roles fits.
+4. **Re-run the audit.** The static gate reports zero `type-scale` findings when the
+   adoption is complete.
+
 ## How cairn versions
 
 cairn is `0.x`, and until it reaches `1.0`, the number tracks scale. A minor version means a new

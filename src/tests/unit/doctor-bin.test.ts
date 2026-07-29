@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { existsSync, mkdtempSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -40,6 +40,14 @@ describe('parseArgs', () => {
 
   it('treats --probe followed by another flag as bare', () => {
     expect(parseArgs(['--probe', '--from', 'a@b.c'])).toEqual({ probe: true, from: 'a@b.c' });
+  });
+
+  it('parses --fix as a bare boolean', () => {
+    expect(parseArgs(['--fix'])).toEqual({ fix: true });
+  });
+
+  it('parses --fix alongside other flags', () => {
+    expect(parseArgs(['--fix', '--from', 'a@b.c'])).toEqual({ fix: true, from: 'a@b.c' });
   });
 
   it('rejects a flag with a missing value, naming the flag and printing usage', () => {
@@ -118,7 +126,7 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-  it('returns the seventeen checks in registry order', () => {
+  it('returns the eighteen checks in registry order', () => {
     expect(defaultChecks().map((c) => c.id)).toEqual([
       'config.bindings',
       'config.media-bucket',
@@ -128,6 +136,7 @@ describe('defaultChecks', () => {
       'config.public-origin',
       'config.tidy-key',
       'admin.mount-shape',
+      'skill.admin-screens',
       'config.dependency-floors',
       'email.sender-onboarded',
       'edge.https-forced',
@@ -151,7 +160,7 @@ describe('defaultChecks', () => {
   it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-    expect(defaultChecks()).toHaveLength(17);
+    expect(defaultChecks()).toHaveLength(18);
   });
 });
 
@@ -184,4 +193,26 @@ describe('packaged bin (needs dist/doctor/bin.js; run npm run package to unskip)
     expect(out.status).toBe(2);
     expect(out.stderr).toContain('Usage: cairn-doctor');
   });
+
+  it.skipIf(!built)(
+    '--fix reports an install failure to stderr and still prints the report, rather than crashing',
+    () => {
+      const dir = mkdtempSync(join(tmpdir(), 'cairn-doctor-fix-fail-'));
+      // Block the skill install directory with a plain file, so installSkill's mkdir(recursive)
+      // fails partway through (ENOTDIR: a path component exists and is not a directory).
+      mkdirSync(join(dir, '.claude/skills'), { recursive: true });
+      writeFileSync(join(dir, '.claude/skills/cairn-admin-screens'), 'not a directory');
+
+      const out = spawnSync(process.execPath, [BIN, '--fix'], {
+        cwd: dir,
+        env: { PATH: process.env.PATH },
+        encoding: 'utf8',
+      });
+
+      expect(out.status).not.toBeNull();
+      expect([0, 1]).toContain(out.status);
+      expect(out.stderr).toContain('cairn-doctor: --fix failed to install the admin-screens skill');
+      expect(out.stdout).toMatch(/\d+ passed, \d+ failed, \d+ skipped/);
+    }
+  );
 });

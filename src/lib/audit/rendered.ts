@@ -2,7 +2,9 @@
 // and turn what rules find into the same AuditReport shape the static runner produces. This module
 // owns the whole rendered contract, since it is the one file the harness is scoped to: the rule
 // model, the Playwright surface a rule reads from, the BASE_URL and Playwright-presence checks, the
-// interaction-state seam, and the page+selector+reason allowlist with its staleness check.
+// interaction-state seam, the page+selector+reason allowlist with its staleness check, and the
+// post-hydration page-identity guard that refuses a page whose settled DOM no longer matches what
+// its server response carried, rather than silently measuring whatever it swapped into.
 //
 // Two things this module NEVER does, both load-bearing. It never starts a server: BASE_URL (default
 // http://localhost:4173) has to already answer, or the run fails naming the URL it tried. And it
@@ -63,7 +65,13 @@ export interface RenderedContext {
 
 /** The launched browser instance. */
 export interface RenderedBrowser {
-  newContext(options?: { colorScheme?: Theme }): Promise<RenderedContext>;
+  /**
+   * `javaScriptEnabled: false` is the page-identity guard's own option: a context opened with it
+   * never runs the page's own scripts, so `evaluate` reads back whatever the server actually sent,
+   * with no race against hydration. Playwright still serves `evaluate` through its own runtime
+   * binding regardless of the flag, so a page opened this way is otherwise ordinary.
+   */
+  newContext(options?: { colorScheme?: Theme; javaScriptEnabled?: boolean }): Promise<RenderedContext>;
   close(): Promise<void>;
 }
 
@@ -158,11 +166,19 @@ export interface RenderedPageVisit {
    * only true of what the run reached.
    */
   statesUnreached?: Set<InteractionState>;
+  /**
+   * The page-identity guard refused this page: its post-hydration DOM did not match its SSR
+   * identity, so no rule ever ran here and no selector was ever probed. An allowlist entry naming
+   * this page cannot be told stale from dead on that evidence, only withheld, the same reasoning
+   * {@link statesUnreached} carries one layer in.
+   */
+  identityRefused?: boolean;
 }
 
 const STALE_ALLOWLIST_RULE_ID = 'rendered-allowlist-stale';
 const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered-allowlist-unprobeable';
 const DEAD_ALLOWLIST_RULE_ID = 'rendered-allowlist-dead';
+const PAGE_IDENTITY_RULE_ID = 'rendered-page-identity-mismatch';
 
 /**
  * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
@@ -284,6 +300,132 @@ function unreachedStateFinding(entry: RenderedAllowlistEntry, unreached: Interac
 }
 
 /**
+ * The finding an allowlist entry raises when the page-identity guard refused its named page
+ * entirely: no rule ran and no selector was ever probed, so stale and dead are both the wrong
+ * verdict, only withheld. Advisory for the same reason {@link unreachedStateFinding} is: the remedy
+ * a stale or dead finding prescribes, removing the entry, is wrong here too, since the entry may
+ * still be exactly right once the route's hydration is fixed. It reuses the dead-allowlist rule id
+ * anyway, the same reuse {@link unreachedStateFinding} makes, so a consumer filtering on the
+ * allowlist-hygiene ids still sees it; the advisory tier and the wording carry the withholding.
+ */
+function identityRefusedFinding(entry: RenderedAllowlistEntry): Finding {
+  return positionless({
+    ruleId: DEAD_ALLOWLIST_RULE_ID,
+    tier: 'advisory',
+    file: entry.page,
+    message:
+      `the rendered allowlist names ${entry.selector} on ${entry.page}, but the page-identity guard refused to ` +
+      `audit that route in this run (see the rendered-page-identity-mismatch finding), so whether the entry is ` +
+      `stale or dead cannot be decided here. (reason on file: ${entry.reason})`,
+  });
+}
+
+/**
+ * What a route's identity looks like to the post-hydration guard: enough to say whether the DOM that
+ * settles after hydration still belongs to the page that was navigated to. Generic across any route
+ * cairn or a consumer might serve, including a consumer's own custom route and the shell-less login
+ * page: neither carries cairn-only markup, and both still produce one, `landmark` simply reading null
+ * where no `<main>`/`[role="main"]` region exists on either side.
+ */
+export interface PageIdentity {
+  title: string;
+  landmark: string | null;
+}
+
+/**
+ * Runs inside the page, on both the no-JS SSR capture and the settled hydrated capture, so its
+ * result means the same thing on either side of {@link identitiesMatch}. Self-contained: no
+ * references outside its own body, the same discipline {@link resolveColorsInPage} follows, since
+ * Playwright serializes it by source.
+ */
+function capturePageIdentity(): PageIdentity {
+  const main = document.querySelector('main, [role="main"]');
+  let landmark: string | null = null;
+  if (main) {
+    const tag = main.tagName.toLowerCase();
+    const id = main.id ? `#${CSS.escape(main.id)}` : '';
+    const heading = main.querySelector('h1, h2, h3, legend');
+    const headingText = (heading?.textContent ?? '').trim().slice(0, 80);
+    landmark = `${tag}${id}::${headingText}`;
+  }
+  return { title: document.title.trim(), landmark };
+}
+
+/**
+ * Whether two {@link PageIdentity} captures describe the same page. Absence of a landmark on both
+ * sides, the login page, a consumer route with no `<main>`, counts as agreement: `landmark: null` on
+ * both is not itself evidence of a swap, only a page that never carried one.
+ */
+function identitiesMatch(a: PageIdentity, b: PageIdentity): boolean {
+  return a.title === b.title && a.landmark === b.landmark;
+}
+
+/**
+ * A settle window after hydration, run inside the page so the wait costs one round trip rather than
+ * a Node-side timeout blocking the whole run. Self-contained for the same reason
+ * {@link capturePageIdentity} is: Playwright serializes it by source.
+ */
+function waitForHydrationSettle(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(() => requestAnimationFrame(() => requestAnimationFrame(() => resolve())), 300);
+  });
+}
+
+/**
+ * Capture a route's SSR identity: what the server actually sent, before any client script has a
+ * chance to run. A dedicated context with JavaScript disabled is the only way to guarantee that;
+ * reading it from the same context immediately after `goto` resolves already races the client
+ * bundle, which is the exact race the ASC hydrated-404 defect exploited (the harness measured a page
+ * that had already swapped chrome before it ever looked). Playwright still serves `evaluate` calls
+ * through the page's own runtime binding regardless of `javaScriptEnabled`, so
+ * {@link capturePageIdentity} is unchanged between this capture and the hydrated one.
+ */
+async function captureSsrIdentity(
+  browser: RenderedBrowser,
+  theme: Theme,
+  baseUrl: string,
+  pagePath: string,
+  cookies: { name: string; value: string; url: string }[]
+): Promise<PageIdentity> {
+  const context = await browser.newContext({ colorScheme: theme, javaScriptEnabled: false });
+  try {
+    await context.addCookies(cookies);
+    const page = await context.newPage();
+    try {
+      await page.goto(`${baseUrl}${pagePath}`, { waitUntil: 'load', timeout: 45_000 });
+      return await page.evaluate(capturePageIdentity);
+    } finally {
+      await page.close();
+    }
+  } finally {
+    await context.close();
+  }
+}
+
+/**
+ * The finding the runner raises when a page's post-hydration DOM no longer matches the identity its
+ * SSR response carried: a named harness finding, not a rule finding, since no rule ever got to look
+ * at this page. Error tier: an admin route that hydrates into unrelated chrome is a real defect, not
+ * a compositional judgment a rule might reasonably differ on, and a harness that reported clean here
+ * anyway is the trust failure this guard exists to close (the two ASC edit desks were measured this
+ * way, silently, for 58 findings against the wrong page).
+ */
+function pageIdentityMismatchFinding(pagePath: string, theme: Theme, ssr: PageIdentity, hydrated: PageIdentity): Finding {
+  const describe = (identity: PageIdentity) =>
+    `"${identity.title}"${identity.landmark ? ` (landmark ${identity.landmark})` : ''}`;
+  return positionless({
+    ruleId: PAGE_IDENTITY_RULE_ID,
+    tier: 'error',
+    file: `${pagePath} [${theme}]`,
+    message:
+      `${pagePath} served ${describe(ssr)} from the server, but settled into ${describe(hydrated)} after ` +
+      `hydration. The rules never ran here: this route is reported unmeasurable rather than audited under the ` +
+      `wrong page's identity. Fix the client-side mismatch, or drop the route from rendered.pages if it ` +
+      `genuinely cannot render stably.`,
+  });
+}
+
+/**
  * Resolve raw rendered findings against the allowlist: an exact page+selector match suppresses, and
  * every allowlist entry that never matched anything the run actually visited becomes its own
  * finding rather than silently doing nothing. An entry whose selector the browser refused to parse
@@ -330,6 +472,10 @@ export function resolveRenderedFindings(
   for (const entry of allowlist) {
     if (spent.has(entry)) continue;
     const visit = visits.find((candidate) => candidate.page === entry.page);
+    if (visit?.identityRefused) {
+      findings.push(identityRefusedFinding(entry));
+      continue;
+    }
     const tier = (entry.rule === undefined ? undefined : ruleTiers.get(entry.rule)) ?? 'error';
     if (visit?.selectorsSeen.has(entry.selector)) {
       const unreached = [...(visit.statesUnreached ?? [])].sort();
@@ -747,6 +893,7 @@ export async function runRendered(
     statesUnreached: new Set<InteractionState>(),
   }));
   const raw: ResolvedRenderedFinding[] = [];
+  const identityFindings: Finding[] = [];
 
   const browser = await chromium.launch();
   try {
@@ -754,11 +901,16 @@ export async function runRendered(
       const visit = visits.find((candidate) => candidate.page === pagePath);
       const relevantAllowlist = config.renderedAllowlist.filter((entry) => entry.page === pagePath);
       for (const theme of themes) {
-        const context = await browser.newContext({ colorScheme: theme });
-        await context.addCookies([
+        const cookies = [
           { name: 'cairn-admin-theme', value: THEME_COOKIE_VALUE[theme], url: baseUrl },
           ...extraCookies.map((cookie) => ({ ...cookie, url: baseUrl })),
-        ]);
+        ];
+        const ssrIdentity = await captureSsrIdentity(browser, theme, baseUrl, pagePath, cookies);
+        const context = await browser.newContext({ colorScheme: theme });
+        await context.addCookies(cookies);
+        // The settled identity that disagreed with `ssrIdentity`, null while the guard is content.
+        // Held rather than reported inline so the finding is raised after the context closes.
+        let mismatchedIdentity: PageIdentity | null = null;
         try {
           for (const state of states) {
             const page = await context.newPage();
@@ -780,6 +932,19 @@ export async function runRendered(
                 continue;
               }
               await ensurePageHelpers(page);
+
+              if (state === 'rest') {
+                // The page-identity guard checks once per (page, theme), on the state every page
+                // reaches: a settle window, then a re-capture compared against the SSR baseline. A
+                // mismatch means this page hydrated into chrome that is not the route it was asked
+                // for, so no rule below this point may run against it.
+                await page.evaluate(waitForHydrationSettle);
+                const hydratedIdentity = await page.evaluate(capturePageIdentity);
+                if (!identitiesMatch(ssrIdentity, hydratedIdentity)) {
+                  mismatchedIdentity = hydratedIdentity;
+                  break;
+                }
+              }
 
               if (relevantAllowlist.length > 0 && visit) {
                 const present = await page.evaluate(probeSelectors, relevantAllowlist.map((entry) => entry.selector));
@@ -818,6 +983,13 @@ export async function runRendered(
         } finally {
           await context.close();
         }
+        if (mismatchedIdentity) {
+          identityFindings.push(pageIdentityMismatchFinding(pagePath, theme, ssrIdentity, mismatchedIdentity));
+          // A page the guard refused was never actually probed, so its allowlist entries cannot be
+          // told stale from dead: {@link identityRefusedFinding} withholds that verdict instead of
+          // accusing a live entry of staleness on a run that never really looked.
+          if (visit) visit.identityRefused = true;
+        }
       }
     }
   } finally {
@@ -832,7 +1004,7 @@ export async function runRendered(
   );
   const byPosition = (a: Finding, b: Finding) => (a.file === b.file ? 0 : a.file.localeCompare(b.file));
   return {
-    findings: [...findings].sort(byPosition),
+    findings: [...findings, ...identityFindings].sort(byPosition),
     suppressed: [...suppressed].sort(byPosition),
     // Pages, not files: rendered mode reuses the static runner's AuditReport shape (so the bin's
     // report formatter and exit-code logic stay agnostic between the two modes) rather than

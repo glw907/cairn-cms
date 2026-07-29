@@ -533,7 +533,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 5 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 6 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -555,7 +555,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 5 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 6 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -574,7 +574,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 5 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 6 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -586,27 +586,43 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 5 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 6 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
 }
 
-/* Every other status badge (New's badge-info, Edited's primary tint, the role pill's
-   badge-primary) reads a Tier-1 color already tuned per theme, so it gets a real dark
-   counterpart for free. daisyUI's own badge-ghost rule instead hardcodes base-200/base-content,
-   and in dark base-200 sits only a touch below the base-100 card it renders on (audit finding 10:
-   the Published pill nearly vanishes). This override repoints it to base-300, the next Tier-1
-   step up (the same token the theme-adaptive card border already reaches for in dark); light is
-   untouched, since its wider base-100/base-200 gap already reads. daisyUI compiles badge-ghost
-   into the utilities layer, which always outranks a components-layer rule regardless of
-   specificity (cascade layers resolve before specificity), so this must be unlayered like the
-   four rules above; it references only the existing Tier-1 base-300 token, no new Tier-2 custom.
-   PINNED unlayered rule 5 of 5 (gate match: `.badge-ghost`); bug it prevents: the dark Published
-   pill blending into its own card. */
-:where([data-theme='cairn-admin-dark']) .badge-ghost {
-  background-color: var(--color-base-300);
-  border-color: var(--color-base-300);
+/* The two ratified chip registers (design infrastructure Pass 3, corpus C evidence). daisyUI's own
+   badge-ghost hardcodes a background/border that can match a row or card color and melt into it
+   (audit finding 10, the dark Published pill nearly vanishing), and neither badge-ghost nor the
+   un-tuned badge-outline clears the audit's own 3:1 border-contrast floor in both themes, so
+   badge-ghost retires from cairn's tree rather than getting another patch. `bounded` demotes
+   badge-outline's full-strength `border-color: currentColor` to a hairline that clears 3:1 in both
+   themes (measured against both zebra stripes and both page grounds); `quiet` drops the border
+   entirely and tints the ground instead, for a settled/put-away state that should recede rather
+   than compete. Values are measured, not invented
+   (docs/internal/probes/2026-07-28-chip-registers). Both are UNLAYERED for the same reason the
+   four rules above are: badge/badge-outline's own border-color and background-color are
+   utilities-layer declarations, which a components-layer rule cannot outrank regardless of
+   specificity (cascade layers resolve before specificity). StatusChip's own scoped <style> carries
+   the identical two recipes for its own markup (a Svelte scoped rule is unlayered by construction,
+   so it needs no selector here); these two classes are the same vocabulary for every OTHER admin
+   surface that composes a chip by hand instead of through the StatusChip component (EditPage's
+   status pill, the CairnAdminShell brand-band CMS pill, ReferenceField/MediaCaptureCard/
+   ManageEditors's bare chips).
+   PINNED unlayered rule 5 of 6 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
+   chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded {
+  background-color: transparent;
+  border-color: color-mix(in oklab, currentColor 55%, transparent);
+}
+
+/* PINNED unlayered rule 6 of 6 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+   either melting into its ground (badge-ghost's old failure) or keeping a border that competes
+   with an attention state rendered next to it. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet {
+  border-width: 0;
+  background-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300));
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

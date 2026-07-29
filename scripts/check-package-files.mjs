@@ -81,6 +81,25 @@ export function checkDocsPacked(filePaths) {
   return { ok: true, count: filePaths.filter((path) => path.startsWith('docs/')).length };
 }
 
+// The packaged skill's always-loaded core. Its presence in the tarball is the floor: without it,
+// `cairn-doctor --fix` would install nothing into a consumer's `.claude/skills/`.
+const SKILL_ENTRY_PATH = 'skills/cairn-admin-screens/SKILL.md';
+
+/**
+ * Check a packed file list for the packaged skill's SKILL.md.
+ * @param {string[]} filePaths the paths npm would include in the tarball
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+export function checkSkillPacked(filePaths) {
+  if (!filePaths.includes(SKILL_ENTRY_PATH)) {
+    return {
+      ok: false,
+      error: `the packed tarball is missing ${SKILL_ENTRY_PATH}; add "skills" to package.json "files" so cairn-doctor can install the packaged skill`
+    };
+  }
+  return { ok: true };
+}
+
 /**
  * Extract the packed file paths from `npm pack --json` stdout. The `prepare` lifecycle
  * (svelte-package, which prints `src/lib -> dist`) can leak onto stdout ahead of the JSON on some
@@ -123,8 +142,14 @@ function main() {
     process.exit(1);
   }
 
+  const skillResult = checkSkillPacked(files);
+  if (!skillResult.ok) {
+    console.error(`check-package-files: ${skillResult.error}`);
+    process.exit(1);
+  }
+
   console.log(
-    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s) packed)`
+    `check-package-files: OK (${migrationsResult.count} migration file(s), ${docsResult.count} docs file(s), the packaged skill packed)`
   );
 }
 

@@ -25,9 +25,10 @@ import {
   emailNormalization,
 } from './checks-cloudflare.js';
 import { githubApp } from './checks-github.js';
+import { skillFreshness } from './check-skill.js';
 
 const USAGE =
-  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]]';
+  'Usage: cairn-doctor [--from <address>] [--repo <owner/name>] [--send-test <address>] [--probe [url]] [--fix]';
 
 export interface DoctorArgs {
   from?: string;
@@ -38,6 +39,11 @@ export interface DoctorArgs {
    *  PUBLIC_ORIGIN input), absent when the flag never appeared (the probe does not run).
    */
   probe?: string | true;
+  /**
+   * Install or refresh the packaged admin-screens skill into `.claude/skills/` before the
+   *  checks run. Bare flag; absent when --fix never appeared.
+   */
+  fix?: boolean;
 }
 
 const FLAGS: Record<string, 'from' | 'repo' | 'sendTest'> = {
@@ -57,6 +63,12 @@ export function parseArgs(argv: string[]): DoctorArgs {
       const bare = value === undefined || value.startsWith('--');
       args.probe = bare ? true : value;
       i += bare ? 1 : 2;
+      continue;
+    }
+    // --fix is a bare boolean; it never takes a value.
+    if (flag === '--fix') {
+      args.fix = true;
+      i += 1;
       continue;
     }
     const key = FLAGS[flag];
@@ -185,6 +197,7 @@ export function defaultChecks(): DoctorCheck[] {
     configPublicOrigin,
     configTidyKey,
     adminMountShape,
+    skillFreshness,
     configDependencyFloors,
     emailSenderOnboarded,
     edgeHttpsForced,

@@ -368,3 +368,77 @@ voice sitting after this task's rationale doc exists; STATUS carries the pointer
   fixes; land; confirm `e2e` green.
 - [ ] STATUS and the initiative memory refreshed; the next-session resume prompt recorded
   (the voice sitting).
+
+## Post-mortem (2026-07-29)
+
+All fourteen tasks landed in one execution session, Geoff-sanctioned as a Fable-conducted
+workflow run rather than the default Opus handoff. The shape: sequential
+implementer-plus-fresh-Opus-review chains per task, with the orchestrator closing narrow
+review blockers inline, plus two dynamic protocols the workflow harness ran directly (the
+k=3 grader calibration loop and the blind-builder craft acceptance).
+
+**Ratified deviations, all recorded where they bind:**
+
+1. **The grader calibration set was reconstructed, not located** (acceptance criterion 6
+   assumed "archived labeled captures"; the archive held prose verdicts only, no images,
+   proven by full git history plus filesystem sweep). Rebuilt as two constructed FAIL
+   fixtures with tells known by construction plus one fresh read-only capture of the
+   consumer's Members screen as the PASS control. Calibration failed round 1 (a grader
+   manufactured sub-pixel measurement evidence), the prompt gained its reading-discipline
+   section, and round 2 reproduced all three known verdicts at 2-of-3 consensus.
+   Canonical record: `docs/internal/2026-07-grader-calibration-ledger.md`.
+2. **The craft chapter passed criterion 5 at round 3 after failing twice.** Rounds 1 and 2
+   failed at 390 (the second because a prose chip-padding rule regressed table
+   containment); the round-3 amendment replaced prose guidance with a concrete structural
+   before/after table recipe and passed 3-of-3 on every state. This is direct evidence for
+   the spec's own capture-form hierarchy: structure and paired demonstration carry what
+   numeric prose rules do not. Record: `docs/internal/2026-07-craft-chapter-acceptance.md`.
+3. **The chip-register classes ship as unlayered pinned rules, not `@layer components`**
+   (daisyUI's badge declarations are utilities-layer, which a components-layer rule cannot
+   outrank; same mechanism as the file's four existing precedents, budget-tracked).
+4. **The calibration probe fixtures were discarded after use** (the ledger's disposition
+   section carries the reasoning; the ledger prose holds every tell verbatim).
+5. **The sheet parser's escaped-quote repair was pulled INTO the pass at the review gate,**
+   against the default that repairs stay filed. The reviewers' argument prevailed: it is
+   substrate correctness (a tokenizer treating `\'` as a string opener, silently dropping
+   every rule after such a selector), not rule calibration; the release makes it
+   consumer-facing immediately; and the demonstrated repro is the fixture. The quiet
+   register's unmeasured fifth ground (its own base-300 mix base, ~1.34) took the opposite
+   ruling for the same reason inverted: retuning the ratified mix without a probe read
+   would be an uncalibrated change at gate stage, so the limit is documented and the
+   ROADMAP notes quiet is unguarded until chip-ground re-promotes.
+
+**The reviewer fan-out earned its place a second time.** Both reviewers independently
+found that the ghost retirement had not actually retired the class: the literal token in
+three code comments kept `.badge-ghost` compiling (Tailwind scans raw bytes; the audit's
+own AST-based scanner excludes comments, which is exactly why the pass's gates missed it),
+while the deleted dark-theme repair made the shipped artifact strictly worse than before
+the pass for any consumer still on the class. The divergence between the two scanners'
+substrates is the durable lesson; the compiled-sheet absence assertion is the durable fix.
+
+**Method notes worth carrying:**
+
+- Every fresh-context review round found something real: the api-surface snapshot, the
+  consumer site named in shipped skill files (twice, then promoted into every dispatch's
+  standing constraints), the grader prompt's item b asserting a per-screen invariant the
+  rule defines per landmark surface, and a guide instructing against tool output that does
+  not exist (`type-scale` findings never name a role; the register gate caught it before a
+  reader could).
+- The dispatch-fallback discipline held where it failed in corpus B: Task 10's assembly
+  agent, offered an exclusion fallback, excluded and escalated with exhaustive evidence
+  instead of substituting, and the empty set surfaced as a design decision rather than a
+  silent degradation.
+- A reviewer citing repo state can be citing a stale document: the register editor
+  "refuted" the dogfooding claim from a ROADMAP entry that Task 5 had already made false.
+  The claim was re-verified against a live audit run instead. Consolidation ordering
+  (Task 14 last) makes this trap structural; treat in-repo citations from mid-pass
+  reviewers accordingly.
+- Guard calibration for workflow babysitting took three settings to get right: journal
+  idle is meaningless mid-agent, and image-reading grader transcripts legitimately exceed
+  2MB. The working signature: active-transcript idle for stalls, 4MB-and-growing for
+  runaways.
+
+**Cost:** roughly 7.2M subagent tokens across six workflows and ten standalone dispatches
+(per-run totals in the session's workflow records), plus the Fable main loop. Human
+interaction points: five brainstorm answers, two approvals (design, spec-to-plan), and
+four steering messages, one of which (model economy override) reshaped the session.

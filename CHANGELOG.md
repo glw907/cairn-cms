@@ -190,8 +190,31 @@
   `cairn-admin-theme` throws too, since the run owns that cookie itself. See [The `cairn-audit`
   CLI](./docs/reference/cairn-audit.md#auditing-an-authenticated-admin).
 
-No consumer action is required for the entries above. No exported type, prop, or route contract
-changed.
+- `StatusChip` (`@glw907/cairn-cms/admin-toolkit`) gains a `register: 'bounded' | 'quiet'` prop
+  (design infrastructure Pass 3): `'bounded'`, the default, is today's discrete-object reading, its
+  border demoted from `badge-outline`'s full-strength `currentColor` (which read as a clickable
+  button) to a hairline that clears the audit's own 3:1 `border-contrast` floor in both themes;
+  `'quiet'` is a new borderless, token-tinted recipe for a settled state (a Published pill, say)
+  that should recede rather than compete. Both recipes are measured, not invented
+  (`docs/internal/probes/2026-07-28-chip-registers/`). `badge-ghost` retires from cairn's own tree:
+  EditPage's Published pill, CairnAdminShell's CMS pill, and every bare `badge-outline` site move
+  onto the two registers, and `stock-default-hazards`' guidance for `badge-ghost` now points at
+  them, naming `'quiet'` as the sanctioned put-away recipe. **Consumers must:** replace any own
+  `badge-ghost` usage (`stock-default-hazards` now errors on it) with `StatusChip
+  register="quiet"` or the equivalent `.cairn-chip-quiet` recipe in `cairn-admin.css`.
+- The package now ships a Claude Code skill, `skills/cairn-admin-screens/` (design infrastructure
+  Pass 3), carrying the admin design standard as loadable reference: an always-loaded core (screen
+  anatomy, the register rules, the done-gate), two annotated exemplar screens (a list and a
+  detail/slide-over), a form-anatomy contract, an extension grammar for deriving a component the
+  toolkit lacks, a calibrated grader prompt, and a craft chapter translating an invisible-polish
+  catalogue into rule-backed recipes. `cairn-doctor` gains a `skill.admin-screens` check: missing or
+  stale (by a content hash of both trees) reports advisory and never fails the run, and
+  `cairn-doctor --fix` installs or refreshes the packaged skill into a consumer's own
+  `.claude/skills/cairn-admin-screens/` before the checks run. See [the `cairn-audit`
+  CLI](./docs/reference/cairn-audit.md) and [`cairn-doctor`](./docs/reference/doctor.md#the---fix-skill-install).
+
+No consumer action is required for the entries above beyond the `badge-ghost` migration named
+above. No exported type, prop, or route contract changed otherwise.
 
 ### Fixed
 
@@ -209,6 +232,31 @@ changed.
   `ListToolbar` count line when both appear together. **Consumers must:** expect the header stack
   on any screen mounting `PageHeader` to render visibly tighter (a shorter title-to-meta gap) and
   its `meta` line one step smaller; no prop or type changed.
+- `cairn-audit --rendered`'s `chip-ground-collision` demotes from error to advisory (design
+  infrastructure Pass 3, corpus C, 2026-07-28): the formula has no chroma term and cannot see hue,
+  which produced 24 false errors of 40 on the first consumer admin it measured, so as coded it
+  could not serve as a consumer gate. The formula itself is unchanged; a chroma-aware repair is
+  filed in ROADMAP and re-promotes the rule on re-measured evidence. **Consumers must:** expect a
+  `chip-ground-collision` finding to no longer fail `cairn-audit --rendered`'s exit code; it still
+  reports.
+- Cairn's own admin's `cairn-audit --rendered` error tier is clean (design infrastructure Pass 3):
+  `ConceptList`'s Title/Date sort buttons gain an outward `::before` hit-area expansion (a
+  `touch-targets` fix) instead of a font-size bump, and its row-title link grows through real
+  padding on its own box, since `truncate`'s `overflow: hidden` would clip a `::before` reaching
+  past it; `ListToolbar`'s segmented filter group can now shrink below its own preferred width
+  (`flex: 0 1 auto`), so it wraps onto a second line at 320px instead of overflowing the viewport
+  (a `viewport-overflow` fix). Internal admin CSS and markup only; no consumer action.
+
+### Documentation
+
+- A new explanation page, [Why the design language is
+  enforced](./docs/explanation/enforced-design.md), states the sixth front-door principle: cairn's
+  admin design language is enforced, not merely documented, and the payoff is that a developer
+  spends less effort building an admin interface. The README's principle ledger grows from five
+  entries to six to match. [Upgrade cairn](./docs/guides/upgrade-cairn.md) gains the grammar-release
+  adoption recipe: how to read a `type-scale` finding, match it to a named role in [Admin grammar
+  tokens](./docs/reference/admin-grammar-tokens.md), and rename the class, plus the safelist
+  reachability note that makes the rename safe.
 
 ## 0.90.1
 

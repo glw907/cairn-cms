@@ -34,6 +34,7 @@ yields a useful report.
 | `--repo <owner/name>` | `GITHUB_REPO` | The site repository the GitHub App check reads. |
 | `--send-test <address>` | none | Opt in to one real test email to this address. |
 | `--probe [url]` | none | Opt in to the live admin sign-in probe. Bare `--probe` probes the `PUBLIC_ORIGIN` input. |
+| `--fix` | none | Install or refresh the packaged `cairn-admin-screens` skill into `.claude/skills/cairn-admin-screens/`, before the checks run. |
 
 The credential variables are the same values `wrangler` and the Worker use:
 
@@ -65,7 +66,7 @@ environment. They are never derived from the repo and never printed.
 
 ## The checks
 
-Sixteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
+Eighteen checks run by default. Two opt-in flags add more: `--send-test` the live email send and
 `--probe` the live admin probe. The condition id is the identity the report, the runtime errors,
 and the readiness checklist share. Some checks share one condition id (`config.media-bucket` and
 `config.tidy-key` both reuse `config.bindings-missing`), so the readiness count holds while the
@@ -81,6 +82,7 @@ checklist gains a distinct line.
 | `config.public-origin` | `config.public-origin-invalid` | `PUBLIC_ORIGIN` (from the wrangler vars, or the environment as a fallback) parses as a URL and uses https, with http allowed only on `localhost` or `127.0.0.1`. The judgment is `requireOrigin`, the same rule the Worker applies. | No wrangler config file exists and `PUBLIC_ORIGIN` is not in the environment. |
 | `config.tidy-key` | `config.bindings-missing` | When `tidy.enabled` is `true` in the site config, and a literal `ANTHROPIC_API_KEY` value is readable locally (typically `.dev.vars`), the doctor actively probes it with a zero-token Anthropic call and reports valid or invalid distinctly. When only the key's name is referenced (a real deployed Worker secret, invisible to any CLI) it passes on presence alone and says so; a network failure during the probe fails soft to an unverified pass rather than claiming the key is invalid. | No `site.config.yaml` exists, or tidy is not enabled in it. |
 | `admin.mount-shape` | `admin.mount-incomplete` | The four-file `/admin` mount is wired: a `shellLoad` call on any identifier and a `CairnAdminShell` render across the `/admin` route files (a heuristic text read that tolerates a renamed composer). This check never fails; it skips with guidance when it cannot see the mount, so an unconventionally wired site never goes red. | None of the candidate `/admin` mount files exist, or the two signals are not both found (a skip carries the one-line fix). |
+| `skill.admin-screens` | `skill.admin-screens-stale` | The consumer's `.claude/skills/cairn-admin-screens/` matches the packaged skill, by a content hash of both trees. This check never fails; it skips with guidance (missing or stale) rather than gating a deploy on a development aid. | Never; it always reports fresh, missing, or stale. |
 | `config.dependency-floors` | `config.dependency-floors-unmet` | The lockfile's resolved `svelte` and `@sveltejs/kit` versions satisfy the engine's declared peer ranges, read from the installed `@glw907/cairn-cms/package.json` so the floors are declared once. | No `package-lock.json` exists (a pnpm or yarn lockfile is not read), or the lockfile carries no entry for a dependency. |
 | `email.sender-onboarded` | `email.sender-not-onboarded` | The from-domain has an enabled Email Sending subdomain on its zone. | No API token, or no from-address. |
 | `edge.https-forced` | `edge.https-not-forced` | Always Use HTTPS is on for the zone. | No API token, or no from-address. |
@@ -139,6 +141,29 @@ site whose send path is broken without spending a real delivery.
 Run it after the first deploy, after an edge or auth change, or whenever an editor reports a
 sign-in problem. A probe failure has many possible causes, so its detail line names the failed
 assertion and the remediation points back at the rest of the doctor and the deploy guide.
+
+## The `--fix` skill install
+
+The package ships an agent-facing skill, `cairn-admin-screens`, that teaches a build agent the
+register rules and the done-gate for a cairn admin screen. `--fix` installs it, copying the
+packaged `skills/cairn-admin-screens/` tree into `.claude/skills/cairn-admin-screens/` in the
+working directory:
+
+```bash
+npx cairn-doctor --fix
+```
+
+It runs before the checks, so `skill.admin-screens` reads fresh in the same report. Run it again
+after upgrading `@glw907/cairn-cms`, whenever the skill's content changes upstream. The
+`skill.admin-screens` check compares a hash of the installed copy against the packaged one and
+reports missing or stale. It never fails the run, since the skill is a development aid, not a
+deploy blocker.
+
+The installed skill's own reference files quote utility class names verbatim as worked examples,
+and Tailwind v4's automatic source detection scans any non-ignored file under the project,
+`.claude/` included. Exclude `.claude/` from the site's own Tailwind build (an `@source not`
+directive, or the equivalent of a `.gitignore` exclusion for the toolchain in use) so those
+examples never compile into the site's own shipped CSS.
 
 ## CI wiring
 

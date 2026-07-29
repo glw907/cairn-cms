@@ -14,7 +14,8 @@
           "[data-theme='cairn-admin'] *, [data-theme='cairn-admin-dark'] *",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
-          ":where([data-theme='cairn-admin-dark']) .badge-ghost"
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet"
         ],
         "componentsLayerCap": 16,
         "retiredTokenBudget": 0

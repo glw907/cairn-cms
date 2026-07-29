@@ -1530,11 +1530,14 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             onkeydown={(e) => onGridKeydown(e, i)}
           >
             <!-- The selection checkbox, top-left: a real native checkbox in a soft chip so it reads on
-                 any thumbnail. Clicking it toggles the selection only; it never opens the slide-over. -->
-            <span class="absolute left-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-md bg-base-100/90 shadow-sm">
+                 any thumbnail. Clicking it toggles the selection only; it never opens the slide-over.
+                 The wrapper is one step larger than daisyUI v5's default 24px `.checkbox` (h-7/w-7,
+                 not h-6/w-6): at h-6 the checkbox exactly fills the plate and its own ring has no
+                 room to paint, leaving no visible contrast plate at all. -->
+            <span class="absolute left-2 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded-md bg-base-100/90 shadow-sm">
               <input
                 type="checkbox"
-                class="checkbox checkbox-sm"
+                class="checkbox"
                 checked={picked}
                 aria-label="Select {asset.displayName}"
                 onclick={(e) => e.stopPropagation()}
@@ -1624,7 +1627,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <td class="w-10 pl-6">
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-sm"
+                  class="checkbox"
                   checked={picked}
                   aria-label="Select {asset.displayName}"
                   onchange={() => toggleSelect(asset.hash)}

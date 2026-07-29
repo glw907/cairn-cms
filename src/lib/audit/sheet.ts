@@ -87,6 +87,11 @@ function stripComments(text: string): string {
   let out = '';
   let i = 0;
   while (i < text.length) {
+    if (text[i] === '\\') {
+      out += text.slice(i, i + 2);
+      i += 2;
+      continue;
+    }
     if (text[i] === '/' && text[i + 1] === '*') {
       i = skipComment(text, i);
       out += ' ';
@@ -111,6 +116,10 @@ function scanBlock(css: string, open: number): { end: number; nested: boolean } 
   let i = open;
   while (i < css.length) {
     const ch = css[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '/' && css[i + 1] === '*') {
       i = skipComment(css, i);
       continue;
@@ -142,6 +151,10 @@ function propertyBoundary(text: string): number {
   let i = 0;
   while (i < text.length) {
     const ch = text[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '"' || ch === "'") {
       i = skipString(text, i);
       continue;
@@ -169,6 +182,10 @@ function parseDeclarations(text: string): { property: string; value: string }[] 
   };
   while (i < text.length) {
     const ch = text[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '/' && text[i + 1] === '*') {
       i = skipComment(text, i);
       continue;
@@ -226,6 +243,10 @@ function skipParens(text: string, open: number): number {
   let i = open;
   while (i < text.length) {
     const ch = text[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '"' || ch === "'") {
       i = skipString(text, i);
       continue;
@@ -250,6 +271,10 @@ export function selectorClassNames(selector: string): string[] {
   let i = 0;
   while (i < selector.length) {
     const ch = selector[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '"' || ch === "'") {
       i = skipString(selector, i);
       continue;
@@ -286,6 +311,10 @@ export function negatedClassNames(selector: string): string[] {
   let i = 0;
   while (i < selector.length) {
     const ch = selector[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '"' || ch === "'") {
       i = skipString(selector, i);
       continue;
@@ -348,6 +377,11 @@ function ownDeclarationText(css: string): string {
   let i = 0;
   while (i < css.length) {
     const ch = css[i];
+    if (ch === '\\') {
+      segment += css.slice(i, i + 2);
+      i += 2;
+      continue;
+    }
     if (ch === '/' && css[i + 1] === '*') {
       i = skipComment(css, i);
       continue;
@@ -388,6 +422,10 @@ function collectRules(css: string, conditions: string[], out: SheetRule[], baseO
   let i = 0;
   while (i < css.length) {
     const ch = css[i];
+    if (ch === '\\') {
+      i += 2;
+      continue;
+    }
     if (ch === '/' && css[i + 1] === '*') {
       i = skipComment(css, i);
       continue;

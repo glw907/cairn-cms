@@ -12,6 +12,11 @@ npx cairn-audit norms <selector-or-role> # look up a measured norm
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
 the installed package, so it needs no config, no built stylesheet, and no browser.
 
+A build agent points at these mechanical checks rather than holding their formulas in working
+memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for
+the details. [`cairn-doctor --fix`](./doctor.md#the---fix-skill-install) installs and
+freshness-checks the skill in a consumer repo.
+
 ## Tiers and exit codes
 
 Every finding carries a tier. An error-tier finding gates: it exits the command nonzero, and only a
@@ -138,6 +143,25 @@ The run fails rather than reporting clean on every shape of silent green: no rul
 pages configured, `BASE_URL` not answering, Playwright absent, or any configured page rendering
 outside 2xx, which also catches a page path that names no route.
 
+### The post-hydration page-identity guard
+
+The runner checks every page once, after its own hydration settles, against the identity its
+server-rendered response carried: the document title, and a signature of its `<main>`/`[role="main"]`
+landmark plus that landmark's first heading, captured from a dedicated no-JavaScript context so the
+baseline is genuinely what the server sent. Take a page whose settled DOM no longer matches: the run
+navigated to `/admin/edit/some-post` and the DOM that settled belongs to an unrelated 404 or a
+different route entirely. The runner reports that page unmeasurable rather than auditing it under
+the wrong page's identity: a `rendered-page-identity-mismatch` finding names the route and both
+identities, and no rule runs against that page in that theme. This is a harness finding, not a rule
+finding, and it gates the exit code at error tier, the same way a stale allowlist entry does: a
+route that hydrates into the wrong chrome is a defect worth fixing, not a compositional judgment
+call.
+
+The mechanism reads only `<title>`, `<main>`, and `[role="main"]`, none of them cairn-only markup,
+so a consumer's own custom route and cairn's shell-less login page (which renders no `<main>` at
+all) both stay auditable: a landmark of `null` on both the SSR and the hydrated side counts as
+agreement, not as evidence of a swap.
+
 ### Auditing an authenticated admin
 
 The admin routes rendered mode visits by default assume an unauthenticated request. Auditing a
@@ -159,7 +183,7 @@ measurement.
 
 ### The rules
 
-Eleven rules run. The first six are error tier and exit the command nonzero.
+Eleven rules run. The first five are error tier and exit the command nonzero.
 
 | ID | What it checks |
 |---|---|
@@ -168,13 +192,13 @@ Eleven rules run. The first six are error tier and exit the command nonzero.
 | `interactive-contrast` | Interactive text reads against its own composited background at a ratio of at least 1.5. This isn't a legibility floor. The bar is that a control isn't camouflaged against its own ground. Both the ink and the ground carry every `opacity` in the chain, so a dimmed wrapper lowers the measurement rather than raising it. Disabled controls are exempt |
 | `touch-targets` | Every tap target renders at least 24x24 CSS px at a 390px viewport. This is a house floor derived from WCAG 2.2 level AA's success criterion 2.5.8, Target Size (Minimum), and not an implementation of it: the rule enforces a strict superset, so a finding is a house-bar failure and not on its own an AA failure. See [What `touch-targets` doesn't cover](#what-touch-targets-doesnt-cover). The measurement is the activation region rather than the painted box: the control's own box, unioned with a qualifying `::before` inset expansion, plus every label the platform reports as activating the control. A control passes when any one of its regions clears the floor |
 | `viewport-overflow` | Nothing renders wider than the viewport at 390 and at 320. Both an element whose own box clears the viewport and an element whose content, an unbreakable string or a bleeding pseudo-element, is wider than its box |
-| `chip-ground-collision` | A chip's own painted fill reads against the ground behind it at a ratio of at least 1.5, the same floor `interactive-contrast` applies and for the same reason. Neither rule is a contrast standard; the bar is that the chip isn't camouflaged. At 1.5:1 two surfaces aren't distinct, only not identical. The rule proves neither the chip's own label contrast nor its status cue. A chip is daisyUI's `.badge` or any element that renders as one, and a chip with no fill of its own, the `badge-outline` recipe, is exempt. Where an element outside the chip's own ancestors paints the ground behind it, an overlay chip on a sibling image, the rule reports an advisory naming the ground it couldn't read rather than an error claiming a collision. That painter test is a bounding-box intersection with no paint-order reading, and daisyUI paints a background-image on every `.btn`, so a chip overlapping a button downgrades the same way |
 
-The other five are advisory. They report and never change the exit code, because each one measures a
+The other six are advisory. They report and never change the exit code, because each one measures a
 compositional question that a legitimately novel component can answer differently on purpose.
 
 | ID | What it checks |
 |---|---|
+| `chip-ground-collision` | A chip's own painted fill reads against the ground behind it at a ratio of at least 1.5, the same floor `interactive-contrast` applies and for the same reason. Neither rule is a contrast standard; the bar is that the chip isn't camouflaged. At 1.5:1 two surfaces aren't distinct, only not identical. The rule proves neither the chip's own label contrast nor its status cue. A chip is daisyUI's `.badge` or any element that renders as one, and a chip with no fill of its own, the `badge-outline` recipe, is exempt. Where an element outside the chip's own ancestors paints the ground behind it, an overlay chip on a sibling image, the rule reports an advisory naming the ground it couldn't read rather than an error claiming a collision. That painter test is a bounding-box intersection with no paint-order reading, and daisyUI paints a background-image on every `.btn`, so a chip overlapping a button downgrades the same way. **Demoted from error to advisory** (design infrastructure Pass 3, corpus C, 2026-07-28): the formula has no chroma term and cannot see hue, which produced 24 false errors of 40 on the first consumer admin it measured, so as coded it could not serve as a consumer gate. The formula is unchanged; a chroma-aware repair is filed in ROADMAP and re-promotes this rule on re-measured evidence |
 | `border-contrast` | A rendered border reads at 3:1 against at least one of the two surfaces it separates. The number is the floor WCAG 1.4.11 sets for a control-identifying boundary, applied here to every rendered border as a house bar: the criterion reaches user interface components and graphical objects, so a finding on a card hairline or a row divider is a design observation and not a conformance failure. Adjacency is measured by hit-testing the pixel beyond each edge, not by walking the DOM, so an overlaid badge is judged against what it sits on. The stroke composites over the element's own fill first, which is where `background-clip: border-box` paints it. Where an ancestor dims the element with `opacity`, the geometric sample already carries that dimming, so the rule reports that it couldn't measure rather than a ratio it can't stand behind |
 | `weight-budget` | At most two distinct font-weights per content region. A region is the body text inside `<main>`, or inside an open dialog layer, split at each visible heading, with chrome removed. Chrome is text inside `<nav>` or `[role="navigation"]`; `<button>`, `[role="button"]`, or `<summary>`; a `<header>` or `[role="banner"]` that contains the heading it introduces; and `<thead>` or `[role="columnheader"]`. Each shape is named by an HTML tag or the ARIA role that means the same thing, never by a class, so a rewritten component stays covered. A heading's own weight never spends the budget of the region it opens. Weights count on the hundreds ladder, so a variable-font ramp reads as one weight. Two limits follow from naming shapes rather than components: `PageHeader`'s caller-authored action slot renders inside the same `<header>` as the heading, so whatever a caller puts there is exempt, and a component's own non-chrome parts still spend the budget, such as `Pagination`'s item-range line and rows-per-page label, which sit outside its `<nav>` |
 | `norms-bands` | A component's control heights, paddings, padding-to-type ratios, radii, and border treatments against the bands the [norms manifest](#the-norms-query) observed. An entry the manifest flags `open-question` or `ratified-drift` is treated as unbanded: a number that is not settled ground truth is not a reference to measure against |

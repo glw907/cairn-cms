@@ -12,14 +12,18 @@ in the packaged `cairn-admin.css` while every `status-<tone>` modifier does. The
 dot carries the actual color signal instead, one consistent mechanism across all five tones
 rather than four covered by a badge fill plus a gap.
 
-`badge-outline`, not `badge-ghost`: `badge-ghost` compiles to an explicit background and border
-color that matches one of AdminTable's own zebra stripe colors, so a ghost chip melts into
-whichever row shares that color. `badge-outline` has no fill and sets no `--badge-color`, so its
-border would otherwise resolve to the full-strength inherited text color, which reads as a
-clickable button rather than a status marker. The scoped `<style>` below demotes it to
-`color-mix(in oklab, currentColor 35%, transparent)`, a hairline adversarially verified against
-both zebra stripes in both themes (22% sits at the visibility floor on the light zebra; 35%
-survives).
+`badge-outline`, not the stock ghost badge modifier: it retired from cairn's own tree (design
+infrastructure Pass 3, corpus C). It compiles to an explicit background and border color that can
+match one of AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares
+that color, and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1
+border-contrast floor in both themes. `register` now carries two ratified recipes instead: the
+default `'bounded'` demotes `badge-outline`'s full-strength inherited-text-color border (which
+otherwise reads as a clickable button, not a status marker) to
+`color-mix(in oklab, currentColor 55%, transparent)`, a hairline that clears 3:1 in both themes,
+measured against both zebra stripes and both page grounds; `'quiet'` drops the border entirely and
+tints the ground with `color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))`
+instead, for a settled state (a household's Published, say) that should recede rather than compete.
+Both values are measured, not invented (docs/internal/probes/2026-07-28-chip-registers).
 
 Padding, truncation, and the min/max width live in this component's own scoped `<style>` rather
 than a Tailwind utility string. That was a hard constraint when this component was written, since
@@ -44,6 +48,12 @@ the office's own three-word vocabulary never needs).
   /** Two named sizes, matching AdminTable's own density tier names rather than a bespoke scale. */
   export type StatusChipSize = 'xs' | 'sm';
 
+  /** The two ratified chip registers (design infrastructure Pass 3): `bounded`, a demoted-hairline
+   *  border for a chip that must read as a discrete object, and `quiet`, a token-derived tinted
+   *  ground with no border for a settled state that should recede. Named in the standard doc's
+   *  chip-passivity register. */
+  export type StatusChipRegister = 'bounded' | 'quiet';
+
   /** The daisyUI `status-<tone>` suffix for each public tone. Exported so a future legend
    *  component renders the identical dot color beside its own explanatory text without
    *  duplicating this mapping, the toolkit's "legend hook". */
@@ -66,6 +76,15 @@ the office's own three-word vocabulary never needs).
     label: string;
     /** Defaults to `'sm'`. */
     size?: StatusChipSize;
+    /** Which register the chip renders in. Defaults to `'bounded'`, the toolkit's original
+     *  reading, a chip that must read as a discrete object; pass `'quiet'` for a settled state
+     *  that should recede rather than compete (e.g. Published). `'bounded'`'s hairline inherits
+     *  its color from the chip's own ancestor, so it can drop under the audit's 3:1
+     *  border-contrast floor inside a muted-text ancestor (verify a new call site). `'quiet'`'s
+     *  tinted ground resolves only inside the admin theme root and is unguarded against a
+     *  base-300-derived ground (e.g. a `.table-zebra` row-hover), where it can drop under the
+     *  1.5 ground-collision floor. */
+    register?: StatusChipRegister;
     /** Optional explanatory text for a tone a label alone does not fully carry (e.g. "full
      *  member benefits continue during the grace window"). Surfaces as a native tooltip and as a
      *  visually-hidden span read straight after the visible label, rather than an `aria-label` on
@@ -74,13 +93,14 @@ the office's own three-word vocabulary never needs).
     legend?: string;
   }
 
-  let { tone, label, size = 'sm', legend }: Props = $props();
+  let { tone, label, size = 'sm', register = 'bounded', legend }: Props = $props();
 
   const dotSizeClass = $derived(size === 'xs' ? 'status-xs' : 'status-sm');
+  const registerClass = $derived(register === 'quiet' ? 'status-chip-quiet' : 'status-chip-bounded');
 </script>
 
 <span
-  class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip {size === 'xs' ? 'status-chip-xs' : ''}"
+  class="badge badge-outline {size === 'xs' ? 'badge-xs' : 'badge-sm'} status-chip {registerClass} {size === 'xs' ? 'status-chip-xs' : ''}"
   title={legend}
 >
   <span class="status {STATUS_CHIP_DOT_CLASS[tone]} {dotSizeClass}" aria-hidden="true"></span>
@@ -98,10 +118,38 @@ the office's own three-word vocabulary never needs).
     gap: 0.375rem;
     min-width: 5rem;
     max-width: 10rem;
-    /* Demoted from badge-outline's full-strength `border-color: currentColor` (reads as a
-       button, not a status marker): a hairline at 35% of the tone color survives adversarial
-       zebra-stripe testing on both themes (22% sat at the visibility floor on light zebra). */
-    border-color: color-mix(in oklab, currentColor 35%, transparent);
+  }
+
+  /* BOUNDED (Task 1 ratified, docs/internal/probes/2026-07-28-chip-registers): demotes
+     badge-outline's full-strength `border-color: currentColor` (reads as a button, not a status
+     marker) to a hairline that clears the audit's own 3:1 border-contrast floor in both themes
+     (light card 3.586, light page 3.513, dark card 4.959, dark page 5.263; measured against both
+     zebra stripes and both page grounds). `background-color: transparent` is stated explicitly
+     rather than left to badge-outline's own default, so this recipe matches cairn-admin.css's
+     shared `.cairn-chip-bounded` declaration for declaration, not merely in visible effect. */
+  .status-chip-bounded {
+    background-color: transparent;
+    border-color: color-mix(in oklab, currentColor 55%, transparent);
+  }
+
+  /* QUIET (Task 1 ratified): no border at all, and a ground tinted off the admin theme's own
+     content/base-300 tokens rather than the tone color, for a settled state that should recede
+     (Published) rather than read as an object (light card 1.804, light page 1.684, dark card
+     1.703, dark page 2.026 -- the only family visibly present against all four theme-ground
+     cells). Depends on the admin theme's `--color-base-content`/`--color-base-300`, the same
+     constraint every other admin color token carries, so it resolves only inside the admin theme
+     root; the layout rules above stay context-free by design, but a recipe that leans on the
+     theme palette cannot also promise a literal outside it without inventing a value the probe
+     never measured. */
+  .status-chip-quiet {
+    border-width: 0;
+    /* A literal fallback, before the token-derived line: `--color-base-content`/`--color-base-300`
+       are undefined outside the admin theme root, which makes the color-mix line invalid at
+       computed-value time and, per the CSS custom-properties cascade, reverts to the declaration
+       immediately before it in source order rather than to a transparent, unbounded default. This
+       is what keeps a misplaced quiet chip visibly a chip instead of visibly nothing. */
+    background-color: oklch(89% 0.011 75);
+    background-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300));
   }
 
   /* xs carries no reserved floor: a dense table column budgets its own narrow-viewport width

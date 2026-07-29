@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   checkPackageFiles,
   checkDocsPacked,
+  checkSkillPacked,
   parsePackFilePaths
 } from '../../../scripts/check-package-files.mjs';
 
@@ -84,6 +85,24 @@ describe('checkDocsPacked', () => {
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('expected failure');
     expect(result.error).toContain('docs/drafts/x.md');
+  });
+});
+
+// The packaged cairn-admin-screens skill must reach the tarball, or cairn-doctor --fix has
+// nothing to install into a consumer's .claude/skills/.
+describe('checkSkillPacked', () => {
+  it('passes when the skill core is packed', () => {
+    expect(
+      checkSkillPacked(['dist/index.js', 'skills/cairn-admin-screens/SKILL.md'])
+    ).toEqual({ ok: true });
+  });
+
+  it('fails naming the fix when the skill core is not packed', () => {
+    const result = checkSkillPacked(['dist/index.js', 'CHANGELOG.md']);
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('expected failure');
+    expect(result.error).toContain('skills/cairn-admin-screens/SKILL.md');
+    expect(result.error).toContain('files');
   });
 });
 

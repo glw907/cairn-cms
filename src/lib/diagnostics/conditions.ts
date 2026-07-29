@@ -185,6 +185,13 @@ export const REGISTRY: Record<string, CairnCondition> = {
 			'Mount the shared /admin/+layout that renders CairnAdminShell and calls createCairnAdmin(runtime).shellLoad, and the /admin/[...path] catch-all that renders CairnAdmin.',
 		docsAnchor: 'cloudflare-readiness.md#wire-the-admin-mount',
 	},
+	'skill.admin-screens-stale': {
+		id: 'skill.admin-screens-stale',
+		severity: 'warning',
+		title: 'admin-screens skill is missing or stale',
+		why: 'The packaged cairn-admin-screens skill teaches an agent the register rules, the annotated exemplars, and the done-gate for building admin screens. When the consumer copy under .claude/skills/cairn-admin-screens/ is absent, or its content no longer hashes the same as the installed package, an agent loading it works from a missing or stale standard instead of the current one.',
+		remediation: 'Run `npx cairn-doctor --fix` to install or refresh the skill from the installed package.',
+	},
 	'admin.login-probe-failed': {
 		id: 'admin.login-probe-failed',
 		severity: 'blocker',

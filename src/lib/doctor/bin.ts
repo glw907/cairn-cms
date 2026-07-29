@@ -9,6 +9,7 @@ import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { liveProbeCheck } from './check-probe.js';
 import { liveSendCheck } from './check-send.js';
+import { installSkill, SKILL_INSTALL_DIR } from './check-skill.js';
 import { readWranglerConfig } from './wrangler-config.js';
 import {
   contextFromEnv,
@@ -30,6 +31,14 @@ async function main(): Promise<void> {
   }
 
   const cwd = process.cwd();
+
+  // --fix installs before the checks run, so the skill.admin-screens check reads fresh in the
+  // same report rather than needing a second invocation.
+  if (args.fix) {
+    const count = await installSkill(resolve(cwd, SKILL_INSTALL_DIR));
+    console.log(`cairn-doctor: installed ${count} admin-screens skill file(s) into ${SKILL_INSTALL_DIR}`);
+  }
+
   const readFileUnderCwd = async (relPath: string): Promise<string | null> => {
     try {
       return await readFile(resolve(cwd, relPath), 'utf8');

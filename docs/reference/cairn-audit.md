@@ -12,6 +12,11 @@ npx cairn-audit norms <selector-or-role> # look up a measured norm
 The static audit reads the working directory. The `norms` subcommand reads only the manifest inside
 the installed package, so it needs no config, no built stylesheet, and no browser.
 
+A build agent points at these mechanical checks rather than holding their formulas in working
+memory. The packaged `cairn-admin-screens` skill names them by rule id and defers to the audit for
+the details. [`cairn-doctor --fix`](./doctor.md#the---fix-skill-install) installs and
+freshness-checks the skill in a consumer repo.
+
 ## Tiers and exit codes
 
 Every finding carries a tier. An error-tier finding gates: it exits the command nonzero, and only a

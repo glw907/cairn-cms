@@ -42,6 +42,14 @@ describe('parseArgs', () => {
     expect(parseArgs(['--probe', '--from', 'a@b.c'])).toEqual({ probe: true, from: 'a@b.c' });
   });
 
+  it('parses --fix as a bare boolean', () => {
+    expect(parseArgs(['--fix'])).toEqual({ fix: true });
+  });
+
+  it('parses --fix alongside other flags', () => {
+    expect(parseArgs(['--fix', '--from', 'a@b.c'])).toEqual({ fix: true, from: 'a@b.c' });
+  });
+
   it('rejects a flag with a missing value, naming the flag and printing usage', () => {
     expect(() => parseArgs(['--from'])).toThrowError(/--from/);
     expect(() => parseArgs(['--from'])).toThrowError(/Usage: cairn-doctor/);
@@ -118,7 +126,7 @@ describe('contextFromEnv', () => {
 });
 
 describe('defaultChecks', () => {
-  it('returns the seventeen checks in registry order', () => {
+  it('returns the eighteen checks in registry order', () => {
     expect(defaultChecks().map((c) => c.id)).toEqual([
       'config.bindings',
       'config.media-bucket',
@@ -128,6 +136,7 @@ describe('defaultChecks', () => {
       'config.public-origin',
       'config.tidy-key',
       'admin.mount-shape',
+      'skill.admin-screens',
       'config.dependency-floors',
       'email.sender-onboarded',
       'edge.https-forced',
@@ -151,7 +160,7 @@ describe('defaultChecks', () => {
   it('returns a fresh array, so the bin appending live-send mutates nothing shared', () => {
     const first = defaultChecks();
     first.push({ id: 'x', conditionId: 'x', title: 'x', run: async () => ({ status: 'pass', detail: '' }) });
-    expect(defaultChecks()).toHaveLength(17);
+    expect(defaultChecks()).toHaveLength(18);
   });
 });
 

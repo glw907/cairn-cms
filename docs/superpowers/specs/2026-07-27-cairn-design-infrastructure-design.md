@@ -495,3 +495,59 @@ rulings; the visual baselines regenerate once at normalization end and the regen
 passes an eyes-on read." After normalization, cairn's own tree must pass the audit's
 error tier with no suppressions beyond the ratified named exceptions above, each carried as
 a counted, reasoned suppression directive at its call site.
+
+### 2026-07-28: the Pass 3 rulings (corpus C evidence)
+
+Ratified at the Pass 3 brainstorm against the authenticated-admin corpus (calibration doc
+section 12, which governs where earlier sections disagree). Three design rulings and two
+scope decisions.
+
+1. **The chip recipe is two registers.** Neither current recipe clears the audit's own 3:1
+   boundary bar in both themes: `badge-ghost` melts in light while reading bounded
+   (1.20–1.43) in dark, and the sanctioned `badge-outline` recipe reads 2.1–2.8. The failure
+   mode across the evidence is a chip that half-claims a boundary, and ASC's twelve
+   deliberate ghost uses show real demand for a quiet register rather than a defect to lint
+   away. StatusChip therefore gains two registers: **bounded** (re-tuned to clear 3:1 in
+   both themes, for chips that must read as objects) and **quiet** (a token-derived tinted
+   ground that reads softly but visibly in both themes and claims no border at all).
+   `badge-ghost` retires from cairn's tree, EditPage's pinned unlayered CSS rule and the
+   shell pill's raw `border-base-300` go with it, and `stock-default-hazards`' guidance
+   points a consumer hitting the ghost finding at the quiet register. The standard doc's
+   chip-passivity register names when each applies. This amends section 5's primitives list
+   and closes the static error that made `cairn-audit` exit 1 on cairn's own tree.
+2. **`screen-anatomy`'s affirmative half lives in the capture layer, permanently.** "The
+   primary action sits in the header slot" is mechanically unfalsifiable without knowing
+   whether a screen has a primary action, and config-declaring one would put per-screen
+   ceremony on every consumer to feed a single check. The rule keeps only its negative
+   half. The affirmative statement lands in Pass 3's own deliverables: the standard doc's
+   anatomy section, the annotated exemplars, and the grader prompt's checklist. This is
+   section 3's doctrine applied: composition rides exemplars plus grader, never lint alone.
+   The fifth ruling is thereby closed.
+3. **`chip-ground-collision` demotes to advisory until repaired.** It produced 24 false
+   errors of 40 on the first consumer admin it measured (the luminance-only formula cannot
+   see hue), so as coded it cannot serve as a consumer gate. The demotion is a tier change
+   only; the chroma-aware repair files in ROADMAP behind its own adversarial pass and
+   re-promotes on re-measured evidence. Sequencing also argues for this order: ruling 1
+   moves the rule's domain, so repairing before the recipe settles would fit the formula
+   twice. After the demotion the error tier stands at 0% measured false positives across
+   all three corpora.
+
+**Scope decision: rule repairs stay out of Pass 3, with a named slice in.** In scope: the
+ruling 1 recipe work, the ruling 3 demotion, the post-hydration page-identity guard (the
+harness silently measured a hydrated 404; a trust fix, not a rule repair), and clearing
+cairn's own remaining rendered error-tier findings (ConceptList's sort targets,
+ListToolbar's small-viewport overflow), so the release ships an engine that passes its own
+error gate. Out, filed in ROADMAP behind a later adversarial pass: every rule-formula
+repair (the two `norms-bands` bugs, `screen-anatomy`'s computed-style card detection, the
+`border-contrast` stock-hairline retune, the chroma formula, `weight-budget`'s
+control-weight limitation), the stock-hairline mass, and the ASC edit-desk hydration
+diagnosis (an ASC-side session).
+
+**Scope decision: the front-page copy is a voice sitting, not a plan task.** The plan
+drafts the rationale doc and README positioning in execution under the docs register. The
+cairn.pub front-page copy is authored in a short dedicated voice sitting once the rationale
+doc exists, since the front page distills the rationale and writing it first would invert
+the derivation; a closing task applies the ratified copy. The plan also drafts the upgrade
+guide's `type-scale` rename recipe (265 of ASC's 298 static findings are a pure mechanical
+rename blocked on the grammar release), since that entry is load-bearing for the audit's
+consumer story the moment the release ships.

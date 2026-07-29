@@ -22,6 +22,10 @@ Cairn is deliberately small. It manages markdown content and the admin where edi
 
 The stack is fixed: SvelteKit, Cloudflare, GitHub, no abstraction layers over any of them. [Why cairn](./docs/explanation/why-cairn.md) explains the rationale and the limits of my choices.
 
+## An enforced design language
+
+The admin design language is written down, and cairn checks it. The admin's type scale and spacing are tokens with named roles. Each toolkit component carries measured norms, generated into a manifest you can query. A packaged audit, `npx cairn-audit`, checks your markup and your rendered screens in both themes against the same rules cairn runs over its own admin. And the standard itself ships in the package as a skill an AI coding agent can load, with annotated exemplar screens and a derivation ladder for components the toolkit doesn't cover. An agent building your next screen works from the written language instead of guessing from rendered ones. You still make the design judgments. The tokens, the norms, and the audit just stop you from having to rediscover what cairn already decided. [Why the design language is enforced](./docs/explanation/enforced-design.md) gives the reasoning and the limits.
+
 ## Waymark and Topo
 
 Cairn ships with a starter template called Waymark: a complete, working site with the component library wired in, built in the DaisyUI and Tailwind idiom and meant to be restyled or replaced. The unmodified template runs live at [cairn.pub](https://cairn.pub), and a scaffolded site begins as exactly that site. For many basic sites, that's the finish line. A site that grows past a basic CMS keeps building on the same template instead of starting over. The live cairn.pub demo is neutral Waymark wearing the cairn theme, its opt-in identity layer. It is one worked example of the re-skin, covered in [Make Waymark your own](./docs/guides/make-waymark-your-own.md).

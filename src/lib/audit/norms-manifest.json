@@ -362,7 +362,8 @@
       "band": {
         "kind": "relationship",
         "expressions": [
-          "var(--btn-fg)"
+          "var(--btn-fg)",
+          "var(--btn-rest-fg,var(--btn-color,var(--color-base-content)))"
         ]
       },
       "observations": 11,
@@ -1122,12 +1123,15 @@
       "band": {
         "kind": "relationship",
         "expressions": [
+          "color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))",
           "var(--badge-bg)"
         ]
       },
       "observations": 14,
       "provenance": "observed",
-      "flags": []
+      "flags": [
+        "literal-dropped"
+      ]
     },
     {
       "role": "status-chip",
@@ -1179,9 +1183,10 @@
         "kind": "length",
         "unit": "px",
         "values": [
+          0,
           1
         ],
-        "min": 1,
+        "min": 0,
         "max": 1
       },
       "observations": 14,

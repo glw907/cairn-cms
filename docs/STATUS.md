@@ -14,13 +14,45 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-29: Pass 3 execution complete, pass-end ritual running now)
+## Immediate next action (2026-07-29: 0.91.0 PUBLISHED; next is the voice sitting)
 
-**Pass 3 (capture) execution is complete on worktree `design-infrastructure-pass-3`, pending the
-pass-end ritual (running now).** The plan, with every step, is
+**The design-infrastructure build is COMPLETE and RELEASED.** Pass 3 merged to `main`
+(`8fa01eba`), the pass-end ritual ran in full (code-simplifier, the two-reviewer fan-out whose
+triage batch landed as `08ae3a0a`, the full gate battery, the post-mortem appended to the plan),
+`main` is pushed, and **`0.91.0` is on the registry as `latest`** (OIDC publish green; the
+release is `v0.91.0` on GitHub). The `norms.yml` freshness check ran green on CI for the first
+time, after correctly catching a stale manifest the triage batch caused; the regenerated
+`admin-visual` baselines landed via CI dispatch and passed the orchestrator's eyes-on read
+(quiet Published chips, edit-page pill, vocabulary actions, media checkbox plates, both themes).
+
+**NEXT: the cairn.pub front-page voice sitting** (Fable sitting). **Resume prompt**, from
+`~/Projects/cairn-cms`: "Brainstorm the cairn.pub front-page copy with me per
+superpowers:brainstorming. This is the voice sitting Pass 3 deliberately carved out: the sixth
+principle is ratified (the design language is enforced; the payoff is a developer less burdened,
+never freed) and its substance lives in `docs/explanation/enforced-design.md` and the README's
+'An enforced design language' section. The front page distills those in the site's own personal
+voice; the `cairn-pub-front-page-voice` memory governs (personal voice over neutral definitional
+intro, no pitch, brainstorm the copy with Geoff rather than drafting solo). The skills claim is
+publishable: 0.91.0 ships `skills/`. Scope is the front-page treatment only; the principle-pages
+pass (T1a through T1f) stays a separate queued pass. Ratified copy lands through the cairn.pub
+repo's own deploy as the closing step."
+
+**The ASC Assets trial is unblocked and briefed.** The trial brief, with the pre-trial upgrade
+chores, the pre-registered controls, the pinned-grader measurement recipe, and the edit-desk
+hydration defect as separate work, is committed in the ASC repo:
+`aksailingclub-org/docs/plans/2026-07-29-cairn-design-trial-assets.md`. It runs in ASC's own
+sessions against the published `0.91.0`; its classified verdict returns here as the initiative
+post-mortem. The principle-pages pass can ride in parallel (docs-only, unblocked now that
+`skills/` ships); after the trial, the rule-repair pass (armed with the trial's ratchet evidence,
+the sheet-parser fix already landed in-pass, the stock-hairline retune as the border-contrast
+promotion path); then Topo. Pre-release DX calls Geoff has not yet made, filed in ROADMAP: the
+`cairn-doctor --fix` flag semantics and the type-scale rename codemod.
+
+The pass record below is superseded by the plan's post-mortem where they differ.
+
+**Pass 3 (capture) execution record.** The plan, with every step and the post-mortem, is
 `docs/superpowers/plans/2026-07-28-design-infrastructure-pass-3-capture.md`; spec:
-`docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`. All fourteen tasks
-landed on the worktree (not yet merged to `main`).
+`docs/superpowers/specs/2026-07-27-cairn-design-infrastructure-design.md`.
 
 **What Pass 3 shipped.** The Task 1 probe ratified two `StatusChip` chip registers, measured
 against both themes and both grounds (`docs/internal/probes/2026-07-28-chip-registers/`); Task 2

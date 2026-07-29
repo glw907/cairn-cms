@@ -446,16 +446,16 @@ Dispatch with `model: opus` (band extraction and provenance logic are novel).
   'ratified' | 'observed', flags }`; palette-dependent norms stored as relationships
   (role, mix formula, floor), never resolved Warm Stone values.
 
-- [ ] **Step 1:** Extraction: control heights by role, padding-to-font-size ratios,
+- [x] **Step 1:** Extraction: control heights by role, padding-to-font-size ratios,
   border treatment vocabulary, corner radii, icon and chip metrics, computed styles per
   semantic role.
-- [ ] **Step 2:** The three disciplines as tests: an entry matching an OPEN design
+- [x] **Step 2:** The three disciplines as tests: an entry matching an OPEN design
   question (the `--cairn-card-border` hairline, still on Geoff's queue) is excluded or
   flagged; a band under the minimum observation count is flagged single-observation; no
   resolved palette literal appears in a palette-dependent entry.
-- [ ] **Step 3:** Freshness: the CI/publish job fails if the committed/emitted manifest
+- [x] **Step 3:** Freshness: the CI/publish job fails if the committed/emitted manifest
   does not match a fresh generation; a cut cannot ship stale.
-- [ ] **Step 4:** Full gate; reference page for the norms query; commit.
+- [x] **Step 4:** Full gate; reference page for the norms query; commit.
 
 ## Phase 5: rendered mode and calibration
 
@@ -620,14 +620,24 @@ inventing a heuristic.
 
 Main-loop orchestrated (it is measurement, not build).
 
-- [ ] **Step 1:** Full audit (static + rendered, both themes) against cairn's showcase
+- [x] **Step 1:** Full audit (static + rendered, both themes) against cairn's showcase
   admin routes; record per-rule finding counts and classify each advisory finding true
   positive / false positive by eye.
-- [ ] **Step 2:** Same against ASC's screens: reach dev/staging read-only via the Access
+- [x] **Step 2:** Same against ASC's screens: reach dev/staging read-only via the Access
   service token (`ASC_ACCESS_CLIENT_ID`/`SECRET` in `~/.local/secrets`, CF-Access-Client
   headers; process in the `asc-cloudflare-access` memory). No ASC code changes; findings
   are data.
-- [ ] **Step 3:** Write `docs/internal/2026-07-design-infrastructure-audit-calibration.md`:
+
+  **The stated method does not work, and the run went local instead (Geoff's call).** The
+  Access token reaches dev/staging, but the `asc-staging` worker that serves both binds no
+  `AUTH_DB` at all (only `DB`, `ASSETS`, and an R2 bucket), so cairn's guard bounces every
+  `/admin` route to `/admin/login` with nothing to authenticate against. The session tables
+  live in `cairn-asc-auth`, bound only by the production `asc-site` worker, and auditing
+  production admin is not read-only: the rendered rules click to capture an open-menu state.
+  Corpus B is therefore `~/Projects/asc-site` run locally on `vite dev`, and ASC ships no
+  dev-auth backend by deliberate design, so its authenticated admin stayed out of reach. The
+  coverage limit is stated in the calibration doc rather than buried.
+- [x] **Step 3:** Write `docs/internal/2026-07-design-infrastructure-audit-calibration.md`:
   per-rule FP rates on both corpora, the promotion bar restated (spec 6.1), and each
   compositional rule's verdict (stays advisory / promotion candidate with evidence).
   Commit.
@@ -636,17 +646,17 @@ Main-loop orchestrated (it is measurement, not build).
 
 ### Task 18: Docs, changelog, ledger, and the ritual
 
-- [ ] Reference page `docs/reference/cairn-audit.md` (both modes, the config file, the
+- [x] Reference page `docs/reference/cairn-audit.md` (both modes, the config file, the
   suppression idiom with its counting contract, tiers, the norms query, the exception
   list); `check:reference` and `check:package` green.
-- [ ] CHANGELOG under `## Unreleased`: the audit bin, the seven-role scale with ruled
+- [x] CHANGELOG under `## Unreleased`: the audit bin, the seven-role scale with ruled
   leading, the normalization (with a `Consumers must:` line ONLY if a consumer-visible
   contract changed; the admin's internal appearance is not one), the graduated gates, the
   manifest. Confirm the window carries the `<!-- release-size: minor -->` marker once.
-- [ ] ROADMAP: mark shipped items, file anything Pass 2 surfaced into tiers; ledger and
+- [x] ROADMAP: mark shipped items, file anything Pass 2 surfaced into tiers; ledger and
   STATUS updated (STATUS points at Pass 3 planning as the next action); friction log
   entries for any docs-surfaced design friction.
-- [ ] `code-simplifier` has run before each task's commit (standing rule); pass-end
+- [x] `code-simplifier` has run before each task's commit (standing rule); pass-end
   reviewer fan-out per `cairn-pass` (svelte-reviewer, cloudflare-workers-reviewer,
   daisyui-a11y-reviewer at minimum; web-auth-security-reviewer only if auth-adjacent
   files moved); post-mortem appended here; merge per `cairn-pass` ritual; no publish.

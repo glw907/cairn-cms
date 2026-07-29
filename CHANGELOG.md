@@ -195,6 +195,11 @@ changed.
 
 ### Fixed
 
+- The Media Library no longer 500s when a stored asset's alt text is `null` or missing. A
+  committed or branch `media.json` row is trusted wholesale on read, so a hand-edited or
+  older-schema manifest could cross the trust boundary with a non-string `alt`; `mediaLibraryEntry`,
+  the one place `MediaLibraryEntry` is constructed, now normalizes it to `''`, the library's
+  existing needs-alt signal.
 - `PageHeader` (`@glw907/cairn-cms/admin-toolkit`) no longer leaks its default `<h1>`/`<p>` margins
   past its own `gap-0.5` heading-stack intent. `OfficeList`, the component `PageHeader`'s own doc
   calls itself "the shape, generalized", carried this UA-margin fix already; `PageHeader` had not

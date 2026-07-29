@@ -134,10 +134,11 @@ import { StatusChip, Pagination, AdminTable, ListToolbar, PageHeader, EmptyState
 Stability tier: Extension API.
 
 ```ts
-let { tone, label, size = 'sm', legend }: {
+let { tone, label, size = 'sm', register = 'bounded', legend }: {
   tone: StatusChipTone;
   label: string;
   size?: StatusChipSize;
+  register?: StatusChipRegister;
   legend?: string;
 };
 ```
@@ -150,7 +151,10 @@ domain knowledge baked in. `size` defaults `'sm'`, matching AdminTable's own den
 `sm` keeps a `5rem` minimum width, comfortable next to a longer generic label; `xs` carries no
 minimum of its own, so a dense table column (a publish-state cell, an alt/usage cell) budgets the
 chip's width against its own short vocabulary rather than a floor sized for a longer label.
-`legend` carries optional explanatory text for a tone a label alone can't fully carry, for example
+`register` picks which of the two ratified chip recipes the badge renders in: `'bounded'` (the
+default) demotes the outline to a hairline border that still reads as a discrete object, and
+`'quiet'` drops the border for a token-tinted ground that recedes rather than competes, for a
+settled state such as Published. `legend` carries optional explanatory text for a tone a label alone can't fully carry, for example
 "full member benefits continue during the grace window." It surfaces as a native tooltip and as a
 visually hidden `sr-only` span that reads straight after the visible label, so the chip's
 accessible name reads `"<label>: <legend>"` from plain text instead of an `aria-label` on the
@@ -585,6 +589,7 @@ compiled from cairn's own admin usage.
 | `FormatTimestampOptions` | Extension API | `interface FormatTimestampOptions { timeZone?: string; locale?: string }` | `formatTimestamp`'s options: the IANA time zone and BCP 47 locale tag. |
 | `StatusChipTone` | Extension API | `type StatusChipTone = 'neutral' \| 'info' \| 'success' \| 'warning' \| 'danger'` | `StatusChip`'s full semantic tone vocabulary. `danger` reads as daisyUI's `error` semantic under the hood. |
 | `StatusChipSize` | Extension API | `type StatusChipSize = 'xs' \| 'sm'` | `StatusChip`'s two named sizes, matching AdminTable's own density tier names. |
+| `StatusChipRegister` | Extension API | `type StatusChipRegister = 'bounded' \| 'quiet'` | `StatusChip`'s two ratified visual registers: `'bounded'`, a demoted-hairline border for a chip that must read as a discrete object, and `'quiet'`, a token-tinted ground with no border for a settled state that should recede. |
 | `STATUS_CHIP_DOT_CLASS` | Extension API | `const STATUS_CHIP_DOT_CLASS: Record<StatusChipTone, string>` | The daisyUI `status-<tone>` suffix for each public tone, exported from `StatusChip`'s module context. |
 | `PageWindowItem` | Extension API | `type PageWindowItem = number \| 'ellipsis'` | One entry in `Pagination`'s windowed page list: a real page number, or a gap marker between two runs. |
 | `ItemRange` | Extension API | `interface ItemRange { first: number; last: number; total: number }` | The inclusive item range a page covers (`computeItemRange`'s return shape), plus the total it is drawn from. |

@@ -771,7 +771,7 @@ discriminant, not the fields, gates the chrome).
             </span>
             <!-- cairn-audit-disable-next-line type-scale -- the K4 keming fix raised the wordmark off text-xl because the rn pair merged and "Cairn" read "Caim"; the recipe is documented in docs/internal/admin-design-system.md. -->
             <span class="text-[1.375rem] font-semibold font-[family-name:var(--font-display)]">Cairn</span>
-            <span class="cairn-chip-quiet rounded-md px-1.5 py-px type-chip font-semibold uppercase tracking-[0.12em] text-muted">CMS</span>
+            <span class="cairn-chip-quiet rounded-md px-1.5 py-px type-chip font-semibold uppercase tracking-[0.12em]">CMS</span>
           </a>
         </div>
 

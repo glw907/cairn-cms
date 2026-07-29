@@ -14,17 +14,32 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-28: Pass 2 is closed; Pass 3 planning is next)
+## Immediate next action (2026-07-28: close the ASC admin corpus gap, THEN plan Pass 3)
+
+**NEXT, in a fresh session: `docs/superpowers/plans/2026-07-28-asc-admin-corpus-calibration.md`.**
+One measurement task, main-loop orchestrated, on a worktree off `main` (`asc-admin-corpus`).
+
+**Resume prompt**, from `~/Projects/cairn-cms`: "Execute the ASC admin corpus calibration
+(`docs/superpowers/plans/2026-07-28-asc-admin-corpus-calibration.md`), per cairn-pass."
+
+Why it jumped the queue: Pass 2's promotion verdict (no compositional rule is promotable) rests on a
+corpus that never reached ASC's authenticated admin, which is the strongest evidence available, and
+**the recorded reason for that gap is wrong.** The calibration ran ASC under `vite dev`, which loads
+no Cloudflare bindings, saw no dev-backend hook, and concluded the admin was structurally
+unreachable. It is not: ASC's `wrangler.toml` declares `AUTH_DB = cairn-asc-auth`, and its own
+`src/hooks.server.ts` (lines 2 to 5) names the working path, seeding a local D1 session row per
+`docs/internal/admin-smoke-test.md`. The plan carries the verified recipe and the constraints. Four
+records currently state the wrong reason and the plan's Step 6 corrects them.
+
+**THEN plan Pass 3 (capture).** Then ONE release at the initiative boundary (spec section 10), then
+the ASC Assets trial. The principle-pages pass queues behind the initiative. Pass 3 also owes the
+`skills/` directory the sixth design principle's page depends on (below).
 
 **Design-infrastructure Pass 2 (enforcement) is COMPLETE and merged to `main` at `446c33d7`.**
 All eighteen tasks landed. The plan, with every step ticked and the post-mortem appended, is
 `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. **Nothing is
 published**; the window holds under `## Unreleased` with its `<!-- release-size: minor -->` marker.
-`main` is NOT pushed.
-
-**Next: plan Pass 3 (capture).** Then ONE release at the initiative boundary (spec section 10),
-then the ASC Assets trial. The principle-pages pass queues behind the initiative. Pass 3 also owes
-the `skills/` directory the sixth design principle's page depends on (below).
+`main` is NOT pushed (41 commits).
 
 **What Pass 2 shipped.** `cairn-audit` is a packaged bin (`"cairn-audit": "./dist/audit/bin.js"`)
 with nine static rules and eleven rendered ones, a counted suppression idiom, the four graduated

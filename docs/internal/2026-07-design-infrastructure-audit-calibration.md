@@ -1,5 +1,19 @@
 # cairn-audit calibration, the promotion evidence base (design infrastructure Pass 2, Task 17)
 
+> **INTERIM CAVEAT, added 2026-07-28, before acting on anything below.** This calibration never
+> measured ASC's authenticated admin, and that is the one corpus the promotion question most needed:
+> the only living extended cairn interface, cairn's own components underneath and roughly 31
+> custom admin routes on top, and the same interface whose Members diagnosis produced this
+> initiative. The verdicts below therefore rest on cairn's own showcase plus a consumer's public
+> marketing pages and login screen. Treat them as provisional.
+>
+> The reason recorded in section 7, that the admin was structurally unreachable, is also wrong. ASC's
+> `wrangler.toml` declares `AUTH_DB = cairn-asc-auth` and its `src/hooks.server.ts` names the working
+> path (seed a local D1 session row per `docs/internal/admin-smoke-test.md`); the run used `vite dev`,
+> which loads no bindings, and stopped there. The corpus is being closed under
+> `docs/superpowers/plans/2026-07-28-asc-admin-corpus-calibration.md`, which rewrites this document's
+> corpus B material and re-examines all five verdicts against real evidence.
+
 **What this is.** The measured evidence that decides whether any of `cairn-audit`'s five compositional
 rendered rules may leave the advisory tier. Two corpora were audited and every finding classified true
 positive or false positive by eye against the live element. The verdicts are in section 5; the numbers

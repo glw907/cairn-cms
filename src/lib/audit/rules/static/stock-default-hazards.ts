@@ -9,9 +9,13 @@ import type { ClassToken, ParsedComponent, SourceNode } from '../../markup.js';
 import type { Finding, StaticRule } from '../../types.js';
 
 const BADGE_GHOST_MESSAGE =
-  'class "badge-ghost" is the stock daisyUI ghost badge; cairn\'s own recipe is badge-outline, ' +
-  'since badge-ghost hardcodes a background/border that can match a row or card color and melt ' +
-  'into it (docs/reference/admin-toolkit.md, StatusChip\'s own tone rationale)';
+  'class "badge-ghost" is the stock daisyUI ghost badge, retired from cairn\'s own tree: it ' +
+  'hardcodes a background/border that can match a row or card color and melt into it, and neither ' +
+  'it nor the un-tuned badge-outline clears the audit\'s own 3:1 border-contrast floor. cairn\'s ' +
+  'own recipe is the two ratified chip registers instead -- bounded (StatusChip\'s default, or the ' +
+  'shared cairn-chip-bounded class) for a chip that must read as an object, and quiet (StatusChip\'s ' +
+  '`register="quiet"`, or the shared cairn-chip-quiet class) as the sanctioned put-away recipe for a ' +
+  'settled state such as Published (docs/reference/admin-toolkit.md, StatusChip\'s tone rationale)';
 
 const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +

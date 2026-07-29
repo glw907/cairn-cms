@@ -1135,7 +1135,7 @@
       "band": {
         "kind": "relationship",
         "expressions": [
-          "color-mix(currentcolor 35%, transparent)",
+          "color-mix(currentcolor 55%, transparent)",
           "currentcolor"
         ]
       },

@@ -891,7 +891,7 @@ describe('EditPage', () => {
 
   it('shows the Published badge when the live site matches', async () => {
     const screen = render(EditPage, postProps());
-    const badge = screen.container.querySelector('[data-testid="cairn-band"] .badge-ghost');
+    const badge = screen.container.querySelector('[data-testid="cairn-band"] .cairn-chip-quiet');
     expect(badge?.textContent?.trim()).toBe('Published');
   });
 
@@ -1609,7 +1609,7 @@ describe('EditPage', () => {
     );
     const header = screen.container.querySelector('[data-testid="cairn-band"]')!;
     expect(header.querySelector('.badge-neutral')?.textContent?.trim()).toBe('Hidden');
-    expect(header.querySelector('.badge-ghost')?.textContent?.trim()).toBe('Published');
+    expect(header.querySelector('.cairn-chip-quiet')?.textContent?.trim()).toBe('Published');
   });
 
   it('hosts the save-state indicator inside the header', async () => {

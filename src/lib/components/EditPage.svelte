@@ -983,10 +983,13 @@ persistent "?" carries Markdown help, design-arc D2).
     if (data.pending) return data.published ? 'Edited' : 'New';
     return data.published ? 'Published' : 'New';
   });
+  // Edited and New are attention states and stay on the bounded-shaped daisyUI tone fills;
+  // Published is a settled, put-away state and takes the quiet chip register instead of the
+  // retired badge-ghost (design infrastructure Pass 3, corpus C).
   const statusBadge = $derived.by(() => {
     if (status === 'Edited') return 'badge-warning';
     if (status === 'New') return 'badge-info';
-    return 'badge-ghost';
+    return 'cairn-chip-quiet';
   });
 
   // The below-sm compact band (design-arc C1) has room for exactly one status pill, never the

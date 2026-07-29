@@ -150,7 +150,7 @@ describe('EditPage Publish visibility', () => {
     const screen = render(EditPage, postProps({ pending: false, published: true }));
     const badge = screen.container.querySelector('.badge.badge-sm.font-medium');
     expect(badge?.textContent?.trim()).toBe('Published');
-    expect(badge?.classList.contains('badge-ghost')).toBe(true);
+    expect(badge?.classList.contains('cairn-chip-quiet')).toBe(true);
   });
 
   it('reads the status badge as Edited for a pending branch over a published copy', async () => {

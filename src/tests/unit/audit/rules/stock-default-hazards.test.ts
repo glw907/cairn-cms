@@ -1,9 +1,13 @@
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { dirname, relative, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { resolveConfig } from '../../../../lib/audit/config.js';
 import { parseComponent } from '../../../../lib/audit/markup.js';
 import { parseSheet } from '../../../../lib/audit/sheet.js';
 import { applySuppressions } from '../../../../lib/audit/suppress.js';
 import { stockDefaultHazards } from '../../../../lib/audit/rules/static/stock-default-hazards.js';
+import { walk } from '../../../../../scripts/walk-files.mjs';
 import type { ParsedComponent } from '../../../../lib/audit/markup.js';
 
 // The rule reads only class tokens and node attributes; it never resolves through the sheet.
@@ -172,5 +176,34 @@ describe('stock-default-hazards: flat base-300 card border', () => {
     const split = applySuppressions(check(file), [file]);
     expect(split.findings).toEqual([]);
     expect(split.suppressed.map((f) => f.ruleId)).toEqual(['stock-default-hazards']);
+  });
+});
+
+// design infrastructure Pass 3, Task 2: the ghost retirement leaves cairn's own admin tree with
+// zero stock-default-hazards findings. Parses the real repo files (not a fixture), the same
+// DEFAULT_STATIC_SCOPE directories the shipped audit walks, so this is the direct proof "the
+// audit's own static run over the tree lost its one error" -- a regression here means a real class
+// token, not a description of one, reappeared in the shipped tree.
+describe('stock-default-hazards: cairn\'s own admin tree', () => {
+  const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
+  const SCAN_DIRS = ['src/routes/admin', 'src/lib/admin-toolkit', 'src/lib/admin-fields', 'src/lib/components'];
+
+  function realFiles(): ParsedComponent[] {
+    return SCAN_DIRS.flatMap((dir) => {
+      let paths: string[];
+      try {
+        paths = walk(resolve(ROOT, dir), (name) => name.endsWith('.svelte'));
+      } catch {
+        return [];
+      }
+      return paths.map((path) =>
+        parseComponent(relative(ROOT, path), readFileSync(path, 'utf8'))
+      );
+    });
+  }
+
+  it('finds no hazard across the whole tree, not only the retired badge-ghost class', () => {
+    const findings = check(...realFiles());
+    expect(findings).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { resolveConfig } from '../../../lib/audit/config.js';
-import { resolveBaseUrl, resolveRenderedFindings, runRendered } from '../../../lib/audit/rendered.js';
+import { resolveBaseUrl, resolveExtraCookies, resolveRenderedFindings, runRendered } from '../../../lib/audit/rendered.js';
 import { exitCodeFor, formatReport } from '../../../lib/audit/report.js';
 import type {
   RenderedBrowser,
@@ -255,6 +255,51 @@ describe('the Playwright-presence contract', () => {
   });
 });
 
+describe('resolveExtraCookies (the CAIRN_AUDIT_COOKIES contract)', () => {
+  it('returns no cookies for undefined', () => {
+    expect(resolveExtraCookies(undefined)).toEqual([]);
+  });
+
+  it('returns no cookies for an all-whitespace value', () => {
+    expect(resolveExtraCookies('   ')).toEqual([]);
+  });
+
+  it('parses a single cookie', () => {
+    expect(resolveExtraCookies('cairn_session=abc123')).toEqual([{ name: 'cairn_session', value: 'abc123' }]);
+  });
+
+  it('parses two cookies separated by a semicolon, tolerating surrounding spaces', () => {
+    expect(resolveExtraCookies(' cairn_session=abc123 ; cairn_csrf=def456 ')).toEqual([
+      { name: 'cairn_session', value: 'abc123' },
+      { name: 'cairn_csrf', value: 'def456' },
+    ]);
+  });
+
+  it('splits on the FIRST = only, so a value containing = survives intact', () => {
+    expect(resolveExtraCookies('cairn_session=abc=def')).toEqual([{ name: 'cairn_session', value: 'abc=def' }]);
+  });
+
+  it('accepts an empty value as legal', () => {
+    expect(resolveExtraCookies('cairn_empty=')).toEqual([{ name: 'cairn_empty', value: '' }]);
+  });
+
+  it('throws naming CAIRN_AUDIT_COOKIES and the entry when a segment carries no =', () => {
+    expect(() => resolveExtraCookies('not-a-cookie')).toThrow(/CAIRN_AUDIT_COOKIES/);
+    expect(() => resolveExtraCookies('not-a-cookie')).toThrow(/not-a-cookie/);
+  });
+
+  it('throws when the name is empty after trimming', () => {
+    expect(() => resolveExtraCookies('=onlyavalue')).toThrow(/CAIRN_AUDIT_COOKIES/);
+  });
+
+  // The run owns cairn-admin-theme per browser context (one context per theme); a caller override
+  // would silently invalidate the per-theme measurement, so this is refused rather than merged.
+  it('throws when an entry names cairn-admin-theme, the cookie the run itself owns', () => {
+    expect(() => resolveExtraCookies('cairn-admin-theme=dark')).toThrow(/cairn-admin-theme/);
+    expect(() => resolveExtraCookies('cairn_session=abc; cairn-admin-theme=dark')).toThrow(/cairn-admin-theme/);
+  });
+});
+
 describe('fail-loud shapes that need no browser at all', () => {
   it('refuses to run against an empty rule registry rather than reporting a clean pass', async () => {
     const config = configWith({ pages: ['/admin/posts'] });
@@ -279,6 +324,8 @@ function fakeBrowser(page: {
   hasMenuTrigger?: boolean;
   matchedSelectors?: Set<string>;
   unprobeableSelectors?: Set<string>;
+  /** Every `addCookies` call across every context this browser opens, in call order. */
+  addCookiesCalls?: { name: string; value: string; url: string }[][];
 }): {
   chromium: { launch: () => Promise<RenderedBrowser> };
 } {
@@ -286,6 +333,7 @@ function fakeBrowser(page: {
   const hasMenuTrigger = page.hasMenuTrigger ?? false;
   const matchedSelectors = page.matchedSelectors ?? new Set<string>();
   const unprobeableSelectors = page.unprobeableSelectors ?? new Set<string>();
+  const addCookiesCalls = page.addCookiesCalls ?? [];
 
   const fakePage = {
     async goto() {
@@ -304,7 +352,9 @@ function fakeBrowser(page: {
   } as unknown as RenderedPage;
 
   const context = {
-    async addCookies() {},
+    async addCookies(cookies: { name: string; value: string; url: string }[]) {
+      addCookiesCalls.push(cookies);
+    },
     async newPage() {
       return fakePage;
     },
@@ -399,5 +449,47 @@ describe('runRendered against a fake browser', () => {
         loadPlaywright: async () => fakeBrowser({ status: 404 }),
       })
     ).rejects.toThrow(/rendered 404/);
+  });
+
+  describe('CAIRN_AUDIT_COOKIES', () => {
+    const originalCookies = process.env.CAIRN_AUDIT_COOKIES;
+
+    afterEach(() => {
+      if (originalCookies === undefined) delete process.env.CAIRN_AUDIT_COOKIES;
+      else process.env.CAIRN_AUDIT_COOKIES = originalCookies;
+    });
+
+    it('adds every parsed cookie to each browser context alongside the theme cookie', async () => {
+      process.env.CAIRN_AUDIT_COOKIES = 'cairn_session=abc123';
+      const config = configWith({ pages: ['/admin/x'] });
+      const addCookiesCalls: { name: string; value: string; url: string }[][] = [];
+
+      await runRendered(config, [trivialRule], {
+        isReachable: async () => true,
+        loadPlaywright: async () => fakeBrowser({ addCookiesCalls }),
+      });
+
+      // One context per theme (light, dark), each call carrying the theme cookie plus the extra one.
+      expect(addCookiesCalls).toHaveLength(2);
+      for (const cookies of addCookiesCalls) {
+        expect(cookies).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({ name: 'cairn-admin-theme' }),
+            { name: 'cairn_session', value: 'abc123', url: expect.any(String) },
+          ])
+        );
+      }
+    });
+
+    it('throws before ever launching a context when CAIRN_AUDIT_COOKIES is malformed', async () => {
+      process.env.CAIRN_AUDIT_COOKIES = 'cairn-admin-theme=dark';
+      const config = configWith({ pages: ['/admin/x'] });
+      await expect(
+        runRendered(config, [trivialRule], {
+          isReachable: async () => true,
+          loadPlaywright: async () => fakeBrowser({}),
+        })
+      ).rejects.toThrow(/cairn-admin-theme/);
+    });
   });
 });

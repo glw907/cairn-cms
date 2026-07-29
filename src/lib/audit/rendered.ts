@@ -371,6 +371,44 @@ export async function resolveBaseUrl(isReachable: (url: string) => Promise<boole
   return baseUrl;
 }
 
+/**
+ * Parse `CAIRN_AUDIT_COOKIES` into the extra cookies a rendered run's browser context carries
+ * alongside the theme cookie, in Cookie-header syntax: `name=value` entries separated by `;`,
+ * each split on the first `=`, the entry trimmed before splitting. `undefined` or an
+ * all-whitespace value means none were configured and resolves to `[]`.
+ *
+ * Throws rather than skipping a malformed entry, no `=` or an empty name after trimming, naming
+ * `CAIRN_AUDIT_COOKIES` and the bad entry in the message. `loadConfig`'s stated philosophy is that
+ * a typo never degrades into a silently narrower audit; a session cookie that silently failed to
+ * parse would produce a full run of login-redirect failures blamed on the wrong cause rather than
+ * on the env var. Also throws on an entry named `cairn-admin-theme`, since `runRendered` owns that
+ * cookie per browser context, one context per theme, and a caller override would silently
+ * invalidate the per-theme measurement.
+ */
+export function resolveExtraCookies(raw: string | undefined): { name: string; value: string }[] {
+  if (raw === undefined || raw.trim() === '') return [];
+  return raw.split(';').map((rawEntry) => {
+    const entry = rawEntry.trim();
+    const eq = entry.indexOf('=');
+    if (eq === -1) {
+      throw new Error(`CAIRN_AUDIT_COOKIES: malformed entry "${entry}", expected name=value.`);
+    }
+    const name = entry.slice(0, eq).trim();
+    const value = entry.slice(eq + 1);
+    if (name === '') {
+      throw new Error(`CAIRN_AUDIT_COOKIES: malformed entry "${entry}", the cookie name is empty.`);
+    }
+    if (name === 'cairn-admin-theme') {
+      throw new Error(
+        'CAIRN_AUDIT_COOKIES: cannot set "cairn-admin-theme"; the rendered run owns that cookie per ' +
+          'browser context (one context per theme), and a caller override would silently invalidate ' +
+          'the per-theme measurement.'
+      );
+    }
+    return { name, value };
+  });
+}
+
 async function defaultLoadPlaywright(): Promise<PlaywrightModule> {
   return (await import('playwright')) as unknown as PlaywrightModule;
 }
@@ -699,6 +737,7 @@ export async function runRendered(
     );
   }
 
+  const extraCookies = resolveExtraCookies(process.env.CAIRN_AUDIT_COOKIES);
   const baseUrl = await resolveBaseUrl(deps.isReachable ?? defaultIsReachable);
   const { chromium } = await loadPlaywrightModule(deps.loadPlaywright ?? defaultLoadPlaywright);
   const states = neededStates(rules);
@@ -718,7 +757,10 @@ export async function runRendered(
       const relevantAllowlist = config.renderedAllowlist.filter((entry) => entry.page === pagePath);
       for (const theme of themes) {
         const context = await browser.newContext({ colorScheme: theme });
-        await context.addCookies([{ name: 'cairn-admin-theme', value: THEME_COOKIE_VALUE[theme], url: baseUrl }]);
+        await context.addCookies([
+          { name: 'cairn-admin-theme', value: THEME_COOKIE_VALUE[theme], url: baseUrl },
+          ...extraCookies.map((cookie) => ({ ...cookie, url: baseUrl })),
+        ]);
         try {
           for (const state of states) {
             const page = await context.newPage();

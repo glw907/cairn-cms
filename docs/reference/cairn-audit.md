@@ -138,6 +138,25 @@ The run fails rather than reporting clean on every shape of silent green: no rul
 pages configured, `BASE_URL` not answering, Playwright absent, or any configured page rendering
 outside 2xx, which also catches a page path that names no route.
 
+### Auditing an authenticated admin
+
+The admin routes rendered mode visits by default assume an unauthenticated request. Auditing a
+consumer's authenticated admin, for example against a local `wrangler dev` carrying a real session,
+needs a session cookie in the request. Set `CAIRN_AUDIT_COOKIES` for that, the run-specific
+credential belonging in the environment rather than the config file, the same reasoning `BASE_URL`
+follows:
+
+```bash
+CAIRN_AUDIT_COOKIES='cairn_session=<id>' npx cairn-audit --rendered
+```
+
+The value is Cookie-header syntax: `name=value` entries separated by a semicolon. The harness adds
+every entry it parses to each browser context alongside the theme cookie. Two things throw rather
+than degrading the run silently: an entry with no `=`, or an empty name, since a typo here should never
+produce a quietly narrower audit; and an entry named `cairn-admin-theme`, since the run owns that
+cookie itself, one per browser context, and a caller override would invalidate the per-theme
+measurement.
+
 ### The rules
 
 Eleven rules run. The first six are error tier and exit the command nonzero.

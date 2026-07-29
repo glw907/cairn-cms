@@ -181,6 +181,15 @@
   matching honesty in the other direction: an entry whose selector still matches an element while
   suppressing nothing reports as a dead entry, at the tier of the rule it names.
 
+- `cairn-audit --rendered` reads an optional `CAIRN_AUDIT_COOKIES` environment variable, Cookie-
+  header syntax (`name=value` entries separated by a semicolon), and adds every parsed cookie to
+  each browser context alongside the theme cookie. This is how a rendered run reaches a consumer's
+  authenticated admin, a session cookie against a local `wrangler dev`, since the run-specific
+  credential belongs in the environment rather than the config file, the same reasoning `BASE_URL`
+  follows. A malformed entry throws rather than the parser silently skipping it, and an entry named
+  `cairn-admin-theme` throws too, since the run owns that cookie itself. See [The `cairn-audit`
+  CLI](./docs/reference/cairn-audit.md#auditing-an-authenticated-admin).
+
 No consumer action is required for the entries above. No exported type, prop, or route contract
 changed.
 

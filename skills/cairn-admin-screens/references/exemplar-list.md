@@ -6,9 +6,9 @@ collection, with a row that expands in place for detail.
 Source: aksailingclub-org's Members screen
 (`src/routes/admin/club/members/+page.svelte`), a real production `/admin/club` route built
 entirely from `@glw907/cairn-cms/admin-toolkit` and `@glw907/cairn-cms/components`. The
-household-grouped anatomy and the filter grammar are ratified decisions
-(`docs/design-benchmark/decisions.md`, "The Members screen optimizes for lookup" and "The
-ratified filter grammar"), not this skill's own invention; what follows translates the
+household-grouped anatomy and the filter grammar are ratified decisions from that site's own
+private design record, a planning archive no cairn package ships, so this file states them on
+its own authority rather than a citation a builder could open; what follows translates the
 shipped markup into the register vocabulary a builder holds in working memory. Where the
 source predates a rule this skill now states, the annotation says so and shows the
 cairn-native call instead of a literal transcription.

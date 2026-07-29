@@ -5,11 +5,9 @@ label is, how a row spaces against its neighbors, and the one composition failur
 mechanical check in this engine catches.
 
 These are normative rules, stated as what to do, not a survey of what exists. The three-level
-register is ratified (`docs/internal/admin-design-system.md`, "Form-row/label register",
-Pass 2 Task 12, translating ASC's own two-level ruling in `decisions.md`, "Form field labels,
-two-level register"); the composition rule below is this pass's own addition, traced to a
-named defect (`docs/design-benchmark/ledger.md`, "the pre-existing `ClassForm` label column
-wraps at 1440").
+register and the composition rule below both trace to defects found in real production admin
+builds, but that tracing lives in a private planning archive no cairn package ships, so this
+page states both on its own authority rather than a citation a builder could open.
 
 ## The three label levels
 
@@ -26,9 +24,9 @@ habit or by copying the nearest existing field.
    Compose it sentence case, `font-medium`, base-content ink, no tracking, no uppercase, no
    display face: `type-body font-medium` (or `type-meta font-medium` inside an
    already-compact panel running its whole scale at the meta role). Never reuse the group
-   legend's eyebrow recipe here: the two-level ruling exists specifically because a field
-   label at the same weight as the group title above it reads as a second, redundant title,
-   not a label.
+   legend's eyebrow recipe here: a field label at the same weight as the group title above it
+   reads as a second, redundant title, not a label, which is exactly why the group legend and
+   the field label stay two distinct levels rather than one shared recipe.
 3. **Inline control-adjacent label**: a label on the same line as its control rather than
    above it, for a control the group legend already-scoped enough that a full stacked label
    would be excess (`FieldLabel`'s own recipe: `flex items-center gap-1.5 type-body`, muted
@@ -54,14 +52,21 @@ arbitrary Tailwind number (`docs/reference/admin-grammar-tokens.md`):
 
 Apply them by relationship, not by eyeballing a value that happens to render close:
 
-- A field grid's own row-to-row gap is `gap-group`. `ClassForm`'s two-column attribute grid
-  (`grid gap-x-6 gap-y-4 sm:grid-cols-2`) already resolves this way by accident: `gap-y-4`
-  (1rem) is `gap-group`, so a cairn-native rewrite writes the utility, `grid gap-group
-  sm:grid-cols-2`, rather than the literal.
-- The gap *between* two field columns in that same grid is `gap-section` (`gap-x-6`, 1.5rem):
-  a column boundary in a multi-column form reads as a section boundary, wide enough that a
-  reader never mistakes the right column's first label as continuing the left column's last
-  row.
+- A field grid's own row-to-row gap is `gap-group`'s relationship (1rem); the gap *between*
+  two field columns in that same grid is `gap-section`'s relationship (1.5rem), wide enough
+  that a reader never mistakes the right column's first label as continuing the left column's
+  last row. `ClassForm`'s two-column attribute grid (`grid gap-x-6 gap-y-4 sm:grid-cols-2`)
+  already resolves both axes to the correct values.
+  This one cannot become a cairn-native rewrite by swapping in the named utilities, though:
+  `gap-group` and `gap-section` both set the single `gap` shorthand property (`@utility
+  gap-group { gap: var(--cairn-gap-group) }`), so writing `grid gap-group sm:grid-cols-2`
+  would set BOTH axes to 1rem and silently drop the 1.5rem column gap the row above states.
+  No `gap-x-*`/`gap-y-*` variant of the role utilities is safelisted, so this two-axis
+  relationship cannot be expressed as named classes with the grammar this build currently
+  ships. Until an axis-scoped role utility exists, a two-column grid like this one keeps the
+  literal `gap-x-6 gap-y-4` values; the row and column gaps still name the `gap-group`/
+  `gap-section` relationships this table states, they just can't compile through the named
+  utilities yet.
 - A modal's own footer row (`Cancel` beside `Save`) is `gap-control`: two controls acting on
   the same submission, not two fields.
 - A block that is visually a distinct group from the fields above it (`ClassForm`'s

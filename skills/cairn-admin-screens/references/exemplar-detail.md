@@ -18,16 +18,31 @@ verb (edit, add, move, record a payment, refund). No `PageHeader`/`OfficeList`: 
 route's own header is bespoke because it carries state (a standing chip) and several verbs a
 generic header snippet doesn't have vocabulary for.
 
-## Desk routes are exempt from screen-anatomy's containment check
+## This screen renders as an office route, and screen-anatomy does flag it
 
-`screen-anatomy`'s negative half (one `<h1>`, one `.card-shell` region, no stray filled
-action) is read from the drawer class the admin shell projects at SSR, and desk routes are
-exempt by name. This screen does not use `OfficeList`/`PageHeader` or `card-shell` at all;
-that's expected here, not a gap to fix. What still applies, because it's judgment rather
-than a mechanical check the rule can scope out: **one filled action per surface.** This page
-holds several open dialogs, and each dialog is its own surface (`one-filled-action` reads
-the topmost open layer). The page underneath keeps zero fills; every dialog keeps exactly
-one (its own "Save").
+`screen-anatomy`'s desk exemption is earned by the admin shell's own concept-based route
+classification, never by a screen being conceptually a desk (`screen-anatomy.ts`'s own
+comment: "The exemption is read off the RENDER, never off the path, and that is the whole
+point"). The shell's `isDeskRoute` (`CairnAdminShell.svelte:403-406`) requires the path's
+SECOND segment to name a registered content concept; this desk lives at
+`/admin/club/members/<id>`, whose second segment is `club`, not one of aksailingclub-org's
+concepts (`posts`/`pages`/`fragments`/`bulletins`). The shell therefore renders the office
+drawer class (`lg:drawer-open`), and `screen-anatomy` reads that render and judges the page
+as an office screen, not a desk.
+
+That matters because this screen's own card markup predates `card-shell`: every card writes
+the `cardCls` literal shown below rather than the class `.card-shell`, and `screen-anatomy`
+looks for that literal class name to find the card region. Since none of this screen's cards
+carry it, the shipped screen DOES draw the rule's "this office route renders no `.card-shell`
+region inside `<main>`" advisory. That is not a false positive to allowlist; it is the same
+drift the next section's recipe already fixes: swapping `cardCls` for `card-shell card-shadow`
+both satisfies the rule and is the cairn-native call on its own terms.
+
+One check still applies regardless of how a given route classifies, because it's judgment
+rather than a mechanical check the rule can scope by route: **one filled action per surface.**
+This page holds several open dialogs, and each dialog is its own surface (`one-filled-action`
+reads the topmost open layer). The page underneath keeps zero fills; every dialog keeps
+exactly one (its own "Save").
 
 ## The header: identity, standing, and light verbs
 
@@ -76,7 +91,7 @@ const cardCls = 'rounded-box border border-[var(--cairn-card-border)] bg-base-10
 
 This literal predates `card-shell card-shadow`, the two safelisted container-role utilities
 that resolve to the identical radius, hairline border, fill, and elevation
-(`docs/internal/admin-design-system.md`, "Floating card"). A cairn-native build writes
+(`docs/reference/admin-grammar-tokens.md`, "Container roles"). A cairn-native build writes
 `class="card-shell card-shadow p-6"` instead of restating the recipe by hand. That was the
 whole point of graduating those two utilities: a repeated literal like this one is a
 drift risk a role name isn't.

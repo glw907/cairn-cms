@@ -28,6 +28,40 @@ read, or source diff informs your verdict. A coherence read grades what a visito
 would see, not the process that produced it: a green audit means vocabulary-clean,
 never design-done, and this read is the other half of that judgment.
 
+## Reading discipline
+
+Four rules bind every item below, before you apply any of them. A calibration run against
+labeled captures with known verdicts found a grader failing them by manufacturing evidence
+these rules rule out; hold to them strictly.
+
+- **The materiality bar.** Read each image at the size you were given it, the way a visitor
+  actually looks at a screen: no zooming, no inferred sub-pixel measurement. Note a FAIL
+  only for something plainly visible at that ordinary read. Never cite an invented distance
+  ("this sits 32px above that," "90px to the left") as evidence; describe what you see in
+  terms you can point to directly, which edge, which baseline, which color, and if you
+  cannot describe the difference without appealing to a measurement you did not actually
+  take, it does not clear the bar. A genuinely large, obvious gap or drift needs no ruler
+  and still fails; a small claim whose precision manufactures a distinction the image does
+  not otherwise show does not.
+- **Verify before you name it.** For any claim that two things fail to line up, share a
+  boundary, or that a rule or border is cut short, trace it across the full row, column, or
+  width in the image before including it. A claim you have not traced end to end in the
+  actual pixels does not clear the bar.
+- **One property is not a system.** A control that matches its neighbors in every visible
+  property but one, the same shape, border, color, type, and spacing, differing only in a
+  single small affordance detail such as a disclosure icon, is not the generic-scaffold
+  tell item h describes. A screen may deliberately mix two different KINDS of the same
+  control family (a quiet menu-button facet beside a content-sized native select, say), and
+  their default affordances differing in that one respect is not itself a tell. FAIL a
+  control only when its overall presentation, several properties at once, reads as a
+  different, unstyled system standing next to a styled one.
+- **Content edge cases.** Before failing an item on how one specific value wraps, breaks,
+  or spaces out, check whether the same element pattern handles an ordinary-length value
+  cleanly elsewhere in the same capture, another row, another field of the same kind. A
+  field carrying an unusually long or unbroken value that wraps awkwardly while its
+  siblings render cleanly is a content edge case in this capture's data, not a coherence
+  defect in the composition; do not FAIL the item on it alone.
+
 ## The checklist
 
 Answer every item below for every one of the six images. Note a checklist letter

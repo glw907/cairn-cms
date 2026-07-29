@@ -149,4 +149,36 @@ describe('admin css build', () => {
       expect(css, `missing blessed class ${cls}`).toContain(cls);
     }
   });
+
+  // The stock ghost badge retired from cairn's tree (design infrastructure Pass 3, corpus C) in
+  // favor of the two chip registers. Tailwind's scanner reads a class-shaped token out of comment
+  // text the same as markup, so an explanatory comment that names the retired class verbatim
+  // silently recompiles it into the shipped sheet. This is the standing guard against that: a hit
+  // means some comment somewhere quoted the literal class again.
+  it('never recompiles the retired stock ghost badge modifier', () => {
+    expect(css).not.toContain('.badge-ghost');
+  });
+
+  // ConceptList's sort-button touch-target expansion (design infrastructure Pass 3 review triage)
+  // deliberately carries no explicit before-content utility, relying instead on two other rules:
+  // every `before:`-prefixed utility itself emits `content: var(--tw-content)`, and a universal
+  // reset (this test's second assertion) sets that custom property to an empty string on every
+  // element. If a future Tailwind release drops either half, the pseudo-element stops painting and
+  // the hit-area expansion silently stops working; this fails HERE instead, naming the missing
+  // mechanism, rather than surfacing as an unexplained touch-target regression.
+  it('keeps the before: content mechanism the touch-target hit-area expansion depends on', () => {
+    // Literal string search, not a regex: the compiled selector carries a real backslash
+    // character (Tailwind's CSS escaping of the colon in a variant-prefixed class name), and a
+    // regex built from these strings would need its own double-escaping to match that backslash
+    // rather than silently swallowing it as an escape sequence.
+    for (const selector of ['.before\\:absolute:before', '.before\\:inset-x-0:before', '.before\\:-inset-y-1\\.5:before', '.before\\:-z-10:before']) {
+      const start = css.indexOf(`${selector} {`);
+      expect(start, `expected a :before rule for ${selector}`).toBeGreaterThan(-1);
+      const end = css.indexOf('}', start);
+      expect(css.slice(start, end)).toContain('content: var(--tw-content)');
+    }
+    // The universal reset that resolves --tw-content to an empty string absent any utility
+    // overriding it (e.g. a tooltip's own `--tw-content: attr(data-tip)`).
+    expect(css).toMatch(/--tw-content:\s*("");/);
+  });
 });

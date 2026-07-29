@@ -364,6 +364,24 @@ alongside the component recipes above and below it.
   ritual](./daisy-absorption-ritual.md) covers keeping that inventory honest across a daisy
   release. This doc keeps only what the toolkit does not decide for a screen: which recipe a
   screen shows, and any screen-specific tone mapping, copy, or layout rhythm.
+- **Chip registers, `bounded` and `quiet` (design infrastructure Pass 3, corpus C).** `StatusChip`
+  and every hand-built chip (`cairn-admin.css`'s shared `cairn-chip-bounded`/`cairn-chip-quiet`
+  classes, composed with `badge`) render in one of two ratified registers, replacing the stock
+  daisyUI ghost badge outright: its hardcoded background and border can match a row or card color
+  and melt into it, and neither it nor an un-tuned `badge-outline` clears the audit's own 3:1
+  border-contrast floor. `bounded` (the default) demotes `badge-outline`'s full-strength
+  inherited-color border to `color-mix(in oklab, currentColor 55%, transparent)`, a hairline that
+  clears 3:1 against both zebra stripes and both page grounds in both themes; it inherits its
+  color from the chip's own ancestor, so it can drop under the floor inside a `text-muted`
+  ancestor (verify a new call site; cairn's own five are verified safe). `quiet`
+  (`register="quiet"`) drops the border and tints the ground with
+  `color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300))` instead, for a
+  settled, put-away state (Published) that should recede rather than compete; it resolves only
+  inside the admin theme root and is unguarded against a ground at or near `base-300` itself (a
+  `.table-zebra` row-hover, say), where it can drop under the 1.5 ground-collision floor
+  (`chip-ground-collision` stays advisory, so this is documented rather than retuned). Values are
+  measured, not invented (`docs/internal/probes/2026-07-28-chip-registers`); the full contract
+  lives on [the admin-toolkit reference page](../reference/admin-toolkit.md#statuschip).
 - **Empty state:** the cairn mark plus warm, concept-named copy ("No posts yet", "Stack your first one
   and it will show up here") and the create CTA, built with the toolkit's `EmptyState` (`heading`,
   `message`, an optional `action` snippet). Not a bare line of text. When a whole concept is empty

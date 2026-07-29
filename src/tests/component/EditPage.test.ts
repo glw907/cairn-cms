@@ -3116,6 +3116,9 @@ describe('EditPage', () => {
       const pill = band.querySelector<HTMLElement>('.badge')!;
       expect(pill.querySelector('svg')).not.toBeNull();
       expect(pill.getAttribute('aria-label')).toBe('Published, hidden, unsaved changes');
+      // A bare span defaults to the generic role, which ARIA-in-HTML drops aria-label from; the
+      // pill needs a non-generic role for its accessible name to actually reach assistive tech.
+      expect(pill.getAttribute('role')).toBe('status');
     });
 
     for (const width of [320, 390]) {

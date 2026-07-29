@@ -155,6 +155,19 @@ describe('parseSheet', () => {
     expect(sheet.rules.map((rule) => rule.selector)).toEqual(['.child']);
   });
 
+  // A compiled `before:content-['']` utility escapes to `.before\:content-\[\'\'\]:before`. The
+  // backslash-escaped quotes inside that selector are not string delimiters; a scanner that reads
+  // one as an opener swallows every rule after it looking for a closing quote that never comes.
+  it('parses every rule after a selector with a backslash-escaped quote', () => {
+    const sheet = parseSheet(
+      ".a { color: red } .before\\:content-\\[\\'\\'\\]:before { content: '' } .b { color: blue } .c { color: green }"
+    );
+    expect(sheet.has('a')).toBe(true);
+    expect(sheet.has(`before:content-['']`)).toBe(true);
+    expect(sheet.has('b')).toBe(true);
+    expect(sheet.has('c')).toBe(true);
+  });
+
   it('keeps a declaration value that carries its own colons and parentheses intact', () => {
     const sheet = parseSheet(
       '.bg-tile { background: url("data:image/svg+xml;base64,AA"); color: color-mix(in oklab, red 50%, blue) }'

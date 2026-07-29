@@ -215,16 +215,17 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
   // `relative` plus the `before:` hit-area pair expand the button's EFFECTIVE tap region past its
   // own 16px-tall painted box, an outward `::before` inset (touch-targets' own sanctioned
-  // technique) rather than inflating the type-label font size to reach the 24px floor. There is
-  // deliberately no explicit before-content utility here: Tailwind's `before:` variant already
-  // emits `content: var(--tw-content)` on every `before:`-prefixed utility, and the sheet's own
-  // `@property --tw-content` declares an empty-string initial value, so the pseudo-element still
-  // paints. Writing that utility out (even in a comment) compiles to an escaped-quote selector
-  // that desyncs the audit's hand-rolled sheet parser, dropping every rule after it in the
-  // compiled sheet, so it is deliberately omitted from both the class list and this note.
+  // technique) rather than inflating the type-label font size to reach the 24px floor, and a
+  // negative z-index keeps the expanded plate from painting over the button's own text and hover
+  // color. There is deliberately no explicit before-content utility here: Tailwind's `before:`
+  // variant already emits `content: var(--tw-content)` on every `before:`-prefixed utility, and
+  // the sheet's own universal reset sets that custom property to an empty string on every
+  // element, so the pseudo-element still paints without a utility naming the content explicitly.
+  // Naming the utility here (even in a comment) would also compile it back into the built sheet,
+  // since Tailwind's scanner reads comment text the same as markup.
   const sortButton =
     `relative inline-flex items-center gap-1 ${headerLabel} hover:text-base-content ` +
-    `before:absolute before:inset-x-0 before:-inset-y-1.5`;
+    `before:absolute before:inset-x-0 before:-inset-y-1.5 before:-z-10`;
 
   // The publish-all flash. A racing second admin can publish first, leaving this redirect
   // counting zero; say nothing then.
@@ -407,7 +408,7 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                    act-on info tone, rhyming with the topbar's "Publish site (N)" pill. -->
               {#if entry.status === 'new'}<StatusChip tone="neutral" label="New" size="xs" />
               {:else if entry.status === 'edited'}<StatusChip tone="info" label="Edited" size="xs" />
-              {:else}<StatusChip tone="neutral" label="Published" size="xs" />{/if}
+              {:else}<StatusChip tone="neutral" label="Published" size="xs" register="quiet" />{/if}
             </td>
             <td class="w-12 px-2 py-2 text-right sm:px-4">
               {#if deleteRefused?.id === entry.id}

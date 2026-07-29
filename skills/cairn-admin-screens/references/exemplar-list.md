@@ -192,9 +192,9 @@ that should stay bounded.
 
 ```svelte
 <Pagination
-  {page}
+  page={pageIndex}
   pageCount={totalPages}
-  onPageChange={(p) => (page = p)}
+  onPageChange={(p) => (pageIndex = p)}
   totalItems={data.households.length}
   pageSize={PAGE_SIZE}
   itemLabel={{ one: 'household', many: 'households' }}

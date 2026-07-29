@@ -12,7 +12,7 @@ in the packaged `cairn-admin.css` while every `status-<tone>` modifier does. The
 dot carries the actual color signal instead, one consistent mechanism across all five tones
 rather than four covered by a badge fill plus a gap.
 
-`badge-outline`, not `badge-ghost`: `badge-ghost` retired from cairn's own tree (design
+`badge-outline`, not the stock ghost badge modifier: it retired from cairn's own tree (design
 infrastructure Pass 3, corpus C). It compiles to an explicit background and border color that can
 match one of AdminTable's own zebra stripe colors, so a ghost chip melts into whichever row shares
 that color, and neither it nor the un-tuned `badge-outline` clears the audit's own 3:1
@@ -78,7 +78,12 @@ the office's own three-word vocabulary never needs).
     size?: StatusChipSize;
     /** Which register the chip renders in. Defaults to `'bounded'`, the toolkit's original
      *  reading, a chip that must read as a discrete object; pass `'quiet'` for a settled state
-     *  that should recede rather than compete (e.g. Published). */
+     *  that should recede rather than compete (e.g. Published). `'bounded'`'s hairline inherits
+     *  its color from the chip's own ancestor, so it can drop under the audit's 3:1
+     *  border-contrast floor inside a muted-text ancestor (verify a new call site). `'quiet'`'s
+     *  tinted ground resolves only inside the admin theme root and is unguarded against a
+     *  base-300-derived ground (e.g. a `.table-zebra` row-hover), where it can drop under the
+     *  1.5 ground-collision floor. */
     register?: StatusChipRegister;
     /** Optional explanatory text for a tone a label alone does not fully carry (e.g. "full
      *  member benefits continue during the grace window"). Surfaces as a native tooltip and as a
@@ -119,8 +124,11 @@ the office's own three-word vocabulary never needs).
      badge-outline's full-strength `border-color: currentColor` (reads as a button, not a status
      marker) to a hairline that clears the audit's own 3:1 border-contrast floor in both themes
      (light card 3.586, light page 3.513, dark card 4.959, dark page 5.263; measured against both
-     zebra stripes and both page grounds). */
+     zebra stripes and both page grounds). `background-color: transparent` is stated explicitly
+     rather than left to badge-outline's own default, so this recipe matches cairn-admin.css's
+     shared `.cairn-chip-bounded` declaration for declaration, not merely in visible effect. */
   .status-chip-bounded {
+    background-color: transparent;
     border-color: color-mix(in oklab, currentColor 55%, transparent);
   }
 
@@ -135,6 +143,12 @@ the office's own three-word vocabulary never needs).
      never measured. */
   .status-chip-quiet {
     border-width: 0;
+    /* A literal fallback, before the token-derived line: `--color-base-content`/`--color-base-300`
+       are undefined outside the admin theme root, which makes the color-mix line invalid at
+       computed-value time and, per the CSS custom-properties cascade, reverts to the declaration
+       immediately before it in source order rather than to a transparent, unbounded default. This
+       is what keeps a misplaced quiet chip visibly a chip instead of visibly nothing. */
+    background-color: oklch(89% 0.011 75);
     background-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300));
   }
 

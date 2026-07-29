@@ -72,7 +72,9 @@ judgment about what the screen is for:
   default) for a chip that must read as an object with a real boundary, and `quiet`
   (`register="quiet"`) for a settled or put-away state that should recede rather than announce
   itself. Use quiet for the state a list mostly sits in (Published, Closed); reserve bounded for
-  a state that needs attention (Draft, Overdue, Pending).
+  a state that needs attention (Draft, Overdue, Pending). Quiet is unguarded against its own
+  ground near or at `base-300` (e.g. a `.table-zebra` row-hover): don't use it for a chip that
+  can sit on that ground.
 - **Facet quietness.** A filter control is a "facet" in `ListToolbar`'s own vocabulary (its
   `'menu'` display): quiet bordered-button chrome at rest, showing only its own name. It picks up
   its applied treatment, a primary-tinted border and background, only once a value departs the

@@ -76,6 +76,12 @@ describe('ConceptList', () => {
     expect(chip('New')?.querySelector('.status-neutral')).not.toBeNull();
     expect(chip('Published')?.querySelector('.status-neutral')).not.toBeNull();
     expect(chip('Edited')?.querySelector('.status-info')).not.toBeNull();
+    // Published is the settled, put-away state (design infrastructure Pass 3's register doctrine,
+    // already applied on EditPage's own header chip): it takes the quiet register, receding rather
+    // than competing with the row's own content.
+    expect(chip('Published')?.classList.contains('status-chip-quiet')).toBe(true);
+    expect(chip('New')?.classList.contains('status-chip-bounded')).toBe(true);
+    expect(chip('Edited')?.classList.contains('status-chip-bounded')).toBe(true);
   });
 
   it('composes the header and the toolbar on the F3 proximity scale', async () => {

@@ -96,10 +96,10 @@ export const ADMIN_CSS_SAFELIST = [
   // badge: the TagChip toolkit component's category badges (StatusChip reuses `badge` plus the
   // `status` family above for system-set state, per the survey's Polaris/Atlassian/Spectrum
   // convergence). `badge` and every color and size variant already compile from the admin's own
-  // usage; `badge-soft`, `badge-outline`, and `badge-dash` are new. `badge-ghost` is deliberately
-  // NOT safelisted: design infrastructure Pass 3 retired it from cairn's own tree in favor of the
-  // two chip registers (`cairn-chip-bounded`/`cairn-chip-quiet` in cairn-admin.css, StatusChip's
-  // own `register` prop), and safelisting a retired stock hazard would just re-invite it.
+  // usage; `badge-soft`, `badge-outline`, and `badge-dash` are new. The stock ghost badge modifier
+  // is deliberately NOT safelisted: design infrastructure Pass 3 retired it from cairn's own tree
+  // in favor of the two chip registers (`cairn-chip-bounded`/`cairn-chip-quiet` in cairn-admin.css,
+  // StatusChip's own `register` prop), and safelisting a retired stock hazard would just re-invite it.
   'badge-soft',
   'badge-outline',
   'badge-dash',

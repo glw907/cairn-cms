@@ -159,6 +159,12 @@ after upgrading `@glw907/cairn-cms`, whenever the skill's content changes upstre
 reports missing or stale. It never fails the run, since the skill is a development aid, not a
 deploy blocker.
 
+The installed skill's own reference files quote utility class names verbatim as worked examples,
+and Tailwind v4's automatic source detection scans any non-ignored file under the project,
+`.claude/` included. Exclude `.claude/` from the site's own Tailwind build (an `@source not`
+directive, or the equivalent of a `.gitignore` exclusion for the toolchain in use) so those
+examples never compile into the site's own shipped CSS.
+
 ## CI wiring
 
 The exit code makes the doctor a deploy gate. One job step covers it:

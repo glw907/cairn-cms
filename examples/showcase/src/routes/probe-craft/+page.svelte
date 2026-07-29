@@ -14,7 +14,16 @@
      `?theme=dark` switches the DaisyUI theme server-side (both are DaisyUI's own bundled themes,
      `light`/`dark`), so a screenshot needs no client script or interaction to settle: navigate to
      `/probe-craft` for light and `/probe-craft?theme=dark` for dark. The "Switch to ..." link
-     exists for a human or agent exploring the fixture directly in a browser. -->
+     exists for a human or agent exploring the fixture directly in a browser.
+
+     Three markup choices below are part of the deliberate stock "before" state, not an oversight
+     an acceptance round should "fix": `data-theme` sits on the styled wrapper div (`bg-base-200
+     p-8`) rather than a bare one, exactly the mistake `docs/internal/admin-design-system.md`
+     warns against; the search input carries no associated name or label; and the trailing
+     actions column's `<th>` is empty. A stock DaisyUI build reaches for all three by default, so
+     the fixture keeps them as-is across every round. Carrying them forward unchanged is what
+     keeps round-to-round captures comparable; changing them would silently change what the
+     acceptance test is even measuring. -->
 <script lang="ts">
   import { page } from '$app/state';
   import probeCraftCss from './probe-craft.css?url';

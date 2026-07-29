@@ -162,17 +162,36 @@ outer element; some assistive technology exposes an outer `aria-label` inconsist
 self-explanatory label omits `legend` entirely, and the chip then carries neither the tooltip nor
 the hidden span.
 
+Both registers carry a measured constraint rather than an unconditional guarantee. `bounded`'s
+hairline is `color-mix(in oklab, currentColor 55%, transparent)`, so it inherits its color from
+the chip's own ancestor. Inside a `text-muted` ancestor the mix reads roughly 2.4:1 against a
+card ground and 2.97:1 against a page ground, under the audit's own 3:1 border-contrast floor.
+Cairn's five call sites, ConceptList, EditPage, CairnAdminShell, ReferenceField,
+MediaCaptureCard, and ManageEditors, all clear this floor; a consumer that places a `bounded`
+chip inside its own muted-text ancestor should re-measure. `quiet`'s tinted ground clears the
+audit's 1.5 ground-collision floor against every admin surface except one. Mixed over
+`--color-base-300` itself, the ground daisyUI's `.table-zebra` row-hover uses, it measures
+roughly 1.34 to 1.41, under the floor. `chip-ground-collision` stays advisory rather than gating
+today, so this fifth ground stays documented rather than retuned; a `quiet` chip shouldn't sit
+directly on a `base-300`-derived ground until the rule re-promotes.
+
 **daisyUI assembly:** `badge badge-outline` (shape only, no tone reads through the badge fill)
 plus a `status status-<tone>` dot for the color signal, and `badge-xs`/`badge-sm` +
 `status-xs`/`status-sm` for the two sizes. `badge-error`/`badge-success` do not compile into the
 packaged `cairn-admin.css`, while every `status-<tone>` modifier does, which is why the dot, not
 the badge fill, carries color: one consistent mechanism across all five tones. `badge-outline`
-(not `badge-ghost`) sets no `--badge-color`, so its border resolves to the inherited text color,
-reading the same against either of AdminTable's zebra stripes or no zebra at all.
+(not the retired stock ghost badge) sets no `--badge-color`, so its border resolves through the
+preceding `register` recipe rather than the full-strength inherited text color badge-outline
+would resolve to on its own.
 
 **Exact class inventory:** `badge`, `badge-outline`, `badge-xs`, `badge-sm`, `status`,
 `status-neutral`, `status-info`, `status-success`, `status-warning`, `status-error`, `status-xs`,
-`status-sm`.
+`status-sm`. Every other admin surface that composes a status chip by hand instead of through this
+component (EditPage, CairnAdminShell, ReferenceField, MediaCaptureCard, ManageEditors) reaches the
+same two registers through `cairn-admin.css`'s shared `cairn-chip-bounded`/`cairn-chip-quiet`
+classes; neither paints anything on its own; both compose with `badge` (and typically
+`badge-outline` for `cairn-chip-bounded`, which supplies the border's width and style), the same
+shape `StatusChip` itself assembles from.
 
 ```svelte
 <StatusChip tone="warning" label="Overdue" legend="Full benefits continue for 30 days." />

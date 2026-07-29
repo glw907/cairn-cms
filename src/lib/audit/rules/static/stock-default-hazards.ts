@@ -13,9 +13,10 @@ const BADGE_GHOST_MESSAGE =
   'hardcodes a background/border that can match a row or card color and melt into it, and neither ' +
   'it nor the un-tuned badge-outline clears the audit\'s own 3:1 border-contrast floor. cairn\'s ' +
   'own recipe is the two ratified chip registers instead -- bounded (StatusChip\'s default, or the ' +
-  'shared cairn-chip-bounded class) for a chip that must read as an object, and quiet (StatusChip\'s ' +
-  '`register="quiet"`, or the shared cairn-chip-quiet class) as the sanctioned put-away recipe for a ' +
-  'settled state such as Published (docs/reference/admin-toolkit.md, StatusChip\'s tone rationale)';
+  'shared cairn-chip-bounded class, composed with badge) for a chip that must read as an object, ' +
+  'and quiet (StatusChip\'s `register="quiet"`, or the shared cairn-chip-quiet class, composed with ' +
+  'badge) as the sanctioned put-away recipe for a settled state such as Published ' +
+  '(docs/reference/admin-toolkit.md, StatusChip\'s tone rationale)';
 
 const DROPDOWN_MESSAGE =
   'class "dropdown" here is the focus-driven daisyUI wrapper, which opens on focus-in-transit and ' +

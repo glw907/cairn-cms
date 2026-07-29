@@ -263,7 +263,12 @@ the named human gates only):**
   see the error-tier entry and the CHANGELOG's `## Unreleased` window.) Rule and harness repairs:
   `chip-ground-collision`'s contrast has no chroma term, so hue-distinct chips flag (24 false
   errors on ASC; **resolved 2026-07-29: demoted to advisory**; the chroma-aware repair (a distance
-  formula that can see hue, plus a recalibrated floor) stays filed here, unbuilt);
+  formula that can see hue, plus a recalibrated floor) stays filed here, unbuilt). Until it
+  re-promotes, the quiet chip register is unguarded against its own fifth ground: quiet's
+  14%-tint mix over `--color-base-300` (e.g. daisyUI's `.table-zebra` row-hover) measures
+  ~1.34/1.41, under the 1.5 floor the register otherwise clears everywhere else, documented rather
+  than retuned in `docs/reference/admin-toolkit.md` and `skills/cairn-admin-screens/SKILL.md`
+  (design infrastructure Pass 3, 2026-07-29 review triage);
   `norms-bands` measures inside closed `dialog.modal` boxes (scale .95 artifact) and trips on UA
   button-vs-anchor default padding; the norms manifest generator passes `size='xs'` to StatusChip
   so the bands never saw the component's `sm` default; rendered mode's missing post-hydration
@@ -278,15 +283,16 @@ the named human gates only):**
   rather than a note: scan the tracked source tree for a control byte outside tab, newline, and
   carriage return, and fail naming the file and offset.
 
-- **The static audit's sheet parser desyncs on a backslash-escaped quote in a selector** (design
-  infrastructure Pass 3, 2026-07-29; `b1634490`). Tailwind's `before:content-['']` utility compiles
-  to an escaped-quote selector that `src/lib/audit/sheet.ts` (`collectRules`, `scanBlock`,
-  `stripComments`, `ownDeclarationText`) reads as a string opener, dropping every rule after it in
-  the built sheet; one such utility on `ConceptList` desynced the whole parse and produced 247 false
-  static errors against files the task never touched. The Task 5 fix worked around it (dropped the
-  utility, since `before:` already emits `content: var(--tw-content)` for free), rather than fixing
-  the parser; the repair itself is unbuilt and runs behind its own adversarial pass, the standing
-  discipline for a rule/harness repair.
+- ~~**The static audit's sheet parser desyncs on a backslash-escaped quote in a selector**~~
+  FIXED (design infrastructure Pass 3, 2026-07-29 review triage). `src/lib/audit/sheet.ts`'s
+  scanning loops (`collectRules`, `stripComments`, `scanBlock`, `propertyBoundary`,
+  `parseDeclarations`, `skipParens`, `selectorClassNames`, `negatedClassNames`,
+  `ownDeclarationText`) now skip a backslash-escaped character as a two-character unit before
+  testing for a quote, so a compiled `before:content-['']` selector no longer reads its escaped
+  quote as a string opener. `src/tests/unit/audit/sheet.test.ts` carries the fixture (a rule with an
+  escaped-quote selector between two plain ones, asserting both survive the parse). The Task 5
+  workaround on `ConceptList` (omitting the redundant `before:content-['']` utility) stays, since
+  `before:` already emits `content: var(--tw-content)` for free either way.
 - **DX: a `type-scale` finding could name the matching grammar role, closing the loop toward a
   rename codemod** (design infrastructure Pass 3, 2026-07-29). The upgrade guide's rename recipe
   (`docs/guides/upgrade-cairn.md`) has an editor look up the reported class's size in [Admin grammar

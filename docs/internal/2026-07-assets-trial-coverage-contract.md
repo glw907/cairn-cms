@@ -40,8 +40,12 @@ not part of the role itself.
 
 Four `--cairn-gap-*` roles: `label` (a label to its control, 0.25rem), `control` (one control to
 the next beside it, 0.5rem), `group` (one field to the next within a group, 1rem), `section` (one
-section to the next, 1.5rem). The `gap-scale` rule (static, error tier) is the backstop.
-`form-anatomy.md` states the relationship table these roles name.
+section to the next, 1.5rem). The `gap-scale` rule (static, error tier) backs which token a
+literal resolves to. `relational-spacing` (rendered, advisory tier) backs a second, narrower
+claim: that the token CHOSEN matches the relationship the markup renders (gap-role nesting per
+axis, label-to-control distance, same-level sibling equality), the "proximity grouping via
+unequal ordered gaps" phenomenon section 5's Before/after bullet names. `form-anatomy.md` states
+the relationship table these roles name.
 
 **Claimed:** every margin, padding, or gap on an admin surface resolves to one of these four
 roles by the relationship it expresses, not by an eyeballed value that happens to render close.
@@ -71,7 +75,11 @@ until an axis-scoped utility ships.
   Explicitly NOT audit-enforced by the 2026-07-28 ruling recorded in the design spec's
   amendments: `screen-anatomy` (rendered, advisory) checks only the negative half (one
   `PageHeader`, one `h1`, no stray fill outside the header slot or card region). The affirmative
-  half is written guidance in the standard doc, both exemplars, and the grader prompt's item a.
+  half is written guidance in the standard doc (`SKILL.md`, "The affirmative half is guidance,
+  not a lint"), the list exemplar (`exemplar-list.md`'s own annotation on the header's `action`
+  slot), and the grader prompt's item a. The detail exemplar never states it: its header carries
+  zero accent fills (every verb is `btn-ghost`), so the placement claim is not claimed against
+  that exemplar.
 
 ## 4. Genre anatomy (the three exemplar genres, written guidance plus targeted audit backing)
 
@@ -108,16 +116,23 @@ Claimed by name, each already classified by its own enforcement form in the chap
 
 - **Tokenize** (audit-backed): type role selection (`type-scale`), spacing role selection
   (`gap-scale`), elevation and boundary via `card-shell`/`card-shadow`
-  (`stock-default-hazards`), the chip register's two-only rule (`stock-default-hazards`), the
-  focus ring's shape and offset (`focus-parity`, `focus-renders`).
-- **Numeric rule** (written guidance, no audit backing claimed): neutrals derived from the
+  (`stock-default-hazards`), the chip register's two-only rule (`stock-default-hazards`), a
+  focus indicator existing and pairing hover with keyboard focus (`focus-parity`,
+  `focus-renders`). **Not claimed:** the ring's shape, offset, or color; `craft.md` states a 2px
+  ring offset 2px in the surface's own accent color as a component recipe, but neither rule
+  checks shape, offset, or color, only that a hover selector has a `:focus-visible`/
+  `:focus-within` sibling in source (`focus-parity`) and that some visible paint change occurs
+  at each tab stop (`focus-renders`), so the recipe itself is written guidance only.
+- **Numeric rule** (written guidance except where noted): neutrals derived from the
   palette rather than an invented gray (`token-colors` backs the raw-value half only, not the
-  derivation judgment), two font weights maximum per body-content region, tabular numerals on
+  derivation judgment), two font weights maximum per body-content region (audit-backed:
+  `weight-budget`, rendered, advisory tier, chrome excluded per Ruling 4), tabular numerals on
   any digit sequence in a column, a recorded optical-alignment offset once made, padding
   asymmetry stated as a ratio, a multi-element row's own narrow-width breakpoint (never
   flex-shrink alone), and a table's containment wrapper staying inside its own card.
-- **Before/after** (written guidance, demonstrated by paired render, no audit backing claimed):
-  optical vs. mathematical centering, proximity grouping via unequal ordered gaps, the
+- **Before/after** (written guidance except where noted, demonstrated by paired render):
+  optical vs. mathematical centering, proximity grouping via unequal ordered gaps
+  (audit-backed: `relational-spacing`, rendered, advisory tier, per section 2's own claim), the
   whole-surface assembled-vs-resolved read, narrow-width row collision and its stacked
   resolution, and the table composition recipe at narrow width (column-priority folding into a
   meta line, with the horizontal-scroll wrapper as a fallback, never the primary answer, for a
@@ -149,9 +164,12 @@ composition is declared done.
 
 **Not claimed:** the ladder and the grader prompt cover only what a builder actually runs them
 against. A build that skips the done-gate's step 3 (the grader run) on a novel composition has
-not exercised this claim, and a tell on an un-graded composition is not a (b) tell against the
-grader; it is process non-compliance with the done-gate below, a distinct finding from the
-capture's own completeness.
+not exercised this claim, but skipping the run does not remove a tell from classification: every
+first-read tell still takes an (a) or (b) label under section 8's test, run against what this
+document claims, regardless of whether the builder actually invoked the grader. Skipping step 3
+is recorded as an additional, process-compliance finding alongside that (a)/(b) classification,
+never a substitute for it (section 8 states the same rule for written guidance the builder never
+checked).
 
 ## 7. The done-gate (`SKILL.md`, "The done-gate", verbatim)
 

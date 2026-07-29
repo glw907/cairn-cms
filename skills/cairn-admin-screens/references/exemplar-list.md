@@ -149,9 +149,9 @@ The row's own cells carry a scoped type scale:
 ```
 
 This call predates `StatusChip`'s `register` prop, so it renders in the default `bounded`
-register for every standing. Applying chip passivity to the ratified standing model
-(`decisions.md`, "Member standing is Current / Overdue / Former") is the judgment call a
-builder makes at each call site, not a fact this screen has already settled: **Overdue**
+register for every standing. Applying chip passivity to the screen's standing vocabulary (Current, Overdue, Former) is
+the judgment call a builder makes at each call site, not a fact this screen has already
+settled: **Overdue**
 needs the visitor's attention (a household approaching Former), so it stays `bounded`; a
 standing that reads as the row's settled, put-away state (the household is simply Current
 and needs nothing from the visitor) is the `register="quiet"` candidate. The rule from the

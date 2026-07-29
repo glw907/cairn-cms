@@ -4,10 +4,11 @@ Load this when laying out a form's rows and labels: which of the three label lev
 label is, how a row spaces against its neighbors, and the one composition failure that no
 mechanical check in this engine catches.
 
-These are normative rules, stated as what to do, not a survey of what exists. The three-level
-register and the composition rule below both trace to defects found in real production admin
-builds, but that tracing lives in a private planning archive no cairn package ships, so this
-page states both on its own authority rather than a citation a builder could open.
+These are normative rules, stated as what to do, not a survey of what exists. The
+three-level register is cairn's own ratified ruling, and the composition rule below was
+learned from defects in real production admin builds. The records behind both live in
+cairn's internal design docs, which the published package does not ship, so this page
+states the rules in full on its own authority.
 
 ## The three label levels
 

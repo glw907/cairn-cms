@@ -187,3 +187,71 @@ spans 12 and 15px across 35 sites and `line-height` resolves to `['19px', 'norma
 members are why Task 13 modeled leading as a keyword vocabulary rather than a length band. Whether a
 table cell should carry a named type role at all is a Task 17 calibration question, and it is adjacent
 to the empty-notice register question directly above.
+
+## 6. Ratified rulings (2026-07-28, Pass 2 Task 16b)
+
+Four questions the rendered audit raised against cairn's own admin, ruled by Geoff and applied to the
+rules in the same task. These are recorded deviations now, not open questions: each one names a
+number the audit will not re-litigate, and the first entry is a measured value that stays below a
+standard's floor on purpose. Canonical record: the plan
+(`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, Task 16b).
+
+**Ruling 1: `touch-targets` enforces 24x24, not 44x44.** Spec 6.3 set 44x44, which is WCAG 2.2's AAA
+criterion 2.5.5 (Target Size Enhanced). The bar cairn can honestly claim is AA, whose own target-size
+criterion is 2.5.8 (Target Size Minimum) at 24x24. At 44x44 the rule raised 138 error-tier findings
+against the shipped admin: `btn-sm` runs 32px, `btn-xs` runs 24px, several toolbar controls run 30px,
+and the admin's own design treats none of them as a defect. At 24x24 nearly all clear and `btn-xs`
+sits exactly on the line, so its 24px measurement has to pass rather than fail. The rule also now
+measures the ACTIVATION REGION rather than the painted box, which is 2.5.8's own wording: the
+control's box unioned with a qualifying `::before` inset expansion, plus every label the platform
+reports as activating it. That closed an error-tier false positive on the label-wrapped checkbox
+(EditPage's "Hidden" toggle, FieldInput's boolean field, five more sites), where the input paints
+20x20 inside a 342x34 label that toggles it.
+
+**Ruling 2: the `--cairn-card-border` hairline is RATIFIED, and is the deviation this file records.**
+Measured against real Chromium: **1.11:1 in light and 1.43:1 in dark** against the ambient beside it,
+and **1.19 light / 1.20 dark** against the card's own fill. WCAG 1.4.11's non-text floor is 3:1, so
+the hairline sits well under it, and it stays as designed. The quiet edge is deliberate. What the
+ruling does NOT license is silence: `border-contrast` still constructs the finding, still carries the
+measurement, and routes it to the report's suppressed list with the ruling printed beside it, so
+every run counts what it let through. The exemption is bounded twice. It applies only where the
+border is PAINTED THROUGH `--cairn-card-border` (proved in-page by substituting a sentinel for the
+token and seeing which computed colors follow, never by comparing color values), and only while the
+boundary still reads at 1.15 or better, just under the invariant card-fill pairing. A byte-equality
+cut failed both bounds: `cairn-admin.css` declares `--color-base-300` and `--cairn-card-border` with
+identical bytes in the same dark block (lines 268 and 381), so it swallowed every `border-base-300`
+boundary in the dark theme, including the shell's CMS pill and the media library's clear-selection
+button, under a printed reason naming a ruling that was never made about them. The norms manifest
+carries the ruling too: `card`/`border-color` moved from `OPEN_DESIGN_QUESTIONS` to `RATIFIED_NORMS`
+and the committed manifest reads `ratified` with no `open-question` flag.
+
+**Ruling 3: `chip-ground-collision`'s 1.5 floor is RATIFIED.** Spec 6.3 named no number; a builder
+borrowed `interactive-contrast`'s probe-derived floor, and Geoff confirmed the borrow rather than
+leaving it open. The shared rationale, so neither rule re-argues it: both test "not accidentally
+camouflaged", never legibility. Legibility is `border-contrast`'s separate job at WCAG 1.4.11's 3:1,
+and 1.5 sits under that number and under the text floors (4.5 normal, 3.0 large) by design. The
+admin's own measured collisions run 1.01 to 1.12, so the floor is not a close call in practice. The
+number is load-bearing all the same: an always-opaque canvas default manufactured a 1.514 against
+this exact line and took two real collisions out of the report while every other gate stayed green.
+
+**Ruling 4: `weight-budget` measures body content with chrome excluded.** The rule's claim is
+unchanged (two weights per content region); its region boundary narrows to what it was always meant
+to test. All ten advisories the rendered baseline raised against the admin, five routes times two
+themes and every one at exactly three weights, were toolbar, pagination, and column-header furniture
+rather than a three-weight passage of prose or data. Chrome is text inside `<nav>` or
+`[role="navigation"]`; `<button>`, `[role="button"]`, or `<summary>`; a `<header>` or
+`[role="banner"]` that contains the heading it introduces; and `<thead>` or `[role="columnheader"]`.
+Each shape is named by an HTML tag or the ARIA role that means the same thing, never by a class, so a
+rewritten component stays covered where a renamed one would not. Two limits are stated rather than
+papered over: a `<button>` used as a row WRAPPER takes its whole content out of the rule's reach
+(CairnMediaLibrary does this; ConceptList uses an `<a>` and every weight counts), and an
+`<a class="btn">` spends the budget where the `<button class="btn">` beside it does not. Both are
+fixtured so neither drifts unnoticed.
+
+**One behavior change beyond the rulings: `chip-ground-collision` stops asserting a collision it
+cannot measure.** `CairnMediaLibrary` renders its usage chip as an absolutely positioned sibling of
+the thumbnail `<img>`, so the rule composited the card fill behind the thumbnail and reported a
+constant 1.06 error on a chip that measures 12.98 against the image it actually sits on. A painter
+outside the chip's own ancestor chain now makes the ground indeterminate, which reports as an
+advisory naming what it could not read. "Cannot measure this ground" is a different claim from "this
+collides", and only one of them was true.

@@ -17,7 +17,10 @@
 // for. The fifth finding is new and real (below).
 //
 // scripts/touch-target-allowlist.json folded into ALLOWLIST here, entry for entry: the JSON's
-// {page, selector, reason} rows are already the rendered allowlist's own shape.
+// {page, selector, reason} rows are already the rendered allowlist's own shape. Geoff's ruling 1
+// (Task 16b) then retired all five of them at once by moving the floor to 24x24, which every
+// control they named clears; the empty list below records why, and the no-drift numbers in the
+// paragraph above are the 44px bar's, kept as the graduation's own history.
 //
 // This is a LIVE gate: it drives a real browser against a running preview server, so it needs
 // BASE_URL (default http://localhost:4173, examples/showcase's `npm run preview` port) already
@@ -35,37 +38,24 @@ const RULE_ID = 'touch-targets';
  * Page+selector exemptions, the rendered allowlist's own shape. Suppressions are counted and
  * printed by the report, and an entry naming a selector no page matches is itself an error, so a
  * row that stops meaning anything says so instead of hiding.
+ *
+ * EMPTY BY RULING, and that is the finished state, not a gap. Geoff's ruling 1 (Task 16b) dropped
+ * the enforced floor from 44x44 to WCAG 2.5.8's AA 24x24, and every row here was written against
+ * the old 44px bar. Four named DaisyUI stock controls whose own documented measurement (40px, 40px,
+ * 40px, 32px) clears 24x24 on both axes. The fifth, the showcase theme's tag-filter chip, is inert
+ * for the same reason, from the component's own source rather than a live measurement:
+ * `.tag-filter__option` declares `min-height: 2.75rem` (44px) in
+ * examples/showcase/src/routes/(site)/+page.svelte, and the width the row's reason recorded as its
+ * failing dimension, 43.78px, is itself well past 24px. Both axes clear the ruled floor.
+ *
+ * Removed rather than carried, because nothing would ever have reported them: an allowlist entry
+ * goes stale only when its SELECTOR matches nothing on the page (`resolveRenderedFindings` keys
+ * staleness on `selectorsSeen`, never on whether the entry suppressed a finding), and every one of
+ * these selectors still renders. A row that suppresses nothing is silent forever, so leaving one to
+ * be found later is leaving it to rot.
  * @type {{ page: string, selector: string, reason: string }[]}
  */
-export const ALLOWLIST = [
-  {
-    page: '/styleguide',
-    selector: 'button.btn.btn-primary',
-    reason:
-      "The styleguide's button row demonstrates DaisyUI's stock classes at their stock 40px; the template's own CTA recipes carry the 44px floor, and resizing the demo would misrepresent what the stock class gives.",
-  },
-  {
-    page: '/styleguide',
-    selector: 'button.btn.btn-outline',
-    reason: 'Stock DaisyUI demo; see btn-primary.',
-  },
-  {
-    page: '/styleguide',
-    selector: 'button.btn.btn-ghost',
-    reason: 'Stock DaisyUI demo; see btn-primary.',
-  },
-  {
-    page: '/styleguide',
-    selector: 'button.btn.btn-primary.btn-sm',
-    reason: 'Stock DaisyUI btn-sm demo at its stock 32px; see btn-primary.',
-  },
-  {
-    page: '/',
-    selector: 'button.tag-filter__option.svelte-1ewzqr7',
-    reason:
-      "A real miss, carried rather than ruled: the showcase theme's tag-filter chips render 43.78px wide against the 44px floor, a padding-math shortfall the graduation surfaced when it fixed the below-the-fold exemption. Closing it moves the site-visual baselines, so it belongs to a theme pass and is filed in docs/internal/docs-friction-log.md, not to the graduation that found it.",
-  },
-];
+export const ALLOWLIST = [];
 
 async function main() {
   try {

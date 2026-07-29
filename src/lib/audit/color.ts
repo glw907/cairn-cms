@@ -80,6 +80,30 @@ export interface PaintLayer {
   hasImage: boolean;
 }
 
+/**
+ * One layer's opacity as the arithmetic below reads it. A computed `opacity` that does not parse to
+ * a number is read as fully opaque, so an unreadable value never manufactures a dimming that the
+ * page does not paint.
+ */
+function layerOpacity(layer: PaintLayer): number {
+  return Number.isFinite(layer.opacity) ? layer.opacity : 1;
+}
+
+/**
+ * The opacity that scales whatever the innermost element in `layers` paints: its own, multiplied by
+ * every ancestor's, since `opacity` always composites a whole subtree.
+ *
+ * For a background chain, {@link resolveGround} handles this itself. This is for paint that is NOT
+ * a layer in the chain, a border stroke above all, and for a caller that deliberately resolves one
+ * element's own fill against a backdrop the DOM chain does not supply (`border-contrast` samples
+ * the adjacent surface geometrically instead). Both were refuted against real Chromium for missing
+ * it: a card hairline under an 8%-opacity ancestor kept its full-strength stroke while the ground
+ * beside it washed out, so a barely-there line measured as if nothing had dimmed it.
+ */
+export function cumulativeOpacity(layers: PaintLayer[]): number {
+  return layers.reduce((product, layer) => product * layerOpacity(layer), 1);
+}
+
 /** What is behind a caller's layer chain, and how the chain's first entry should be read. */
 export interface GroundOptions {
   /**
@@ -109,12 +133,13 @@ export type GroundResolution =
   | { kind: 'indeterminate'; reason: string };
 
 /**
- * The color a chain of layers actually paints, composited from the outermost layer inward.
+ * The color a chain of layers actually paints, resolved onto `options.canvas`.
  *
  * `layers` runs nearest-first (the element's own layer, then each ancestor up to the document
  * root), matching the order a DOM walk produces, and `colors` carries the same entries already
- * normalized by `resolveColors`. A layer's `opacity` scales its own alpha and every layer inside
- * it, which is how a chip painted at 4% opacity stops reading as an opaque fill.
+ * normalized by `resolveColors`. A layer's `opacity` dims that layer's own background together with
+ * everything inside it, once, as a group, which is how a chip painted at 4% opacity stops reading
+ * as an opaque fill and why a 25%-opacity wrapper does not thin the chip inside it twice over.
  *
  * Returns `indeterminate` rather than a color when a layer paints a `background-image` and
  * contributes no color at all. That is exactly the demonstrated fail-open: a gradient band keeps
@@ -153,27 +178,31 @@ export function resolveGround(
           : 'an ancestor paints a background-image over no color at all, so no single ground color exists to measure against',
     };
   }
-  // Cumulative opacity, outermost inward: an ancestor's opacity scales everything inside it.
-  const opacityAt: number[] = new Array(layers.length);
-  let cumulative = 1;
-  for (let i = layers.length - 1; i >= 0; i -= 1) {
-    cumulative *= Number.isFinite(layers[i].opacity) ? layers[i].opacity : 1;
-    opacityAt[i] = cumulative;
-  }
-
-  let ground: Rgba = TRANSPARENT;
-  for (let i = layers.length - 1; i >= 0; i -= 1) {
+  // `opacity` is a GROUP operation: an element's own background and everything inside it composite
+  // together first, and the result is dimmed once. So the chain is built innermost outward, each
+  // layer's accumulated content scaled by that layer's own opacity before the next layer's
+  // background goes behind it.
+  //
+  // Applying each layer's cumulative opacity to its own alpha instead, which is the same arithmetic
+  // for the common case and diverges the moment an ANCESTOR carries opacity, dims an inner layer
+  // twice over: it thins the inner paint AND lightens the backdrop it lands on. Against a
+  // screenshot of a chip inside a 25%-opacity wrapper, that model returned rgb(177, 174, 170) where
+  // the painted pixels are rgb(216, 213, 210), and the error ran the wrong way, reporting the
+  // collision as milder than it renders.
+  let content: Rgba = TRANSPARENT;
+  for (const [i, layer] of layers.entries()) {
     const color = colors[i];
-    if (!color) continue;
-    const alpha = color.a * opacityAt[i];
-    if (alpha <= 0) continue;
-    ground = composite({ ...color, a: alpha }, ground);
+    // What is already accumulated sits INSIDE this layer, so it paints over this layer's own
+    // background, and only then does this layer's opacity dim the pair as one.
+    if (color && color.a > 0) content = composite(content, color);
+    const opacity = layerOpacity(layer);
+    if (opacity < 1) content = { ...content, a: content.a * opacity };
   }
   // The chain always resolves onto the caller's backdrop, so a ground is opaque by construction.
   // Returning a partly transparent ground let `contrastRatio` measure a color no user ever sees:
   // `relativeLuminance` discards alpha, so a 50%-black panel over white read as pure black, and a
   // black border on it reported 1.00 where the painted pixels measure 5.24.
-  return { kind: 'resolved', color: composite(ground, canvas) };
+  return { kind: 'resolved', color: composite(content, canvas) };
 }
 
 /**

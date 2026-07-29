@@ -37,6 +37,7 @@ export { DEFAULT_BASE_URL, resolveBaseUrl, resolveColors, resolveRenderedFinding
 export {
   composite,
   contrastRatio,
+  cumulativeOpacity,
   describeColor,
   indeterminateFinding,
   relativeLuminance,

@@ -37,6 +37,18 @@
 //     /admin/vocabulary went silent at a manufactured 1.51 against a true 1.11. The backdrop is now
 //     required by `resolveGround` rather than defaulted, and the chip's fill resolves onto its own
 //     ground.
+//  5. The chip's fill was resolved at the chip's OWN opacity while its ground was resolved at the
+//     whole chain's, so an ancestor `opacity` washed out one side of the comparison and not the
+//     other: a chip under a 25%-opacity wrapper measured 4.4:1 where the painted pixels, read off a
+//     screenshot, measure 1.18:1. The chip's own color is now the WHOLE chain resolved onto the
+//     canvas, and `resolveGround` itself was corrected to composite a subtree before dimming it,
+//     which is what `opacity` actually does.
+//  6. The ground was taken from the ancestor chain even where something else paints behind the
+//     chip. `CairnMediaLibrary` renders its usage chip as an absolutely positioned sibling of the
+//     thumbnail `<img>`, so the rule composited the card fill and reported a constant 1.06 error on
+//     a chip measuring 12.98 against the image it actually sits on. An overlapping painter outside
+//     the chip's own ancestors now makes the ground indeterminate, which is advisory, because
+//     "cannot measure" is a different claim from "this collides".
 //
 // Only the `rest` state is read (no interaction reveals or hides a chip's own background), so no
 // `states` field is declared; the runner's default `['rest']` already covers this rule.
@@ -47,14 +59,38 @@ import {
   type RenderedRule,
   type RenderedRuleContext,
 } from '../../rendered.js';
-import { contrastRatio, describeColor, indeterminateFinding, resolveGround, type PaintLayer } from '../../color.js';
+import {
+  contrastRatio,
+  cumulativeOpacity,
+  describeColor,
+  indeterminateFinding,
+  resolveGround,
+  type PaintLayer,
+} from '../../color.js';
 
 /**
  * Below this contrast ratio, a chip's composited fill and the ground behind it are close enough
- * to read as the same color. Not the WCAG text floor (4.5) or the non-text boundary floor (3.0,
- * `border-contrast`'s own number): this rule is not proving legibility, only that the chip is not
- * accidentally camouflaged against its own row, the same "not camouflaged" bar the graduated
- * `interactive-contrast` probe set for a control's text against its own background.
+ * to read as the same color. RATIFIED (Task 16b ruling 3, Geoff, 2026-07-28): spec 6.3 named no
+ * number here, a builder borrowed this value from `interactive-contrast`'s own probe-derived floor,
+ * and Geoff confirmed the borrow on review rather than leaving it as an open question. The shared
+ * rationale, now on the record so neither rule re-litigates it: both rules test "not accidentally
+ * camouflaged," never a legibility standard. Legibility is `border-contrast`'s different job,
+ * measured against WCAG 1.4.11's 3:1 non-text floor; this rule's 1.5 sits well under that number
+ * and never tries to clear it, the same way it sits under the WCAG text floors (4.5 normal, 3.0
+ * large). The admin's own measured chip collisions run 1.01 to 1.12, far below every one of these
+ * numbers, so in practice the floor is not a close call.
+ *
+ * The number is LOAD-BEARING, not a rounding nicety, and this pass demonstrated why: the
+ * always-opaque canvas default this file's header describes (closed by making
+ * `GroundOptions.canvas` required in `color.ts`) manufactured a measured ratio of 1.514 against
+ * this exact 1.5 line, one hundredth over it, and that one hundredth silently took two real
+ * collisions (chips measuring 1.11 and 1.12 against their own ground, both invisible to a sighted
+ * user) out of the report while every other gate stayed green. `rulings.chip-ground-collision.test.ts`
+ * pins this line against real Chromium from both sides: an opaque pair one sRGB channel step either
+ * side of 1.5 pins the NUMBER, and a translucent chip over a ground the page canvas differs from
+ * pins the ARITHMETIC that feeds it. The second fixture is the one that matters for drift. The
+ * opaque pair cannot see a canvas change at all, so with it alone the exact one-line edit this
+ * paragraph describes could be reintroduced and the whole suite stayed green.
  */
 const RATIO_FLOOR = 1.5;
 
@@ -66,6 +102,11 @@ interface ChipGroundCandidate {
   selector: string;
   /** The chip's own paint layer, first, then every ancestor's up to the document root. */
   layers: PaintLayer[];
+  /**
+   * How an element outside the chip's own ancestor chain paints behind it, when one does; `null`
+   * when the ancestor chain really is what the chip sits on.
+   */
+  overlaps: string | null;
 }
 
 /** Every chip on the page, with the one canvas color all of their chains resolve onto. */
@@ -112,6 +153,7 @@ function readChipGrounds(): ChipGroundReading {
   }
 
   function layersFor(el: Element): PaintLayer[] {
+    if (helpers) return helpers.paintLayers(el);
     const layers: PaintLayer[] = [];
     for (let node: Element | null = el; node; node = node.parentElement) {
       const style = getComputedStyle(node);
@@ -124,16 +166,51 @@ function readChipGrounds(): ChipGroundReading {
     return layers;
   }
 
+  // What paints behind a chip is its ancestor chain ONLY while nothing else is layered under it.
+  // The admin's own media grid breaks that: `CairnMediaLibrary` renders the usage chip as an
+  // absolutely positioned SIBLING of the thumbnail `<img>`, so the pixels behind it belong to the
+  // image and no ancestor carries them. The rule composited the card fill instead and reported a
+  // constant 1.06 collision on a chip that measures 12.98 against the thumbnail, at error tier, on
+  // every media row whatever the image contains. An element painting content this arithmetic cannot
+  // read (a replaced element, or a background-image) that overlaps the chip's own box and is not in
+  // its ancestor chain is named here, and the rule reports the measurement as impossible rather
+  // than answering it with a ground that is not there.
+  // Collected once for the whole page rather than per chip: the second half needs a computed style
+  // per element, and running that inside the chip loop is a full-document style read per chip.
+  const painters: { el: Element; rect: DOMRect; what: string }[] = [];
+  for (const el of document.querySelectorAll('img, video, canvas, svg, picture, object, iframe')) {
+    if (isPainted(el)) painters.push({ el, rect: el.getBoundingClientRect(), what: `a <${el.tagName.toLowerCase()}>` });
+  }
+  for (const el of document.querySelectorAll('*')) {
+    if (getComputedStyle(el).backgroundImage === 'none' || !isPainted(el)) continue;
+    painters.push({ el, rect: el.getBoundingClientRect(), what: 'an element painting a background-image' });
+  }
+
+  function overlappingPainter(el: Element): string | null {
+    const rect = el.getBoundingClientRect();
+    for (const painter of painters) {
+      if (painter.el === el || painter.el.contains(el) || el.contains(painter.el)) continue;
+      const other = painter.rect;
+      if (other.left >= rect.right || rect.left >= other.right) continue;
+      if (other.top >= rect.bottom || rect.top >= other.bottom) continue;
+      return `${painter.what} outside this chip's own ancestors paints behind it`;
+    }
+    return null;
+  }
+
   const chips: ChipGroundCandidate[] = [];
   for (const el of document.querySelectorAll('*')) {
     if (!isPainted(el)) continue;
     const style = getComputedStyle(el);
     const isChip = el.classList.contains('badge') || (isPillShaped(el, style) && (el.textContent ?? '').trim() !== '');
     if (!isChip) continue;
-    const classes = Array.from(el.classList).slice(0, 4).join('.');
     chips.push({
-      selector: `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${classes ? `.${classes}` : ''}`,
+      // The shared page helpers name an element the one way every rendered rule names it, escaped
+      // so the rendered allowlist can probe the selector. The hand-rolled copy this replaced could
+      // emit a Tailwind variant class the browser refuses to parse.
+      selector: helpers ? helpers.signature(el) : el.tagName.toLowerCase(),
       layers: layersFor(el),
+      overlaps: overlappingPainter(el),
     });
   }
   return { canvas: helpers ? helpers.canvasColor() : null, chips };
@@ -188,8 +265,12 @@ export const chipGroundCollision: RenderedRule = {
         canvas,
         firstLayerIs: 'ancestor',
       });
-      const backdrop = ground.kind === 'resolved' ? ground.color : canvas;
-      const own = resolveGround(candidate.layers.slice(0, 1), colors.slice(0, 1), { canvas: backdrop });
+      // The chip's own painted color is its WHOLE chain resolved onto the canvas, chip layer
+      // included, not its fill sliced out and resolved against the ground. The slice was the first
+      // fix for an assumed-white canvas and it carried its own error: an ancestor's `opacity` is a
+      // group operation, so slicing dropped it from the chip while leaving it in the ground, and a
+      // chip under a 25%-opacity wrapper measured 4.4 where the painted pixels measure 1.18.
+      const own = resolveGround(candidate.layers, colors, { canvas });
       // The chip's own layer is reported first when both are unmeasurable, so a gradient the chip
       // paints on itself is named as its own rather than as an ancestor's.
       if (own.kind === 'indeterminate') {
@@ -203,7 +284,14 @@ export const chipGroundCollision: RenderedRule = {
       // A chip with no fill of its own shows the ground straight through, which is what
       // `badge-outline` is for. `own.color` is the ground itself in that case, so the unresolved
       // alpha, not the returned color, is what answers "was there a fill at all".
-      if ((colors[0]?.a ?? 0) * candidate.layers[0].opacity < NO_FILL_ALPHA) continue;
+      if ((colors[0]?.a ?? 0) * cumulativeOpacity(candidate.layers) < NO_FILL_ALPHA) continue;
+      // Reported after the fill test so a see-through chip over a thumbnail stays the non-finding
+      // it already was, and before the ratio so no number is printed for a ground that is not the
+      // one painting there.
+      if (candidate.overlaps) {
+        findings.push(indeterminateFinding('chip-ground-collision', candidate.selector, candidate.overlaps));
+        continue;
+      }
 
       const ratio = contrastRatio(own.color, ground.color);
       if (ratio >= RATIO_FLOOR) continue;

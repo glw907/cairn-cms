@@ -534,6 +534,13 @@ describe('border-contrast: the refuted inputs', () => {
 
   // The ratified hairline still reports under the two-sided reading, and the number on record
   // (1.11 in light) is still the number in the message. Do not allowlist this into silence.
+  //
+  // Ruling 2 (Task 16b) suppressed the ratified hairline and this pin SURVIVED it, which is the
+  // point: the exemption is keyed to the value the page's own `--cairn-card-border` resolves to,
+  // and this fixture authors the same color as a literal without declaring the token. So the
+  // measurement is unchanged, the number stays on the record, and the ruling reaches only a border
+  // painted through the token it actually ratified. `rulings.border-contrast.test.ts` carries the
+  // token-declaring half.
   it('still reports the ratified card hairline at its number on record', async () => {
     const findings = await findingsFor(
       borderContrast,

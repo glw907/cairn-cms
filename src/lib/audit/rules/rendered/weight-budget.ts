@@ -10,28 +10,91 @@
 // when one is open, which then stands ALONE the way one-filled-action's own surface partition
 // treats a layer as replacing the page beneath it), split into one sub-region per heading (h1-h6 or
 // `[role="heading"]`): the text before the first heading is its own region, and each heading opens
-// a new one that runs until the next. Two exclusions fall directly out of that boundary rather than
-// needing their own carve-out:
+// a new one that runs until the next, MINUS CHROME.
 //
-//  - `<nav>` is never scanned at all, because it lives OUTSIDE `<main>` in this admin's shell
-//    (CairnAdminShell renders the sidebar and the breadcrumb as siblings of `<main>`, never a
-//    descendant), so nav's own weights structurally cannot reach any region's tally.
-//  - A heading's OWN text is excluded from the region it opens. Cairn's page-heading recipe
-//    (`font-bold`, the display face) is a deliberate departure from body weight by design; counting
-//    it against the region it introduces would flag the ordinary "bold heading over plain body"
-//    shape that is the intended reading, not the violation. The heading still marks where the next
-//    region begins, so a heading changes what "the region" means without ever being IN one.
+// Ruling 4 (Task 16b, 2026-07-28, Geoff): the region definition above, before this ruling, still
+// counted a route's own toolbar, pagination, and column-header furniture as if it were the body
+// prose or data the rule exists to test. Every one of the ten advisories the rendered baseline
+// raised against cairn's own admin (five routes times two themes, every one at exactly three
+// weights) was exactly that furniture, never a real three-weight passage of prose or data. The
+// claim stays (two weights per body-content region); only the region's own boundary narrows to
+// what the rule was always meant to test.
 //
-// Nothing else is exempted by name. A field label (`font-medium`), an eyebrow legend
-// (`font-semibold`), a table header cell styled with the eyebrow recipe, an emphasized span, a
-// button label: all of it is ordinary region content and all of it spends the two-weight budget,
-// because letting any one of those categories opt out by class name is exactly the kind of
-// class-name trust chip-ground-collision and interactive-contrast both had to unlearn. Whether the
-// eyebrow/label register specifically deserves its own exemption (cairn's three-level label recipe
-// legitimately stacks a 600-weight legend over a 500-weight field label over 400-weight body, which
-// is three weights in one region under this definition) is a judgment call this rule takes the
-// strict reading on and flags for ratification rather than resolving unilaterally; see the file's
-// test suite for the fixture that exercises it.
+// CHROME, for this rule, is text inside one of the shapes below, each named by the PLATFORM's own
+// semantics (an HTML tag or the ARIA role that means the same thing), never a class name or a
+// component's own identity, so a rewritten component stays covered the same way a renamed one would
+// not be under a class-name match. The ARIA half is not decoration: this file already treats ARIA
+// as first class (`[role="heading"]` opens a region, `[role="dialog"]` selects a root), and a
+// pagination strip built from `<div role="navigation">` and `<div role="button">` is the same
+// furniture as the tag-built one:
+//
+//  - `<nav>` and `[role="navigation"]`, anywhere they render. The prior cut only ever excluded nav
+//    because this admin's shell (`CairnAdminShell`) renders the sidebar and the breadcrumb as
+//    siblings of `<main>`, never a descendant, so nav's own weights structurally could not reach a
+//    region's tally. That was an accident of THIS admin's shell, not a rule about nav; the admin
+//    toolkit's own `Pagination` renders `<nav aria-label="Pagination">` NESTED inside `<main>`, and
+//    its own `.btn` page buttons (daisyUI's compiled 600 weight) counted as region content until
+//    this ruling.
+//  - `<button>`, `[role="button"]`, and `<summary>`. A control the user OPERATES, not text the user
+//    READS: every toolbar control (a search box's own filter buttons, a segmented radiogroup, a
+//    facet menu trigger), every sort button on a table's own column header, a row's own delete
+//    action, `Pagination`'s own page buttons, and `CairnTidySettings`' own disclosure `<summary>`.
+//    This reverses the prior cut's stated position ("a button label ... is ordinary region
+//    content"); the reversal is Ruling 4 itself, and the axis is the one WCAG 4.1.2 already draws
+//    between a "user interface component" and static text.
+//  - `<header>` and `[role="banner"]`, ONLY when it contains the heading it introduces. The
+//    page-header recipe (`PageHeader.svelte`, and `OfficeList.svelte`'s own pre-toolkit twin of it)
+//    wraps an optional eyebrow, the page's one `h1`, and an optional meta line in one `<header>`,
+//    which generalizes the heading-text exclusion below to the heading's whole title band. The
+//    heading condition is what keeps that from becoming an unbounded exemption: `<header>` is legal
+//    inside every article, section, and aside, so an unconditional clause hid any multi-weight
+//    byline band in one, on a rule that ships to consumers rendering their own routes inside
+//    `<main>` through the `CairnAdminShell` custom-route seam.
+//  - `<thead>` and `[role="columnheader"]`. A table's own column-header row is a label FOR the rows
+//    below it, not one of the rows: `ConceptList`'s own "Status" column header carries the same
+//    eyebrow recipe (`font-semibold`, uppercase, tracking) as a page's title-band eyebrow, but sits
+//    in the SAME region as the table's body rows (no heading separates a `<thead>` from its own
+//    `<tbody>`), so its 600 weight counted as a third weight beside an ordinary title link (500)
+//    and a plain data cell (400) until this ruling.
+//
+// TWO LIMITS OF THIS CUT, both demonstrated against cairn's own markup, both stated here rather
+// than papered over with a heuristic (Ruling 4's own instruction):
+//
+//  - A `<button>` used as a row WRAPPER takes its whole content out of the rule's reach.
+//    `CairnMediaLibrary` wraps an asset row's name, meta line, and status chip in one bare
+//    `<button>`, so none of that text spends the budget, while `ConceptList` does the same job with
+//    an `<a>` and every weight counts. The platform is why this is not resolvable here: `<button>`
+//    takes phrasing content only, and the accessible-name computation makes ALL of it the control's
+//    own name, so no structural signal separates a label from a wrapper. The fix belongs in the
+//    component, not in this rule.
+//  - An `<a class="btn">` spends the budget where the `<button class="btn">` beside it does not.
+//    `EditPage`'s advisory-notice row renders exactly that pair from one `{#each}` (`{#if
+//    row.href}`), so which branch the data takes decides whether the route reports. A link is a
+//    user interface component under WCAG 4.1.2 too, but excluding every `<a>` would blind the rule
+//    to a list route's own titles, which are the content a reader came for, and telling a
+//    btn-styled anchor from a title link needs the class name this rule refuses to trust. Both
+//    behaviors are fixtured in `rulings.weight-budget.test.ts` so neither drifts unnoticed.
+//
+// A heading's OWN text is excluded from the region it opens, independent of whether the heading
+// also happens to sit inside a `<header>` (PageHeader's does; a bare `<h2>` mid-page does not).
+// Cairn's page-heading recipe (`font-bold`, the display face) is a deliberate departure from body
+// weight by design; counting it against the region it introduces would flag the ordinary "bold
+// heading over plain body" shape that is the intended reading, not the violation. The heading still
+// marks where the next region begins, so a heading changes what "the region" means without ever
+// being IN one.
+//
+// Nothing else is exempted by name. A field label (`font-medium`), an ordinary link's own weight
+// (a row's own title, the actual content a reader came for), an inline status tag (a draft row's
+// `font-semibold` "Hidden" marker), an emphasized span: all of it is ordinary region content and all
+// of it spends the two-weight budget, because letting any of those categories opt out by class name
+// is exactly the kind of class-name trust chip-ground-collision and interactive-contrast both had to
+// unlearn. Only the shapes above draw that line.
+//
+// CHROME IS EXCLUDED FROM THE TALLY AND FROM THE PARTITION BOTH. A heading inside chrome does not
+// open a region, or a section-index `<nav>` dropped mid-page would split a genuine three-weight
+// passage into two clean two-weight halves and silence it, with no signal that it happened. The one
+// exception is a title band's own heading, which still opens the region it introduces: that is what
+// `<header>` is FOR, and the band's text is excluded either way.
 //
 // A page with neither a `<main>` landmark nor an open dialog layer (this admin's own login screen,
 // which renders outside `CairnAdminShell` and carries no landmark at all) has no content region
@@ -87,10 +150,34 @@ interface WeightCandidate {
   regionSelector: string;
 }
 
+/** One region the walk opened, whether or not any body content turned up inside it. */
+interface WeightRegionRoster {
+  regionId: string;
+  label: string;
+  selector: string;
+  /** The root this region belongs to, so a root already reported empty does not report twice. */
+  rootSelector: string;
+  /**
+   * Whether a heading opened this region. The implicit region before a root's first heading is not
+   * one an author declared, and on this admin it holds the title band's eyebrow and nothing else,
+   * so reporting it empty would fire on every page that renders a `PageHeader`.
+   */
+  openedByHeading: boolean;
+  /** Body-content elements measured in this region. */
+  candidates: number;
+  /**
+   * Text-bearing elements skipped as chrome. What separates "this region rendered only furniture"
+   * from "nothing rendered here at all", two conditions the fail-loud report used one wrong
+   * sentence for.
+   */
+  chrome: number;
+}
+
 /** One content region the in-page walk identified, whether or not it had anything to measure. */
 interface WeightRegionScan {
   /** Every root the walk judged, as a real CSS selector, for the fail-loud empty-root report. */
-  roots: { selector: string; candidates: number }[];
+  roots: { selector: string; candidates: number; chrome: number }[];
+  regions: WeightRegionRoster[];
   candidates: WeightCandidate[];
 }
 
@@ -102,14 +189,37 @@ interface WeightRegionScan {
  *
  * Walks the chosen root (the topmost open dialog layer, or `<main>` when none is open) in document
  * order, incrementing a region counter at each heading and recording every other visible
- * text-bearing element's computed weight against the current region. `hasRoot: false` is the signal
- * this admin's own login screen produces: no `<main>`, no open dialog, nothing to measure.
+ * text-bearing element's computed weight against the current region, excluding chrome (a nav
+ * landmark, a native button control, the page's own `<header>` title band, and a table's own
+ * `<thead>` column-header row; see the file header for why each one is chrome). `hasRoot: false` is
+ * the signal this admin's own login screen produces: no `<main>`, no open dialog, nothing to
+ * measure.
  */
 function collectWeightCandidates(): WeightRegionScan {
   const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+  // Chrome the user operates or navigates by, per the file header. Matched by tag or by the ARIA
+  // role that means the same thing, never a class name, so it holds against a rewritten component.
+  // A heading inside one of these does not open a region either (see `regionBlocking` below).
+  const CONTROL_CHROME = 'nav, [role="navigation"], button, [role="button"], summary, thead, [role="columnheader"]';
+  // A title band is chrome only when it carries the heading it introduces, which is the shape
+  // PageHeader renders. Unconditional, the clause exempts any <header> in any article or section,
+  // which is an unbounded hole in a rule consumers run against their own routes.
+  const TITLE_BAND = 'header, [role="banner"]';
   const helpers = globalThis.__cairnAudit;
   const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
   const isVisible = (el: Element) => (helpers ? helpers.isVisible(el) : true);
+
+  /** Whether `el` sits inside chrome the user operates, which also stops a heading opening a region. */
+  const regionBlocking = (el: Element | null) => el !== null && el.closest(CONTROL_CHROME) !== null;
+
+  /** Whether `el`'s text is chrome: operable furniture, or a title band introducing its own heading. */
+  function isChrome(el: Element): boolean {
+    if (regionBlocking(el)) return true;
+    for (let node: Element | null = el; node; node = node.parentElement) {
+      if (node.matches(TITLE_BAND) && node.querySelector(HEADING_SELECTOR) !== null) return true;
+    }
+    return false;
+  }
 
   // An open dialog layer is judged as its OWN region set, and `<main>` keeps being judged too. The
   // first cut let the topmost layer REPLACE main, and an adversarial pass showed what that costs:
@@ -129,49 +239,76 @@ function collectWeightCandidates(): WeightRegionScan {
   if (layers.length > 0) roots.push(layers[layers.length - 1]);
 
   const candidates: WeightCandidate[] = [];
-  const scanned: { selector: string; candidates: number }[] = [];
+  const regions: WeightRegionRoster[] = [];
+  const scanned: WeightRegionScan['roots'] = [];
 
   for (const root of roots) {
     const rootSelector = signature(root);
     const rootLabel = root === mainEl ? 'main' : rootSelector;
     let found = 0;
+    let chromeFound = 0;
     const visited = new Set<Element>();
     let regionIndex = 0;
-    let headingName = '';
-    let regionSelector = rootSelector;
+    // Every region the walk opens is rostered as it opens, including one that turns out to hold no
+    // body content at all. Carrying only the regions that produced a candidate is how a region that
+    // became entirely chrome vanished from the report, which reads as "measured, and clean".
+    const openRegion = (label: string, selector: string, openedByHeading: boolean): WeightRegionRoster => {
+      const opened = {
+        regionId: `${rootLabel}::${regionIndex}`,
+        label,
+        selector,
+        rootSelector,
+        openedByHeading,
+        candidates: 0,
+        chrome: 0,
+      };
+      regions.push(opened);
+      return opened;
+    };
+    let region = openRegion(`${rootLabel} (before any heading)`, rootSelector, false);
 
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
     for (let node = walker.nextNode(); node; node = walker.nextNode()) {
       if (node.nodeType === Node.ELEMENT_NODE) {
         const el = node as Element;
-        if (el.matches(HEADING_SELECTOR) && isVisible(el)) {
+        if (el.matches(HEADING_SELECTOR) && isVisible(el) && !regionBlocking(el)) {
           regionIndex += 1;
-          headingName = (el.textContent ?? '').trim().slice(0, 40) || signature(el);
-          regionSelector = signature(el);
+          const headingSelector = signature(el);
+          const headingName = (el.textContent ?? '').trim().slice(0, 40) || headingSelector;
+          region = openRegion(`${rootLabel} › ${headingName}`, headingSelector, true);
         }
         continue;
       }
       const text = (node.textContent ?? '').trim();
       if (text.length === 0) continue;
       const el = node.parentElement;
-      // A heading's own text is excluded from the region it opens: it is heading chrome by design,
-      // not content spending the budget. `closest` reaches the heading whether the text sits
-      // directly in it or in an inline wrapper (an icon span) inside it.
-      if (!el || visited.has(el) || el.closest(HEADING_SELECTOR)) continue;
+      if (!el || visited.has(el)) continue;
       if (!isVisible(el)) continue;
       visited.add(el);
+      // A heading's own text is excluded from the region it opens: it is heading chrome by design,
+      // not content spending the budget. `closest` reaches the heading whether the text sits
+      // directly in it or in an inline wrapper (an icon span) inside it. `isChrome` excludes the
+      // other shapes the same way, by ancestor, so text nested arbitrarily deep inside a toolbar's
+      // own control or a table's own header row is still caught, and it is COUNTED rather than
+      // dropped so an all-chrome region can say what it is.
+      if (el.closest(HEADING_SELECTOR) || isChrome(el)) {
+        chromeFound += 1;
+        region.chrome += 1;
+        continue;
+      }
       found += 1;
+      region.candidates += 1;
       candidates.push({
         selector: signature(el),
         weight: getComputedStyle(el).fontWeight,
-        regionId: `${rootLabel}::${regionIndex}`,
-        regionLabel: regionIndex === 0 ? `${rootLabel} (before any heading)` : `${rootLabel} › ${headingName}`,
-        regionSelector,
+        regionId: region.regionId,
+        regionLabel: region.label,
+        regionSelector: region.selector,
       });
     }
-    scanned.push({ selector: rootSelector, candidates: found });
+    scanned.push({ selector: rootSelector, candidates: found, chrome: chromeFound });
   }
-  return { roots: scanned, candidates };
+  return { roots: scanned, regions, candidates };
 }
 
 /**
@@ -203,16 +340,36 @@ export const weightBudget: RenderedRule = {
     // An identified region that yielded no measurement is reported, never returned as clean. An
     // unhydrated `<main>` and an empty dialog both produced an empty candidate list, and an empty
     // result read exactly like "measured, and clean" in the report.
+    //
+    // The two ways that happens are different problems and say so separately. "No visible text at
+    // all" is the unhydrated-root condition, a fix-in-the-app signal; a root or region that renders
+    // only chrome is fully hydrated and covered in text this rule deliberately does not count. One
+    // message for both was factually false about the second, which after Ruling 4's narrowing is
+    // the common case: a heading followed by a toolbar or a pagination strip.
+    const unmeasured = (selector: string, label: string, chrome: number): RenderedFinding => ({
+      ruleId: 'weight-budget',
+      tier: 'advisory',
+      selector,
+      message:
+        chrome > 0
+          ? `${label} rendered only chrome (${chrome} text-bearing element${chrome === 1 ? '' : 's'} inside a nav, ` +
+            'a control, a title band, or a column-header row), so no body content was measurable in it. ' +
+            'An empty result here means unmeasured, not clean.'
+          : `${label} carries no visible text at all, so no font-weight could be measured in it. ` +
+            'An empty result here means unmeasured, not clean.',
+    });
     for (const root of result.roots) {
       if (root.candidates > 0) continue;
-      findings.push({
-        ruleId: 'weight-budget',
-        tier: 'advisory',
-        selector: root.selector,
-        message:
-          'this content region carries no visible text at all, so no font-weight could be measured in it. ' +
-          'An empty result here means unmeasured, not clean.',
-      });
+      findings.push(unmeasured(root.selector, 'this content region', root.chrome));
+    }
+    // A region a heading opened, that then held nothing but chrome, reports on its own: the root
+    // above cannot speak for it, since one measurable region elsewhere keeps the root's own count
+    // above zero. The implicit region before a root's first heading is excluded, since on this
+    // admin it holds a `PageHeader` title band and nothing else on every single page.
+    for (const region of result.regions) {
+      if (!region.openedByHeading || region.candidates > 0 || region.chrome === 0) continue;
+      if (result.roots.some((root) => root.candidates === 0 && root.selector === region.rootSelector)) continue;
+      findings.push(unmeasured(region.selector, region.label, region.chrome));
     }
 
     const byRegion = new Map<string, { label: string; selector: string; candidates: WeightCandidate[] }>();

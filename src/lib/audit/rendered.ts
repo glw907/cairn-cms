@@ -93,6 +93,27 @@ export interface RenderedFinding {
   tier: Tier;
   selector: string;
   message: string;
+  /**
+   * Why this finding is exempt, when a rule holds a ratified exception the two suppression idioms
+   * cannot express: a design token every recipe shares, on every page, which no page+selector
+   * allowlist entry names and no source-positioned directive can reach. On an ADVISORY finding,
+   * present means suppressed, so the text is what the report prints in place of a justification a
+   * reader could look up, and it states the ruling, the measurement, and the token it turns on.
+   *
+   * On an `error`-tier finding it is refused: {@link resolveRenderedFindings} keeps the finding in
+   * the gating list and prints the refusal beside it. Unlike the allowlist, which is a config file
+   * the consumer owns and reviews, and unlike a source directive, which shows up in a diff, this
+   * reason is written by the engine, applies to every page automatically, and is discoverable only
+   * by reading the suppressed block. A one-line way to quiet a gate is not a thing to leave lying
+   * around, and the symmetry is deliberate: {@link unprobeableFinding} forces itself advisory so no
+   * suppression can turn a non-gating rule into a gating one, and this forces the other direction.
+   *
+   * The alternative a rule reaches for first is `continue`, and that is the defect this field
+   * exists to make impossible: `border-contrast`'s ratified hairline silenced 135 findings against
+   * cairn's own admin while the report said `0 suppressed`. An engine whose premise is that silent
+   * green is the enemy counts its own exceptions.
+   */
+  exemption?: string;
 }
 
 /** A rendered rule: an id, a tier, the interaction states it needs, and a pure-per-state check. */
@@ -129,10 +150,19 @@ export interface RenderedPageVisit {
    * directly) has nothing to record here.
    */
   selectorsUnprobeable?: Set<string>;
+  /**
+   * Interaction states the run declared but could not put this page into, so the rules that read
+   * only those states never ran here. A page with no popup trigger cannot reach `menu-open`, which
+   * is ordinary rather than an error, and it means this page's findings are a SUBSET of what a full
+   * run would raise. {@link deadFinding} needs that, since "nothing raised a finding for it" is
+   * only true of what the run reached.
+   */
+  statesUnreached?: Set<InteractionState>;
 }
 
 const STALE_ALLOWLIST_RULE_ID = 'rendered-allowlist-stale';
 const UNPROBEABLE_ALLOWLIST_RULE_ID = 'rendered-allowlist-unprobeable';
+const DEAD_ALLOWLIST_RULE_ID = 'rendered-allowlist-dead';
 
 /**
  * A rendered finding in the report's own `Finding` shape. A live page carries no source text, so
@@ -142,12 +172,27 @@ function positionless(finding: Pick<Finding, 'ruleId' | 'tier' | 'file' | 'messa
   return { ...finding, line: 0, start: 0, end: 0 };
 }
 
-function toFinding(rf: ResolvedRenderedFinding): Finding {
+/**
+ * A rendered finding in the report's `Finding` shape. `exemptionHonored` is false for a rule-declared
+ * exemption this resolver refused, which prints as a refusal rather than as an exemption: a reader
+ * of a gating line needs to know a rule asked for silence and did not get it, and printing
+ * `(exempt: ...)` beside a finding that gates would be a report contradicting itself.
+ */
+function toFinding(rf: ResolvedRenderedFinding, exemptionHonored = true): Finding {
+  // The exemption rides in the message rather than in a field of its own on `Finding`, because
+  // the report's whole job with a suppressed line is to print it: an allowlisted finding's reason
+  // lives in the config a reader can open, and a rule's own exception has no such file.
+  let note = '';
+  if (rf.exemption !== undefined) {
+    note = exemptionHonored
+      ? ` (exempt: ${rf.exemption})`
+      : ` (the rule claimed an exemption, refused because an error-tier finding gates: ${rf.exemption})`;
+  }
   return positionless({
     ruleId: rf.ruleId,
     tier: rf.tier,
     file: `${rf.page} [${rf.theme}, ${rf.state}]`,
-    message: `${rf.selector}: ${rf.message}`,
+    message: `${rf.selector}: ${rf.message}${note}`,
   });
 }
 
@@ -185,11 +230,65 @@ function unprobeableFinding(entry: RenderedAllowlistEntry): Finding {
 }
 
 /**
+ * The finding an allowlist entry raises when its selector still matches an element but no rule
+ * raised anything for it. The staleness check keys on the SELECTOR, so a fix that removed the
+ * finding while the element stayed put leaves an entry that suppresses nothing and can never be
+ * reported: it reads as a legitimate exemption forever, and the next real finding on that selector
+ * disappears into it. `suppress.ts` calls the static twin of this a dead directive and errors on it
+ * for the same reason. Tiered like the staleness finding, so a dead entry covering an advisory rule
+ * cannot become the path by which a non-gating rule reaches the exit code.
+ */
+function deadFinding(entry: RenderedAllowlistEntry, tier: Tier): Finding {
+  return positionless({
+    ruleId: DEAD_ALLOWLIST_RULE_ID,
+    tier,
+    file: entry.page,
+    message:
+      `the rendered allowlist names ${entry.selector} on ${entry.page}, and it still matches an element, but ` +
+      `nothing there raised a finding for it in any captured theme or state, so the entry suppresses nothing. ` +
+      `An exemption that has outlived its finding is where the next real one goes to hide: remove the entry. ` +
+      `(reason on file: ${entry.reason})`,
+  });
+}
+
+/**
+ * The finding an allowlist entry raises when its selector still matches but the run could not reach
+ * every interaction state the rules declare, so "nothing raised a finding for it" is a claim about
+ * an incomplete run rather than about the page. Advisory and worded as a withheld verdict, because
+ * the remedy {@link deadFinding} prescribes, removing the entry, is the WRONG move here: the next
+ * run that does reach the state would then gate on the real finding the entry covers.
+ *
+ * `runRendered` produces exactly this subset on any page with no popup trigger, which the default
+ * page list includes, so the gating verdict had to be conditional on coverage rather than on the
+ * caller doing something unusual.
+ */
+function unreachedStateFinding(entry: RenderedAllowlistEntry, unreached: InteractionState[]): Finding {
+  return positionless({
+    ruleId: DEAD_ALLOWLIST_RULE_ID,
+    tier: 'advisory',
+    file: entry.page,
+    message:
+      `the rendered allowlist names ${entry.selector} on ${entry.page}, and it still matches an element, but ` +
+      `nothing raised a finding for it in what this run reached. The run never reached ${unreached.join(', ')} ` +
+      `on that page, so whether the entry is dead cannot be decided here: check it against a page that reaches ` +
+      `that state before removing it. (reason on file: ${entry.reason})`,
+  });
+}
+
+/**
  * Resolve raw rendered findings against the allowlist: an exact page+selector match suppresses, and
  * every allowlist entry that never matched anything the run actually visited becomes its own
  * finding rather than silently doing nothing. An entry whose selector the browser refused to parse
  * is reported separately and advisory, since "unreadable" is a different claim from "stale" (see
- * {@link unprobeableFinding}).
+ * {@link unprobeableFinding}), and an entry that still matches an element while suppressing nothing
+ * is reported as dead (see {@link deadFinding}).
+ *
+ * An ADVISORY rule may also exempt its own finding by giving it a reason
+ * ({@link RenderedFinding.exemption}), which suppresses it here rather than inside the rule. The
+ * routing is deliberately the same one the allowlist takes: an exception is a finding that was
+ * raised, counted, and printed, never a branch a rule took before constructing one. On an
+ * `error`-tier finding the reason is refused and the finding still gates, so no rule can write
+ * itself out of the exit code.
  *
  * A stale entry is reported at the tier of the rule it names, which `ruleTiers` supplies, and at
  * `error` when it names none. Without that, suppressing an ADVISORY finding gated the build the
@@ -207,17 +306,29 @@ export function resolveRenderedFindings(
 ): { findings: Finding[]; suppressed: Finding[] } {
   const findings: Finding[] = [];
   const suppressed: Finding[] = [];
+  const spent = new Set<RenderedAllowlistEntry>();
   for (const rf of raw) {
-    const entry = allowlist.find((candidate) => candidate.page === rf.page && candidate.selector === rf.selector);
-    (entry ? suppressed : findings).push(toFinding(rf));
+    // EVERY matching entry is spent, not just the first. Marking one left a duplicated row, an
+    // ordinary result of a hand edit or a config merge, falling into the dead branch and gating the
+    // build with a message asserting nothing raised a finding for that selector, one line under the
+    // finding that had just been raised and suppressed for it.
+    const matches = allowlist.filter((candidate) => candidate.page === rf.page && candidate.selector === rf.selector);
+    for (const entry of matches) spent.add(entry);
+    const selfExempt = rf.exemption !== undefined && rf.tier !== 'error';
+    const destination = matches.length > 0 || selfExempt ? suppressed : findings;
+    destination.push(toFinding(rf, selfExempt));
   }
   for (const entry of allowlist) {
+    if (spent.has(entry)) continue;
     const visit = visits.find((candidate) => candidate.page === entry.page);
-    if (visit?.selectorsSeen.has(entry.selector)) continue;
+    const tier = (entry.rule === undefined ? undefined : ruleTiers.get(entry.rule)) ?? 'error';
+    if (visit?.selectorsSeen.has(entry.selector)) {
+      const unreached = [...(visit.statesUnreached ?? [])].sort();
+      findings.push(unreached.length > 0 ? unreachedStateFinding(entry, unreached) : deadFinding(entry, tier));
+      continue;
+    }
     findings.push(
-      visit?.selectorsUnprobeable?.has(entry.selector)
-        ? unprobeableFinding(entry)
-        : staleFinding(entry, (entry.rule === undefined ? undefined : ruleTiers.get(entry.rule)) ?? 'error')
+      visit?.selectorsUnprobeable?.has(entry.selector) ? unprobeableFinding(entry) : staleFinding(entry, tier)
     );
   }
   return { findings, suppressed };
@@ -584,7 +695,11 @@ export async function runRendered(
   const states = neededStates(rules);
   const themes: Theme[] = ['light', 'dark'];
 
-  const visits: RenderedPageVisit[] = pages.map((page) => ({ page, selectorsSeen: new Set<string>() }));
+  const visits: RenderedPageVisit[] = pages.map((page) => ({
+    page,
+    selectorsSeen: new Set<string>(),
+    statesUnreached: new Set<InteractionState>(),
+  }));
   const raw: ResolvedRenderedFinding[] = [];
 
   const browser = await chromium.launch();
@@ -608,7 +723,13 @@ export async function runRendered(
                 );
               }
               const reached = await applyState(state, page);
-              if (!reached) continue;
+              if (!reached) {
+                // Recorded, never swallowed: the rules that read only this state did not run here,
+                // so this page's findings are a subset and the allowlist's dead verdict has to know
+                // it before accusing a live entry.
+                visit?.statesUnreached?.add(state);
+                continue;
+              }
               await ensurePageHelpers(page);
 
               if (relevantAllowlist.length > 0 && visit) {

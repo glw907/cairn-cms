@@ -200,6 +200,19 @@ describe('formatReport', () => {
     expect(formatReport(reportOf([]))).toMatch(/0 suppressed/);
   });
 
+  // One ratified rendered exemption can suppress the same line on scores of elements, and a
+  // hundred-line block is read as noise rather than as the exception count it is. Repeats collapse
+  // to one line carrying the multiplier; the summary total still counts every finding, and a line
+  // that occurs once prints exactly as it always did.
+  it('collapses repeated identical suppressed lines while the total stays exact', () => {
+    const suppressed = [finding('advisory'), finding('advisory'), finding('advisory'), finding('error')];
+    const text = formatReport(reportOf([], suppressed));
+    expect(text).toMatch(/4 suppressed/);
+    expect(text).toContain('(x3)');
+    expect(text.split('\n').filter((row) => row.includes('type-scale'))).toHaveLength(2);
+    expect(text).not.toContain('(x1)');
+  });
+
   it('names the scan size and the rules that ran', () => {
     const text = formatReport(reportOf([]));
     expect(text).toContain('1 file');

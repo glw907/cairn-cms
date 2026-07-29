@@ -492,10 +492,8 @@
         ]
       },
       "observations": 14,
-      "provenance": "observed",
-      "flags": [
-        "open-question"
-      ]
+      "provenance": "ratified",
+      "flags": []
     },
     {
       "role": "card",

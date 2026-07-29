@@ -16,6 +16,8 @@ import type {
   NormObservation,
   NormsManifest,
   NormsSource,
+  OpenDesignQuestion,
+  RatifiedNorm,
 } from '../../../lib/audit/norms.js';
 
 // One observation per line, so a fixture reads as the measurements it is rather than as nested
@@ -49,6 +51,27 @@ function entryOf(manifest: NormsManifest, role: string, property: string): NormE
   if (!entry) throw new Error(`fixture is missing ${role}/${property}`);
   return entry;
 }
+
+// A fixture-owned open question and ratified norm, deliberately independent of whatever the
+// production OPEN_DESIGN_QUESTIONS/RATIFIED_NORMS tables currently hold. Pinning the open-question
+// discipline's tests to a real row (the card-border hairline, before Ruling 2 settled it) meant a
+// settled ruling silently emptied the table and stopped proving anything; a fixture proves the
+// mechanics no matter how many real questions are open right now. Sharing one role/property between
+// the two also lets a single fixture prove that an open question overrides an otherwise-ratified
+// band, not merely that it sits beside an unrelated one.
+const FIXTURE_OPEN_QUESTION: OpenDesignQuestion = {
+  role: 'select',
+  property: 'fixture-open-question',
+  question: 'a fixture-owned question with no production meaning, used only to prove the discipline',
+  reference: 'fixture only, not a real design record',
+};
+
+const FIXTURE_RATIFIED_NORM: RatifiedNorm = {
+  role: FIXTURE_OPEN_QUESTION.role,
+  property: FIXTURE_OPEN_QUESTION.property,
+  values: ['thin'],
+  reference: 'fixture only, not a real design record',
+};
 
 describe('buildManifest band derivation', () => {
   it('derives a length band from the distinct rounded values', () => {
@@ -197,18 +220,20 @@ describe('provenance', () => {
 });
 
 describe('the open-question discipline', () => {
-  // The live case: the --cairn-card-border hairline is measured, unsettled, and on Geoff's queue.
-  // A manifest that presented it as a norm would launder an open question into a settled one.
-  it('flags an entry an open design question governs and refuses it ratified provenance', () => {
-    expect(OPEN_DESIGN_QUESTIONS.some((q) => q.role === 'card' && q.property === 'border-color')).toBe(true);
+  // A manifest that presented an open question's band as a norm would launder it into a settled
+  // one; this proves the guard holds, and that an open question wins over an otherwise-agreeing
+  // ratified band rather than the two merely coexisting.
+  it('flags an entry an open design question governs, overriding an otherwise-ratified provenance', () => {
     const manifest = buildManifest(
       sourceOf([
-        observe('card', 'border-color', 'relationship', 'var(--cairn-card-border)'),
-        observe('card', 'border-color', 'relationship', 'var(--cairn-card-border)'),
-      ])
+        observe(FIXTURE_OPEN_QUESTION.role, FIXTURE_OPEN_QUESTION.property, 'keyword', 'thin'),
+        observe(FIXTURE_OPEN_QUESTION.role, FIXTURE_OPEN_QUESTION.property, 'keyword', 'thin'),
+      ]),
+      { ratifiedNorms: [FIXTURE_RATIFIED_NORM], openQuestions: [FIXTURE_OPEN_QUESTION] }
     );
-    const entry = entryOf(manifest, 'card', 'border-color');
+    const entry = entryOf(manifest, FIXTURE_OPEN_QUESTION.role, FIXTURE_OPEN_QUESTION.property);
     expect(entry.flags).toContain('open-question');
+    expect(entry.flags).not.toContain('ratified-drift');
     expect(entry.provenance).toBe('observed');
   });
 
@@ -274,19 +299,20 @@ describe('checkManifestDisciplines', () => {
     };
   }
 
-  it('passes a manifest that honors all three', () => {
+  it('passes a manifest that honors every discipline', () => {
     expect(
       checkManifestDisciplines(
         manifestWith([
           {
-            role: 'card',
-            property: 'border-color',
-            band: { kind: 'relationship', expressions: ['var(--cairn-card-border)'] },
+            role: FIXTURE_OPEN_QUESTION.role,
+            property: FIXTURE_OPEN_QUESTION.property,
+            band: { kind: 'relationship', expressions: ['var(--fixture-token)'] },
             observations: 4,
             provenance: 'observed',
             flags: ['open-question'],
           },
-        ])
+        ]),
+        { openQuestions: [FIXTURE_OPEN_QUESTION] }
       )
     ).toEqual([]);
   });
@@ -295,18 +321,101 @@ describe('checkManifestDisciplines', () => {
     const violations = checkManifestDisciplines(
       manifestWith([
         {
-          role: 'card',
-          property: 'border-color',
-          band: { kind: 'relationship', expressions: ['var(--cairn-card-border)'] },
+          role: FIXTURE_OPEN_QUESTION.role,
+          property: FIXTURE_OPEN_QUESTION.property,
+          band: { kind: 'relationship', expressions: ['var(--fixture-token)'] },
           observations: 4,
           provenance: 'ratified',
           flags: [],
         },
-      ])
+      ]),
+      { openQuestions: [FIXTURE_OPEN_QUESTION] }
     );
-    expect(violations).toHaveLength(2);
+    // Three, because the reverse direction sees the same entry too: no ratified decision governs
+    // this role/property in the production table it was checked against.
+    expect(violations).toHaveLength(3);
     expect(violations.join('\n')).toMatch(/not flagged/);
     expect(violations.join('\n')).toMatch(/claims ratified provenance/);
+    expect(violations.join('\n')).toMatch(/no ratified decision governs it/);
+  });
+
+  // The reverse disciplines. A table-to-entry lookup only ever notices a row it already knows
+  // about, so an entry claiming a flag or a provenance that nothing behind it supports could live
+  // in the committed manifest indefinitely, which is exactly what happened to `card/border-color`
+  // after Ruling 2 emptied the open-question table: the CLI printed `[open-question]` with no
+  // `OPEN:` line, so the one row Geoff had ruled on read as an unsettled question with the question
+  // redacted. The disciplines exist to stop an unsettled number reading as settled; this is that
+  // laundering inverted.
+  it('reports an entry flagged open-question that no open question governs', () => {
+    const violations = checkManifestDisciplines(
+      manifestWith([
+        {
+          role: 'select',
+          property: 'height',
+          band: { kind: 'length', unit: 'px', values: [40], min: 40, max: 40 },
+          observations: 4,
+          provenance: 'observed',
+          flags: ['open-question'],
+        },
+      ]),
+      { openQuestions: [] }
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatch(/no open design question governs it/);
+  });
+
+  it('reports an entry a ratified decision settles that still claims observed provenance', () => {
+    const violations = checkManifestDisciplines(
+      manifestWith([
+        {
+          role: FIXTURE_RATIFIED_NORM.role,
+          property: FIXTURE_RATIFIED_NORM.property,
+          band: { kind: 'keyword', values: ['thin'] },
+          observations: 4,
+          provenance: 'observed',
+          flags: [],
+        },
+      ]),
+      { ratifiedNorms: [FIXTURE_RATIFIED_NORM], openQuestions: [] }
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatch(/still claims observed provenance/);
+  });
+
+  it('reports a drifted band that never says so', () => {
+    const violations = checkManifestDisciplines(
+      manifestWith([
+        {
+          role: FIXTURE_RATIFIED_NORM.role,
+          property: FIXTURE_RATIFIED_NORM.property,
+          band: { kind: 'keyword', values: ['thick'] },
+          observations: 4,
+          provenance: 'observed',
+          flags: [],
+        },
+      ]),
+      { ratifiedNorms: [FIXTURE_RATIFIED_NORM], openQuestions: [] }
+    );
+    expect(violations).toHaveLength(1);
+    expect(violations[0]).toMatch(/not flagged ratified-drift/);
+  });
+
+  it('accepts a drifted band that carries the flag', () => {
+    expect(
+      checkManifestDisciplines(
+        manifestWith([
+          {
+            role: FIXTURE_RATIFIED_NORM.role,
+            property: FIXTURE_RATIFIED_NORM.property,
+            band: { kind: 'keyword', values: ['thick'] },
+            observations: 4,
+            provenance: 'observed',
+            flags: ['ratified-drift'],
+          },
+        ]),
+        { ratifiedNorms: [FIXTURE_RATIFIED_NORM], openQuestions: [] }
+      )
+    ).toEqual([]);
   });
 
   it('reports a band under the floor that never says so', () => {
@@ -375,12 +484,29 @@ describe('the query', () => {
     expect(unknownTermMessage(manifest, 'btn-secondary')).toContain('button-primary');
   });
 
-  it('prints the band, the site count, the provenance, and the open question', () => {
+  it('prints the band, the site count, and the provenance, citing where a ratified band is recorded', () => {
     const printed = formatNormsQuery(queryNorms(manifest, 'card'));
     expect(printed).toContain('card  (container)');
     expect(printed).toContain('border-radius');
     expect(printed).toContain('ratified by');
+  });
+
+  // The shipped manifest carries no open question once Ruling 2 settled the last one, so the
+  // OPEN: line is proved against a fixture question rather than the manifest's live contents, the
+  // same reasoning FIXTURE_OPEN_QUESTION exists for above.
+  it('prints an open question governing an entry', () => {
+    const fixtureManifest = buildManifest(
+      sourceOf([
+        observe(FIXTURE_OPEN_QUESTION.role, FIXTURE_OPEN_QUESTION.property, 'keyword', 'thin'),
+        observe(FIXTURE_OPEN_QUESTION.role, FIXTURE_OPEN_QUESTION.property, 'keyword', 'thin'),
+      ]),
+      { openQuestions: [FIXTURE_OPEN_QUESTION] }
+    );
+    const printed = formatNormsQuery(queryNorms(fixtureManifest, FIXTURE_OPEN_QUESTION.role), {
+      openQuestions: [FIXTURE_OPEN_QUESTION],
+    });
     expect(printed).toContain('OPEN:');
+    expect(printed).toContain(FIXTURE_OPEN_QUESTION.question);
   });
 });
 
@@ -392,8 +518,46 @@ describe('the shipped manifest', () => {
     expect([...NORM_ROLES].map((role) => role.id).filter((id) => !covered.has(id))).toEqual([]);
   });
 
-  it('honors its own three disciplines', () => {
+  // The production-anchored check. Every other discipline test hands `checkManifestDisciplines` its
+  // own fixture tables, which proves the mechanics and proves nothing about whether production
+  // still reads the production tables; a mutation pass cut `OPEN_DESIGN_QUESTIONS` out of all four
+  // call sites and the whole suite stayed green. This one passes no tables, so it reads
+  // `RATIFIED_NORMS` and `OPEN_DESIGN_QUESTIONS` on every run and holds the committed manifest
+  // against them in both directions. It needs no browser and no preview server, unlike
+  // `npm run norms:check`, which is why the stale row it now catches survived every gate that runs
+  // in CI.
+  //
+  // One limit is worth stating rather than papering over: while the open-question table is empty,
+  // no test can tell `?? OPEN_DESIGN_QUESTIONS` from `?? []`. The wiring becomes load-bearing again
+  // the moment a question is opened, because a severed table would then fire the reverse discipline
+  // on every real open question and turn this red.
+  it('honors its own disciplines against the production tables', () => {
     expect(checkManifestDisciplines(manifest)).toEqual([]);
+  });
+
+  // The flag and the decision are two files that have to agree. Ruling 2 is the live example: the
+  // hairline moved from open question to ratified norm, and a manifest that still called it a
+  // question would print `[open-question]` at a builder with nothing behind it.
+  it('carries no open-question flag the production table cannot explain', () => {
+    for (const entry of manifest.entries) {
+      if (!entry.flags.includes('open-question')) continue;
+      expect(
+        OPEN_DESIGN_QUESTIONS.some(
+          (question) => question.role === entry.role && question.property === entry.property
+        )
+      ).toBe(true);
+    }
+  });
+
+  // What a builder actually reads. A `ratified` row prints the document that settles it, and a
+  // flagged row prints the question, so neither can appear as a bare word with no authority behind
+  // it. `card/border-color` is the row Ruling 2 moved, and it prints the ruling now.
+  it('prints a decision behind every provenance the CLI shows', () => {
+    const printed = formatNormsQuery(queryNorms(manifest, 'card'));
+    expect(printed).not.toContain('[open-question]');
+    expect(printed).toContain('border-color  var(--cairn-card-border)');
+    expect(printed).toMatch(/border-color .*ratified/);
+    expect(printed).toContain('Ruling 2');
   });
 
   // The manifest ships to consumers who re-tune the palette, so a resolved Warm Stone value in it

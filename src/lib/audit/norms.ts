@@ -272,6 +272,13 @@ export const RATIFIED_NORMS: readonly RatifiedNorm[] = [
     values: [1],
     reference: 'docs/internal/admin-design-system.md (the card-shell hairline)',
   },
+  {
+    role: 'card',
+    property: 'border-color',
+    values: ['var(--cairn-card-border)'],
+    reference:
+      "docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md (Ruling 2, Task 16b): the --cairn-card-border hairline measures 1.11:1 light and 1.43:1 dark against WCAG 1.4.11's 3:1 floor and stays by design, a quiet edge deliberately below the floor",
+  },
 ];
 
 /** A design question still on the queue, and the norm a reader must not settle from the manifest. */
@@ -288,16 +295,13 @@ export interface OpenDesignQuestion {
 // provenance, and the `norms-bands` rule treats a flagged entry as unbanded rather than checking
 // against it. The manifest still carries the measurement, because hiding it would leave a builder
 // inventing a number instead; what the flag removes is the entry's authority.
+//
+// Empty is the ordinary state, not a stale one: it means every design question a spec raised has
+// been ruled. The table's last resident, the `--cairn-card-border` hairline, moved to
+// {@link RATIFIED_NORMS} once Ruling 2 settled it; that move is the discipline working, not a gap
+// in it.
 /** Every open design question the manifest must not present as settled. */
-export const OPEN_DESIGN_QUESTIONS: readonly OpenDesignQuestion[] = [
-  {
-    role: 'card',
-    property: 'border-color',
-    question:
-      "the --cairn-card-border hairline measures 1.11:1 light and 1.43:1 dark against base-200, under WCAG 1.4.11's 3:1 floor, and the ruling is on Geoff's queue",
-    reference: 'docs/STATUS.md (v0.90.1, OPEN DESIGN QUESTION)',
-  },
-];
+export const OPEN_DESIGN_QUESTIONS: readonly OpenDesignQuestion[] = [];
 
 // A palette-dependent value is admitted only in token-derived form. The test is deliberately
 // inverted: an expression qualifies when it reaches the palette through a custom property or is one
@@ -387,14 +391,31 @@ function bandValues(band: NormBand): (number | string)[] {
   return band.kind === 'relationship' ? band.expressions : band.values;
 }
 
-function findRatified(role: string, property: string): RatifiedNorm | undefined {
-  return RATIFIED_NORMS.find((norm) => norm.role === role && norm.property === property);
+/**
+ * An override of the production {@link RATIFIED_NORMS}/{@link OPEN_DESIGN_QUESTIONS} tables, for a
+ * fixture that must prove a discipline without depending on whichever real design questions happen
+ * to be open. Every derivation and query entry point defaults to the production tables when this
+ * is omitted, so nothing outside a test ever needs to pass one.
+ */
+export interface NormsTables {
+  ratifiedNorms?: readonly RatifiedNorm[];
+  openQuestions?: readonly OpenDesignQuestion[];
 }
 
-function findOpenQuestion(role: string, property: string): OpenDesignQuestion | undefined {
-  return OPEN_DESIGN_QUESTIONS.find(
-    (question) => question.role === role && question.property === property
-  );
+function findRatified(
+  role: string,
+  property: string,
+  table: readonly RatifiedNorm[] = RATIFIED_NORMS
+): RatifiedNorm | undefined {
+  return table.find((norm) => norm.role === role && norm.property === property);
+}
+
+function findOpenQuestion(
+  role: string,
+  property: string,
+  table: readonly OpenDesignQuestion[] = OPEN_DESIGN_QUESTIONS
+): OpenDesignQuestion | undefined {
+  return table.find((question) => question.role === role && question.property === property);
 }
 
 /** The raw material one generator run hands the derivation. */
@@ -411,8 +432,10 @@ export interface NormsSource {
  * {@link NORM_ROLES}, when a role's selector matched nothing anywhere, or when one property's
  * observations disagree about their kind. Each of those is a generator that measured less than it
  * claims, and a manifest is worse than useless when it is confidently incomplete.
+ *
+ * `tables` overrides the production ratified/open-question tables; the generator never passes one.
  */
-export function buildManifest(source: NormsSource): NormsManifest {
+export function buildManifest(source: NormsSource, tables: NormsTables = {}): NormsManifest {
   if (source.observations.length === 0) {
     throw new Error(
       'the norms render produced no observations; the pages rendered nothing the role selectors match'
@@ -424,7 +447,7 @@ export function buildManifest(source: NormsSource): NormsManifest {
     if (!known.has(observation.role)) {
       throw new Error(`${observation.role}: not a known norm role`);
     }
-    const key = `${observation.role} ${observation.property}`;
+    const key = `${observation.role}\u0000${observation.property}`;
     const group = groups.get(key);
     if (group) group.push(observation);
     else groups.set(key, [observation]);
@@ -453,14 +476,14 @@ export function buildManifest(source: NormsSource): NormsManifest {
     const observations = new Set(kept.map((observation) => observation.site)).size;
     if (observations < MIN_OBSERVATION_SITES) flags.push('single-observation');
 
-    const ratified = findRatified(role, property);
+    const ratified = findRatified(role, property, tables.ratifiedNorms);
     let provenance: NormEntry['provenance'] = 'observed';
     if (ratified) {
       const agrees = bandValues(band).every((value) => ratified.values.includes(value));
       if (agrees) provenance = 'ratified';
       else flags.push('ratified-drift');
     }
-    if (findOpenQuestion(role, property)) {
+    if (findOpenQuestion(role, property, tables.openQuestions)) {
       flags.push('open-question');
       provenance = 'observed';
     }
@@ -488,20 +511,34 @@ export function buildManifest(source: NormsSource): NormsManifest {
 }
 
 /**
- * Check a manifest against the three disciplines that keep it honest: an entry matching an open
- * design question never reads as settled, a band under the observation floor says so, and no
- * palette-dependent entry carries a resolved literal. Returns one message per violation, empty when
- * the manifest is clean.
+ * Check a manifest against the disciplines that keep it honest, in BOTH directions: an entry
+ * matching an open design question never reads as settled, an entry claiming a flag or a provenance
+ * the tables do not support never reads as governed, a band under the observation floor says so,
+ * and no palette-dependent entry carries a resolved literal. Returns one message per violation,
+ * empty when the manifest is clean.
  *
  * This runs over the FINISHED manifest rather than inside the derivation on purpose. The derivation
  * is one way to produce a manifest; a hand-edited or stale file is another, and both reach the same
  * gate here.
+ *
+ * The reverse direction is the half an adversarial pass found missing, and it is what makes the
+ * shipped manifest a live check on the tables rather than a snapshot beside them. A table-to-entry
+ * lookup can only ever notice a row it already knows about, so a flag whose referent had been
+ * ruled away survived in the committed file, and `norms card` printed `[open-question]` with no
+ * question behind it: the one row Geoff had actually ruled on read to a builder as unsettled with
+ * the question redacted. Nothing in `npm test`, `npm run check`, or CI could see it, because the
+ * only gate that regenerates the manifest needs a built package and a running preview server. This
+ * check needs neither, and it reads the production tables on every run, which is also what keeps
+ * the default-parameter wiring below load-bearing the moment a design question is opened.
+ *
+ * `tables` overrides the production tables; a fixture proving a discipline passes its own rows
+ * rather than depending on whichever real question happens to be open.
  */
-export function checkManifestDisciplines(manifest: NormsManifest): string[] {
+export function checkManifestDisciplines(manifest: NormsManifest, tables: NormsTables = {}): string[] {
   const violations: string[] = [];
   for (const entry of manifest.entries) {
     const where = `${entry.role}/${entry.property}`;
-    const question = findOpenQuestion(entry.role, entry.property);
+    const question = findOpenQuestion(entry.role, entry.property, tables.openQuestions);
     if (question) {
       if (!entry.flags.includes('open-question')) {
         violations.push(`${where}: an open design question governs this norm and the entry is not flagged (${question.reference})`);
@@ -509,7 +546,29 @@ export function checkManifestDisciplines(manifest: NormsManifest): string[] {
       if (entry.provenance === 'ratified') {
         violations.push(`${where}: an open design question governs this norm and the entry claims ratified provenance`);
       }
+    } else if (entry.flags.includes('open-question')) {
+      violations.push(
+        `${where}: the entry is flagged open-question and no open design question governs it, so the flag prints with nothing behind it. Regenerate the manifest.`
+      );
     }
+
+    const ratified = findRatified(entry.role, entry.property, tables.ratifiedNorms);
+    if (ratified) {
+      const agrees = bandValues(entry.band).every((value) => ratified.values.includes(value));
+      if (!agrees && !entry.flags.includes('ratified-drift')) {
+        violations.push(
+          `${where}: the render disagrees with the ratified decision and the entry is not flagged ratified-drift (${ratified.reference})`
+        );
+      }
+      if (agrees && !question && entry.provenance !== 'ratified') {
+        violations.push(
+          `${where}: a ratified decision settles this norm and the render agrees with it, and the entry still claims ${entry.provenance} provenance (${ratified.reference})`
+        );
+      }
+    } else if (entry.provenance === 'ratified') {
+      violations.push(`${where}: the entry claims ratified provenance and no ratified decision governs it`);
+    }
+
     if (entry.observations < manifest.minObservationSites && !entry.flags.includes('single-observation')) {
       violations.push(
         `${where}: ${entry.observations} observation site(s) is under the floor of ${manifest.minObservationSites} and the entry is not flagged single-observation`
@@ -585,8 +644,12 @@ function formatBand(band: NormBand): string {
   return band.min === band.max ? `${band.min}${unit}` : `${band.min}${unit} to ${band.max}${unit}`;
 }
 
-/** Render a query result for a terminal or an agent reading the CLI. */
-export function formatNormsQuery(matches: NormsQueryMatch[]): string {
+/**
+ * Render a query result for a terminal or an agent reading the CLI.
+ *
+ * `tables` overrides the production ratified/open-question tables; the bin never passes one.
+ */
+export function formatNormsQuery(matches: NormsQueryMatch[], tables: NormsTables = {}): string {
   const lines: string[] = [];
   for (const match of matches) {
     lines.push(`${match.role.id}  (${match.role.family})  ${match.role.selector}`, `  ${match.role.description}`, '');
@@ -594,10 +657,11 @@ export function formatNormsQuery(matches: NormsQueryMatch[]): string {
       const sites = `${entry.observations} site${entry.observations === 1 ? '' : 's'}`;
       const flags = entry.flags.length > 0 ? `  [${entry.flags.join(' ')}]` : '';
       lines.push(`  ${entry.property}  ${formatBand(entry.band)}  ${sites}  ${entry.provenance}${flags}`);
-      const ratified = entry.provenance === 'ratified' ? findRatified(entry.role, entry.property) : undefined;
+      const ratified =
+        entry.provenance === 'ratified' ? findRatified(entry.role, entry.property, tables.ratifiedNorms) : undefined;
       if (ratified) lines.push(`    ratified by ${ratified.reference}`);
       const question = entry.flags.includes('open-question')
-        ? findOpenQuestion(entry.role, entry.property)
+        ? findOpenQuestion(entry.role, entry.property, tables.openQuestions)
         : undefined;
       if (question) lines.push(`    OPEN: ${question.question} (${question.reference})`);
     }

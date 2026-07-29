@@ -375,31 +375,31 @@ describe('interactive-contrast against a real browser', () => {
 
 describe('touch-targets against a real browser', () => {
   // The expansion arithmetic was inverted: a POSITIVE inset reaches inward and widens nothing, but
-  // the rule expanded on it. A 28px button with a decorative inset dot inflated to 46x46 and its
-  // real 28x28 hit area went unreported.
+  // the rule expanded on it. A 20px button with a decorative inset dot (below Geoff's ruled 24x24
+  // AA floor, Task 16b) inflated past the floor and its real 20x20 hit area went unreported.
   it('catches a small control whose decorative ::before reaches inward', async () => {
     const findings = await findingsFor(
       touchTargets,
       `<style>
-         button.icon-btn { display:inline-flex; width:28px; height:28px; position:relative;
+         button.icon-btn { display:inline-flex; width:20px; height:20px; position:relative;
                            padding:0; border:0; background:transparent; }
-         button.icon-btn::before { content:""; position:absolute; inset:9px;
+         button.icon-btn::before { content:""; position:absolute; inset:6px;
                                    border-radius:999px; background:rgba(0,0,0,.08); }
        </style>
        <body><button class="icon-btn" aria-label="Dismiss">x</button></body>`
     );
     expect(findings).toHaveLength(1);
-    expect(findings[0].message).toContain('28x28');
+    expect(findings[0].message).toContain('20x20');
   });
 
   // The same inversion against third-party CSS already on the admin's dependency path: daisyUI's
   // .tab::before is a decorative 3px underline at bottom:0; left:10%, whose positive computed left
-  // and right widened a 42px tab past the floor.
+  // and right widened a below-floor tab past it.
   it('catches a tab whose decorative underline pseudo-element sits inside its box', async () => {
     const findings = await findingsFor(
       touchTargets,
       `<style>
-         a.tab { display:inline-flex; align-items:center; width:42px; height:30px;
+         a.tab { display:inline-flex; align-items:center; width:20px; height:20px;
                  position:relative; text-decoration:none; }
          a.tab::before { content:""; background-color:#999; border-radius:4px; width:80%;
                          height:3px; position:absolute; bottom:0; left:10%; }
@@ -415,7 +415,7 @@ describe('touch-targets against a real browser', () => {
     const findings = await findingsFor(
       touchTargets,
       `<style>
-         button.expanded-btn { display:inline-flex; width:28px; height:28px; position:relative;
+         button.expanded-btn { display:inline-flex; width:20px; height:20px; position:relative;
                                padding:0; border:0; }
          button.expanded-btn::before { content:""; position:absolute; inset:-12px; }
        </style>
@@ -431,7 +431,7 @@ describe('touch-targets against a real browser', () => {
       touchTargets,
       `<style>
          .card { position:relative; padding:40px; width:300px; }
-         button.static-btn { display:inline-flex; width:28px; height:28px; padding:0; border:0; }
+         button.static-btn { display:inline-flex; width:20px; height:20px; padding:0; border:0; }
          button.static-btn::before { content:""; position:absolute; inset:-12px; }
        </style>
        <body><div class="card"><button class="static-btn" aria-label="Static">s</button></div></body>`
@@ -442,12 +442,14 @@ describe('touch-targets against a real browser', () => {
   // The graduated script's off-canvas exemption compared against `window.innerHeight`, so on any
   // page taller than one screenful every control below the fold was skipped before the floor was
   // applied. That is why both implementations reported the showcase styleguide clean while its
-  // buttons render at 40px and 32px, and why the gate's own four allowlist rows had gone inert.
+  // buttons render at 40px and 32px, and why the gate's own four allowlist rows had gone inert. The
+  // control itself is sized below the 24x24 AA floor (Task 16b ruling 1) so the off-canvas defect
+  // being demonstrated does not depend on which floor is in force.
   it('applies the floor to a control below the fold', async () => {
     const findings = await findingsFor(
       touchTargets,
       `<body style="margin:0"><div style="height:2000px"></div>
-       <button class="btn btn-sm" style="width:81px;height:32px">Read more</button></body>`
+       <button class="btn btn-sm" style="width:20px;height:20px;padding:0;border:0">x</button></body>`
     );
     expect(selectors(findings)).toEqual(['button.btn.btn-sm']);
   });
@@ -662,10 +664,16 @@ describe('chip-ground-collision against a real browser', () => {
 
 describe('border-contrast against a real browser', () => {
   // The ratified --cairn-card-border hairline, at its real light-theme oklch value, against the
-  // real base-200 ambient the admin's cards sit on. This is the exact case spec 6.3 names: the
-  // rule fires here by design, and the ratio this test asserts is the same 1.11:1 the design
-  // question on the owner's queue is measured against, reproduced against real Chromium rather
-  // than taken on faith.
+  // real base-200 ambient the admin's cards sit on. This is the exact case spec 6.3 names, and the
+  // ratio this test asserts is the same 1.11:1 the ruling was measured against, reproduced against
+  // real Chromium rather than taken on faith.
+  //
+  // Ruling 2 (Task 16b) settled that question and suppressed the hairline, and this fixture still
+  // reports, on purpose: the exemption is keyed to the value the page's own `--cairn-card-border`
+  // resolves to, and every fixture in this block authors the color as a literal without declaring
+  // the token. The measurement therefore stays pinned here while the ruling reaches the admin's own
+  // card recipe, which paints through `var(--cairn-card-border)`. That half lives in
+  // `rulings.border-contrast.test.ts`.
   it('catches the ratified light-theme hairline at its documented 1.11:1', async () => {
     const findings = await findingsFor(
       borderContrast,
@@ -1130,7 +1138,9 @@ describe('the registry', () => {
               padding:16px;width:200px;height:80px">Card</div>
        </body>`
     );
-    // The ratified hairline, so this is guaranteed non-empty; the point is what tier it carries.
+    // The hairline's own color authored as a literal, without the `--cairn-card-border` token
+    // Ruling 2 keyed its exemption to, so this is guaranteed non-empty; the point is what tier it
+    // carries.
     expect(findings.length).toBeGreaterThan(0);
     expect(findings.every((finding) => finding.tier === 'advisory')).toBe(true);
     // The exit-criterion proof, not just a tier label: run the same findings through the bin's

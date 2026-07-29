@@ -12,11 +12,27 @@ function line(finding: Finding): string {
   return `${finding.file}:${finding.line}  ${finding.tier}  ${finding.ruleId}  ${finding.message}`;
 }
 
+/**
+ * The suppressed block, with an identical line printed once and multiplied. One ratified exemption
+ * inside a rendered rule covers every element that carries a shared token, which on cairn's own
+ * admin is scores of identical lines; that block reads as noise rather than as the exception count
+ * it is. Only an exactly identical line collapses, so no distinct selector is lost (a rendered
+ * finding's selector is part of its message), and the summary below still counts every finding.
+ */
+function suppressedBlock(suppressed: Finding[]): string[] {
+  const counts = new Map<string, number>();
+  for (const finding of suppressed) {
+    const text = line(finding);
+    counts.set(text, (counts.get(text) ?? 0) + 1);
+  }
+  return [...counts].map(([text, count]) => `  ${text}${count > 1 ? `  (x${count})` : ''}`);
+}
+
 /** Render a report for a terminal or a CI log. */
 export function formatReport(report: AuditReport): string {
   const lines = report.findings.map(line);
   if (report.suppressed.length > 0) {
-    lines.push('', 'Suppressed:', ...report.suppressed.map((finding) => `  ${line(finding)}`));
+    lines.push('', 'Suppressed:', ...suppressedBlock(report.suppressed));
   }
   const errors = report.findings.filter((finding) => finding.tier === 'error').length;
   const advisories = report.findings.length - errors;

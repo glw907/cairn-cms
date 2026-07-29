@@ -552,8 +552,15 @@ reflows its neighboring characters.
     --input-color: var(--cairn-card-border);
   }
 
+  /* `flex: 1 1 auto` plus `min-width: 0` let the group shrink below its own preferred width
+     (the flexbox default that overflowed the 320px composition floor: a three-option triage with
+     count badges renders past 320px on its own, and `flex: 0 0 auto` refused to yield that width
+     back). `flex-wrap: wrap` then wraps the group's own buttons onto a second line inside
+     whatever width it was given, rather than the whole row scrolling past the viewport. */
   .toolkit-toolbar-segmented {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 100%;
     flex-wrap: wrap;
   }
 

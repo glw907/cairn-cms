@@ -213,7 +213,12 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
-  const sortButton = `inline-flex items-center gap-1 ${headerLabel} hover:text-base-content`;
+  // `relative` plus the `before:` hit-area trio expand the button's EFFECTIVE tap region past its
+  // own 16px-tall painted box, an outward `::before` inset (touch-targets' own sanctioned
+  // technique) rather than inflating the type-label font size to reach the 24px floor.
+  const sortButton =
+    `relative inline-flex items-center gap-1 ${headerLabel} hover:text-base-content ` +
+    `before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']`;
 
   // The publish-all flash. A racing second admin can publish first, leaving this redirect
   // counting zero; say nothing then.
@@ -375,7 +380,11 @@ Filtering, sorting, and paging run over the loaded entries in component state.
                    title-status-date, so the summary line stays off the office list and the
                    Hidden tag sits inline beside the title. -->
               <div class="flex items-center gap-2">
-                <a class="truncate type-subtitle font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
+                <!-- `py-1` grows the link's own box past its 19px line-height to the 24px touch-target
+                     floor: real padding on the anchor's border box, not a font-size bump. `::before`
+                     expansion (ConceptList's other touch-target fix, above) does not reach here since
+                     `truncate`'s own `overflow: hidden` would clip an outward pseudo-element. -->
+                <a class="truncate py-1 type-subtitle font-medium hover:text-primary hover:underline {entry.draft ? draftDim : ''}" href={`/admin/${data.conceptId}/${entry.id}`}>{entry.title}</a>
                 {#if entry.draft}
                   <!-- Hidden is a row treatment, not a status badge: the row de-emphasizes and an
                        eye-off tag sits by the title, leaving the Status cell to its publish chip. -->

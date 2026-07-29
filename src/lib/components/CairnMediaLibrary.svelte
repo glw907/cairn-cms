@@ -1534,7 +1534,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
             <span class="absolute left-2 top-2 z-10 inline-flex h-6 w-6 items-center justify-center rounded-md bg-base-100/90 shadow-sm">
               <input
                 type="checkbox"
-                class="checkbox checkbox-sm"
+                class="checkbox"
                 checked={picked}
                 aria-label="Select {asset.displayName}"
                 onclick={(e) => e.stopPropagation()}
@@ -1624,7 +1624,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
               <td class="w-10 pl-6">
                 <input
                   type="checkbox"
-                  class="checkbox checkbox-sm"
+                  class="checkbox"
                   checked={picked}
                   aria-label="Select {asset.displayName}"
                   onchange={() => toggleSelect(asset.hash)}

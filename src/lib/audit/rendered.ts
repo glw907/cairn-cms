@@ -373,17 +373,15 @@ export async function resolveBaseUrl(isReachable: (url: string) => Promise<boole
 
 /**
  * Parse `CAIRN_AUDIT_COOKIES` into the extra cookies a rendered run's browser context carries
- * alongside the theme cookie, in Cookie-header syntax: `name=value` entries separated by `;`,
- * each split on the first `=`, the entry trimmed before splitting. `undefined` or an
- * all-whitespace value means none were configured and resolves to `[]`.
+ * alongside the theme cookie. The syntax is a Cookie header's: `name=value` entries separated by
+ * `;`, each entry trimmed and split on its first `=`, so a value may itself contain one. An unset
+ * or all-whitespace value configures none.
  *
- * Throws rather than skipping a malformed entry, no `=` or an empty name after trimming, naming
- * `CAIRN_AUDIT_COOKIES` and the bad entry in the message. `loadConfig`'s stated philosophy is that
- * a typo never degrades into a silently narrower audit; a session cookie that silently failed to
- * parse would produce a full run of login-redirect failures blamed on the wrong cause rather than
- * on the env var. Also throws on an entry named `cairn-admin-theme`, since `runRendered` owns that
- * cookie per browser context, one context per theme, and a caller override would silently
- * invalidate the per-theme measurement.
+ * A malformed entry throws rather than being skipped, holding `loadConfig`'s rule that a typo never
+ * degrades into a silently narrower audit: a session cookie that quietly failed to parse would
+ * produce a whole run of login-redirect failures blamed on the admin rather than on the env var. An
+ * entry naming `cairn-admin-theme` is refused outright, since `runRendered` owns that cookie per
+ * theme context.
  */
 export function resolveExtraCookies(raw: string | undefined): { name: string; value: string }[] {
   if (raw === undefined || raw.trim() === '') return [];

@@ -484,12 +484,14 @@ describe('runRendered against a fake browser', () => {
     it('throws before ever launching a context when CAIRN_AUDIT_COOKIES is malformed', async () => {
       process.env.CAIRN_AUDIT_COOKIES = 'cairn-admin-theme=dark';
       const config = configWith({ pages: ['/admin/x'] });
+      const addCookiesCalls: { name: string; value: string; url: string }[][] = [];
       await expect(
         runRendered(config, [trivialRule], {
           isReachable: async () => true,
-          loadPlaywright: async () => fakeBrowser({}),
+          loadPlaywright: async () => fakeBrowser({ addCookiesCalls }),
         })
       ).rejects.toThrow(/cairn-admin-theme/);
+      expect(addCookiesCalls).toHaveLength(0);
     });
   });
 });

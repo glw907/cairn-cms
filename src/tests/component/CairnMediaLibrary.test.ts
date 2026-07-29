@@ -192,20 +192,20 @@ describe('CairnMediaLibrary handles a null alt crossing the trust boundary', () 
   // test runs the SAME projection every real load path calls, then renders the result: a live ASC
   // 500 traced a TypeError in needsAlt back to exactly this untrusted value reaching the screen.
   it('renders without throwing and counts the row as needing alt', async () => {
-    const rawRow = {
+    const rawRow: MediaEntry = {
       hash: 'eeee555566667777',
       sha256: 'eeee555566667777-full-sha',
       slug: 'null-alt-row',
       displayName: 'null-alt-row',
       originalFilename: 'null-alt-row.jpg',
-      alt: null,
+      alt: null as unknown as string,
       ext: 'jpg',
       contentType: 'image/jpeg',
       bytes: 1234,
       width: 800,
       height: 600,
       createdAt: '2026-05-01T00:00:00.000Z',
-    } as unknown as MediaEntry;
+    };
     const projected = mediaLibraryEntry(rawRow);
 
     const screen = render(CairnMediaLibrary, {

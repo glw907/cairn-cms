@@ -3,9 +3,8 @@
 Load this when building or reviewing a detail (desk) screen: a single record's own full
 picture, its own sections of related data, and the dialogs that mutate it.
 
-Source: aksailingclub-org's household desk
-(`src/routes/admin/club/members/[id]/+page.svelte`), the record a Members list row's own
-"Open household" link opens. It predates cairn's later ratified rules (`StatusChip`
+Source: the same consumer site's member-detail desk (the record its list screen's own
+"Open household" link opens), a production `/admin` extension route. It predates cairn's later ratified rules (`StatusChip`
 registers, the `card-shell card-shadow` primitive), so several annotations below translate
 its shipped markup into the cairn-native call rather than transcribing it as-is; the
 annotation says which is which.
@@ -25,8 +24,8 @@ classification, never by a screen being conceptually a desk (`screen-anatomy.ts`
 comment: "The exemption is read off the RENDER, never off the path, and that is the whole
 point"). The shell's `isDeskRoute` (`CairnAdminShell.svelte:403-406`) requires the path's
 SECOND segment to name a registered content concept; this desk lives at
-`/admin/club/members/<id>`, whose second segment is `club`, not one of aksailingclub-org's
-concepts (`posts`/`pages`/`fragments`/`bulletins`). The shell therefore renders the office
+`/admin/club/members/<id>`, whose second segment is `club`, which is not one of the site's
+registered content concepts. The shell therefore renders the office
 drawer class (`lg:drawer-open`), and `screen-anatomy` reads that render and judges the page
 as an office screen, not a desk.
 

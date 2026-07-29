@@ -17,7 +17,12 @@ library's own development proves changes against `examples/showcase`.
 ## Immediate next action (2026-07-28: plan Pass 3, with the ASC corpus closed)
 
 **NEXT: plan design-infrastructure Pass 3 (capture).** Brainstorm first (Fable sitting), then the
-plan. Then ONE release at the initiative boundary (spec section 10), then the ASC Assets trial. The
+plan. **Resume prompt**, from `~/Projects/cairn-cms`: "Brainstorm design-infrastructure Pass 3
+(capture) per superpowers:brainstorming; spec sections 5, 7, 8, and 10 carry the locked scope, and
+the corpus C entry below plus calibration doc section 12 carry the fresh evidence. Settle the three
+OPEN FOR GEOFF design calls first (chip recipe, screen-anatomy's affirmative half, chip-ground
+repair-or-demote); they gate the standard doc's content. Then decide: rule-repair scope in or out
+of Pass 3, and how the plan handles the front-page copy (its voice is a separate sitting)." Then ONE release at the initiative boundary (spec section 10), then the ASC Assets trial. The
 principle-pages pass queues behind the initiative. Pass 3 also owes the `skills/` directory the
 sixth design principle's page depends on (below). **The release that ships the grammar layer is now
 load-bearing for the audit's consumer story** (see the corpus C entry below: 265 of ASC's 298

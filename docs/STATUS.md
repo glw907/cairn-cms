@@ -14,368 +14,138 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
+## Immediate next action (2026-07-28: Pass 2 is closed; Pass 3 planning is next)
 
-## Immediate next action (2026-07-28: design-infrastructure Pass 2, Task 16b is next)
+**Design-infrastructure Pass 2 (enforcement) is COMPLETE and merged to `main` at `446c33d7`.**
+All eighteen tasks landed. The plan, with every step ticked and the post-mortem appended, is
+`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. **Nothing is
+published**; the window holds under `## Unreleased` with its `<!-- release-size: minor -->` marker.
+`main` is NOT pushed.
 
-**Tasks 0 through 16 are COMPLETE and verified. Task 16b (Geoff's four rulings) is next, THEN Task
-17 (calibration), then Task 18.** Plan:
-`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`, ticked through
-Task 16, with Task 16b written into it in full.
+**Next: plan Pass 3 (capture).** Then ONE release at the initiative boundary (spec section 10),
+then the ASC Assets trial. The principle-pages pass queues behind the initiative. Pass 3 also owes
+the `skills/` directory the sixth design principle's page depends on (below).
 
-**Resume prompt for a fresh session**, from `~/Projects/cairn-cms`: "Resume design-infrastructure
-Pass 2 at Task 16b, the four rulings recorded in the plan, per cairn-pass; the worktree is
-`.claude/worktrees/design-infra-pass-2`, clean at `80041424`." The worktree has its showcase deps
-installed against it, so no setup is owed. Do NOT re-run Tasks 0 through 16.
+**What Pass 2 shipped.** `cairn-audit` is a packaged bin (`"cairn-audit": "./dist/audit/bin.js"`)
+with nine static rules and eleven rendered ones, a counted suppression idiom, the four graduated
+repo gates, and a norms manifest with provenance and a CLI query. The substrates are
+`svelte/compiler` markup parsing and built-sheet resolution for static mode, and real Chromium
+against a running preview for rendered mode. Never a regex.
 
-**ALL FOUR RULINGS ARE RULED, none open.** They are written out with their reasoning as Task 16b in
-the plan file, which is the authority; the summary is that `touch-targets` drops to WCAG 2.2 AA's
-24x24, the `--cairn-card-border` hairline is ratified and suppressed, `chip-ground-collision`'s 1.5
-floor is ratified, and `weight-budget`'s content region narrows to exclude chrome. Task 16b
-implements them; Task 17 then calibrates against the ruled engine rather than a moving one.
+**The calibration verdict (Task 17), the pass's real product.** None of the five compositional rules
+can be promoted from advisory to error. The spec's bar names both corpora and sets no numeric
+threshold; every rule fails on any reading of it, so the missing number never became the deciding
+question. Evidence base:
+`docs/internal/2026-07-design-infrastructure-audit-calibration.md`.
 
-**Branch state:** `80041424` (Task 16b written into the plan) on `ba7f401d` (the dark-theme fix) on
-`4cacfd5f` (Task 16) on `c14c2f03` (Task 15) on `001e817b`. Everything from `c14c2f03` up is
-committed locally and NOT pushed. Tree clean, no preview servers left running.
+**The finding worth carrying into every later rule: five rules fire in only one direction.**
+`viewport-overflow` and `chip-ground-collision` fire only on cairn's own admin and are clean on a
+consumer, which is a healthy rule catching real debt in its own house. `interactive-contrast`,
+`relational-spacing`, and `norms-bands` fire only on the consumer and are silent on the code they
+were written against, each for a mechanism traced to its cause. A rule silent on the codebase it was
+written against and loud on the first outside codebase it meets was never calibrated; it was fitted.
 
-**A launch-order trap proven today:** a workflow launched just before a context clear keeps running,
-but its completion notification lands in the CLEARED session and never reaches the new one, and its
-agent transcripts split across both session directories so a guard watching only one misreads a live
-agent as stalled. Launch a workflow AFTER the clear, from the session that will review it.
+**Corpus B and its limit.** ASC (`~/Projects/asc-site`, on `0.90.1` from the registry) ran entirely
+locally, on Geoff's call. The plan's stated method does not work: the `asc-staging` worker serving
+both `dev.` and `staging.aksailingclub.org` binds no `AUTH_DB`, so the Access service token reaches
+the outer door and cairn's guard then bounces every `/admin` route with nothing to authenticate
+against. The session tables live in `cairn-asc-auth`, bound only by the production `asc-site` worker,
+and auditing production admin is not read-only (the rendered rules click to capture an open-menu
+state). ASC ships no dev-auth backend by deliberate design, so **its authenticated admin, including
+31 custom admin routes, is uncovered.** That is the richest evidence the promotion question could
+have had. Anyone reopening promotion should close this gap first.
 
-**Task 17 needs a running preview server** (the rendered audit never starts one):
-`cd examples/showcase && CAIRN_DEV_BACKEND=1 npm run preview -- --port 4173`, then
-`npx cairn-audit --rendered` from the worktree root. Run `npm run package` after ANY edit to
-`src/lib/audit`, since the bin runs from `dist` and will otherwise measure stale bytes. Kill the
-server afterward: a survivor makes the `BASE_URL contract` test fail, because it asserts nothing
-answers on 4173.
+**The accessibility review's corrections matter more than any code in the pass.** A fresh-context
+gate found the engine misstating standards, and a wrong citation in an enforcement engine propagates
+into every consumer that trusts it. Four rules called WCAG 1.4.11 a legibility standard; legibility
+is 1.4.3, which no rule here measures. `border-contrast` asserted 1.4.11 over every rendered border
+including decorative ones, when the criterion reaches UI components and graphical objects; it now
+states a house bar that borrows the number. `touch-targets` presented as SC 2.5.8 while enforcing a
+strict superset with four of five exceptions unimplemented; it now reads as a house floor derived
+from the criterion. `weight-budget` cited 4.1.2 for a typographic axis it draws no line about. The
+reference page gained a section naming what the rules do not cover, so nobody reads `cairn-audit` as
+an accessibility conformance tool.
 
-**The verified rendered baseline Task 17 calibrates against** (six admin routes, both themes,
-`160 errors, 338 advisories, 0 suppressed`, exit 1). Main-loop measured, not reported:
+**Both carried risks are CLOSED.** The norms freshness check moved into its own reusable workflow
+(`.github/workflows/norms.yml`, `workflow_call` plus `workflow_dispatch`), so `publish.yml` still
+gates on one definition while the check can finally be rehearsed against any branch without
+attempting a real publish. **Rehearse it once with `gh workflow run norms.yml --ref main` before the
+next release**; it has still never run on CI. The `## Unreleased` window now carries its
+`<!-- release-size: minor -->` marker; `check-version.mjs` matches only `## X.Y.Z` headings, so the
+marker is inert until the cut and reads correctly then.
 
-| rule | tier | count | note |
-| --- | --- | --- | --- |
-| `touch-targets` | error | 138 | at the OLD 44x44 bar; ruling 1 drops it to 24x24 |
-| `chip-ground-collision` | error | 16 | 8 light + 8 dark, restored by `ba7f401d` |
-| `viewport-overflow` | error | 4 | media toolbar segmented control at 320 |
-| `one-filled-action` | error | 2 | two accent fills on vocabulary |
-| `focus-renders`, `interactive-contrast` | error | 0 | clean |
-| `border-contrast` | advisory | 326 | the hairline, now ratified by ruling 3 |
-| `weight-budget` | advisory | 10 | five routes x two themes at exactly 3 weights |
-| `screen-anatomy` | advisory | 2 | |
-| `relational-spacing`, `norms-bands` | advisory | 0 | |
+**The measured state of cairn's own admin**, rendered mode, six routes in both themes:
+`20 errors, 214 advisories, 130 suppressed`, exit 1. Static mode: `1 error, 0 advisories, 5
+suppressed`, the one error being the `badge-ghost` design call below.
 
-**Task 15 LANDED and is fully verified**, as `c14c2f03` (rebased onto `001e817b`). The gate was
-re-run in the main loop rather than trusted from the report: `check` 1503 files 0 errors 0 warnings,
-`npm test` 351 files / 4235 tests exit 0, `check:comments`, `check:reference`,
-`check:reference:signatures`, `check:docs`, `check:package`, `check:surface`, `check:version` all
-green. Diff reviewed clean: only Task 15's checkbox ticked, CHANGELOG under `## Unreleased` with no
-version, no forward claims about Task 16's rules, no scratch files.
+**OPEN FOR GEOFF, two items, both design calls rather than defects:**
 
-**The Task 15 headline, worth carrying into every later rule.** Six agents built the rules and six
-refuted them, each required to demonstrate a miss with a runnable input. All six were refuted. The
-shared cause: three rules parsed computed colors with an `rgb()`-only regex against a palette that
-is `oklch` end to end, so they could not fire against the shipped admin at all, and
-`chip-ground-collision` passed the very `badge-ghost`-on-zebra collision named in its own header.
-The engine that exists because regexes fail open had built three rules on a regex. Second lesson:
-all six shipped green under `page.evaluate` test doubles and two threw `ReferenceError` on every
-real page, having never once executed in a browser. Rendered rules are now proven against real
-Chromium in `src/tests/unit/audit/rules/rendered/browser-regressions.test.ts`.
-
-**TASK 16 LANDED (`4cacfd5f`), and a REGRESSION IT INTRODUCED WAS CAUGHT AND FIXED (`ba7f401d`).**
-The five advisory rules shipped, all five refuted on first build. Its best product was the
-advisory-cannot-gate proof: Task 15 had proved that property one way, and Task 16 found FOUR more
-paths by which an advisory finding could still reach the exit code (a rule that throws, an
-unparseable allowlist selector, a stale entry reported at the wrong tier, and a rule emitting prose
-where a selector belonged). All four are closed and proved in real Chromium.
-
-**The regression, and how it was caught.** Task 16's rendered error count moved 160 to 152 and its
-commit never accounted for the delta. The whole delta was one rule: `chip-ground-collision` went
-from 8 light + 8 dark findings to 8 light + ZERO dark, so two real defects (chips at contrast 1.11
-and 1.12 against their own ground, invisible to a human) stopped being seen. Not a tier demotion:
-zero lines in dark at any tier. Root cause: Task 16 gave `resolveGround` an always-opaque tail whose
-`canvas` DEFAULTED to opaque white, so the chip's own fill came back pre-flattened onto an assumed
-white page. In light that assumption is nearly true and perturbs the answer by 0.007, so findings
-still fired; in dark it pushed the ratio to 1.514 against a 1.5 floor, one hundredth over, and the
-rule returned early. The fix makes `GroundOptions.canvas` REQUIRED, so a caller that does not know
-what is behind the chain cannot silently assume white, and it closed the same latent bug in
-`interactive-contrast` (loaded but not yet firing).
-
-**THE METHOD LESSON, now three passes deep and worth generalizing.** No gate caught this; a COUNT
-DELTA did. Eleven of eleven rendered rules were refuted on first build across Tasks 15 and 16, and
-this defect additionally survived five refuters, an Opus integrator, a simplifier, and a finalizer,
-because every one of them was looking at the advisory rules while an error-tier rule went half-blind
-beside them. When a pass changes a shared substrate, diff the MEASURED OUTPUT of every rule that
-consumes it, per theme, and treat an unexplained movement as a defect until explained. Phase 1 and
-Phase 2 each earned the same lesson in a different costume.
-
-**THE RULINGS, ALL ANSWERED 2026-07-28 (Geoff).** Four were ruled and are now Task 16b in the plan
-file; the fifth is still open and is the only one outstanding. The context that produced each
-question is kept below because Task 17 will want the evidence, not just the verdict.
-
-1. **RULED: 24x24, WCAG 2.2 AA.** (The 44x44 question.) The rendered run against cairn's own admin returns 160 errors, 138
-   of them `touch-targets`, because the admin is built on `btn-sm` (32px), `btn-xs` (24px), and 30px
-   toolbar controls, essentially none of which clear 44x44 at 390. Every class was spot-checked as a
-   real finding, not a rule bug, and no admin markup was touched. Either the admin meets that bar or
-   the bar is wrong for a dense desk interface. This is a design ruling, not a task's call.
-2. **RULED: 1.5 is ratified, with the reasoning recorded.** Spec 6.3 set no
-   threshold; the builder borrowed `1.5` from the graduating `interactive-contrast` probe on a shared
-   "not accidentally camouflaged" rationale and flagged it for confirmation. Note the floor is now
-   load-bearing in a way it was not: the dark regression turned on the measured ratio landing at
-   1.514 against it.
-3. **RULED: the hairline is ratified and suppressed.** This is the already-open
-   `--cairn-card-border` hairline question (1.11:1 light, 1.43:1 dark against WCAG 1.4.11's 3:1)
-   measured across the whole admin. The rule reports without gating until ruled. A one-token ruling
-   clears most of the advisory volume; leaving it open means Task 17 calibrates around a rule whose
-   findings are all known-and-accepted.
-4. **RULED: narrow the region to exclude chrome.** `weight-budget` reports 10
-   advisories, five routes x two themes, every one at exactly THREE weights, all of it
-   toolbar/pagination/eyebrow chrome living inside `<main>`. Spec 6.3 already refuted the per-route
-   form for this reason and scoped the rule to a content region. The question is whether the region
-   definition is now right, or whether cairn's chrome legitimately needs a third weight.
-5. **STILL OPEN, the only one.** `screen-anatomy`'s affirmative half is deliberately NOT implemented. "The primary action sits
-   in the header slot" is mechanically unfalsifiable without knowing whether a screen HAS a primary
-   action, so implementing it would fire on every screen legitimately without one. Currently the rule
-   checks only the negative half. Ruling needed on whether that half is dropped, made
-   config-declared, or left to the grader.
-
-**Where the work sits.** `main` is at `cda70f30`. The pass branch `design-infra-pass-2-enforcement`
-is pushed through `001e817b`; `c14c2f03` (Task 15) is committed locally and NOT yet pushed, with
-Task 16's workflow committing on top of it.
-
-**Two process notes from this session.** Tasks 14 and 15 both shipped without `code-simplifier`,
-because a subagent cannot dispatch another agent; the Task 16 workflow carries a simplifier stage
-covering both. And the Task 15 workflow's transcripts split across two session directories after a
-`/clear`, so a guard watching only the launching session's directory misreads a live agent as
-stalled; watch both.
-
-**TWO CARRIED RISKS, do not lose:**
-
-- **`publish` now depends on a CI job that has never run on CI.** Task 13 added a `norms` job to
-  `publish.yml` that `publish` needs, so a stale manifest cannot ship. Generation is deterministic
-  locally across preview-server restarts, but the residual risk is font fallback differing between
-  the workstation and `ubuntu-latest`, and it would surface at a release rather than before one.
-  `publish.yml` does carry `workflow_dispatch`, but dispatching it would attempt a real npm publish,
-  so it is NOT a safe way to rehearse the job. Two options at Task 18: split the norms job into its
-  own dispatchable workflow so it can be proven independently, or accept that the first cut proves
-  it and know the remedy is `npm run norms:generate` plus a recommit. The release is not due until
-  the initiative boundary after Pass 3, so there is time.
-- **The `## Unreleased` window still carries NO `<!-- release-size: minor -->` marker**, so
-  `check:version` sizes it as a patch. Pass 1 added public surface and Pass 2 adds a bin, so that is
-  wrong and Task 18 must fix it.
-
-**What Phase 2 closed.** `cairn-audit` ships as a packaged bin (`"cairn-audit":
-"./dist/audit/bin.js"`) with nine static rules, a counted suppression idiom, and the two static
-repo gates graduated into it as thin wrappers. The substrates are `svelte/compiler` markup
-parsing and built-sheet resolution, never regexes. The engine's own-tree run is the acceptance
-evidence: `1 error, 0 advisories, 5 suppressed`, where the five are exactly the ratified
-`type-scale` exceptions and the one error is a real design defect (carry-forward 1).
-
-An adversarial verify pass (three read-only lenses, each required to demonstrate a miss with a
-runnable input) returned 13 findings against the finished engine, several live in cairn's own
-tree rather than synthetic: class strings built in a component's `<script>` were unreachable in
-principle, every rule prefilter anchored at the start of the raw token so `2xl:text-sm` escaped,
-`gap-scale` never consulted the sheet at all, CSS nesting hid whole rules, and a typo in a
-configured scan path produced a clean exit-0 audit. Eleven were fixed at the substrate with the
-demonstrated input as the regression fixture. That the audit engine had reproduced the very
-fail-open failure it exists to prevent is the pass's headline lesson.
-
-**Four items carried into Phase 3 and Task 17**, full detail in the post-mortem:
-
-1. **FOR GEOFF, a design call: `badge-ghost` on EditPage's Published pill**
-   (`EditPage.svelte:989`). cairn's tree patched around its own refuted alternative with a
-   PINNED unlayered CSS rule to stop the pill vanishing in dark, while `StatusChip.svelte:15`
-   records `badge-ghost` as refuted. A naive swap to `badge-outline` is wrong on its own, moves
-   pixels, and leaves the pinned rule dead. This is why `npx cairn-audit` exits 1 on cairn's own
-   tree, honestly.
-2. **Suppression range semantics.** A directive covers the next construct AND its children. The
-   only non-arbitrary alternative would make a directive above an `@media` or `{#if}` dead. Both
-   satisfy cairn's five live exceptions, so it wants Task 17's evidence, not a guess.
-3. **`.ts`-embedded styles are unaudited.** The old gate walked `.ts`; the new CSS-family rules
-   do not, so `preview-doc.ts`'s RATIFIED `#fff` budget entry did not migrate to a directive, it
-   stopped being seen. `WATCH:` note co-located at `preview-doc.ts:99`.
-4. **`stock-default-hazards` reads raw token values** while `type-scale` and `gap-scale` read
-   `utilityBase()`, so `sm:badge-ghost` slips past. Routing it through widens the rule, so it is
-   a rule-design call. `WATCH:` note at the rule.
-
-(The release-size marker that used to be recorded here is now carried risk 2 in the
-immediate-next-action section above, so it lives in one place rather than two. No release is due
-until the initiative boundary after Pass 3, spec section 10.)
-
-**What Phases 3 and 4 closed (2026-07-28).**
-
-- **Task 11:** `card-shell` and `card-shadow` ship as two safelisted `@utility` container roles, NOT
-  as a `CardShell.svelte`. The repeated shell string lands on `<div>`, `<form>`, `<details>`, `<a>`,
-  and `<span>` alike, so a wrapper component would have served almost none of the 25 migrated sites,
-  and spec section 4 already bans the bracketed `var()` wrappers it replaces. Declarations were
-  derived from the compiled sheet with a no-drift test comparing resolved property maps.
-  `admin-visual` held at 18/18. The in-card empty-notice half closed as documentation, since
-  `AdminTable` already owns that register in scoped CSS.
-- **Task 12:** `PageHeader` never received the UA-margin fix `OfficeList` documents and carries,
-  despite its own doc calling itself that component's shape generalized, so its `gap-0.5` intent
-  rendered as a roughly 58px title-to-meta gap. Ported, with a regression test confirmed red first.
-  The `meta` prop also joins `type-meta`, ruled by eye against the media-library baseline where a
-  14px header meta line sat above a 13px toolbar count line. **The destination-picker was DEFERRED,
-  not built**, on one existing implementation and zero cairn call sites; trigger recorded in the
-  ledger. PageHeader adoption turned out already complete (seven mounts, five deliberate
-  non-adopters).
-- **Task 13:** the norms manifest generates deterministically, 88 entries across 12 roles, 11
-  ratified and 77 observed, with all three disciplines fixture-proven and the open
-  `--cairn-card-border` question flagged rather than quietly canonized as a norm.
-- **Task 14:** the rendered harness lands with its fail-loud contracts fixture-tested, including the
-  stale-allowlist case, and the interaction-state seam where a rule declares the states it reads.
-
-**Graduation drift is now a repeatable pattern, not an incident.** Task 12's `PageHeader` defect is
-the second instance on record (Classes harvest finding 1 was the first): a component that says it
-generalizes another may have silently dropped the original's fixes. The phrase "the X shape,
-generalized" is not evidence that the fixes came along. Both instances were found by a fresh context
-reading for meaning, neither by a gate.
-
-**Three findings the norms manifest surfaced on its first generation**, full detail in the
-deviations ledger: icons are being flexed rather than sized (ten distinct widths across 183 sites,
-with sub-pixel members, the signature of a missing `flex-none`); `status-chip` renders an 8px radius
-against a design system that says badges take `--radius-field` (10px); and `table-cell` mixes two
-type sizes and two leading kinds. The icon one is a real defect at real scale that no gate and no eye
-had caught, and it wants its own task with a baseline regeneration rather than a drive-by fix.
-
-**A lesson Phase 1 earned, still binding on any migration pass.** A bracketed arbitrary size
-(`text-[1.875rem]`) sets `font-size` alone while a named step (`text-3xl`) also sets
-`line-height`, so converting between them silently changes leading. And a migration can break a
-surface it never edits: removing the last scanned `text-sm` stopped Tailwind compiling that
-rule, and `src/lib/admin-fields`, a public export subpath outside the scan roots, still used it.
-Both were found by a fresh context reading for meaning, not by a gate. Phase 2 repeated the
-pattern exactly: every one of its 13 fail-opens came from an adversarial reader, none from the
-green gates.
-
-**PASS 1 (GRAMMAR TOKENS) LANDED 2026-07-27, unpublished on `main`.** Seven commits
-(`ddf0afbd`..`6b3a5138`): ten grammar tokens (`--cairn-type-*` x6, `--cairn-gap-*` x4) declared once
-outside the theme blocks, ten role utilities that set exactly one property each, 25 admin components
-migrated pixel-identically (the 18 `admin-visual` snapshots do not move), the deviations ledger, and
-the public contract page `docs/reference/admin-grammar-tokens.md`. Full gate green, plus a
-from-scratch showcase `npm ci` + e2e (107 passed; the 6 `admin-visual` failures are the stale
-baselines described below, which predate the pass). Method, the five locked
-decisions, and the three defects the mechanical gates missed are in the post-mortem appended to
-`docs/superpowers/plans/2026-07-27-design-infrastructure-pass-1-grammar-tokens.md`. Read it before
-planning Pass 2.
-
-Pass 3 (capture) follows, then ONE release at the initiative boundary (spec section 10), then the ASC
-Assets trial. The principle-pages pass queues behind the initiative. When that release is cut it is a
-MINOR, not a patch: Pass 1 added a new public surface (the grammar layer and its reference page), so
-its entry needs the `<!-- release-size: minor -->` marker `check:version` looks for.
+1. **`badge-ghost` on EditPage's Published pill** (`EditPage.svelte:989`), carried since Phase 2.
+   cairn's tree patched around its own refuted alternative with a PINNED unlayered CSS rule to stop
+   the pill vanishing in dark, while `StatusChip.svelte:15` records `badge-ghost` as refuted. A naive
+   swap to `badge-outline` is wrong on its own, moves pixels, and leaves the pinned rule dead. This
+   is why `npx cairn-audit` honestly exits 1 on cairn's own tree.
+2. **`screen-anatomy`'s affirmative half** is deliberately NOT implemented, the fifth ruling and the
+   only one still open. "The primary action sits in the header slot" is mechanically unfalsifiable
+   without knowing whether a screen HAS a primary action, so implementing it would fire on every
+   screen legitimately without one. The rule checks only the negative half. Ruling needed on whether
+   that half is dropped, made config-declared, or left to the grader.
 
 **A SIXTH DESIGN PRINCIPLE, ruled 2026-07-28 (Geoff).** The front-page ledger goes from five to six.
-The new claim is that cairn's design language is ENFORCED, not merely documented (the grammar tokens,
-the toolkit primitives, `cairn-audit`, the norms manifest, the standard shipped as a loadable skill),
-and the payoff is that a developer spends their effort on their own business logic rather than on
-building an admin interface. The honest form is LESS burdened, not free. "Build for agentic coding"
-was considered and rejected as the phrasing: it is an imperative where the other five are flat
-declaratives, and it keys the principle to a vocabulary that will move. Agentic coding is the payoff,
-not the premise; the acute case is that an enforced language keeps an agent from drifting off the
-rails when it implements or adds UI, which helps a human developer identically.
-
-This touches two queued passes. The principle-pages plan is AMENDED in place (six pages, `T1a`
-through `T1f`; full reasoning at the top of that file), and Pass 3 owns the README and front-page
+The claim is that cairn's design language is ENFORCED, not merely documented (the grammar tokens, the
+toolkit primitives, `cairn-audit`, the norms manifest, the standard shipped as a loadable skill), and
+the payoff is that a developer spends their effort on their own business logic rather than on building
+an admin interface. The honest form is LESS burdened, not free. "Build for agentic coding" was
+considered and rejected as the phrasing: it is an imperative where the other five are flat
+declaratives, and it keys the principle to a vocabulary that will move. The principle-pages plan is
+AMENDED in place (six pages, `T1a` through `T1f`), and Pass 3 owns the README and front-page
 positioning that lands it. **The blocking dependency: the page will want to say cairn ships a Claude
-skill, and that is not true today.** There is no `skills/` directory and the package `files` array
-does not carry one; Pass 3 ships it. Do not publish the skills claim before it lands. The copy itself
-is unwritten by design, since front-page voice is a brainstorm sitting with Geoff, not execution work.
+skill, and that is not true today.** There is no `skills/` directory and the package `files` array does
+not carry one; Pass 3 ships it. Do not publish the skills claim before it lands. The copy itself is
+unwritten by design, since front-page voice is a brainstorm sitting with Geoff.
 
-**RED CI CLOSED 2026-07-28 (Pass 2 Task 0).** The six stale `admin-visual` baselines (office shell,
-media library, media detail panel, each in both schemes) regenerated on the CI renderer via `e2e.yml`'s
-`update_snapshots` dispatch and landed on `main` as `84abe955`. They had been stale since 2026-07-21
-(`bff6ee46`): `0.90.0` (ExpandableRow graduation, the ListToolbar menu facet and its flex-row
-recomposition, StatusChip's border, OfficeList) and `0.90.1` (ListToolbar select sizing) changed exactly
-those screens without regenerating, and `e2e` had been red on `main` since 2026-07-24, through both cuts.
+**Method lessons from this pass, all three earned the hard way:**
 
-Regeneration blesses whatever renders, so all six got a main-loop eyes-on read against the `0.90.x`
-design intent before landing. The only delta is the intended one: the `ListToolbar` recomposes onto a
-single flex row, the search input grows to fill it, the facet groups right-align, and the content below
-settles up about 2px. No regression in either scheme. One observation carried, not a defect: with a
-single facet group the media library's search input stretches to roughly 630px, which is wide for a
-search field, and it is a register question for the Task 12 toolbar work rather than a `0.90.x` bug.
+- **Build-then-refute is now proven over eleven rendered rules and four rulings, and every single one
+  was refuted on first build.** Each refuter had to demonstrate a miss with a runnable input against
+  real Chromium, and the demonstrations became the fixtures. A rendered rule proved only by a
+  `page.evaluate` test double is not proved: two rules once shipped throwing `ReferenceError` on
+  every real page while their suites were green.
+- **A count delta, not a gate, catches the worst regressions.** Task 16's dark-theme half-blinding and
+  Task 16b's `.btn` transition blindness were both found by diffing measured output per rule per
+  theme and refusing to accept an unexplained movement. Every gate was green through both.
+- **Two source files carried a raw NUL byte as a composite-key separator**, which made them binary to
+  `grep` and to `file`, so any grep-based gate over `src/lib` silently skipped them. Found from a
+  simplifier's passing aside, not from a gate. Both now spell it as a unicode escape, and a gate to
+  stop a third is filed in ROADMAP.
 
-**v0.90.1 published 2026-07-24 (`latest` verified).** Patch cut for the Members-refinement
-coherence round: `ListToolbar`'s `'select'` facets un-pin from daisyUI's fixed 320px clamp and
-size to content, sharing the `'menu'` facet's border family; both dropdown disclosures now show
-only on `dropdown-open` so `aria-expanded` stays truthful; the menu options carry
-`role="menuitemradio"`/`aria-checked` with a roving-tabindex keyboard model. Window in the
-CHANGELOG's `0.90.1` entry. OPEN DESIGN QUESTION for Geoff (measured at the cut, report-only):
-`--cairn-card-border` as the facet controls' only boundary measures 1.11:1 light / 1.43:1 dark
-against `base-200` — well under WCAG 1.4.11's 3:1 — a deliberate ratified hairline, but a one-token
-ruling could clear it in a follow-up patch.
+**Carry-forwards (live):** eight confirmed-but-deferred rule repairs, each filed in ROADMAP with its
+cost (widening a gating rule's net at a gate stage, with no adversarial pass behind it, is how a
+calibrated baseline stops meaning anything); the 20 error-tier findings against cairn's own admin,
+which are real defects the engine correctly caught and which nothing has fixed; the ASC admin corpus
+gap above; admin error statuses flattening to HTTP 200 under the shell's streamed pending count
+(upstream sveltejs/kit#12533, scheduled routine watches it); mermaid diagrams near-illegible at
+320/390 (candidate: tap-to-expand in the Topo pass); section-index breadcrumbs duplicating the arm
+name; the cairn.pub live admin smoke (Geoff's magic link plus publish round-trip) is owed; the
+`/admin/help` first-steps card overlap.
 
-**v0.90.0 published 2026-07-23 (`latest` verified).** Cut for the Members-refinement round-1
-cairn phase (C1-C6): `ExpandableRow` graduates into `admin-toolkit` (its second consumer,
-aksailingclub-org's own copy, carrying three hover/zebra/panel-depth fixes), `ListToolbar`
-gains a `display: 'menu'` filter facet plus a flex-row recomposition of its controls,
-`StatusChip`'s border demotes to a 35% currentColor hairline, `OfficeList`'s header-stack
-margin leak and mobile action stretch are fixed, `formatPhone` joins the toolkit formatters,
-and `ConceptList`'s create-button label now reads through `itemNoun`. Minor per the 0.x scheme
-(a new component export plus a new `ListToolbar` display variant). Full window in the
-CHANGELOG's `0.90.0` entry. ASC's own pickup (the plan's Phase A) rides this publish.
+**THEN, after Pass 3 and the release: the Topo design pass.** Open with
+`docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices table, Starlight
+anatomy checklist, section 5's open questions for Geoff; mockup candidates go to Geoff BEFORE any
+build); the cairn.pub design arc ratified seed vocabulary for it: the four-door landing, the docs rail
+on /help, the step-down doc heading scale, and the micro-cta device. After Topo: the scaffolder.
 
-**v0.89.1 published 2026-07-21 (`latest` verified).** The one-item window: `itemNoun`/`ItemLabel`
-graduated from ASC's toolkit into the `admin-toolkit` subpath, with `Pagination`'s and
-`ListToolbar`'s `itemLabel` widened to `string | ItemLabel` (plain strings unchanged; no
-consumer action). Cut mid-classes-pass because ASC's toolkit swap (its Task 2) needs the export
-on the registry; a blind swap onto 0.89.0 would have regressed the "1 households" coherence
-fix. The cut also stamped the api-surface snapshot and renamed the upgrade guide's stale
-`Unreleased` heading to 0.89.0 (missed at the prior cut). ASC's range bump to `^0.89.1` rides
-its classes pass.
-
-**THE ADMIN-TOOLKIT ORGANIZATION PASS SHIPPED 2026-07-21 (PR #9 merged, v0.89.0 published,
-`latest` verified).** The window: the new public subpath `@glw907/cairn-cms/admin-toolkit`
-(PageHeader, ListToolbar, AdminTable, StatusChip, Pagination, EmptyState, and the four
-formatters, graduated from the ASC-born contracts with the additive ruling-6 extensions;
-`formatTimestamp` defaults UTC; ExpandableRow held ASC-local per ruling 1), the adoption
-sweep re-expressing every engine admin screen on the toolkit (finding 11 closed: one header
-idiom, one count device, one search-placement rule; the showcase Signups screen is the
-packaged-subpath consumer proof), T8's daisy absorption ritual + Dependabot watch, and the
-reviewer-fix round (live-region count lines, disclosure dismissal, 24px targets, EmptyState
-heading levels, the AdminTable empty contract). Late catch worth knowing: the admin CSS
-build's `@source` scan had never included `src/lib/admin-toolkit`, so classes used only
-there silently never compiled (ListToolbar's segmented filters rendered stacked; the first
-CI baseline regen swallowed it; the main-loop crop read caught it). Fixed at the root plus
-a new CI gate, `check:admin-css-classes`, that fails on any referenced-but-never-compiled
-class. Record: the post-mortem in
-`docs/superpowers/plans/2026-07-20-admin-toolkit-organization.md` (method, cost, the
-five-gate miss, and the two evidence-backed finding refutations).
-
-**ASC hand-off now fully unblocked:** v0.89.0 carries the toolkit subpath ASC's next screen
-pass swaps onto (deleting its local `src/admin-club/toolkit/` copies; `formatTimestamp` now
-needs an explicit `America/Anchorage`), plus everything the admin-sidebar-2 consumer brief
-waited on. ASC work runs in aksailingclub-org's own sessions; its sites must apply
-`0001_roles.sql` before custom role names insert.
-
-**NEXT (immediate): the principle-pages + LLM-ingestion pass, APPROVED 2026-07-20.**
-`docs/superpowers/plans/2026-07-19-principle-pages-and-llm-ingestion.md` (a disposition
-survey that integrates the five core principles into the docs and reorganizes as needed,
-a STAGED DEMO extended-admin figure, and cairn.pub's llms.txt / llms-full.txt / per-page
-markdown endpoints plus the /docs-landing and footer surfacing; ends with a release cut so
-the site can render the reorganized docs). Docs-prose work that reuses the register
-machinery; execute in a FRESH session (the plan is the cold-start handoff).
-
-**THEN (2) The Topo design pass.** Open with
-`docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices
-table, Starlight anatomy checklist, section 5's open questions for Geoff; mockup
-candidates go to Geoff BEFORE any build); the cairn.pub design arc (its Passes 2 through 4)
-ratified seed vocabulary for it: the four-door landing, the docs rail on /help, the
-step-down doc heading scale, and the micro-cta device. After Topo: the scaffolder (step 6).
-Check the Fable window state at session start (post-Fable doctrine: Opus conducts after it
-closes; verify online).
-
-**Carry-forwards (live):** admin error statuses flatten to HTTP 200 under the shell's
-streamed pending count (upstream sveltejs/kit#12533; guide caveat published, ROADMAP watch
-filed, scheduled routine now watches it); mermaid diagrams near-illegible at 320/390
-(candidate: tap-to-expand in the Topo pass, which the engine's new mermaid passthrough
-unblocks); section-index breadcrumbs duplicate the arm name; the cairn.pub live admin
-smoke (Geoff's magic link + publish round-trip) is owed; the `/admin/help` first-steps
-card overlap (pre-existing, found 2026-07-21 during the toolkit pass's render read) is
-filed in ROADMAP Now with a baseline-coverage rider.
+**Published state:** `0.90.1` is `latest` (2026-07-24). Passes 1 and 2 are both unpublished on `main`.
+When the cut comes it is a MINOR: Pass 1 added the grammar layer as public surface and Pass 2 adds a
+bin. Verify the next number is free with `npm view @glw907/cairn-cms versions --json` before promising
+it, and cut with the `cairn-release` skill.
 
 ## Archives
 
 Superseded entries live under `docs/internal/history/`:
 `STATUS-archive-2026-05-to-2026-07.md`, `STATUS-archive-2026-07-02-to-2026-07-16.md`,
 `STATUS-archive-2026-07-17-to-2026-07-18.md` (the cairn.pub step-5 launch and the Waymark
-final-review entries), and `STATUS-archive-2026-07-19-to-2026-07-20.md` (the chassis-nav
-pass and the v0.88.3 safelist publish).
+final-review entries), `STATUS-archive-2026-07-19-to-2026-07-20.md` (the chassis-nav pass and the
+v0.88.3 safelist publish), and `STATUS-archive-2026-07-21-to-2026-07-28.md` (design-infrastructure
+Passes 1 and 2 phase by phase, the `0.89.x` and `0.90.x` publishes, and the admin-toolkit
+organization pass).

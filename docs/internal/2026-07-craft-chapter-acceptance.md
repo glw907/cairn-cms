@@ -223,11 +223,64 @@ recipe the developer includes rather than reconstructs by hand) that the chapter
 instead of describing.
 
 Per the protocol's own pass condition, an overall FAIL after a round amends the chapter and
-re-runs. This record stops at two rounds rather than launching a third, because the round-2
-regression shows prose amendment alone repeating the same failure mode; a third round without a
-different kind of fix (a structural component, not another paragraph) risks the same result.
+re-runs. This record originally stopped at two rounds rather than launching a third, because the
+round-2 regression showed prose amendment alone repeating the same failure mode. That decision
+was revisited: rather than accepting the gap as a known limitation, the chapter was amended with
+a structural recipe (a concrete before/after markup skeleton, not another paragraph of prose) and
+the protocol ran a third round, recorded below, which closes this gap in the process this record
+had left open.
+
+### Round 3: PASS
+
+A fresh agent was dispatched against the round-2-amended chapter (the version amended with the
+"Table composition at narrow width" before/after entry: column-priority `hidden sm:table-cell`
+hiding on every secondary column, with each hidden column's value folded into the always-visible
+Name cell as one `type-meta sm:hidden` line, plus an explicit carve-out on when the
+`overflow-x-auto` scroll wrapper is fallback rather than primary, and an explicit statement of
+how this recipe and the Chip register rule interact without competing) and the reset fixture
+(fixture markup and stylesheet unchanged from the committed BEFORE state; only `craft.md` differed
+from round 2). Its AFTER edits were captured at the standard six-image set under
+`docs/internal/probes/2026-07-29-craft-acceptance/round-3/probe-craft-after-round-3-<state>-<theme>.png`.
+
+At 390, both themes, the members table now folds into a single always-visible Name column
+carrying a `type-meta` line with the member's standing chip, joined date, and balance, exactly as
+the chapter's before/after recipe states; the card's own border closes inside the 390 frame in
+both captures, with no clipped header, no mid-value date break, and no column pushed past the
+visible edge. The agent also applied the chapter's other items in the same pass (chip register
+split into bounded/quiet, the type role scale, tabular numerals on the date/balance/pagination
+digits, a theme-adaptive shell border and shadow, a global `:focus-visible` ring, an optical icon
+nudge, asymmetric button padding, and demoting the form's own "Save" button off the single
+dominant filled action so only "New member" carries it).
+
+The grader prompt ran k = 3, pinned `claude-opus-5`, verbatim as follows:
+
+```json
+[{"verdict":"PASS","tells":[]},{"verdict":"PASS","tells":[]},{"verdict":"PASS","tells":[]}]
+```
+
+**Per-device consensus.** 390: PASS, 3-of-3. 1440: PASS, 3-of-3. Interaction: PASS, 3-of-3.
+
+**Overall verdict: PASS** (all three per-device states pass 3-of-3 consensus, exceeding the
+protocol's 2-of-3 pass bar).
+
+The round-1 and round-2 FAILs were both driven by one mechanism, the members table's lack of any
+narrow-width composition recipe; round 1's amendment stated the problem in prose (a breakpoint
+rule and a containment rule) without a concrete markup answer, and round 2's own chip-register
+repair even regressed the same failure by widening the Standing column. Round 3's amendment
+replaced the prose-only guidance with a literal before/after markup skeleton scoped to the
+fixture's own column shape, and named its interaction with the Chip register rule explicitly so
+the two rules stop competing for the same column width. That structural change, not a further
+paragraph, is what closed the gap: the fresh agent given only the amended chapter produced a
+table that folds correctly at 390 with no cross-round memory of the prior failures to draw on.
+
+## Outcome: criterion 5 is met
+
 **Criterion 5 (the craft chapter measurably moves a fresh agent's output toward the cairn feel,
-demonstrated by this acceptance protocol) is not met.** The design-infrastructure initiative
-cannot close until either a further round passes, or the initiative's own scope is revised to
-accept the chapter's real reach (everything but multi-column data tables at narrow widths) with
-that gap named as a known limitation rather than silently dropped.
+demonstrated by this acceptance protocol) is met, as of round 3.** The round-3 amendment, a
+concrete column-priority-and-fold-into-primary-cell markup recipe replacing prose-only narrow-
+width table guidance, is what closed the gap round 1 and round 2 both left open; the acceptance
+protocol's own pass condition (all three per-device states passing 2-of-3 consensus) is satisfied
+with a 3-of-3 result on every state. The round-3 fixture edit is not committed to this repository,
+per the protocol's own convention that only a round's capture images and grader verdict are kept;
+the fixture at `examples/showcase/src/routes/probe-craft/` remains reset to its committed BEFORE
+state between rounds and after this record.

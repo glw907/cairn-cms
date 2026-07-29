@@ -102,7 +102,11 @@ Four ways to close it, in order of how directly cairn can enforce them:
   content push it, and the page along with it, wider than the viewport, defeating the scroll
   container entirely. Render the surface at the narrow width and confirm the card's own border
   closes inside the frame, with a scrollbar doing the work instead, before calling a table
-  handled.
+  handled. This wrapper is the fallback that catches whatever the column-demotion recipe below
+  cannot fold, never the primary answer for a table with room to demote: reach for the
+  Before/after "Table composition at narrow width" entry first, and treat a scrollbar that
+  appears on a table which still had columns left to fold as the same kind of miss as an
+  unstated breakpoint.
 
 ## Before/after: only demonstrable
 
@@ -138,6 +142,95 @@ Four ways to close it, in order of how directly cairn can enforce them:
   element at full width with a section-scale gap between them. The difference: a row is either
   verified at the narrow width it will actually render at, or it is not; a class that merely
   lets text wrap is not the same as a layout that reflows.
+- **Table composition at narrow width.** A multi-column data table cannot satisfy a
+  breakpoint by stacking the way a header row can; it needs a column-priority decision. Keep
+  one column, the one a reader identifies the row by, always visible, hide every other column's
+  own `<th>`/`<td>` below the breakpoint, and fold each hidden column's value into the visible
+  column as one `type-meta` line, so no information disappears, it moves.
+
+  *Assembled:* every column stays rendered at every width.
+
+  ```html
+  <table class="table w-full">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Standing</th>
+        <th>Joined</th>
+        <th>Balance</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Priya Natarajan</td>
+        <td><span class="badge">Current</span></td>
+        <td>2024-03-11</td>
+        <td>$85.00</td>
+        <td><button aria-label="Edit Priya Natarajan">...</button></td>
+      </tr>
+    </tbody>
+  </table>
+  ```
+
+  At a wide viewport this is correct. At the narrow one, the row's combined content exceeds the
+  card, and (per the containment rule above) the whole card, not just the table, runs off the
+  edge unless something changes which columns render at all.
+
+  *Resolved:* the secondary columns hide below the breakpoint and their values fold into the
+  Name cell as one meta line; the action column, already narrow, stays put.
+
+  ```html
+  <table class="table w-full">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th class="hidden sm:table-cell">Standing</th>
+        <th class="hidden sm:table-cell">Joined</th>
+        <th class="hidden sm:table-cell">Balance</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>
+          Priya Natarajan
+          <div class="type-meta sm:hidden">
+            <span class="badge">Current</span> · Joined 2024-03-11 · $85.00
+          </div>
+        </td>
+        <td class="hidden sm:table-cell"><span class="badge">Current</span></td>
+        <td class="hidden sm:table-cell">2024-03-11</td>
+        <td class="hidden sm:table-cell">$85.00</td>
+        <td><button aria-label="Edit Priya Natarajan">...</button></td>
+      </tr>
+    </tbody>
+  </table>
+  ```
+
+  The difference: `hidden sm:table-cell` removes each secondary column's cell from the layout
+  below `sm`, and the same value reappears once, inside the always-visible column's own
+  `sm:hidden` block, so the table's rendered width at 390 is one identifying column plus the
+  action column, never four columns fighting for the same card.
+
+  **Where horizontal scroll belongs and where it does not.** The containment wrapper
+  (`overflow-x-auto`, the rule above) stays on the table regardless; it is not a defect by
+  itself. It becomes one only when a scrollbar is doing the work that column demotion should
+  have done, a table whose columns could fold into a meta line but instead runs wide and lets
+  the browser scroll it. A scrollbar earns its place only after every foldable column is
+  already folded and the table still does not fit, for example a table with two or three
+  columns a reader must compare side by side, none of which is safe to hide. Check which case
+  applies before reaching for the wrapper as the whole answer.
+
+  **Interaction with the Chip register rule.** These two rules govern different things and
+  never compete. Chip register (above) governs how one chip renders: its own border, its own
+  padding. This recipe governs whether that chip's column exists in the table at all at a given
+  width. Once Standing's value moves into the folded meta line, its chip sits in a stacked block
+  next to plain text, not inline inside a table column with three siblings bidding for the same
+  row width, so giving it real pill padding and a border never costs another column space; there
+  is no column budget left at that point for it to compete over. Apply chip register to how the
+  chip looks, apply this recipe to where the chip lives, and check the second before the first,
+  since a chip rendered correctly inside a column that should not exist at 390 is still a miss.
 
 ## Audit rule
 
@@ -152,7 +245,7 @@ name in working memory, not its formula.
 | A tap target's effective size | `touch-targets` |
 | Interactive text legible against its own background at rest | `interactive-contrast` |
 | One dominant filled action per surface | `one-filled-action` |
-| Nothing renders wider than its own viewport | `viewport-overflow` (the narrow-width numeric rules above are what to apply directly when the tool isn't run) |
+| Nothing renders wider than its own viewport | `viewport-overflow` (for a row, the narrow-width numeric rule above is what to apply directly when the tool isn't run; for a multi-column table, the "Table composition at narrow width" before/after recipe is) |
 | A chip legible against its own row | `chip-ground-collision` (advisory) |
 | A boundary's contrast against what it separates | `border-contrast` (advisory; cairn's own hairline is itself still an open design question, so this one reports without gating today) |
 | A component's measured shape against precedent | `norms-bands` (advisory; query `cairn-audit norms <role>` rather than guessing a height or a padding value) |

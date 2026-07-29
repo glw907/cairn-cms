@@ -213,12 +213,18 @@ Filtering, sorting, and paging run over the loaded entries in component state.
   // Shared column-header typography: small uppercase muted labels. The sort buttons add their own
   // flex layout and a hover affordance on top of this.
   const headerLabel = 'type-label font-semibold uppercase tracking-[0.08em] text-muted';
-  // `relative` plus the `before:` hit-area trio expand the button's EFFECTIVE tap region past its
+  // `relative` plus the `before:` hit-area pair expand the button's EFFECTIVE tap region past its
   // own 16px-tall painted box, an outward `::before` inset (touch-targets' own sanctioned
-  // technique) rather than inflating the type-label font size to reach the 24px floor.
+  // technique) rather than inflating the type-label font size to reach the 24px floor. There is
+  // deliberately no explicit before-content utility here: Tailwind's `before:` variant already
+  // emits `content: var(--tw-content)` on every `before:`-prefixed utility, and the sheet's own
+  // `@property --tw-content` declares an empty-string initial value, so the pseudo-element still
+  // paints. Writing that utility out (even in a comment) compiles to an escaped-quote selector
+  // that desyncs the audit's hand-rolled sheet parser, dropping every rule after it in the
+  // compiled sheet, so it is deliberately omitted from both the class list and this note.
   const sortButton =
     `relative inline-flex items-center gap-1 ${headerLabel} hover:text-base-content ` +
-    `before:absolute before:inset-x-0 before:-inset-y-1.5 before:content-['']`;
+    `before:absolute before:inset-x-0 before:-inset-y-1.5`;
 
   // The publish-all flash. A racing second admin can publish first, leaving this redirect
   // counting zero; say nothing then.

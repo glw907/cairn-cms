@@ -82,7 +82,12 @@ own label, and a second **control** for the action that commits the pick.
   to hold real content, list markup a menu can't. A destination list is content, not a
   menu, so the state-toggle form is the closer match; the panel itself still composes
   from `card-shell card-shadow`, the same container recipe `exemplar-detail.md` uses for
-  every other floating surface.
+  every other floating surface, and carries `role="dialog"`, which is what actually
+  earns it a layer of its own under `one-filled-action`'s own partition
+  (`dialog[open], [role="dialog"], [role="alertdialog"]` wins the layer; everything else
+  falls to whichever `main`/`nav`/`aside`/`header`/`footer` landmark encloses it). A
+  state-toggled panel that skipped this role would be judged against its enclosing
+  landmark instead, the same surface its trigger already sits on.
 - Each destination's own label uses `type-body`, the row-subject register
   `exemplar-list.md`'s name cell states; a destination that also carries a settled state
   (an archived collection, say) gets a `StatusChip` in its `quiet` register, the same
@@ -109,10 +114,14 @@ because they share a screen.
 
 **Rung 6, clear the mechanical net.** Static: `no-uncompiled-class`, `type-scale`,
 `gap-scale`, and `stock-default-hazards` all run clean, because every piece above named
-a sanctioned recipe rather than a stock default. Rendered, both themes:
-`one-filled-action` on the open panel, `touch-targets` on the trigger and every
-destination row, `viewport-overflow` at 390 and 320 for the panel's own width against
-whichever row it opens from, `focus-parity` on every hover state the panel introduces.
+a sanctioned recipe rather than a stock default; `focus-parity` joins this static line
+only if the panel picks up a scoped `<style>` block with hand-authored `:hover`
+selectors, since it is deliberately scoped to hand-authored CSS and says nothing about a
+panel composed entirely from Tailwind utility classes. Rendered, both themes:
+`one-filled-action` on the open panel, `focus-renders` walking the whole tab order into
+and through the panel (the check that actually covers this panel's keyboard behavior),
+`touch-targets` on the trigger and every destination row, `viewport-overflow` at 390 and
+320 for the panel's own width against whichever row it opens from.
 
 **Rung 7, run the grader prompt.** Capture the trigger at rest, the panel open, and a
 destination selected, at 390 and 1440, both themes, and run `grader-prompt.md` against

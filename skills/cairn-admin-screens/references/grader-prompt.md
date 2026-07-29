@@ -38,10 +38,13 @@ deliberate primary action, does it sit in the header, toolbar, or dialog-footer
 position, rather than trailing the content below it? A surface with no primary action
 passes this item automatically.
 
-**b. One filled action.** Count every accent-filled control, a solid background fill,
-not an ink-only or ghost button, on the topmost open layer: the whole page if nothing
-is open, or a modal, slide-over, or expanded panel if one is. FAIL if more than one
-control on that layer carries an accent fill.
+**b. One filled action, the right one.** The audit's `one-filled-action` rule already
+gates the count by live computed style before this prompt ever runs, so assume at most
+one accent-filled control is present. Find the control that carries it and ask: is this
+the one thing an editor looking at this screen most needs to do, or does the fill sit on
+a lower-stakes control while a more consequential action sits ghost or outline beside
+it? FAIL when the accent-filled control is not the surface's own deliberate primary
+action.
 
 **c. Chip register.** Does every status or state chip read as clearly one of two
 things: a bounded object with a real, visible edge, or a quiet, soft-tinted mark with no

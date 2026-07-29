@@ -19,7 +19,9 @@ component usually measure" as data instead of inference from a screenshot.
 `cairn-audit` (static: `npx cairn-audit`; rendered: `npx cairn-audit --rendered`, against a
 running dev server, both themes) runs twenty rules across two modes: nine static, all error
 tier, and eleven rendered, five error and six advisory. Full descriptions live in
-[`docs/reference/cairn-audit.md`](../../docs/reference/cairn-audit.md).
+[`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
+(the installed package's copy, reached from where this skill lives once `cairn-doctor --fix`
+installs it at `.claude/skills/cairn-admin-screens/`).
 
 **Static, error tier:** `no-uncompiled-class`, `type-scale`, `gap-scale`,
 `stock-default-hazards`, `token-colors`, `grammar-boundary`, `focus-parity`, `motion-band`,
@@ -36,7 +38,8 @@ differently on purpose; reported, never gating): `chip-ground-collision`, `borde
 
 `screen-anatomy` checks the negative half mechanically: one `PageHeader`, one `h1`, and no
 accent- or ink-filled action stray outside the header slot or the card region (desk routes are
-exempt; see [`docs/reference/cairn-audit.md`](../../docs/reference/cairn-audit.md)).
+exempt; see [`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md),
+the installed package's copy).
 
 The affirmative half is guidance, not a lint: **the primary action sits in the header slot.** The
 rule cannot enforce this because it cannot know whether a given screen has a primary action to
@@ -54,8 +57,9 @@ A component's measured shape (control height, padding, border treatment, radius)
 prose to recall: `npx cairn-audit norms <role>` returns the measured band with its provenance,
 ratified against a written decision or observed-only. Query by role id (`button-primary`,
 `status-chip`, `card`, `table-cell`, `page-title`, and the rest; the full role table is in
-[`docs/reference/cairn-audit.md`](../../docs/reference/cairn-audit.md)) before inventing a
-height or a padding value from scratch.
+[`docs/reference/cairn-audit.md`](../../../node_modules/@glw907/cairn-cms/docs/reference/cairn-audit.md)
+(again, the installed package's copy)) before inventing a height or a padding value from
+scratch.
 
 ## Register rules
 

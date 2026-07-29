@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -143,6 +143,28 @@ describe('skillFreshness', () => {
       expect(result.status).toBe('pass');
     } finally {
       rmSync(dest, { recursive: true, force: true });
+    }
+  });
+
+  it('skips rather than throws when the packaged tree cannot be read', async () => {
+    vi.resetModules();
+    vi.doMock('node:fs/promises', async () => {
+      const actual = await vi.importActual<typeof import('node:fs/promises')>('node:fs/promises');
+      return {
+        ...actual,
+        readdir: async () => {
+          throw new Error('EACCES: permission denied, scandir');
+        },
+      };
+    });
+    try {
+      const { skillFreshness: guardedSkillFreshness } = await import('../../lib/doctor/check-skill.js');
+      const result = await guardedSkillFreshness.run(ctx({}));
+      expect(result.status).toBe('skip');
+      expect(result.detail).toContain('could not read the packaged admin-screens skill');
+    } finally {
+      vi.doUnmock('node:fs/promises');
+      vi.resetModules();
     }
   });
 });

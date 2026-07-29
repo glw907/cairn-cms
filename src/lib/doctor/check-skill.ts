@@ -118,7 +118,17 @@ export const skillFreshness: DoctorCheck = {
   conditionId: 'skill.admin-screens-stale',
   title: 'admin-screens skill',
   async run(ctx: DoctorContext): Promise<CheckResult> {
-    const packaged = await readPackagedSkillFiles();
+    // The packaged-tree read touches the real filesystem (resolveSkillSourceRoot's
+    // require.resolve, then a directory walk); a broken or repackaged install must skip
+    // rather than fail the run, matching docs/reference/doctor.md's "this check never fails".
+    let packaged: Record<string, string>;
+    try {
+      packaged = await readPackagedSkillFiles();
+    } catch (err) {
+      return skip(
+        `could not read the packaged admin-screens skill (${err instanceof Error ? err.message : String(err)})`
+      );
+    }
     const installed = await readInstalledSkillFiles(ctx, Object.keys(packaged));
     return skillFreshnessResult(installed, packaged);
   },

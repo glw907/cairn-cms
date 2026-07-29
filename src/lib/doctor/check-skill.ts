@@ -6,7 +6,7 @@
 // next check run reads fresh.
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { mkdir, readdir, readFile as fsReadFile, writeFile as fsWriteFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, sep } from 'node:path';
 import { pass, skip } from './types.js';
 import type { CheckResult, DoctorCheck, DoctorContext } from './types.js';
@@ -86,7 +86,7 @@ export async function readPackagedSkillFiles(): Promise<Record<string, string>> 
   const relPaths = await walkFiles(root);
   const files: Record<string, string> = {};
   for (const relPath of relPaths) {
-    files[relPath] = await fsReadFile(join(root, relPath), 'utf8');
+    files[relPath] = await readFile(join(root, relPath), 'utf8');
   }
   return files;
 }
@@ -144,7 +144,7 @@ export async function installSkill(destRoot: string): Promise<number> {
   for (const [relPath, content] of Object.entries(packaged)) {
     const dest = join(destRoot, relPath);
     await mkdir(dirname(dest), { recursive: true });
-    await fsWriteFile(dest, content, 'utf8');
+    await writeFile(dest, content, 'utf8');
   }
   return Object.keys(packaged).length;
 }

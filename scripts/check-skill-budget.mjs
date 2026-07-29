@@ -54,8 +54,10 @@ export function checkSkillBudget(text, budget = SKILL_BUDGET_TOKENS) {
 
 /** @typedef {{ id: string, mode: 'static' | 'rendered', tier: 'error' | 'advisory' }} TierMapEntry */
 
-/** The tier-map section labels this check parses, in the order SKILL.md declares them.
- * @type {{ label: string, mode: TierMapEntry['mode'], tier: TierMapEntry['tier'] }[]} */
+/**
+ * The tier-map section labels this check parses, in the order SKILL.md declares them.
+ * @type {{ label: string, mode: TierMapEntry['mode'], tier: TierMapEntry['tier'] }[]}
+ */
 const TIER_MAP_SECTIONS = [
   { label: 'Static, error tier', mode: 'static', tier: 'error' },
   { label: 'Rendered, error tier', mode: 'rendered', tier: 'error' },
@@ -94,26 +96,31 @@ export function parseTierMap(skillText) {
  * @returns {{ ok: true } | { ok: false, error: string }}
  */
 export function checkTierMap(documented, actual) {
+  // Mode plus id, since a static and a rendered rule may legitimately share an id. The maps hold
+  // the whole entry rather than its tier alone, so a problem line reads its mode and id back off
+  // the entry instead of taking the composite key apart again.
   const key = (/** @type {TierMapEntry} */ e) => `${e.mode}:${e.id}`;
-  const documentedTiers = new Map(documented.map((e) => [key(e), e.tier]));
-  const actualTiers = new Map(actual.map((e) => [key(e), e.tier]));
+  const documentedByKey = new Map(documented.map((e) => [key(e), e]));
+  const actualByKey = new Map(actual.map((e) => [key(e), e]));
 
   const problems = [];
-  for (const [k, tier] of actualTiers) {
-    const [mode, id] = k.split(':');
-    const documentedTier = documentedTiers.get(k);
-    if (documentedTier === undefined) {
-      problems.push(`SKILL.md's tier map is missing the ${mode} rule "${id}" (registry tier: ${tier})`);
-    } else if (documentedTier !== tier) {
+  for (const [k, rule] of actualByKey) {
+    const documentedRule = documentedByKey.get(k);
+    if (documentedRule === undefined) {
+      problems.push(`SKILL.md's tier map is missing the ${rule.mode} rule "${rule.id}" (registry tier: ${rule.tier})`);
+    } else if (documentedRule.tier !== rule.tier) {
       problems.push(
-        `SKILL.md lists the ${mode} rule "${id}" as ${documentedTier} tier, but the registry has it at ${tier} tier`
+        `SKILL.md lists the ${rule.mode} rule "${rule.id}" as ${documentedRule.tier} tier, ` +
+          `but the registry has it at ${rule.tier} tier`
       );
     }
   }
-  for (const [k, tier] of documentedTiers) {
-    if (!actualTiers.has(k)) {
-      const [mode, id] = k.split(':');
-      problems.push(`SKILL.md's tier map lists the ${mode} rule "${id}" (${tier} tier), which is not in the rule registry`);
+  for (const [k, rule] of documentedByKey) {
+    if (!actualByKey.has(k)) {
+      problems.push(
+        `SKILL.md's tier map lists the ${rule.mode} rule "${rule.id}" (${rule.tier} tier), ` +
+          `which is not in the rule registry`
+      );
     }
   }
 
@@ -121,6 +128,17 @@ export function checkTierMap(documented, actual) {
     return { ok: false, error: problems.join('; ') };
   }
   return { ok: true };
+}
+
+/**
+ * Project one registry rule onto a tier-map entry, so the registry's own richer rule shape (a
+ * `check` function, optional interaction states) narrows to just what the doc's table claims.
+ * @param {{ id: string, tier: TierMapEntry['tier'] }} rule
+ * @param {TierMapEntry['mode']} mode
+ * @returns {TierMapEntry}
+ */
+function tierMapEntry(rule, mode) {
+  return { id: rule.id, mode, tier: rule.tier };
 }
 
 /**
@@ -137,8 +155,8 @@ async function actualTierMap(root) {
   /** @type {typeof import('../src/lib/audit/rules/rendered/index.js')} */
   const renderedModule = await import(`file://${resolve(root, 'dist/audit/rules/rendered/index.js')}`);
   return [
-    ...staticModule.staticRules().map((rule) => /** @type {TierMapEntry} */ ({ id: rule.id, mode: 'static', tier: rule.tier })),
-    ...renderedModule.renderedRules().map((rule) => /** @type {TierMapEntry} */ ({ id: rule.id, mode: 'rendered', tier: rule.tier })),
+    ...staticModule.staticRules().map((rule) => tierMapEntry(rule, 'static')),
+    ...renderedModule.renderedRules().map((rule) => tierMapEntry(rule, 'rendered')),
   ];
 }
 

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { dirname, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { resolveConfig } from '../../../../lib/audit/config.js';
+import { DEFAULT_STATIC_SCOPE, resolveConfig } from '../../../../lib/audit/config.js';
 import { parseComponent } from '../../../../lib/audit/markup.js';
 import { parseSheet } from '../../../../lib/audit/sheet.js';
 import { applySuppressions } from '../../../../lib/audit/suppress.js';
@@ -186,24 +186,23 @@ describe('stock-default-hazards: flat base-300 card border', () => {
 // token, not a description of one, reappeared in the shipped tree.
 describe('stock-default-hazards: cairn\'s own admin tree', () => {
   const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../../../../..');
-  const SCAN_DIRS = ['src/routes/admin', 'src/lib/admin-toolkit', 'src/lib/admin-fields', 'src/lib/components'];
 
+  // The scope list comes from the audit itself rather than a copy, so a scope change reaches this
+  // proof automatically. Absent directories are skipped: DEFAULT_STATIC_SCOPE names
+  // `src/routes/admin`, which only a consumer site carries, and the library's own tree has no
+  // `src/routes` at all.
   function realFiles(): ParsedComponent[] {
-    return SCAN_DIRS.flatMap((dir) => {
-      let paths: string[];
-      try {
-        paths = walk(resolve(ROOT, dir), (name) => name.endsWith('.svelte'));
-      } catch {
-        return [];
-      }
-      return paths.map((path) =>
-        parseComponent(relative(ROOT, path), readFileSync(path, 'utf8'))
-      );
-    });
+    return DEFAULT_STATIC_SCOPE.map((dir) => resolve(ROOT, dir))
+      .filter((dir) => existsSync(dir))
+      .flatMap((dir) => walk(dir, (name) => name.endsWith('.svelte')))
+      .map((path) => parseComponent(relative(ROOT, path), readFileSync(path, 'utf8')));
   }
 
   it('finds no hazard across the whole tree, not only the retired badge-ghost class', () => {
-    const findings = check(...realFiles());
-    expect(findings).toEqual([]);
+    const files = realFiles();
+    // A vacuous pass is the failure mode a skipped directory could hide, so the scan proves it
+    // reached real components before it proves they are clean.
+    expect(files.length).toBeGreaterThan(0);
+    expect(check(...files)).toEqual([]);
   });
 });

@@ -304,7 +304,9 @@ function unreachedStateFinding(entry: RenderedAllowlistEntry, unreached: Interac
  * entirely: no rule ran and no selector was ever probed, so stale and dead are both the wrong
  * verdict, only withheld. Advisory for the same reason {@link unreachedStateFinding} is: the remedy
  * a stale or dead finding prescribes, removing the entry, is wrong here too, since the entry may
- * still be exactly right once the route's hydration is fixed.
+ * still be exactly right once the route's hydration is fixed. It reuses the dead-allowlist rule id
+ * anyway, the same reuse {@link unreachedStateFinding} makes, so a consumer filtering on the
+ * allowlist-hygiene ids still sees it; the advisory tier and the wording carry the withholding.
  */
 function identityRefusedFinding(entry: RenderedAllowlistEntry): Finding {
   return positionless({
@@ -337,13 +339,11 @@ export interface PageIdentity {
  * Playwright serializes it by source.
  */
 function capturePageIdentity(): PageIdentity {
-  const escapeIdentifier = (value: string): string =>
-    typeof CSS !== 'undefined' && typeof CSS.escape === 'function' ? CSS.escape(value) : value;
   const main = document.querySelector('main, [role="main"]');
   let landmark: string | null = null;
   if (main) {
     const tag = main.tagName.toLowerCase();
-    const id = main.id ? `#${escapeIdentifier(main.id)}` : '';
+    const id = main.id ? `#${CSS.escape(main.id)}` : '';
     const heading = main.querySelector('h1, h2, h3, legend');
     const headingText = (heading?.textContent ?? '').trim().slice(0, 80);
     landmark = `${tag}${id}::${headingText}`;
@@ -908,7 +908,9 @@ export async function runRendered(
         const ssrIdentity = await captureSsrIdentity(browser, theme, baseUrl, pagePath, cookies);
         const context = await browser.newContext({ colorScheme: theme });
         await context.addCookies(cookies);
-        let identityMismatch: { ssr: PageIdentity; hydrated: PageIdentity } | null = null;
+        // The settled identity that disagreed with `ssrIdentity`, null while the guard is content.
+        // Held rather than reported inline so the finding is raised after the context closes.
+        let mismatchedIdentity: PageIdentity | null = null;
         try {
           for (const state of states) {
             const page = await context.newPage();
@@ -939,7 +941,7 @@ export async function runRendered(
                 await page.evaluate(waitForHydrationSettle);
                 const hydratedIdentity = await page.evaluate(capturePageIdentity);
                 if (!identitiesMatch(ssrIdentity, hydratedIdentity)) {
-                  identityMismatch = { ssr: ssrIdentity, hydrated: hydratedIdentity };
+                  mismatchedIdentity = hydratedIdentity;
                   break;
                 }
               }
@@ -981,8 +983,8 @@ export async function runRendered(
         } finally {
           await context.close();
         }
-        if (identityMismatch) {
-          identityFindings.push(pageIdentityMismatchFinding(pagePath, theme, identityMismatch.ssr, identityMismatch.hydrated));
+        if (mismatchedIdentity) {
+          identityFindings.push(pageIdentityMismatchFinding(pagePath, theme, ssrIdentity, mismatchedIdentity));
           // A page the guard refused was never actually probed, so its allowlist entries cannot be
           // told stale from dead: {@link identityRefusedFinding} withholds that verdict instead of
           // accusing a live entry of staleness on a run that never really looked.

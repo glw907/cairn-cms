@@ -7,6 +7,7 @@ import CairnMediaLibrary from '../../lib/components/CairnMediaLibrary.svelte';
 // the same reason ConceptList's narrow/wide extremes suite does (the source partial alone leaves
 // UA-default widths, which never reproduces a real truncation defect).
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
+import { mediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type { MediaLibraryEntry } from '../../lib/media/library-entry.js';
 import type {
   MediaLibraryData,
@@ -181,6 +182,41 @@ describe('CairnMediaLibrary grid', () => {
       ) as HTMLElement;
       expect(describedTitle.getBoundingClientRect().width).toBe(needsAltTitle.getBoundingClientRect().width);
     });
+  });
+});
+
+describe('CairnMediaLibrary handles a null alt crossing the trust boundary', () => {
+  // A hand-edited or older-schema media.json row can carry a null alt even though MediaEntry types
+  // it as string (parseMediaManifest trusts the committed file wholesale). The one construction
+  // site for MediaLibraryEntry, mediaLibraryEntry, is the guaranteed normalization point, so this
+  // test runs the SAME projection every real load path calls, then renders the result: a live ASC
+  // 500 traced a TypeError in needsAlt back to exactly this untrusted value reaching the screen.
+  it('renders without throwing and counts the row as needing alt', async () => {
+    const rawRow: MediaEntry = {
+      hash: 'eeee555566667777',
+      sha256: 'eeee555566667777-full-sha',
+      slug: 'null-alt-row',
+      displayName: 'null-alt-row',
+      originalFilename: 'null-alt-row.jpg',
+      alt: null as unknown as string,
+      ext: 'jpg',
+      contentType: 'image/jpeg',
+      bytes: 1234,
+      width: 800,
+      height: 600,
+      createdAt: '2026-05-01T00:00:00.000Z',
+    };
+    const projected = mediaLibraryEntry(rawRow);
+
+    const screen = render(CairnMediaLibrary, {
+      data: fixture({ assets: [projected], usage: {} }),
+    } as never);
+
+    const options = [...screen.container.querySelectorAll('[role="option"]')];
+    expect(options.length).toBe(1);
+    expect(options[0].textContent ?? '').toMatch(/needs alt/i);
+    const radios = [...screen.container.querySelectorAll('[role="radio"]')];
+    expect(radios.find((r) => /needs alt/i.test(r.textContent ?? ''))!.textContent ?? '').toContain('1');
   });
 });
 

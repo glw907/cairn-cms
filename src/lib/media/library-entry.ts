@@ -43,6 +43,14 @@ export type MediaLibrary = Record<string, MediaLibraryEntry>;
  * Project a stored MediaEntry to the picker's MediaLibraryEntry, copying every display field and
  *  dropping the source-only sha256 and original filename. The single projection editLoad and
  *  mediaLibraryLoad both call, so the popover and the Library never diverge on the shared shape.
+ *
+ *  This is also the one place the manifest's `alt` is normalized. `parseMediaManifest` trusts a
+ *  committed or branch manifest file wholesale (unlike `parseMediaEntries`, which validates a
+ *  client-posted row field by field), so a hand-edited or older-schema `media.json` can carry a
+ *  null or missing `alt` even though `MediaEntry` types it as `string`. Coercing here, the sole
+ *  construction site for `MediaLibraryEntry`, guarantees every consumer (the Library screen, the
+ *  picker, the insert popover) sees a real string and never has to guard against the impossible
+ *  type again.
  */
 export function mediaLibraryEntry(entry: MediaEntry): MediaLibraryEntry {
   return {
@@ -51,7 +59,7 @@ export function mediaLibraryEntry(entry: MediaEntry): MediaLibraryEntry {
     ext: entry.ext,
     contentType: entry.contentType,
     displayName: entry.displayName,
-    alt: entry.alt,
+    alt: (entry.alt as string | null | undefined) ?? '',
     width: entry.width,
     height: entry.height,
     bytes: entry.bytes,

@@ -1,18 +1,13 @@
 # cairn-audit calibration, the promotion evidence base (design infrastructure Pass 2, Task 17)
 
-> **INTERIM CAVEAT, added 2026-07-28, before acting on anything below.** This calibration never
-> measured ASC's authenticated admin, and that is the one corpus the promotion question most needed:
-> the only living extended cairn interface, cairn's own components underneath and roughly 31
-> custom admin routes on top, and the same interface whose Members diagnosis produced this
-> initiative. The verdicts below therefore rest on cairn's own showcase plus a consumer's public
-> marketing pages and login screen. Treat them as provisional.
->
-> The reason recorded in section 7, that the admin was structurally unreachable, is also wrong. ASC's
-> `wrangler.toml` declares `AUTH_DB = cairn-asc-auth` and its `src/hooks.server.ts` names the working
-> path (seed a local D1 session row per `docs/internal/admin-smoke-test.md`); the run used `vite dev`,
-> which loads no bindings, and stopped there. The corpus is being closed under
-> `docs/superpowers/plans/2026-07-28-asc-admin-corpus-calibration.md`, which rewrites this document's
-> corpus B material and re-examines all five verdicts against real evidence.
+> **READ SECTION 12 WITH THE VERDICTS (added 2026-07-28).** The original calibration (corpora A
+> and B, sections 2 through 11) never measured ASC's authenticated admin, the one corpus the
+> promotion question most needed. That gap is now closed: corpus C (section 12) measured the
+> authenticated admin, 32 routes in both themes, every finding classified and adversarially
+> verified. The promotion outcome survives (no advisory rule promotes), but section 12 inverts
+> the reasoning for two rules, withdraws one demotion candidacy, flags one error-tier rule for
+> repair-or-demote, and dissolves most of section 6's one-direction asymmetry. Where sections 5
+> and 11 disagree with section 12, section 12 governs.
 
 **What this is.** The measured evidence that decides whether any of `cairn-audit`'s five compositional
 rendered rules may leave the advisory tier. Two corpora were audited and every finding classified true
@@ -79,8 +74,8 @@ the hairline and its 1.15 floor. Read 6.3 through the rulings, not on its own.
 Corpus B's composition is the fact that governs how its numbers read. Of its ten pages, **nine are ASC's
 own public pages** (home, post index, an article, events, join, contact, donate, my-account, members) and
 exactly **one, `/admin/login`, renders inside cairn's admin theme**. That single page is the only
-apples-to-apples surface between the corpora. Section 7 explains why the rest of the admin was
-unreachable and what that costs the evidence.
+apples-to-apples surface between the corpora. Section 7 records why the rest of the admin went
+unmeasured in that run, what the miss cost the evidence, and how corpus C closed it.
 
 Corpus B was run against the committed `40cb6d77` state, before the `border-contrast` fix described in
 section 9 landed in the working tree. Corpus A is reported at both baselines, since the fix moved 14
@@ -380,26 +375,31 @@ stated contract. That is what calibration looks like. It carries one disclosed g
 
 ---
 
-## 7. What corpus B could not cover
+## 7. What corpus B did not cover, and how corpus C closed it
 
-Stated plainly, because it limits what this evidence proves.
+Stated plainly, because it limits what corpus B's evidence proves.
 
-**The entire authenticated admin was unreachable.** Every `/admin/*` route on ASC returns 303 to
-`/admin/login`, verified individually. That means zero coverage of two things. First, cairn's own admin
-office and desk screens as installed on a consumer. Second, and more costly, **ASC's 31 custom admin
+**The Task 17 run measured no authenticated admin.** Every `/admin/*` route on that run returned 303 to
+`/admin/login`, verified individually. That meant zero coverage of two things. First, cairn's own admin
+office and desk screens as installed on a consumer. Second, and more costly, **ASC's custom admin
 routes under `src/routes/admin/club/**`**: members, classes, events, money, email, documents, committees,
 assets, settings.
 
 Group two is the corpus this task most wanted. It is the extending developer's own markup rendering
 inside cairn's shell through `CairnAdminShell`, with the drawer present, the theme root mounted and the
 gap tokens in scope. That is exactly where the compositional rules are designed to apply, and it is where
-they were never measured.
+that run never measured them.
 
-**Why it was unreachable.** ASC ships no dev-auth backend, deliberately and documented at
-`hooks.server.ts:2-5`: `@glw907/cairn-cms-dev` is a monorepo-only devDependency, unpublished by design,
-and a local admin smoke test seeds a D1 session row directly instead. Seeding a session row is a database
-write, which this task's constraints forbid, and adding a switch would have meant modifying the thing
-being measured.
+**Why the run stopped short, corrected 2026-07-28.** The original record here called the admin
+structurally unreachable. It was not, and the door was documented in the very file the run read. The run
+started ASC under `vite dev`, which loads no Cloudflare bindings at all, observed that ASC ships no
+`@glw907/cairn-cms-dev` dev-backend hook (deliberate, `hooks.server.ts:2-5`), and concluded no path
+existed. But that same hook comment names the working path: build, run `wrangler dev`, and seed a session
+row in the **local** D1 per `docs/internal/admin-smoke-test.md`. The task's constraints forbade remote
+writes; a local D1 row under `wrangler dev` was always in bounds. The dispatch offered "record the gap
+honestly" as a fallback and never demanded that documented paths be exhausted first, so the fallback is
+what it got. Corpus C (section 12) reached the authenticated admin exactly this way, read-only against
+the ASC tree, and re-measured every verdict.
 
 **What that costs the verdicts.** Someone will reasonably object that `screen-anatomy`'s 36/36 and
 `relational-spacing`'s 18-of-20 are manufactured by pointing an admin rule at a marketing page. Three
@@ -659,3 +659,136 @@ to 130-versus-2.
 | `touch-targets` | error | **Keep at error.** The only rule that fired true positives on both corpora (10 and 36, 0% FP). Disclose the unimplemented 2.5.8 spacing exception in the message. |
 | `viewport-overflow`, `chip-ground-collision`, `one-filled-action` | error | **Keep at error.** True positives on cairn's own admin, clean passes with real candidates present on the consumer. |
 | `focus-renders` | error | **No signal.** Zero findings on both corpora. Needs a live-fire check on a manufactured input before any claim about it. |
+
+> This table predates corpus C. Section 12's "Verdicts after corpus C" supersedes it where the
+> two disagree, most notably `border-contrast` (reason inverted), `interactive-contrast`
+> (demotion withdrawn), `chip-ground-collision` (repair-or-demote flag), and `focus-renders`
+> (first live-fire pass).
+
+---
+
+## 12. Corpus C: the authenticated admin (2026-07-28)
+
+The corpus the promotion question most wanted, reached one day after the verdicts above were
+written. ASC's authenticated admin: cairn's own admin as installed on a consumer, plus 25 custom
+club-admin routes built by a developer who is not cairn's author, rendering inside
+`CairnAdminShell` with the drawer present and the theme root mounted. Everything below was
+measured against ASC running the published `0.90.1` from the registry, audited by this worktree's
+engine, and classified finding by finding to the same standard as corpora A and B.
+
+### Method
+
+The door section 7 describes: `npm run build` in ASC, `wrangler dev` on a local port, an
+`Administrator` session row seeded into the **local** D1 per `docs/internal/admin-smoke-test.md`,
+and the audit's browser contexts carrying the session cookie through the new
+`CAIRN_AUDIT_COOKIES` env var (added this pass; see the cairn-audit reference). The ASC tree was
+read-only throughout: clean at start, byte-identical at end, HEAD unmoved, no remote write of any
+kind. The only remote binding `wrangler dev` connected was EMAIL (`remote = true` in ASC's
+config); the audit's whole interaction surface is one Tab press and one click on the first
+`aria-haspopup` trigger per page, so no send path was reachable.
+
+The corpus: 32 routes, both themes, static and rendered. Seven cairn routes as installed
+(posts, pages, two edit desks, editors, help, login) and 25 club routes (members, classes,
+events, money, email, documents with signature and certificate views, committees, assets,
+asset-requests, announce, settings, plus two honest not-found states). `/admin/media` is
+excluded: it 500s on ASC local state, a real engine defect (`parseMediaManifest` casts a
+manifest wholesale with no per-row validation, so a row with a null `alt` reaches
+`needsAlt`'s `.trim()` and crashes the whole library), fixed on this branch at the
+`mediaLibraryEntry` chokepoint.
+
+Classification ran as a two-wave agent harness: ten classifiers, one per rule family, each
+required to demonstrate with screenshots or live computed-style probes rather than reason from
+source; then adversarial verifiers on every load-bearing verdict, each required to refute with
+its own independent measurement. The pattern earned its keep a thirteenth time: the `type-scale`
+classifier built a plausible three-leg structural argument that all 298 findings were false
+positives, and the verifier killed all three legs with a runnable probe (inject the current
+sheet into a live ASC page and a hand-authored `type-body` resolves instantly; the grammar
+utilities are safelisted into the shipped sheet precisely so consumer markup can reach them).
+`border-contrast`'s verifier re-implemented the measurement from the WCAG spec with raw pixel
+strips and matched the audit's printed ratios within 0.02 across seven mechanism families.
+
+**One corpus defect, caught by the classifiers.** Both `/admin/edit/*` routes serve correct
+admin SSR (curl proves it) and then hydrate client-side into ASC's public 404 chrome. The audit
+measured the hydrated 404 without noticing: rendered mode has no post-hydration page-identity
+guard, which is now a filed harness gap. The 58 findings on those two pages are quarantined
+(false positive or unmeasurable), the edit desks are the one surface still unmeasured, and the
+hydration failure itself is an open question for an ASC-side session (local `wrangler dev`,
+mechanism undiagnosed, possibly local-only).
+
+### Headline counts
+
+**Static: 411 errors, 0 advisories; all 411 true positives after adversarial verification.**
+(Corpus A static: 1 error.) The static gate told the truth on every line it printed.
+
+**Rendered: 120 errors, 1432 advisories, 534 suppressed. Of the 1552 live findings: 1178 true
+positives, 256 false positives, 118 unmeasurable.** The 534 suppressions are the section 9
+rulings correctly forgiving token-derived hairlines on a consumer's pages, first proof the
+exemption discipline transfers.
+
+### Per-rule results
+
+| Rule | Findings | TP | FP | UM | The mechanism that decides it |
+| --- | ---: | ---: | ---: | ---: | --- |
+| `type-scale` (static) | 298 | 298 | 0 | 0 | 265 are pixel-identical to a grammar role (mechanical rename once the grammar publishes); 33 are genuine off-scale drift. Verifier reversed the classifier's clearing: reachability is a shipped-sheet property, deliberately safelisted. |
+| `no-uncompiled-class` (static) | 99 | 99 | 0 | 0 | 39 distinct dead tokens, absent from both the installed and current sheets. Author intent silently unrealized, exactly per ASC's own toolkit README. |
+| `stock-default-hazards` (static) | 12 | 12 | 0 | 0 | All `badge-ghost`. Pixel-proven melts in light theme. |
+| `reduced-motion`, `focus-parity` (static) | 2 | 2 | 0 | 0 | Unguarded transition; `:hover` with no focus sibling. |
+| `border-contrast` | 1060 | 1018 | 6 | 36 | 96% true, overturning corpus B's 100% FP. But 864 of 1018 are daisyUI stock hairlines shipped by cairn's own bundle (tables 640, form controls 150, buttons 74), plus cairn's own shell pill (54), StatusChip recipe (48), and light-theme kbd chip (29). The debt is real and it is mostly cairn's. |
+| `norms-bands` | 174 | 38 | 136 | 0 | Two rule bugs drive the FPs: measuring inside closed `dialog.modal` (scale .95 artifact, 76) and UA button-vs-anchor default padding (52); plus a manifest blind spot (8). TPs include cairn's own ListToolbar forced-30px row. |
+| `screen-anatomy` | 102 | 16 | 86 | 0 | 86 are version skew: the rule greps literal `.card-shell`/`.card-shadow` class names absent from the entire installed 0.90.1 package, so every consumer screen and cairn's own native screens flag identically while carrying genuine cards by computed style. Real TPs: h1 outside header, multiple h1s, headingless not-found states. |
+| `weight-budget` | 32 | 18 | 4 | 10 | Works on its actual domain. TPs include ASC stat trios and cairn's own LoginPage rendering no `<main>` landmark at all. FPs: the documented control-weight limitation (anchor-styled buttons). |
+| `one-filled-action` | 2 | 2 | 0 | 0 | Two competing filled primaries on one committee surface. First consumer true positives. |
+| `touch-targets` | 46 | 38 | 0 | 8 | Third corpus at 0% FP (10, 36, 38). 24 ASC back-links, 10 table links, and 4 on cairn's own ConceptList sort button (62x16px). |
+| `viewport-overflow` | 32 | 32 | 0 | 0 | Verifier re-implemented the scan at the rule's real 390/320 widths: element-for-element match. 24 ASC unwrapped tables and rows; 8 on cairn's own ListToolbar segmented control. |
+| `chip-ground-collision` | 40 | 16 | 24 | 0 | First false positives this rule has produced anywhere. TPs: light-theme `badge-ghost` melts and exact-match `bg-warning/15` chips. FPs: the luminance-only formula cannot see hue (14 purple-tinted chips plainly visible to the eye), and dark-theme ghost pills at 1.20 to 1.43 read bounded. |
+| `relational-spacing` | 64 | 0 | 0 | 64 | Version skew, total: no `--cairn-gap-*` token exists in 0.90.1, so every page is an honest could-not-resolve refusal. Verified with a token-injection control proving the probe works the moment the tokens exist. |
+| `interactive-contrast` | 0 | | | | Silent-clean. Real candidates walked, composited, and passed on 30 admin pages. Corpus B's 175-finding flood was public-page noise, not a property of the rule on its own domain. |
+| `focus-renders` | 0 | | | | Silent-clean, and the first live-fire evidence this rule has ever had: real tab stops walked per page, visible focus affordance found at each. |
+
+### Verdicts after corpus C
+
+The promotion outcome survives: **none of the five advisory rules is promotable today.** The
+reasoning behind two of them inverts, and the one-direction asymmetry section 6 worried about
+dissolves almost entirely.
+
+| Rule | Verdict after corpus C |
+| --- | --- |
+| `border-contrast` | **Stays advisory, reason inverted.** The rule measures correctly and 96% of its consumer-admin findings are true. Promotion is blocked from the other side now: 864 of 1018 true findings are cairn's own stock component defaults, so promoting would gate every consumer on engine-owned debt they cannot fix. The promotion path is concrete: re-tune the engine's stock hairlines or extend token-derived exemptions to them, then re-measure. |
+| `weight-budget` | **Stays advisory.** Functions on its real domain (18 TP, including an engine defect it caught). Remaining FP mechanism is the documented control-weight limitation; repair before any promotion talk. |
+| `screen-anatomy` | **Stays advisory.** Unmeasurable-in-part on every registry consumer today (literal class grep vs unpublished utilities), and the repair is named: detect card regions by computed style against the ratified tokens, the discipline the color checks already use. Its negative-half TPs are real. |
+| `relational-spacing` | **Stays advisory; still unanswerable.** Zero true positives ever demonstrated, and no released engine carries its tokens. The earliest the promotion question can be ASKED is after the grammar publishes and a consumer upgrades. |
+| `norms-bands` | **Stays advisory, by principle (spec 6.3) and now by two named rule bugs.** Repairs: skip closed dialogs, handle UA default padding, regenerate the manifest size-variant-aware. |
+| `interactive-contrast` | **Demotion candidacy WITHDRAWN.** On its actual domain it measures real candidates and passes cleanly; the corpus B gating FPs were public pages fed to an admin rule. The fix is the page-identity guard, not demotion. |
+| `chip-ground-collision` | **New flag: repair-or-demote, Geoff's call.** First measured consumer admin produced 24 false errors out of 40 (chroma-blind formula; floor vs dark-theme 1.20-1.43 bounded pills). An error-tier rule that fails a healthy consumer 24 times wrongly cannot be run as a consumer gate as-is. Repair path is known (chroma-aware distance, floor recalibration); per the Pass 2 lesson, the repair happens behind an adversarial pass, not as a gate-stage patch. |
+| `touch-targets`, `viewport-overflow`, `one-filled-action` | **Keep at error, strengthened.** All three now have consumer-admin true positives at 0% FP. The "fired only on cairn's own admin" asymmetry was corpus composition, not fitting: public marketing pages simply lack dense admin furniture. |
+| `focus-renders` | **Keep at error.** No longer "no signal": first live-fire pass on 30 real admin pages. |
+
+**The asymmetry finding, resolved.** Pass 2 read one-directional firing as evidence of fitted
+rules. Corpus C shows most of that direction was the corpora, not the rules: five rules that
+looked one-directional measured real candidates on a consumer's admin and behaved (three fired
+true, two passed clean). What remains true: a rule is only ever calibrated by measuring it on
+surfaces of the kind it polices, and corpus B contained nine marketing pages and one login
+screen.
+
+### Engine debt this corpus surfaced
+
+Real defects in cairn itself, caught by its own audit running on a consumer, in ROADMAP with
+this pass: the Media Library null-alt SSR crash (fixed on this branch); LoginPage rendering no
+`<main>`/`<header>` landmark; ConceptList's 62x16px sort targets; ListToolbar's segmented
+control overflowing at 320/390; the shell's CMS pill painted with raw `border-base-300` instead
+of the ratified token; StatusChip's own `badge-outline` recipe reading 2.1 to 2.8 against a 3:1
+floor; the RULING 2 exemption floor stranding the light-theme kbd chip; the norms manifest's
+size blind spots (generator passes `size='xs'` where the component defaults `sm`); and the two
+`norms-bands` measurement bugs. Rule repairs follow the standing discipline: filed with costs,
+executed behind an adversarial pass, never patched at gate stage.
+
+### The sequencing note the static result forces
+
+A consumer running `npx cairn-audit` today gets 411 static errors, and 265 of them cannot be
+fixed on any published engine: renaming `text-sm` to `type-body` against 0.90.1 renders
+unstyled, because the grammar utilities are still in this repo's unreleased window. The findings
+are true; the remedy does not exist outside this worktree yet. The release that ships the
+grammar layer is therefore load-bearing for the audit's consumer story, and the upgrade guide
+entry for that release should carry the rename recipe (the 265 are a pure mechanical rename with
+zero visual change, which is itself a design-language success worth stating: the consumer's
+instincts landed pixel-identical to the scale five times out of six).

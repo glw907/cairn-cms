@@ -263,7 +263,28 @@ the named human gates only):**
     Batching the sentinel probe onto `documentElement` costs one recalc instead of N. Wall-clock
     only, on a consumer's CI.
 
-- **A gate forbidding a raw control byte in a source file** (design infrastructure Pass 2,
+- **The engine debt and rule repairs corpus C confirmed** (ASC authenticated-admin calibration,
+  2026-07-28; evidence and per-item mechanisms in
+  `docs/internal/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline
+  as the entry above: each is confirmed, classified, and adversarially verified, and each waits
+  for its own pass rather than a gate-stage patch. Engine defects the audit caught in cairn
+  itself: LoginPage renders no `<main>`/`<header>` landmark (already tracked above; corpus C
+  re-confirmed it as the rule's only cairn-origin weight-budget error); ConceptList's table-sort
+  buttons render 62x16px against the 24x24 floor; ListToolbar's segmented control overflows the
+  320/390 viewports (wraps its buttons but not its own box); CairnAdminShell's "CMS" pill paints
+  a raw `border-base-300` instead of the ratified `--cairn-card-border`; StatusChip's own
+  `badge-outline` recipe reads 2.1 to 2.8 against the rule's 3:1 floor; the daisyUI stock table,
+  input, and button hairlines cairn's bundle ships produce 864 true `border-contrast` advisories
+  on one consumer (re-tune the stock borders or extend token-derived exemptions to them; this is
+  the named blocker on `border-contrast` promotion). Rule and harness repairs:
+  `chip-ground-collision`'s contrast has no chroma term, so hue-distinct chips flag (24 false
+  errors on ASC; repair-or-demote is flagged for Geoff in STATUS); `norms-bands` measures inside
+  closed `dialog.modal` boxes (scale .95 artifact) and trips on UA button-vs-anchor default
+  padding; the norms manifest generator passes `size='xs'` to StatusChip so the bands never saw
+  the component's `sm` default; rendered mode has no post-hydration page-identity guard, so a
+  page that hydrates into other chrome is measured silently (the two ASC edit desks were; the
+  guard needs a design that keeps deliberate public-page audits legal); RULING 2's exemption
+  floor strands the light-theme kbd chip at 1.143 against its 1.15 floor. (design infrastructure Pass 2,
   2026-07-28). Two files in `src/lib` carried a raw NUL as a composite-key separator, which made
   them binary to `grep` and to `file`, so every grep-based gate over `src/lib` skipped them
   silently while reporting success. Both were rewritten to a unicode escape in `40cb6d77` and

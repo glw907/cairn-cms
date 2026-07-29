@@ -181,11 +181,25 @@
   matching honesty in the other direction: an entry whose selector still matches an element while
   suppressing nothing reports as a dead entry, at the tier of the rule it names.
 
+- `cairn-audit --rendered` reads an optional `CAIRN_AUDIT_COOKIES` environment variable, Cookie-
+  header syntax (`name=value` entries separated by a semicolon), and adds every parsed cookie to
+  each browser context alongside the theme cookie. This is how a rendered run reaches a consumer's
+  authenticated admin, a session cookie against a local `wrangler dev`, since the run-specific
+  credential belongs in the environment rather than the config file, the same reasoning `BASE_URL`
+  follows. A malformed entry throws rather than the parser silently skipping it, and an entry named
+  `cairn-admin-theme` throws too, since the run owns that cookie itself. See [The `cairn-audit`
+  CLI](./docs/reference/cairn-audit.md#auditing-an-authenticated-admin).
+
 No consumer action is required for the entries above. No exported type, prop, or route contract
 changed.
 
 ### Fixed
 
+- The Media Library no longer 500s when a stored asset's alt text is `null` or missing. A
+  committed or branch `media.json` row is trusted wholesale on read, so a hand-edited or
+  older-schema manifest could cross the trust boundary with a non-string `alt`; `mediaLibraryEntry`,
+  the one place `MediaLibraryEntry` is constructed, now normalizes it to `''`, the library's
+  existing needs-alt signal.
 - `PageHeader` (`@glw907/cairn-cms/admin-toolkit`) no longer leaks its default `<h1>`/`<p>` margins
   past its own `gap-0.5` heading-stack intent. `OfficeList`, the component `PageHeader`'s own doc
   calls itself "the shape, generalized", carried this UA-margin fix already; `PageHeader` had not

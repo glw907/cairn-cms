@@ -371,6 +371,42 @@ export async function resolveBaseUrl(isReachable: (url: string) => Promise<boole
   return baseUrl;
 }
 
+/**
+ * Parse `CAIRN_AUDIT_COOKIES` into the extra cookies a rendered run's browser context carries
+ * alongside the theme cookie. The syntax is a Cookie header's: `name=value` entries separated by
+ * `;`, each entry trimmed and split on its first `=`, so a value may itself contain one. An unset
+ * or all-whitespace value configures none.
+ *
+ * A malformed entry throws rather than being skipped, holding `loadConfig`'s rule that a typo never
+ * degrades into a silently narrower audit: a session cookie that quietly failed to parse would
+ * produce a whole run of login-redirect failures blamed on the admin rather than on the env var. An
+ * entry naming `cairn-admin-theme` is refused outright, since `runRendered` owns that cookie per
+ * theme context.
+ */
+export function resolveExtraCookies(raw: string | undefined): { name: string; value: string }[] {
+  if (raw === undefined || raw.trim() === '') return [];
+  return raw.split(';').map((rawEntry) => {
+    const entry = rawEntry.trim();
+    const eq = entry.indexOf('=');
+    if (eq === -1) {
+      throw new Error(`CAIRN_AUDIT_COOKIES: malformed entry "${entry}", expected name=value.`);
+    }
+    const name = entry.slice(0, eq).trim();
+    const value = entry.slice(eq + 1);
+    if (name === '') {
+      throw new Error(`CAIRN_AUDIT_COOKIES: malformed entry "${entry}", the cookie name is empty.`);
+    }
+    if (name === 'cairn-admin-theme') {
+      throw new Error(
+        'CAIRN_AUDIT_COOKIES: cannot set "cairn-admin-theme"; the rendered run owns that cookie per ' +
+          'browser context (one context per theme), and a caller override would silently invalidate ' +
+          'the per-theme measurement.'
+      );
+    }
+    return { name, value };
+  });
+}
+
 async function defaultLoadPlaywright(): Promise<PlaywrightModule> {
   return (await import('playwright')) as unknown as PlaywrightModule;
 }
@@ -699,6 +735,7 @@ export async function runRendered(
     );
   }
 
+  const extraCookies = resolveExtraCookies(process.env.CAIRN_AUDIT_COOKIES);
   const baseUrl = await resolveBaseUrl(deps.isReachable ?? defaultIsReachable);
   const { chromium } = await loadPlaywrightModule(deps.loadPlaywright ?? defaultLoadPlaywright);
   const states = neededStates(rules);
@@ -718,7 +755,10 @@ export async function runRendered(
       const relevantAllowlist = config.renderedAllowlist.filter((entry) => entry.page === pagePath);
       for (const theme of themes) {
         const context = await browser.newContext({ colorScheme: theme });
-        await context.addCookies([{ name: 'cairn-admin-theme', value: THEME_COOKIE_VALUE[theme], url: baseUrl }]);
+        await context.addCookies([
+          { name: 'cairn-admin-theme', value: THEME_COOKIE_VALUE[theme], url: baseUrl },
+          ...extraCookies.map((cookie) => ({ ...cookie, url: baseUrl })),
+        ]);
         try {
           for (const state of states) {
             const page = await context.newPage();

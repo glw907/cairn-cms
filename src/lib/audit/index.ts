@@ -33,7 +33,14 @@ export { negatedClassNames, parseSheet, selectorClassNames } from './sheet.js';
 export { applySuppressions, parseDirectives, DIRECTIVE_MARKER, SUPPRESSION_RULE_ID } from './suppress.js';
 export { staticRules } from './rules/static/index.js';
 export { renderedRules } from './rules/rendered/index.js';
-export { DEFAULT_BASE_URL, resolveBaseUrl, resolveColors, resolveRenderedFindings, runRendered } from './rendered.js';
+export {
+  DEFAULT_BASE_URL,
+  resolveBaseUrl,
+  resolveColors,
+  resolveExtraCookies,
+  resolveRenderedFindings,
+  runRendered,
+} from './rendered.js';
 export {
   composite,
   contrastRatio,

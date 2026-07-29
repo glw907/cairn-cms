@@ -45,4 +45,18 @@ describe('mediaLibraryEntry', () => {
     expect(projected.width).toBeNull();
     expect(projected.height).toBeNull();
   });
+
+  it('normalizes a null alt to an empty string, the needs-alt signal', () => {
+    // parseMediaManifest trusts a committed or branch media.json wholesale, so a hand-edited or
+    // older-schema row can carry a null alt even though MediaEntry types it as string. This is the
+    // uncommitted-uploads merge path a live ASC 500 traced back to.
+    const nullAlt: MediaEntry = { ...ENTRY, alt: null as unknown as string };
+    expect(mediaLibraryEntry(nullAlt).alt).toBe('');
+  });
+
+  it('normalizes an undefined alt to an empty string', () => {
+    const missingAlt: MediaEntry = { ...ENTRY };
+    delete (missingAlt as { alt?: string }).alt;
+    expect(mediaLibraryEntry(missingAlt).alt).toBe('');
+  });
 });

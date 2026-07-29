@@ -62,34 +62,34 @@ What remains genuinely blocked, and must stay blocked:
 
 ## The task
 
-- [ ] **Step 1: reach the authenticated admin.** Build ASC (`npm run build`), start
+- [x] **Step 1: reach the authenticated admin.** Build ASC (`npm run build`), start
   `npx wrangler dev` on a free port, seed an `editor` row and a `session` row in the LOCAL D1 per
   `docs/internal/admin-smoke-test.md` (the cookie value is the opaque session `id` itself; nothing
   is signed), and prove an authed request renders by fetching an `/admin` route and getting 200 with
   real admin markup rather than a redirect to `/admin/login`. Do not proceed on a 303.
-- [ ] **Step 2: enumerate the corpus.** cairn's own admin routes as installed on a consumer, plus
+- [x] **Step 2: enumerate the corpus.** cairn's own admin routes as installed on a consumer, plus
   ASC's custom admin routes under `src/routes/admin/club/**` (roughly 31: members, classes, events,
   money, email, documents, committees, assets, settings). Record the exact route list in the
   calibration doc so the run is reproducible.
-- [ ] **Step 3: run the audit**, both themes, static and rendered, with the config in the scratchpad
+- [x] **Step 3: run the audit**, both themes, static and rendered, with the config in the scratchpad
   and `--config`. Run `npm run package` in cairn first; the bin runs from `dist`.
-- [ ] **Step 4: classify every finding true or false positive BY EYE**, per finding, to the same
+- [x] **Step 4: classify every finding true or false positive BY EYE**, per finding, to the same
   standard corpora A and B were held to. Screenshots where seeing the screen decides it. A genuine
   defect in ASC's interface is a TRUE positive; this task does not fix ASC.
-- [ ] **Step 5: re-examine the five verdicts.** The existing calibration concluded no compositional
+- [x] **Step 5: re-examine the five verdicts.** The existing calibration concluded no compositional
   rule is promotable. This corpus is the evidence that can confirm or overturn it, so state which
   happened, per rule, with numbers. Pay particular attention to the ONE-DIRECTION asymmetry Pass 2
   found: `interactive-contrast`, `relational-spacing`, and `norms-bands` fired only on the consumer's
   public pages and were silent on cairn's own admin. On a consumer's ADMIN screens, built from
   cairn's own components, that asymmetry either reproduces or dissolves, and either answer is
   informative.
-- [ ] **Step 6: correct the record in four places**, all of which currently say the gap was
+- [x] **Step 6: correct the record in four places**, all of which currently say the gap was
   structural: `docs/internal/2026-07-design-infrastructure-audit-calibration.md` (its corpus B
   section and section 7), `docs/STATUS.md`, the initiative memory
   (`cairn-design-infrastructure-initiative`), and the Task 17 Step 2 note in
   `docs/superpowers/plans/2026-07-27-design-infrastructure-pass-2-enforcement.md`. Say the run
   stopped short and why, rather than that the door was locked.
-- [ ] **Step 7:** full gate if any rule changed; commit; ASC repo verified untouched.
+- [x] **Step 7:** full gate if any rule changed; commit; ASC repo verified untouched.
 
 ## Acceptance
 
@@ -110,3 +110,63 @@ including the honest recording. What the instruction never demanded was that doc
 exhausted before the fallback was taken. When one input to a measurement is the whole point of the
 measurement, the dispatch has to say so and treat failure to obtain it as a blocker to escalate, not
 as a branch to take.
+
+---
+
+## Post-mortem (2026-07-28, pass complete)
+
+**What was done.** The authenticated-admin corpus the calibration was missing exists now, measured
+and classified end to end. Step 1's gate opened exactly as the plan said it would: build, local
+`wrangler dev`, one seeded session row in the local D1, and the anon/authed proof (303 to login
+without the cookie, 200 with real `cairn-admin` markup with it). 32 routes audited in both themes,
+static and rendered; every finding classified by a two-wave agent harness (ten classifiers, seven
+adversarial verifiers) with the by-eye standard the plan demanded; the four wrong records
+corrected; the ASC tree verified byte-identical at the end (porcelain empty, HEAD `55578d7`).
+
+**The numbers.** Static: 411 errors, 411 true positives after adversarial verification. Rendered:
+1552 live findings; 1178 true, 256 false, 118 unmeasurable; plus 534 correctly suppressed by the
+section 9 rulings, the first proof the exemption discipline transfers to a consumer. Full per-rule
+table and verdicts: calibration doc section 12, which now governs over sections 5 and 11 where
+they disagree.
+
+**The verdict re-examination (Step 5's product).** The promotion outcome stands: no advisory rule
+promotes. The reasoning moved: `border-contrast` flipped from "100% FP on the consumer" to "96%
+true, blocked by cairn's own stock hairline debt"; `interactive-contrast`'s demotion candidacy is
+withdrawn (silent-clean on real admin candidates); `chip-ground-collision` gained a
+repair-or-demote flag (24 false errors of 40, chroma-blind formula), now Geoff's third open call;
+Pass 2's one-direction "fitted rules" reading dissolved into corpus composition. Version skew was
+the day's structural finding: `relational-spacing` (no grammar tokens in 0.90.1) and
+`screen-anatomy`'s card checks (no `card-shell` utilities in 0.90.1) are unmeasurable on every
+registry consumer, and 265 of the 298 `type-scale` errors are a mechanical rename blocked on the
+same unpublished window, which makes the grammar release load-bearing for the audit's consumer
+story.
+
+**Engine changes landed on this branch** (all gates green: check 0/0, comments, docs, reference,
+signatures, package, surface, `npm test` 360/360 files, 4444 tests, from-scratch showcase consumer
+build): `CAIRN_AUDIT_COOKIES` for rendered mode (`a85ea434`), the Media Library null-alt crash fix
+at the `mediaLibraryEntry` chokepoint (`8a9f1165`, root cause `parseMediaManifest`'s unvalidated
+cast), and the simplifier's refinements (`bee37168`). Everything else found was FILED, not fixed,
+per the standing gate-stage discipline: the corpus C engine-debt and rule-repair entry in ROADMAP.
+
+**Method notes.**
+
+- The build-then-refute pattern earned its thirteenth confirmation at the classification layer
+  itself: the `type-scale` classifier's 298-false-positive structural argument was plausible,
+  well-evidenced, and wrong, and only an adversarial verifier's runnable probe (inject the current
+  sheet, watch `type-body` resolve on a live ASC page) exposed it. A classification without a
+  refuter is a draft.
+- The classifiers caught a corpus defect the harness could not: both `/admin/edit/*` desks SSR
+  correctly then hydrate into ASC's public 404, so the audit silently measured the wrong surface
+  on two pages. Their 58 findings are quarantined; the harness gap (no post-hydration
+  page-identity guard) and the ASC-side hydration question are both filed.
+- One live-executor collision, self-inflicted: reaping stray `workerd` processes mid-pass nearly
+  killed the needsAlt implementer's own miniflare test processes. Process cleanup on a shared
+  machine belongs at the very end of a pass, after every agent is done.
+
+**Budget.** Subagent tokens: ~2.7M (classification workflow 1.82M, verify wave 0.42M, two
+implementer dispatches and the simplifier ~0.5M). Human interaction points: zero between the
+kickoff and this close; the one mid-pass user message was the standing workflow opt-in.
+
+**Blockers carried out of the pass:** none for Pass 3 planning. The edit-desk hydration failure
+and the media-page re-measure (post-fix, needs a released engine on ASC's side or a local
+override) ride the carry-forwards.

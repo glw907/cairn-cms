@@ -637,6 +637,13 @@ Main-loop orchestrated (it is measurement, not build).
   Corpus B is therefore `~/Projects/asc-site` run locally on `vite dev`, and ASC ships no
   dev-auth backend by deliberate design, so its authenticated admin stayed out of reach. The
   coverage limit is stated in the calibration doc rather than buried.
+  > **Correction (2026-07-28).** "Out of reach" was wrong. `vite dev` loads no Cloudflare
+  > bindings, but ASC's `wrangler.toml` binds `AUTH_DB` locally and `hooks.server.ts:2-5`
+  > names the documented way in: build, `wrangler dev`, seed a session row in the local D1
+  > per `docs/internal/admin-smoke-test.md`. The run stopped short of the documented path;
+  > the door was never locked. Closed by the ASC admin corpus calibration
+  > (`2026-07-28-asc-admin-corpus-calibration.md`), which reached the authenticated admin
+  > read-only and re-measured all five verdicts.
 - [x] **Step 3:** Write `docs/internal/2026-07-design-infrastructure-audit-calibration.md`:
   per-rule FP rates on both corpora, the promotion bar restated (spec 6.1), and each
   compositional rule's verdict (stays advisory / promotion candidate with evidence).
@@ -824,6 +831,12 @@ site or modifying the thing being measured. That gap is itself a finding: **a co
 `cairn-audit --rendered` against their own admin today** without hand-seeding a session row, and if
 they try, the redirect defect hands them a clean-looking report of the login screen measured six
 times.
+> **Correction (2026-07-28).** The "D1 write into a live site" half was wrong: the smoke-doc
+> path seeds the **local** D1 under `wrangler dev`, which touches nothing live and was always
+> within the task's constraints. The hand-seeding requirement was real; the follow-up pass
+> (`2026-07-28-asc-admin-corpus-calibration.md`) took that path and additionally gave rendered
+> mode a `CAIRN_AUDIT_COOKIES` env var so an authed session cookie rides the audit's own
+> browser contexts.
 
 Nine of corpus B's ten pages are ASC's public marketing pages, so an objection that the admin rules
 were pointed at the wrong surface is fair on its face. It does not survive: `rendered.pages` is a

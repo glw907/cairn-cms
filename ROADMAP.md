@@ -318,6 +318,46 @@ the named human gates only):**
   through `node_modules/@glw907/cairn-cms/`, which is correct once installed but means the links are
   necessarily relative to an install, not to this repo's own tree.
 
+- **From the ASC Assets-trial harvest (2026-07-29, six findings, folded at the 0.91.1 hotfix
+  pass; full detail in the ASC repo's trial log).** Finding 1, the 0.91.0 shipped-sheet
+  regression, shipped as the 0.91.1 hotfix itself (the nineteen-class compatibility safelist plus
+  the sheet-inventory snapshot gate). The other five were verified against the code at the fold:
+  - **The reachable class vocabulary is an undocumented contract (design gap, medium).** A
+    consumer's admin markup can use only the utilities cairn's own compiled sheet happens to
+    carry. After its type sweep, ASC still held 94 dead classes across 17 admin screens (`w-fit`,
+    the `print:*` family, most responsive variants), each reading as live markup and compiling to
+    nothing. The 0.91.1 committed sheet-inventory snapshot
+    (`src/tests/unit/fixtures/admin-sheet-inventory.txt`) is now a machine-readable statement of
+    that surface; the open call is the remedy: publish the inventory as a documented list, give
+    consumers a supported seam to run their own Tailwind pass over the admin, or state the
+    constraint so `<style>`-block scoping reads as the expected idiom rather than an escape hatch
+    (ASC has hand-taken that route four times).
+  - **`cairn-audit` cannot scope to a path, but its done-gate asks a builder to (DX, low).** The
+    CLI takes `--rendered`, `--config`, and the `norms` subcommand only (verified in
+    `src/lib/audit/bin.ts`), so narrowing a run to "the routes you touched" means authoring a
+    config file naming `static.scope`. A positional path argument closes it.
+  - **The static scan cannot see a class string a plain `.ts` module exports (coverage gap,
+    medium).** The substrate is `svelte/compiler` over markup, so a consumer who centralizes
+    admin class vocabulary in TypeScript modules gets zero coverage there while the run reports
+    clean: 7 of ASC's 21 `badge-ghost` sites lived in such modules, and its most-used label
+    recipe (118 uses across 18 screens) carried a never-compiled `text-[0.6875rem]` for its
+    entire life under a green gate. Either extend the static substrate to string literals in
+    `.ts` files under scope, or state the blind spot in the cairn-audit reference so a consumer
+    knows the gate's coverage rather than inferring it.
+  - **The closed type scale has no 12px role (design ruling; feeds the trial ratchet).** The
+    scale steps from 13px (`meta`) to 11px (`label`), so Tailwind's 12px `text-xs` has no
+    mechanical target; cairn resolved its own 120 twelve-pixel sites "by the relationship each
+    site expresses" and ASC resolved its 24 the same way, but the upgrade guide's "match that
+    size to a grammar role" step has no answer for 12px. Either document the 12px case in the
+    adoption recipe or reconsider where the scale closes. Routes to the rule-repair pass, with
+    the trial's ratchet evidence.
+  - **`cairn-doctor`'s zone checks report a bare 403 on read (DX, low; repair named).**
+    `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts`) fails with "`<setting>` read
+    returned 403" and prints a fix that assumes the setting is off, while the email check in the
+    same file already routes the same status through `permissionFail`, which names the missing
+    token scope. Route the zone-settings read through `permissionFail` so the failure
+    distinguishes "the setting is wrong" from "this token cannot read zone settings".
+
 - **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
   pass, 2026-07-19). The guide's root-layout snippet imports `{ cairn }` from `$lib/cairn.config`
   in a client script to reach `cairn.rendering.islands`, shipping the whole adapter to every

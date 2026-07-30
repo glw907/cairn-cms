@@ -14,7 +14,32 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-29: 0.91.0 PUBLISHED; next is the voice sitting)
+## Immediate next action (2026-07-29: HOTFIX 0.91.1 before anything else)
+
+**0.91.0 shipped a silent consumer-breaking regression: the admin sheet dropped named Tailwind
+utilities cairn's own tree stopped using (`text-sm`, `text-xs`, `text-lg`, `text-2xl`, `gap-6`,
+`tracking-tight`; verified one-rule-each in 0.90.1's published sheet, zero in 0.91.0's), so
+consumer markup riding them lost its styling, roughly 300 sites on the first consumer measured,
+while the upgrade guide promises no rendering change. The canonical record and four-step fix plan
+is [issue #12](https://github.com/glw907/cairn-cms/issues/12).** The ASC Assets trial's substrate
+is blocked at its upgrade step until 0.91.1; everything else in the trial brief stands.
+
+**Resume prompt (fresh session, from `~/Projects/cairn-cms`):** "Execute the 0.91.1 hotfix per
+issue #12: enumerate the FULL dropped class set by diffing the published 0.90.1 and 0.91.0
+sheets with the audit's own `sheet.ts` tokenizer (the six named utilities are one consumer's
+usage, not the whole delta); restore the dropped set via a labeled compatibility block in
+`scripts/admin-css.input.css`'s `@source inline(...)`; add the regression gate the failure
+earned (the built sheet's class inventory diffed against a committed snapshot, so a class leaves
+the shipped sheet only as a deliberate changelog-carried act); correct the upgrade guide's
+'keep rendering exactly as they did' sentence and carry a `Consumers must:` line describing
+0.91.0's actual behavior; cut 0.91.1 via `cairn-release` (patch); comment on and close #12;
+tell the ASC side the trial's upgrade step is unblocked. Also: a friction-gates batch commit
+(`feat(gates): the friction-log tightenings...`) may sit unpushed on `main` from the prior
+session's dispatched agent; verify it landed green and push it with the hotfix."
+
+The voice sitting (below) moves to SECOND. Prior entry follows.
+
+## Superseded same-day (2026-07-29: 0.91.0 published; the voice sitting)
 
 **The design-infrastructure build is COMPLETE and RELEASED.** Pass 3 merged to `main`
 (`8fa01eba`), the pass-end ritual ran in full (code-simplifier, the two-reviewer fan-out whose

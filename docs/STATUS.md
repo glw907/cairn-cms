@@ -33,9 +33,10 @@ earned (the built sheet's class inventory diffed against a committed snapshot, s
 the shipped sheet only as a deliberate changelog-carried act); correct the upgrade guide's
 'keep rendering exactly as they did' sentence and carry a `Consumers must:` line describing
 0.91.0's actual behavior; cut 0.91.1 via `cairn-release` (patch); comment on and close #12;
-tell the ASC side the trial's upgrade step is unblocked. Also: a friction-gates batch commit
-(`feat(gates): the friction-log tightenings...`) may sit unpushed on `main` from the prior
-session's dispatched agent; verify it landed green and push it with the hotfix."
+tell the ASC side the trial's upgrade step is unblocked." (The friction-gates batch landed and
+is pushed, `90bf2860`; its new sheet-count and parity gates are live, and its parity check
+already caught and fixed the upgrade guide's stale `## Unreleased:` heading the 0.91.0 rider
+missed.)
 
 The voice sitting (below) moves to SECOND. Prior entry follows.
 

@@ -51,9 +51,15 @@ and pruned the rest as filed, closed in-pass, shipped (the rendered-allowlist `r
 the own-tree error tier cleared by Pass 3), or resolved by the 24x24 ruling (the 43.78px
 tag-filter chip clears the ratified floor; the gate's own header documents it as inert).
 Git history holds the full record of all three clearings. The 2026-07-29 ASC Assets-trial
-harvest (six findings, staged in the consumer repo while a cairn worktree held live workerd)
-was folded at the 0.91.1 hotfix pass under the same complete-or-move rule: finding 1, the
-0.91.0 shipped-sheet regression, shipped as the hotfix itself, and the other five were
-verified against the code and filed into `ROADMAP.md` (the reachable-vocabulary contract, the
-audit's missing path filter, the `.ts`-module scan blind spot, the 12px role gap, and the
-doctor's bare-403 zone reads). New findings start fresh below this line.
+harvest (ten findings across two batches, staged in the consumer repo while a cairn worktree
+held live workerd) was folded at the 0.91.1 hotfix pass under the same complete-or-move rule:
+finding 1, the 0.91.0 shipped-sheet regression, shipped as the hotfix itself; the
+status-flattening finding folded into ROADMAP's standing kit entry with the upstream issue
+repointed from the closed kit#12533 to the open kit#12987; and the other eight were verified
+and filed into `ROADMAP.md` (the reachable-vocabulary contract, the audit's missing path
+filter, the `.ts`-module scan blind spot, the 12px role gap, the doctor's bare-403 zone
+reads, the identity-guard/non-2xx hole, the mismatched rendered-summary totals, and the
+CodeMirror decoration throw on a consumer edit desk). The same harvest disproved the ASC
+edit-desk hydration defect the STATUS carry-forwards had held (corpus C had configured
+cairn's internal route shape, which 404s on ASC's single-mount admin; the real desks proved
+hydration-clean across 24 runs). New findings start fresh below this line.

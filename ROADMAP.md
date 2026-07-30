@@ -318,10 +318,33 @@ the named human gates only):**
   through `node_modules/@glw907/cairn-cms/`, which is correct once installed but means the links are
   necessarily relative to an install, not to this repo's own tree.
 
-- **From the ASC Assets-trial harvest (2026-07-29, six findings, folded at the 0.91.1 hotfix
-  pass; full detail in the ASC repo's trial log).** Finding 1, the 0.91.0 shipped-sheet
-  regression, shipped as the 0.91.1 hotfix itself (the nineteen-class compatibility safelist plus
-  the sheet-inventory snapshot gate). The other five were verified against the code at the fold:
+- **From the ASC Assets-trial harvest (2026-07-29, ten findings across two batches, folded at
+  the 0.91.1 hotfix pass; full detail in the ASC repo's trial log).** Finding 1, the 0.91.0
+  shipped-sheet regression, shipped as the 0.91.1 hotfix itself (the nineteen-class compatibility
+  safelist plus the sheet-inventory snapshot gate). The status-flattening finding folded into the
+  standing kit#12987 entry below, with the upstream issue repointed and the severity raised. The
+  rest were verified against the code (or against ASC's own adversarially-verified evidence) at
+  the fold:
+  - **The rendered audit's identity guard and its non-2xx precondition leave a hole between
+    them, and the status flattening opens it (harness, high).** The 0.91.0 post-hydration
+    identity guard catches a swap (SSR identity vs settled identity); a configured path that was
+    never a route SSRs the consumer's 404 and hydrates the same 404, so the identities agree and
+    the guard passes it. The only check that would catch it is the non-2xx precondition
+    (`rendered.ts`), which the admin-shell status flattening (kit#12987 entry below) defeats:
+    ASC's twelve-page run would have measured a 404 as a real screen had a configured path been
+    wrong. Remedy candidates from the filing: read the page's own embedded status, or compare
+    settled identity against the requested route rather than only against what the server sent.
+  - **The rendered summary's two totals are computed differently (DX, low).** The advisories
+    total counts printed lines while the suppressed total is `(xN)`-weighted, so a reader
+    hand-reconciling ASC's 393 advisories against 217 suppressed finds a discrepancy that has no
+    meaning. Pick one convention for both.
+  - **A CodeMirror decoration throw on a consumer edit desk (defect, medium).** ASC's
+    `/admin/bulletins/2026-03-membership-open` throws `Ranges must be added sorted by 'from'
+    position and 'startSide'` at 1440 in both themes; the editor still mounts and stays reactive,
+    and the post and page desks are clean, so a decoration set is being built out of order
+    somewhere in the editing surface for that content shape. A separate rider from the same desk:
+    a `source-code-pro-latin-wght-normal.*.woff2` request fails there, which is its own question
+    about whether that face ships.
   - **The reachable class vocabulary is an undocumented contract (design gap, medium).** A
     consumer's admin markup can use only the utilities cairn's own compiled sheet happens to
     carry. After its type sweep, ASC still held 94 dead classes across 17 admin screens (`w-fit`,
@@ -425,14 +448,24 @@ the named human gates only):**
   hits it. The scheduled kit#15992 watch stays the tripwire for the eventual `checkOrigin` removal;
   this item is the mitigation a site can adopt now, scoped pre-beta, not a 2.0 driver. See the Later
   tracking item below for the removal itself.
-- **Admin error statuses flatten to 200 under the streamed pending count (upstream kit#12533).**
-  A page-load `error(403)`/`error(404)` inside `/admin` renders the right error page and emits its
-  log event, but the HTTP status reads 200 because the shell layout load streams `pendingEntries`
-  and SvelteKit commits the status before a sibling load rejects. Enforcement is intact (no
-  restricted data crosses; the access-map guide documents the caveat). Trigger: the upstream fix
-  landing in sveltejs/kit#12533; adopt it and delete the guide caveat. Candidate for the existing
-  scheduled kit-watch routine (kit#15992) to track alongside `checkOrigin`. Surfaced by the
-  access-and-attention pass's live smoke, 2026-07-19.
+- **Admin error statuses flatten to 200 under the streamed pending count (upstream kit#12987;
+  severity raised at the ASC rendered baseline, 2026-07-29).** A page-load `error(403)`/`error(404)`
+  inside `/admin` renders the right error page and emits its log event, but the HTTP status reads
+  200 because the shell layout load streams `pendingEntries` and SvelteKit's streaming branch
+  builds its `Response` with no `status` (the non-streamed branch passes it through). ASC proved
+  the mechanism on the shipped artifact, not just `node_modules`: `.svelte-kit/output/server/index.js`
+  carries the single status-passing site, and ETag presence tracks the lost status exactly. The
+  blast radius is not only bad paths: `/admin/posts/<deleted-or-mistyped-slug>` reports success to
+  crawlers, uptime monitors, and any caller trusting a status code, and the flattening also defeats
+  the rendered audit's non-2xx precondition (see the guard-hole entry in the ASC harvest block
+  above). Enforcement is intact (no restricted data crosses; the access-map guide documents the
+  caveat). The upstream tracking issue is sveltejs/kit#12987 (open); the previously tracked
+  kit#12533 CLOSED without the behavior changing on the shipped bundle, so repoint the scheduled
+  kit-watch routine (kit#15992) at #12987. Since cairn chooses the streaming that triggers the
+  upstream bug, a cairn-side mitigation (passing the status through another channel, or refusing
+  to stream on an error path) is worth weighing rather than waiting on upstream. Surfaced by the
+  access-and-attention pass's live smoke, 2026-07-19; mechanism, shipped-bundle proof, and blast
+  radius from the ASC Assets-trial rendered baseline, 2026-07-29.
 - **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
   writes: a per-entry history view over the backend's commit log (the commit author is already the
   editor, so attribution is free), and revert implemented as a new commit through the existing

@@ -14,33 +14,48 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-29: HOTFIX 0.91.1 before anything else)
+## Immediate next action (2026-07-29 evening: the voice sitting; 0.91.1 SHIPPED)
 
-**0.91.0 shipped a silent consumer-breaking regression: the admin sheet dropped named Tailwind
-utilities cairn's own tree stopped using (`text-sm`, `text-xs`, `text-lg`, `text-2xl`, `gap-6`,
-`tracking-tight`; verified one-rule-each in 0.90.1's published sheet, zero in 0.91.0's), so
-consumer markup riding them lost its styling, roughly 300 sites on the first consumer measured,
-while the upgrade guide promises no rendering change. The canonical record and four-step fix plan
-is [issue #12](https://github.com/glw907/cairn-cms/issues/12).** The ASC Assets trial's substrate
-is blocked at its upgrade step until 0.91.1; everything else in the trial brief stands.
+**The 0.91.1 hotfix is SHIPPED and issue #12 is closed.** The mechanical diff of the published
+0.90.1 and 0.91.0 sheets (the audit's own `parseSheet` tokenizer) found NINETEEN dropped
+classes, not the six one consumer measured: the named type steps, `gap-6`, `tracking-tight`,
+`badge-ghost`, and ten bracketed arbitrary sizes. All nineteen are restored through a labeled
+compatibility safelist in `scripts/admin-css.input.css` (`badge-ghost` stays retired from
+cairn's own tree but ships for consumers), and the failure earned its gate:
+`admin-sheet-inventory.test.ts` diffs the built sheet's full 812-class inventory against the
+committed `src/tests/unit/fixtures/admin-sheet-inventory.txt` in both directions, with regen an
+explicit `npm run update-admin-sheet-inventory`, so a class leaves the shipped sheet only as a
+deliberate changelog-carried act. The shipped-sheet inventory is now a gated de facto public
+API. Upgrade guide corrected, `Consumers must:` line carried, full gate plus CI green,
+`v0.91.1` published via OIDC and serving as `latest`. **The ASC Assets trial's substrate is
+UNBLOCKED at its upgrade step** (ASC is the only consumer with an extended admin today, so it
+was the whole practical blast radius).
 
-**Resume prompt (fresh session, from `~/Projects/cairn-cms`):** "Execute the 0.91.1 hotfix per
-issue #12: enumerate the FULL dropped class set by diffing the published 0.90.1 and 0.91.0
-sheets with the audit's own `sheet.ts` tokenizer (the six named utilities are one consumer's
-usage, not the whole delta); restore the dropped set via a labeled compatibility block in
-`scripts/admin-css.input.css`'s `@source inline(...)`; add the regression gate the failure
-earned (the built sheet's class inventory diffed against a committed snapshot, so a class leaves
-the shipped sheet only as a deliberate changelog-carried act); correct the upgrade guide's
-'keep rendering exactly as they did' sentence and carry a `Consumers must:` line describing
-0.91.0's actual behavior; cut 0.91.1 via `cairn-release` (patch); comment on and close #12;
-tell the ASC side the trial's upgrade step is unblocked." (The friction-gates batch landed and
-is pushed, `90bf2860`; its new sheet-count and parity gates are live, and its parity check
-already caught and fixed the upgrade guide's stale `## Unreleased:` heading the 0.91.0 rider
-missed.)
+**The ten-finding ASC harvest is folded** (two batches; the staging file in the ASC repo is
+deleted). Finding 1 was the hotfix; the status-flattening finding repointed ROADMAP's standing
+kit entry from the closed kit#12533 to the open kit#12987 with severity raised and a cairn-side
+mitigation now on the table; the other eight are filed in ROADMAP's Next tier (see the ASC
+harvest block there). Two carry-forward corrections from the same harvest: the ASC edit-desk
+hydration defect DOES NOT EXIST (corpus C had configured cairn's internal route shape, which
+404s on ASC's single-mount admin; the real desks proved hydration-clean across 24 runs), and
+what replaced it is worse, the kit#12987 status flattening composing with the 0.91.0 identity
+guard to reopen the audited-404 hole (ROADMAP holds both).
 
-The voice sitting (below) moves to SECOND. Prior entry follows.
+**NEXT: the cairn.pub front-page voice sitting** (Fable sitting). **Resume prompt**, from
+`~/Projects/cairn-cms`: "Brainstorm the cairn.pub front-page copy with me per
+superpowers:brainstorming. This is the voice sitting Pass 3 deliberately carved out: the sixth
+principle is ratified (the design language is enforced; the payoff is a developer less burdened,
+never freed) and its substance lives in `docs/explanation/enforced-design.md` and the README's
+'An enforced design language' section. The front page distills those in the site's own personal
+voice; the `cairn-pub-front-page-voice` memory governs (personal voice over neutral definitional
+intro, no pitch, brainstorm the copy with Geoff rather than drafting solo). The skills claim is
+publishable: 0.91.1 ships `skills/`. Scope is the front-page treatment only; the principle-pages
+pass (T1a through T1f) stays a separate queued pass. Ratified copy lands through the cairn.pub
+repo's own deploy as the closing step."
 
-## Superseded same-day (2026-07-29: 0.91.0 published; the voice sitting)
+Prior entry follows.
+
+## Superseded same-day (2026-07-29: 0.91.0 published)
 
 **The design-infrastructure build is COMPLETE and RELEASED.** Pass 3 merged to `main`
 (`8fa01eba`), the pass-end ritual ran in full (code-simplifier, the two-reviewer fan-out whose
@@ -126,13 +141,16 @@ into ROADMAP and CHANGELOG (`## Unreleased`, still unpublished).
 4. **The ASC Assets trial**, in aksailingclub-org's own sessions, graded against the pre-registered
    coverage contract (`docs/internal/2026-07-assets-trial-coverage-contract.md`).
 
-**Carry-forwards (live):** the ASC edit-desk hydration failure (SSR correct, hydrates to public 404
-under local `wrangler dev`; for an aksailingclub-org session, now that Task 4's guard reports it as
-unmeasurable rather than auditing it silently); admin error statuses flattening to HTTP 200 under
-the shell's streamed pending count (upstream sveltejs/kit#12533, scheduled routine watches it);
-mermaid diagrams near-illegible at 320/390 (candidate: tap-to-expand in the Topo pass); section-index
-breadcrumbs duplicating the arm name; the cairn.pub live admin smoke (Geoff's magic link plus
-publish round-trip) is owed; the `/admin/help` first-steps card overlap.
+**Carry-forwards (live):** admin error statuses flattening to HTTP 200 under the shell's streamed
+pending count (upstream sveltejs/kit#12987, OPEN; the previously tracked kit#12533 closed without
+the shipped behavior changing, so the scheduled kit-watch routine needs repointing at #12987;
+severity raised and a cairn-side mitigation weighed in ROADMAP's entry, 2026-07-29 ASC rendered
+baseline); mermaid diagrams near-illegible at 320/390 (candidate: tap-to-expand in the Topo pass);
+section-index breadcrumbs duplicating the arm name; the cairn.pub live admin smoke (Geoff's magic
+link plus publish round-trip) is owed; the `/admin/help` first-steps card overlap. (The ASC
+edit-desk hydration failure is REMOVED: the 2026-07-29 ASC rendered baseline disproved it, corpus
+C had configured cairn's internal route shape, which 404s on ASC's single-mount admin, and the
+real desks proved hydration-clean across 24 runs.)
 
 **THEN, after the release: the Topo design pass.** Open with
 `docs/internal/2026-07-18-topo-inspiration-review.md` (four-system synthesis, devices table, Starlight
@@ -140,12 +158,10 @@ anatomy checklist, section 5's open questions for Geoff; mockup candidates go to
 build); the cairn.pub design arc ratified seed vocabulary for it: the four-door landing, the docs rail
 on /help, the step-down doc heading scale, and the micro-cta device. After Topo: the scaffolder.
 
-**Published state:** `0.90.1` is `latest` (2026-07-24). Passes 1, 2, and 3 are all unpublished (Pass
-3 not yet merged to `main`). When the cut comes it is a MINOR: Pass 1 added the grammar layer as
-public surface, Pass 2 adds the `cairn-audit` bin, and Pass 3 adds the `skills/` package and the
-StatusChip register prop. Verify the next number is free with
-`npm view @glw907/cairn-cms versions --json` before promising it, and cut with the `cairn-release`
-skill.
+**Published state:** `0.91.1` is `latest` (2026-07-29): the shipped-sheet restoration hotfix,
+patch, on top of `0.91.0` (the design-infrastructure minor: Pass 1's grammar layer, Pass 2's
+`cairn-audit` bin, Pass 3's `skills/` package and chip registers). Nothing is held unpublished;
+`main` equals the registry.
 
 **Prior pass detail (design-infrastructure Pass 2, enforcement, and the ASC admin corpus C
 calibration that closed its calibration gap) is preserved in full in

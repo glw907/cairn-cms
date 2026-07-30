@@ -508,6 +508,12 @@ the named human gates only):**
   landing so it describes real generated output.
 ## Later
 
+- **Field-label weight: cairn's 500 vs the consumer ruling's 600 (a design ruling, from the
+  friction log 2026-07-29).** The form-anatomy contract keeps `font-medium` (500) as cairn's
+  individual-field-label weight, matching the dozen-plus existing call sites, while the consumer
+  site's own ratified two-level label ruling uses 600. Whether cairn's field labels bump to match
+  is a rendered-probe-plus-eyes-on ruling for whichever admin design pass next opens; reweighting
+  moves pixels sitewide, so it never rides another pass's baseline regeneration silently.
 - **An engine-side design dev loop (`design:dev` or an optimizeDeps exclusion).** Engine admin
   work breaks the 0.84.0 minutes-per-turn design loop: after `npm run package`, vite's client dep
   optimizer serves a stale pre-bundled shell (SSR reloads fire, the client bundle does not), so

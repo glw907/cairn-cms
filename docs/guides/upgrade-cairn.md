@@ -76,7 +76,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: the `cairn-audit` design gate, and the type scale closes (non-breaking)
+## 0.91.0: the `cairn-audit` design gate, and the type scale closes (non-breaking)
 
 A new bin, `cairn-audit`, audits an admin surface against cairn's design language. Static mode
 parses your components and the built admin stylesheet. Rendered mode drives Chromium against a

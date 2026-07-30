@@ -115,6 +115,33 @@ export function isExternal(dest) {
   return EXTERNAL.test(dest);
 }
 
+// Whether a CHANGELOG-shaped Markdown text carries an `## Unreleased` heading, the window a pass
+// writes before a cut assigns it a version number.
+/** @param {string} text */
+export function hasUnreleasedHeading(text) {
+  return /^## Unreleased\b/m.test(text);
+}
+
+/**
+ * Whether CHANGELOG.md and docs/guides/upgrade-cairn.md agree on having (or not having) an open
+ * `## Unreleased` window. The upgrade guide keys its own entries by version the same way the
+ * CHANGELOG does, and a human renames each heading by hand at the cut; nothing else notices when
+ * one side is renamed and the other is not. That drift already shipped once: the 0.91.0 cut
+ * renamed the CHANGELOG's heading but left the upgrade guide's "## Unreleased" heading in place.
+ * Returns null when the two sides agree, an error string naming the mismatch otherwise.
+ * @param {string} changelogText the full CHANGELOG.md text
+ * @param {string} upgradeGuideText the full docs/guides/upgrade-cairn.md text
+ * @returns {string | null}
+ */
+export function unreleasedParityMismatch(changelogText, upgradeGuideText) {
+  const changelogHas = hasUnreleasedHeading(changelogText);
+  const upgradeGuideHas = hasUnreleasedHeading(upgradeGuideText);
+  if (changelogHas === upgradeGuideHas) return null;
+  return changelogHas
+    ? 'CHANGELOG.md carries an "## Unreleased" heading but docs/guides/upgrade-cairn.md does not; add the matching window before the next cut renames it'
+    : 'docs/guides/upgrade-cairn.md carries an "## Unreleased" heading but CHANGELOG.md does not; rename it to the version it shipped in, or reopen the CHANGELOG window';
+}
+
 /**
  * Check every relative link in the scoped files. Returns the broken ones with file, line, dest, and a
  * reason. A target file that does not exist or a `#anchor` with no matching heading is broken.
@@ -167,18 +194,28 @@ export function findBrokenLinks(root = ROOT) {
 function main() {
   const scanned = filesInScope().length;
   const broken = findBrokenLinks();
-  if (broken.length === 0) {
+  const unreleasedMismatch = unreleasedParityMismatch(
+    readFileSync(join(ROOT, 'CHANGELOG.md'), 'utf8'),
+    readFileSync(join(ROOT, 'docs/guides/upgrade-cairn.md'), 'utf8'),
+  );
+
+  if (broken.length === 0 && !unreleasedMismatch) {
     console.log(`docs-links: OK (${scanned} files, every relative link and anchor resolves)`);
     return;
   }
-  console.error(`docs-links: ${broken.length} broken link(s) across ${scanned} files\n`);
-  let last = '';
-  for (const b of broken.sort((a, c) => a.file.localeCompare(c.file) || a.line - c.line)) {
-    if (b.file !== last) {
-      console.error(`  ${b.file}`);
-      last = b.file;
+  if (unreleasedMismatch) {
+    console.error(`docs-links: ${unreleasedMismatch}\n`);
+  }
+  if (broken.length > 0) {
+    console.error(`docs-links: ${broken.length} broken link(s) across ${scanned} files\n`);
+    let last = '';
+    for (const b of broken.sort((a, c) => a.file.localeCompare(c.file) || a.line - c.line)) {
+      if (b.file !== last) {
+        console.error(`  ${b.file}`);
+        last = b.file;
+      }
+      console.error(`    :${b.line}  ${b.dest}  -- ${b.reason}`);
     }
-    console.error(`    :${b.line}  ${b.dest}  -- ${b.reason}`);
   }
   process.exitCode = 1;
 }

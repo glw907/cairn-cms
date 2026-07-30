@@ -12,6 +12,14 @@ on:
         default: false
 
 jobs:
+  # The 0.91.0 cut proved the norms manifest's staleness window bites: a post-generation component
+  # edit left the manifest stale, and only the release-time rehearsal caught it (docs-friction-log,
+  # 2026-07-29). This workflow already builds and serves the showcase for the e2e specs, so calling
+  # the reusable norms.yml here (the same definition publish.yml gates on) proves manifest freshness
+  # on every push and pull request, well before a release. One definition, two callers.
+  norms:
+    uses: ./.github/workflows/norms.yml
+
   e2e:
     runs-on: ubuntu-latest
     # Only the manual regen dispatch needs to push a commit back to the branch it ran against;

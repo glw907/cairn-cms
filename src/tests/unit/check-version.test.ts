@@ -59,3 +59,46 @@ describe('checkVersion', () => {
     expect(result).toEqual({ ok: true, bump: 'initial' });
   });
 });
+
+// A `## Unreleased` window sits above the top published heading, so nothing above enforces it
+// until this heading is renamed at a real cut. These cases exercise that window in isolation: a
+// two-entry changelog with an Unreleased window pushed above `top`, so `checkVersion` still
+// matches pkgVersion against the top PUBLISHED heading, `top`, not the Unreleased one.
+function changelogWithUnreleased(unreleasedBody: string, top: string, prev: string) {
+  return `# Changelog\n\n## Unreleased\n\n${unreleasedBody}\n\n## ${top}\n\nnotes.\n\n## ${prev}\n\nolder notes.\n`;
+}
+
+describe('checkVersion: the Unreleased window', () => {
+  it('leaves a changelog with no Unreleased heading unaffected (today\'s CHANGELOG.md shape)', () => {
+    const result = checkVersion('0.56.2', changelog('0.56.2', '0.56.1', 'a refinement.'));
+    expect(result).toEqual({ ok: true, bump: 'patch' });
+  });
+
+  it('passes an Unreleased window with no marker (presumed patch-worthy)', () => {
+    const result = checkVersion(
+      '0.56.2',
+      changelogWithUnreleased('some prose, no marker yet.', '0.56.2', '0.56.1'),
+    );
+    expect(result).toEqual({ ok: true, bump: 'patch' });
+  });
+
+  it('passes an Unreleased window carrying exactly one marker', () => {
+    const result = checkVersion(
+      '0.56.2',
+      changelogWithUnreleased(`a new subsystem.\n${MINOR_MARK}`, '0.56.2', '0.56.1'),
+    );
+    expect(result).toEqual({ ok: true, bump: 'patch' });
+  });
+
+  it('fails an Unreleased window carrying two markers', () => {
+    const result = checkVersion(
+      '0.56.2',
+      changelogWithUnreleased(`${MINOR_MARK}\n${MAJOR_MARK}`, '0.56.2', '0.56.1'),
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toMatch(/Unreleased/);
+      expect(result.error).toMatch(/2 release-size markers/);
+    }
+  });
+});

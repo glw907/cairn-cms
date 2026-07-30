@@ -13,6 +13,68 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const RULE = 'see README "Status": a minor/major must introduce a new subsystem or public surface and carry a release-size marker; refining an existing surface is a patch';
 
 /**
+ * Slice the `## Unreleased` window out of a CHANGELOG, from its heading to the next `## ` heading
+ * (of any kind) or the end of the text. Returns null when there is no `## Unreleased` heading, the
+ * ordinary case once a window has been cut and renamed to a version.
+ * @param {string} changelogText the full CHANGELOG.md text
+ * @returns {string | null}
+ */
+function unreleasedWindow(changelogText) {
+  const heading = changelogText.match(/^## Unreleased\b.*$/m);
+  if (!heading) return null;
+  const afterHeading = (heading.index ?? 0) + heading[0].length;
+  const nextHeading = changelogText.slice(afterHeading).match(/^## .+$/m);
+  const end = nextHeading ? afterHeading + (nextHeading.index ?? 0) : changelogText.length;
+  return changelogText.slice(afterHeading, end);
+}
+
+/**
+ * Validate the `## Unreleased` window, if one exists. It may carry at most one release-size
+ * marker; a window with none is presumed patch-worthy, the same default a real patch entry
+ * carries. When exactly one marker is present, simulate the cut it would become (bump the last
+ * published version by the marker's declared size) and run this same function's size rule against
+ * that simulated heading, so a marker malformed or contradicted by its own body fails now, on the
+ * pass that wrote it, rather than only once the heading is renamed at a real cut.
+ * @param {string} changelogText the full CHANGELOG.md text
+ * @param {{ version: string, index: number }[]} publishedHeadings the numbered headings, most recent first
+ * @returns {{ ok: true } | { ok: false, error: string }}
+ */
+function checkUnreleasedWindow(changelogText, publishedHeadings) {
+  const windowBody = unreleasedWindow(changelogText);
+  if (windowBody === null) return { ok: true };
+
+  const markers = [...windowBody.matchAll(/<!-- release-size: (\w+) -->/g)];
+  if (markers.length > 1) {
+    return {
+      ok: false,
+      error: `the "## Unreleased" window carries ${markers.length} release-size markers; at most one is allowed`
+    };
+  }
+
+  const last = publishedHeadings[0];
+  if (!last) return { ok: true };
+
+  const [lMajor, lMinor, lPatch] = last.version.split('.').map(Number);
+  const declaredSize = markers[0]?.[1];
+  const simulatedVersion =
+    declaredSize === 'major'
+      ? `${lMajor + 1}.0.0`
+      : declaredSize === 'minor'
+        ? `${lMajor}.${lMinor + 1}.0`
+        : `${lMajor}.${lMinor}.${lPatch + 1}`;
+
+  const simulatedChangelog = changelogText.replace(/^## Unreleased\b.*$/m, `## ${simulatedVersion}`);
+  const simulatedResult = checkVersion(simulatedVersion, simulatedChangelog);
+  if (!simulatedResult.ok) {
+    return {
+      ok: false,
+      error: `the "## Unreleased" window fails the size rule when simulated as a cut to ${simulatedVersion}: ${simulatedResult.error}`
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Compare the package version against the CHANGELOG and enforce the size rule.
  * @param {string} pkgVersion the version from package.json
  * @param {string} changelogText the full CHANGELOG.md text
@@ -27,6 +89,11 @@ export function checkVersion(pkgVersion, changelogText) {
   if (headings.length === 0) {
     return { ok: false, error: 'CHANGELOG.md has no version heading matching "## X.Y.Z"' };
   }
+  // The Unreleased window sits above every published heading, so its validity is independent of
+  // whether pkgVersion matches the top one; check it before anything else can short-circuit.
+  const unreleasedCheck = checkUnreleasedWindow(changelogText, headings);
+  if (!unreleasedCheck.ok) return unreleasedCheck;
+
   const C = headings[0];
   if (pkgVersion !== C.version) {
     return {

@@ -299,3 +299,89 @@ describe('container role utilities (card-shell, card-shadow)', () => {
     expect(shadowDeclarations).toEqual(expected);
   });
 });
+
+// CONTRACT: the `@source inline(...)` safelist line in scripts/admin-css.input.css, and the two
+// hand-written prose counts that describe it (that file's own comment, and
+// docs/reference/admin-grammar-tokens.md), are all numbers a human bumps by hand whenever a role
+// utility is added. grammar-tokens.test.ts already guards the utility CLASSES themselves against
+// drift (the describe blocks above); this guards the COUNTS the friction log flagged (2026-07-28,
+// design infrastructure Pass 2, Task 11) as unguarded: a role added to GRAMMAR_TOKENS or the
+// container-role set now fails a test here instead of leaving a stale number in either file.
+describe('safelist token count stays in sync with GRAMMAR_TOKENS and its own prose', () => {
+  const inputCssSource = readFileSync(
+    new URL('../../../scripts/admin-css.input.css', import.meta.url),
+    'utf8',
+  );
+  const docsSource = readFileSync(
+    new URL('../../../docs/reference/admin-grammar-tokens.md', import.meta.url),
+    'utf8',
+  );
+
+  // The two container roles (card-shell, card-shadow) name a surface's border/radius/fill, not a
+  // --cairn-type-*/--cairn-gap-* property, so no token module lists them; two is the current,
+  // deliberate count (docs/reference/admin-grammar-tokens.md, "Container roles").
+  const CONTAINER_ROLE_COUNT = 2;
+
+  // Each --cairn-type-* role in GRAMMAR_TOKENS pairs a base token with a --leading token; stripping
+  // the --leading suffix and deduplicating collapses the pair to the ONE role utility it authors
+  // (type-title, not two). The --cairn-gap-* roles carry no --leading pair, so they dedup to
+  // themselves. This is GRAMMAR_TOKENS' own utility count, 11 today, derived rather than hard-coded.
+  function utilityCountFromGrammarTokens(tokens: readonly string[]): number {
+    return new Set(tokens.map((token) => token.replace(/--leading$/, ''))).size;
+  }
+
+  const expectedCount = utilityCountFromGrammarTokens(GRAMMAR_TOKENS) + CONTAINER_ROLE_COUNT;
+
+  const NUMBER_WORDS: Record<string, number> = {
+    nine: 9,
+    ten: 10,
+    eleven: 11,
+    twelve: 12,
+    thirteen: 13,
+    fourteen: 14,
+    fifteen: 15,
+    sixteen: 16,
+  };
+
+  function parseCount(word: string, context: string): number {
+    if (/^\d+$/.test(word)) return Number.parseInt(word, 10);
+    const value = NUMBER_WORDS[word.toLowerCase()];
+    if (value === undefined) throw new Error(`unrecognized count word "${word}" in ${context}`);
+    return value;
+  }
+
+  it("matches the @source inline(...) safelist's own token count", () => {
+    const match = inputCssSource.match(/@source inline\("([^"]+)"\)/);
+    expect(match, 'expected an @source inline(...) line in scripts/admin-css.input.css').not.toBeNull();
+    const tokenCount = match![1].trim().split(/\s+/).length;
+    expect(
+      tokenCount,
+      `expected the @source inline(...) safelist in scripts/admin-css.input.css to carry ${expectedCount} tokens (GRAMMAR_TOKENS' ${utilityCountFromGrammarTokens(GRAMMAR_TOKENS)} role utilities plus ${CONTAINER_ROLE_COUNT} container roles); scripts/admin-css.input.css and docs/reference/admin-grammar-tokens.md both state this count in prose and must move together`,
+    ).toBe(expectedCount);
+  });
+
+  it("matches scripts/admin-css.input.css's own prose count", () => {
+    const match = inputCssSource.match(
+      /The (\w+) grammar and container role utilities are safelisted/,
+    );
+    expect(match, 'expected the safelist comment in scripts/admin-css.input.css').not.toBeNull();
+    const parsed = parseCount(match![1], 'scripts/admin-css.input.css');
+    expect(
+      parsed,
+      `scripts/admin-css.input.css states "${match![1]}" (${parsed}) grammar and container role utilities but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in scripts/admin-css.input.css and the matching count in docs/reference/admin-grammar-tokens.md`,
+    ).toBe(expectedCount);
+  });
+
+  it("matches docs/reference/admin-grammar-tokens.md's own prose count", () => {
+    const match = docsSource.match(/container roles, close this page's set at (\w+)\./);
+    expect(
+      match,
+      "expected the container-roles sentence in docs/reference/admin-grammar-tokens.md",
+    ).not.toBeNull();
+    const parsed = parseCount(match![1], 'docs/reference/admin-grammar-tokens.md');
+    expect(
+      parsed,
+      `docs/reference/admin-grammar-tokens.md states its full set closes at "${match![1]}" (${parsed}) but GRAMMAR_TOKENS plus the container roles total ${expectedCount}; update the count in docs/reference/admin-grammar-tokens.md and the matching comment in scripts/admin-css.input.css`,
+    ).toBe(expectedCount);
+  });
+});

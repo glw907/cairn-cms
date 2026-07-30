@@ -1,3 +1,26 @@
+## Unreleased
+
+<!-- release-size: patch -->
+
+### Fixed
+
+- The shipped admin sheet restores the nineteen class rules `0.91.0` silently dropped
+  ([#12](https://github.com/glw907/cairn-cms/issues/12)). The sheet compiles from Tailwind
+  scanning cairn's own source, and the `0.91.0` window migrated cairn's tree off the named type
+  steps onto the grammar roles, so Tailwind tree-shook the newly unused utilities out of the
+  compiled sheet: `text-sm`, `text-xs`, `text-lg`, `text-base`, `text-2xl`, `text-3xl`, `gap-6`,
+  `tracking-tight`, `badge-ghost`, and ten bracketed arbitrary sizes (`text-[0.625rem]` through
+  `text-[1.0625rem]`). Consumer admin markup resolves its classes from that sheet, so markup
+  riding any of the nineteen rendered unstyled on `0.91.0` while the upgrade guide promised no
+  rendering change. All nineteen are back through a labeled compatibility safelist in the sheet's
+  compile input, and the sheet's class inventory is now a gated contract: a snapshot test diffs
+  the built sheet's inventory against a committed snapshot, so a class can leave the shipped
+  sheet only as a deliberate, changelog-carried act.
+
+  Consumers must: nothing, coming from `0.90.1` or earlier; the sheet again carries every class
+  it did there. Coming from `0.91.0`, upgrade and any custom admin markup that lost its styling
+  (most commonly `text-sm`) styles again with no markup change.
+
 ## 0.91.0
 
 <!-- release-size: minor -->

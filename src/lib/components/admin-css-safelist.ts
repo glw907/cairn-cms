@@ -97,9 +97,13 @@ export const ADMIN_CSS_SAFELIST = [
   // `status` family above for system-set state, per the survey's Polaris/Atlassian/Spectrum
   // convergence). `badge` and every color and size variant already compile from the admin's own
   // usage; `badge-soft`, `badge-outline`, and `badge-dash` are new. The stock ghost badge modifier
-  // is deliberately NOT safelisted: design infrastructure Pass 3 retired it from cairn's own tree
-  // in favor of the two chip registers (`cairn-chip-bounded`/`cairn-chip-quiet` in cairn-admin.css,
-  // StatusChip's own `register` prop), and safelisting a retired stock hazard would just re-invite it.
+  // stays OUT of this toolkit vocabulary: design infrastructure Pass 3 retired it from cairn's own
+  // tree in favor of the two chip registers (`cairn-chip-bounded`/`cairn-chip-quiet` in
+  // cairn-admin.css, StatusChip's own `register` prop), and a new toolkit screen should reach for
+  // those, not the stock modifier. It still ships in the compiled sheet, through the separate
+  // compatibility safelist in scripts/admin-css.input.css (issue #12, 0.91.1): a consumer's own
+  // admin markup may still ride `badge-ghost` even after cairn's own tree moved on, since the
+  // shipped sheet's class inventory is a de facto public API.
   'badge-soft',
   'badge-outline',
   'badge-dash',

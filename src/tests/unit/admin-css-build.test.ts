@@ -150,13 +150,14 @@ describe('admin css build', () => {
     }
   });
 
-  // The stock ghost badge retired from cairn's tree (design infrastructure Pass 3, corpus C) in
-  // favor of the two chip registers. Tailwind's scanner reads a class-shaped token out of comment
-  // text the same as markup, so an explanatory comment that names the retired class verbatim
-  // silently recompiles it into the shipped sheet. This is the standing guard against that: a hit
-  // means some comment somewhere quoted the literal class again.
-  it('never recompiles the retired stock ghost badge modifier', () => {
-    expect(css).not.toContain('.badge-ghost');
+  // The stock ghost badge retired from cairn's own tree (design infrastructure Pass 3, corpus C) in
+  // favor of the two chip registers, then restored to the SHIPPED sheet as a compatibility safelist
+  // entry (issue #12, 0.91.1): the shipped sheet's class inventory is a de facto public API, and a
+  // consumer's own admin markup may still ride `badge-ghost` even after cairn's tree moved on.
+  // admin-sheet-inventory.test.ts is the standing gate against losing this (or any of the other
+  // eighteen classes 0.91.0 silently dropped) again.
+  it('ships the compatibility-safelisted stock ghost badge modifier', () => {
+    expect(css).toContain('.badge-ghost');
   });
 
   // ConceptList's sort-button touch-target expansion (design infrastructure Pass 3 review triage)

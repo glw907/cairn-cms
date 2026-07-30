@@ -26,8 +26,11 @@ version; a version with no `Consumers must:` list is a drop-in bump.
 
 ## Adopt the admin type grammar
 
-When you cross `0.91.0`, the release that ships the admin grammar tokens, your custom
-admin screens keep rendering exactly as they did.
+When you cross `0.91.0`, the release that ships the admin grammar tokens, cross straight to
+`0.91.1`. `0.91.0` alone dropped nineteen utility classes from the shipped admin sheet, the
+named type steps among them, so custom admin markup riding any of them rendered unstyled;
+`0.91.1` restores the full set, and on it your custom admin screens render as they did on
+`0.90.1`.
 `npx cairn-audit`'s static `type-scale` rule starts reporting named Tailwind steps
 (`text-sm`, `text-xs`, bracketed sizes) in your admin markup, and most of those reports
 are a mechanical rename with zero visual change. On the first consumer admin measured, 265
@@ -75,6 +78,20 @@ what you expected, and what happened. Attach the structured log record if the fa
 one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
+
+## Unreleased: the admin sheet classes `0.91.0` dropped come back (non-breaking)
+
+`0.91.0` dropped nineteen utility classes from the shipped admin sheet when cairn's own tree
+stopped using them: the named type steps (`text-sm`, `text-xs`, `text-lg`, `text-base`,
+`text-2xl`, `text-3xl`), `gap-6`, `tracking-tight`, `badge-ghost`, and ten bracketed arbitrary
+sizes. Custom admin markup riding any of them rendered unstyled on `0.91.0`, with no build error
+to point at it. This release restores the full set through a labeled compatibility safelist, and
+the shipped sheet's class inventory is now a tested contract: a class can leave the sheet only as
+a deliberate act carried in the changelog.
+
+Consumers must: nothing, coming from `0.90.1` or earlier; the sheet again carries every class it
+did there. Coming from `0.91.0`, upgrade and your custom admin screens style again with no markup
+change on your side.
 
 ## 0.91.0: the `cairn-audit` design gate, and the type scale closes (non-breaking)
 

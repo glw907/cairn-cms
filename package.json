@@ -46,6 +46,7 @@
     "check:cm-internals": "node scripts/check-cm-internals.mjs",
     "check:invisible-craft": "npm run package && node scripts/check-invisible-craft.mjs",
     "check:admin-css-classes": "npm run package && node scripts/check-admin-css-classes.mjs",
+    "update-admin-sheet-inventory": "npm run package && node scripts/update-admin-sheet-inventory.mjs",
     "check:interactive-contrast": "node scripts/check-interactive-contrast.mjs",
     "check:touch-targets": "node scripts/check-touch-targets.mjs",
     "test:reskin": "node scripts/reskin-fixture.mjs",

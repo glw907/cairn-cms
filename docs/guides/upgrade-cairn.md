@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: the admin sheet classes `0.91.0` dropped come back (non-breaking)
+## 0.91.1: the admin sheet classes `0.91.0` dropped come back (non-breaking)
 
 `0.91.0` dropped nineteen utility classes from the shipped admin sheet when cairn's own tree
 stopped using them: the named type steps (`text-sm`, `text-xs`, `text-lg`, `text-base`,

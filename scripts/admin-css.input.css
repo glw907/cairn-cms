@@ -7,7 +7,7 @@
    examples/showcase and docs/, compiling foreign utility candidates into the shipped sheet (the
    tailwind-scans-docs-bad-candidate incident family). The explicit @source below is then the sole
    scan root, so only the admin components feed the build. */
-@layer theme, components, utilities;
+@layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities) source(none);
 @plugin "daisyui" { themes: false; }

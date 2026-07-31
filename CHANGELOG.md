@@ -1,3 +1,22 @@
+## Unreleased
+
+### Fixed
+
+- The packaged admin sheet ships a `base` cascade layer, so a bare form control, `dialog`,
+  `fieldset`/`legend`, or daisyUI's own `.list` container no longer renders its browser
+  default inside the admin frame. `scripts/admin-css.input.css` reorders its `@layer`
+  declaration to `theme, base, components, utilities`, so the reset loses to daisyUI's
+  component classes and to any consumer override, while still beating unstyled UA defaults.
+  Visible changes: a bare `<textarea>` (and any un-classed button, input, select, or optgroup)
+  now renders the admin's own IBM Plex Sans face and inherited color instead of the browser's
+  UA font; a `<textarea>` resizes vertically only, never horizontally; a native `<dialog>` loses
+  Chrome's UA border frame; a bare `<fieldset>`/`<legend>` loses its UA border, margin, and
+  padding (daisyUI's own `.fieldset` class is unaffected); and daisyUI's `.list` container loses
+  the UA's 40px bullet-marker gutter. The reset never touches a bare `ul`, `ol`, heading, or `p`,
+  since the admin wrapper also hosts the editor's rendered markdown preview.
+
+  Consumers must: nothing.
+
 ## 0.91.1
 
 <!-- release-size: patch -->

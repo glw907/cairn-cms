@@ -401,6 +401,72 @@
   box-sizing: border-box;
 }
 
+/* The `base` cascade layer (design ratchet Task 1, closes findings 1 and 6): the UA reset the
+   embed-anywhere box-sizing rule above never covered. scripts/admin-css.input.css orders it
+   `theme, base, components, utilities`, so a rule here loses to daisyUI's own component classes
+   and to any consumer override, while still beating the browser's UA defaults (author origin
+   always wins over UA regardless of layer). Every selector below is bare; the build's
+   postcss-prefix-selector scopes it under the two admin theme roots the same way it scopes the
+   rest of the sheet (the `:root` rule uses the same trick the grammar-token block above does: the
+   build maps a bare `:root` selector to the scope itself). The admin wrapper also hosts the
+   editor's rendered markdown preview, so this reset never touches a bare `ul`, `ol`, heading, or
+   `p`; only form controls, `dialog`, `fieldset`/`legend`, and daisyUI's own `.list` container. */
+@layer base {
+  /* 1. The admin body face on the scoped root itself, the same --font-body token the type-body
+     role's text renders in. Un-classed text already inherits this from the theme root's own
+     unlayered font-family declaration above; declaring it again here, in the base layer, keeps
+     the reset self-contained and gives item 2 below a stable ancestor value to inherit from. */
+  :root {
+    font-family: var(--font-body);
+  }
+
+  /* 2. The Tailwind-preflight convention: form controls do not inherit font, letter-spacing, or
+     color from their ancestors by default in the UA stylesheet, so a bare textarea renders UA
+     monospace even though the theme root sets font-family. */
+  button,
+  input,
+  select,
+  textarea,
+  optgroup {
+    font: inherit;
+    letter-spacing: inherit;
+    color: inherit;
+  }
+
+  /* 3. Vertical-only resize. Horizontal resize breaks the admin's column layout, so this is a
+     mechanic, not a taste call. */
+  textarea {
+    resize: vertical;
+  }
+
+  /* 4. Bare fieldset loses the UA border, margin, and padding; legend loses UA padding. DaisyUI's
+     own `.fieldset` class styling is unaffected: it lives in the components layer, which wins. */
+  fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  legend {
+    padding: 0;
+  }
+
+  /* 5. Kills the Chrome UA `border: solid currentColor` that paints a frame around every native
+     dialog. */
+  dialog {
+    border: none;
+  }
+
+  /* 6. The UA's 40px bullet-marker reservation on daisyUI's own `.list` container. Scoped to
+     `.list`, never a bare `ul`/`ol`: the admin wrapper hosts the editor's rendered markdown
+     preview, and a bare list-element reset would strip its bullets too. */
+  ul.list,
+  ol.list {
+    padding-inline-start: 0;
+    list-style: none;
+  }
+}
+
 /* Anchors inherit their color and drop the underline by default, which the omitted Preflight used to
    do. This lives in the `components` layer, below `utilities`, so a Tailwind utility (a `text-*`
    color, a `hover:underline`) and DaisyUI's own `.link`/`.breadcrumbs` rules (which sit in the

@@ -46,6 +46,17 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
   "closely held until the core lands" condition is the same condition as 1.0.
 
+**Churn stays free until the public beta (Geoff, 2026-07-30).** The design-ratchet pass broke two
+public seams outright (the admin-fields `register` default flip, the tightened
+`one-filled-action` partition) in service of the better long-term engine design, and that is
+correct at this stage, not a lapse against the first checklist item above. `0.x` exists
+precisely so a public seam can move when it demonstrably improves the engine; the "no known
+breaking change is pending" bullet starts mattering once cairn approaches the beta cut, and the
+"public seams have held across an initiative or two" bullet measures the stretch of stability
+leading into beta, not the whole history before it. Treat any further pre-beta seam break the
+same way: ship it, batch its `Consumers must:` line, and let this note stand as the ruling
+rather than re-litigating it pass by pass.
+
 When these hold, cut `1.0` deliberately, retire the `0.x` "minor = new subsystem / patch = everything else"
 scale heuristic, and switch the numbers to their compatibility meaning (patch = fix, minor = additive,
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
@@ -367,19 +378,34 @@ the named human gates only):**
     entire life under a green gate. Either extend the static substrate to string literals in
     `.ts` files under scope, or state the blind spot in the cairn-audit reference so a consumer
     knows the gate's coverage rather than inferring it.
-  - **The closed type scale has no 12px role (design ruling; feeds the trial ratchet).** The
-    scale steps from 13px (`meta`) to 11px (`label`), so Tailwind's 12px `text-xs` has no
-    mechanical target; cairn resolved its own 120 twelve-pixel sites "by the relationship each
-    site expresses" and ASC resolved its 24 the same way, but the upgrade guide's "match that
-    size to a grammar role" step has no answer for 12px. Either document the 12px case in the
-    adoption recipe or reconsider where the scale closes. Routes to the rule-repair pass, with
-    the trial's ratchet evidence.
+  - **The closed type scale has no 12px role (design ruling; still open).** The scale steps from
+    13px (`meta`) to 11px (`label`), so Tailwind's 12px `text-xs` has no mechanical target; cairn
+    resolved its own 120 twelve-pixel sites "by the relationship each site expresses" and ASC
+    resolved its 24 the same way, but the upgrade guide's "match that size to a grammar role" step
+    has no answer for 12px. Either document the 12px case in the adoption recipe or reconsider
+    where the scale closes. This item routed to "the rule-repair pass, with the trial's ratchet
+    evidence"; that pass ran as the design-ratchet initiative (2026-07-30) and deliberately left
+    the type-role scale untouched (its global constraints rule out changes to type roles), so the
+    12px ruling stays unresolved. The ratchet evidence it fed now lives in
+    `docs/explanation/enforced-design.md`'s grammar-ladder section.
   - **`cairn-doctor`'s zone checks report a bare 403 on read (DX, low; repair named).**
     `readZoneSetting` (`src/lib/doctor/checks-cloudflare.ts`) fails with "`<setting>` read
     returned 403" and prints a fix that assumes the setting is off, while the email check in the
     same file already routes the same status through `permissionFail`, which names the missing
     token scope. Route the zone-settings read through `permissionFail` so the failure
     distinguishes "the setting is wrong" from "this token cannot read zone settings".
+
+- **daisyUI pins every `.list-row` child to `grid-row-start: 1`, so overriding the container's
+  grid alone does nothing (from the 2026-07-30 Assets-trial-build harvest, finding 5; the design
+  ratchet pass verified it and deliberately did not repair it).** At 390 a long action label
+  squeezed a `.list-row` grid's content column toward zero width, wrapping an asset-type name one
+  character per line, measured on `/admin/club/asset-requests`. The repair needs two overrides
+  rather than one: daisyUI pins every `.list-row` child to `grid-row-start: 1` in a rule separate
+  from the container's own `grid-template-columns`, so the child pin has to be released and
+  re-pinned per breakpoint alongside the container override. Engine-level because it recurs in any
+  consumer using `.list-row` with a variable-width trailing action, the common admin row shape.
+  Site-side overrides exist today; the engine-side fix needs its own design rather than riding the
+  design-ratchet pass's cap of three new rendered rules.
 
 - **`add-an-island.md` teaches a client-side adapter import** (from the friction log, chassis-nav
   pass, 2026-07-19). The guide's root-layout snippet imports `{ cairn }` from `$lib/cairn.config`

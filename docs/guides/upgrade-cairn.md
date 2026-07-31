@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a UA reset layer, an exported stacked field register, and a skill-exemplar compile gate
+## Unreleased: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate
 
 The packaged admin sheet now ships a `base` cascade layer, so a bare form control, `dialog`,
 `fieldset`/`legend`, or daisyUI's own `.list` container renders the admin's own face instead of
@@ -92,6 +92,17 @@ sheet: every class token a worked example teaches has to actually compile. `form
 two-column form-grid recipe and `exemplar-detail.md`'s divided-list row rhythm both needed a
 small labeled addition to the shipped sheet's compatibility safelist so the taught recipes
 render as written.
+
+`cairn-audit`'s rendered `one-filled-action` rule now partitions a screen only at `nav`, `aside`,
+and the topmost open `dialog` layer. `header`, `footer`, and `main` no longer partition it, so a
+filled action in a page header and a filled action in a card beneath it now count as one surface.
+The same change raises the dark theme's `.btn-active` selected-state fill to a visible lightness
+step off a plain `.btn`, since the ruling pushes a segmented control's selected state onto
+`btn-active` rather than `btn-primary`.
+
+**Consumers must:** treat a screen with a filled header action and a filled card action beneath
+it as a finding, and demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen
+the rule to pass a screen instead.
 
 `FieldLabel`, `SelectField`, and `TextField` (`@glw907/cairn-cms/admin-fields`) gain a
 `register: 'inline' | 'stacked'` prop. `'stacked'` puts the label on its own line preceding the

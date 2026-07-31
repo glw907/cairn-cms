@@ -88,10 +88,13 @@ under the two `data-theme` roots like everything else, carries exactly:
 
 **Explicit ownership decisions, recorded so they are not re-derived:** cairn owns every UA
 default that contradicts the packaged sheet's own claims (items 1-6). Cairn does NOT own
-daisyUI's `width: clamp(3rem, 20rem, 100%)` on `.input`/`.select`/`.textarea`: a global
-`width: 100%` would ripple through every compact toolbar control, and the trial's own
-principle says the repair is a component that makes full width automatic (Task 3) plus a
-check that makes the shortfall visible, not a default flip.
+daisyUI's `width: clamp(3rem, 20rem, 100%)` on `.input`/`.select`/`.textarea`, and the
+reason is design, not churn (churn is ratified free until the public beta, Geoff
+2026-07-30): a global `width: 100%` would diverge a daisyUI primitive's intrinsic sizing
+from the stock dialect cairn keeps, and would break the inline register's own composition,
+where a label-adjacent control must not fill the row. Width is a composition concern; the
+stacked register owns it (Task 3), and the trial's principle says the repair is the
+component plus the check, not a raw-class default flip.
 
 - [ ] **Step 1:** Write the failing component-browser test asserting, inside a
   `data-theme="cairn-admin"` wrapper with the built sheet loaded: a bare `<textarea>`
@@ -181,19 +184,28 @@ They cohere as one reviewable unit: the component and the docs that make it find
 
 **Interfaces:**
 - Consumes: Task 1's `base` layer ordering (the hook lives in `components`, above it).
-- Produces: `register?: 'inline' | 'stacked'` (default `'inline'`) on `FieldLabel`,
+- Produces: `register?: 'inline' | 'stacked'` (default `'stacked'`) on `FieldLabel`,
   `TextField`, `SelectField`; a scoped class hook (e.g. `cairn-field-stacked`) whose
   descendant `.input`/`.select`/`.textarea` compute `width: 100%`.
 
 **Outcome.** The stacked register that already works inside the package (extract the exact
 shape from `FieldInput.svelte`'s rendered field blocks; do not invent a new one) becomes the
-opt-in register on the three exported admin-fields components: label on its own line above
+DEFAULT register on the three exported admin-fields components: label on its own line above
 the control, `gap-label` spacing, and the container filling its grid cell. The full-width
 behavior is automatic: the stacked wrapper's sheet hook forces contained controls to
 `width: 100%`, so a consumer cannot forget `w-full` (this is the decided answer to daisyUI's
-320px clamp, per Task 1's ownership note). The default stays `'inline'`: the trap was that
-the working register required re-derivation, not that inline exists, and a default flip
-would churn every existing screen.
+320px clamp, per Task 1's ownership note). `'inline'` stays available as the explicit choice
+for control-adjacent compositions (toolbar filters, compact panels).
+
+**The default flip is a deliberate breaking change** (ratified by Geoff 2026-07-30: site
+contracts may break where the break is the better long-term engine design). Defaulting to
+inline would reproduce the harvest's trap shape: the register that staircases in any grid
+stays the effortless path and every consumer must know to opt out. Stacked is the robust
+all-widths form-field shape; inline is the compact exception, so the names say so. In the
+same task, sweep cairn's own call sites of the three components: set `register="inline"`
+explicitly where the composition is genuinely control-adjacent, and accept the new default
+where stacked is right; update affected existing tests deliberately (never loosen an
+assertion to pass).
 
 Docs make the construction findable: `admin-fields.md` documents both registers and states
 the rule (stacked for any multi-column grid; inline staircases there), and
@@ -206,12 +218,15 @@ regenerated snapshot committed in this task.
   via `getBoundingClientRect` (the finding-3 measurement, as a test), and a control inside
   the stacked register computes `width` equal to its cell, not 320px. Expect red.
 - [ ] **Step 2:** Implement the register prop on `FieldLabel`, pass-through on `TextField`
-  and `SelectField`, and the sheet hook. Rebuild the sheet. Test to green; existing
-  admin-fields tests stay green (inline default unchanged). Reconcile the sheet inventory
-  if the hook or scanned markup added classes (CHANGELOG first, then regen).
-- [ ] **Step 3:** Update `docs/reference/admin-fields.md` and `form-anatomy.md`; run
-  `npm run check:surface -- --update` and commit the snapshot; CHANGELOG entry
-  (non-breaking addition; `Consumers must:` nothing, but name the new prop).
+  and `SelectField`, and the sheet hook. Rebuild the sheet. Test to green. Sweep cairn's
+  own call sites per the outcome; update affected existing tests deliberately. Reconcile
+  the sheet inventory if the hook or scanned markup added classes (CHANGELOG first, then
+  regen).
+- [ ] **Step 3:** Update `docs/reference/admin-fields.md` and `form-anatomy.md` (inline
+  becomes the marked exception); run `npm run check:surface -- --update` and commit the
+  snapshot; CHANGELOG entry is BREAKING: `Consumers must:` pass `register="inline"` on any
+  `FieldLabel`/`TextField`/`SelectField` whose inline label-beside-control layout should
+  survive the upgrade; unmarked fields render the stacked register.
 - [ ] **Step 4:** Full gate, plus `npm run check:reference` and
   `npm run check:reference:signatures` (public surface changed). Commit.
 
@@ -399,7 +414,7 @@ repair needs its own design), so it files as a live entry with the harvest's mea
 lands in ROADMAP's Next tier. ROADMAP also marks the queued rule-repair item shipped and
 prunes it. The upgrade guide gains this window's behavior entries (the reset layer's visible
 changes; the tightened `one-filled-action` with its `Consumers must:` demotion recipe; the
-new `register` prop).
+`register` default flip with its `Consumers must:` opt-back recipe).
 
 The durable version of the pass lands as a short section in
 `docs/explanation/enforced-design.md`: the grammar ladder. Component where the construction
@@ -408,7 +423,8 @@ standing ratchet: a composition claim moves down the ladder the moment it is cit
 second repeated miss. Keep it to a few paragraphs in the page's existing register; it is
 doctrine, not a changelog.
 
-- [ ] **Step 1:** Friction log fold + ROADMAP (ship + prune + file finding 5).
+- [ ] **Step 1:** Friction log fold + ROADMAP (ship + prune + file finding 5 + record in
+  "Toward 1.0" that churn is ratified free until the public beta, Geoff 2026-07-30).
 - [ ] **Step 2:** Upgrade guide entries; `npm run check:docs` green.
 - [ ] **Step 3:** The ladder section in `enforced-design.md`; Vale clean.
 - [ ] **Step 4:** Delete the ASC staging file (ASC repo docs commit).

@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, afterEach, beforeAll, afterAll } from 'vitest';
 import { userEvent } from 'vitest/browser';
+import { contrastRatio as rgbaContrastRatio, type Rgba } from '../../lib/audit/color.js';
 // The shipped sheet, the same artifact AdminReset.test.ts and the CairnAdminShell.test.ts palette
 // suite load: this test has to prove the override that reaches a consumer, not the source file, so
 // it loads the built dist output rather than compiling cairn-admin.css itself.
@@ -39,35 +40,38 @@ function backgroundChroma(computedColor: string): number {
 }
 
 /**
- * The WCAG contrast ratio between two computed colors, priced through oklab to linear sRGB to
- * relative luminance, with each linear channel clamped to the displayable range (an oklch token whose
- * chroma sits outside sRGB renders clipped, and the clipped render is what a reader sees). Chromium
- * serializes every color in this sheet as either `oklch(L C H)` or `oklab(L a b)`, so one parser
- * covers both: oklch is oklab's polar form.
+ * A computed color as sRGB bytes, resolved by painting it rather than by parsing color syntax, the
+ * discipline `src/lib/audit/color.ts` already documents for the audit's own rules: every color in
+ * this sheet serializes in its authored oklch/oklab space, and an out-of-gamut token renders
+ * clipped, so the canvas is the one reader that reports the pixels a person actually sees.
  */
-function contrastRatio(a: string, b: string): number {
-  const luminance = (color: string): number => {
-    const nums = (color.match(/-?[\d.]+/g) ?? []).map(Number);
-    if (nums.length < 3) throw new Error(`not an oklch/oklab color: ${color}`);
-    const [L, second, third] = nums;
-    const [oa, ob] = color.startsWith('oklch')
-      ? [second * Math.cos((third * Math.PI) / 180), second * Math.sin((third * Math.PI) / 180)]
-      : [second, third];
-    const l = (L + 0.3963377774 * oa + 0.2158037573 * ob) ** 3;
-    const m = (L - 0.1055613458 * oa - 0.0638541728 * ob) ** 3;
-    const s = (L - 0.0894841775 * oa - 1.291485548 * ob) ** 3;
-    const [r, g, bl] = [
-      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-    ].map((v) => Math.min(1, Math.max(0, v)));
-    return 0.2126 * r + 0.7152 * g + 0.0722 * bl;
-  };
-  const [x, y] = [luminance(a), luminance(b)];
-  return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+function paintedRgba(color: string): Rgba {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  const context = canvas.getContext('2d');
+  if (!context) throw new Error('the browser gave no 2d canvas context');
+  // A string the browser refuses leaves `fillStyle` at whatever it already held, so the sentinel
+  // separates a refusal from a color that legitimately resolves to it.
+  context.fillStyle = '#ff00ff';
+  context.fillStyle = color;
+  if (context.fillStyle === '#ff00ff') throw new Error(`the browser refused the color: ${color}`);
+  context.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = context.getImageData(0, 0, 1, 1).data;
+  return { r, g, b, a: a / 255 };
 }
 
-/** One detached button carrying `className`, mounted so `getComputedStyle` resolves the sheet. */
+/** The WCAG contrast ratio between two colors as `getComputedStyle` serializes them. */
+function contrastRatio(a: string, b: string): number {
+  return rgbaContrastRatio(paintedRgba(a), paintedRgba(b));
+}
+
+const mounted: HTMLElement[] = [];
+
+/**
+ * One button carrying `className`, on the page so `getComputedStyle` resolves it against the
+ * sheet. Every mount is torn down after the test that made it.
+ */
 function mount(className: string): HTMLButtonElement {
   const el = document.createElement('button');
   el.className = className;
@@ -75,8 +79,13 @@ function mount(className: string): HTMLButtonElement {
   // the pointer lands would catch a mid-interpolation frame close to the resting color.
   el.style.transition = 'none';
   document.body.appendChild(el);
+  mounted.push(el);
   return el;
 }
+
+afterEach(() => {
+  for (const el of mounted.splice(0)) el.remove();
+});
 
 // Design ratchet Task 4 (closes finding 4, ships with the one-filled-action partition change): the
 // ruling pushes a segmented control's selected state off btn-primary and onto btn-active, and
@@ -105,9 +114,6 @@ describe('the dark-ground .btn-active selected state', () => {
     const activeL = oklchLightness(getComputedStyle(active).backgroundColor);
 
     expect(Math.abs(activeL - plainL)).toBeGreaterThanOrEqual(0.04);
-
-    plain.remove();
-    active.remove();
   });
 
   // The fill step above is perceptual, not photometric: it measures 1.14:1 against an unselected
@@ -133,10 +139,6 @@ describe('the dark-ground .btn-active selected state', () => {
     // The border is painted, not merely declared: a zero-width border would carry the color and cue
     // nothing.
     expect(parseFloat(style.borderTopWidth)).toBeGreaterThan(0);
-
-    active.remove();
-    ground.remove();
-    plain.remove();
   });
 
   // A first repair hardcoded a flat --btn-bg value that fixed the neutral step above but discarded
@@ -152,8 +154,6 @@ describe('the dark-ground .btn-active selected state', () => {
     // 0.009-0.014 chroma; --color-primary's own chroma is 0.15. 0.05 sits well clear of the neutral
     // ceiling and well under the primary floor, so it discriminates a collapsed fill from a kept one.
     expect(chroma).toBeGreaterThan(0.05);
-
-    primaryActive.remove();
   });
 
   // .btn-outline sets `color` directly off --btn-color rather than through --btn-fg, and daisyUI's
@@ -170,9 +170,6 @@ describe('the dark-ground .btn-active selected state', () => {
       const style = getComputedStyle(el);
       expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
     }
-
-    outlineActive.remove();
-    neutralOutlineActive.remove();
   });
 
   // Design ratchet D3 item 1: the color override that repairs the outline/dash composition used
@@ -189,27 +186,25 @@ describe('the dark-ground .btn-active selected state', () => {
     const outlineActive = mount('btn btn-outline btn-primary btn-active');
     const style = getComputedStyle(outlineActive);
     expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(6);
-
-    plainErrorActive.remove();
-    referenceError.remove();
-    outlineActive.remove();
   });
 
   // The unlayered rules beat daisyUI's disabled reset (--btn-bg and --btn-border to transparent)
   // unless they exclude the disabled forms themselves, which left a disabled selected control wearing
   // an active-colored ring where daisyUI intends none.
   it('leaves a disabled selected control the transparent border daisyUI resets it to', () => {
-    for (const cls of ['btn btn-active btn-disabled', 'btn btn-active']) {
-      const el = mount(cls);
-      if (cls === 'btn btn-active') el.disabled = true;
-      expect(getComputedStyle(el).borderTopColor).toBe('rgba(0, 0, 0, 0)');
-      el.remove();
-    }
+    const disabledForms: Record<string, (el: HTMLButtonElement) => void> = {
+      'the .btn-disabled class': (el) => el.classList.add('btn-disabled'),
+      'the disabled property': (el) => {
+        el.disabled = true;
+      },
+      'the aria-disabled attribute': (el) => el.setAttribute('aria-disabled', 'true'),
+    };
 
-    const ariaDisabled = mount('btn btn-active');
-    ariaDisabled.setAttribute('aria-disabled', 'true');
-    expect(getComputedStyle(ariaDisabled).borderTopColor).toBe('rgba(0, 0, 0, 0)');
-    ariaDisabled.remove();
+    for (const [form, disable] of Object.entries(disabledForms)) {
+      const el = mount('btn btn-active');
+      disable(el);
+      expect(getComputedStyle(el).borderTopColor, `${form} kept the active hairline`).toBe('rgba(0, 0, 0, 0)');
+    }
   });
 
   // The resting override above carries no pseudo-class, so it always applies (hover included) and,
@@ -225,8 +220,6 @@ describe('the dark-ground .btn-active selected state', () => {
     const hovered = getComputedStyle(active).backgroundColor;
 
     expect(oklchLightness(hovered) - oklchLightness(resting)).toBeGreaterThanOrEqual(0.03);
-
-    active.remove();
   });
 });
 
@@ -258,9 +251,6 @@ describe('the light theme .btn-active', () => {
     const active = mount('btn btn-active');
 
     expect(getComputedStyle(active).borderTopColor).toBe(getComputedStyle(plain).borderTopColor);
-
-    plain.remove();
-    active.remove();
   });
 
   // Design ratchet D3 items 1-2: stock daisyUI fills an active outline button (a color-mix toward
@@ -271,11 +261,8 @@ describe('the light theme .btn-active', () => {
     const outline = mount('btn btn-outline btn-primary');
     const outlineActive = mount('btn btn-outline btn-primary btn-active');
 
-    expect(getComputedStyle(outlineActive).color).not.toBe(getComputedStyle(outline).color);
     const style = getComputedStyle(outlineActive);
+    expect(style.color).not.toBe(getComputedStyle(outline).color);
     expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
-
-    outline.remove();
-    outlineActive.remove();
   });
 });

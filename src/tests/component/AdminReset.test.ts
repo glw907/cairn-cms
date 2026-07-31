@@ -57,8 +57,8 @@ describe('the admin sheet base reset layer', () => {
     const dialog = document.createElement('dialog');
     document.body.appendChild(dialog);
     const style = getComputedStyle(dialog);
-    const hasNoBorder = style.borderStyle === 'none' || parseFloat(style.borderTopWidth) === 0;
-    expect(hasNoBorder).toBe(false);
+    expect(style.borderStyle).not.toBe('none');
+    expect(parseFloat(style.borderTopWidth)).toBeGreaterThan(0);
     dialog.remove();
   });
 

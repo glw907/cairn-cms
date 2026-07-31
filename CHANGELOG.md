@@ -17,6 +17,26 @@
   `FieldLabel`/`TextField`/`SelectField` call whose inline label-beside-control layout should
   survive the upgrade; every other call renders the new stacked default.
 
+### Changed
+
+- `cairn-audit`'s `one-filled-action` rendered rule narrows the landmarks that partition a
+  surface from `<main>, <nav>, <aside>, <header>, <footer>` to just `<nav>` and `<aside>`
+  (design ratchet Task 4, closes finding 4, ratified by Geoff 2026-07-30): the topmost open
+  dialog layer still stands apart from the page beneath it, and a nav rail's persistent chrome
+  still partitions, but `<header>`, `<footer>`, and `<main>` itself no longer do. A DOM boundary
+  between a page header and the card beneath it removed none of the harm the rule exists to
+  catch, same visual column, same first look, so it was never a real partition. The same change
+  raises the dark theme's `.btn-active` selected-state fill from a 0.011 oklch-lightness step off
+  a plain `.btn` to a 0.05-0.07 step, in the dark Warm Stone family's own hue and chroma: the
+  ruling pushes a segmented control's selected state off `btn-primary` (now two primaries on one
+  surface) and onto `btn-active`, which was close to invisible on the dark ground before this
+  step. `docs/reference/cairn-audit.md`'s `one-filled-action` row states the narrowed partition
+  and its reasoning. A sweep of cairn's own admin and the showcase found no screen newly failing.
+
+  **Consumers must:** treat a screen with a filled header action above a filled card action as a
+  finding: demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen the rule to
+  pass a screen.
+
 ### Fixed
 
 - The packaged admin sheet ships a `base` cascade layer, so a bare form control, `dialog`,

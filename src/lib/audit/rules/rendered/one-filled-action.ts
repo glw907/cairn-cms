@@ -1,9 +1,20 @@
 // cairn-audit's one-filled-action rule: at most one accent-filled control competes for attention on
 // any one surface. A surface is the topmost open layer (a native <dialog> or a [role="dialog"] wins
 // over the page beneath it, which contributes nothing while the layer is open), partitioned further
-// by the <main>, <nav>, <aside>, <header>, and <footer> landmarks a layer carries: a filled Publish
-// button in <main> and a filled New button in <nav> are on different surfaces and both stand. This
-// is the ratified register rule ("the portal's first filled button"), made mechanical.
+// by the <nav> and <aside> landmarks a layer carries: a filled Publish button in <main> and a filled
+// New button in <nav> are on different surfaces and both stand. This is the ratified register rule
+// ("the portal's first filled button"), made mechanical.
+//
+// The partition RULING (Geoff, 2026-07-30, SETTLED, not re-litigated): <nav> and <aside> partition;
+// the topmost open dialog layer partitions; <header>, <footer>, and <main> itself do NOT. The rule
+// exists to stop two controls both claiming to be the action, and a DOM boundary between a page
+// header and the card beneath it removes none of that harm, same visual column, same first look. A
+// nav rail genuinely does remove it: persistent chrome, its own ground, its own spatial zone, read
+// by an editor as a different part of the screen entirely. The landmark set narrowed from
+// `main, nav, aside, header, footer` to `nav, aside` for exactly this reason; the topmost-open-dialog
+// logic is unchanged. The consequence, applied to cairn's own screens: a filled header action above
+// a filled card action is now two primaries on one surface by definition, and the fix is to demote
+// the non-primary fill to ghost, never to loosen this rule to pass a screen.
 //
 // "Filled" means the ACCENT fill, read off the live computed style rather than a class-name guess,
 // since a class scan cannot tell a real fill from a class an override later neutralizes. The
@@ -45,7 +56,11 @@ interface FilledCandidate {
  */
 function collectFilledCandidates(): FilledCandidate[] {
   const CONTROL_SELECTOR = 'button, [role="button"], a.btn, input[type="submit"], input[type="button"]';
-  const LANDMARK_SELECTOR = 'main, nav, aside, header, footer';
+  // Design ratchet Task 4: narrowed from `main, nav, aside, header, footer` to just the two
+  // landmarks the ruling above holds actually partition. `main` and `header`/`footer` no longer
+  // separate a surface, so a control's surface falls through to the layer id unless it sits inside
+  // a nav or aside.
+  const LANDMARK_SELECTOR = 'nav, aside';
 
   function isRendered(el: Element): boolean {
     const style = getComputedStyle(el);

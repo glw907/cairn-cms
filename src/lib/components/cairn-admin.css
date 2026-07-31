@@ -599,7 +599,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 7 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 8 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -621,7 +621,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 7 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 8 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -640,7 +640,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 7 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 8 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -652,7 +652,7 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 7 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 8 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -676,14 +676,14 @@
    surface that composes a chip by hand instead of through the StatusChip component (EditPage's
    status pill, the CairnAdminShell brand-band CMS pill, ReferenceField/MediaCaptureCard/
    ManageEditors's bare chips).
-   PINNED unlayered rule 5 of 7 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
+   PINNED unlayered rule 5 of 8 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded {
   background-color: transparent;
   border-color: color-mix(in oklab, currentColor 55%, transparent);
 }
 
-/* PINNED unlayered rule 6 of 7 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+/* PINNED unlayered rule 6 of 8 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
    either melting into its ground (badge-ghost's old failure) or keeping a border that competes
    with an attention state rendered next to it. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet {
@@ -700,12 +700,37 @@
    components-layer rule cannot outrank regardless of specificity (cascade layers resolve before
    specificity, the same reason the two chip rules above are unlayered); this is UNLAYERED for the
    same reason.
-   PINNED unlayered rule 7 of 7 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
+   PINNED unlayered rule 7 of 8 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
    fields' controls in the same column stop sharing a left AND right edge once the cell exceeds
    20rem. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked :where(.input, .select, .textarea) {
   width: 100%;
+}
+
+/* The dark-ground selected state (design ratchet Task 4, ships with the one-filled-action
+   partition change above and not without it): the ruling pushes a segmented control's selected
+   state (EditorToolbar's mode switch, ListToolbar's and Pagination's join-pagination pickers) off
+   `btn-primary`, now that two of them beside a card action would be two primaries on one surface,
+   and onto `btn-active`. DaisyUI's dark `.btn-active` mixes `--color-base-200` (already 15.5%
+   oklch-lightness, near-black) 7% toward pure black, an 0.011 step from a plain `.btn`, close to
+   invisible on a dark ground. Without a repair the ruling would make the selected state read
+   WORSE than before it shipped, so this raises the step into the measured 0.05-0.07 oklch range
+   Geoff's ruling calls for (BtnActiveDarkGround.test.ts pins >= 0.04 with rounding slack), in the
+   same hue-75, low-chroma family as the dark theme's own `--color-base-300` border token
+   (oklch(30% 0.014 75)), so the selected state reads as one more step of the same Warm Stone ramp
+   rather than an unrelated color. Overrides `--btn-bg` rather than `background-color` directly, so
+   it also raises the derived `--btn-shadow` depth cue, which reads off the same variable.
+   Dark-theme only, so the selector carries the explicit `[data-theme='cairn-admin-dark']` root
+   rather than the shared `:where(both themes)` prefix the rest of this file uses, the same pattern
+   the theme-token block above uses for a dark-only declaration. `--btn-bg` is itself a
+   utilities-layer declaration (`@layer daisyui.l1.l2`), which a components-layer rule cannot
+   outrank regardless of specificity; UNLAYERED for the same reason as the seven rules above.
+   PINNED unlayered rule 8 of 8 (gate match: `[data-theme='cairn-admin-dark'] .btn-active`); bug it
+   prevents: a segmented control's selected state reading as visually identical to its unselected
+   siblings on the dark theme. */
+[data-theme='cairn-admin-dark'] .btn-active {
+  --btn-bg: oklch(22% 0.012 75);
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

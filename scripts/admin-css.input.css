@@ -48,6 +48,19 @@
    deliberate, changelog-carried act, never as a side effect of cairn's own tree moving on; the
    admin-sheet-inventory.test.ts gate exists precisely to make that removal loud instead of silent. */
 @source inline("badge-ghost gap-6 text-2xl text-3xl text-[0.625rem] text-[0.6875rem] text-[0.6rem] text-[0.75rem] text-[0.7rem] text-[0.8125rem] text-[0.875rem] text-[0.9375rem] text-[0.9em] text-[1.0625rem] text-base text-lg text-sm text-xs tracking-tight");
+/* SKILL-EXEMPLAR SAFELIST (ASC Assets-trial harvest finding 2, 2026-07-30). The
+   cairn-admin-screens skill's own reference docs teach class recipes cairn's own tree never
+   calls, so a Tailwind tree-shake drops them from the shipped sheet with no warning: a consumer
+   who copies the recipe verbatim gets markup that silently renders unstyled, then cairn-audit's
+   own no-uncompiled-class rule convicts the very code that followed the docs. Each class here is
+   named in skill-references-compile.test.ts's own committed finding. gap-x-6/gap-y-4:
+   form-anatomy.md's two-column form-grid recipe; the named gap-group/gap-section roles both set
+   the single `gap` shorthand and cannot express an axis split, so the raw pair is the deliberate
+   prescription (form-anatomy.md's own "Row and group spacing" section explains why). divide-y,
+   divide-[var(--cairn-card-border)], first:pt-0, last:pb-0: exemplar-detail.md's divided-list row
+   rhythm for a desk's related-data lists. A class leaves this block only as a deliberate,
+   changelog-carried act, the same discipline the compatibility safelist above holds to. */
+@source inline("gap-x-6 gap-y-4 divide-y divide-[var(--cairn-card-border)] first:pt-0 last:pb-0");
 @import "../src/lib/components/cairn-admin.css";
 
 /* The named secondary-text roles. Rule 2: a component writes `text-muted`/`text-subtle`, never an

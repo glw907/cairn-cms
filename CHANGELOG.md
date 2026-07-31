@@ -17,6 +17,20 @@
 
   Consumers must: nothing.
 
+- The `cairn-admin-screens` skill's own reference docs are now gated against the built admin
+  sheet: a new unit test extracts every class token the references teach (a static `class="..."`
+  attribute inside a fenced example, an inline code span that is a pure class list) and asserts
+  each resolves against `cairn-admin.css`. `form-anatomy.md` prescribed `gap-x-6 gap-y-4` for a
+  two-column form grid, a pair the sheet never compiled (the named `gap-group`/`gap-section`
+  roles both set the single `gap` shorthand and cannot express an axis split, so the raw pair is
+  the deliberate recipe); the gate also caught `exemplar-detail.md`'s divided-list row rhythm
+  (`divide-y`, `divide-[var(--cairn-card-border)]`, `first:pt-0`, `last:pb-0`) never reaching the
+  sheet either. All six join the labeled compatibility safelist in `scripts/admin-css.input.css`
+  as documented interface classes, naming the reference doc each serves.
+
+  Consumers must: nothing; the six classes now compile and render as the exemplars already
+  describe.
+
 ## 0.91.1
 
 <!-- release-size: patch -->

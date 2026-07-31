@@ -360,6 +360,20 @@ async function main() {
       console.error(
         `${MANIFEST_FILE} is stale: a fresh render does not match the committed manifest. Run \`npm run norms:generate\` against the same server and commit the result.`
       );
+      // Name the drift so a failing run is diagnosable from its log alone: the committed and
+      // fresh lines that differ, paired by line number. Without this, a checker that fails on a
+      // renderer this machine cannot reproduce gives the reader nothing to act on.
+      const committedLines = committed.split('\n');
+      const generatedLines = generated.split('\n');
+      const max = Math.max(committedLines.length, generatedLines.length);
+      let shown = 0;
+      for (let i = 0; i < max && shown < 40; i += 1) {
+        if (committedLines[i] !== generatedLines[i]) {
+          console.error(`  line ${i + 1}: committed ${JSON.stringify(committedLines[i] ?? '<absent>')}`);
+          console.error(`  line ${i + 1}: fresh     ${JSON.stringify(generatedLines[i] ?? '<absent>')}`);
+          shown += 1;
+        }
+      }
       process.exitCode = 1;
       return;
     }

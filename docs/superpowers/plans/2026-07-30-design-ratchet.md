@@ -581,3 +581,86 @@ live admin smoke (the pass touches the `/admin` surface via the sheet and admin-
 eyes-on read of the dark-ground `btn-active` state and a modal (the dialog border) before
 merge; post-mortem appended here; STATUS on `main`; no version bump, no publish (hold
 unpublished; whether ASC's trial wants a cut is Geoff's release call, noted in STATUS).
+
+## Post-mortem (2026-07-31, appended at close-out)
+
+**Shipped.** Tasks 1-5 and 7 as recorded above, then the close-out's fix waves, executed by a
+workflow (serial implementers, each gated by a fresh Opus verify) and two follow-on dispatches:
+
+- **A2 `a0e4e785` + repair `e426c158`.** All six sheet/component items. The A2 verify caught a
+  real blocker the implementer's green gates missed: the prepended `@layer` statement omitted
+  Tailwind's `properties` layer, which would have promoted it above `utilities` for a consumer's
+  merged layers on older engines. The repair pinned `@layer properties, theme, base, components,
+  utilities;` and swept a false-provenance comment class (fix-item numbers misread as harvest
+  finding numbers).
+- **B `a646e07b`.** The three audit-rule repairs, each with a red-then-green fixture the verifier
+  reproduced independently against the parent commit.
+- **C `077d6e1b`.** Fix-or-drop resolved to NEITHER: `container-inset-asymmetry`'s corpus miss at
+  `8778556` was an empty-state corpus leg, not a rule defect. The implementer re-stood both ASC
+  legs, proved the rule fires (40px/0px on the live `ul.list`, both themes) and stays quiet at
+  `c340db6`, and identified the recipe defect (migrations-only setup seeds no club rows, so the
+  page renders its EmptyState with no `.list` at all). The standing recipe correction is written
+  into the leg recipe above. The refreshed matrix: all four rules CORRECT at all three SHAs
+  (`one-filled-action` FIRES/quiet, `field-edge-alignment` FIRES/quiet,
+  `container-inset-asymmetry` FIRES/quiet, `form-font-parity` FIRES at 406 findings on the
+  published pre-reset sheet per the standing adjudication).
+- **D1 `46d7c16b` (Opus).** The reviewer fan-out's hard finding: A1's ratified repair, despite
+  red-then-green tests, failed the repo's own photometric bars (the 0.068 oklch fill step buys
+  only 1.14:1 near black; border=fill deleted the last edge). The conformant device was already
+  in the design system: the 3:1 cue moved to a 1px hairline (`var(--btn-color, oklch(57% 0.012
+  75))`, measured 3.83-4.37:1 across pairs), the outline composition got its ink restated
+  (1.20:1 to 6.67:1), disabled forms excluded, hover companion gated on `hover: hover`,
+  EditorToolbar reverted to ghost unselected tabs and gained the check glyph per the
+  ListToolbar precedent.
+- **D2 `54f8d9ea`.** Reset narrowings (`dialog:where(.modal)`; `list-style: none` dropped from
+  `.list` for WCAG 1.3.1, the padding reset alone suffices), the unlabeled-controls docs
+  correction (wrapping label names only its first labelable descendant), the `form-font-parity`
+  tier record, provenance strays, and the ROADMAP filings.
+- **D3 `e75804c2`.** The second-round a11y re-check's fallout: the unlayered `color` scoped to
+  `:is(.btn-outline, .btn-dash)` so dark `text-*` utilities survive; the outline repair made
+  theme-agnostic (light went 1.17:1 to 6.61:1); two false doc claims corrected (light's fill
+  does NOT separate, the glyph is the cue; Pagination named the known exception); the glyph
+  always rendered and toggled `invisible` so tab width is stable across the mode switch
+  (verified: 78px both states); the sheet-inventory gate exercised deliberately (`btn-dash`
+  ships, changelog-carried).
+- **Simplifier `e9a364f8`.** Biggest yield: the test's hand-rolled oklab math replaced with the
+  audit module's own `contrastRatio`, verified equivalent before the swap.
+
+**The A1 story, which is the pass's thesis reproduced twice.** The trial's premise is that a
+builder's green tests can miss a composition defect. Inside the pass that repaired exactly such
+a defect, it happened twice more: A1's ratified fill-step repair passed its own red-then-green
+suite while failing WCAG 1.4.11 photometrically (perceptual oklch deltas compress near black),
+and the first A2 layer statement passed every gate while inverting a layer order. Both were
+caught only by fresh-context measured review (three independent Opus contexts converged on A1).
+The countermeasure that worked: measurement-first review with the numbers in the dispatch, and a
+second-round re-check that re-measures rather than trusts.
+
+**Verification evidence.** Full local battery green at `e9a364f8` (check 0/0; 4552 tests exit 0;
+comments; reference + signatures; package; docs; surface; custom-surface). CI on PR #13: test,
+scaffold, design green; e2e's 18 failures are ALL `admin-visual` baseline drift (95 functional
+specs passed; `site-visual` clean, proving the reset never leaked to public output); baselines
+regenerated via CI dispatch per the standing method. Live admin smoke: production build +
+preview with the dev backend, exercised list/edit/preview/media/panel/delete-dialog (cancelled).
+Eyes-on reads, both themes, by the orchestrator: office (hairline + glyph on selected filters),
+edit write/preview (glyph swap, no tab-width shift), media (checkbox plates, chips), the
+safe-delete modal (bounded frame on dimmed backdrop), the asset panel's alt-text fieldset. The
+pass touched no auth/session code, so the smoke's auth half is the untouched guard suite.
+
+**Decisions locked.**
+
+- `form-font-parity` STAYS ADVISORY: the exemption net is deliberately coarse (variant-prefixed
+  faces, `font-serif`/`font-sans`, the `font-()` shorthand still uncovered); promotion
+  prerequisites are filed in ROADMAP's Next tier with the other rule refinements.
+- The declined `color: inherit` ruling stands, with a caveat for Geoff: two independent Opus
+  reviews re-raised it as a real WCAG 1.4.3 vector (a bare control inside a `text-muted`/
+  `text-error` wrapper paints that ink over an unmoving UA field background). It remains
+  declined per the recorded triage; re-open only if a consumer hits it.
+- The 12px-type-role ROADMAP bullet stays (constraint honored: no type-role changes this pass).
+- Deferred, filed in ROADMAP Next: the audit-rule promotion prerequisites
+  (clustering/clamping/surface-key/`themeRoot` refinements), Pagination's color-only selected
+  state on light, the per-call-site legend padding, the variant segmented-control gap.
+
+**Cost note.** The close-out ran as one workflow (13 agents, ~1.27M subagent tokens) plus five
+direct dispatches (D1-D3, simplifier, re-check, ~880K); the review gate consumed roughly as
+much as the fix waves and caught two blockers plus the D-wave, which is the right ratio for a
+pass whose thesis is that unreviewed green gates lie.

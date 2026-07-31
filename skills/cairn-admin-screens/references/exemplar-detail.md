@@ -163,8 +163,10 @@ than once:
 </dialog>
 ```
 
-- `TextField`/`SelectField` both wrap `FieldLabel`, the inline control-adjacent register
-  (`form-anatomy.md` states the full three-level contract this is one of).
+- `TextField`/`SelectField` both wrap `FieldLabel`, rendering its default `register="stacked"`
+  register here with no extra prop (`form-anatomy.md` states the full three-level contract this
+  is one of); a single-column dialog form has no shared-row width to compete for, so the
+  default is the right choice, not a call for the inline exception.
 - `modal-action`'s two-button pattern, plain `Cancel` beside filled `Save`, is this dialog's
   own `one-filled-action` surface satisfied: exactly one accent fill, and it's the
   submitting action. Every dialog in this file repeats the identical pair.

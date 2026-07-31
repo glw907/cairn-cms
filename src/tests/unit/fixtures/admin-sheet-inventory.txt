@@ -134,6 +134,7 @@ cairn-chip-bounded
 cairn-chip-quiet
 cairn-doc-title
 cairn-doc-title-dim
+cairn-field-stacked
 capitalize
 card
 card-shadow

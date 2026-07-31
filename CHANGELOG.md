@@ -1,5 +1,22 @@
 ## Unreleased
 
+### Added
+
+- `FieldLabel`, `SelectField`, and `TextField` (`@glw907/cairn-cms/admin-fields`) gain a
+  `register: 'inline' | 'stacked'` prop (design ratchet Task 3, closes finding 3): `'stacked'`
+  puts the label on its own line above the control, the individual-field-label recipe already
+  proven inside the engine's own `FieldInput`; `'inline'` keeps the prior label-beside-control
+  layout. A `.cairn-field-stacked` sheet hook fills a stacked control to its container, so a
+  consumer cannot forget `w-full`, and a stacked field in a wide multi-column grid track fills its
+  own cell edge-to-edge instead of clamping to daisyUI's fixed 20rem default. **`'stacked'` is now
+  the default**, a deliberate breaking change (ratified by Geoff 2026-07-30): defaulting to inline
+  reproduces the harvest's trap shape, where the register that staircases in a grid stays the
+  effortless path. `docs/reference/admin-fields.md` documents both registers;
+  `skills/cairn-admin-screens/references/form-anatomy.md`'s composition-width guidance now points
+  at `register="stacked"` by name. **Consumers must:** pass `register="inline"` on any
+  `FieldLabel`/`TextField`/`SelectField` call whose inline label-beside-control layout should
+  survive the upgrade; every other call renders the new stacked default.
+
 ### Fixed
 
 - The packaged admin sheet ships a `base` cascade layer, so a bare form control, `dialog`,

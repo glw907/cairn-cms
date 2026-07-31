@@ -5,7 +5,8 @@ modifier). The first of the `admin-fields` primitives (Part C item 1 of the phas
 the smallest coherent set a custom `/admin/` screen composes today (a select, a text input, and the
 shared label wrapper), proven by the aksailingclub-org club-admin scaffold. The set is expected to
 grow, a date field and an image-picker are the likely next additions, the same way the engine's own
-field vocabulary grows one real consumer at a time.
+field vocabulary grows one real consumer at a time. `FieldLabel`'s header comment documents the
+`register` this component passes straight through.
 -->
 <script lang="ts">
   import FieldLabel from './FieldLabel.svelte';
@@ -17,7 +18,7 @@ field vocabulary grows one real consumer at a time.
   }
 
   interface Props {
-    /** The visible label, read to the left of the control. */
+    /** The visible label, read to the left of (inline) or above (stacked) the control. */
     label: string;
     /** The native `name`, so the field posts inside an ordinary form submit. */
     name: string;
@@ -25,12 +26,14 @@ field vocabulary grows one real consumer at a time.
     value: string;
     /** The option list, in display order. */
     options: SelectFieldOption[];
+    /** The label register; see `FieldLabel`. Defaults to `stacked`. */
+    register?: 'inline' | 'stacked';
   }
 
-  let { label, name, value = $bindable(), options }: Props = $props();
+  let { label, name, value = $bindable(), options, register }: Props = $props();
 </script>
 
-<FieldLabel {label}>
+<FieldLabel {label} {register}>
   <select class="select select-sm" {name} bind:value>
     {#each options as option (option.value)}
       <option value={option.value}>{option.label}</option>

@@ -256,7 +256,10 @@ Recipes:
     would move pixels well beyond a single field's own label.
   - **Inline control-adjacent label,** on one line beside its control rather than above it:
     `flex items-center gap-1.5 type-body`, muted ink on the label span, plain weight. The
-    `admin-fields` subpath's `FieldLabel` recipe (`SelectField` and `TextField` both wrap it).
+    `admin-fields` subpath's `FieldLabel` renders both this register and the individual-field-label
+    register above through its `register` prop (`'inline' | 'stacked'`, design ratchet Task 3);
+    `'stacked'` is the default (the robust shape for any multi-column form grid, finding 3), and
+    `SelectField`/`TextField` both pass the prop straight through.
 - Nav item: `type-subtitle` (the lists use `menu-sm` for layout), `font-medium` inactive,
   `font-semibold` active. The 15px step is the T4 chrome scale (design arc, 2026-07-15); office
   table cells share it via `table type-subtitle`.

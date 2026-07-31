@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a UA reset layer and a skill-exemplar compile gate (non-breaking)
+## Unreleased: a UA reset layer, an exported stacked field register, and a skill-exemplar compile gate
 
 The packaged admin sheet now ships a `base` cascade layer, so a bare form control, `dialog`,
 `fieldset`/`legend`, or daisyUI's own `.list` container renders the admin's own face instead of
@@ -93,7 +93,17 @@ two-column form-grid recipe and `exemplar-detail.md`'s divided-list row rhythm b
 small labeled addition to the shipped sheet's compatibility safelist so the taught recipes
 render as written.
 
-Consumers must: nothing.
+`FieldLabel`, `SelectField`, and `TextField` (`@glw907/cairn-cms/admin-fields`) gain a
+`register: 'inline' | 'stacked'` prop. `'stacked'` puts the label on its own line preceding the
+control and fills the control to its container, so a field composed inside a multi-column form
+grid renders with no extra markup. **`'stacked'` is now the default**, replacing the prior
+label-beside-control layout: `inline` stays available for a genuinely control-adjacent
+composition, but it is now an explicit choice rather than the default. See
+[Admin fields](../reference/admin-fields.md).
+
+**Consumers must:** pass `register="inline"` on any `FieldLabel`, `TextField`, or `SelectField`
+call whose label-beside-control layout should survive the upgrade. Every other call renders the
+new stacked default. Nothing else here requires action.
 
 ## 0.91.1: the admin sheet classes `0.91.0` dropped come back (non-breaking)
 

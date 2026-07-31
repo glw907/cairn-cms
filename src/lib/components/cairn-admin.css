@@ -599,7 +599,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 6 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 7 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -621,7 +621,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 6 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 7 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -640,7 +640,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 6 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 7 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -652,7 +652,7 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 6 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 7 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -676,19 +676,36 @@
    surface that composes a chip by hand instead of through the StatusChip component (EditPage's
    status pill, the CairnAdminShell brand-band CMS pill, ReferenceField/MediaCaptureCard/
    ManageEditors's bare chips).
-   PINNED unlayered rule 5 of 6 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
+   PINNED unlayered rule 5 of 7 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded {
   background-color: transparent;
   border-color: color-mix(in oklab, currentColor 55%, transparent);
 }
 
-/* PINNED unlayered rule 6 of 6 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+/* PINNED unlayered rule 6 of 7 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
    either melting into its ground (badge-ghost's old failure) or keeping a border that competes
    with an attention state rendered next to it. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet {
   border-width: 0;
   background-color: color-mix(in oklab, var(--color-base-content) 14%, var(--color-base-300));
+}
+
+/* The stacked field register's width hook (design ratchet Task 3, closes finding 3): a control
+   inside a `.cairn-field-stacked` wrapper (FieldLabel's stacked register, the admin-fields default)
+   fills its container instead of clamping to daisyUI's own fixed 20rem preferred width, so a
+   consumer cannot forget `w-full` and a stacked field in a wide multi-column grid track fills its
+   own cell edge-to-edge. DaisyUI's `.input`/`.select`/`.textarea` width declarations are themselves
+   utilities-layer rules (`@layer utilities { @layer daisyui.l1.l2.l3 { ... } }`), which a
+   components-layer rule cannot outrank regardless of specificity (cascade layers resolve before
+   specificity, the same reason the two chip rules above are unlayered); this is UNLAYERED for the
+   same reason.
+   PINNED unlayered rule 7 of 7 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
+   field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
+   fields' controls in the same column stop sharing a left AND right edge once the cell exceeds
+   20rem. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked :where(.input, .select, .textarea) {
+  width: 100%;
 }
 
 /* Respect a reduced-motion preference inside the admin. DaisyUI's modal, drawer, and the admin's

@@ -15,7 +15,8 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded",
-          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet"
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked :where(.input, .select, .textarea)"
         ],
         "componentsLayerCap": 16,
         "retiredTokenBudget": 0

@@ -28,8 +28,9 @@ static/rendered rule engine (Playwright harness in `src/lib/audit/rendered.ts`).
   topmost dialog layer partitions, header/footer nested inside main do NOT partition main, and
   the grader prompt's item b is unchanged. Do not re-litigate.
 - The token layer is not the problem: no changes to type roles, gap-role values, chip
-  registers, or theme color tokens, except the two safelist classes (Task 2) and the dark
-  `.btn-active` step (Task 4), both of which serve composition.
+  registers, or theme color tokens, except the Task 2 safelist classes (implementation found
+  six uncompiled exemplar classes, not the predicted two; all six landed the same way) and
+  the dark `.btn-active` step (Task 4), both of which serve composition.
 - `skills/cairn-admin-screens/references/grader-prompt.md` item b is untouched.
 - The admin wrapper hosts the editor's rendered markdown preview, so the reset layer never
   touches bare content elements (`ul`, `ol`, headings, `p`); only form controls, `dialog`,
@@ -432,6 +433,97 @@ doctrine, not a changelog.
   ritual.
 
 ---
+
+## Close-out state and remaining work (2026-07-30 handoff, written at context clear)
+
+A fresh session resumes HERE. Verify before acting: `git -C
+.claude/worktrees/design-ratchet log --oneline -12` for the landed commits, and confirm no
+implementer is live in the worktree (warm uncommitted changes = stand down and investigate).
+
+**Landed on `design-ratchet`:** Tasks 1-5 and 7 (T1 `3a110c54` reset layer; T2 `8d0f3791`
+exemplar gate + six-class safelist, not two — Global Constraints corrected; T3 stacked
+register, default flipped, width hook shipped as pinned unlayered rule 7 (the plan's
+components-layer assumption was false: daisyUI widths compile into the `utilities` layer,
+which beats `components`; the unlayered convention is the repo's own); T4 `ca2b9ae9`
+partition narrowed to nav/aside + dark `.btn-active` (BROKEN, see fix A1) + own-admin sweep
+clean; T5 `a640dea4` three geometry rules at advisory; T7 `088179fb` docs fold + grammar
+ladder in `enforced-design.md`; ASC staging file deleted, ASC commit `bd12d6c`). The
+12px-type-role ROADMAP bullet was deliberately KEPT (its design ruling is still open; this
+pass's constraints forbade type-role changes).
+
+**Corpus matrix (three ASC SHAs, this worktree's audit build):** `one-filled-action` and
+`field-edge-alignment` matched every cell. `form-font-parity` fired at ALL states including
+`c340db6` — adjudicated CORRECT, not a rule defect: every corpus state runs the published
+pre-reset sheet, where buttons genuinely compute Arial; the quiet leg is proven on the NEW
+sheet (CI + local sweep), not the corpus. `container-inset-asymmetry` MISSED the known 57px
+gutter at `8778556` — unexplained by source reading; needs the empirical diagnosis in batch
+C before it can ship, else it drops per the plan's fix-or-drop rule.
+
+**Review triage (two Opus reviews, findings adjudicated):**
+
+- **Fix A1 (blocker, dispatched, may still be in flight — VERIFY ITS COMMIT FIRST).** The
+  dark `.btn-active` flat `--btn-bg` discards the variant channel, kills hover/press, and
+  makes EditorToolbar's ghost-paired tablist worse. Ratified repair: dark mixes toward
+  white keeping `var(--btn-color, --color-base-200)` (step 0.05-0.10 oklch L), companion
+  hover/press/border variables verified against the built sheet, EditorToolbar unselected
+  tabs move `btn-ghost` → plain `btn`, BtnActiveDarkGround fixtures extended (primary hue
+  preserved; hover changes bg).
+- **Fix A2 (sheet + components, one dispatch):** (1) stacked width hook `.cairn-field-stacked
+  :where(...)` → child combinator `>` so nested compact rows escape; document the width
+  escape in `docs/reference/admin-fields.md` and the CHANGELOG `Consumers must:` line.
+  (2) `FieldLabel` register branches collapse to ONE `<label>` with a conditional class
+  list (the `{#if}` pair remounts the control on a live register flip, dropping focus/IME).
+  (3) `docs/reference/admin-fields.md`'s FieldLabel section is stale: no `register` in the
+  signature block, prose still describes inline as the default. (4) `legend { padding: 0 }`
+  breaks the one bordered fieldset: add `px-1` to `ComponentForm.svelte`'s legend (~line
+  330). (5) The built sheet ships NO `@layer theme, base, components, utilities;` ordering
+  statement — precedence is accidental file order; prepend it explicitly in
+  `scripts/build-admin-css.mjs` (beside the font-face block, ~line 94) and assert it in
+  `AdminReset.test.ts`. (6) Upgrade guide: one line that cairn's `base` layer merges by
+  name with a consumer's own Tailwind `base`, so host import order decides within it.
+- **Fix B (audit rules, one dispatch):** (1) `form-font-parity`: scope the walk to the
+  theme root (currently document-wide) and exempt a control carrying an explicit face
+  (`font-mono`, `font-[family-name:...]`); four shipped controls are mismatches by
+  construction (CairnMediaLibrary slug + two type-to-confirm inputs, MarkdownEditor's
+  no-JS fallback textarea). Required before any error-tier promotion. (2)
+  `field-edge-alignment`: clustering is transitive rect-overlap, so a `col-span-2` row
+  merges two real columns; cluster on left-edge proximity instead, add a `col-span-2`
+  fixture. (3) `one-filled-action`: surface key is the landmark's TAG NAME, so all `<nav>`s
+  merge into one surface; key per element (selector + index). Latent today only because
+  Pagination uses `btn-active`.
+- **Fix C (empirical, after B):** recreate the `8778556` ASC leg (detached worktree, the
+  corpus-leg recipe in Task 6 — the legs' own notes add: apply cairn AUTH_DB migrations
+  0000/0001 by hand, apply all CLUB_DB migrations, seed owner session, `wrangler dev
+  --local`), instrument WHY `container-inset-asymmetry` stayed quiet on the asset-requests
+  gutter (hand-evaluate the rule's measurement in the page console against the live
+  `.list`), fix the rule, confirm fire at `8778556` and quiet at `c340db6` (re-run that leg
+  too for every rule B touched), and refresh the matrix in the post-mortem. If the miss
+  proves structural, DROP the rule per the plan; never tune blind.
+- **Declined, recorded:** `color: inherit` on form controls stays (the preflight
+  convention; deviating is its own surprise — the muted-wrapper scenario is real but rare
+  and advisory rules surface it).
+
+**Then, in order:** (1) push the branch; CI green including the rendered suite on the CI
+runner; finalize `form-font-parity`'s tier — error ONLY if CI is quiet on cairn's own
+admin + showcase after B's exemptions, else it stays advisory with the reasoning in
+`cairn-audit.md`. (2) Pass-end ritual per the section below, PLUS: a focused
+`daisyui-a11y-reviewer` re-check of the A1 repair; eyes-on reads owed — dark `.btn-active`
+across Pagination/ListToolbar/EditorToolbar, an open modal's frame (dialog border), and
+the two fieldset alt-groups the reset silently moved ~12px (`MediaHeroField.svelte:519`,
+`CairnMediaLibrary.svelte:1801`), both themes. (3) Post-mortem appended here (carry the
+matrix, the adjudications, the A1 story: the trial's own thesis — a builder's green tests
+missing a composition defect — reproduced inside the pass that repaired it). (4) Merge to
+`main`, STATUS updated there. (5) **NO release: Geoff held it (2026-07-30).** The cut
+waits for the next pass and rolls both windows; number derived at the cut.
+
+**Next pass seed (draft its plan at close-out or in a Fable sitting):** the
+optical-centering ratchet — `text-box-trim` as a silent engine default, measurement-first:
+capture Geoff's ASC chip sighting first (page/chip/theme unknown; ask or survey), decide
+trim breadth (chips + buttons minimum; "more broadly" is an explicit scope question for
+Geoff), corpus-style validation; fold in the `.list-row` `grid-row-start` pin (ROADMAP
+Next, filed by T7) and any friction-log items that are genuinely small, verified against
+code first, each with a deliverable count. Churn is free until the public beta (ratified
+2026-07-30; memory `cairn-churn-free-until-beta`).
 
 ## Pass-end ritual (per `cairn-pass`, not a task)
 

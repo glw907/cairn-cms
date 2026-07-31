@@ -183,7 +183,7 @@ measurement.
 
 ### The rules
 
-Eleven rules run. The first five are error tier and exit the command nonzero.
+Fourteen rules run. The first five are error tier and exit the command nonzero.
 
 | ID | What it checks |
 |---|---|
@@ -193,7 +193,7 @@ Eleven rules run. The first five are error tier and exit the command nonzero.
 | `touch-targets` | Every tap target renders at least 24x24 CSS px at a 390px viewport. This is a house floor derived from WCAG 2.2 level AA's success criterion 2.5.8, Target Size (Minimum), and not an implementation of it: the rule enforces a strict superset, so a finding is a house-bar failure and not on its own an AA failure. See [What `touch-targets` doesn't cover](#what-touch-targets-doesnt-cover). The measurement is the activation region rather than the painted box: the control's own box, unioned with a qualifying `::before` inset expansion, plus every label the platform reports as activating the control. A control passes when any one of its regions clears the floor |
 | `viewport-overflow` | Nothing renders wider than the viewport at 390 and at 320. Both an element whose own box clears the viewport and an element whose content, an unbreakable string or a bleeding pseudo-element, is wider than its box |
 
-The other six are advisory. They report and never change the exit code, because each one measures a
+The other nine are advisory. They report and never change the exit code, because each one measures a
 compositional question that a legitimately novel component can answer differently on purpose.
 
 | ID | What it checks |
@@ -204,6 +204,9 @@ compositional question that a legitimately novel component can answer differentl
 | `norms-bands` | A component's control heights, paddings, padding-to-type ratios, radii, and border treatments against the bands the [norms manifest](#the-norms-query) observed. An entry the manifest flags `open-question` or `ratified-drift` is treated as unbanded: a number that is not settled ground truth is not a reference to measure against |
 | `screen-anatomy` | An office screen carries one `<h1>` inside PageHeader's `<header>`, renders a `.card-shell` region, and keeps its accent- and ink-filled actions in the header slot or inside the card. Desk routes are exempt, read from the drawer class the admin shell projects at SSR rather than from path depth |
 | `relational-spacing` | The `--cairn-gap-*` scale matches the relationship the markup renders: a nested rhythm never opens wider than the rhythm containing it (per axis), a label sits the gap-label distance above its control, and same-level siblings sit at one gap |
+| `form-font-parity` | Every rendered `input`, `select`, `textarea`, and `button` computes the same first `font-family` as the admin root. String equality on the first family, so a control either loaded the reset or it didn't; this is the UA reset layer's own regression tripwire (design ratchet Task 1), catching a consumer whose sheet never reached the page. **Registered provisionally at advisory**: the intended tier is error, promoted only once a CI re-check confirms the rendered suite is green against cairn's own admin and showcase on the CI runner |
+| `field-edge-alignment` | Within a grid or flex-column container, two or more form controls (`.input`/`.select`/`.textarea`) rendering in the same visual column must share a left edge within 1.5px. The staircase detector: an `inline`-register field whose label width varies row to row pushes its control's left edge with it, a shape a consumer's own corpus surfaced at a 1440px viewport. Advisory, since "same column" is read from rendered geometry rather than a DOM contract, a heuristic over arbitrary layouts |
+| `container-inset-asymmetry` | A `.card-shell`, `.list`, or `.modal-box` container whose rendered content sits more than 24px closer to one side than the other. The phantom-gutter detector, catching a one-sided padding or margin utility; the corpus's own measurement was a 57px left inset against an 8px right one. Advisory: the threshold is judged, and a deliberately asymmetric layout is a real composition this rule can't tell from a defect |
 
 Every rule that compares two colors resolves them by painting each one on a canvas in the page and
 reading the sRGB bytes back, rather than parsing color syntax. A themed admin computes to whatever

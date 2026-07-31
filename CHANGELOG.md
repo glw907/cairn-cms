@@ -17,6 +17,22 @@
   `FieldLabel`/`TextField`/`SelectField` call whose inline label-beside-control layout should
   survive the upgrade; every other call renders the new stacked default.
 
+- `cairn-audit`'s rendered rule set gains three geometry rules (design ratchet Task 5, the
+  mechanical halves of findings 1, 3, and 6), the cap the plan set at three: `form-font-parity`
+  asserts every rendered `input`/`select`/`textarea`/`button` computes the same first
+  `font-family` as the admin root, the UA reset layer's own regression tripwire; registered
+  **provisionally at advisory**, promoted to error only once a CI re-check confirms the rendered
+  suite is green against cairn's own admin and showcase on the CI runner.
+  `field-edge-alignment` (advisory) is the staircase detector: two or more form controls in the
+  same visual column of a grid or flex-column container must share a left edge within 1.5px, the
+  shape an `inline`-register field with a varying label width produces.
+  `container-inset-asymmetry` (advisory) is the phantom-gutter detector: a `.card-shell`, `.list`,
+  or `.modal-box` container whose content sits more than 24px closer to one side than the other.
+  `docs/reference/cairn-audit.md`'s rule table gains all three rows.
+
+  Consumers must: nothing; both `field-edge-alignment` and `container-inset-asymmetry` are
+  advisory and `form-font-parity` is provisionally advisory, so none changes the exit code yet.
+
 ### Changed
 
 - `cairn-audit`'s `one-filled-action` rendered rule narrows the landmarks that partition a

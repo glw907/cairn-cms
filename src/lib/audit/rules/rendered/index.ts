@@ -3,14 +3,20 @@
 // refuses to run against an empty registry rather than reporting a silently clean audit, so this
 // list is what turns the rendered harness on.
 //
-// Eleven rules are registered: five error-tier rules (`one-filled-action`, `focus-renders`,
+// Fourteen rules are registered: five error-tier rules (`one-filled-action`, `focus-renders`,
 // `interactive-contrast`, `touch-targets`, `viewport-overflow`; `chip-ground-collision` demoted
 // out of this tier in design infrastructure Pass 3, pending its chroma repair, see ROADMAP), then
-// six advisory ones (`chip-ground-collision`, `border-contrast`, `weight-budget`, `norms-bands`,
-// `screen-anatomy`, `relational-spacing`), which report and never reach the exit code.
+// nine advisory ones (`chip-ground-collision`, `border-contrast`, `weight-budget`, `norms-bands`,
+// `screen-anatomy`, `relational-spacing`, `form-font-parity`, `field-edge-alignment`,
+// `container-inset-asymmetry`), which report and never reach the exit code. `form-font-parity` is
+// registered PROVISIONALLY at advisory (design ratchet Task 5): its own header names the intended
+// promotion to error, gated on Task 6's CI re-check.
 import { borderContrast } from './border-contrast.js';
 import { chipGroundCollision } from './chip-ground-collision.js';
+import { containerInsetAsymmetry } from './container-inset-asymmetry.js';
+import { fieldEdgeAlignment } from './field-edge-alignment.js';
 import { focusRenders } from './focus-renders.js';
+import { formFontParity } from './form-font-parity.js';
 import { interactiveContrast } from './interactive-contrast.js';
 import { normsBands } from './norms-bands.js';
 import { oneFilledAction } from './one-filled-action.js';
@@ -38,5 +44,8 @@ export function renderedRules(): RenderedRule[] {
     normsBands,
     screenAnatomy,
     relationalSpacing,
+    formFontParity,
+    fieldEdgeAlignment,
+    containerInsetAsymmetry,
   ];
 }

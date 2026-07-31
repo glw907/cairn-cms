@@ -260,14 +260,18 @@ stays pinned at the row's right end, reachable at every width.
   <!-- The capsule look is manual rounding, not daisyUI's .join: join radii follow direct
        children, and the device trigger must sit outside the tablist (ARIA required children),
        so the segments square their shared edges themselves. Preview squares its right edge only
-       while the trigger extends the capsule. -->
+       while the trigger extends the capsule. Unselected carries plain btn, not btn-ghost, the
+       same join/segmented-picker semantics Pagination.svelte and ListToolbar.svelte already use
+       (design ratchet Task 4 review fold-in): a ghost segment beside an active one reads as one
+       fewer distinct step on the dark ground than a filled-neutral segment beside the lighter
+       selected fill does. -->
   <button
     type="button"
     role="tab"
     id={`cairn-tab-${m}`}
     aria-selected={mode === m}
     aria-controls={`cairn-pane-${m}`}
-    class="btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
+    class="btn btn-sm {mode === m ? 'btn-active' : ''}"
     class:rounded-r-none={m === 'write' || showDeviceTrigger}
     class:rounded-l-none={m === 'preview'}
     class:-ml-px={m === 'preview'}

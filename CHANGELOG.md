@@ -42,12 +42,16 @@
   still partitions, but `<header>`, `<footer>`, and `<main>` itself no longer do. A DOM boundary
   between a page header and the card beneath it removed none of the harm the rule exists to
   catch, same visual column, same first look, so it was never a real partition. The same change
-  raises the dark theme's `.btn-active` selected-state fill from a 0.011 oklch-lightness step off
-  a plain `.btn` to a 0.05-0.07 step, in the dark Warm Stone family's own hue and chroma: the
-  ruling pushes a segmented control's selected state off `btn-primary` (now two primaries on one
-  surface) and onto `btn-active`, which was close to invisible on the dark ground before this
-  step. `docs/reference/cairn-audit.md`'s `one-filled-action` row states the narrowed partition
-  and its reasoning. A sweep of cairn's own admin and the showcase found no screen newly failing.
+  pushes a segmented control's selected state off `btn-primary` (now two primaries on one surface)
+  and onto `btn-active`, which raises the dark theme's `.btn-active` fill: it mixes `--btn-color`
+  (or `--color-base-200` when no variant is set) toward white rather than daisyUI's own toward-black
+  mix, so a variant selected control (`btn btn-primary btn-active`) keeps its hue and chroma instead
+  of collapsing to a flat neutral, while the neutral case still lands a 0.05-0.07 oklch-lightness
+  step off a plain `.btn`, up from 0.011 before this change, in the dark Warm Stone family's own hue.
+  A companion `:hover` step and a border matched to the new fill keep the selected state's hover
+  feedback and its ring coherent with the lighter background. `docs/reference/cairn-audit.md`'s
+  `one-filled-action` row states the narrowed partition and its reasoning. A sweep of cairn's own
+  admin and the showcase found no screen newly failing.
 
   **Consumers must:** treat a screen with a filled header action above a filled card action as a
   finding: demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen the rule to

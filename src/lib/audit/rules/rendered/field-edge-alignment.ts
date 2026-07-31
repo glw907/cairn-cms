@@ -21,13 +21,15 @@
 // COLUMN CLUSTERING. A group can hold controls from several real grid columns (an office form's
 // whole two-column grid, say), and this rule must not compare a column-1 control's left edge
 // against a column-2 control's, which would report every ordinary two-column form as broken. Within
-// a group, controls are clustered by horizontal overlap of their rendered rects: two controls "are
-// in the same column" when their left/right ranges intersect, the same read `viewport-overflow` and
-// `relational-spacing` use for "shares a line" turned onto the perpendicular axis. Two controls in
-// different grid tracks do not overlap horizontally and cluster apart; two controls staggered
-// within one track still overlap (the label difference is smaller than the control's own width in
-// every real case this rule was built against) and cluster together, which is what lets their edges
-// be compared at all.
+// a group, controls are clustered by LEFT-EDGE PROXIMITY, not whole-rect overlap: sort the group's
+// controls by left edge, then start a new column whenever the gap to the previous control's left
+// edge exceeds `CLUSTER_GAP_PX`. Rect overlap was the original design and it has a bridging defect:
+// a `col-span-2` control's rect stretches across two real columns, so it horizontally overlaps a
+// column-1 control's range AND a column-2 control's range, and transitive clustering ("share a
+// column with anything I overlap") chains the two real columns into one, comparing controls that
+// were never meant to align. Left-edge proximity only ever asks whether two edges are close to each
+// other, so a spanning control's own left edge (wherever its column starts) clusters with that
+// column alone, however far its rect reaches to the right.
 //
 // Advisory: "same column" is a heuristic over arbitrary layouts, not a DOM contract cairn's own
 // components declare, and a legitimately narrower control deliberately placed off-grid (a compact
@@ -53,6 +55,10 @@ interface EdgeMismatch {
 function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] {
   const { tolerancePx } = args;
   const CONTROL_SELECTOR = '.input, .select, .textarea';
+  // The floor a gap between two sorted left edges may reach and still cluster as the same column.
+  // 80px comfortably clears the corpus staircase shape (a ~50px stagger from label-width variance)
+  // while staying far short of a real grid column's own width plus gutter (hundreds of pixels).
+  const CLUSTER_GAP_PX = 80;
   const helpers = globalThis.__cairnAudit;
   const signature = (el: Element) => (helpers ? helpers.signature(el) : el.tagName.toLowerCase());
   const isVisible = (el: Element) => (helpers ? helpers.isVisible(el) : true);
@@ -84,16 +90,22 @@ function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] 
   const findings: EdgeMismatch[] = [];
   for (const [container, controls] of byContainer) {
     if (controls.length < 2) continue;
-    const items = controls.map((el) => ({ el, rect: el.getBoundingClientRect() }));
-    // Cluster into columns by horizontal overlap, so two controls in different grid tracks are
-    // never compared against each other.
+    const items = controls
+      .map((el) => ({ el, rect: el.getBoundingClientRect() }))
+      .sort((a, b) => a.rect.left - b.rect.left);
+    // Cluster into columns by left-edge proximity along the sorted sequence: a new column starts
+    // whenever the gap to the previous edge exceeds the threshold. Wide enough to absorb an
+    // inline-register field's label-width stagger, narrow enough to never bridge two real grid
+    // columns, which are separated by a full column width plus its gutter.
     const columns: { el: Element; rect: DOMRect }[][] = [];
     for (const item of items) {
-      const column = columns.find((group) =>
-        group.some((member) => member.rect.left < item.rect.right && item.rect.left < member.rect.right)
-      );
-      if (column) column.push(item);
-      else columns.push([item]);
+      const current = columns[columns.length - 1];
+      const previous = current?.[current.length - 1];
+      if (previous && item.rect.left - previous.rect.left <= CLUSTER_GAP_PX) {
+        current.push(item);
+      } else {
+        columns.push([item]);
+      }
     }
     for (const column of columns) {
       if (column.length < 2) continue;

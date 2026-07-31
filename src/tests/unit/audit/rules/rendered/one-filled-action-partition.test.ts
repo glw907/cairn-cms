@@ -106,4 +106,34 @@ describe('one-filled-action, the narrowed partition (design ratchet Task 4)', ()
     expect(findings[0].message).toContain('dialog-one');
     expect(findings[0].message).toContain('dialog-two');
   });
+
+  // (e) Batch B fix: two <nav> landmarks are two surfaces, keyed by their own DOM position rather
+  // than the shared `<nav>` tag name. Each rail carries one filled action alone, so the rule stays
+  // quiet; the old tag-name key would have merged both rails into one `'nav'` surface and reported
+  // two competing fills that were never on the same surface at all.
+  it('does not merge two nav landmarks into one surface', async () => {
+    const findings = await findingsFor(
+      `${THEME}<body><div data-theme="cairn-admin">
+        <nav id="primary-nav"><button type="button" class="btn btn-primary" id="primary-nav-action">New</button></nav>
+        <nav id="secondary-nav"><button type="button" class="btn btn-primary" id="secondary-nav-action">Filter</button></nav>
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // (f) The other half of (e): two fills inside the SAME nav landmark still compete, so the fix is
+  // per-element keying, not a blanket exemption for every nav.
+  it('fires when two filled actions sit inside one nav landmark', async () => {
+    const findings = await findingsFor(
+      `${THEME}<body><div data-theme="cairn-admin">
+        <nav id="primary-nav">
+          <button type="button" class="btn btn-primary" id="nav-one">One</button>
+          <button type="submit" class="btn btn-primary" id="nav-two">Two</button>
+        </nav>
+      </div></body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].message).toContain('nav-one');
+    expect(findings[0].message).toContain('nav-two');
+  });
 });

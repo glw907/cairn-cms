@@ -95,6 +95,32 @@ describe('field-edge-alignment against a real browser', () => {
     expect(findings).toEqual([]);
   });
 
+  // A col-span-2 row must not bridge the two real columns into one cluster. The spanning control
+  // shares column 1's own left edge (a 40px label, the same as col1's other rows) but its own width
+  // reaches well into column 2's territory, the shape that breaks whole-rect-overlap clustering:
+  // its rect horizontally overlaps a column-1 control's range AND a column-2 control's range,
+  // chaining both real columns into one cluster and reporting column 2 as staggered by the full
+  // column-1 width. Left-edge proximity clustering keeps the spanning control with column 1 (their
+  // left edges match) and leaves column 2's own cluster untouched.
+  const wideSpanRow = `<label style="grid-column:1 / span 2;display:flex;align-items:center;gap:8px;">
+    <span style="display:inline-block;width:40px;">&nbsp;</span>
+    <input class="input" id="span-row" style="width:520px;height:32px;">
+  </label>`;
+  it('does not bridge two real grid columns through a col-span-2 row', async () => {
+    const findings = await findingsFor(
+      `<body style="margin:0"><div data-theme="cairn-admin">
+        <div style="display:grid;grid-template-columns:200px 320px;column-gap:40px;row-gap:12px;width:560px;">
+          ${inlineField('col1-row1', 40)}
+          ${inlineField('col2-row1', 140)}
+          ${wideSpanRow}
+          ${inlineField('col1-row2', 40)}
+          ${inlineField('col2-row2', 140)}
+        </div>
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
   // register="stacked"'s own wrapper (`flex flex-col gap-label`) is itself a column container, so a
   // stacked field's control is grouped alone and never compared to a sibling: this is correct, since
   // a stacked control's left edge is fixed by its own container and cannot stagger.

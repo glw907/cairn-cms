@@ -75,4 +75,37 @@ describe('form-font-parity against a real browser', () => {
     );
     expect(findings).toEqual([]);
   });
+
+  // The walk is scoped to the theme root's own subtree (design ratchet Batch B): a control that
+  // sits outside every `[data-theme]` wrapper has no root to be compared against and must not be
+  // read as a mismatch, even when its own font-family plainly differs.
+  it('ignores a mismatched control that renders outside the theme root', async () => {
+    const findings = await findingsFor(
+      `<style>
+        [data-theme='cairn-admin'] { font-family: "Figtree", system-ui, sans-serif; }
+      </style>
+      <body>
+        <textarea id="outside-textarea" style="font-family: monospace;"></textarea>
+        <div data-theme="cairn-admin"></div>
+      </body>`
+    );
+    expect(findings).toEqual([]);
+  });
+
+  // A control that opts into its own face on purpose is a mismatch by construction, not by
+  // omission: CairnMediaLibrary's slug and type-to-confirm inputs, and MarkdownEditor's no-JS
+  // fallback textarea, all carry one of these two class shapes.
+  it('exempts a control carrying an explicit face class from the parity check', async () => {
+    const findings = await findingsFor(
+      `<style>
+        [data-theme='cairn-admin'] { font-family: "Figtree", system-ui, sans-serif; }
+      </style>
+      <body><div data-theme="cairn-admin">
+        <input id="mono-input" class="input font-mono" style="font-family: monospace;">
+        <textarea id="arbitrary-face-textarea" class="textarea font-[family-name:var(--font-editor)]"
+          style="font-family: monospace;"></textarea>
+      </div></body>`
+    );
+    expect(findings).toEqual([]);
+  });
 });

@@ -12,6 +12,15 @@
 // stack) is deliberate: a control that resolves the same primary face as the root, with a different
 // fallback chain behind it, is not the regression this rule exists to catch.
 //
+// SCOPE (design ratchet Batch B fix). The walk is scoped to the theme root's own subtree, not the
+// whole document: a page that mounts more than one theme wrapper, or that renders unthemed chrome
+// alongside the admin surface, has no business comparing a control outside the root against a face
+// declared on the root. A control that opts INTO a different face on purpose (`font-mono`, or an
+// arbitrary `font-[family-name:...]` class) is exempt for the same reason a color the developer
+// chose deliberately is never a regression: CairnMediaLibrary's slug input and its two
+// type-to-confirm inputs, and MarkdownEditor's no-JS fallback textarea, all declare their own
+// monospace face this way and are mismatches by construction, not by omission.
+//
 // Registered PROVISIONALLY at advisory (design ratchet Task 5). The intended tier is error, since a
 // consumer whose sheet never loaded is exactly the silent-fail-open shape this engine exists to
 // rule out, but a rule validated only on this workstation is not trusted to gate a build until Task
@@ -51,6 +60,15 @@ function readFontParity(): FontParityResult {
     return first.trim().replace(/^['"]|['"]$/g, '').toLowerCase();
   }
 
+  /** A control carrying a class that declares its own face on purpose, exempt from the reset check. */
+  function hasExplicitFace(el: Element): boolean {
+    for (const className of el.classList) {
+      if (className === 'font-mono') return true;
+      if (className.startsWith('font-[family-name:')) return true;
+    }
+    return false;
+  }
+
   // The admin's own theme shape: `data-theme` sits on a bare wrapper inside body
   // (docs/internal/admin-design-system.md's load-bearing rule), which is where the reset's own
   // body-face declaration lands. A page with no such wrapper (a bespoke route rendering outside the
@@ -63,8 +81,9 @@ function readFontParity(): FontParityResult {
 
   const mismatches: FontMismatch[] = [];
   if (rootFamily !== '') {
-    for (const el of document.querySelectorAll('input, select, textarea, button')) {
+    for (const el of themeRoot.querySelectorAll('input, select, textarea, button')) {
       if (!isVisible(el)) continue;
+      if (hasExplicitFace(el)) continue;
       const family = firstFamily(getComputedStyle(el).fontFamily);
       if (family === '' || family === rootFamily) continue;
       mismatches.push({ selector: signature(el), family });

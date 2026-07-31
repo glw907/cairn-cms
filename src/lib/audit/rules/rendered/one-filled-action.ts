@@ -5,6 +5,10 @@
 // New button in <nav> are on different surfaces and both stand. This is the ratified register rule
 // ("the portal's first filled button"), made mechanical.
 //
+// Each landmark is its own surface, keyed by its own DOM position, not by its tag name: a page with
+// two `<nav>` rails partitions into two surfaces, never one shared `'nav'` surface (design ratchet
+// Batch B fix; latent until now only because every shipped nav uses `btn-active`, never a real fill).
+//
 // The partition RULING (Geoff, 2026-07-30, SETTLED, not re-litigated): <nav> and <aside> partition;
 // the topmost open dialog layer partitions; <header>, <footer>, and <main> itself do NOT. The rule
 // exists to stop two controls both claiming to be the action, and a DOM boundary between a page
@@ -81,12 +85,20 @@ function collectFilledCandidates(): FilledCandidate[] {
   const layerRoot: Element = openLayers.length > 0 ? openLayers[openLayers.length - 1] : document.body;
   const layerId = openLayers.length === 0 ? 'body' : selectorFor(layerRoot);
 
+  // Every landmark inside the layer, keyed by its own position: a page with two `<nav>` rails (a
+  // primary rail and a secondary one, say) must not merge them into one surface just because they
+  // share a tag name. Batch B fix: the previous key was `landmark.tagName.toLowerCase()` alone, so
+  // every `<nav>` on a page collapsed onto the same `'nav'` surface no matter how many there were.
+  const landmarks = Array.from(layerRoot.querySelectorAll(LANDMARK_SELECTOR));
+
   function surfaceFor(el: Element): string {
     const landmark = el.closest(LANDMARK_SELECTOR);
     // A landmark ABOVE the current layer (an enclosing <main> a dialog happens to be nested inside)
     // does not partition the dialog's own surface; `contains` is false for an ancestor, so this
     // falls through to the layer id in exactly that case.
-    if (landmark && layerRoot.contains(landmark)) return landmark.tagName.toLowerCase();
+    if (landmark && layerRoot.contains(landmark)) {
+      return `${selectorFor(landmark)}#${landmarks.indexOf(landmark)}`;
+    }
     return layerId;
   }
 

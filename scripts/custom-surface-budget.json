@@ -16,7 +16,7 @@
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\\:drawer-open > .drawer-toggle ~ .drawer-side",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded",
           ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet",
-          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked :where(.input, .select, .textarea)",
+          ":where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-field-stacked > :where(.input, .select, .textarea)",
           "[data-theme='cairn-admin-dark'] .btn-active",
           "[data-theme='cairn-admin-dark'] .btn-active:hover"
         ],

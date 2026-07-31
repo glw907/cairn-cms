@@ -8,14 +8,19 @@
   proven inside the engine's own `FieldInput`; `'inline'` keeps the prior label-beside-control
   layout. A `.cairn-field-stacked` sheet hook fills a stacked control to its container, so a
   consumer cannot forget `w-full`, and a stacked field in a wide multi-column grid track fills its
-  own cell edge-to-edge instead of clamping to daisyUI's fixed 20rem default. **`'stacked'` is now
+  own cell edge-to-edge instead of clamping to daisyUI's fixed 20rem default. The hook matches only
+  a control that's a direct child of the label (fix A2, closes finding 5 from the Assets-trial
+  harvest), not any descendant, so a consumer composing a compact row, a flex wrapper holding two
+  or more narrower controls side by side, inside a stacked field can nest it and keep the row's own
+  width choice instead of every nested control being forced to fill the row. **`'stacked'` is now
   the default**, a deliberate breaking change (ratified by Geoff 2026-07-30): defaulting to inline
   reproduces the harvest's trap shape, where the register that staircases in a grid stays the
-  effortless path. `docs/reference/admin-fields.md` documents both registers;
-  `skills/cairn-admin-screens/references/form-anatomy.md`'s composition-width guidance now points
-  at `register="stacked"` by name. **Consumers must:** pass `register="inline"` on any
+  effortless path. `docs/reference/admin-fields.md` documents both registers and the compact-row
+  escape; `skills/cairn-admin-screens/references/form-anatomy.md`'s composition-width guidance now
+  points at `register="stacked"` by name. **Consumers must:** pass `register="inline"` on any
   `FieldLabel`/`TextField`/`SelectField` call whose inline label-beside-control layout should
-  survive the upgrade; every other call renders the new stacked default.
+  survive the upgrade; every other call renders the new stacked default. A stacked field composing
+  a compact row needs no extra care: the width hook already reaches only its direct child.
 
 - `cairn-audit`'s rendered rule set gains three geometry rules (design ratchet Task 5, the
   mechanical halves of findings 1, 3, and 6), the cap the plan set at three: `form-font-parity`

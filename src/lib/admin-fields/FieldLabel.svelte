@@ -33,14 +33,12 @@ primitive to match. `SelectField` and `TextField` both wrap it internally.
   let { label, children, register = 'stacked' }: Props = $props();
 </script>
 
-{#if register === 'inline'}
-  <label class="flex items-center gap-1.5 type-body">
-    <span class="text-muted">{label}</span>
-    {@render children()}
-  </label>
-{:else}
-  <label class="flex flex-col gap-label cairn-field-stacked">
-    <span class="type-body font-medium">{label}</span>
-    {@render children()}
-  </label>
-{/if}
+<!-- ONE label element, never a two-branch {#if} (fix A2, closes finding 2): the two registers used
+     to render as separate {#if}/{:else} branches, so a live register flip destroyed and recreated
+     this label, including the composed control inside `children()`, dropping the control's focus
+     and any in-progress IME composition. A single element with a conditional class list keeps the
+     control's own DOM node stable across the flip. -->
+<label class={register === 'inline' ? 'flex items-center gap-1.5 type-body' : 'flex flex-col gap-label cairn-field-stacked'}>
+  <span class={register === 'inline' ? 'text-muted' : 'type-body font-medium'}>{label}</span>
+  {@render children()}
+</label>

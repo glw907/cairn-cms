@@ -85,7 +85,9 @@ The packaged admin sheet now ships a `base` cascade layer, so a bare form contro
 `fieldset`/`legend`, or daisyUI's own `.list` container renders the admin's own face instead of
 the browser's UA default: a bare `<textarea>` no longer falls back to the browser's monospace
 font and resizes vertically only, a native `<dialog>` loses Chrome's UA border frame, and
-daisyUI's `.list` loses its 40px bullet-marker gutter.
+daisyUI's `.list` loses its 40px bullet-marker gutter. Cascade layers merge by name across
+stylesheets, so cairn's `base` layer merges with a `base` layer your own Tailwind build declares.
+Your import order decides which rule wins within that merged layer.
 
 The `cairn-admin-screens` skill's own reference docs are now checked against the built admin
 sheet: every class token a worked example teaches has to actually compile. `form-anatomy.md`'s

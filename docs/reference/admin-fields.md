@@ -100,12 +100,22 @@ described above, defaulting to `'stacked'`.
 Stability tier: Extension API.
 
 ```ts
-let { label, children }: { label: string; children: Snippet };
+let { label, children, register }: {
+  label: string;
+  children: Snippet;
+  register?: 'inline' | 'stacked';
+};
 ```
 
-The label wrapper `SelectField` and `TextField` both compose internally: a small single-line label
-beside its control. Compose it directly around a bare custom control (an admin field this subpath
-does not yet cover) to keep the same label rhythm.
+The label wrapper `SelectField` and `TextField` both compose internally. Compose it directly
+around a bare custom control (an admin field this subpath does not yet cover) to keep the same
+label rhythm. `register` picks the label register. `'stacked'` is the default:
+the label sits on its own line preceding the control, which fills to its container. `'inline'`
+puts the label beside the control on one line instead, muted, for a genuinely control-adjacent
+composition. A control that's a direct child of a stacked `FieldLabel` fills the label's own
+width. A control nested one level deeper, such as a compact row of two or more controls side by
+side, keeps its own width instead, since the stacked register's width hook only reaches a direct
+child.
 
 ```svelte
 <script lang="ts">

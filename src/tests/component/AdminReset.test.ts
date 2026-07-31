@@ -60,4 +60,13 @@ describe('the admin sheet base reset layer', () => {
     expect(getComputedStyle(textarea).resize).toBe('vertical');
     textarea.remove();
   });
+
+  // Fix A2 (closes finding 6 from the Assets-trial harvest): scripts/admin-css.input.css declares
+  // the layer order up front, but a bare `@layer name, name, ...;` ordering statement with no rules
+  // never survived the Tailwind/lightningcss pipeline, so the shipped sheet's layer precedence fell
+  // back to accidental file order (whichever named layer's populated block happened to appear
+  // first). build-admin-css.mjs now re-declares the order explicitly, first in the output.
+  it('ships an explicit theme/base/components/utilities layer order, first in the sheet', () => {
+    expect(compiledAdminCss.startsWith('@layer theme, base, components, utilities;')).toBe(true);
+  });
 });

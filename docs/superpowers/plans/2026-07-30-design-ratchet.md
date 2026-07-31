@@ -461,13 +461,14 @@ C before it can ship, else it drops per the plan's fix-or-drop rule.
 
 **Review triage (two Opus reviews, findings adjudicated):**
 
-- **Fix A1 (blocker, dispatched, may still be in flight — VERIFY ITS COMMIT FIRST).** The
-  dark `.btn-active` flat `--btn-bg` discards the variant channel, kills hover/press, and
-  makes EditorToolbar's ghost-paired tablist worse. Ratified repair: dark mixes toward
-  white keeping `var(--btn-color, --color-base-200)` (step 0.05-0.10 oklch L), companion
-  hover/press/border variables verified against the built sheet, EditorToolbar unselected
-  tabs move `btn-ghost` → plain `btn`, BtnActiveDarkGround fixtures extended (primary hue
-  preserved; hover changes bg).
+- **Fix A1: DONE, commit `f790ffcf` (2026-07-31).** The dark `.btn-active` repair landed
+  per the ratified design: variant-preserving `color-mix(in oklab, var(--btn-color,
+  var(--color-base-200)), oklch(100% 0 0) 8%)` (measured step 0.0676 oklch L vs light's
+  0.068; primary variant keeps chroma 0.138), `--btn-border` matched to the fill, an
+  unlayered `:hover` companion at 14% (measured distinct, 0.2733), EditorToolbar unselected
+  tabs moved `btn-ghost` → plain `btn`, three BtnActiveDarkGround fixtures red-then-green,
+  full gate + custom-surface green. Hover-only companion was the deliberate scope (press
+  feedback on the selected control was never a measured defect).
 - **Fix A2 (sheet + components, one dispatch):** (1) stacked width hook `.cairn-field-stacked
   :where(...)` → child combinator `>` so nested compact rows escape; document the width
   escape in `docs/reference/admin-fields.md` and the CHANGELOG `Consumers must:` line.

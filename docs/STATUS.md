@@ -14,7 +14,33 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-29 evening: the voice sitting; 0.91.1 SHIPPED)
+## Immediate next action (2026-07-30: the design-ratchet close-out; release HELD)
+
+**The design-ratchet pass is IN FLIGHT** on the `design-ratchet` worktree
+(`.claude/worktrees/design-ratchet`), converting the six ASC Assets-trial harvest findings
+into engine repairs (UA reset layer, stacked field register with a ratified breaking default
+flip, the settled `one-filled-action` partition ruling, three corpus-validated geometry
+rules, the grammar ladder in `enforced-design.md`). Tasks 1-5 and 7 are committed; the
+corpus matrix ran against the three ASC SHAs; two Opus reviews are triaged. Remaining: fix
+batches A1 (dark `.btn-active` repair, may be mid-flight in the worktree — verify its commit
+and that no implementer is live before dispatching more), A2, B, C, then the CI leg, the
+pass-end ritual, and the merge. **Geoff's calls, all ratified 2026-07-30: push when
+complete, do NOT release** (the cut waits for the next pass, the optical-centering ratchet,
+and rolls both windows); churn is free until the public beta; a minor is the right size when
+the cut comes.
+
+**Resume prompt** (fresh session, from `~/Projects/cairn-cms`, Opus 5 recommended — the
+remainder is execution-shaped; the post-mortem and the next pass's plan can return to a
+Fable sitting): "Resume the design-ratchet pass close-out. Read the section 'Close-out
+state and remaining work (2026-07-30 handoff)' in
+`docs/superpowers/plans/2026-07-30-design-ratchet.md` (on the `design-ratchet` branch) and
+execute it top to bottom. Verify fix A1's commit landed and the worktree is clean before
+dispatching A2."
+
+The prior entry (the cairn.pub voice sitting) stays queued behind this close-out and the
+optical-centering pass; its resume prompt below remains valid.
+
+## Superseded 2026-07-30 (the voice sitting, still queued)
 
 **The 0.91.1 hotfix is SHIPPED and issue #12 is closed.** The mechanical diff of the published
 0.90.1 and 0.91.0 sheets (the audit's own `parseSheet` tokenizer) found NINETEEN dropped

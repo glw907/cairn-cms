@@ -33,7 +33,7 @@ primitive to match. `SelectField` and `TextField` both wrap it internally.
   let { label, children, register = 'stacked' }: Props = $props();
 </script>
 
-<!-- ONE label element, never a two-branch {#if} (fix A2, closes finding 2): the two registers used
+<!-- ONE label element, never a two-branch {#if} (fix A2, item 2): the two registers used
      to render as separate {#if}/{:else} branches, so a live register flip destroyed and recreated
      this label, including the composed control inside `children()`, dropping the control's focus
      and any in-progress IME composition. A single element with a conditional class list keeps the

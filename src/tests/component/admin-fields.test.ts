@@ -19,11 +19,11 @@ describe('FieldLabel', () => {
     expect(screen.container.querySelector('input[name="x"]')).not.toBeNull();
   });
 
-  // Design ratchet fix A2 (closes finding 2): the two registers used to render as separate
-  // {#if}/{:else} branches, so a live register flip destroyed and recreated the label, including
-  // the composed control, dropping the control's focus and any in-progress IME composition. This
-  // fails against the two-branch shape (a new input element and a cleared document.activeElement)
-  // and passes once FieldLabel renders one label with a conditional class list.
+  // Design ratchet fix A2, item (2): the two registers used to render as separate {#if}/{:else}
+  // branches, so a live register flip destroyed and recreated the label, including the composed
+  // control, dropping the control's focus and any in-progress IME composition. This fails against
+  // the two-branch shape (a new input element and a cleared document.activeElement) and passes
+  // once FieldLabel renders one label with a conditional class list.
   it('keeps the control element and its focus across a live register flip', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
     const screen = render(FieldLabel, { label: 'Instructor', children: control, register: 'inline' });
@@ -36,6 +36,10 @@ describe('FieldLabel', () => {
     const inputAfter = screen.container.querySelector('input[name="x"]') as HTMLInputElement;
     expect(inputAfter).toBe(input);
     expect(document.activeElement).toBe(input);
+    // Confirms the rerender actually applied the new register, so this test cannot pass vacuously
+    // against a component that ignores the prop.
+    const label = screen.container.querySelector('label')!;
+    expect(label.className).toContain('cairn-field-stacked');
   });
 });
 
@@ -116,7 +120,7 @@ describe('the stacked register', () => {
     expect(first.width).toBeGreaterThan(320);
   });
 
-  // Fix A2 (closes finding 5): the width hook's selector matched EVERY descendant control, so a
+  // Fix A2, item (1): the width hook's selector matched EVERY descendant control, so a
   // compact row nested inside a stacked label (two controls side by side, rather than one control
   // composing the label directly) had each control forced to `width: 100%` of the row, which
   // flex-shrink then had to fight over, instead of each control keeping daisyUI's own 20rem

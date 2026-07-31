@@ -9,9 +9,9 @@
   layout. A `.cairn-field-stacked` sheet hook fills a stacked control to its container, so a
   consumer cannot forget `w-full`, and a stacked field in a wide multi-column grid track fills its
   own cell edge-to-edge instead of clamping to daisyUI's fixed 20rem default. The hook matches only
-  a control that's a direct child of the label (fix A2, closes finding 5 from the Assets-trial
-  harvest), not any descendant, so a consumer composing a compact row, a flex wrapper holding two
-  or more narrower controls side by side, inside a stacked field can nest it and keep the row's own
+  a control that's a direct child of the label (fix A2, item 1), not any descendant, so a
+  consumer composing a compact row, a flex wrapper holding two or more narrower controls side by
+  side, inside a stacked field can nest it and keep the row's own
   width choice instead of every nested control being forced to fill the row. **`'stacked'` is now
   the default**, a deliberate breaking change (ratified by Geoff 2026-07-30): defaulting to inline
   reproduces the harvest's trap shape, where the register that staircases in a grid stays the

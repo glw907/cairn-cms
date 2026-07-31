@@ -61,12 +61,17 @@ describe('the admin sheet base reset layer', () => {
     textarea.remove();
   });
 
-  // Fix A2 (closes finding 6 from the Assets-trial harvest): scripts/admin-css.input.css declares
-  // the layer order up front, but a bare `@layer name, name, ...;` ordering statement with no rules
-  // never survived the Tailwind/lightningcss pipeline, so the shipped sheet's layer precedence fell
-  // back to accidental file order (whichever named layer's populated block happened to appear
-  // first). build-admin-css.mjs now re-declares the order explicitly, first in the output.
-  it('ships an explicit theme/base/components/utilities layer order, first in the sheet', () => {
-    expect(compiledAdminCss.startsWith('@layer theme, base, components, utilities;')).toBe(true);
+  // Fix A2 item (5): scripts/admin-css.input.css declares the layer order up front, but a bare
+  // `@layer name, name, ...;` ordering statement with no rules never survives the
+  // Tailwind/lightningcss pipeline, so the statement is dropped and precedence then rides on
+  // lightningcss's own emission order for the populated blocks. That order also includes an
+  // undeclared `@layer properties { ... }` block (Tailwind's `--tw-*` fallback initializers), which
+  // registers after every declared layer and would outrank `utilities`. build-admin-css.mjs
+  // re-declares the full order explicitly, `properties` first, pinning `properties` ahead of
+  // `utilities` regardless of file order.
+  it('ships an explicit properties/theme/base/components/utilities layer order, first in the sheet', () => {
+    expect(compiledAdminCss.startsWith('@layer properties, theme, base, components, utilities;')).toBe(
+      true,
+    );
   });
 });

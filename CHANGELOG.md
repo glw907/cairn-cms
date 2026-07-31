@@ -92,6 +92,16 @@
 
   Consumers must: nothing.
 
+- The `base` reset above scoped and narrowed two of its rules (design ratchet D2 items 1 and 2,
+  reviewer triage): the `dialog` border reset now targets `dialog:where(.modal)`, the shape
+  every cairn dialog renders, so a bare `<dialog>` in a consumer's own custom admin route keeps
+  its UA border rather than losing its only visual boundary (WCAG 1.4.11); and the `.list`
+  reset drops `list-style: none`, which strips list semantics from the accessibility tree in
+  WebKit/VoiceOver (WCAG 1.3.1) and was never load-bearing, since daisyUI's own `.list-row`
+  renders `display: grid` and so never generates a marker box regardless of `list-style`.
+
+  Consumers must: nothing.
+
 - The `cairn-admin-screens` skill's own reference docs are now gated against the built admin
   sheet: a new unit test extracts every class token the references teach (a static `class="..."`
   attribute inside a fenced example, an inline code span that is a pure class list) and asserts

@@ -12,7 +12,9 @@ import StackedCompactRow from './_StackedCompactRow.svelte';
 import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 
 describe('FieldLabel', () => {
-  it('renders the label beside its control', async () => {
+  // No register prop, so this renders the 'stacked' default (design ratchet D2 item 6): the name
+  // asserts only that the label text and the composed control both render, not their position.
+  it('renders the label with its control', async () => {
     const control = createRawSnippet(() => ({ render: () => '<input name="x" />' }));
     const screen = render(FieldLabel, { label: 'Instructor', children: control });
     await expect.element(screen.getByText('Instructor')).toBeInTheDocument();

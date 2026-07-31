@@ -40,8 +40,8 @@ async function findingsFor(html: string): Promise<RenderedFinding[]> {
 }
 
 describe('container-inset-asymmetry against a real browser', () => {
-  // The violating direction: a one-sided padding utility, the corpus's own 57px-left/8px-right
-  // gutter, reads as content pushed right.
+  // The violating direction: a constructed one-sided padding utility (not the corpus's own
+  // shape, which the bare-.list fixture below pins) reads as content pushed right.
   it('fires when a card-shell content region sits far closer to its right edge than its left', async () => {
     const findings = await findingsFor(
       `<body style="margin:0"><div data-theme="cairn-admin">

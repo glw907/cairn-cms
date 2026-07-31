@@ -19,7 +19,7 @@ this component passes straight through.
     type?: 'text' | 'search' | 'email' | 'url';
     /** A placeholder shown while the field is empty. */
     placeholder?: string;
-    /** The label register; see `FieldLabel`. Defaults to `stacked`. */
+    /** The label register, forwarded to `FieldLabel`, whose own default prop owns the value. */
     register?: 'inline' | 'stacked';
   }
 

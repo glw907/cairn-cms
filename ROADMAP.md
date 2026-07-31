@@ -260,6 +260,40 @@ the named human gates only):**
     Batching the sentinel probe onto `documentElement` costs one recalc instead of N. Wall-clock
     only, on a consumer's CI.
 
+- **The design ratchet's own reviewer-triage rule repairs (D2, 2026-07-31)**, filed as promotion
+  prerequisites rather than fixed at the gate.
+  `field-edge-alignment`'s clustering compares each control's left edge only to the PREVIOUS
+  member in the sorted sequence, not to a fixed column anchor, so a chain of sub-`CLUSTER_GAP_PX`
+  gaps can drift a whole run into one merged column (a false positive on a legitimate
+  multi-column stagger) while a single gap over 80px splits what was really one staggered column
+  into two (a silent miss). Its finding message also always recommends `register="stacked"`,
+  a real remedy only for a control composed inside `FieldLabel`, and a wrong one for a control
+  the rule matches (`.input`/`.select`/`.textarea`) that was never wrapped that way.
+  `container-inset-asymmetry` reads a raw inset with no floor, so an absolutely positioned or
+  negative-margin child can drive the computed inset negative and the asymmetry math with it;
+  clamp with `Math.max(0, inset)` on each side. `one-filled-action` reimplements its own
+  unescaped `selectorFor` instead of the shared `helpers.signature` the other rendered rules
+  install, so its surface key is not reliably a parseable CSS selector, and it keys a surface as
+  `` `${selector}#${landmarks.indexOf(landmark)}` ``, which prints the sentinel `#-1` whenever the
+  topmost open layer is itself a `nav`/`aside` landmark (`landmarks` is queried from the layer
+  root's descendants only, so the layer's own root element is never in the list its own index is
+  read against). `form-font-parity` (already advisory, `docs/reference/cairn-audit.md`) walks
+  only the first `[data-theme='cairn-admin']`/`[data-theme='cairn-admin-dark']` wrapper on the
+  page, so a page mounting more than one is only partly checked, and its explicit-face exemption
+  net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
+  and Tailwind 4's `font-(family-name:--x)` shorthand.
+
+- **Two design-system gaps found in the same triage.** `Pagination`'s selected page
+  (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps
+  color and carries `aria-current="page"` for assistive technology, but a sighted user who
+  cannot distinguish the fill has no visual cue at all, the same WCAG 1.4.1 shape
+  `one-filled-action`'s own dark-theme hairline fix (CHANGELOG `## Unreleased`) already solved
+  for the segmented control; give the selected page the same non-color cue. The legend padding
+  reset (`cairn-admin.css`'s `base` layer, design ratchet Task 1) is repaired per call site
+  rather than structurally: `ComponentForm.svelte` carries its own `px-1` on the one legend that
+  needed it, so the next fieldset that needs the same visual balance has to rediscover the fix
+  rather than inherit it.
+
 - **The engine debt and rule repairs corpus C confirmed** (ASC authenticated-admin calibration,
   2026-07-28; evidence and per-item mechanisms in
   `docs/internal/2026-07-design-infrastructure-audit-calibration.md` section 12). Same discipline

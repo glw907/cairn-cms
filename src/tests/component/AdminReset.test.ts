@@ -7,7 +7,11 @@ import compiledAdminCss from '../../../dist/components/cairn-admin.css?inline';
 // Design ratchet Task 1 (closes findings 1 and 6): the packaged admin sheet ships no user-agent
 // reset, so a bare textarea renders UA monospace, a native <dialog> carries Chrome's UA border
 // frame, and daisyUI's own .list container keeps the UA's 40px bullet gutter. This suite proves
-// the new `base` cascade layer fixes each one against the REAL compiled sheet.
+// the new `base` cascade layer fixes each one against the REAL compiled sheet. D2 items 1 and 2
+// (2026-07-31) narrowed the reset: the dialog border rule is scoped to dialog.modal so a bare
+// consumer <dialog> keeps its UA border (WCAG 1.4.11), and the .list rule dropped list-style:
+// none since it strips list semantics from the accessibility tree in WebKit/VoiceOver (WCAG
+// 1.3.1) and was never load-bearing (.list-row's own display: grid already suppresses markers).
 describe('the admin sheet base reset layer', () => {
   let sheet: HTMLStyleElement;
 
@@ -45,11 +49,36 @@ describe('the admin sheet base reset layer', () => {
     dialog.remove();
   });
 
+  // D2 item 2: a bare consumer <dialog> with no .modal class (a custom admin route's own
+  // dialog, never one of cairn's own) must keep the UA border, since cairn's modal shape
+  // (.modal-box) carries its own border in the components layer and a bare dialog has nothing
+  // else to draw one (WCAG 1.4.11).
+  it('leaves the UA border frame on a bare dialog with no .modal class', () => {
+    const dialog = document.createElement('dialog');
+    document.body.appendChild(dialog);
+    const style = getComputedStyle(dialog);
+    const hasNoBorder = style.borderStyle === 'none' || parseFloat(style.borderTopWidth) === 0;
+    expect(hasNoBorder).toBe(false);
+    dialog.remove();
+  });
+
   it('drops the UA bullet gutter on a ul.list container', () => {
     const list = document.createElement('ul');
     list.className = 'list';
     document.body.appendChild(list);
     expect(getComputedStyle(list).paddingInlineStart).toBe('0px');
+    list.remove();
+  });
+
+  // D2 item 1: list-style: none was dropped from the .list reset since it strips list
+  // semantics from the accessibility tree in WebKit/VoiceOver (WCAG 1.3.1). This test proves
+  // the reset no longer sets it, rather than asserting a marker renders (jsdom does not lay
+  // out list markers, so a visual check is not possible in this harness).
+  it('does not set list-style on a ul.list container', () => {
+    const list = document.createElement('ul');
+    list.className = 'list';
+    document.body.appendChild(list);
+    expect(getComputedStyle(list).listStyleType).not.toBe('none');
     list.remove();
   });
 

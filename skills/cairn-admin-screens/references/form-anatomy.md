@@ -112,7 +112,11 @@ mobile breakpoint alone:
   daisyUI's fixed 20rem default the way an un-widened inline control can. The hook reaches only
   a direct child of the label, so a compact row nested one level deeper, two or more controls
   composed side by side inside a stacked field, keeps each control's own width instead of being
-  forced to fill the row (`docs/reference/admin-fields.md`'s `FieldLabel` section).
+  forced to fill the row (`docs/reference/admin-fields.md`'s `FieldLabel` section). `FieldLabel`
+  renders one wrapping `<label>` with no `for`, and a wrapping label only associates with its
+  *first* labelable descendant, so only the first control in a compact row picks up the
+  wrapping label's accessible name. Give every control after the first its own accessible name
+  (its own `<label>` or an `aria-label`), or the row ships unlabeled controls.
 - **If `register="inline"` is kept**, give the label span a floor it can't donate away:
   either `white-space: nowrap` on the label (the row itself may still wrap as a whole, which
   is a layout choice, not a mid-word label break), or size the grid track to comfortably fit

@@ -26,7 +26,7 @@ field vocabulary grows one real consumer at a time. `FieldLabel`'s header commen
     value: string;
     /** The option list, in display order. */
     options: SelectFieldOption[];
-    /** The label register; see `FieldLabel`. Defaults to `stacked`. */
+    /** The label register, forwarded to `FieldLabel`, whose own default prop owns the value. */
     register?: 'inline' | 'stacked';
   }
 

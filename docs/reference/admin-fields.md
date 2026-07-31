@@ -117,6 +117,12 @@ width. A control nested one level deeper, such as a compact row of two or more c
 side, keeps its own width instead, since the stacked register's width hook only reaches a direct
 child.
 
+`FieldLabel` renders one wrapping `<label>` with no `for` attribute, and the browser associates a
+wrapping label with only the *first* labelable descendant it contains. In a compact row of two or
+more controls, only the first control picks up the wrapping label's accessible name; every
+control after it has none. Give each control after the first its own accessible name, either its
+own `<label>` (visually hidden if the row's own layout already reads clearly) or an `aria-label`.
+
 ```svelte
 <script lang="ts">
   import { FieldLabel } from '@glw907/cairn-cms/admin-fields';

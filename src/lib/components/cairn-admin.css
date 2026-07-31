@@ -452,18 +452,25 @@
   }
 
   /* 5. Kills the Chrome UA `border: solid currentColor` that paints a frame around every native
-     dialog. */
-  dialog {
+     dialog. Scoped to `dialog:where(.modal)`, the shape every cairn dialog renders (every
+     <dialog> in this package carries class="modal"), never a bare dialog: a bare consumer
+     <dialog> in a custom admin route keeps the UA border so it is never left with no boundary
+     at all (WCAG 1.4.11; design ratchet D2 item 2). */
+  dialog:where(.modal) {
     border: none;
   }
 
   /* 6. The UA's 40px bullet-marker reservation on daisyUI's own `.list` container. Scoped to
      `.list`, never a bare `ul`/`ol`: the admin wrapper hosts the editor's rendered markdown
-     preview, and a bare list-element reset would strip its bullets too. */
+     preview, and a bare list-element reset would strip its bullets too. No list-style reset:
+     `list-style: none` removes list semantics from the accessibility tree in WebKit/VoiceOver
+     (WCAG 1.3.1), and it is not needed here anyway. daisyUI's own `.list-row` renders
+     `display: grid`, and a list item whose used display value is not one of the list-item
+     variants generates no marker box regardless of list-style, so the padding reset alone
+     already leaves no visible gutter and no stray marker (design ratchet D2 item 1). */
   ul.list,
   ol.list {
     padding-inline-start: 0;
-    list-style: none;
   }
 }
 

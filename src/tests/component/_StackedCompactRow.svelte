@@ -1,6 +1,6 @@
 <!--
 @component
-Test harness (design ratchet fix A2, closes finding 5): a stacked-register `FieldLabel` wrapping a
+Test harness (design ratchet fix A2, item 1): a stacked-register `FieldLabel` wrapping a
 compact row, a flex wrapper holding two controls side by side, rather than one control that
 composes the label directly. Proves the stacked register's width hook applies only to a control
 that is a direct child of the label: a control nested one level deeper, inside a compact row,

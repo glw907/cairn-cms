@@ -1,10 +1,17 @@
 // cairn-audit's container-inset-asymmetry rule: the phantom-gutter detector (design ratchet Task 5,
 // the mechanical half of finding 1). A block container's rendered content should sit roughly as far
 // from its left edge as from its right; when it does not, the container reads as pushed off-center
-// even though nothing about its own box moved. The motivating shape is the ASC Assets-trial
-// harvest's own corpus finding: a native `<textarea>` inside a card carried a 57px left inset
-// against an 8px right one, an accidental one-sided padding utility rather than a deliberate
-// asymmetric layout.
+// even though nothing about its own box moved.
+//
+// PROVENANCE, measured against the running corpus rather than paraphrased from the harvest (design
+// ratchet fix C). The motivating shape is the ASC Assets-trial gutter on `/admin/club/asset-requests`:
+// a bare `<ul class="list">` keeping the user agent's own 40px bullet indent, which the published
+// sheet of that moment never reset, so the rule reads a 40px left inset against a 0px right one on
+// the `ul` itself. The harvest's headline number, 57px, was a different origin: the card's left edge
+// out to the row's text, which sums the card's border, that same 40px, and the row's own padding.
+// Localizing the asymmetry to the element that actually carries it is the point, since that is the
+// element a repair edits. Note the cause was a MISSING reset, not an author's one-sided utility;
+// both reach the same rendered result, and the finding text names both.
 //
 // SCOPE. A "block container" is cairn's own three content-holding recipes: `.card-shell` (the card
 // surface), `.list` (daisyUI's list container), and `.modal-box` (a dialog's own content box).
@@ -101,7 +108,8 @@ export const containerInsetAsymmetry: RenderedRule = {
       message:
         `renders a ${finding.leftInsetPx}px left inset against a ${finding.rightInsetPx}px right inset ` +
         `(content reads pushed ${finding.pushedRight ? 'right' : 'left'}). Check for a one-sided padding or ` +
-        `margin utility on this container, or on a wrapper immediately inside it.`,
+        `margin utility on this container, an unreset user-agent default such as a list's own bullet indent, ` +
+        `or either of those on a wrapper immediately inside it.`,
     }));
   },
 };

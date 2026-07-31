@@ -1,8 +1,9 @@
 // The container-inset-asymmetry rule against a real browser, in the shape browser-regressions.test.ts
 // establishes for this rule family. Design ratchet Task 5 (the mechanical half of finding 1): the
 // phantom-gutter detector, catching a card or list whose content sits closer to one edge than the
-// other. The 57px left inset against an 8px right one mirrors the ASC Assets-trial harvest's own
-// corpus measurement on `/admin/club/asset-requests` at 390.
+// other. The first fixtures below are constructed, an author's one-sided padding at a comfortable
+// margin over the threshold; the bare-`ul` one is the ASC Assets-trial corpus's real shape, with
+// its numbers taken from the rule's own output against the running site (design ratchet fix C).
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { chromium, type Browser } from 'playwright';
 import { resolveConfig } from '../../../../../lib/audit/config.js';
@@ -78,6 +79,27 @@ describe('container-inset-asymmetry against a real browser', () => {
     );
     expect(findings).toHaveLength(1);
     expect(findings[0].selector).toContain('gutter-list');
+  });
+
+  // The corpus's own shape, pinned from the live page rather than paraphrased (design ratchet fix
+  // C). The gutter on `/admin/club/asset-requests` was never an author's padding utility: the
+  // `<ul class="list">` carried NO author inset at all and kept the user agent's own 40px bullet
+  // indent, which the published sheet of that moment never reset. So this fixture declares no
+  // padding, and the numbers it asserts are the ones the rule reported against the running site.
+  // Every other fixture here sets an explicit one-sided padding, which would let a future rewrite
+  // that only reads author-declared insets stay green while missing the defect the rule exists for.
+  it('fires on a bare .list keeping the user agent bullet indent, with no author padding at all', async () => {
+    const findings = await findingsFor(
+      `<body style="margin:0"><div data-theme="cairn-admin">
+        <ul class="list" id="ua-indent-list" style="display:flex;flex-direction:column;width:400px;">
+          <li style="display:grid;">Mooring &middot; Kelleher household</li>
+          <li style="display:grid;">Boat storage &middot; Vaara household</li>
+        </ul>
+      </div></body>`
+    );
+    expect(findings).toHaveLength(1);
+    expect(findings[0].selector).toContain('ua-indent-list');
+    expect(findings[0].message).toContain('40px left inset against a 0px right inset');
   });
 
   // A modest, sub-threshold asymmetry (ordinary sub-pixel rounding, a deliberate near-even design)

@@ -451,13 +451,59 @@ ladder in `enforced-design.md`; ASC staging file deleted, ASC commit `bd12d6c`).
 12px-type-role ROADMAP bullet was deliberately KEPT (its design ruling is still open; this
 pass's constraints forbade type-role changes).
 
-**Corpus matrix (three ASC SHAs, this worktree's audit build):** `one-filled-action` and
-`field-edge-alignment` matched every cell. `form-font-parity` fired at ALL states including
-`c340db6` — adjudicated CORRECT, not a rule defect: every corpus state runs the published
-pre-reset sheet, where buttons genuinely compute Arial; the quiet leg is proven on the NEW
-sheet (CI + local sweep), not the corpus. `container-inset-asymmetry` MISSED the known 57px
-gutter at `8778556` — unexplained by source reading; needs the empirical diagnosis in batch
-C before it can ship, else it drops per the plan's fix-or-drop rule.
+**Corpus matrix, REFRESHED after fix C (two ASC SHAs re-run end to end against this worktree's
+audit build, `8778556` on port 8811 and `c340db6` on 8812, both themes, all twelve configured
+pages):**
+
+| Rule | `8778556` | `c340db6` | Adjudication |
+| --- | --- | --- | --- |
+| `one-filled-action` (tightened) | FIRES, `/admin/club/assets`, error tier, "2 accent-filled controls compete on this surface", both themes | quiet | CORRECT |
+| `field-edge-alignment` (reclustered) | FIRES, `/admin/club/assets`, `select.select-sm` 2px and `input.input-sm` 40px off their column's leftmost control, both themes | quiet | CORRECT |
+| `container-inset-asymmetry` | FIRES, `/admin/club/asset-requests`, `ul.list` 40px left inset against 0px right, both themes | quiet | CORRECT |
+| `form-font-parity` (scoped + exempted) | FIRES, 406 findings across 12 pages | FIRES, 406 findings, identical distribution | CORRECT, per the standing adjudication below |
+
+`form-font-parity`'s adjudication is unchanged and re-confirmed: every corpus state runs the
+published pre-reset sheet, where buttons genuinely compute Arial, so both legs firing identically
+is the truth about those bytes and not a rule defect. Its quiet leg is proven on the NEW sheet (CI
+plus the local sweep), never on the corpus. Batch B's scoping and exemptions did not move the
+corpus count, which is the expected result: the four exempted controls are cairn's own, not ASC's.
+
+**`container-inset-asymmetry`'s earlier MISS was a corpus-leg defect, not a rule defect** (fix C,
+diagnosed empirically 2026-07-31). The rule file is byte-identical to the version the first matrix
+ran, `a640dea4` being its only commit, so the whole difference between MISS and FIRES is page
+state. The leg recipe as written stands up cairn's AUTH_DB and applies the CLUB_DB migrations, but
+seeds no club rows, so `asset_requests` was empty and `/admin/club/asset-requests` rendered its
+`EmptyState` branch. That branch contains no `<ul class="list">` at all, and the gutter lives only
+in the populated branch.
+
+The first run's own log settles it. In that run, identified as the `8778556` leg because its
+`field-edge-alignment` and `one-filled-action` findings match the recorded matrix cells value for
+value, `/admin/club/asset-requests` produced findings on exactly four selectors, and every one is
+admin-shell chrome: the sidebar's collapse button, a sidebar `btn-block` button, the command
+palette's `kbd`, and a sidebar `details`. Not one finding touches row content. The same page in
+this run, same SHA with the rows seeded, produces fourteen findings on the rows' own `join-item`
+buttons alone, plus the `ul.list` finding. The page the first matrix audited was the empty state.
+
+Proven from both ends on the live leg besides: with the two pending rows the page carries one
+`.list` and the rule fires; with the same rows flipped to `denied` it carries zero `.list` elements
+and renders "Nothing pending". A hand-evaluation of the rule's measurement against the live `.list`
+returned exactly what the harness reported, 40px left against 0px right, so the measurement logic
+was never in question.
+
+Two corrections follow, both landed: the rule's stated provenance was wrong (it named a textarea
+and a "57px against 8px" one-sided padding utility; the real shape is a bare `<ul class="list">`
+keeping the user agent's 40px bullet indent, which the harvest's own correction had already
+recorded, and 57px was the composite card-edge-to-text read, not what the rule measures), and the
+finding text now names an unreset user-agent default beside the one-sided utility. A regression
+test pins the bare-`ul` shape with no author padding, since every prior fixture declared an
+explicit one-sided padding and would have stayed green through a rewrite that only read
+author-declared insets.
+
+**Standing correction to the corpus-leg recipe:** a leg is not stood up until the screens under
+test render their POPULATED branch. Copying the ASC checkout's own `.wrangler/state` (which carries
+the trial's seeded `asset_requests` rows and a live owner session) is the cheap way there, and the
+hand recipe's migrations-only path silently produces empty states that make every data-dependent
+rule look quiet. An audit run over an empty state is not evidence.
 
 **Review triage (two Opus reviews, findings adjudicated):**
 
@@ -492,14 +538,13 @@ C before it can ship, else it drops per the plan's fix-or-drop rule.
   fixture. (3) `one-filled-action`: surface key is the landmark's TAG NAME, so all `<nav>`s
   merge into one surface; key per element (selector + index). Latent today only because
   Pagination uses `btn-active`.
-- **Fix C (empirical, after B):** recreate the `8778556` ASC leg (detached worktree, the
-  corpus-leg recipe in Task 6 — the legs' own notes add: apply cairn AUTH_DB migrations
-  0000/0001 by hand, apply all CLUB_DB migrations, seed owner session, `wrangler dev
-  --local`), instrument WHY `container-inset-asymmetry` stayed quiet on the asset-requests
-  gutter (hand-evaluate the rule's measurement in the page console against the live
-  `.list`), fix the rule, confirm fire at `8778556` and quiet at `c340db6` (re-run that leg
-  too for every rule B touched), and refresh the matrix in the post-mortem. If the miss
-  proves structural, DROP the rule per the plan; never tune blind.
+- **Fix C: DONE (2026-07-31).** Both legs recreated and re-run; the refreshed matrix and the
+  full diagnosis are in the corpus-matrix section above. Verdict: `container-inset-asymmetry`
+  is CORRECT and ships, the miss was an empty-state corpus leg rather than a rule defect, so
+  neither the fix-or-drop rule's fix branch nor its drop branch applied to the measurement
+  logic. Landed alongside it: a bare-`ul` regression test, corrected provenance in the rule
+  header and `docs/reference/cairn-audit.md`, a finding text that names an unreset user-agent
+  default, and the standing corpus-leg recipe correction above.
 - **Declined, recorded:** `color: inherit` on form controls stays (the preflight
   convention; deviating is its own surprise — the muted-wrapper scenario is real but rare
   and advisory rules surface it).

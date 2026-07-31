@@ -82,8 +82,9 @@ function collectFilledCandidates(): FilledCandidate[] {
   const openLayers = Array.from(document.querySelectorAll('dialog[open], [role="dialog"], [role="alertdialog"]')).filter(
     isRendered
   );
-  const layerRoot: Element = openLayers.length > 0 ? openLayers[openLayers.length - 1] : document.body;
-  const layerId = openLayers.length === 0 ? 'body' : selectorFor(layerRoot);
+  const topLayer: Element | undefined = openLayers[openLayers.length - 1];
+  const layerRoot: Element = topLayer ?? document.body;
+  const layerId = topLayer ? selectorFor(topLayer) : 'body';
 
   // Every landmark inside the layer, keyed by its own position: a page with two `<nav>` rails (a
   // primary rail and a secondary one, say) must not merge them into one surface just because they

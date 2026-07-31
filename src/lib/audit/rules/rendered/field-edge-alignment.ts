@@ -38,6 +38,9 @@
 import { ensurePageHelpers } from '../../rendered.js';
 import type { RenderedFinding, RenderedRule, RenderedRuleContext } from '../../rendered.js';
 
+/** The floor a control's left edge may trail its column's leftmost sibling by and still pass. */
+const TOLERANCE_PX = 1.5;
+
 /** One control whose left edge trails its column's leftmost sibling by more than the tolerance. */
 interface EdgeMismatch {
   selector: string;
@@ -48,8 +51,8 @@ interface EdgeMismatch {
 
 /**
  * Every form control whose left edge disagrees with its column's leftmost sibling, grouped by
- * nearest grid/flex-column ancestor and clustered by horizontal overlap. Playwright serializes this
- * into the page, so it stays self-contained: every helper is nested and the tolerance arrives
+ * nearest grid/flex-column ancestor and clustered by left-edge proximity. Playwright serializes
+ * this into the page, so it stays self-contained: every helper is nested and the tolerance arrives
  * through `args`.
  */
 function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] {
@@ -94,9 +97,7 @@ function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] 
       .map((el) => ({ el, rect: el.getBoundingClientRect() }))
       .sort((a, b) => a.rect.left - b.rect.left);
     // Cluster into columns by left-edge proximity along the sorted sequence: a new column starts
-    // whenever the gap to the previous edge exceeds the threshold. Wide enough to absorb an
-    // inline-register field's label-width stagger, narrow enough to never bridge two real grid
-    // columns, which are separated by a full column width plus its gutter.
+    // whenever the gap to the previous edge exceeds the threshold.
     const columns: { el: Element; rect: DOMRect }[][] = [];
     for (const item of items) {
       const current = columns[columns.length - 1];
@@ -124,9 +125,6 @@ function findFieldEdgeMismatches(args: { tolerancePx: number }): EdgeMismatch[] 
   }
   return findings;
 }
-
-/** The floor a control's left edge may trail its column's leftmost sibling by and still pass. */
-const TOLERANCE_PX = 1.5;
 
 export const fieldEdgeAlignment: RenderedRule = {
   id: 'field-edge-alignment',

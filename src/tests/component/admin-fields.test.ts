@@ -110,7 +110,7 @@ describe('the stacked register', () => {
 
   it('aligns two stacked controls sharing a grid column, regardless of label length, and fills the cell', async () => {
     const screen = render(StackedFieldGrid);
-    const inputs = Array.from(screen.container.querySelectorAll('input')) as HTMLInputElement[];
+    const inputs = Array.from(screen.container.querySelectorAll('input'));
     expect(inputs).toHaveLength(2);
     const [first, second] = inputs.map((el) => el.getBoundingClientRect());
     expect(first.left).toBeCloseTo(second.left, 1);
@@ -129,7 +129,7 @@ describe('the stacked register', () => {
   // the pre-fix descendant selector, the pair overflows the row and shrinks well past 400px each.
   it("lets a nested compact row keep daisyUI's default width instead of filling the label", async () => {
     const screen = render(StackedCompactRow);
-    const inputs = Array.from(screen.container.querySelectorAll('input')) as HTMLInputElement[];
+    const inputs = Array.from(screen.container.querySelectorAll('input'));
     expect(inputs).toHaveLength(2);
     for (const input of inputs) {
       const width = input.getBoundingClientRect().width;

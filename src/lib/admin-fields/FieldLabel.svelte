@@ -31,6 +31,12 @@ primitive to match. `SelectField` and `TextField` both wrap it internally.
   }
 
   let { label, children, register = 'stacked' }: Props = $props();
+
+  let inline = $derived(register === 'inline');
+  let labelClass = $derived(
+    inline ? 'flex items-center gap-1.5 type-body' : 'flex flex-col gap-label cairn-field-stacked'
+  );
+  let textClass = $derived(inline ? 'text-muted' : 'type-body font-medium');
 </script>
 
 <!-- ONE label element, never a two-branch {#if} (fix A2, item 2): the two registers used
@@ -38,7 +44,7 @@ primitive to match. `SelectField` and `TextField` both wrap it internally.
      this label, including the composed control inside `children()`, dropping the control's focus
      and any in-progress IME composition. A single element with a conditional class list keeps the
      control's own DOM node stable across the flip. -->
-<label class={register === 'inline' ? 'flex items-center gap-1.5 type-body' : 'flex flex-col gap-label cairn-field-stacked'}>
-  <span class={register === 'inline' ? 'text-muted' : 'type-body font-medium'}>{label}</span>
+<label class={labelClass}>
+  <span class={textClass}>{label}</span>
   {@render children()}
 </label>

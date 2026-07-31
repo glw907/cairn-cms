@@ -132,7 +132,8 @@ stays pinned at the row's right end, reachable at every width.
   ];
 
   const ellipsisPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'];
-  // The check glyph marking an active pick, shared by the More menu's toggles and the device list.
+  // The check glyph marking an active pick, shared by the More menu's toggles, the device list,
+  // and the Write/Preview tabs.
   const checkPaths = ['M20 6 9 17l-5-5'];
 
   // The trimmed overflow: the block formats that stay rare. A divider splits the code block from
@@ -260,23 +261,30 @@ stays pinned at the row's right end, reachable at every width.
   <!-- The capsule look is manual rounding, not daisyUI's .join: join radii follow direct
        children, and the device trigger must sit outside the tablist (ARIA required children),
        so the segments square their shared edges themselves. Preview squares its right edge only
-       while the trigger extends the capsule. Unselected carries plain btn, not btn-ghost, the
-       same join/segmented-picker semantics Pagination.svelte and ListToolbar.svelte already use
-       (design ratchet Task 4 review fold-in): a ghost segment beside an active one reads as one
-       fewer distinct step on the dark ground than a filled-neutral segment beside the lighter
-       selected fill does. -->
+       while the trigger extends the capsule. Unselected stays btn-ghost: swapping it to a plain
+       btn was tried and measured worse on both themes, dropping light's selected-to-unselected
+       separation from 1.32:1 to 1.23:1 and flattening dark's unselected hover step from 1.20:1
+       to 1.01:1, which is the only hover feedback an unselected segment has. The selected
+       segment's own visibility rides on the cairn-admin.css hairline instead. One thing neither
+       class fixes: on light, a hovered unselected segment computes exactly the selected
+       segment's resting fill either way, so fill alone cannot separate them. The check glyph
+       does, and it is the non-color state cue WCAG 1.4.1 asks for besides, the same device
+       ListToolbar's segmented facet already uses. -->
   <button
     type="button"
     role="tab"
     id={`cairn-tab-${m}`}
     aria-selected={mode === m}
     aria-controls={`cairn-pane-${m}`}
-    class="btn btn-sm {mode === m ? 'btn-active' : ''}"
+    class="btn btn-sm {mode === m ? 'btn-active' : 'btn-ghost'}"
     class:rounded-r-none={m === 'write' || showDeviceTrigger}
     class:rounded-l-none={m === 'preview'}
     class:-ml-px={m === 'preview'}
     onclick={() => onMode(m)}
   >
+    {#if mode === m}
+      {@render strokeIcon(checkPaths)}
+    {/if}
     {label}
   </button>
 {/snippet}

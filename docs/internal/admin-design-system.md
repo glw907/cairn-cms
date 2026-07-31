@@ -515,6 +515,14 @@ alongside the component recipes above and below it.
   `segmentTintClass` in `segmented-control.ts`), and the primary pressed family adds
   `ring-1 ring-inset ring-primary/35`. The hairline is the non-color, non-weight cue that also covers
   icon-only controls; never give a neutral segment a primary edge (the accent budget).
+  The third family is daisyUI's own `.btn-active`, which a join-style picker uses instead of the
+  tint pair (`ListToolbar`'s segmented facet, `Pagination`, the editor's Write/Preview capsule).
+  It gets the same two cues, and it needs them more: on dark, a lightened `.btn-active` fill
+  measures only 1.14:1 against an unselected sibling, so the hairline is the whole 3:1 cue. It is
+  a `--btn-border` literal in `cairn-admin.css` rather than a `ring-*` utility, because the border
+  is the property daisyUI's own button recipe already paints. The check glyph is the caller's job,
+  the same as for the tint families. Both are dark-only; the light theme's `.btn-active` stays
+  stock, since its fill already separates.
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
   folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.

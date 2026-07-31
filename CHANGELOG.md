@@ -48,15 +48,28 @@
   between a page header and the card beneath it removed none of the harm the rule exists to
   catch, same visual column, same first look, so it was never a real partition. The same change
   pushes a segmented control's selected state off `btn-primary` (now two primaries on one surface)
-  and onto `btn-active`, which raises the dark theme's `.btn-active` fill: it mixes `--btn-color`
+  and onto `btn-active`, which rebuilds the dark theme's `.btn-active`. The fill mixes `--btn-color`
   (or `--color-base-200` when no variant is set) toward white rather than daisyUI's own toward-black
   mix, so a variant selected control (`btn btn-primary btn-active`) keeps its hue and chroma instead
-  of collapsing to a flat neutral, while the neutral case still lands a 0.05-0.07 oklch-lightness
-  step off a plain `.btn`, up from 0.011 before this change, in the dark Warm Stone family's own hue.
-  A companion `:hover` step and a border matched to the new fill keep the selected state's hover
-  feedback and its ring coherent with the lighter background. `docs/reference/cairn-audit.md`'s
-  `one-filled-action` row states the narrowed partition and its reasoning. A sweep of cairn's own
-  admin and the showcase found no screen newly failing.
+  of collapsing to a flat neutral, while the neutral case lands a 0.05-0.07 oklch-lightness step off
+  a plain `.btn`, up from 0.011 before this change, in the dark Warm Stone family's own hue. That
+  step is perceptual, not photometric: near-black compresses sRGB luminance, so the lighter fill
+  alone measures 1.14:1 against an unselected sibling. The 3:1 cue WCAG 1.4.11 asks for therefore
+  rides on the border, the design system's 1px inset hairline in the family's own ink, which
+  measures 3.85:1 against the selected fill, 3.68:1 against the base-100 ground, and 4.37:1 against
+  an unselected sibling's fill. The hairline carries no `color-mix`, so an engine without
+  `color-mix` support still gets the cue. A companion `:hover` step keeps the selected control's
+  hover feedback, which the resting override would otherwise have taken away, gated on
+  `@media (hover: hover)` so a tap does not strand it. `btn-outline btn-active` becomes legible:
+  daisyUI fills an active outline button but leaves its ink at the outline color, 1.20:1 on dark,
+  and the override now restates that ink off `--btn-fg` (6.67:1 for the primary case). A disabled
+  selected control keeps daisyUI's own transparent border and fill. The `EditorToolbar` Write and
+  Preview tabs mark the selected tab with a check glyph, the non-color state cue WCAG 1.4.1 asks
+  for and the device `ListToolbar`'s segmented facet already uses. **The light theme is unchanged**:
+  every rule here is scoped to the dark root alone, and the tabs' unselected `btn-ghost` is the
+  class they already carried. `docs/reference/cairn-audit.md`'s `one-filled-action` row states the
+  narrowed partition and its reasoning. A sweep of cairn's own admin and the showcase found no
+  screen newly failing.
 
   **Consumers must:** treat a screen with a filled header action above a filled card action as a
   finding: demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen the rule to

@@ -65,11 +65,12 @@
   and the override now restates that ink off `--btn-fg` (6.67:1 for the primary case). A disabled
   selected control keeps daisyUI's own transparent border and fill. The `EditorToolbar` Write and
   Preview tabs mark the selected tab with a check glyph, the non-color state cue WCAG 1.4.1 asks
-  for and the device `ListToolbar`'s segmented facet already uses. **The light theme is unchanged**:
-  every rule here is scoped to the dark root alone, and the tabs' unselected `btn-ghost` is the
-  class they already carried. `docs/reference/cairn-audit.md`'s `one-filled-action` row states the
-  narrowed partition and its reasoning. A sweep of cairn's own admin and the showcase found no
-  screen newly failing.
+  for and the device `ListToolbar`'s segmented facet already uses. **The light theme was
+  unchanged at first release**: every rule here shipped scoped to the dark root alone, and the
+  tabs' unselected `btn-ghost` is the class they already carried; a later pass widens the outline
+  fix to light too (see the `.btn-active` outline/dash entry further down). `docs/reference/cairn-audit.md`'s
+  `one-filled-action` row states the narrowed partition and its reasoning. A sweep of cairn's own
+  admin and the showcase found no screen newly failing.
 
   **Consumers must:** treat a screen with a filled header action above a filled card action as a
   finding: demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen the rule to
@@ -100,7 +101,28 @@
   WebKit/VoiceOver (WCAG 1.3.1) and was never load-bearing, since daisyUI's own `.list-row`
   renders `display: grid` and so never generates a marker box regardless of `list-style`.
 
-  Consumers must: nothing.
+  Consumers must: for a bare `<dialog>` in a custom admin route, nothing (it already kept its UA
+  border; this only narrows what the reset touches). For `.list`, only a consumer whose own
+  `<ul class="list">` holds children that are NOT daisyUI's `.list-row` (which never rendered a
+  marker anyway): those children now render the browser's default bullet again. Add
+  `list-style: none` locally to keep them suppressed.
+
+- The `btn-active` ink override that repairs `.btn-outline`/`.btn-dash`'s selected-state
+  composition is now theme-agnostic (design ratchet D3 items 1-2, review triage): it shipped
+  dark-only inside the neutral `.btn-active` fill rule above, so being unlayered it also
+  outranked a plain selected control's OWN text utility (`btn btn-active text-error` painted
+  `--btn-fg` instead of `text-error`'s ink, dark only). Split into its own rule scoped to
+  `:is(.btn-outline, .btn-dash)`, it now touches neither a plain selected control's text utility
+  (restored on dark) nor the light theme (previously untouched, and stock daisyUI's own light
+  `.btn-outline btn-active` composition is illegible: measured 1.17:1, worse than dark's own
+  pre-repair 1.20:1). Both themes now measure legible: light 6.61:1 primary / 11.44:1 neutral,
+  dark 6.67:1 primary / 14.00:1 neutral.
+
+  Consumers must: nothing for a plain selected control (`btn btn-active`, no outline/dash
+  variant); its text utility already resolved correctly except on dark, which this restores.
+  Anyone reading `btn-outline`/`btn-dash` selected-state ink off `--btn-color` on the light theme
+  (the prior stock composition) sees it now resolve off `--btn-fg` instead, the same repair dark
+  already shipped with.
 
 - The `cairn-admin-screens` skill's own reference docs are now gated against the built admin
   sheet: a new unit test extracts every class token the references teach (a static `class="..."`

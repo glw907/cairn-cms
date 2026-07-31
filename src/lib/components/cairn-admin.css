@@ -509,7 +509,13 @@
 
   /* One brand-violet keyboard-focus ring across the admin, so every control shows the same clear
      focus, including the links, nav items, and summaries that the browser would otherwise outline in
-     its default color. Only keyboard focus triggers it. */
+     its default color. Only keyboard focus triggers it.
+     Truthfulness note (design ratchet D3 item 9, pre-existing, no behavior change): a daisyUI
+     `.btn` does not actually pick up the brand violet here. DaisyUI's own `.btn` rule sets
+     `outline-color: var(--btn-color, var(--color-base-content))` inside the layered `daisyui`
+     sublayers, which, being a later-declared layer, outranks this `components`-layer rule
+     regardless of specificity. A focused button therefore outlines in `--btn-color` (or
+     base-content for a neutral button), not `--color-primary`, measured a conformant ~12.6:1. */
   :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
@@ -606,7 +612,7 @@
    lets the theme blocks win), because no layered rule can outrank a later layer; it restores a
    visible focus indicator on the popover and nav menu items. The negative offset draws the ring
    inside the item, clear of the menu panel's clipped corners.
-   PINNED unlayered rule 1 of 9 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
+   PINNED unlayered rule 1 of 10 (gate match: `.menu li`); bug it prevents: invisible keyboard focus
    on menu items. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .menu li > :is(button, a):focus-visible {
   outline: 2px solid var(--color-primary);
@@ -628,7 +634,7 @@
    restatement for the non-ghost case (same computed color), so no selector was added to the pinned set
    below. EditPage.svelte matches by dropping the extra opacity-50 utility it used to layer on top, which
    halved this control's visibility again on top of daisyUI's own dimming.
-   PINNED unlayered rule 2 of 9 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
+   PINNED unlayered rule 2 of 10 (gate match: `.cairn-btn-guarded`); bug it prevents: a guarded
    toolbar button losing its why-it-is-off tooltip to pointer-events:none, and a guarded ghost button
    fading to a rendering gap. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn.cairn-btn-guarded[aria-disabled='true'] {
@@ -647,7 +653,7 @@
    `CairnAdminShell.svelte` gives `.drawer-content` a matching `lg:ml-56` margin instead. Deliberately
    UNLAYERED, the same mechanism as the two rules above: no layered rule can outrank daisyUI's
    utilities-layer rule.
-   PINNED unlayered rule 3 of 9 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 3 of 10 (gate match: `.lg\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the persistent desktop sidebar drifting with the page scroll. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .lg\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -659,7 +665,7 @@
    generates the `xl:drawer-open` utility from this component's own class usage (no config change
    needed; the JIT scanner picks it up from CairnAdminShell.svelte the same way it already does for
    `lg:drawer-open`). Deliberately UNLAYERED, the same mechanism as the three rules above.
-   PINNED unlayered rule 4 of 9 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
+   PINNED unlayered rule 4 of 10 (gate match: `.xl\:drawer-open > .drawer-toggle ~ .drawer-side`); bug it
    prevents: the desk route's persistent sidebar drifting with the page scroll at xl. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .xl\:drawer-open > .drawer-toggle ~ .drawer-side {
   position: fixed;
@@ -683,14 +689,14 @@
    surface that composes a chip by hand instead of through the StatusChip component (EditPage's
    status pill, the CairnAdminShell brand-band CMS pill, ReferenceField/MediaCaptureCard/
    ManageEditors's bare chips).
-   PINNED unlayered rule 5 of 9 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
+   PINNED unlayered rule 5 of 10 (gate match: `.cairn-chip-bounded`); bug it prevents: a hand-built
    chip reading as a clickable button (full-strength border) or sitting under the audit's 3:1 floor. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-bounded {
   background-color: transparent;
   border-color: color-mix(in oklab, currentColor 55%, transparent);
 }
 
-/* PINNED unlayered rule 6 of 9 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
+/* PINNED unlayered rule 6 of 10 (gate match: `.cairn-chip-quiet`); bug it prevents: a settled chip
    either melting into its ground (badge-ghost's old failure) or keeping a border that competes
    with an attention state rendered next to it. */
 :where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .cairn-chip-quiet {
@@ -713,7 +719,7 @@
    a compact row (a flex wrapper holding two or more narrower controls side by side) inside a stacked
    label and keep that row's own width choice; a descendant selector reached through the wrapper and
    forced every nested control to 100% regardless.
-   PINNED unlayered rule 7 of 9 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
+   PINNED unlayered rule 7 of 10 (gate match: `.cairn-field-stacked`); bug it prevents: a stacked
    field's control pinning at daisyUI's fixed 20rem width inside a wider grid cell, so two stacked
    fields' controls in the same column stop sharing a left AND right edge once the cell exceeds
    20rem. */
@@ -747,22 +753,19 @@
    base-100 ground, 4.37:1 against an unselected sibling's base-200 fill. Do not darken it below
    about 52% L without re-measuring, which is where the 3:1 floor sits.
    `var(--btn-color, ...)` picks the same branch the fill does: a variant selected control keeps
-   daisyUI's own border-in-the-variant's-ink look (a `btn-primary btn-active` fill already
-   measures 6.03:1 against the ground, so it needs no hairline), and only the neutral case, the
-   one the fill cannot cue, gets the literal. The hairline carries no `color-mix`, so it also
-   answers the fallback problem the fill has: Tailwind's optimizer splits every `color-mix`
-   declaration into a plain fallback plus an `@supports` override, and the fallback it derives
-   for the fill is `var(--btn-color, var(--color-base-200))`, exactly a plain `.btn`'s
-   background. On an engine without `color-mix` the selected state therefore loses its fill step
-   but keeps its full-strength hairline, which is the cue that had to survive.
-   The `color` declaration exists for `.btn-outline`. DaisyUI already fills an outline button
-   that carries `.btn-active` (its own `.btn-active` sits directly in `daisyui.l1.l2`, which
-   outranks `.btn-outline` in the nested `daisyui.l1.l2.l3`), but leaves `color` at the outline
-   variant's own `--btn-color`, so `btn-outline btn-primary btn-active` painted primary ink on a
-   primary-derived fill: 1.20:1 stock, illegible, and excluding outline here would not have
-   changed that. Restating `color` off `--btn-fg` completes what daisyUI's own fill already
-   intends, and measures 6.67:1 for the primary case and 14.00:1 for the neutral one. It is a
-   no-op for every non-outline variant, which reads its ink through `--btn-fg` already.
+   daisyUI's own border-in-the-variant's-ink look, and only the neutral case, the one the fill
+   cannot cue, gets the literal. That states what daisyUI already renders, not a claim of WCAG
+   1.4.11 coverage for the variant case: measured against an unselected sibling's own fill, a
+   variant `.btn-active` border reads 1.11:1 dark / 1.17:1 light, stock daisyUI's own gap, not
+   this rule's to close. Cairn renders no variant segmented control today (every one is neutral),
+   so the gap is filed rather than fixed here (ROADMAP.md, "Next", "Three design-system gaps
+   found in the same triage").
+   The hairline carries no `color-mix`, so it also answers the fallback problem the fill has:
+   Tailwind's optimizer splits every `color-mix` declaration into a plain fallback plus an
+   `@supports` override, and the fallback it derives for the fill is
+   `var(--btn-color, var(--color-base-200))`, exactly a plain `.btn`'s background. On an engine
+   without `color-mix` the selected state therefore loses its fill step but keeps its
+   full-strength hairline, which is the cue that had to survive.
    Excludes the four disabled forms so daisyUI's own disabled reset (`--btn-bg`/`--btn-border`
    to transparent) still wins on a disabled selected control.
    Dark-theme only, so the selector carries the explicit `[data-theme='cairn-admin-dark']` root
@@ -770,7 +773,13 @@
    the theme-token block above uses for a dark-only declaration. `--btn-bg` is itself a
    utilities-layer declaration (`@layer daisyui.l1.l2`), which a components-layer rule cannot
    outrank regardless of specificity; UNLAYERED for the same reason as the seven rules above.
-   PINNED unlayered rule 8 of 9 (gate match:
+   No `color` declaration here (design ratchet D3 item 1): a first cut carried
+   `color: var(--btn-fg, ...)` on this same unscoped rule, needed only for `.btn-outline`/
+   `.btn-dash`'s own ink composition, but being unlayered it outranked every OTHER selected
+   control's own text utility too (`btn btn-active text-error` painted `--btn-fg` instead of
+   `text-error`'s ink on dark). The outline/dash rule below carries that declaration, scoped to
+   the forms that need it.
+   PINNED unlayered rule 8 of 10 (gate match:
    `[data-theme='cairn-admin-dark'] .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
    bug it prevents: a segmented control's selected state reading as visually identical to its unselected
    siblings on the dark theme, or a variant selected control losing its accent. */
@@ -778,25 +787,57 @@
   .btn-active:not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
   --btn-bg: color-mix(in oklab, var(--btn-color, var(--color-base-200)), oklch(100% 0 0) 8%);
   --btn-border: var(--btn-color, oklch(57% 0.012 75));
+}
+
+/* The outline/dash ink fix for a selected control (design ratchet D3 items 1-2, split out of the
+   rule above): DaisyUI already fills an outline or dashed button that carries `.btn-active` (its
+   own `.btn-active` sits directly in `daisyui.l1.l2`, which outranks `.btn-outline`/`.btn-dash`
+   in the nested `daisyui.l1.l2.l3`), but leaves `color` at the outline variant's own
+   `--btn-color`, so `btn-outline btn-primary btn-active` painted primary ink on a
+   primary-derived fill. Restating `color` off `--btn-fg` completes what daisyUI's own fill
+   already intends. It is a no-op for every non-outline, non-dash variant, which reads its ink
+   through `--btn-fg` already.
+   Theme-agnostic, not mirrored per theme: this shipped dark-only at first (folded into the rule
+   above), scoped by the explicit `[data-theme='cairn-admin-dark']` root the way the fill and
+   hairline still are. But daisyUI's own `.btn-active` fill recipe is not theme-scoped, so the
+   light theme carries the identical outline-ink defect, and measures worse there (1.17:1 stock,
+   against dark's own pre-repair 1.20:1): light's fill already separates enough on its own for the
+   neutral case (see "Segmented control and check-and-tint toggle",
+   docs/internal/admin-design-system.md), but the outline composition needs the same ink repair
+   either theme. So this rule carries the shared `:where(both themes)` prefix the rest of this
+   file uses, scoped further to `:is(.btn-outline, .btn-dash)` so it touches neither the neutral
+   fill above (dark-only, unaffected) nor the light theme's otherwise-stock `.btn-active`.
+   Excludes the four disabled forms for the same reason the rule above does. `--btn-bg` (what the
+   outline/dash recipe fills against) and `.btn-outline`/`.btn-dash`'s own `color` are both
+   utilities-layer declarations (`@layer daisyui.l1.l2` / `daisyui.l1.l2.l3`), which a
+   components-layer rule cannot outrank regardless of specificity; UNLAYERED for the same reason
+   as the rule above.
+   PINNED unlayered rule 9 of 10 (gate match:
+   `:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark']) .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true'])`);
+   bug it prevents: an outline or dashed selected control painting its own ink on its own fill,
+   on either theme. */
+:where([data-theme='cairn-admin'], [data-theme='cairn-admin-dark'])
+  .btn-active:is(.btn-outline, .btn-dash):not(.btn-disabled, :disabled, [disabled], [aria-disabled='true']) {
   color: var(--btn-fg, var(--color-base-content));
 }
 
-/* The companion hover step for the rule above: because the resting override reaches every state of
-   `.btn-active` (it carries no pseudo-class, so it always applies, hover included), it also beats
-   daisyUI's own layered `.btn:hover` attempt at `--btn-bg` regardless of that rule's specificity
-   (an unlayered declaration always outranks a layered one, hover or not), so the selected control
-   gave no visible hover feedback. Setting `--btn-hover-bg` on the resting rule above would not
-   help, since the resting rule's own unconditional `--btn-bg` still wins over the hover-layer read
-   of it; only a second unlayered rule scoped to `:hover`, with the higher specificity a pseudo-class
-   adds, can outrank the resting rule during hover. Steps the mix a few points further toward white
-   (14% against the resting 8%) so hovering the selected control visibly lightens it.
+/* The companion hover step for the neutral fill rule above: because the resting override reaches
+   every state of `.btn-active` (it carries no pseudo-class, so it always applies, hover
+   included), it also beats daisyUI's own layered `.btn:hover` attempt at `--btn-bg` regardless of
+   that rule's specificity (an unlayered declaration always outranks a layered one, hover or not),
+   so the selected control gave no visible hover feedback. Setting `--btn-hover-bg` on the resting
+   rule above would not help, since the resting rule's own unconditional `--btn-bg` still wins
+   over the hover-layer read of it; only a second unlayered rule scoped to `:hover`, with the
+   higher specificity a pseudo-class adds, can outrank the resting rule during hover. Steps the mix
+   a few points further toward white (14% against the resting 8%) so hovering the selected control
+   visibly lightens it.
    This repairs what the resting override took away; it is not an opinion about hover. DaisyUI's
    own convention is that `.btn-active` does not change on hover (its `--btn-hover-bg` restates
-   its `--btn-bg`), and the LIGHT theme keeps that convention, because light's `.btn-active` is
-   stock, so nothing there needs repairing. Gated on `@media (hover: hover)`, the same guard
+   its `--btn-bg`), and the LIGHT theme keeps that convention, because light's `.btn-active` fill
+   is stock, so nothing there needs repairing. Gated on `@media (hover: hover)`, the same guard
    daisyUI puts on its own button hover recipes, so a touch device does not strand the lighter
    fill on the last-tapped segment.
-   PINNED unlayered rule 9 of 9 (gate match: the rule 8 selector plus `:hover`, inside
+   PINNED unlayered rule 10 of 10 (gate match: the rule 8 selector plus `:hover`, inside
    `@media (hover: hover)`);
    bug it prevents: a selected control giving no visible feedback on hover. */
 @media (hover: hover) {

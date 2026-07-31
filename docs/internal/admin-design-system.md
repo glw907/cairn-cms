@@ -520,9 +520,14 @@ alongside the component recipes above and below it.
   It gets the same two cues, and it needs them more: on dark, a lightened `.btn-active` fill
   measures only 1.14:1 against an unselected sibling, so the hairline is the whole 3:1 cue. It is
   a `--btn-border` literal in `cairn-admin.css` rather than a `ring-*` utility, because the border
-  is the property daisyUI's own button recipe already paints. The check glyph is the caller's job,
-  the same as for the tint families. Both are dark-only; the light theme's `.btn-active` stays
-  stock, since its fill already separates.
+  is the property daisyUI's own button recipe already paints. The hairline is dark-only; on light
+  the fill separates nothing (measured 1.23:1 against a plain sibling's fill, 1.31:1 against a
+  ghost sibling's hover fill, 1.06:1 against its own border, all well under WCAG 1.4.11's 3:1
+  floor), so on light the check glyph IS the state cue, full stop, not a second cue alongside a
+  working fill. The check glyph is the caller's job, the same as for the tint families.
+  `Pagination` is the one caller that renders no glyph at all: its selected page conveys state
+  through `aria-current="page"` and fill alone, a known exception, out of conformance on light
+  (ROADMAP.md, "Next", filed 2026-07-31).
 - **Container fold affordance:** a directive container folds from the rail band. One chevron replaces
   the container's innermost rail bar on the opener row (down while the caret is inside, right while
   folded, fading in on rail-band hover), and the whole 28px gutter band on that row is the click target.

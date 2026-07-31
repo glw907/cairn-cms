@@ -120,6 +120,7 @@ break-words
 btn
 btn-active
 btn-block
+btn-dash
 btn-disabled
 btn-error
 btn-ghost

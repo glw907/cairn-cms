@@ -175,6 +175,26 @@ describe('the dark-ground .btn-active selected state', () => {
     neutralOutlineActive.remove();
   });
 
+  // Design ratchet D3 item 1: the color override that repairs the outline/dash composition used
+  // to sit on this same unscoped rule, so being unlayered it outranked every OTHER selected
+  // control's own text utility too, not only the outline/dash forms it exists for. Splitting it
+  // into its own rule, scoped to :is(.btn-outline, .btn-dash), lets a plain selected control's
+  // ink follow a consumer's own utility again while the outline composition keeps its repair.
+  it('scopes the color override to outline/dash forms, so a plain selected control keeps its own text utility', () => {
+    const plainErrorActive = mount('btn btn-active text-error');
+    const referenceError = mount('text-error');
+
+    expect(getComputedStyle(plainErrorActive).color).toBe(getComputedStyle(referenceError).color);
+
+    const outlineActive = mount('btn btn-outline btn-primary btn-active');
+    const style = getComputedStyle(outlineActive);
+    expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(6);
+
+    plainErrorActive.remove();
+    referenceError.remove();
+    outlineActive.remove();
+  });
+
   // The unlayered rules beat daisyUI's disabled reset (--btn-bg and --btn-border to transparent)
   // unless they exclude the disabled forms themselves, which left a disabled selected control wearing
   // an active-colored ring where daisyUI intends none.
@@ -210,10 +230,14 @@ describe('the dark-ground .btn-active selected state', () => {
   });
 });
 
-// The fill override, the hairline, and the hover step are all scoped to the dark root alone, so the
-// light theme keeps daisyUI's stock .btn-active in every one of them, including stock's own
-// no-change-on-hover convention. The claim is worth pinning because the CHANGELOG makes it: a rule
-// written under the shared :where(both themes) prefix by mistake would silently move the light theme.
+// The neutral fill override, the hairline, and the hover step are all scoped to the dark root
+// alone, so the light theme keeps daisyUI's stock .btn-active in each of them, including stock's
+// own no-change-on-hover convention. The outline/dash color rule is the one exception: it is
+// theme-agnostic from the start (design ratchet D3 items 1-2), since stock daisyUI's own
+// outline-active ink composition is illegible on both themes, worse on light (1.17:1) than dark's
+// own pre-repair defect (1.20:1). The remaining claim is still worth pinning because the CHANGELOG
+// makes it: a rule written under the shared :where(both themes) prefix by mistake would silently
+// move the light theme's neutral fill, border, or hover behavior.
 describe('the light theme .btn-active', () => {
   let sheet: HTMLStyleElement;
 
@@ -239,13 +263,17 @@ describe('the light theme .btn-active', () => {
     active.remove();
   });
 
-  it('keeps daisyUI stock: the outline variant stays unfilled and untouched', () => {
+  // Design ratchet D3 items 1-2: stock daisyUI fills an active outline button (a color-mix toward
+  // black) but leaves `color` at the outline variant's own ink, measured 1.17:1 here, worse than
+  // dark's own pre-repair 1.20:1. The outline/dash color rule that first shipped dark-only is
+  // theme-agnostic, so light gets the same ink repair off --btn-fg.
+  it('repairs the outline variant the same way dark does: color off --btn-fg, not the outline ink', () => {
     const outline = mount('btn btn-outline btn-primary');
     const outlineActive = mount('btn btn-outline btn-primary btn-active');
 
-    // Stock daisyUI fills an active outline button and leaves its ink at --btn-color. The dark
-    // repair does not reach here, so the light composition still reads as daisyUI ships it.
-    expect(getComputedStyle(outlineActive).color).toBe(getComputedStyle(outline).color);
+    expect(getComputedStyle(outlineActive).color).not.toBe(getComputedStyle(outline).color);
+    const style = getComputedStyle(outlineActive);
+    expect(contrastRatio(style.color, style.backgroundColor)).toBeGreaterThanOrEqual(4.5);
 
     outline.remove();
     outlineActive.remove();

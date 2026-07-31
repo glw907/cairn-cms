@@ -71,14 +71,21 @@ describe('the admin sheet base reset layer', () => {
   });
 
   // D2 item 1: list-style: none was dropped from the .list reset since it strips list
-  // semantics from the accessibility tree in WebKit/VoiceOver (WCAG 1.3.1). This test proves
-  // the reset no longer sets it, rather than asserting a marker renders (jsdom does not lay
-  // out list markers, so a visual check is not possible in this harness).
-  it('does not set list-style on a ul.list container', () => {
+  // semantics from the accessibility tree in WebKit/VoiceOver (WCAG 1.3.1). The component
+  // project runs real headless Chromium (@vitest/browser-playwright), so this asserts the
+  // rendered marker box directly: a real ::marker pseudo-element and a list-item principal
+  // box, rather than only the inherited list-style-type value.
+  it('renders a real marker box on a list item inside a ul.list container', () => {
     const list = document.createElement('ul');
     list.className = 'list';
+    const item = document.createElement('li');
+    item.textContent = 'Item';
+    list.appendChild(item);
     document.body.appendChild(list);
-    expect(getComputedStyle(list).listStyleType).not.toBe('none');
+
+    expect(getComputedStyle(item, '::marker').display).toBe('inline-block');
+    expect(getComputedStyle(item).display).toBe('list-item');
+
     list.remove();
   });
 

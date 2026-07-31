@@ -283,7 +283,7 @@ the named human gates only):**
   net misses variant-prefixed forms (`md:font-mono`, `dark:font-mono`), `font-serif`/`font-sans`,
   and Tailwind 4's `font-(family-name:--x)` shorthand.
 
-- **Two design-system gaps found in the same triage.** `Pagination`'s selected page
+- **Three design-system gaps found in the same triage.** `Pagination`'s selected page
   (`src/lib/admin-toolkit/Pagination.svelte`) conveys its state by fill alone: `btn-active` swaps
   color and carries `aria-current="page"` for assistive technology, but a sighted user who
   cannot distinguish the fill has no visual cue at all, the same WCAG 1.4.1 shape
@@ -292,7 +292,13 @@ the named human gates only):**
   reset (`cairn-admin.css`'s `base` layer, design ratchet Task 1) is repaired per call site
   rather than structurally: `ComponentForm.svelte` carries its own `px-1` on the one legend that
   needed it, so the next fieldset that needs the same visual balance has to rediscover the fix
-  rather than inherit it.
+  rather than inherit it. A variant-selected control (`btn-primary btn-active`) carries the same
+  border-cue gap `Pagination` carries by fill: daisyUI's own hairline resolves to exactly the
+  unselected sibling's own fill, measured 1.11:1 dark / 1.17:1 light, well under WCAG 1.4.11's
+  3:1 floor (D3 review triage, 2026-07-31; `cairn-admin.css`'s dark selected-state comment). This
+  is stock daisyUI, not cairn's own composition, and cairn renders no variant segmented control
+  today, so it is a documented gap rather than a live defect; a consumer who builds one on the
+  stock composition inherits it silently until this is fixed.
 
 - **The engine debt and rule repairs corpus C confirmed** (ASC authenticated-admin calibration,
   2026-07-28; evidence and per-item mechanisms in

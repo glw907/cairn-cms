@@ -21,6 +21,18 @@
   engine's own login proves in production instead of copying them by hand. See [Auth
   crypto](docs/reference/auth-crypto.md). Consumers must: nothing.
 
+- A new factory on `@glw907/cairn-cms/sveltekit`, `createSectionAction`, composes onto
+  `adminAction` the enforcement every site-built admin section otherwise hand-rolls: an
+  optional per-action rate limit (degrade-to-open, structurally typed as `RateLimitLike`, so no
+  dependency on `@cloudflare/workers-types`), the section's own database binding, and the same
+  access-map check `requireAccess` runs (`hasAccessRule` then `canReach`, audited on every
+  refusal, with both 403 branches emitting the existing `auth.access.denied` and both 500
+  branches the new `admin.action.misconfigured`). `AdminActionEvent` becomes generic over the
+  site's platform env (`Env = AuthEnv` by default, so every existing call site keeps today's
+  meaning) and its `locals` type gains `cairnAccess?: AccessMap`, the map `createAuthGuard`
+  already attaches. See
+  [SvelteKit](docs/reference/sveltekit.md#createsectionaction). Consumers must: nothing.
+
 - The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish
   action writes once, at the commit that first lands an entry non-draft, and never overwrites
   or clears afterward. An entry already non-draft and unstamped before this release stays

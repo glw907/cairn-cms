@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: an auth-store export, an auth-crypto export, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
+## Unreleased: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1
 editor-provisioning functions the engine's own `editors-routes` already uses: `listEditors`,
@@ -108,11 +108,21 @@ involved. The same subpath also re-exports `Manifest` and `parseManifest`, so yo
 validate the manifest you fetch to build the `before`/`after` pair. See [Announce on
 publish](./announce-on-publish.md).
 
+A third new export on `@glw907/cairn-cms/sveltekit`, `createSectionAction`, packages the
+form-action guard every site-built admin section otherwise hand-rolls: SvelteKit dispatches a
+matched action directly, with no ancestor layout `load` run first, so a section's own POST needs
+its own check. The factory composes `adminAction`'s editor resolution, CSRF, and audit contract
+with an optional rate limit (degrade-to-open) and the same access-map check `requireAccess` runs,
+then hands your handler its resolved database binding. `AdminActionEvent` becomes generic over
+your platform env, defaulting to today's `AuthEnv` so no existing call site changes, and its
+`locals` type gains the `cairnAccess` map the guard already attaches. See
+[SvelteKit](../reference/sveltekit.md#createsectionaction).
+
 The `@codemirror/*` editor dependencies moved to their latest 6.x releases within cairn's existing
 version ranges (`@codemirror/state` 6.6.0 to 6.7.1, `@codemirror/view` 6.43.0 to 6.43.7, plus patch
 bumps to `autocomplete`, `commands`, `language`, and `lang-markdown`). Lockfile-only.
 
-Consumers must: nothing. All three new seams are additive, and the `publishedAt` stamp only
+Consumers must: nothing. All four new seams are additive, and the `publishedAt` stamp only
 ever appears on a publish that happens after the upgrade.
 
 ## 0.92.0: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate

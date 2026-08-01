@@ -66,6 +66,42 @@ scale heuristic, and switch the numbers to their compatibility meaning (patch = 
 major = breaking). The scheme and cadence live in `CLAUDE.md` ("Releases") and the
 `cairn-release-process-and-versioning` memory.
 
+### The pre-beta pass series and the two-release shape (organized 2026-08-01)
+
+The Now and Next tiers' pre-beta entries execute as this series. The release shape is
+RECOMMENDED, not yet ratified: two releases, where release one carries everything that impacts a
+current consumer site and release two is `1.0.0-beta.1` itself. The alternative Geoff weighed
+(bundle everything into `beta.1`) costs the same number of breaking rounds, since the sites absorb
+release one through the ratified Waymark rebuilds and ASC retrofits once either way; two releases
+additionally give the frozen contract production miles before strangers see it (the "seams have
+held" checklist bullet needs runway), give the dress rehearsal and rebuild dogfood a published
+surface to run against, and land `beta.1` already stable. Flipping to single-beta moves only the
+release-one boundary; the passes are invariant.
+
+- **In flight:** ASC seams pass one (`0.93.0`), then seams pass two (spec done, plan
+  just-in-time; additive).
+- **Phase C, settle the contract:** C1 the seam-shape pass (env-genericity sweep, the
+  function-color and refusal-channel rulings, the toolchain matrix); C2 the naming pass (a Fable
+  sitting over `api-surface.md` settles the rename set and the `locals` policy, then one
+  execution pass lands every rename in one diff, one `Consumers must:` list — the only genuinely
+  breaking pass in the series).
+- **Phase F, the core features:** F1 the history/revert design sitting; F2 the history view
+  pass; F3 the revert pass (the sitting may merge F2/F3); F4 the preview design sitting; F5 the
+  preview pass.
+- **RELEASE ONE cuts here**, the last substantial `0.x`: contract, renames, and the three core
+  features in one window. The standing pipeline consumes it (the Waymark rebuilds, ASC's
+  retrofit) — the one round of breaking changes.
+- **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
+  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep); P2
+  the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
+  walkthrough as the attended session at phase end plus a fixes rider; P5 the
+  `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
+  zero-credential quickstart. The standing template track (cairn.pub voice, starter set, Topo
+  with the docs-effectiveness infra, the scaffolder with its agent brief) runs parallel and
+  feeds the rebuilds.
+- Then the widened **go-public pass**, the **dress rehearsal**, and **RELEASE TWO:
+  `1.0.0-beta.1`**.
+
 ### The beta gate — DECIDED (Geoff, 2026-07-02; step 10 is now mechanics)
 
 All four rulings, ratified in advance: **(1) Versioning** — compatibility-meaning SemVer from

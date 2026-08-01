@@ -1,5 +1,30 @@
 ## Unreleased
 
+<!-- release-size: minor -->
+
+### Added
+
+- A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1
+  editor-provisioning functions the engine's own `editors-routes` already uses:
+  `listEditors`, `insertEditor`, `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`,
+  `insertOwnerIfEmpty`, and `demoteOwnerIfNotLast`, plus the `EditorRow` and `Role` types. A
+  site that provisions or manages editors from its own server code, a setup script, or a
+  migration now reads and writes the same rows the `ManageEditors` screen does, instead of
+  reimplementing the D1 statements. See [Auth store](docs/reference/auth-store.md). Consumers
+  must: nothing.
+
+- The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish
+  action writes once, at the commit that first lands an entry non-draft, and never overwrites
+  or clears afterward. An entry already non-draft and unstamped before this release stays
+  unstamped; only a future transition into published stamps. A new pure helper,
+  `newlyPublishedEntries(before, after)` on `@glw907/cairn-cms/delivery/data`, diffs two
+  manifests down to the entries that just carried that transition, so a site can detect a
+  first publish and fan out its own notification with no engine networking or scheduling
+  involved. See [Announce on publish](docs/guides/announce-on-publish.md) and [Delivery
+  data](docs/reference/delivery-data.md#newlypublishedentries). Consumers must: nothing; the
+  field is additive and optional, and the stamp only ever appears on a publish that happens
+  after the upgrade.
+
 ### Changed
 
 - CodeMirror dependencies updated to the latest 6.x releases within the existing ranges

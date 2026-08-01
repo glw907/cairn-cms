@@ -27,8 +27,19 @@ passes, so pass two needs no second sitting, only its just-in-time plan. The gov
 Geoff's at the sitting: every seam properly generic, for any builder; ASC and ecxc are evidence,
 never shape.
 
+**The spec and plan are POST-REVIEW.** Geoff ordered a pre-implementation adversarial review
+(2026-08-01); both read-only reviewers (`web-auth-security-reviewer`, `svelte-reviewer`,
+Opus) returned do-not-implement-as-written verdicts, and the fold landed as `5e09e437`. The
+blocking catches, so the executor knows why the contract looks the way it does: `canReach`
+alone fails open on unmapped POSTs (the wrapper now mirrors `requireAccess`'s
+`hasAccessRule` predicate), a catch-all route's pathname is attacker-chosen (`opts.target`),
+and the `AuthEnv`-fixed `AdminActionEvent` broke route `Actions` assignability
+(compile-proven; now generic). The spec's "Adversarial review record" section carries the
+full list and the one deliberate non-adoption (fail over throw).
+
 **NEXT: execute pass one** from the committed plan,
-`docs/superpowers/plans/2026-08-01-asc-engine-seams-1.md` (`ae3e9072`): four tasks, the
+`docs/superpowers/plans/2026-08-01-asc-engine-seams-1.md` (`ae3e9072`, amended `5e09e437`):
+four tasks, the
 `cookieName`/`tokensMatch` internal refactor, the `./auth-crypto` server-only subpath, the
 `createSectionAction` module and suite, and its export plus docs. A fresh Opus session executes on
 a feature worktree, dispatching each task to `cairn-implementer` per the repo defaults;

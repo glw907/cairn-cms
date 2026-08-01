@@ -6,14 +6,17 @@
 // resolver and an optional rate limit. It deliberately does no schema validation and no domain
 // work; those stay the handler's job.
 //
-// The check order below is fail-closed at every step and mirrors `requireAccess` (guard.ts)
-// exactly: `hasAccessRule` runs before `canReach`, never `canReach` alone, whose permissive
-// unmapped-target reading is nav semantics, not an authorization floor a POST can rely on. Each
-// refusal audits through `ctx.audit` (adminAction's own contract) except the rate limit, which is
-// back-pressure, not a domain-state change. Every user-facing message stays deliberately generic
-// (both 403s share one string, both 500s share another) so a session learns no deployment or
-// gating detail from a refusal; the branch identity lives in the audit `detail` and the
-// structured log.
+// The check order below runs every authorization check before the binding-resolution failure
+// (a session the access map refuses learns nothing about whether the section's own database is
+// deployed) and mirrors `requireAccess` (guard.ts) exactly: `hasAccessRule` runs before
+// `canReach`, never `canReach` alone, whose permissive unmapped-target reading is nav semantics,
+// not an authorization floor a POST can rely on. It is fail-closed at every step but two,
+// deliberately: the rate limit degrades to open (an unresolved binding, or a throwing
+// `key()`/`limit()` call, never blocks) and its `fail(429)` branch emits no `ctx.audit` (back
+// pressure is not a domain-state change). Every other refusal audits through `ctx.audit`
+// (adminAction's own contract). Every user-facing message stays deliberately generic (both 403s
+// share one string, both 500s share another) so a session learns no deployment or gating detail
+// from a refusal; the branch identity lives in the audit `detail` and the structured log.
 import { fail } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
 import { canReach, hasAccessRule } from '../auth/access.js';
@@ -29,7 +32,7 @@ export interface RateLimitLike {
 
 /** Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know. */
 export interface SectionActionConfig<Env, Db> {
-  /** Resolve the section's database binding off the platform env; undefined fails the action closed (500). */
+  /** Resolve the section's database binding off the platform env; undefined or null fails the action closed (500). */
   resolveDb: (env: Env | undefined) => Db | undefined;
   /** Optional per-action rate limit, degrade-to-open: an unresolved binding never blocks. */
   rateLimit?: {
@@ -71,23 +74,27 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  * 1. `adminAction` composes underneath: editor resolution, CSRF, the single form read, the audit
  *    contract. A refusal it throws (`AdminActionError`) propagates untouched; a site maps it in
  *    `handleError`.
- * 2. Rate limit, when configured: an unresolved binding, or one whose `limit()` call throws,
- *    degrades to open (never blocks) and logs `admin.action.rate_limit_absent`, so a forgotten
+ * 2. Rate limit, when configured: an unresolved binding, or a `key()`/`limit()` call that throws,
+ *    degrades to open (never blocks) and logs `admin.action.rate_limit_absent` (unresolved
+ *    binding) or `admin.action.rate_limit_failed` (a throwing call), so a forgotten
  *    `[[ratelimits]]` block or a transient binding error is observable, not a silent bypass or a
  *    500 the hand-rolled code never produced. A present binding over its limit logs
  *    `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this branch: a
  *    limiter denial is back-pressure, not a domain-state change.
- * 3. `resolveDb` returning undefined audits `'rejected: database not bound'`, logs
- *    `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not a
- *    denial.
- * 4. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
+ * 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
  *    `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route (a
- *    zero-config site attaches an empty map instead, per the guard's own contract).
- * 5. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
+ *    zero-config site attaches an empty map instead, per the guard's own contract). This check
+ *    runs before authorization out of necessity, since a map cannot authorize against itself; it
+ *    leaks nothing per-editor, since it is identical for every session.
+ * 4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
  *    `requireAccess` exactly, owner included: a POST must never be admitted where the load fails
  *    closed.
- * 6. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
+ * 5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
  *    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
+ * 6. `resolveDb` returning null or undefined audits `'rejected: database not bound'`, logs
+ *    `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not a
+ *    denial. This runs last, after authorization, so a session the access map refuses learns
+ *    nothing about whether the section's binding is deployed.
  * 7. The handler runs once with `ctx: { ...ctx, db }`.
  *
  * `Env` does not infer from `resolveDb`'s parameter alone; annotate it (as below) or pass
@@ -139,7 +146,10 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
             const result = await limiter.limit({ key: config.rateLimit.key(ctx) });
             blocked = !result.success;
           } catch (err) {
-            log.warn('admin.action.rate_limit_absent', {
+            // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
+            // argument to limit(), inside this same try); either way the limit was never
+            // actually checked, which is distinct from rate_limit_absent's "no binding at all".
+            log.warn('admin.action.rate_limit_failed', {
               path,
               action: opts.action,
               entity: opts.entity,
@@ -160,13 +170,8 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         }
       }
 
-      const db = config.resolveDb(siteEvent.platform?.env);
-      if (db === undefined) {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: database not bound' });
-        log.error('admin.action.misconfigured', { path, reason: 'db_not_bound' });
-        return fail(500, { error: UNAVAILABLE_MESSAGE });
-      }
-
+      // The access map's absence is checked before authorization, out of necessity (nothing can
+      // authorize against a map that was never attached), never before the rate limit above.
       const access: AccessMap | undefined = siteEvent.locals.cairnAccess;
       if (access === undefined) {
         ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: access map not attached' });
@@ -192,9 +197,19 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
         return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
       }
 
-      // db excludes undefined by the check above; NonNullable<Db> also strips a null a caller's
-      // own explicit Db argument might otherwise admit, so the check order above is what a
-      // handler's ctx.db can rely on, never a type argument alone.
+      // resolveDb runs last, after every authorization check, so a session the access map
+      // refuses learns nothing about whether the section's binding is deployed: its refusal
+      // audits as a denial, never a config fault.
+      const db = config.resolveDb(siteEvent.platform?.env);
+      if (db == null) {
+        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: database not bound' });
+        log.error('admin.action.misconfigured', { path, reason: 'db_not_bound' });
+        return fail(500, { error: UNAVAILABLE_MESSAGE });
+      }
+
+      // db excludes null and undefined by the check above; NonNullable<Db> also strips a null a
+      // caller's own explicit Db argument might otherwise admit, so the check order above is what
+      // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
       return handler({ event: siteEvent, form, ctx: { ...ctx, db: resolvedDb } });
     }) as unknown as (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;

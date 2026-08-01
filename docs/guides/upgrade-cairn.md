@@ -113,9 +113,10 @@ form-action guard every site-built admin section otherwise hand-rolls: SvelteKit
 matched action directly, with no ancestor layout `load` run first, so a section's own POST needs
 its own check. The factory composes `adminAction`'s editor resolution, CSRF, and audit contract
 with an optional rate limit (degrade-to-open) and the same access-map check `requireAccess` runs,
-then hands your handler its resolved database binding. `AdminActionEvent` becomes generic over
-your platform env, defaulting to today's `AuthEnv` so no existing call site changes, and its
-`locals` type gains the `cairnAccess` map the guard already attaches. See
+then hands your handler its resolved database binding; authorization runs before that binding
+check, so a refused session never learns whether the binding is deployed. `AdminActionEvent`
+becomes generic over your platform env, defaulting to today's `AuthEnv` so no existing call site
+changes, and `App.Locals` gains the `cairnAccess` map the guard already attaches. See
 [SvelteKit](../reference/sveltekit.md#createsectionaction).
 
 The `@codemirror/*` editor dependencies moved to their latest 6.x releases within cairn's existing

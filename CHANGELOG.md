@@ -26,12 +26,18 @@
   optional per-action rate limit (degrade-to-open, structurally typed as `RateLimitLike`, so no
   dependency on `@cloudflare/workers-types`), the section's own database binding, and the same
   access-map check `requireAccess` runs (`hasAccessRule` then `canReach`, audited on every
-  refusal, with both 403 branches emitting the existing `auth.access.denied` and both 500
-  branches the new `admin.action.misconfigured`). `AdminActionEvent` becomes generic over the
-  site's platform env (`Env = AuthEnv` by default, so every existing call site keeps today's
-  meaning) and its `locals` type gains `cairnAccess?: AccessMap`, the map `createAuthGuard`
-  already attaches. See
-  [SvelteKit](docs/reference/sveltekit.md#createsectionaction). Consumers must: nothing.
+  refusal, with all three 403 branches emitting the existing `auth.access.denied` and both 500
+  branches the new `admin.action.misconfigured`). Authorization runs before the
+  database-binding check, so a session the access map refuses never learns whether the
+  section's binding is deployed, and `resolveDb` returning `null` fails closed the same as
+  `undefined`. A rate limit's `key()` or `limit()` call throwing still degrades to open, but now
+  logs a distinct `admin.action.rate_limit_failed`, so a transient limiter error reads apart
+  from `admin.action.rate_limit_absent`'s "no binding at all". `AdminActionEvent` becomes
+  generic over the site's platform env (`Env = AuthEnv` by default, so every existing call site
+  keeps today's meaning) and `App.Locals` (via `@glw907/cairn-cms/ambient`) gains
+  `cairnAccess?: AccessMap`, the map `createAuthGuard` already attaches. See
+  [SvelteKit](docs/reference/sveltekit.md#createsectionaction) and [log
+  events](docs/reference/log-events.md). Consumers must: nothing.
 
 - The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish
   action writes once, at the commit that first lands an entry non-draft, and never overwrites

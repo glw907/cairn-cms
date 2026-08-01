@@ -1,8 +1,10 @@
 # Auth crypto (`@glw907/cairn-cms/auth-crypto`)
 
-**Server only.** The export carries a `browser` condition pointing at a stub that throws at
-import time, so a client bundle that reaches this subpath fails the build rather than shipping
-Web Crypto calls to the page.
+**Server only.** The export carries a `browser` condition pointing at a stub with no exports and
+a module-level throw. A named import (`import { hashToken } from '...'`) fails the build: a
+bundler's static export check finds no such name on the stub and errors before any code runs. A
+bare side-effect import (`import '@glw907/cairn-cms/auth-crypto'`) passes the build instead and
+throws at runtime, the moment that import executes in the browser.
 
 This subpath re-exports the token and session-id generators, the token hash, the constant-time
 compare, and the `__Host-` cookie-name primitive the engine's own magic-link guard uses, for a
@@ -120,8 +122,10 @@ colliding with an engine cookie.
 ```ts
 import { cookieName } from '@glw907/cairn-cms/auth-crypto';
 
-function memberSessionCookieName(url: URL): string {
-  return cookieName('member-session', url.protocol === 'https:');
+// `secure` is derived from the externally visible scheme (here, a trusted platform header set
+// by the edge that terminates TLS), never from `url.protocol`, per the warning above.
+function memberSessionCookieName(request: Request): string {
+  return cookieName('member-session', request.headers.get('X-Forwarded-Proto') === 'https');
 }
 ```
 

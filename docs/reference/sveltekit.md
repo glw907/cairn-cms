@@ -319,43 +319,52 @@ check, never instead of it.
 does, or pass explicit type arguments, else it collapses to `{}` and every downstream binding
 read stops typechecking usefully.
 
-Check order, fail-closed at every step, refusals returned as SvelteKit `fail(...)`:
+Check order, refusals returned as SvelteKit `fail(...)`, fail-closed at every step but the rate
+limit, which deliberately degrades to open. Authorization runs before the database-binding
+check: a session the access map refuses learns nothing about whether the section's own database
+is deployed:
 
 1. `adminAction` resolves the editor, verifies CSRF, and reads the form once. Its own guards
    throw `AdminActionError`, not a `fail()`, so a site maps it in `handleError`; only this
    factory's own branches below render as form failures.
-2. The rate limit, when configured: an unresolved binding, or a `limit()` call that throws,
-   degrades to open (never blocks) and logs `admin.action.rate_limit_absent`, so a forgotten
-   `[[ratelimits]]` block or a transient binding error is observable rather than a silent bypass.
-   A present binding over its limit logs `admin.action.rate_limited` and returns `fail(429)`.
-   This branch calls no `ctx.audit`: a limiter denial is back-pressure, not a domain-state
-   change.
-3. `config.resolveDb` returning `undefined` audits `'rejected: database not bound'`, logs
-   `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not a
-   denial.
-4. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
+2. The rate limit, when configured: an unresolved binding logs `admin.action.rate_limit_absent`
+   and degrades to open (never blocks); a `key()` or `limit()` call that throws logs
+   `admin.action.rate_limit_failed` and degrades to open the same way, so a forgotten
+   `[[ratelimits]]` block reads distinctly from a transient binding error rather than either one
+   being a silent bypass. A present binding over its limit logs `admin.action.rate_limited` and
+   returns `fail(429)`. This branch calls no `ctx.audit`: a limiter denial is back-pressure, not
+   a domain-state change.
+3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
    `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route.
    Only [`createAuthGuard`](#createauthguard) may write `locals.editor` and `locals.cairnAccess`,
-   and it must be the last handle in the sequence to set them.
-5. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
+   and it must be the last handle in the sequence to set them. This check runs before
+   authorization out of necessity (a route cannot authorize against a map that was never
+   attached) and leaks nothing per-editor: it is identical for every session.
+4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
    `requireAccess` exactly, owner included: **a section path must carry an access-map rule**, or
    every call through it refuses. The section's layout `load` must call `requireAccess` too, so
    reads and writes gate on the same fail-closed predicate and a denied POST's page render
    exposes nothing the load would already have refused.
-6. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
+5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
    `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
+6. `config.resolveDb` returning `null` or `undefined` audits `'rejected: database not bound'`,
+   logs `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not
+   a denial. This runs last, so a refused session's attempt always audits as a denial, never as a
+   config fault that leaks a deployment detail.
 7. The handler runs once with `ctx: { ...ctx, db }`, `db` narrowed to `NonNullable<Db>`.
 
-The two 403 branches share one default message and the two 500 branches another
+The three 403 branches share one default message and the two 500 branches another
 (`deniedMessage` overrides the 403 copy only), so a session learns no deployment or gating
 detail from the response; the branch identity lives in the audit `detail` and the structured
-log. Both 403 branches also emit the guard's own `auth.access.denied` (see [log
+log. All three 403 branches also emit the guard's own `auth.access.denied` (see [log
 events](./log-events.md)), so a site alerting on load denials covers POST denials with the same
 query, and both 500 branches emit `admin.action.misconfigured`. A denial's own audit record
 carries no `entityId` (the refused write never named one); a handler's own `ctx.audit` call
 should, when its entity has one. `createSectionAction` never guards a POST that reaches the
 section through SvelteKit remote functions, only a form action's own POST: a remote function
-call never dispatches through `Actions` at all.
+call never dispatches through `Actions` at all, and it also bypasses the admin guard's own CSRF
+check (that check runs on `Actions` dispatch too), so a site that adds a remote function under
+`/admin` owns that verification itself, with no seam here to lean on.
 
 The rate-limit `key` must carry an actor-scoped, normalized component (the editor's email,
 lowercased), never the bare request path alone, and one binding backs one shared budget across

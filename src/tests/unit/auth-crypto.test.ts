@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   generateToken,
   generateSessionId,
@@ -60,6 +60,11 @@ describe('cookieName', () => {
     expect(() => cookieName('__Secure-cairn_session', true)).toThrow();
   });
 
+  it('throws on a differently-cased prefix, since a browser matches __Host-/__Secure- case-insensitively', () => {
+    expect(() => cookieName('__host-cairn_session', true)).toThrow();
+    expect(() => cookieName('__SECURE-cairn_session', true)).toThrow();
+  });
+
   it('throws on a base carrying a character outside the cookie-name token set', () => {
     expect(() => cookieName('bad;name', true)).toThrow();
     expect(() => cookieName('bad=name', true)).toThrow();
@@ -91,8 +96,27 @@ describe('tokensMatch', () => {
   });
 
   it('compares a non-ASCII pair correctly by byte, not by code unit', () => {
-    // Two strings whose only difference is a single multibyte character.
-    expect(tokensMatch('tökén-Ä', 'tökén-Ä')).toBe(true);
-    expect(tokensMatch('tökén-Ä', 'tökén-B')).toBe(false);
+    // é (U+00E9) and ë (U+00EB) both encode to 2 UTF-8 bytes, so this pair is the same total
+    // byte length and must reach the byte-comparison loop, unlike a pair that differs in byte
+    // length (which the length check alone would already reject).
+    expect(tokensMatch('tökén-é', 'tökén-é')).toBe(true);
+    expect(tokensMatch('tökén-é', 'tökén-ë')).toBe(false);
+  });
+
+  it('calls a native crypto.subtle.timingSafeEqual when the runtime provides one', () => {
+    const original = crypto.subtle as SubtleCrypto & { timingSafeEqual?: unknown };
+    const stub = vi.fn((a: ArrayBufferView, b: ArrayBufferView) => {
+      const aBytes = new Uint8Array(a.buffer, a.byteOffset, a.byteLength);
+      const bBytes = new Uint8Array(b.buffer, b.byteOffset, b.byteLength);
+      return aBytes.length === bBytes.length && aBytes.every((byte, i) => byte === bBytes[i]);
+    });
+    original.timingSafeEqual = stub;
+    try {
+      expect(tokensMatch('abc123', 'abc123')).toBe(true);
+      expect(tokensMatch('abc123', 'abc124')).toBe(false);
+      expect(stub).toHaveBeenCalledTimes(2);
+    } finally {
+      delete original.timingSafeEqual;
+    }
   });
 });

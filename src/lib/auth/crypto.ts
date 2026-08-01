@@ -41,7 +41,8 @@ const COOKIE_TOKEN_RE = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
  * that namespace does not throw, but risks colliding with an engine cookie.
  */
 export function cookieName(base: string, secure: boolean): string {
-  if (base.startsWith('__Host-') || base.startsWith('__Secure-')) {
+  const lowerBase = base.toLowerCase();
+  if (lowerBase.startsWith('__host-') || lowerBase.startsWith('__secure-')) {
     throw new Error(
       `cookieName: base "${base}" already carries a __Host- or __Secure- prefix; pass the unprefixed base and let cookieName apply it`,
     );
@@ -104,7 +105,10 @@ type SubtleWithTimingSafeEqual = SubtleCrypto & {
  * non-constant-time reject, since length is not a secret); `tokensMatch('', '')` is
  * deliberately false, so an unset expected value can never accept an unset submitted one; and
  * it is meant only for fixed-length CSPRNG tokens and hex hashes, never for a password or
- * anything an attacker can enumerate.
+ * anything an attacker can enumerate. `TextEncoder` maps an unpaired surrogate to the
+ * replacement character, so two distinct strings that differ only in a lone surrogate encode to
+ * the same bytes and compare equal; harmless for the CSPRNG tokens and hex hashes this function
+ * is for, which is exactly why this precondition is stated rather than guarded against.
  */
 export function tokensMatch(a: string, b: string): boolean {
   const aBytes = new TextEncoder().encode(a);

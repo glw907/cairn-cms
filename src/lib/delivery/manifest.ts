@@ -36,25 +36,29 @@ export function buildSiteManifest<A extends CairnAdapter>(adapter: A, config: Si
 const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
 
 /**
- * The `after` entries a deploy just carried across the first-publish transition: `publishedAt` is
- *  set, and the same concept+id entry in `before` was absent or itself unstamped. Presence of the
- *  stamp is the whole signal, given the stamping rules in `stampFirstPublish`: a carried stamp never
- *  matches its own counterpart, a legacy entry that is non-draft but was never stamped never matches,
- *  and a draft never carries a stamp so it never matches either. An entry present only in `before`
- *  (deleted in `after`) is never returned.
+ * The `after` entries a deploy just carried across the first-publish transition: the entry is
+ *  currently live (non-draft), `publishedAt` is set, and the same concept+id entry in `before` was
+ *  absent or itself unstamped. Presence of the stamp is most of the signal, given the stamping rules
+ *  in `stampFirstPublish`, but not all of it: a carried stamp never matches its own counterpart, and a
+ *  legacy entry that is non-draft but was never stamped never matches, but a drafted entry CAN carry a
+ *  stamp forward (`upsertEntry` preserves a prior `publishedAt` through an ordinary save, including one
+ *  that flips `draft` back to `true`), so the draft check below is what actually excludes a currently
+ *  unpublished entry rather than the stamp check alone. An entry present only in `before` (deleted in
+ *  `after`) is never returned.
  *
- * `before: null` means no prior manifest is known and returns every stamped entry in `after`, the
- *  full fan-out. A consumer wiring announce-on-publish persists the prior manifest across deploys and
- *  passes `null` only when that full fan-out is actually wanted.
+ * `before: null` means no prior manifest is known and returns every currently-live stamped entry in
+ *  `after`, the full fan-out. A consumer wiring announce-on-publish persists the prior manifest across
+ *  deploys and passes `null` only when that full fan-out is actually wanted.
  *
  * Pure and node-safe: no I/O, no clock read, so a caller supplies both manifests and the result is
  *  deterministic. The engine performs no network sends; a consumer diffs and then acts.
  */
 export function newlyPublishedEntries(before: Manifest | null, after: Manifest): ManifestEntry[] {
   // A null `before` indexes to nothing, which is already the full-fan-out answer: no key it is asked
-  // for carries a stamp, so every stamped entry in `after` reads as newly published.
+  // for carries a stamp, so every currently-live stamped entry in `after` reads as newly published.
   const priorStamps = new Map(before?.entries.map((e) => [keyOf(e), e.publishedAt]) ?? []);
   return after.entries.filter((e) => {
+    if (e.draft) return false;
     if (!e.publishedAt) return false;
     return !priorStamps.get(keyOf(e));
   });

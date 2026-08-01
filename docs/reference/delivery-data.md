@@ -467,6 +467,30 @@ Build the per-concept descriptors for a site from its adapter content and its pa
 `createSiteIndexes` derives them internally. A public route calls this directly when it needs a
 `ConceptDescriptor` on its own, such as the descriptor `resolveReferences` takes.
 
+### `parseManifest`
+
+Stability tier: Extension API.
+
+```ts
+function parseManifest(raw: string): Manifest;
+```
+
+Parse a committed manifest file's raw text. Throws on malformed JSON, a wrong version, or a
+malformed entry, so a caller sees a well-formed graph or a clear error rather than a broken shape
+fed silently into the diff. Use it to validate a manifest your own code fetches, such as the
+`before`/`after` pair [`newlyPublishedEntries`](#newlypublishedentries) takes, instead of casting
+the fetched JSON yourself.
+
+```ts
+import { parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
+
+declare function fetchManifestFile(): Promise<string>;
+
+async function readDeployedManifest(): Promise<Manifest> {
+  return parseManifest(await fetchManifestFile());
+}
+```
+
 ### `newlyPublishedEntries`
 
 Stability tier: Extension API.
@@ -526,3 +550,4 @@ for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
 | `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
 | `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `newlyPublishedEntries`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
+| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |

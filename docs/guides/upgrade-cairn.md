@@ -90,11 +90,14 @@ the `ManageEditors` screen. See [Auth store](../reference/auth-store.md).
 
 The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish action
 writes once, at the commit that first lands an entry non-draft, and never overwrites or clears
-afterward. An entry already non-draft and unstamped before this release stays unstamped forever;
-only a future transition into published stamps. A new pure helper,
+afterward. An entry already non-draft and unstamped before this release stays unstamped forever,
+unless you take it back to Hidden and publish it again, which stamps it as though it were newly
+published; only a future transition into published stamps otherwise. A new pure helper,
 `newlyPublishedEntries(before, after)` on `@glw907/cairn-cms/delivery/data`, diffs two manifests
-down to the entries that just carried that transition, so you can detect a first publish and fan
-out your own notification with no engine networking or scheduling involved. See [Announce on
+down to the entries that just carried that transition and are still currently live, so you can
+detect a first publish and fan out your own notification with no engine networking or scheduling
+involved. The same subpath also re-exports `Manifest` and `parseManifest`, so you can name and
+validate the manifest you fetch to build the `before`/`after` pair. See [Announce on
 publish](./announce-on-publish.md).
 
 The `@codemirror/*` editor dependencies moved to their latest 6.x releases within cairn's existing

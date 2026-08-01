@@ -18,9 +18,12 @@
   or clears afterward. An entry already non-draft and unstamped before this release stays
   unstamped; only a future transition into published stamps. A new pure helper,
   `newlyPublishedEntries(before, after)` on `@glw907/cairn-cms/delivery/data`, diffs two
-  manifests down to the entries that just carried that transition, so a site can detect a
-  first publish and fan out its own notification with no engine networking or scheduling
-  involved. See [Announce on publish](docs/guides/announce-on-publish.md) and [Delivery
+  manifests down to the entries that just carried that transition and are still currently
+  live, so a site can detect a first publish and fan out its own notification with no engine
+  networking or scheduling involved. The same subpath also re-exports `Manifest` and
+  `parseManifest`, so a consumer can name and validate the manifest it fetches to build
+  `newlyPublishedEntries`'s `before`/`after` pair without hand-casting JSON. See [Announce on
+  publish](docs/guides/announce-on-publish.md) and [Delivery
   data](docs/reference/delivery-data.md#newlypublishedentries). Consumers must: nothing; the
   field is additive and optional, and the stamp only ever appears on a publish that happens
   after the upgrade.

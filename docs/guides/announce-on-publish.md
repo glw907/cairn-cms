@@ -22,6 +22,10 @@ reads no clock and touches no network, so both manifests are yours to supply.
 ```ts
 import { newlyPublishedEntries, type Manifest } from '@glw907/cairn-cms/delivery/data';
 
+declare function readPersistedManifest(): Promise<Manifest | null>;
+declare function readDeployedManifest(): Promise<Manifest>;
+declare function persistManifest(manifest: Manifest): Promise<void>;
+
 const before: Manifest | null = await readPersistedManifest(); // your own storage
 const after: Manifest = await readDeployedManifest(); // the manifest your site just shipped
 
@@ -39,6 +43,35 @@ The first time you run this you have no prior manifest to diff against. Pass `nu
 already-published entry in `after` comes back, a full backfill. Do that once, on purpose, then
 start persisting the real manifest from that run on.
 
+## Where the manifest comes from
+
+Both `before` and `after` have to come from the same source: the committed manifest file at your
+site's `manifestPath` (defaulting to `/src/content/.cairn/index.json`, see
+[Vite](../reference/vite.md)), the file cairn's own publish commits write the `publishedAt` stamp
+into. The preceding `readDeployedManifest` is your own fetch: read that file from wherever the deploy that
+just shipped makes it reachable (your built site, a raw GitHub content fetch, whatever your deploy
+pipeline already has access to), and hand the raw text to
+[`parseManifest`](../reference/delivery-data.md#parsemanifest), re-exported from this same
+subpath, rather than casting the fetched JSON yourself. It throws on a malformed or truncated file
+instead of quietly feeding a broken shape into the diff.
+
+```ts
+import { parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
+
+declare function fetchManifestFile(): Promise<string>;
+
+async function readDeployedManifest(): Promise<Manifest> {
+  return parseManifest(await fetchManifestFile());
+}
+```
+
+[`buildSiteManifest`](../reference/delivery-data.md#buildsitemanifest) sits on the same export
+line as `parseManifest` and reads like the obvious way to get a `Manifest`, but it is not a
+substitute here. It derives every row fresh from your content files at build time, and no content
+file carries the `publishedAt` stamp, so a manifest built that way is always `[]` when diffed
+against here, silently, with no error. Only the committed manifest file, the one cairn's own
+publish commits write the stamp into, carries what this pattern needs.
+
 ## Filter to what you actually want to announce
 
 `justPublished` holds every entry that crossed into published, across every concept your site
@@ -47,6 +80,10 @@ category, is ordinary filtering over the fields the entries already carry. If yo
 that category with a tag, filter on `tags`:
 
 ```ts
+import type { ManifestEntry } from '@glw907/cairn-cms/delivery/data';
+
+declare const justPublished: ManifestEntry[];
+
 const announcements = justPublished.filter((entry) => entry.tags?.includes('Team Announcement'));
 ```
 
@@ -63,8 +100,14 @@ the preceding pattern and sends whatever `announcements` produces:
 
 ```ts
 // src/routes/api/announce/+server.ts
-import { newlyPublishedEntries, type Manifest } from '@glw907/cairn-cms/delivery/data';
+import { newlyPublishedEntries, type Manifest, type ManifestEntry } from '@glw907/cairn-cms/delivery/data';
 import type { RequestHandler } from './$types';
+
+declare function requireDeploySecret(request: Request): void;
+declare function readPersistedManifest(): Promise<Manifest | null>;
+declare function readDeployedManifest(): Promise<Manifest>;
+declare function sendTeamText(entry: ManifestEntry): Promise<void>;
+declare function persistManifest(manifest: Manifest): Promise<void>;
 
 export const POST: RequestHandler = async ({ request }) => {
   requireDeploySecret(request); // your own auth, not cairn's
@@ -92,10 +135,14 @@ so it's the step that pings this endpoint.
 
 ## Three things the stamp rules mean for you
 
-- **An entry published before you upgraded to this cairn version never retro-stamps.** The stamp
-  only lands on the transition into published; an entry that was already live and unstamped before
-  the upgrade stays unstamped forever, so it never appears in `newlyPublishedEntries` and never
-  announces.
+- **An entry published before you upgraded to this cairn version stays unstamped only as long as
+  nobody touches its Hidden checkbox.** The stamp lands on the transition into published, checked
+  against the entry's own prior row, not against your upgrade date. Leave a pre-upgrade entry alone
+  and it stays unstamped forever, so it never appears in `newlyPublishedEntries` and never
+  announces. But checking Hidden and publishing, then unchecking Hidden and publishing again, takes
+  that same entry through draft and back: the second publish sees a prior row with `draft: true` and
+  stamps it with today's date, exactly like a real first publish. A years-old entry can announce
+  itself this way after a routine hide-and-reshow.
 - **Renaming a published entry reads as a new publish.** A rename changes the entry's `concept` or
   `id`, cairn's identity key. The old key's stamped row disappears from `after`, and the new key's
   stamped row has no stamped counterpart in `before`, so `newlyPublishedEntries` reports it as

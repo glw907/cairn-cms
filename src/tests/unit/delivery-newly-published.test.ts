@@ -1,8 +1,11 @@
 // newlyPublishedEntries diffs two manifests to find entries a deploy just carried across the
-// first-publish transition. Presence-of-stamp is the whole signal (see manifest-published-at.test.ts
-// for the stamp rules this relies on): a carried stamp never matches its own counterpart, a legacy
-// unstamped entry never matches, and a draft never carries a stamp so never matches either. The
-// engine performs no I/O here; a consumer persists `before` across deploys and calls this pure diff.
+// first-publish transition. Presence-of-stamp is most of the signal (see
+// manifest-published-at.test.ts for the stamp rules this relies on): a carried stamp never matches
+// its own counterpart, and a legacy unstamped entry never matches. A currently-drafted entry never
+// matches either, but not because it lacks a stamp: upsertEntry carries a prior publishedAt forward
+// through an ordinary save, including one that flips draft back to true, so the draft check is load
+// bearing on its own. The engine performs no I/O here; a consumer persists `before` across deploys
+// and calls this pure diff.
 import { describe, it, expect } from 'vitest';
 import { newlyPublishedEntries } from '../../lib/delivery/manifest.js';
 import type { Manifest, ManifestEntry } from '../../lib/content/manifest.js';
@@ -41,6 +44,14 @@ describe('newlyPublishedEntries', () => {
     const before = manifest();
     const after = manifest(entry({ draft: true }));
     expect(newlyPublishedEntries(before, after)).toEqual([]);
+  });
+
+  it('never returns a drafted entry that still carries a stamp from a prior publish, even under the before: null backfill', () => {
+    // upsertEntry carries a prior publishedAt forward through an ordinary save that flips draft
+    // back to true, so a currently-unpublished entry can still hold a stamp. The draft check, not
+    // the stamp check, is what has to exclude it here.
+    const after = manifest(entry({ draft: true, publishedAt: EARLIER }));
+    expect(newlyPublishedEntries(null, after)).toEqual([]);
   });
 
   it('returns exactly the stamped set when before is null', () => {

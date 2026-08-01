@@ -21,4 +21,5 @@ export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
 export { buildSiteManifest, newlyPublishedEntries } from './manifest.js';
-export type { ManifestEntry } from '../content/manifest.js';
+export { parseManifest } from '../content/manifest.js';
+export type { Manifest, ManifestEntry } from '../content/manifest.js';

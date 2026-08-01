@@ -75,19 +75,32 @@ Internal refactor, behavior-identical; nothing exports publicly yet. Deliverable
   (`'asc-member'`) prefixes the same way. Equivalence: for both `secure` states,
   `sessionCookieName(secure)` equals `cookieName('cairn_session', secure)` and
   `csrfCookieName(secure)` equals `cookieName('cairn_csrf', secure)`, so the refactor is
-  provably byte-identical. `tokensMatch` (imported from `../../lib/auth/crypto.js`): equal
-  tokens true; empty-vs-empty false; same-length mismatch false; different-length false.
+  provably byte-identical. Validation (adversarial-review hardening): a base starting with
+  `__Host-` or `__Secure-` throws (double-prefixing is a browser-silently-rejects mystery);
+  a base containing a character outside the cookie-name token set throws (test `;`, `=`, a
+  space, and `\n`); `cairn_`-prefixed bases do NOT throw (the engine's own names delegate
+  through this function; the namespace is reserved by documentation). `tokensMatch`
+  (imported from `../../lib/auth/crypto.js`): equal tokens true; empty-vs-empty false;
+  same-length mismatch false; different-length false; a non-ASCII pair differing only in a
+  multibyte character compares correctly (the byte-encoding case).
 - [ ] **Step 2: run it, confirm it fails** (`cookieName` and `tokensMatch` not exported from
   `crypto.ts`): `npx vitest run src/tests/unit/auth-crypto.test.ts`.
 - [ ] **Step 3: implement.** In `crypto.ts`: add `cookieName(base, secure)` returning
-  `` `__Host-${base}` `` when secure, `base` otherwise, with a TSDoc comment carrying the
-  `__Host-` rationale the two existing name functions carry today; rewrite
-  `sessionCookieName`/`csrfCookieName` as one-line delegations through it; move `tokensMatch`
-  in from `csrf.ts` with its doc comment. In `csrf.ts`: import `tokensMatch` alongside the
-  existing `csrfCookieName, generateCsrfToken` import. Update `admin-action.ts`'s import.
-  Then `grep -rn "tokensMatch" src/` and update any importer the list above missed (tests
-  included); the only known importers today are `csrf.ts`'s own callers and
-  `admin-action.ts`.
+  `` `__Host-${base}` `` when secure, `base` otherwise, throwing an actionable error on a
+  `__Host-`/`__Secure-`-prefixed base or a character outside the RFC 6265 cookie-name token
+  set, with a TSDoc comment carrying the `__Host-` rationale the two existing name
+  functions carry today plus the other half of the prefix contract (the browser accepts a
+  `__Host-` cookie only with `Secure`, `Path=/`, and no `Domain`) and the `cairn_`
+  reservation; rewrite `sessionCookieName`/`csrfCookieName` as one-line delegations through
+  it. Move `tokensMatch` in from `csrf.ts`, upgraded per the spec: encode both sides with
+  `TextEncoder`, return false on unequal byte length, use `crypto.subtle.timingSafeEqual`
+  when the runtime provides it (workerd does; Node's webcrypto does not) with the XOR loop
+  as fallback, and a doc comment stating the three consumer-facing properties (length leak,
+  empty-is-false, fixed-length CSPRNG tokens and hex hashes only). In `csrf.ts`: import
+  `tokensMatch` alongside the existing `csrfCookieName, generateCsrfToken` import. Update
+  `admin-action.ts`'s import. Then `grep -rn "tokensMatch" src/` and update any importer
+  the list above missed (tests included); the only known importers today are `csrf.ts`'s
+  own callers and `admin-action.ts`.
 - [ ] **Step 4: targeted tests green:** the new file plus
   `npx vitest run src/tests/unit/admin-action.test.ts` (its CSRF mismatch cases prove the
   moved compare still backs the wrapper).
@@ -105,8 +118,13 @@ promotion viewed from five gates, not five features.
 
 **Files:**
 - Create: `src/lib/auth-crypto/index.ts`
-- Modify: `package.json` (the `exports` map: a `./auth-crypto` entry with `types` +
-  `default`, no `svelte` condition, imitating the `./auth-store` entry exactly)
+- Create: `src/lib/auth-crypto/browser.ts` (one statement: throw
+  `new Error('@glw907/cairn-cms/auth-crypto is server-only')` at import time, with a
+  one-line comment saying why: every export here is Web Crypto and would run, uselessly and
+  dangerously, in a client bundle)
+- Modify: `package.json` (the `exports` map: a `./auth-crypto` entry with `types`,
+  `browser` pointing at the built stub, and `default`, otherwise imitating the
+  `./auth-store` entry)
 - Modify: `scripts/reference-coverage.mjs` (add
   `{ subpath: '/auth-crypto', dts: 'dist/auth-crypto/index.d.ts', page: 'docs/reference/auth-crypto.md' }`
   to the subpath table at scripts/reference-coverage.mjs:309)
@@ -144,13 +162,27 @@ promotion viewed from five gates, not five features.
 - [ ] **Step 4: wire the export map and gates** (`package.json`, `reference-coverage.mjs`,
   `check-reference-signatures.mjs`).
 - [ ] **Step 5: write `docs/reference/auth-crypto.md`.** Imitate `auth-store.md`'s register:
-  a header naming the subpath and its audience (the second-audience story, with the ASC
-  member-auth shape as the worked example, unnamed per the docs register), the
-  what-stays-out paragraph (a TTL is the site's ruling; the engine's own cookie names are
-  internal), an import snippet, then a section per export with `Stability tier: Extension
-  API.` and a fenced signature. Include one composed snippet, a site building its own
-  session cookie: `const name = cookieName('member-session', url.protocol === 'https:')`.
-  Snippets must pass `check:snippets`. Add the README.md index line.
+  a `**Server only.**` banner as the first body line (the `browser` condition enforces it at
+  build; the banner says so), a header naming the subpath and its audience (the
+  second-audience story, with the ASC member-auth shape as the worked example, unnamed per
+  the docs register), the what-stays-out paragraph (a TTL is the site's ruling; the
+  engine's own cookie names are internal, and `cairn_`-prefixed bases are the engine's
+  reserved namespace), an import snippet, then a section per export with `Stability tier:
+  Extension API.` and a fenced signature. Reviewer-mandated content, all from the spec:
+  `hashToken`'s precondition paragraph BEFORE its signature (CSPRNG-drawn values only;
+  never a password, numeric OTP, email, or anything enumerable; those need a password KDF
+  cairn does not ship; cite the OWASP Password Storage Cheat Sheet); `cookieName`'s
+  attribute contract (`Secure`, `Path=/`, no `Domain`, or the browser silently rejects) and
+  the `secure`-derivation caveat (behind upstream TLS termination `url.protocol` is not the
+  externally visible scheme); `tokensMatch`'s three properties; and the "discipline these
+  primitives assume" section per the spec (hash-only storage, atomic single-statement
+  consume shown via the engine's own `consumeToken` SQL, token in POST body never a URL,
+  `Referrer-Policy: no-referrer` plus the admin guard's header set named as the second
+  audience's own responsibility, double-submit CSRF on the second audience's routes, rate
+  limiting per email and per IP; cite the OWASP Authentication and Session Management
+  cheat sheets). Include one composed snippet, a site building its own session cookie:
+  `const name = cookieName('member-session', url.protocol === 'https:')`. Snippets must
+  pass `check:snippets`. Add the README.md index line.
 - [ ] **Step 6: changelog and upgrade window.** One `### Added` entry in `CHANGELOG.md`
   naming the six exports and the reference page, ending `Consumers must: nothing.`; a
   matching paragraph in `upgrade-cairn.md`'s Unreleased section; retitle that window's
@@ -161,16 +193,32 @@ promotion viewed from five gates, not five features.
 
 ### Task 3: the `createSectionAction` module and its suite
 
-The factory, internal only; Task 4 exports it. Deliverable count: two (module, test suite).
+The factory, internal only; Task 4 exports it. Deliverable count: four (two small
+amendments to existing modules, the module, the test suite); the amendments exist because
+the adversarial review compile-proved the factory cannot be built without them.
 
 **Files:**
+- Modify: `src/lib/sveltekit/admin-action.ts` (two review-mandated amendments, both
+  compile-proven necessary: `AdminActionEvent` becomes `AdminActionEvent<Env = AuthEnv>
+  extends EventBase<Env>` so the factory's returned function is assignable to a route's
+  generated `Actions` when the site's `App.Platform['env']` is its own generated type (the
+  default preserves every existing consumer's meaning; `adminAction` itself never reads
+  `platform`), and its `locals` gain `cairnAccess?: AccessMap`, which `EventBase` already
+  carries and the narrowed re-declaration dropped, so the wrapper can read it typed)
+- Modify: `src/lib/sveltekit/guard.ts:132` (attach `access ?? {}` instead of `access`;
+  behavior-identical, since `canReach` and `hasAccessRule` agree on `undefined` and `{}` in
+  every branch, and it makes the wrapper's absent-map 500 mean what it says: the guard
+  never ran)
 - Create: `src/lib/sveltekit/section-action.ts`
 - Create: `src/tests/unit/section-action.test.ts`
+- Regenerate: `docs/internal/api-surface.md` (the `AdminActionEvent` widening is a declared
+  public-shape change; disclose it in this task's diff)
 
 **Interfaces:**
 - Consumes: `adminAction`, `AdminActionContext`, `AdminActionEvent` from
-  `./admin-action.js`; `canReach` and `AccessMap` from `../auth/access.js`; `fail`,
-  `isActionFailure`, and the `ActionFailure` type from `@sveltejs/kit`.
+  `./admin-action.js`; `canReach`, `hasAccessRule`, and `AccessMap` from
+  `../auth/access.js`; `log` from `../log/index.js`; `fail`, `isActionFailure`, and the
+  `ActionFailure` type from `@sveltejs/kit`.
 - Produces, all exported from `section-action.ts` (Task 4 re-exports them):
 
 ```ts
@@ -195,98 +243,170 @@ export interface SectionActionConfig<Env, Db> {
 export interface SectionActionOptions {
   action: string;
   entity: string;
+  /** The authorization target the access map matches; defaults to event.url.pathname. A route
+   *  serving more than one section, or any route with a rest parameter, must declare it:
+   *  SvelteKit dispatches actions by ?/name while the map matches paths, and on a catch-all
+   *  route the pathname is attacker-chosen. */
+  target?: string;
   ownerOnly?: boolean;
   deniedMessage?: string;
 }
 
-/** What a wrapped handler receives: adminAction's context plus the resolved binding. */
-export type SectionActionContext<Db> = AdminActionContext & { db: Db };
+/** What a wrapped handler receives: adminAction's context plus the resolved binding.
+ *  NonNullable so explicit type arguments cannot re-nullify what the check order proved. */
+export type SectionActionContext<Db> = AdminActionContext & { db: NonNullable<Db> };
 
 export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>): <T>(
-  handler: (args: { event: AdminActionEvent; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
+  handler: (args: { event: AdminActionEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
   opts: SectionActionOptions,
-) => (event: AdminActionEvent) => Promise<T | ActionFailure<{ error: string }>>;
+) => (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
 ```
 
+`Env` does not infer from the resolver parameter alone (compile-proven collapse to `{}`
+under `check:snippets`' options): every documented snippet annotates the parameter or
+passes explicit type arguments, and with `resolveDb` annotated, `rateLimit.resolve` is
+contextually typed.
+
 **Behavior contract** (the module's TSDoc carries this ordering the way `adminAction`'s and
-ASC's `clubAdminAction`'s do; every refusal returns SvelteKit's `fail(...)`, never a throw,
-so a form renders it, and every refusal is audited through `ctx.audit` with `opts.action`/
-`opts.entity` and the exact `detail` string given):
+ASC's `clubAdminAction`'s do; the wrapper's own refusals return SvelteKit's `fail(...)`, so
+a form renders them, and each is audited through `ctx.audit` with `opts.action`/
+`opts.entity` and the exact `detail` string given, except the rate limit, which logs but
+never audits. Let `target = opts.target ?? event.url.pathname` throughout. User-facing
+copy is deliberately uniform: both 403 branches share
+`'You do not have access to this action.'` (overridable via `opts.deniedMessage`) and both
+500 branches share `'This section is not available.'`, so an authenticated editor learns no
+deployment or gating detail from the copy; branch identity lives in the audit `detail` and
+the structured log):
 
 1. `adminAction` composes underneath: editor resolution, CSRF, the single form read, the
-   audit contract. A refusal it throws (`AdminActionError`) propagates untouched.
-2. Rate limit, when configured: `resolve` returning undefined never blocks (local dev,
-   vitest, an unprovisioned deploy); a present binding whose `limit()` answers
-   `success: false` audits `detail: 'rejected: rate limited'` and returns
+   audit contract. A refusal it throws (`AdminActionError`) propagates untouched (a site
+   maps it in `handleError`; the reference says so).
+2. Rate limit, when configured: `resolve` returning undefined never blocks, and logs
+   `log.warn('admin.action.rate_limit_absent', { path, action, entity })` so the open
+   degrade is observable (local dev, vitest, an unprovisioned deploy all log it; a
+   production Workers Logs query on the event finds a forgotten `[[ratelimits]]` block). A
+   `limit()` call that THROWS also degrades to open, logged through the same event with an
+   `error` field: a transient binding error must not become a 500. A present binding
+   answering `success: false` logs `log.warn('admin.action.rate_limited', { path, action,
+   entity, editor })` and returns
    `fail(429, { error: config.rateLimit.message ?? 'Too many requests. Wait a moment and try again.' })`.
-3. `resolveDb` returning undefined audits `detail: 'rejected: database not bound'` and
-   returns `fail(500, { error: 'The section database is not bound.' })`: a deployment
+   No `ctx.audit` on this branch: a limiter denial is back-pressure, not a domain state
+   change, and auditing it would hand a flood one D1 insert per rejected request once the
+   pass-two sink lands.
+3. `resolveDb` returning undefined audits `detail: 'rejected: database not bound'`, logs
+   `log.error('admin.action.misconfigured', { path, reason: 'db_not_bound' })`, and returns
+   `fail(500, { error: 'This section is not available.' })`: a deployment
    misconfiguration, not a denial.
-4. The guard-attached access map absent from `event.locals` audits
-   `detail: 'rejected: access map not attached'` and returns
-   `fail(500, { error: 'The access map is not attached.' })`. Never fall through to
-   `canReach` with an absent map: its permissive absent-map reading is nav semantics, and a
-   form action never re-runs the layout `load` that would have refused. The wrapper reads
-   the map from the event's locals under the guard's own key (`cairnAccess`; see
-   `src/lib/sveltekit/types.ts:42` and `guard.ts:132`), typed on the wrapper's own event
-   interface extending `AdminActionEvent`, so no site ever casts.
-5. `canReach(map, ctx.editor, event.url.pathname)` false audits
-   `detail: 'rejected: role not admitted'` and returns
-   `fail(403, { error: opts.deniedMessage ?? 'Your role does not have access to this action.' })`.
-   With `opts.ownerOnly` and a non-owner capability, audit `detail: 'rejected: not owner'`
-   and return `fail(403, { error: opts.deniedMessage ?? 'Only an owner can do this.' })`;
+4. `event.locals.cairnAccess` absent (now typed on `AdminActionEvent` directly; no wrapper
+   event interface, no cast) audits `detail: 'rejected: access map not attached'`, logs
+   `log.error('admin.action.misconfigured', { path, reason: 'access_map_not_attached' })`,
+   and returns `fail(500, { error: 'This section is not available.' })`. With the guard's
+   `access ?? {}` amendment this genuinely means the guard never ran on this route; a
+   zero-config site presents an empty map and lands in branch 5 instead, whose log names
+   the remedy.
+5. `hasAccessRule(map, target)` false audits `detail: 'rejected: no access rule'`, emits
+   `auth.access.denied` (`warn`, the guard's own event shape: `{ email, role, target }`),
+   logs the remedy (`declare the section path in defineAccess and pass access to
+   createAuthGuard`), and returns `fail(403, { error: opts.deniedMessage ?? 'You do not
+   have access to this action.' })`. This mirrors `requireAccess` exactly, owner included:
+   a POST must never be admitted where the load fails closed, and `canReach` alone (its
+   permissive unmapped reading is nav semantics) is never consulted without
+   `hasAccessRule` first.
+6. `canReach(map, ctx.editor, target)` false audits `detail: 'rejected: role not
+   admitted'`; `opts.ownerOnly` set with a non-owner capability audits
+   `detail: 'rejected: not owner'`; both emit `auth.access.denied` (`warn`) and return
+   `fail(403, { error: opts.deniedMessage ?? 'You do not have access to this action.' })`.
    `ownerOnly` stacks on the map check, never replaces it.
-6. The handler runs once with `ctx: { ...ctx, db }`.
+7. The handler runs once with `ctx: { ...ctx, db }`.
 
 - [ ] **Step 1: write the failing suite.** Imitate `admin-action.test.ts`'s `jar`/`makeEvent`
-  fakes, extending the event with `platform: { env }` and `locals.cairnAccess`. Cases, one
-  `it` per line here:
-  - no `rateLimit` config: handler runs (a matching CSRF pair and a valid editor given);
-  - `rateLimit.resolve` returns undefined: handler runs (degrade-to-open);
+  fakes, extending the event with `platform: { env }` and `locals.cairnAccess`, WITHOUT
+  casts (once the Task 3 amendments land, the shapes type cleanly; a cast here would hide
+  the exact assignability defect the review caught). Cases, one `it` per line here:
+  - no `rateLimit` config: handler runs (a matching CSRF pair, a valid editor, and a mapped
+    path given);
+  - `rateLimit.resolve` returns undefined: handler runs (degrade-to-open), and no audit
+    record was emitted for it;
+  - a `limit()` that throws: handler still runs (degrade-to-open on error);
   - binding present, over limit: 429 `ActionFailure` (assert via `isActionFailure` and
-    `.status`), audit record emitted with `detail: 'rejected: rate limited'`, handler never
-    called;
+    `.status`), handler never called, and NO audit record emitted (the no-audit-on-429
+    contract);
   - binding present, under limit: handler runs, and `rateLimit.key` was called with a ctx
     whose `editor.email` is the verified editor's;
-  - `resolveDb` returns undefined: 500, audited `'rejected: database not bound'`, handler
-    never called;
-  - `locals.cairnAccess` absent: 500, audited `'rejected: access map not attached'`, handler
-    never called, even though `canReach` alone would have admitted;
-  - map present, role not admitted for the event's pathname (use a two-role map and an
-    editor-capability session against a path mapped to the other role): 403 with the default
-    message; again with `deniedMessage` set, the override comes back;
+  - `resolveDb` returns undefined: 500 with `'This section is not available.'`, audited
+    `'rejected: database not bound'`, handler never called;
+  - `locals.cairnAccess` absent: 500, audited `'rejected: access map not attached'`,
+    handler never called;
+  - `locals.cairnAccess` an EMPTY map (the guard's zero-config sentinel): 403, audited
+    `'rejected: no access rule'`, handler never called, OWNER included (build the event
+    with an owner-capability editor to prove the fail-closed mirror of `requireAccess`);
+  - map present but no rule matches the pathname: 403, audited `'rejected: no access
+    rule'`, owner included, even though `canReach` alone would have admitted (the
+    fail-open defect the review caught, pinned as a test);
+  - map rule present, role not admitted (a two-role map, an editor-capability session
+    against a path mapped to the other role): 403 with the shared default message
+    `'You do not have access to this action.'`; again with `deniedMessage` set, the
+    override comes back;
+  - `opts.target` set: authorization runs against `opts.target`, not `event.url.pathname`
+    (map admits the pathname but not the target: refused; map admits the target but not
+    the pathname: admitted — the catch-all defense);
   - `ownerOnly: true` with an editor-capability session a permissive map admits: 403,
-    audited `'rejected: not owner'`;
-  - ordering: with an over-limit binding AND an unbound db, the audit detail is
-    `'rejected: rate limited'` (rate limit runs first, the evidence order);
+    audited `'rejected: not owner'`, same shared default message;
+  - ordering: with an over-limit binding AND an unbound db, the 429 wins (rate limit runs
+    first, the evidence order);
   - happy path: `ctx.db` is the exact object `resolveDb` returned, the handler's return
-    value comes back through both wrappers, and exactly one audit record was emitted by the
-    handler itself (proving the wrapper's refusal audits did not fire).
+    value comes back through both wrappers, and exactly one audit record was emitted by
+    the handler itself (proving the wrapper's refusal audits did not fire).
 - [ ] **Step 2: run it, confirm it fails** (module not found).
-- [ ] **Step 3: implement to the contract above.** Header comment: what the factory is for
-  (the enforcement every site-built section otherwise hand-rolls, because SvelteKit
-  dispatches a matched action directly and never re-runs an ancestor layout's `load`), what
-  it deliberately does not do (no schema, no domain, no member-side anything), and the
-  fail-closed rationale per branch.
-- [ ] **Step 4: suite green,** plus `npx vitest run src/tests/unit/admin-action.test.ts`
-  (composition unchanged).
-- [ ] **Step 5: full gate.** No public surface yet, so `check:surface` reports no drift.
-- [ ] **Step 6: commit.**
+- [ ] **Step 3: land the two amendments** (`admin-action.ts` generic + `locals.cairnAccess`;
+  `guard.ts` `access ?? {}`), then run
+  `npx vitest run src/tests/unit/admin-action.test.ts src/tests/unit/guard.test.ts`: both
+  suites stay green untouched, proving the amendments are additive.
+- [ ] **Step 4: implement the factory to the contract above.** Header comment: what the
+  factory is for (the enforcement every site-built section otherwise hand-rolls, because
+  SvelteKit dispatches a matched action directly and never re-runs an ancestor layout's
+  `load`), what it deliberately does not do (no schema, no domain, no member-side
+  anything), and the fail-closed rationale per branch.
+- [ ] **Step 5: add the compile-only type test** (review note N1: the runtime fakes cannot
+  prove route assignability, and `check:snippets` rewrites `./$types` to `any`). In the
+  test file, a non-executing block: declare a synthetic env type
+  (`type SiteEnv = { SECTION_DB: { marker: true } }`), build
+  `createSectionAction<SiteEnv, SiteEnv['SECTION_DB']>({ resolveDb: (env) => env?.SECTION_DB })`,
+  and assert the produced action `satisfies` kit's `Action` shape for an event whose
+  `platform.env` is `SiteEnv` (import the types from `@sveltejs/kit`). This must compile
+  under the suite's `npm run check` without casts.
+- [ ] **Step 6: suite green,** then full gate. Regenerate the surface snapshot
+  (`npm run check:surface -- --update`); the diff must show ONLY the `AdminActionEvent`
+  widening (the generic parameter and the `cairnAccess` local), which this task disclosed
+  deliberately. Any other drift is a defect.
+- [ ] **Step 7: commit.**
 
 ### Task 4: export `createSectionAction` and document it
 
-Deliverable count: four (barrel export + signature anchor, reference sections, guide update,
-changelog + upgrade window).
+Deliverable count: five (barrel export + signature anchor, reference sections + log-events
+rows, guide update, changelog + upgrade window, ROADMAP filing). Stated per the pass-sizing
+rule; the fifth is one line.
 
 **Files:**
 - Modify: `src/lib/sveltekit/index.ts` (export `createSectionAction` and the types
   `RateLimitLike`, `SectionActionConfig`, `SectionActionOptions`, `SectionActionContext`
   from `./section-action.js`, beside the existing `adminAction` exports)
 - Modify: `scripts/check-reference-signatures.mjs` (add `'/sveltekit#createSectionAction'`)
-- Modify: `docs/reference/sveltekit.md` (new sections beside `adminAction`'s)
+- Modify: `docs/reference/sveltekit.md` (new sections beside `adminAction`'s; also correct
+  the stale `AdminActionEvent` row, which asserts "A real SvelteKit `RequestEvent`
+  satisfies it" unconditionally — after the Task 3 amendments the row documents the `Env`
+  parameter and its default)
+- Modify: `docs/reference/log-events.md` (four new rows: `admin.action.rate_limit_absent`
+  `warn`, `admin.action.rate_limited` `warn`, `admin.action.misconfigured` `error` with its
+  `reason` values `db_not_bound` and `access_map_not_attached`, and the note that the
+  factory's 403 branches emit the existing `auth.access.denied`)
 - Modify: `docs/guides/add-a-custom-admin-screen.md` (the actions section teaches
-  `createSectionAction` as the default path; `adminAction` stays documented as the primitive
-  beneath it for a section needing no db or rate limit)
+  `createSectionAction` as the default path; `adminAction` stays documented as the
+  primitive beneath it for a section needing no db or rate limit)
+- Modify: `ROADMAP.md` (file the `applySecurityHeaders` promotion the review suggested as a
+  candidate: the guard applies the header set only under `/admin`, and a second audience
+  built on `./auth-crypto` has no exported way to apply the same set; docs-only in this
+  pass, the export is a future call)
 - Modify: `CHANGELOG.md` and `docs/guides/upgrade-cairn.md` (extend both Unreleased windows)
 - Regenerate: `docs/internal/api-surface.md` (via `npm run check:surface -- --update`)
 
@@ -299,15 +419,32 @@ changelog + upgrade window).
 - [ ] **Step 2: document in `sveltekit.md`.** Imitate the `adminAction` sections' register:
   the factory's purpose, the site-fixed vs per-call split, the check order with its
   statuses, the degrade-to-open and fail-closed conventions, `Stability tier: Extension
-  API.`, fenced signatures for the factory and its four types. One composed snippet showing
-  a site defining its wrapper once and using it in an action (the spec's shape:
-  `resolveDb: (env) => env?.CLUB_DB` becomes a generic `env?.SECTION_DB`); snippets must
-  pass `check:snippets`.
-- [ ] **Step 3: update `add-a-custom-admin-screen.md`.** Where the guide currently shows the
-  hand-rolled action path, the factory becomes the shown path; keep the flow task-shaped per
-  the guides register.
+  API.`, fenced signatures for the factory and its four types. Review-mandated clauses,
+  all from the spec: the section's layout `load` must call `requireAccess` (reads and
+  writes then gate on the same fail-closed predicate) and a section path must carry a map
+  rule; a multi-action or catch-all route must declare `opts.target`; `adminAction`'s own
+  session/CSRF guards throw `AdminActionError` and need a site `handleError` mapping (only
+  the factory's own branches render as form failures); the rate-limit `key` must carry an
+  actor-scoped, normalized component, one binding is one shared budget, and the limiter
+  never bounds request-parse cost (the body is read before it runs); only
+  `createAuthGuard` may write `locals.editor`/`locals.cairnAccess` and it must be the last
+  handle to set them; denial audits carry no `entityId`, so a handler's own audit should;
+  a POST through SvelteKit remote functions never reaches form actions, so the factory
+  does not guard it. The composed snippet uses the ANNOTATED resolver form
+  (`resolveDb: (env: App.Platform['env'] | undefined) => env?.SECTION_DB`), never the bare
+  `(env) =>` shape, which the review compile-proved collapses `Env` to `{}` and fails
+  `check:snippets`. Add the four log-events rows.
+- [ ] **Step 3: update `add-a-custom-admin-screen.md`.** Where the guide currently shows
+  the hand-rolled action path, the factory becomes the shown path; keep the flow
+  task-shaped per the guides register. The guide's prerequisites change and must say so
+  (review note N7): declaring `defineAccess` with a rule covering the section path, and
+  passing it to `createAuthGuard`, becomes a named prerequisite step, not an implication.
+  Link the existing checkOrigin/CSRF page rather than restating its guidance (the watched
+  kit#15992 removal has one place to land).
 - [ ] **Step 4: changelog and upgrade window,** `Consumers must: nothing.`; retitle both
-  window headings to cover the factory.
+  window headings to cover the factory. The entry also names the `AdminActionEvent`
+  widening (generic `Env` defaulting to `AuthEnv`, `locals.cairnAccess`) as additive. Add
+  the one-line ROADMAP filing for `applySecurityHeaders`.
 - [ ] **Step 5: regenerate the surface snapshot;** the diff must show only the five new
   `/sveltekit` names. Commit the diff with the task.
 - [ ] **Step 6: full gate,** all five public-surface gates by name. Commit.

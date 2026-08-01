@@ -130,6 +130,15 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }
 
+## `/auth-crypto`
+
+- `cookieName`: (base: string, secure: boolean) => string
+- `generateCsrfToken`: () => string
+- `generateSessionId`: () => string
+- `generateToken`: () => string
+- `hashToken`: (token: string) => Promise<string>
+- `tokensMatch`: (a: string, b: string) => boolean
+
 ## `/auth-store`
 
 - `deleteEditor`: (db: D1Database, email: string) => Promise<void>

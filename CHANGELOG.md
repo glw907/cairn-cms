@@ -13,6 +13,14 @@
   reimplementing the D1 statements. See [Auth store](docs/reference/auth-store.md). Consumers
   must: nothing.
 
+- A new server-only export subpath, `@glw907/cairn-cms/auth-crypto`, re-exports the token and
+  session-id generators, the token hash, the constant-time compare, and a new `__Host-`
+  cookie-naming primitive: `generateToken`, `generateSessionId`, `generateCsrfToken`,
+  `hashToken`, `tokensMatch`, and `cookieName`. A site authenticating a second audience, member
+  magic-link sessions, offer tokens, an OTP flow, reuses the same cryptography primitives the
+  engine's own login proves in production instead of copying them by hand. See [Auth
+  crypto](docs/reference/auth-crypto.md). Consumers must: nothing.
+
 - The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish
   action writes once, at the commit that first lands an entry non-draft, and never overwrites
   or clears afterward. An entry already non-draft and unstamped before this release stays

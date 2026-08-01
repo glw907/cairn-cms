@@ -49,6 +49,15 @@ export interface ManifestEntry {
    *  (absent reads as no includes).
    */
   includes?: string[];
+  /**
+   * When this entry first went live, ISO 8601 in UTC. Manifest-owned: no content file carries it, so
+   *  `manifestEntryFromFile` can never derive it and every path that re-derives a row preserves it
+   *  instead (`upsertEntry` is that chokepoint). A publish action sets it once, at the commit that
+   *  first lands the entry non-draft, and nothing ever overwrites or clears it. Additive and
+   *  optional: an entry published before this field, or one still in draft, omits the key, and a
+   *  manifest committed before this field still parses (absent reads as never stamped).
+   */
+  publishedAt?: string;
 }
 
 /** The whole corpus as one committed file. `version` guards a future shape migration. */
@@ -132,6 +141,9 @@ export function serializeManifest(manifest: Manifest): string {
     permalink: e.permalink,
     ...(e.summary ? { summary: e.summary } : {}),
     draft: e.draft,
+    // Set publishedAt only when stamped, so an unpublished or pre-upgrade entry's row stays
+    // byte-identical to a manifest committed before this field (matching mediaRefs and includes).
+    ...(e.publishedAt ? { publishedAt: e.publishedAt } : {}),
     links: [...e.links].sort(compareRef).map((r) => ({ concept: r.concept, id: r.id })),
     ...(e.mediaRefs && e.mediaRefs.length ? { mediaRefs: [...e.mediaRefs].sort() } : {}),
     ...(e.references && e.references.length
@@ -176,6 +188,7 @@ export function parseManifest(raw: string): Manifest {
       (e.references === undefined || Array.isArray(e.references)) &&
       (e.tags === undefined || Array.isArray(e.tags)) &&
       (e.includes === undefined || Array.isArray(e.includes)) &&
+      (e.publishedAt === undefined || typeof e.publishedAt === 'string') &&
       Array.isArray(e.links);
     if (!ok) {
       throw new Error(`cairn: content manifest entry ${JSON.stringify(e)} is malformed`);
@@ -336,6 +349,16 @@ export function verifyManifest(built: Manifest, committedRaw: string): void {
         const { includes: _dropped, ...rest } = entry;
         entry = rest;
       }
+      // publishedAt normalizes in the OPPOSITE direction to the four drops above. Those exist for a
+      // field the corpus can produce and an old committed file lacks, so they drop the built key.
+      // This one is manifest-owned: the publish action writes it and no content file carries it, so
+      // the corpus-built entry NEVER has it and every committed stamp would otherwise read as drift
+      // and fail the build after the first publish. Carry the committed value onto the built entry
+      // instead. Per entry and per key, so it never masks drift in any other field, and a built
+      // stamp that disagrees with the committed one still fails.
+      if (c?.publishedAt && entry.publishedAt === undefined) {
+        entry = { ...entry, publishedAt: c.publishedAt };
+      }
       return entry;
     }),
   };
@@ -378,11 +401,40 @@ export function verifyReferences(manifest: Manifest): void {
 /**
  * Replace the entry with the same concept and id, or add it. Order does not matter, since
  *  serializeManifest sorts. This is the save path's incremental patch.
+ *
+ * Invariant: a `publishedAt` already held for that concept and id survives the replacement. The
+ *  replacement row is re-derived from a content file, which can never carry the stamp, so without
+ *  this every save, publish, and rename repoint would silently clear it. Preserving here covers all
+ *  three at one chokepoint. The held stamp wins outright, never the incoming one, which is what
+ *  makes the stamp immutable once set.
  */
 export function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest {
-  const entries = manifest.entries.filter((e) => !(e.concept === entry.concept && e.id === entry.id));
-  entries.push(entry);
+  const sameKey = (e: ManifestEntry) => e.concept === entry.concept && e.id === entry.id;
+  const prior = manifest.entries.find(sameKey);
+  const entries = manifest.entries.filter((e) => !sameKey(e));
+  entries.push(prior?.publishedAt ? { ...entry, publishedAt: prior.publishedAt } : entry);
   return { version: 1, entries };
+}
+
+/**
+ * Decide the first-publish stamp for a row a publish commit is about to land. `prior` is the row the
+ *  committed manifest holds for the same concept and id, absent for a never-published entry, and
+ *  `nowIso` is the publish moment the caller reads off the clock.
+ *
+ * A stamp lands only on the transition into published: `next` is non-draft and `prior` was absent or
+ *  a draft. An existing stamp is carried unchanged, so a re-publish, an unpublish, and a rename all
+ *  keep the original moment. A row already non-draft but unstamped stays unstamped forever, which is
+ *  what keeps entries published before this field from ever reading as newly published.
+ *
+ * Pure, so both publish paths share one rule and a test injects a fixed clock. Internal: the engine
+ *  calls it, and no export subpath carries it.
+ */
+export function stampFirstPublish(prior: ManifestEntry | undefined, next: ManifestEntry, nowIso: string): ManifestEntry {
+  if (prior?.publishedAt) return { ...next, publishedAt: prior.publishedAt };
+  if (next.draft === false && (prior === undefined || prior.draft === true)) {
+    return { ...next, publishedAt: nowIso };
+  }
+  return { ...next };
 }
 
 /** Drop the entry with the given concept and id, if present. The delete path's patch. */

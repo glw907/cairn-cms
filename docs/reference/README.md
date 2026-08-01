@@ -43,6 +43,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [Delivery (`/delivery`)](./delivery.md): the public read-model route loaders, the response helpers, and `CairnHead`.
 - [Delivery data (`/delivery/data`)](./delivery-data.md): the node-safe pure projections.
 - [Media (`/media`)](./media.md): the node-safe media surface: the config normalizer, the manifest functions, the naming and transform-URL helpers, the `media:` codec, and the render resolver.
+- [Auth store (`/auth-store`)](./auth-store.md): the server-only editor-provisioning functions backing D1.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
 - [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.editor` augmentation for a site's `app.d.ts`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.

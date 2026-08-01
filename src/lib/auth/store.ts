@@ -1,10 +1,21 @@
 // cairn-cms: D1 access for auth, through prepared statements only. No ORM. Each function takes
 // the `AUTH_DB` binding plus primitives, so it is testable against a real local D1 and free of
 // SvelteKit. Callers pass `now`/`expiresAt` in epoch milliseconds.
+//
+// Store-level invariant: every email argument is normalized here, trimmed and lowercased, before it
+// matches or writes a row. `editor.email` is the identity, a BINARY-collated TEXT PRIMARY KEY, so a
+// row written under one case is unreachable to a lookup under another. Normalizing at the store,
+// rather than trusting each caller, keeps that impossible: `/auth-store` is public surface, and a
+// consumer provisioning an editor from an address as a user typed it would otherwise write a shadow
+// row that can never sign in yet still counts toward the last-owner guards.
 import type { D1Database } from '@cloudflare/workers-types';
 import type { Role } from './types.js';
 
 type EditorCols = { email: string; display_name: string; role: Role };
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
 
 /**
  * An allowlist row as the store reads it: email, displayName, and the bare role name. The store
@@ -22,7 +33,7 @@ function toEditor(row: EditorCols): EditorRow {
 export async function findEditor(db: D1Database, email: string): Promise<EditorRow | null> {
   const row = await db
     .prepare('SELECT email, display_name, role FROM editor WHERE email = ?')
-    .bind(email)
+    .bind(normalizeEmail(email))
     .first<EditorCols>();
   return row ? toEditor(row) : null;
 }
@@ -35,12 +46,13 @@ export async function issueToken(
   expiresAt: number,
   now: number,
 ): Promise<void> {
+  const key = normalizeEmail(email);
   await db.batch([
     // Replace this email's prior token, and sweep any expired token while here (no cron needed).
-    db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(email, now),
+    db.prepare('DELETE FROM magic_token WHERE email = ? OR expires_at <= ?').bind(key, now),
     db
       .prepare('INSERT INTO magic_token (token_hash, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(tokenHash, email, expiresAt, now),
+      .bind(tokenHash, key, expiresAt, now),
   ]);
 }
 
@@ -48,7 +60,7 @@ export async function issueToken(
 export async function recentlyIssued(db: D1Database, email: string, since: number): Promise<boolean> {
   const row = await db
     .prepare('SELECT 1 AS one FROM magic_token WHERE email = ? AND created_at >= ? LIMIT 1')
-    .bind(email, since)
+    .bind(normalizeEmail(email), since)
     .first<{ one: number }>();
   return row != null;
 }
@@ -78,7 +90,7 @@ export async function createSession(
     db.prepare('DELETE FROM session WHERE expires_at <= ?').bind(now),
     db
       .prepare('INSERT INTO session (id, email, expires_at, created_at) VALUES (?, ?, ?, ?)')
-      .bind(id, email, expiresAt, now),
+      .bind(id, normalizeEmail(email), expiresAt, now),
   ]);
 }
 
@@ -121,16 +133,17 @@ export async function insertEditor(
 ): Promise<void> {
   await db
     .prepare('INSERT INTO editor (email, display_name, role, created_at) VALUES (?, ?, ?, ?)')
-    .bind(email, displayName, role, now)
+    .bind(normalizeEmail(email), displayName, role, now)
     .run();
 }
 
 /** Remove an editor and cut their live access (sessions and any pending token go too). */
 export async function deleteEditor(db: D1Database, email: string): Promise<void> {
+  const key = normalizeEmail(email);
   await db.batch([
-    db.prepare('DELETE FROM session WHERE email = ?').bind(email),
-    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
-    db.prepare('DELETE FROM editor WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM session WHERE email = ?').bind(key),
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
+    db.prepare('DELETE FROM editor WHERE email = ?').bind(key),
   ]);
 }
 
@@ -144,6 +157,7 @@ export async function deleteEditor(db: D1Database, email: string): Promise<void>
  */
 export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerRoles: string[]): Promise<boolean> {
   if (ownerRoles.length === 0) return false;
+  const key = normalizeEmail(email);
   const placeholders = ownerRoles.map(() => '?').join(', ');
   const res = await db
     .prepare(
@@ -151,12 +165,12 @@ export async function removeOwnerIfNotLast(db: D1Database, email: string, ownerR
        WHERE email = ? AND role IN (${placeholders})
          AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
     )
-    .bind(email, ...ownerRoles, ...ownerRoles)
+    .bind(key, ...ownerRoles, ...ownerRoles)
     .run();
   if (res.meta.changes !== 1) return false;
   await db.batch([
-    db.prepare('DELETE FROM session WHERE email = ?').bind(email),
-    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(email),
+    db.prepare('DELETE FROM session WHERE email = ?').bind(key),
+    db.prepare('DELETE FROM magic_token WHERE email = ?').bind(key),
   ]);
   return true;
 }
@@ -179,14 +193,14 @@ export async function insertOwnerIfEmpty(
        SELECT ?, ?, 'owner', ?
        WHERE NOT EXISTS (SELECT 1 FROM editor)`,
     )
-    .bind(email, displayName, now)
+    .bind(normalizeEmail(email), displayName, now)
     .run();
   return res.meta.changes === 1;
 }
 
 /** Change an editor's role. The guard reads the new role on the next request. */
 export async function setEditorRole(db: D1Database, email: string, role: Role): Promise<void> {
-  await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, email).run();
+  await db.prepare('UPDATE editor SET role = ? WHERE email = ?').bind(role, normalizeEmail(email)).run();
 }
 
 /**
@@ -209,7 +223,7 @@ export async function demoteOwnerIfNotLast(
        WHERE email = ? AND role IN (${placeholders})
          AND (SELECT COUNT(*) FROM editor WHERE role IN (${placeholders})) > 1`,
     )
-    .bind(newRole, email, ...ownerRoles, ...ownerRoles)
+    .bind(newRole, normalizeEmail(email), ...ownerRoles, ...ownerRoles)
     .run();
   return res.meta.changes === 1;
 }

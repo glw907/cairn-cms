@@ -20,7 +20,7 @@ import { isValidId, slugify, filenameFromId, composeDatedId, slugFromId, renameI
 import type { Backend } from '../github/backend.js';
 import type { FileChange } from '../github/repo.js';
 import { PENDING_PREFIX, pendingBranch, parsePendingBranch } from '../content/pending.js';
-import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type LinkTarget, type InboundLink } from '../content/manifest.js';
+import { emptyManifest, manifestEntryFromFile, parseManifest, serializeManifest, stampFirstPublish, upsertEntry, removeEntry, inboundLinks, inboundReferences, inboundIncludes, type Manifest, type ManifestEntry, type LinkTarget, type InboundLink } from '../content/manifest.js';
 import { deriveGettingStarted, type GettingStarted } from '../content/getting-started.js';
 import { markdownReference, type MarkdownReferenceRow } from '../components/markdown-reference.js';
 import { isConflict } from '../github/types.js';
@@ -340,6 +340,15 @@ function resolvePreview(preview: PreviewConfig | undefined, conceptId: string): 
 function invalidIdMessage(concept: ConceptDescriptor): string {
   const noun = concept.routing.routable ? 'address' : 'name';
   return `Enter a valid ${noun}: lowercase letters, numbers, and hyphens.`;
+}
+
+/**
+ * The row a manifest already holds for one entry, absent when it holds none, matched on the same
+ *  concept+id identity `upsertEntry` uses. The publish and rename paths read it for the fields a
+ *  re-derived row cannot carry, `publishedAt` above all.
+ */
+function manifestRow(manifest: Manifest, conceptId: string, id: string): ManifestEntry | undefined {
+  return manifest.entries.find((e) => e.concept === conceptId && e.id === id);
 }
 
 /** Look up the concept named by the `[concept]` route param, or a 404. */
@@ -951,6 +960,14 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     branch: string;
     branchSha: string;
     manifest: Manifest;
+    /** This entry's row as re-derived from the posted markdown, the one `manifest` holds upserted. */
+    row: ManifestEntry;
+    /**
+     * The row that one replaced, read off main's manifest before the upsert. Absent for a
+     *  never-published entry. Publish reads both to decide the first-publish stamp, which needs the
+     *  old and the new draft state in scope; save ignores them, since a save commits no manifest.
+     */
+    priorRow?: ManifestEntry;
     /** The draft-target tokens the body links to, for save's warning query. */
     draftLinks: string[];
     /** The absent-or-draft reference targets, for save's non-blocking reference warning. */
@@ -1080,6 +1097,9 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // the publish commit. The save commits no manifest change; publish lands the upsert on main.
     const manifest = await ctx.readManifest(backend);
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
+    // Capture the committed row BEFORE the upsert replaces it. The upsert result carries the merged
+    // row, so publish could not otherwise tell a first publish from a re-publish.
+    const priorRow = manifestRow(manifest, concept.id, id);
     const upserted = upsertEntry(manifest, row);
 
     // Save guard: resolve the body's cairn links against main's manifest with this entry upserted,
@@ -1145,7 +1165,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       ctx.commitFailure(commitFields, err, `/admin/${concept.id}/${id}`,
         'This file changed since you opened it. Reload and reapply your edits.', { query: suffix });
     }
-    return { path, markdown, branch, branchSha, manifest: upserted, draftLinks, referenceWarnings, backend, mediaChange };
+    return { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, draftLinks, referenceWarnings, backend, mediaChange };
   }
 
   /**
@@ -1176,7 +1196,12 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
-    const { path, markdown, branch, branchSha, manifest, backend, mediaChange } = held;
+    const { path, markdown, branch, branchSha, manifest: upserted, row, priorRow, backend, mediaChange } = held;
+
+    // Stamp the first publish here, not in saveToBranch: a save commits no manifest, so the moment an
+    // entry goes live is this commit. The stamped row replaces the unstamped one saveToBranch
+    // upserted, keyed the same, so the manifest this commit lands carries the stamp.
+    const manifest = upsertEntry(upserted, stampFirstPublish(priorRow, row, new Date().toISOString()));
 
     // The publish commit reuses the exact merged media.json saveToBranch already built (decision 1:
     // no re-read or re-merge here). Promote it to main alongside the body and the content manifest
@@ -1284,10 +1309,17 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     let next = await ctx.readManifest(backend);
     const changes: FileChange[] = [];
     const published: { concept: string; id: string; branch: string; sha: string }[] = [];
+    // One clock read for the batch, so every entry this commit first publishes carries the same
+    // moment, the way one commit is one publish.
+    const publishedAt = new Date().toISOString();
     for (const entry of reads) {
       if (entry.raw === null || entry.sha === null) continue;
       changes.push({ path: entry.path, content: entry.raw });
-      next = upsertEntry(next, manifestEntryFromFile(entry.concept, { path: entry.path, raw: entry.raw }));
+      // The same stamp rule as the single publish: the prior row is still in `next` at this point,
+      // since the upsert that replaces it is the very next call.
+      const prior = manifestRow(next, entry.concept.id, entry.id);
+      const row = manifestEntryFromFile(entry.concept, { path: entry.path, raw: entry.raw });
+      next = upsertEntry(next, stampFirstPublish(prior, row, publishedAt));
       published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
     }
     if (published.length === 0) {
@@ -1575,8 +1607,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       { path: oldPath, content: null },
       { path: newPath, content: movedRaw },
     ];
+    // The rename changes the entry's key, so the upsert preservation chokepoint cannot reach the old
+    // row's first-publish stamp: read it off the old key here and carry it onto the new one. A
+    // renamed entry is the same published entry at a new address, so its stamp must not reset.
+    const priorPublishedAt = manifestRow(manifest, concept.id, id)?.publishedAt;
     let next = removeEntry(manifest, concept.id, id);
-    next = upsertEntry(next, manifestEntryFromFile(concept, { path: newPath, raw: movedRaw }));
+    const movedRow = manifestEntryFromFile(concept, { path: newPath, raw: movedRaw });
+    next = upsertEntry(next, priorPublishedAt ? { ...movedRow, publishedAt: priorPublishedAt } : movedRow);
 
     // Repoint every inbound linker so its outbound edges point at the new id, both body `cairn:` links
     // and frontmatter reference fields. One entry can hold BOTH kinds at the same target, and the Git

@@ -740,6 +740,15 @@ linked entry. This edge carries no build-time integrity check of its own: the fr
 throws on a dangling `::include` when the build renders the entry, which is the same backstop a
 dangling `cairn:` link relies on.
 
+An entry also carries an optional `publishedAt`, an ISO 8601 timestamp in UTC of when the entry
+first went live. Unlike every other field, no content file carries it: a publish sets it once, at
+the commit that first lands the entry non-draft, and nothing afterward overwrites or clears it. A
+stamp marks the first publish, never the most recent edit. An entry still in draft has no
+`publishedAt`, and neither does one published before the field existed. Because the field belongs to
+the manifest rather than to the corpus, regenerating with
+[`cairn-manifest`](./cli-cairn-manifest.md) merges the committed stamps back into the rebuilt file,
+and `verifyManifest` accepts a committed stamp the corpus can't produce.
+
 #### Manifest serialize and verify
 
 Stability tier: Extension API.

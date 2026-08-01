@@ -56,6 +56,8 @@ later, or the upkeep of a running site.
   and find the one a symptom points at
 - **[Rotate the GitHub App private key](./rotate-the-github-app-key.md)**: generate a new key
   with no window where the App can't authenticate
+- **[Announce on publish](./announce-on-publish.md)**: detect the entries a deploy just carried
+  across their first publish and fan out from your own endpoint
 - **[Migrate existing content](./migrate-existing-content.md)**: map markdown from Hugo, Jekyll,
   or whatever came before onto cairn's concepts
 - **[Upgrade cairn](./upgrade-cairn.md)**: bump the version range and run the doctor over the

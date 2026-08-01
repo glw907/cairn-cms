@@ -79,6 +79,34 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: an auth-store export, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
+
+A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1
+editor-provisioning functions the engine's own `editors-routes` already uses: `listEditors`,
+`insertEditor`, `deleteEditor`, `setEditorRole`, `removeOwnerIfNotLast`, `insertOwnerIfEmpty`,
+and `demoteOwnerIfNotLast`, plus the `EditorRow` and `Role` types. Reach for it when you need to
+provision or manage editors from your own server code, a setup script, or a migration, outside
+the `ManageEditors` screen. See [Auth store](../reference/auth-store.md).
+
+The content manifest gains `ManifestEntry.publishedAt`, an ISO 8601 UTC stamp a publish action
+writes once, at the commit that first lands an entry non-draft, and never overwrites or clears
+afterward. An entry already non-draft and unstamped before this release stays unstamped forever,
+unless you take it back to Hidden and publish it again, which stamps it as though it were newly
+published; only a future transition into published stamps otherwise. A new pure helper,
+`newlyPublishedEntries(before, after)` on `@glw907/cairn-cms/delivery/data`, diffs two manifests
+down to the entries that just carried that transition and are still currently live, so you can
+detect a first publish and fan out your own notification with no engine networking or scheduling
+involved. The same subpath also re-exports `Manifest` and `parseManifest`, so you can name and
+validate the manifest you fetch to build the `before`/`after` pair. See [Announce on
+publish](./announce-on-publish.md).
+
+The `@codemirror/*` editor dependencies moved to their latest 6.x releases within cairn's existing
+version ranges (`@codemirror/state` 6.6.0 to 6.7.1, `@codemirror/view` 6.43.0 to 6.43.7, plus patch
+bumps to `autocomplete`, `commands`, `language`, and `lang-markdown`). Lockfile-only.
+
+Consumers must: nothing. Both seams are additive, and the `publishedAt` stamp only ever appears
+on a publish that happens after the upgrade.
+
 ## 0.92.0: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate
 
 The packaged admin sheet now ships a `base` cascade layer, so a bare form control, `dialog`,

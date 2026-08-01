@@ -467,6 +467,68 @@ Build the per-concept descriptors for a site from its adapter content and its pa
 `createSiteIndexes` derives them internally. A public route calls this directly when it needs a
 `ConceptDescriptor` on its own, such as the descriptor `resolveReferences` takes.
 
+### `parseManifest`
+
+Stability tier: Extension API.
+
+```ts
+function parseManifest(raw: string): Manifest;
+```
+
+Parse a committed manifest file's raw text. Throws on malformed JSON, a wrong version, or a
+malformed entry, so a caller sees a well-formed graph or a clear error rather than a broken shape
+fed silently into the diff. Use it to validate a manifest your own code fetches, such as the
+`before`/`after` pair [`newlyPublishedEntries`](#newlypublishedentries) takes, instead of casting
+the fetched JSON yourself.
+
+```ts
+import { parseManifest, type Manifest } from '@glw907/cairn-cms/delivery/data';
+
+declare function fetchManifestFile(): Promise<string>;
+
+async function readDeployedManifest(): Promise<Manifest> {
+  return parseManifest(await fetchManifestFile());
+}
+```
+
+### `newlyPublishedEntries`
+
+Stability tier: Extension API.
+
+```ts
+function newlyPublishedEntries(before: Manifest | null, after: Manifest): ManifestEntry[];
+```
+
+Diff two manifests down to the entries a deploy just carried across the first-publish transition:
+`after` entries that carry a `publishedAt` stamp, whose same concept-and-id counterpart in `before`
+was absent or itself unstamped. An entry that carried its stamp forward from `before`, an entry that
+was already non-draft but never stamped, and a draft never match, since none of them changes the
+stamp between the two manifests. An entry deleted from `after` never returns. The helper is pure
+and node-safe. It performs no I/O and reads no clock, so a caller supplies both manifests and gets a
+deterministic result back. The engine sends nothing over the network and runs no scheduler. A
+consumer diffs and then acts on the result, the seam an announce-on-publish integration builds on.
+
+Pass `before: null` to mean no prior manifest exists. Every stamped entry in `after` then comes back,
+a full fan-out. A consumer wiring announce-on-publish has to persist the prior deployed manifest
+itself, since the engine keeps no state across deploys, and should pass `null` only when a fan-out
+over every already-published entry is actually wanted, such as a first backfill run.
+
+Renaming a published entry changes its `concept`/`id` key, cairn's identity model. This helper reads
+the renamed entry as newly published: the old key's stamped row no longer appears in `after`, and the
+new key's stamped row has no stamped counterpart in `before`. A consumer that renames published
+entries should expect the rename to read as a new publish here.
+
+```ts
+import { newlyPublishedEntries, type Manifest } from '@glw907/cairn-cms/delivery/data';
+
+declare const priorManifest: Manifest | null;
+declare const deployedManifest: Manifest;
+
+for (const entry of newlyPublishedEntries(priorManifest, deployedManifest)) {
+  // Fan out from the consumer's own endpoint; the engine sends nothing.
+}
+```
+
 ---
 
 ## Types
@@ -487,3 +549,5 @@ Build the per-concept descriptors for a site from its adapter content and its pa
 | `SeoMeta` | Extension API | `interface SeoMeta { title; meta; links; jsonLd }` | The plain-data head: a title, meta tags, link tags, and one JSON-LD object. |
 | `SeoFields` | Extension API | `interface SeoFields { description?; image?; robots?; author? }` | The optional SEO head fields a concept can carry in frontmatter. |
 | `ResolvedReference` | Extension API | `interface ResolvedReference { id; concept; title; permalink; summary? }` | A reference edge resolved to its target's identity, for a public route to render a linked target. |
+| `ManifestEntry` | Extension API | `interface ManifestEntry { id; concept; title; date?; permalink; summary?; draft; links; mediaRefs?; references?; tags?; includes?; publishedAt? }` | One corpus entry as the manifest holds it, the element type of `Manifest.entries` and `newlyPublishedEntries`'s return. `publishedAt`, ISO 8601 in UTC, is set once at the publish commit that first lands the entry non-draft and never overwritten or cleared afterward. |
+| `Manifest` | Extension API | `interface Manifest { version: 1; entries: ManifestEntry[] }` | The whole corpus as one committed file, with a version guard. `parseManifest` and `newlyPublishedEntries`'s `before`/`after` parameters carry this type. |

@@ -20,4 +20,6 @@ export { readSeoFields, resolveImageUrl } from './seo-fields.js';
 export type { SeoFields } from './seo-fields.js';
 export { rssResponse, jsonFeedResponse, sitemapResponse, robotsResponse } from './responses.js';
 export { jsonLdScript } from './json-ld.js';
-export { buildSiteManifest } from './manifest.js';
+export { buildSiteManifest, newlyPublishedEntries } from './manifest.js';
+export { parseManifest } from '../content/manifest.js';
+export type { Manifest, ManifestEntry } from '../content/manifest.js';

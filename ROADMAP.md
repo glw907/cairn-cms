@@ -175,6 +175,16 @@ the named human gates only):**
 
 ## Next
 
+- **`COLLATE NOCASE` on `editor.email`, to ride along with the next auth migration.** The column is a
+  BINARY-collated `TEXT PRIMARY KEY` (`migrations/0000_auth.sql:3`), so two case variants of one address
+  are two rows. The 2026-08-01 xcathletes seams pass closed this at the store: every email argument in
+  `src/lib/auth/store.ts` is trimmed and lowercased before it matches or writes, so no path through the
+  engine or the public `/auth-store` subpath can create a shadow row. The residual is a site writing the
+  `editor` table with raw `wrangler d1 execute`, which is why this is filed rather than urgent. Closing it
+  at the database is a schema change against two production sites, so it wants batching with the next
+  migration rather than a migration of its own. Found by the pass's review gate while confirming the
+  lockout defect the store fix closed.
+
 - **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The four
   error-tier defect groups Pass 2 calibration found against six admin routes in both themes
   (measurements in `docs/internal/2026-07-design-infrastructure-audit-calibration.md`) are resolved:

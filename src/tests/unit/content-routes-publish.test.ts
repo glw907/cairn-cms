@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
+import { parseManifest, serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
@@ -537,6 +537,138 @@ describe('publishAllAction', () => {
     expect(gh.read('main', PAGE_PATH)).toBe(PAGE_MD);
     expect(gh.branches.has(BRANCH)).toBe(false);
     expect(gh.branches.has(PAGE_BRANCH)).toBe(false);
+  });
+});
+
+// The first-publish stamp. publishedAt is manifest-owned (no content file can carry it), so these
+// cases prove the two publish paths stamp the same transition and that every later publish carries
+// the stamp forward untouched, the immutability a consumer's announce-on-publish rides on.
+describe('the publishedAt first-publish stamp', () => {
+  const PAGE_PATH = 'src/content/pages/about.md';
+  const PAGE_BRANCH = 'cairn/pages/about';
+  const PAGE_MD = '---\ntitle: About\n---\nabout body';
+  const EARLIER = '2020-03-04T05:06:07.000Z';
+
+  /** The published row for the shared posts fixture, read off main's committed manifest. */
+  function publishedRow(gh: GithubDouble, concept = 'posts', id = '2026-05-01-hi') {
+    return parseManifest(gh.read('main', MANIFEST_PATH) ?? '').entries.find((e) => e.concept === concept && e.id === id);
+  }
+
+  /** Main seeded with one committed posts row, plus the entry's pending branch. */
+  function mainWith(row: ManifestEntry) {
+    return new GithubDouble({
+      main: {
+        [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
+        [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [row] }),
+      },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+  }
+
+  const draftRow: ManifestEntry = { concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: true, links: [] };
+  const liveRow: ManifestEntry = { ...draftRow, draft: false };
+
+  it('stamps an entry whose committed row was a draft', async () => {
+    const gh = mainWith(draftRow);
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const before = Date.now();
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'live now' }) as never));
+
+    const stamp = publishedRow(gh)?.publishedAt;
+    expect(stamp).toBeTruthy();
+    expect(Date.parse(stamp!)).toBeGreaterThanOrEqual(before);
+  });
+
+  it('stamps a brand-new entry with no committed row', async () => {
+    const gh = new GithubDouble({
+      main: { [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [] }) },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+    });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+    const before = Date.now();
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'first publish' }) as never));
+
+    const stamp = publishedRow(gh)?.publishedAt;
+    expect(stamp).toBeTruthy();
+    expect(Date.parse(stamp!)).toBeGreaterThanOrEqual(before);
+  });
+
+  it('carries an existing stamp through a re-publish byte-identical', async () => {
+    const gh = mainWith({ ...liveRow, publishedAt: EARLIER });
+    gh.install();
+    const routes = createContentRoutes(runtime());
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' }) as never));
+
+    expect(publishedRow(gh)).toMatchObject({ title: 'Hi', publishedAt: EARLIER });
+  });
+
+  it('never retro-stamps a legacy non-draft row that carries no stamp', async () => {
+    const gh = mainWith(liveRow);
+    gh.install();
+    const routes = createContentRoutes(runtime());
+
+    await redirectedTo(routes.publishAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'edited text' }) as never));
+
+    expect(publishedRow(gh)?.publishedAt).toBeUndefined();
+  });
+
+  it('leaves main untouched on a save, so no stamp lands before the publish', async () => {
+    const gh = mainWith(draftRow);
+    gh.install();
+    const routes = createContentRoutes(runtime());
+
+    await redirectedTo(routes.saveAction(actionEvent('2026-05-01-hi', { title: 'Hi', body: 'saved text' }) as never));
+
+    expect(publishedRow(gh)?.draft).toBe(true);
+    expect(publishedRow(gh)?.publishedAt).toBeUndefined();
+    expect(mainRefPatches(gh)).toHaveLength(0);
+  });
+
+  it('stamps the same transitions in a publish-all batch, carrying and skipping the same rows', async () => {
+    const gh = new GithubDouble({
+      main: {
+        [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
+        [MANIFEST_PATH]: serializeManifest({
+          version: 1,
+          entries: [
+            draftRow,
+            { concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false, links: [], publishedAt: EARLIER },
+          ],
+        }),
+      },
+      [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
+      [PAGE_BRANCH]: { [PAGE_PATH]: PAGE_MD },
+    });
+    gh.install();
+    const routes = createContentRoutes(multiRuntime());
+    const before = Date.now();
+
+    await redirectedTo(
+      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} }) as never),
+    );
+
+    // The draft-to-live post takes a fresh stamp; the already-stamped page keeps its own.
+    const post = publishedRow(gh)?.publishedAt;
+    expect(post).toBeTruthy();
+    expect(Date.parse(post!)).toBeGreaterThanOrEqual(before);
+    expect(publishedRow(gh, 'pages', 'about')?.publishedAt).toBe(EARLIER);
+  });
+
+  it('leaves a legacy unstamped row unstamped in a publish-all batch', async () => {
+    const gh = mainWith(liveRow);
+    gh.install();
+    const routes = createContentRoutes(runtime());
+
+    await redirectedTo(
+      routes.publishAllAction(contentEvent({ url: 'https://t.example/admin/posts', params: { concept: 'posts' }, form: {} }) as never),
+    );
+
+    expect(publishedRow(gh)?.publishedAt).toBeUndefined();
   });
 });
 

@@ -4,6 +4,7 @@ import { seedEditor, countRows } from './_auth-harness.js';
 import {
   findEditor,
   issueToken,
+  recentlyIssued,
   consumeToken,
   createSession,
   resolveSession,
@@ -175,5 +176,77 @@ describe('sessions (server-side, role read live)', () => {
     await createSession(db, 'sid-del', 'ed@x.dev', Date.now() + 10_000, Date.now());
     await deleteSession(db, 'sid-del');
     expect(await resolveSession(db, 'sid-del', Date.now())).toBeNull();
+  });
+});
+
+describe('email normalization (the store owns it)', () => {
+  it('stores a mixed-case insert under its normalized email', async () => {
+    await insertEditor(db, '  Backup@Site.COM ', 'Backup', 'editor', Date.now());
+    expect(await findEditor(db, 'backup@site.com')).toEqual({
+      email: 'backup@site.com',
+      displayName: 'Backup',
+      role: 'editor',
+    });
+    expect((await listEditors(db)).map((e) => e.email)).toEqual(['backup@site.com']);
+  });
+
+  it('resolves a lookup written under a different case', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    expect((await findEditor(db, 'ED@X.Dev'))?.email).toBe('ed@x.dev');
+  });
+
+  it('rejects a case-variant insert of an email already present', async () => {
+    await insertEditor(db, 'ed@x.dev', 'Ed', 'editor', Date.now());
+    await expect(insertEditor(db, 'ED@X.dev', 'Ed Again', 'owner', Date.now())).rejects.toThrow();
+    expect(await countRows('editor')).toBe(1);
+  });
+
+  it('leaves a reachable owner after a mixed-case owner is provisioned and one is removed', async () => {
+    // The lockout the promoted `/auth-store` surface could otherwise cause: a roster screen adds an
+    // owner as a user typed it, then an owner removes themselves through ManageEditors. Both rows
+    // must be reachable by the lowercased email the login path looks up.
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    await insertEditor(db, 'Backup@Site.com', 'Backup', 'owner', Date.now());
+    expect(await findEditor(db, 'backup@site.com')).not.toBeNull();
+
+    expect(await removeOwnerIfNotLast(db, 'own@x.dev', ['owner'])).toBe(true);
+    const remaining = await listEditors(db);
+    expect(remaining.map((e) => e.email)).toEqual(['backup@site.com']);
+    // Reachable means the login path's normalized lookup finds it.
+    expect(await findEditor(db, 'backup@site.com')).not.toBeNull();
+  });
+
+  it('matches a differently-cased row from every write path', async () => {
+    await insertEditor(db, 'Mixed@X.dev', 'Mixed', 'editor', Date.now());
+    await setEditorRole(db, 'MIXED@x.DEV', 'owner');
+    expect((await findEditor(db, 'mixed@x.dev'))?.role).toBe('owner');
+
+    await seedEditor('own@x.dev', 'Own', 'owner');
+    expect(await demoteOwnerIfNotLast(db, ' mixed@X.DEV ', ['owner'], 'editor')).toBe(true);
+    expect((await findEditor(db, 'mixed@x.dev'))?.role).toBe('editor');
+
+    await setEditorRole(db, 'mixed@x.dev', 'owner');
+    expect(await removeOwnerIfNotLast(db, 'Mixed@X.Dev', ['owner'])).toBe(true);
+    expect(await findEditor(db, 'mixed@x.dev')).toBeNull();
+
+    await insertEditor(db, 'other@x.dev', 'Other', 'editor', Date.now());
+    await deleteEditor(db, 'OTHER@X.DEV');
+    expect(await findEditor(db, 'other@x.dev')).toBeNull();
+  });
+
+  it('normalizes the bootstrap owner insert', async () => {
+    expect(await insertOwnerIfEmpty(db, 'Boss@X.dev', 'Boss', Date.now())).toBe(true);
+    expect((await findEditor(db, 'boss@x.dev'))?.role).toBe('owner');
+  });
+
+  it('normalizes the token and session paths', async () => {
+    await seedEditor('ed@x.dev', 'Ed', 'editor');
+    const now = Date.now();
+    await issueToken(db, 'Ed@X.dev', 'hash-mixed', now + 10_000, now);
+    expect(await recentlyIssued(db, 'ED@x.DEV', now - 1)).toBe(true);
+    expect(await consumeToken(db, 'hash-mixed', now)).toBe('ed@x.dev');
+
+    await createSession(db, 'sid-mixed', 'Ed@X.dev', now + 10_000, now);
+    expect((await resolveSession(db, 'sid-mixed', now))?.email).toBe('ed@x.dev');
   });
 });

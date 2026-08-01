@@ -205,3 +205,115 @@ The `cairn-pass` pass-end ritual applies (reviewer fan-out including
 `web-auth-security-reviewer` for Task 1's auth-adjacent surface, code-simplifier before the
 final commits, STATUS update, post-mortem). A publish is likely warranted at close under the
 consumer-needs trigger; that is `cairn-release`'s call, made then, not a pre-numbered promise.
+
+---
+
+## Post-mortem (2026-08-01)
+
+**Status: complete, merged-ready, HELD UNPUBLISHED.** Geoff called off the release mid-pass
+(2026-08-01) to batch this window with the ASC consumer brief's seams. `package.json` stays at
+`0.92.0`; the work sits under `## Unreleased`.
+
+### What shipped
+
+Seven commits on `xcathletes-seams` off `main` at `2b9e1c19`:
+
+| Commit | What |
+| --- | --- |
+| `82fcd36b` | Task 1: the `./auth-store` server-only subpath |
+| `5ecab62f` | Task 2: `ManifestEntry.publishedAt`, the first-publish stamp |
+| `1c709fdd` | Task 3: `newlyPublishedEntries` on `./delivery/data` |
+| `41088673` | Task 4: the announce-on-publish guide, changelog, upgrade guide |
+| `252b26c8` | code-simplifier refinements |
+| `73dc4336` | Review fix: email normalization in the auth store |
+| `84fe1927` | Review fix: the `Manifest`/`parseManifest` exports, the draft filter, the snippet declarations |
+
+Both briefed seams are delivered. Task 1 was the export-map promotion the brief asked for. Tasks 2
+and 3 are one design: the engine stamps and diffs, and the consumer owns every send.
+
+### Verified, with evidence
+
+- `npm run check` `1540 FILES 0 ERRORS 0 WARNINGS`; `npm test` **exit 0**, 375 files / 4604 tests.
+  Both re-run by the main loop against the committed tree, not only reported by an implementer.
+- `check:comments`, `check:reference`, `check:reference:signatures`, `check:docs`,
+  `check:surface`, `check:package` all green.
+- `check:snippets` `OK (177 blocks typechecked)`. It was RED at 12 problems until `84fe1927`.
+- **Consumer build proved against THIS worktree's engine**, not main's: `examples/showcase` had no
+  `node_modules`, `npm ci` resolved `@glw907/cairn-cms` to the worktree path, `./auth-store`
+  resolved into the worktree's `dist/`, and `npm run build` exited 0.
+
+### The review gate is the headline
+
+A five-dimension adversarial workflow (18 agents, ~1.47M tokens, 31 raw findings, 6 verified by
+two independent lenses each, all 6 confirmed) found three real defects, two of which would have
+merged red:
+
+1. **`Manifest` was never exported from `./delivery/data`**, the subpath the pass's headline
+   function ships on, so a consumer could not name either of its parameters and all three snippets
+   the pass wrote failed to typecheck. Four dimensions found this independently.
+2. **`check:snippets` was red.** It typechecks every fenced `ts` block against the built package,
+   runs at `.github/workflows/test.yml:35`, and short-circuits every gate after it.
+3. **The `auth-store` promotion was lockout-capable.** `editor.email` is a BINARY-collated
+   `TEXT PRIMARY KEY`; every login path lowercases; the store wrote verbatim. That was safe only
+   because the single in-engine caller normalized first, and promoting the functions to public API
+   removed the guarantee. A consumer inserting `Backup@Site.com` as an owner creates a row that can
+   never sign in, fires no duplicate error, and still counts in `removeOwnerIfNotLast`'s
+   `COUNT(*) > 1` subselect, so the real owner removing themselves strands the site with no
+   reachable owner. Fixed structurally: the store now owns normalization.
+
+Three further findings the synthesis raised, all corrections of claims the pass itself authored,
+folded into `84fe1927`: `newlyPublishedEntries` excluded no drafts though `upsertEntry` carries a
+stamp through an unpublish, so it could return a link the build never rendered; the guide's
+"stays unstamped forever" bullet is false across a Hidden round-trip; and the guide never named
+where `after` comes from, where the obvious reach (`buildSiteManifest`) silently diffs to nothing
+forever.
+
+### Decisions locked
+
+- **`publishedAt` is a manifest-owned field.** No content file carries it, so
+  `manifestEntryFromFile` can never derive it, and preservation lives at the `upsertEntry`
+  chokepoint rather than at each call site. Any future manifest-owned field needs the same four
+  coordinated changes: the optional-spread in `serializeManifest`, the `parseManifest` predicate,
+  an INVERSE normalization in `verifyManifest` (carry committed onto built, not drop built), and a
+  merge in `writeManifest` so `cairn-manifest` regeneration does not strip it.
+- **The engine stamps and diffs; it never sends or schedules.** Reaffirmed, not revisited.
+- **`newlyPublishedEntries` returns only live entries.** Presence of a stamp is not sufficient.
+- **The store owns email normalization**, because the column is the identity and the surface is now
+  public.
+
+### Process findings
+
+- **`check:snippets` is a FOURTH CI-only gate the local ritual skips**, alongside
+  `check:comments`, `check:reference:signatures`, and `check:surface`. The `cairn-pass` skill names
+  the other three and not this one. It belongs in the skill's step 5.
+- **`main` arrived red.** The CodeMirror bump (`20f7a975`), a docs-adjacent commit landed straight
+  on `main`, opened a `CHANGELOG.md` `## Unreleased` window with no matching upgrade-guide section,
+  which the `docs-links` parity gate catches. Verified independently in the main checkout. Fixed in
+  `82fcd36b` and carried here. A commit that skips the suite because it "only touches deps" is how
+  a releasable `main` stops being releasable.
+- **The plan under-specified Task 2 in a way that would have shipped broken.** Its file list named
+  only the type and the two publish actions. Scouting found that the build gate, the regeneration
+  bin, and both rename paths all re-derive rows and would have cleared or rejected the stamp. The
+  orchestrator derived the full contract before dispatching and upshifted the task to Opus. **A
+  plan's file list is a hypothesis, not an inventory.**
+- **One dispatch stalled without committing**, ending on "I'll wait for the background test" with
+  eight files modified and no gate run. The main loop reviewed the diff, ran the full battery
+  itself, and committed. Trusting the agent's own completion claim would have left the work
+  unverified; the standing rule to verify each commit rather than the report is what caught it.
+
+### Budgets
+
+~2.55M subagent tokens. The review workflow alone was 1.47M, 58% of the total, and it bought two
+merge-blocking defects plus a lockout-capable security defect on a package two production sites
+consume. Human interaction points: three after the initial dispatch, two of which changed the
+outcome (the release retraction, the ASC planning prep). None was a question the orchestrator
+should have answered itself.
+
+### Carry-forwards
+
+- `COLLATE NOCASE` on `editor.email`, filed in ROADMAP's Next tier to ride along with the next auth
+  migration. The store fix closes every path through the engine; the residual is raw
+  `wrangler d1 execute`.
+- Renaming a published entry reads as a new publish to `newlyPublishedEntries`, and a
+  delete-then-recreate under the same id re-stamps. Both follow from the id-identity model, both are
+  documented in the guide rather than engineered around.

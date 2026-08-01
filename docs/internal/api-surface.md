@@ -130,6 +130,18 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }
 
+## `/auth-store`
+
+- `deleteEditor`: (db: D1Database, email: string) => Promise<void>
+- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<boolean>
+- `EditorRow`: { email: string; displayName: string; role: "owner" | "editor" }
+- `insertEditor`: (db: D1Database, email: string, displayName: string, role: "owner" | "editor", now: number) => Promise<void>
+- `insertOwnerIfEmpty`: (db: D1Database, email: string, displayName: string, now: number) => Promise<boolean>
+- `listEditors`: (db: D1Database) => Promise<EditorRow[]>
+- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<boolean>
+- `Role`: "owner" | "editor"
+- `setEditorRole`: (db: D1Database, email: string, role: "owner" | "editor") => Promise<void>
+
 ## `/components`
 
 - `CairnAdmin`: Component<Props, {}, "">
@@ -172,6 +184,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
+- `Manifest`: { version: 1; entries: ManifestEntry[] }
+- `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
+- `parseManifest`: (raw: string) => Manifest
 - `PublicRoutesDeps`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
@@ -212,6 +228,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
+- `Manifest`: { version: 1; entries: ManifestEntry[] }
+- `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
+- `parseManifest`: (raw: string) => Manifest
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string

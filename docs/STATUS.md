@@ -14,53 +14,45 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-01: the xcathletes seams pass is DONE and held; next is the ASC planning sitting)
+## Immediate next action (2026-08-01: the ASC seams planning sitting is DONE; next is pass-one execution)
 
-**The xcathletes engine-seams pass is COMPLETE and HELD UNPUBLISHED.** Seven commits on
-`xcathletes-seams`, full gate green (`check` 0/0, `npm test` exit 0 at 375 files / 4604 tests,
-every doc and surface gate, plus a consumer build proved against the worktree's own engine rather
-than main's). Both briefed seams shipped: the `./auth-store` server-only subpath, and
-`ManifestEntry.publishedAt` with the `newlyPublishedEntries` diff helper on `./delivery/data`.
-**Geoff called off the release mid-pass (2026-08-01)**, so `package.json` stays at `0.92.0` and this
-window batches with the ASC seams below. Full record, including the review gate's yield and four
-process findings: the post-mortem in
-`docs/superpowers/plans/2026-08-01-xcathletes-engine-seams.md`.
+**The ASC engine-seams planning sitting is COMPLETE.** All three open decisions settled with Geoff
+2026-08-01: **seam 3 is IN SCOPE** under a stated charter line (Cloudflare-native platform
+primitives are in-stack; third-party verifiers such as Stripe or Discord are not, and must never
+ride the precedent in); **seam 1 exports one primitive** (`cookieName(base, secure)` plus the pure
+crypto and `tokensMatch`, no TTL or naming-policy surface); **seam 2's factory reads the
+guard-owned access map** (config carries only the DB-binding resolver and an optional rate limit).
+The spec, `docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md` (`061d5710`), designs BOTH
+passes, so pass two needs no second sitting, only its just-in-time plan. The governing constraint,
+Geoff's at the sitting: every seam properly generic, for any builder; ASC and ecxc are evidence,
+never shape.
 
-Three things from that pass worth carrying, not buried in the post-mortem:
+**NEXT: execute pass one** from the committed plan,
+`docs/superpowers/plans/2026-08-01-asc-engine-seams-1.md` (`ae3e9072`): four tasks, the
+`cookieName`/`tokensMatch` internal refactor, the `./auth-crypto` server-only subpath, the
+`createSectionAction` module and suite, and its export plus docs. A fresh Opus session executes on
+a feature worktree, dispatching each task to `cairn-implementer` per the repo defaults;
+`web-auth-security-reviewer` is mandatory at the pass-end fan-out (auth crypto plus an
+authorization wrapper). Pass two (seams 3+4+5: the `./cloudflare` subpath, the packaged D1 audit
+sink) follows with its own plan written from the spec after pass one lands.
+
+**Resume prompt**, from `~/Projects/cairn-cms`: "Execute the ASC engine-seams pass one per
+`cairn-pass`. Plan: `docs/superpowers/plans/2026-08-01-asc-engine-seams-1.md`; spec:
+`docs/superpowers/specs/2026-08-01-asc-engine-seams-design.md`. Work on a feature worktree off
+`main`; dispatch each task to `cairn-implementer`; hold unpublished at close (the window batches,
+`release-size: minor`)."
+
+Three carry-notes from the xcathletes pass, still live (its full entry is archived):
 
 1. **`check:snippets` is a FOURTH CI-only gate the local ritual skips**, alongside
-   `check:comments`, `check:reference:signatures`, and `check:surface`. It was red on this branch
-   until late in the pass. The `cairn-pass` skill's step 5 names the other three and should name it.
-2. **`main` arrived red.** The CodeMirror bump (`20f7a975`) landed on `main` without the suite and
-   broke the `docs-links` changelog/upgrade-guide parity gate. Fixed in this branch.
-3. **The engine now owns email normalization** (`src/lib/auth/store.ts`), because the promoted
-   `/auth-store` surface made a BINARY-collated `editor.email` lockout-capable. `COLLATE NOCASE` on
-   the column is filed in ROADMAP's Next tier for the next auth migration.
-
-**NEXT: the ASC engine-seams PLANNING sitting** (design decisions first, then a plan; execution is a
-separate session). Input: `docs/internal/2026-08-01-asc-consumer-brief.md`, five seams harvested from
-the ASC site. Geoff ratified the shape 2026-08-01: **split into two passes**, seams 1+2 (exported auth
-primitives, the form-action wrapper factory) as the first, seams 3+4+5 (`verifyTurnstile`, the
-rate-limit wrapper, the packaged D1 audit sink) as the second. Seams 1 and 2 carry the design weight
-and have the xcathletes platform as a second consumer on its own clock.
-
-**Three decisions are OPEN and belong to Geoff at that sitting, not to the planner:**
-
-- **The charter call on seam 3.** The brief states it rather than settling it: cairn performs no
-  network sends, and a Turnstile siteverify call is a verification fetch, arguably the same class as
-  the engine's own GitHub API commits. This is the only seam that moves the charter boundary rather
-  than sitting inside it. "Out of scope" is a valid answer, and if it is the answer, seam 4 still
-  stands alone.
-- **Seam 1's parameterization shape.** The cookie-name builders and TTL constants are fixed to the
-  editor store today; the brief proposes a cookie base name plus TTLs as arguments. This is new
-  public surface, not an export-map promotion like the xcathletes seam 1 was.
-- **Seam 2's factory signature** (the access map, a binding resolver, an optional rate limit).
-
-**Resume prompt**, from `~/Projects/cairn-cms`: "Brainstorm the ASC engine-seams pass with me per
-superpowers:brainstorming. Input: `docs/internal/2026-08-01-asc-consumer-brief.md`. Geoff ratified
-the two-pass split (seams 1+2, then 3+4+5) on 2026-08-01; settle the three open decisions recorded in
-`docs/STATUS.md` (the seam 3 charter call above all), then author the plan for the first pass under
-`docs/superpowers/plans/`. Do not plan seam 3 until the charter call is made."
+   `check:comments`, `check:reference:signatures`, and `check:surface`. The `cairn-pass` skill's
+   step 5 names the other three and should name it.
+2. **The engine now owns email normalization** (`src/lib/auth/store.ts`); `COLLATE NOCASE` on
+   `editor.email` is filed in ROADMAP's Next tier for the next auth migration (that queued
+   migration may claim `0002`, which is why the audit-sink migration number is claimed at
+   pass-two plan time).
+3. **`main` arrived red once** (the CodeMirror bump landed without the suite); the fix shipped
+   with the xcathletes pass, and the lesson stands: nothing lands on `main` without the suite.
 
 Queued behind it, in order: the optical-centering ratchet plan (a Fable sitting; `text-box-trim` as a
 silent engine default, measurement-first, capture Geoff's ASC chip sighting first, fold in the

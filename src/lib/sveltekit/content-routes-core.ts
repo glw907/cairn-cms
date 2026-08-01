@@ -342,6 +342,15 @@ function invalidIdMessage(concept: ConceptDescriptor): string {
   return `Enter a valid ${noun}: lowercase letters, numbers, and hyphens.`;
 }
 
+/**
+ * The row a manifest already holds for one entry, absent when it holds none, matched on the same
+ *  concept+id identity `upsertEntry` uses. The publish and rename paths read it for the fields a
+ *  re-derived row cannot carry, `publishedAt` above all.
+ */
+function manifestRow(manifest: Manifest, conceptId: string, id: string): ManifestEntry | undefined {
+  return manifest.entries.find((e) => e.concept === conceptId && e.id === id);
+}
+
 /** Look up the concept named by the `[concept]` route param, or a 404. */
 function conceptOf(runtime: CairnRuntime, params: Record<string, string>): ConceptDescriptor {
   const concept = findConcept(runtime.concepts, params.concept ?? '');
@@ -1090,7 +1099,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     const row = manifestEntryFromFile(concept, { path, raw: markdown });
     // Capture the committed row BEFORE the upsert replaces it. The upsert result carries the merged
     // row, so publish could not otherwise tell a first publish from a re-publish.
-    const priorRow = manifest.entries.find((e) => e.concept === concept.id && e.id === id);
+    const priorRow = manifestRow(manifest, concept.id, id);
     const upserted = upsertEntry(manifest, row);
 
     // Save guard: resolve the body's cairn links against main's manifest with this entry upserted,
@@ -1308,7 +1317,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
       changes.push({ path: entry.path, content: entry.raw });
       // The same stamp rule as the single publish: the prior row is still in `next` at this point,
       // since the upsert that replaces it is the very next call.
-      const prior = next.entries.find((e) => e.concept === entry.concept.id && e.id === entry.id);
+      const prior = manifestRow(next, entry.concept.id, entry.id);
       const row = manifestEntryFromFile(entry.concept, { path: entry.path, raw: entry.raw });
       next = upsertEntry(next, stampFirstPublish(prior, row, publishedAt));
       published.push({ concept: entry.concept.id, id: entry.id, branch: entry.branch, sha: entry.sha });
@@ -1601,7 +1610,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
     // The rename changes the entry's key, so the upsert preservation chokepoint cannot reach the old
     // row's first-publish stamp: read it off the old key here and carry it onto the new one. A
     // renamed entry is the same published entry at a new address, so its stamp must not reset.
-    const priorPublishedAt = manifest.entries.find((e) => e.concept === concept.id && e.id === id)?.publishedAt;
+    const priorPublishedAt = manifestRow(manifest, concept.id, id)?.publishedAt;
     let next = removeEntry(manifest, concept.id, id);
     const movedRow = manifestEntryFromFile(concept, { path: newPath, raw: movedRaw });
     next = upsertEntry(next, priorPublishedAt ? { ...movedRow, publishedAt: priorPublishedAt } : movedRow);

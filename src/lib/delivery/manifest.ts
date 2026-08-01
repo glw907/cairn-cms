@@ -51,10 +51,11 @@ const keyOf = (e: ManifestEntry) => `${e.concept}/${e.id}`;
  *  deterministic. The engine performs no network sends; a consumer diffs and then acts.
  */
 export function newlyPublishedEntries(before: Manifest | null, after: Manifest): ManifestEntry[] {
-  const beforeByKey = before ? new Map(before.entries.map((e) => [keyOf(e), e])) : null;
+  // A null `before` indexes to nothing, which is already the full-fan-out answer: no key it is asked
+  // for carries a stamp, so every stamped entry in `after` reads as newly published.
+  const priorStamps = new Map(before?.entries.map((e) => [keyOf(e), e.publishedAt]) ?? []);
   return after.entries.filter((e) => {
     if (!e.publishedAt) return false;
-    if (!beforeByKey) return true;
-    return !beforeByKey.get(keyOf(e))?.publishedAt;
+    return !priorStamps.get(keyOf(e));
   });
 }

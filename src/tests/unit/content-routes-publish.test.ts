@@ -5,7 +5,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
-import { parseManifest, serializeManifest } from '../../lib/content/manifest.js';
+import { parseManifest, serializeManifest, type ManifestEntry } from '../../lib/content/manifest.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import { defineRoles } from '../../lib/auth/roles.js';
 import { defineAccess } from '../../lib/auth/access.js';
@@ -555,18 +555,18 @@ describe('the publishedAt first-publish stamp', () => {
   }
 
   /** Main seeded with one committed posts row, plus the entry's pending branch. */
-  function mainWith(row: Record<string, unknown>) {
+  function mainWith(row: ManifestEntry) {
     return new GithubDouble({
       main: {
         [ENTRY_PATH]: '---\ntitle: Old\ndate: 2026-05-01\n---\nlive body',
-        [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [row as never] }),
+        [MANIFEST_PATH]: serializeManifest({ version: 1, entries: [row] }),
       },
       [BRANCH]: { [ENTRY_PATH]: PENDING_MD },
     });
   }
 
-  const draftRow = { concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: true, links: [] };
-  const liveRow = { ...draftRow, draft: false };
+  const draftRow: ManifestEntry = { concept: 'posts', id: '2026-05-01-hi', permalink: '/posts/hi', title: 'Old', date: '2026-05-01', draft: true, links: [] };
+  const liveRow: ManifestEntry = { ...draftRow, draft: false };
 
   it('stamps an entry whose committed row was a draft', async () => {
     const gh = mainWith(draftRow);
@@ -636,8 +636,8 @@ describe('the publishedAt first-publish stamp', () => {
         [MANIFEST_PATH]: serializeManifest({
           version: 1,
           entries: [
-            { ...draftRow } as never,
-            { concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false, links: [], publishedAt: EARLIER } as never,
+            draftRow,
+            { concept: 'pages', id: 'about', permalink: '/about', title: 'About', draft: false, links: [], publishedAt: EARLIER },
           ],
         }),
       },

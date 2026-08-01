@@ -409,8 +409,9 @@ export function verifyReferences(manifest: Manifest): void {
  *  makes the stamp immutable once set.
  */
 export function upsertEntry(manifest: Manifest, entry: ManifestEntry): Manifest {
-  const prior = manifest.entries.find((e) => e.concept === entry.concept && e.id === entry.id);
-  const entries = manifest.entries.filter((e) => !(e.concept === entry.concept && e.id === entry.id));
+  const sameKey = (e: ManifestEntry) => e.concept === entry.concept && e.id === entry.id;
+  const prior = manifest.entries.find(sameKey);
+  const entries = manifest.entries.filter((e) => !sameKey(e));
   entries.push(prior?.publishedAt ? { ...entry, publishedAt: prior.publishedAt } : entry);
   return { version: 1, entries };
 }

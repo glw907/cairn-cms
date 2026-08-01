@@ -14,7 +14,7 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-01: design-ratchet SHIPPED as 0.92.0; next is the optical-centering pass plan)
+## Immediate next action (2026-08-01: xcathletes engine-seams pass is planned and ready to execute)
 
 **The design-ratchet pass is MERGED and RELEASED.** PR #13 merged to `main` (`e70f295b`) with
 all five CI checks green, and **`0.92.0` published as `latest`** (Geoff's 2026-07-31 go
@@ -30,18 +30,28 @@ before counting; two CI dispatches green back-to-back). Full record: the post-mo
 `docs/superpowers/plans/2026-07-30-design-ratchet.md`. The `design-ratchet` worktree is
 mergeable-clean and can be removed.
 
-**NEXT: draft the optical-centering ratchet plan** (a Fable sitting per the model economy;
-execution then runs Opus). Seed, from the post-mortem: `text-box-trim` as a silent engine
-default, measurement-first — capture Geoff's ASC chip sighting FIRST (page/chip/theme
-unknown; ask or survey), decide trim breadth (chips + buttons minimum; "more broadly" is an
-explicit scope question for Geoff), corpus-style validation; fold in the `.list-row`
-`grid-row-start` pin (ROADMAP Next) and any genuinely small friction-log items verified
-against code first, each with a deliverable count. ROADMAP's new promotion-prerequisites
-block (the audit-rule refinements) is standing material for whichever pass promotes the
-geometry rules.
+**NEXT: execute the xcathletes engine-seams pass** (a fresh Opus 5 session per the model
+economy; the plan is authored and committed at
+`docs/superpowers/plans/2026-08-01-xcathletes-engine-seams.md`). Four tasks: the
+`./auth-store` server-only export promotion, the `publishedAt` first-publish stamp, the
+`newlyPublishedEntries` diff helper on `./delivery/data`, and the announce-on-publish guide.
+Input: `docs/internal/2026-08-01-xcathletes-consumer-brief.md` (Geoff authorized the pass
+2026-08-01). Seam 2 gates the platform's pass 3, so this pass runs ahead of the queued
+sittings. Execute on a fresh worktree (`.claude/worktrees/xcathletes-seams`), dispatching each
+task to `cairn-implementer`; a publish at close is likely warranted under the consumer-needs
+trigger (that call belongs to `cairn-release` at pass end). Resume prompt: "Execute the
+xcathletes engine-seams plan (cairn-pass; plan at
+docs/superpowers/plans/2026-08-01-xcathletes-engine-seams.md)."
 
-The cairn.pub voice sitting stays queued behind that plan; its resume prompt below remains
-valid.
+Queued behind it, in order: the optical-centering ratchet plan (a Fable sitting; seed in this
+entry's 2026-08-01 predecessor, archived detail: `text-box-trim` as a silent engine default,
+measurement-first, capture Geoff's ASC chip sighting first, fold in the `.list-row`
+`grid-row-start` pin and small verified friction-log items), then the cairn.pub voice sitting
+(resume prompt below remains valid).
+
+Housekeeping landed 2026-08-01 on `main` directly (monthly-updates follow-through): the
+CodeMirror deps bump (`20f7a975`, full gate green) and the kit-watch routine repoint at
+kit#12987 (`2855b8d7`).
 
 ## Superseded 2026-07-30 (the voice sitting, still queued)
 

@@ -1,3 +1,13 @@
+## Unreleased
+
+### Changed
+
+- CodeMirror dependencies updated to the latest 6.x releases within the existing ranges
+  (`@codemirror/state` 6.6.0 to 6.7.1, `@codemirror/view` 6.43.0 to 6.43.7, plus patch bumps to
+  `autocomplete`, `commands`, `language`, and `lang-markdown`). Lockfile-only; the full gate
+  (`check` 0/0, 4552 tests, `check:cm-internals`) passes on the new versions. Consumers must:
+  nothing.
+
 ## 0.92.0
 
 <!-- release-size: minor -->

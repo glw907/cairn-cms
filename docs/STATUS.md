@@ -14,31 +14,34 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-07-30: the design-ratchet close-out; release HELD)
+## Immediate next action (2026-08-01: design-ratchet SHIPPED as 0.92.0; next is the optical-centering pass plan)
 
-**The design-ratchet pass is IN FLIGHT** on the `design-ratchet` worktree
-(`.claude/worktrees/design-ratchet`), converting the six ASC Assets-trial harvest findings
-into engine repairs (UA reset layer, stacked field register with a ratified breaking default
-flip, the settled `one-filled-action` partition ruling, three corpus-validated geometry
-rules, the grammar ladder in `enforced-design.md`). Tasks 1-5 and 7 are committed; the
-corpus matrix ran against the three ASC SHAs; two Opus reviews are triaged. Remaining: fix
-batches A1 (dark `.btn-active` repair, may be mid-flight in the worktree — verify its commit
-and that no implementer is live before dispatching more), A2, B, C, then the CI leg, the
-pass-end ritual, and the merge. **Geoff's calls, all ratified 2026-07-30: push when
-complete, do NOT release** (the cut waits for the next pass, the optical-centering ratchet,
-and rolls both windows); churn is free until the public beta; a minor is the right size when
-the cut comes.
+**The design-ratchet pass is MERGED and RELEASED.** PR #13 merged to `main` (`e70f295b`) with
+all five CI checks green, and **`0.92.0` published as `latest`** (Geoff's 2026-07-31 go
+superseded the 2026-07-30 hold). The pass converted the six Assets-trial harvest findings
+into engine repairs, then its review gate earned its cost twice over: the A2 verify caught an
+inverted `@layer` order behind green gates, and three independent Opus reviews measured the
+ratified A1 dark `.btn-active` repair failing WCAG 1.4.11 photometrically, which the D-wave
+(D1 hairline device, D2 reset narrowings + docs, D3 re-check fallout) repaired to measured
+3:1+ margins on both themes. Fix C proved `container-inset-asymmetry` was never broken (the
+corpus miss was an empty-state leg; the recipe correction is standing in the plan). The norms
+freshness gate was made deterministic (the generator now settles streamed data and hydration
+before counting; two CI dispatches green back-to-back). Full record: the post-mortem in
+`docs/superpowers/plans/2026-07-30-design-ratchet.md`. The `design-ratchet` worktree is
+mergeable-clean and can be removed.
 
-**Resume prompt** (fresh session, from `~/Projects/cairn-cms`, Opus 5 recommended — the
-remainder is execution-shaped; the post-mortem and the next pass's plan can return to a
-Fable sitting): "Resume the design-ratchet pass close-out. Read the section 'Close-out
-state and remaining work (2026-07-30 handoff)' in
-`docs/superpowers/plans/2026-07-30-design-ratchet.md` (on the `design-ratchet` branch) and
-execute it top to bottom. Verify fix A1's commit landed and the worktree is clean before
-dispatching A2."
+**NEXT: draft the optical-centering ratchet plan** (a Fable sitting per the model economy;
+execution then runs Opus). Seed, from the post-mortem: `text-box-trim` as a silent engine
+default, measurement-first — capture Geoff's ASC chip sighting FIRST (page/chip/theme
+unknown; ask or survey), decide trim breadth (chips + buttons minimum; "more broadly" is an
+explicit scope question for Geoff), corpus-style validation; fold in the `.list-row`
+`grid-row-start` pin (ROADMAP Next) and any genuinely small friction-log items verified
+against code first, each with a deliverable count. ROADMAP's new promotion-prerequisites
+block (the audit-rule refinements) is standing material for whichever pass promotes the
+geometry rules.
 
-The prior entry (the cairn.pub voice sitting) stays queued behind this close-out and the
-optical-centering pass; its resume prompt below remains valid.
+The cairn.pub voice sitting stays queued behind that plan; its resume prompt below remains
+valid.
 
 ## Superseded 2026-07-30 (the voice sitting, still queued)
 
@@ -184,10 +187,10 @@ anatomy checklist, section 5's open questions for Geoff; mockup candidates go to
 build); the cairn.pub design arc ratified seed vocabulary for it: the four-door landing, the docs rail
 on /help, the step-down doc heading scale, and the micro-cta device. After Topo: the scaffolder.
 
-**Published state:** `0.91.1` is `latest` (2026-07-29): the shipped-sheet restoration hotfix,
-patch, on top of `0.91.0` (the design-infrastructure minor: Pass 1's grammar layer, Pass 2's
-`cairn-audit` bin, Pass 3's `skills/` package and chip registers). Nothing is held unpublished;
-`main` equals the registry.
+**Published state:** `0.92.0` is `latest` (2026-08-01): the design-ratchet minor (UA reset
+layer, stacked field register with breaking default flip, narrowed `one-filled-action` with
+the conformant dark selected state, three advisory geometry rules, the skill-exemplar compile
+gate), on top of `0.91.1`. Nothing is held unpublished; `main` equals the registry.
 
 **Prior pass detail (design-infrastructure Pass 2, enforcement, and the ASC admin corpus C
 calibration that closed its calibration gap) is preserved in full in

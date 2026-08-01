@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate
+## 0.92.0: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate
 
 The packaged admin sheet now ships a `base` cascade layer, so a bare form control, `dialog`,
 `fieldset`/`legend`, or daisyUI's own `.list` container renders the admin's own face instead of

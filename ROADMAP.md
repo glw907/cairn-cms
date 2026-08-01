@@ -526,8 +526,8 @@ the named human gates only):**
   the rendered audit's non-2xx precondition (see the guard-hole entry in the ASC harvest block
   above). Enforcement is intact (no restricted data crosses; the access-map guide documents the
   caveat). The upstream tracking issue is sveltejs/kit#12987 (open); the previously tracked
-  kit#12533 CLOSED without the behavior changing on the shipped bundle, so repoint the scheduled
-  kit-watch routine (kit#15992) at #12987. Since cairn chooses the streaming that triggers the
+  kit#12533 CLOSED without the behavior changing on the shipped bundle, and the scheduled
+  kit-watch routine was repointed at #12987 on 2026-08-01. Since cairn chooses the streaming that triggers the
   upstream bug, a cairn-side mitigation (passing the status through another channel, or refusing
   to stream on an error path) is worth weighing rather than waiting on upstream. Surfaced by the
   access-and-attention pass's live smoke, 2026-07-19; mechanism, shipped-bundle proof, and blast

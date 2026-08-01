@@ -16,6 +16,12 @@ write-mode virtual module through your build's own resolution and writes the ser
 the configured `manifestPath`, which defaults to `/src/content/.cairn/index.json`. Because the bin
 reuses the plugin's options, it regenerates with exactly the inputs the build verifies against.
 
+One field survives the rebuild rather than coming from the corpus: each entry's `publishedAt`
+first-publish stamp. The command reads the stamps out of the file it's about to overwrite and merges
+them into the new one, dropping any stamp whose entry the corpus no longer holds. When the existing
+file is corrupt, the command warns on stderr and writes the rebuilt manifest without the stamps,
+because regenerating is also how you repair a corrupt manifest.
+
 Run it after you edit content outside the admin, so the committed manifest tracks the corpus. The
 [`cairnManifest`](./vite.md) plugin verifies the manifest on every build and fails the build on
 drift, and this command regenerates the manifest to clear that drift.

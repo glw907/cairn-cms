@@ -10,9 +10,10 @@
 // downgrade it). The same virtual module in write mode produces the serialized manifest, which the
 // cairn-manifest bin uses to regenerate. See the design spec, locked decision 1.
 import type { Plugin, PluginOption } from 'vite';
-import { writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { resolveViteRoot } from './resolve-root.js';
+import { parseManifest, serializeManifest } from '../content/manifest.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 
 /**
@@ -208,8 +209,45 @@ export async function writeManifest(cwd: string = process.cwd()): Promise<void> 
   // The manifest path is app-root-absolute (a leading slash relative to the project), so resolve it
   // against the Vite root, not the filesystem root or the config-search cwd.
   const outPath = join(root, manifestPath.replace(/^\//, ''));
+  // The rebuild derives every row from a content file, and publishedAt is manifest-owned, so merge
+  // the committed stamps back in before writing. Without this, regenerating would clear every one.
+  const committed = await readFile(outPath, 'utf8').catch(() => null);
   await mkdir(dirname(outPath), { recursive: true });
-  await writeFile(outPath, serialized);
+  await writeFile(outPath, carryPublishStamps(serialized, committed));
+}
+
+/**
+ * Merge the committed manifest's first-publish stamps into a freshly built one, matched on concept
+ *  and id, and return the canonical serialized result. `committedRaw` is the file's current contents,
+ *  or null when none exists yet.
+ *
+ * Only `publishedAt` carries over, and only onto an entry the rebuild still produces, so a deleted
+ *  entry's stamp does not come back. A committed file that will not parse degrades to the built
+ *  output with a warning rather than throwing: regenerating is how a site repairs a corrupt manifest,
+ *  so throwing here would leave it with no way out.
+ */
+export function carryPublishStamps(builtSerialized: string, committedRaw: string | null): string {
+  if (committedRaw === null) return builtSerialized;
+  const stamps = new Map<string, string>();
+  try {
+    for (const e of parseManifest(committedRaw).entries) {
+      if (e.publishedAt) stamps.set(`${e.concept}/${e.id}`, e.publishedAt);
+    }
+  } catch {
+    console.warn(
+      'cairn-manifest: the committed manifest could not be read, so publish stamps were not carried forward.',
+    );
+    return builtSerialized;
+  }
+  if (stamps.size === 0) return builtSerialized;
+  const built = parseManifest(builtSerialized);
+  return serializeManifest({
+    version: 1,
+    entries: built.entries.map((e) => {
+      const publishedAt = stamps.get(`${e.concept}/${e.id}`);
+      return publishedAt ? { ...e, publishedAt } : e;
+    }),
+  });
 }
 
 /**

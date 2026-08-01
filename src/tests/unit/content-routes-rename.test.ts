@@ -142,6 +142,31 @@ describe('renameAction', () => {
     expect(moved.content).toContain('cairn:posts/2026-05-01-new');
   });
 
+  it('keeps the first-publish stamp on the renamed row and on every repointed linker', async () => {
+    const manifest = JSON.stringify({
+      version: 1,
+      entries: [
+        { id: '2026-05-01-hi', concept: 'posts', title: 'Hi', permalink: '/posts/hi', draft: false, publishedAt: '2026-01-02T03:04:05.000Z', links: [] },
+        { id: 'home', concept: 'pages', title: 'Home', permalink: '/', draft: false, publishedAt: '2025-12-25T00:00:00.000Z', links: [{ concept: 'posts', id: '2026-05-01-hi' }] },
+      ],
+    });
+    const files = new Map<string, string | null>([
+      ['src/content/posts/2026-05-01-new.md', null],
+      ['src/content/posts/2026-05-01-hi.md', '---\ntitle: Hi\n---\nbody'],
+      ['src/content/.cairn/index.json', manifest],
+      ['src/content/pages/home.md', '---\ntitle: Home\n---\nsee [hi](cairn:posts/2026-05-01-hi)'],
+    ]);
+    const calls = renameFetch(files);
+    const routes = createContentRoutes(runtime(() => ({ ok: true, data: {} })));
+    await expectRedirect(() => routes.renameAction(renameEvent('2026-05-01-hi', 'new') as never));
+
+    // The rename removes the old key and adds a new one, so the renamed row's stamp is carried
+    // explicitly; the linker's row goes through the upsert chokepoint and keeps its own.
+    const committed = parseManifest(treeOf(calls).find((t) => t.path === 'src/content/.cairn/index.json')!.content!);
+    expect(committed.entries.find((e) => e.id === '2026-05-01-new')?.publishedAt).toBe('2026-01-02T03:04:05.000Z');
+    expect(committed.entries.find((e) => e.id === 'home')?.publishedAt).toBe('2025-12-25T00:00:00.000Z');
+  });
+
   it('refuses a collision with no commit', async () => {
     const files = new Map<string, string | null>([
       ['src/content/posts/2026-05-01-new.md', '---\ntitle: Taken\n---\nx'], // exists -> collision

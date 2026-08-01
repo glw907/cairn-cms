@@ -122,6 +122,10 @@
       "svelte": "./dist/media/index.js",
       "default": "./dist/media/index.js"
     },
+    "./auth-store": {
+      "types": "./dist/auth-store/index.d.ts",
+      "default": "./dist/auth-store/index.js"
+    },
     "./vite": {
       "types": "./dist/vite/index.d.ts",
       "default": "./dist/vite/index.js"

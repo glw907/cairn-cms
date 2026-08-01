@@ -130,6 +130,18 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }
 
+## `/auth-store`
+
+- `deleteEditor`: (db: D1Database, email: string) => Promise<void>
+- `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<boolean>
+- `EditorRow`: { email: string; displayName: string; role: "owner" | "editor" }
+- `insertEditor`: (db: D1Database, email: string, displayName: string, role: "owner" | "editor", now: number) => Promise<void>
+- `insertOwnerIfEmpty`: (db: D1Database, email: string, displayName: string, now: number) => Promise<boolean>
+- `listEditors`: (db: D1Database) => Promise<EditorRow[]>
+- `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<boolean>
+- `Role`: "owner" | "editor"
+- `setEditorRole`: (db: D1Database, email: string, role: "owner" | "editor") => Promise<void>
+
 ## `/components`
 
 - `CairnAdmin`: Component<Props, {}, "">

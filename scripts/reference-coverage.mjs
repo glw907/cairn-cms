@@ -306,6 +306,7 @@ export const CONFIG = [
   { subpath: '/delivery/data', dts: 'dist/delivery/data.d.ts', page: 'docs/reference/delivery-data.md' },
   { subpath: '/delivery/head', dts: 'dist/delivery/head.d.ts', page: 'docs/reference/delivery.md' },
   { subpath: '/media', dts: 'dist/media/index.d.ts', page: 'docs/reference/media.md' },
+  { subpath: '/auth-store', dts: 'dist/auth-store/index.d.ts', page: 'docs/reference/auth-store.md' },
   { subpath: '/vite', dts: 'dist/vite/index.d.ts', page: 'docs/reference/vite.md' },
   // Type-only: the module exports no names, so the entry asserts only that the page exists.
   { subpath: '/ambient', dts: 'dist/ambient.d.ts', page: 'docs/reference/ambient.md' },

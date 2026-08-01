@@ -44,7 +44,11 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **`create-cairn-site` ships**, so a new consumer starts from a scaffold rather than hand-copying the
   showcase. (Weigh whether this gates 1.0 or rides the first 1.x.)
 - [ ] **The core-feature roadmap has landed** to the point the author opens the project up: the intro's
-  "closely held until the core lands" condition is the same condition as 1.0.
+  "closely held until the core lands" condition is the same condition as 1.0. Named contents (Geoff,
+  2026-08-01): entry history, revert, and public preview for a non-editor, all three ratified as
+  landing BEFORE the public beta; their entries live in Now. Release intent (Geoff, 2026-08-01):
+  the three bundle into one release, the next cut after the ASC-seams window publishes, however
+  many passes they take to land.
 
 **Churn stays free until the public beta (Geoff, 2026-07-30).** The design-ratchet pass broke two
 public seams outright (the admin-fields `register` default flip, the tightened
@@ -96,6 +100,29 @@ The original decision framing, for the record:
   decision, not a default; check name availability first.
 
 ## Now
+
+- **Entry history and revert (editor-facing revisions). PROMOTED (Geoff, 2026-08-01).** Surface the
+  version history cairn already writes: a per-entry history view over the backend's commit log (the
+  commit author is already the editor, so attribution is free), and revert implemented as a new
+  commit through the existing save/publish pipeline, so the per-entry branch and the deliberate
+  Publish gate hold unchanged. No new storage and no new actor. The strongest unbuilt in-charter
+  feature from the 2026-07-01 mission review: every competitor CMS has "revisions," cairn has
+  something better underneath, and the editor persona currently sees none of it. Promoted from Next
+  at the ASC-seams pass-one sitting as a named content of the "core-feature roadmap has landed" beta
+  checklist item; needs its own design sitting before a plan (the history view's shape, how far back
+  the list reads, what a revert of a published entry means for the draft branch). Gates the public
+  beta (Geoff, 2026-08-01): the beta does not cut until this ships.
+
+- **Public preview for a non-editor (FILED at promotion, Geoff, 2026-08-01).** Let an editor hand a
+  draft to someone who is not an editor: the per-entry `cairn/<concept>/<id>` branch already holds
+  the draft, so the artifact exists and only the surface is missing, the same signature as entry
+  history above. The shape to design, not yet decided: a time-limited signed preview URL rendering
+  that branch's entry through the site's own `render`, issued from the editor's screen, readable
+  without a session. Open questions for the sitting: where the render runs (the public route
+  factories know `render`; the admin knows the branch), the token's issue and expiry discipline
+  (`./auth-crypto` now exports the primitives), and whether a preview of a draft that references
+  unpublished media resolves. Gates the public beta alongside entry history and revert (Geoff,
+  2026-08-01): the beta does not cut until this ships.
 
 - **Help screen first-steps card overlap (pre-existing, found 2026-07-21).** The getting-started
   steps card on `/admin/help` renders its three step columns overlapping at desktop widths (the
@@ -542,13 +569,6 @@ the named human gates only):**
   to stream on an error path) is worth weighing rather than waiting on upstream. Surfaced by the
   access-and-attention pass's live smoke, 2026-07-19; mechanism, shipped-bundle proof, and blast
   radius from the ASC Assets-trial rendered baseline, 2026-07-29.
-- **Entry history and revert (editor-facing revisions).** Surface the version history cairn already
-  writes: a per-entry history view over the backend's commit log (the commit author is already the
-  editor, so attribution is free), and revert implemented as a new commit through the existing
-  save/publish pipeline, so the per-entry branch and the deliberate Publish gate hold unchanged. No
-  new storage and no new actor. The strongest unbuilt in-charter feature from the 2026-07-01 mission
-  review: every competitor CMS has "revisions," cairn has something better underneath, and the editor
-  persona currently sees none of it.
 - **Body-link cross-branch delete protection.** Lift the body-link delete guard from its current main-only
   posture to the strict, fail-closed cross-branch reference index that the reference delete and rename gates
   now use, so deleting a body-linked target refuses across every open branch the same way a referenced
@@ -601,6 +621,130 @@ the named human gates only):**
   renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
   set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
   icon vocabulary shipped.
+- **Pre-beta contract: the env-genericity sweep of exported event and config types (Geoff,
+  2026-08-01).** The ASC-seams pass paid for this defect class once: `AdminActionEvent` was
+  hard-fixed to `AuthEnv`, and the pre-implementation adversarial review had to compile-prove it
+  broke route `Actions` assignability for a site whose `App.Platform['env']` is its own generated
+  type. The fix set the pattern: generic over the env with an `AuthEnv` default, so every existing
+  consumer keeps its meaning. One sweep applies that pattern to the rest of the exported surface
+  that extends `EventBase<AuthEnv>` or names `AuthEnv` directly (the route-factory configs, the
+  guard types, the `RequestContext`-adjacent shapes), each instance compile-checked against a
+  synthetic site env the way the section-action suite now does. Post-beta, each missed instance is
+  a consumer bug report and a compatibility event.
+- **Pre-beta contract: a `locals` namespace policy (Geoff, 2026-08-01).** The engine writes four
+  keys into the namespace it shares with every site: `editor`, `backend`, `auditSink`, and
+  `cairnAccess`. One is prefixed, three are not, and the unprefixed names are maximally
+  collision-prone (a site with its own notion of `editor` is not exotic). Renaming a `locals` key
+  after beta breaks every consumer's `app.d.ts` and every read site-wide. Decide the convention
+  once, plausibly engine-owned keys carry the `cairn` prefix with the old names as deprecated
+  aliases through the beta window, while the whole change is one `Consumers must:` line.
+- **Pre-beta contract: the function-color audit of the seams (Geoff, 2026-08-01).** Sync-vs-async
+  and void-vs-value are contract, and flipping either is breaking. Deliberately re-ratify rather
+  than freeze by accident: `render(md)` (sync today; a site wanting async embeds post-1.0 would
+  force a major) and `AdminActionAuditSink`'s `(record) => void` (deliberately fire-and-forget and
+  fail-open; likely right, but it should be frozen on purpose, and pass two's D1 sink is the moment
+  to state it in the reference). The audit's output is a ruling per seam recorded on its reference
+  page, with at most small additive shims.
+- **Pre-beta contract: the refusal-channel ruling (Geoff, 2026-08-01).** The admin action surface
+  has two refusal channels a consumer must understand: `adminAction` throws `AdminActionError`
+  (needing a site `handleError` mapping) while `createSectionAction`'s own branches return
+  `fail(...)`. The split is deliberate (the 2026-08-01 adversarial review pressed on it and the
+  seams spec kept it, with the rationale in that spec's review record), but the ruling lives in a
+  spec, not in the contract docs. Before beta, either document the two-channel model as the
+  intended contract in the `./sveltekit` reference or converge it; a stranger meeting both
+  channels without the history will file the split as a bug.
+- **Pre-beta contract: declare the supported-toolchain matrix (Geoff, 2026-08-01).** SvelteKit
+  range, Vite/Rolldown, the TypeScript floor, node resolution modes. Today it is implicitly
+  whatever the showcase CI proves; beta makes it a promise strangers rely on, and narrowing an
+  implicit promise later is a breaking change in practice even when no code moves. Lands as a docs
+  table plus perhaps an `engines`/`peerDependencies` tightening.
+- **Pre-beta polish: the public-surface naming review (Geoff, 2026-08-01).** One deliberate read of
+  every exported name, option key, subpath, and log event as a whole, before beta's
+  compatibility-SemVer adoption makes each rename a `Consumers must:` line (and, after 1.0, a
+  major). The surface grew by accretion and carries visible asymmetries: the `create*` factory
+  family beside the bare `adminAction` wrapper, `./sveltekit` accreting toward a grab-bag while
+  `./auth-store` and `./auth-crypto` stay precise. None is wrong alone; some will be wrong read
+  together. `docs/internal/api-surface.md` (the `check:surface` snapshot) is the ready-made review
+  document, and every rename lands while renames are still cheap. The single
+  cheapest-now/dearest-later item in the pre-beta set.
+- **Pre-beta polish: fold the four CI-only gates into one named script (Geoff, 2026-08-01).**
+  `check:comments`, `check:reference:signatures`, `check:surface`, and `check:snippets` run on CI
+  but not under `npm run check`/`npm test`, so the pass ritual recites them by name and two passes
+  still shipped red on one of them. A `check:ci-parity` script (and a one-line ritual update) ends
+  the recitation; a repeated local workaround is the wrong-altitude signal this repo's own
+  conventions name.
+- **Pre-beta polish: test the `commitFiles` retry-loop 422 branch (promoted from Later, Geoff,
+  2026-08-01).** The fetch-level `GithubDouble` always fast-forwards, so the head-merge retry path
+  (a concurrent commit moving the branch under an atomic commit, no `expectedHead`) is never
+  exercised. Give the double a concurrency-injection hook and a fast-forward check so a test can
+  drive the non-fast-forward retry. Promoted because it is the one untested branch in the publish
+  pipeline, the engine's most consequential path, and it should not still be unproven when
+  strangers start filing bugs.
+- **Pre-beta polish: the cold-reader front-door pass, with a visual first impression (Geoff,
+  2026-08-01).** README to tutorial to first deploy, read by fresh context with no family
+  knowledge, hunting assumed context the register rules cannot catch (they govern tone, not what a
+  stranger already knows). And the README currently shows the product nowhere: strangers evaluate a
+  CMS with their eyes before their editor, so it needs admin screenshots or a hosted showcase link.
+  Distinct from the filed docs-effectiveness infrastructure (search, `/llms`, the upgrade page),
+  which adds surfaces; this audits the ones that exist.
+- **Pre-beta polish: the error-message actionability sweep (Geoff, 2026-08-01).** One pass over
+  every engine `throw` and `fail(...)` string against the standard the conventions already state:
+  can a stranger act on this without us. Most comply; the sweep catches the stragglers, and it
+  pairs naturally with the dress rehearsal, which is where stragglers bite a zero-context user.
+- **Pre-beta polish: split `CairnMediaLibrary.svelte` (promoted from Later, Geoff, 2026-08-01:
+  the code goes public as clean as it can be).** It is the file a code-reading stranger will judge
+  the repo by. The code-polish pass's measurement
+  (`docs/superpowers/plans/2026-07-01-code-polish-measurements.md`) converged three signals on this
+  one file: the largest component in the tree (3,141 lines), the largest jscpd self-duplication
+  cluster (25 `html`-format clone pairs, unchanged across the pass), and an internal organization of
+  six near-identical inline dialog controllers (open/close/apply per feature, each with its own
+  `$state` cluster and origin-refocus lifecycle) followed by six near-identical `<dialog>` markup
+  blocks. The pass's S3 idiom convergence already extracted the *script*-level repetition into
+  shared helpers; the *markup* duplication is untouched on purpose, since splitting a component
+  couples its template, state, and focus behavior (the phase-3a lesson) and risks the same
+  multi-instance-focus hazard the form-renderer rider guarded against. The split therefore needs
+  its own designed pass, not a rider: most likely one child component or snippet per feature dialog
+  (replace, alt-propagate, bulk-delete, orphan-scan, upload, delete), verified against the
+  `admin-visual` baseline and the e2e media suite.
+- **Pre-beta design: the zero-state audit (Geoff, 2026-08-01).** Every beta user starts in the
+  exact state the passes never look at: a fresh site with no content, no media, no second editor.
+  One deliberate pass proves every admin screen renders a designed zero state rather than a blank
+  table, and that the first-run path (empty dashboard, first entry, first publish) reads as a
+  guided arc. The highest-leverage design item in the pre-beta set because it is every stranger's
+  first five minutes.
+- **Pre-beta design: the admin at the viewport extremes (Geoff, 2026-08-01).** The five-viewport
+  composed standard is enforced for the public artifacts through the showcase's CI matrix; the
+  admin has visual baselines but has never been held to composed-at-320-and-2560, never merely
+  unbroken, screen by screen. Editors open admins on phones constantly.
+- **Pre-beta design: the sign-in touchpoints (Geoff, 2026-08-01).** The login screen, the
+  magic-link email itself, and the confirm page are the first impression for every editor a
+  developer invites, and the email has never had a design pass; it is the one piece of cairn UI
+  that renders in an inbox next to professionally designed mail.
+- **Pre-beta design: a keyboard-and-screen-reader walkthrough of the three core flows (Geoff,
+  2026-08-01).** Sign in, edit-and-save, publish, run end-to-end the way an assistive-tech user
+  experiences them. The per-pass a11y reviewer catches component-level issues; nobody has run the
+  flows whole. One attended session with findings filed; the public beta is the forcing function.
+- **Pre-beta DX: the scaffolder ships an agent brief (Geoff, 2026-08-01).** A scaffolded consumer
+  site includes a `CLAUDE.md`/`AGENTS.md` written by the engine: the seams, the gates, the
+  conventions, what belongs to the site versus the engine, where the reference docs live. Every
+  consumer repo will have an AI assistant in it from day one, and today that assistant starts
+  blind and guesses at the boundary. Cheap, distinctive, and compounding; the consumer-side mirror
+  of the repo discipline that already works here. Rides the scaffolder work; the brief's content
+  is its own small authoring task against the docs register.
+- **Pre-beta DX: the zero-credential quickstart (Geoff, 2026-08-01).** The dev backend already
+  lets the engine run without the GitHub App; verify the whole first-contact path (scaffold, local
+  admin, edit, preview) closes with zero accounts, no GitHub App, no Cloudflare, no email sender,
+  then make "try cairn in five minutes" the tutorial's first chapter with provisioning deferred to
+  deploy time. Needs verification before documentation; nothing lowers adoption friction more.
+- **Pre-beta DX: publish the surface snapshot as a machine artifact (Geoff, 2026-08-01).**
+  `docs/internal/api-surface.md` is already an exact, gate-enforced rendering of the whole public
+  contract, precisely what an AI agent wants and cannot get from rendered docs. Ship it (or a JSON
+  sibling) in the package or on the docs site; nearly free, and pairs with the filed `/llms` page.
+- **Pre-beta DX: make the diagnostic pair consumer-complete (Geoff, 2026-08-01).** `cairn-doctor`
+  covers config and `cairn-audit` covers the design layer; verify both run cleanly from a consumer
+  site (not only this repo), document them as the first two commands to run when something is
+  wrong, and have the scaffolder's agent brief tell the AI assistant to reach for them before
+  guessing.
 - **The go-public pass (gates the repo flipping public at beta).** A real pass, not a settings
   toggle: a full git-history secrets scan (gitleaks/trufflehog — the loose `.pem` was shredded from
   disk but history was never audited); an exposure review of `docs/internal/` beyond staleness
@@ -608,7 +752,13 @@ the named human gates only):**
   public/redact/archive ruling); fork-PR CI hardening (Actions permissions, `pull_request` vs
   `pull_request_target`, protecting the OIDC publish path from drive-by PRs); branch protection on
   `main`; the private-vulnerability-reporting toggle plus the SECURITY.md trim (the standing timed
-  item); and the issues-on decision with a minimal triage posture.
+  item); and the issues-on decision with a minimal triage posture. Widened (Geoff, 2026-08-01): the
+  exposure review covers everything the flip publishes, not `docs/internal/` alone — the
+  `docs/superpowers/` plans, specs, and post-mortems (written candid, for an audience of us), the
+  STATUS archives, and the repo `CLAUDE.md` — and one rule changes meaning at the flip: the docs
+  register's never-name-the-ASC-site line currently binds only the published arms, a boundary that
+  stops existing when the whole tree is public, so the internal arms' pervasive ASC naming needs
+  its own deliberate ruling (scrub, prune, or keep), per arm.
 - **The beta dress rehearsal (after the docs rewrite and scaffolder land).** One fresh-environment
   first-hour run: a clean machine or account, only the public docs and scaffolder, zero context,
   through to a deployed site with a working admin. Every artifact will have been individually gated
@@ -680,11 +830,6 @@ the named human gates only):**
   Cloudflare Image Transformations are actually enabled on the zone, so a site that flips the flag
   without enabling the feature (or vice versa) gets silently wrong image URLs instead of a build-time
   or doctor-time signal. `cairn-doctor` could corroborate the declared flag against a live probe.
-- **Test the `commitFiles` retry-loop 422 branch.** The fetch-level `GithubDouble` always fast-forwards,
-  so the head-merge retry path (a concurrent commit moving the branch under an atomic commit, no
-  `expectedHead`) is never exercised. Give the double a concurrency-injection hook and a fast-forward
-  check so a test can drive the non-fast-forward retry. The fail-closed `expectedHead` path the backend
-  seam added is tested; this is the older retry branch, a pre-existing gap surfaced by the seam's review.
 - **Frontmatter field `description` channel.** Schema-authored per-field help rendered under the input,
   so the Details panel stops showing fields with no hint. Dovetails with the Contract v2 field work.
 - **Nested-image delivery: seo and needs-alt.** Allow `seo: true` on an image inside a top-level `object`
@@ -721,21 +866,6 @@ the named human gates only):**
   `markFieldsDirty`, `onuploaded`, `onheroneedsalt`, and the field). Folding those into one shared
   field-context object (a prop or a context, not a merged component) is the accurate remaining
   refactor; the guard suite is the standing regression net for it.
-- **Split `CairnMediaLibrary.svelte`.** The code-polish pass's measurement (`docs/superpowers/plans/
-  2026-07-01-code-polish-measurements.md`) converged three signals on this one file: it is the
-  largest component in the tree (3,141 lines), the largest jscpd self-duplication cluster (25
-  `html`-format clone pairs, unchanged across the pass), and internally organized as six
-  near-identical inline dialog controllers (open/close/apply per feature, each with its own
-  `$state` cluster and origin-refocus lifecycle) followed by six near-identical `<dialog>` markup
-  blocks. The pass's S3 idiom convergence (the code-idioms.md charter) already extracted the
-  *script*-level repetition into shared helpers (the check-and-tint class helper, the typed-confirm
-  gate, the fetch/deserialize/stale-guard round-trip, the origin-refocus lifecycle), closing several
-  hundred lines; the *markup* duplication is untouched on purpose, since splitting a component
-  couples its template, state, and focus behavior (the phase-3a lesson) and risks the same
-  multi-instance-focus hazard the form-renderer rider guarded against. A dedicated pass should
-  design the split (most likely one child component or snippet per feature dialog: replace, alt-
-  propagate, bulk-delete, orphan-scan, upload, delete), verified against the `admin-visual` baseline
-  and the e2e media suite.
 - **Build-time icon-name validation against the set.** An icon value is a glyph name from the adapter's
   `rendering.icons`, but the `fieldset` validator only enforces required and non-empty (3c decision 1); it does
   not check the name against the set (the directive icon is not set-validated today either). A build-time check

@@ -62,4 +62,26 @@ reads, the identity-guard/non-2xx hole, the mismatched rendered-summary totals, 
 CodeMirror decoration throw on a consumer edit desk). The same harvest disproved the ASC
 edit-desk hydration defect the STATUS carry-forwards had held (corpus C had configured
 cairn's internal route shape, which 404s on ASC's single-mount admin; the real desks proved
-hydration-clean across 24 runs). New findings start fresh below this line.
+hydration-clean across 24 runs). The 2026-07-30 Assets-trial BUILD harvest (six findings from
+the pass that rebuilt `/admin/club/assets` and `/admin/club/asset-requests` under the
+design-capture trial's control conditions, a different staging file from the 2026-07-29
+harvest above) was folded at the design-ratchet pass under the same rule. Findings 1 and 6 (the
+packaged admin sheet ships no user-agent reset, so a bare `textarea` rendered the browser's
+monospace default and daisyUI's `.list` kept the UA's 40px bullet gutter) shipped as the pass's
+`base` cascade layer (Task 1). Finding 2 (`form-anatomy.md`'s own worked example prescribed
+`gap-x-6 gap-y-4`, which never compiled) shipped as a standing compile gate over the skill's own
+reference exemplars, plus a labeled safelist addition (Task 2). Finding 3 (the stacked field
+register that already worked inside the package was never exported) shipped as
+`register: 'inline' | 'stacked'` on `FieldLabel`/`TextField`/`SelectField`, `'stacked'` now the
+default (Task 3, a deliberate breaking change, ratified by Geoff 2026-07-30). Finding 4
+(`one-filled-action` and the grader prompt disagreed about what one surface is) was ruled and
+shipped: the partition narrows to `nav`/`aside` plus the topmost open dialog layer, and the dark
+theme's `.btn-active` selected state gains a visible lightness step (Task 4). Finding 5 (daisyUI
+pins every `.list-row` child to `grid-row-start: 1`, so overriding the container's
+`grid-template-columns` alone does nothing) is the one finding this pass deliberately did not
+repair; it files as a live entry in `ROADMAP.md`'s Next tier with the harvest's own measurement,
+since site-side overrides exist and the engine-side repair needs its own design. The pass also
+lands the grammar-ladder doctrine the harvest's pattern argued for, in
+`docs/explanation/enforced-design.md`: every composition claim gets either a component or a
+check, prose alone being the demonstrated failure mode. New findings start fresh below this
+line.

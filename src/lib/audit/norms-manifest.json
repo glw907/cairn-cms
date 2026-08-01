@@ -170,6 +170,7 @@
         "expressions": [
           "color-mix(in oklab, var(--color-base-content) 60%, transparent)",
           "color-mix(in oklch, var(--color-base-content) 20%, #0000)",
+          "inherit",
           "var(--btn-fg)",
           "var(--btn-rest-fg,var(--btn-color,var(--color-base-content,currentColor)))",
           "var(--color-base-content)",
@@ -362,6 +363,7 @@
       "band": {
         "kind": "relationship",
         "expressions": [
+          "inherit",
           "var(--btn-fg)",
           "var(--btn-rest-fg,var(--btn-color,var(--color-base-content)))"
         ]
@@ -736,6 +738,19 @@
     },
     {
       "role": "input-text",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "inherit"
+        ]
+      },
+      "observations": 12,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "input-text",
       "property": "font-size",
       "band": {
         "kind": "length",
@@ -1014,6 +1029,19 @@
         ],
         "min": 1,
         "max": 1
+      },
+      "observations": 3,
+      "provenance": "observed",
+      "flags": []
+    },
+    {
+      "role": "select",
+      "property": "color",
+      "band": {
+        "kind": "relationship",
+        "expressions": [
+          "inherit"
+        ]
       },
       "observations": 3,
       "provenance": "observed",

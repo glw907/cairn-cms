@@ -87,6 +87,11 @@ describe('one-filled-action against a real browser', () => {
   // declared on the [data-theme] wrapper nested inside body, so var(--color-primary) was invalid at
   // computed-value time and the accent resolved to rgba(0, 0, 0, 0). Two competing accent fills
   // reported clean.
+  //
+  // The reported selector is 'body', not 'main': design ratchet Task 4 narrowed the partition to
+  // nav/aside, so this fixture's <main> no longer separates a surface (see
+  // one-filled-action-partition.test.ts for the ruling itself); the surface both buttons fall
+  // through to is the layer id, 'body', with no open dialog.
   it('catches two accent fills on one surface when the theme lives on a nested wrapper', async () => {
     const findings = await findingsFor(
       oneFilledAction,
@@ -96,7 +101,7 @@ describe('one-filled-action against a real browser', () => {
       </main></div></body>`
     );
     expect(findings).toHaveLength(1);
-    expect(findings[0]).toMatchObject({ ruleId: 'one-filled-action', tier: 'error', selector: 'main' });
+    expect(findings[0]).toMatchObject({ ruleId: 'one-filled-action', tier: 'error', selector: 'body' });
     expect(findings[0].message).toContain('button#save');
   });
 

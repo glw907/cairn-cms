@@ -208,6 +208,43 @@ describe('EditorToolbar', () => {
     });
   });
 
+  describe('Write/Preview tab sizing (design ratchet D3 item 6)', () => {
+    // The check glyph adds 22px to a selected tab's own box; before this fix, selecting a tab
+    // resized it and shifted the row after it. The compiled sheet carries daisyUI's real button
+    // sizing, so this measures the production footprint, not a UA default.
+    let sheet: HTMLStyleElement;
+    beforeAll(() => {
+      document.documentElement.setAttribute('data-theme', 'cairn-admin');
+      sheet = document.createElement('style');
+      sheet.textContent = compiledAdminCss;
+      document.head.appendChild(sheet);
+    });
+    afterAll(() => {
+      document.documentElement.removeAttribute('data-theme');
+      sheet.remove();
+    });
+
+    it('keeps each tab its own width across the selected/unselected swap', async () => {
+      const screen = render(EditorToolbar, baseProps({ mode: 'write' }));
+      const writeTab = () => screen.getByRole('tab', { name: 'Write' }).element() as HTMLElement;
+      const previewTab = () => screen.getByRole('tab', { name: 'Preview' }).element() as HTMLElement;
+
+      const writeWidthSelected = writeTab().getBoundingClientRect().width;
+      const previewWidthUnselected = previewTab().getBoundingClientRect().width;
+
+      await screen.rerender(baseProps({ mode: 'preview' }));
+
+      const writeWidthUnselected = writeTab().getBoundingClientRect().width;
+      const previewWidthSelected = previewTab().getBoundingClientRect().width;
+
+      expect(writeWidthUnselected, 'Write tab resized when it lost the check glyph').toBeCloseTo(writeWidthSelected, 0);
+      expect(previewWidthSelected, 'Preview tab resized when it gained the check glyph').toBeCloseTo(
+        previewWidthUnselected,
+        0,
+      );
+    });
+  });
+
   it('drives the More menu as a popover with aria-expanded and Escape', async () => {
     const screen = render(EditorToolbar, baseProps());
     const trigger = screen.getByRole('button', { name: 'More formatting' });

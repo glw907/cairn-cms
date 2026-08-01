@@ -327,7 +327,7 @@ binds out its live `values` and `incomplete` so the dialog can render that previ
     {@const items = slotItems(slot.name)}
     {@const ids = slotIds(slot.name)}
     <fieldset class="rounded-box border border-[var(--cairn-card-border)] flex flex-col gap-2 p-2">
-      <legend class="type-body font-medium">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
+      <legend class="type-body font-medium px-1">{slot.label}{#if slot.required}<span data-testid="cairn-pk-req" class="text-error" aria-hidden="true">*</span>{/if}</legend>
       <!-- Keyed by the parallel stable id so a mid-list removal drops the right node and focus follows the data; the value still binds to the canonical items[i] string the serializer reads. The visible row tag derives from itemLabel, falling back to the indexed label. -->
       {#each ids as id, i (id)}
         {@const label = rowLabel(slot, items[i] ?? '', i)}

@@ -132,7 +132,8 @@ stays pinned at the row's right end, reachable at every width.
   ];
 
   const ellipsisPaths = ['M5 12h.01', 'M12 12h.01', 'M19 12h.01'];
-  // The check glyph marking an active pick, shared by the More menu's toggles and the device list.
+  // The check glyph marking an active pick, shared by the More menu's toggles, the device list,
+  // and the Write/Preview tabs.
   const checkPaths = ['M20 6 9 17l-5-5'];
 
   // The trimmed overflow: the block formats that stay rare. A divider splits the code block from
@@ -257,10 +258,26 @@ stays pinned at the row's right end, reachable at every width.
 {/snippet}
 
 {#snippet tab(m: 'write' | 'preview', label: string)}
-  <!-- The capsule look is manual rounding, not daisyUI's .join: join radii follow direct
-       children, and the device trigger must sit outside the tablist (ARIA required children),
-       so the segments square their shared edges themselves. Preview squares its right edge only
-       while the trigger extends the capsule. -->
+  <!-- Design ratchet D3 item 5: this is not a two-segment capsule at rest. Unselected stays
+       btn-ghost, and ghost composites fully transparent (fill and border both equal the ground)
+       until hover or focus, so the resting render is one bordered selected box plus a plain text
+       label beside it, not two visually joined segments. A plain btn in its place was tried and
+       measured worse on both themes, dropping light's selected-to-unselected separation from
+       1.32:1 to 1.23:1 and flattening dark's unselected hover step from 1.20:1 to 1.01:1, which
+       is the only hover feedback an unselected tab has; the selected tab's own visibility rides
+       on the cairn-admin.css hairline instead.
+       The squared-edge machinery (rounded-r-none / rounded-l-none / -ml-px) still matters despite
+       the missing seam: it holds the right radii and adjacency for the states where a boundary
+       DOES paint, an unselected tab's own hover fill and the focus ring's outline geometry, so
+       hovering or tabbing to the ghost tab reveals a clean shared edge rather than a stray rounded
+       corner or a doubled border where the two tabs meet. Manual rounding rather than daisyUI's
+       .join, because join radii follow direct children and the device trigger must sit outside the
+       tablist (ARIA required children); the tabs square their shared edges themselves instead.
+       Preview squares its right edge only while the trigger extends the row.
+       One thing neither class fixes: on light, a hovered unselected tab computes exactly the
+       selected tab's resting fill either way, so fill alone cannot separate them. The check glyph
+       does, and it is the non-color state cue WCAG 1.4.1 asks for besides, the same device
+       ListToolbar's segmented facet already uses. -->
   <button
     type="button"
     role="tab"
@@ -273,6 +290,16 @@ stays pinned at the row's right end, reachable at every width.
     class:-ml-px={m === 'preview'}
     onclick={() => onMode(m)}
   >
+    <!-- Design ratchet D3 item 6: always rendered, so the tab's own box reserves the check
+         glyph's width in every state (selected or not). Selecting a tab used to add 22px of
+         glyph-plus-gap to that tab's box on click, so the Preview tab's own box, and everything
+         after it on the row, shifted; toggling visibility instead of presence keeps the layout
+         identical across the swap, matching this tab's own widest (glyph-plus-label) state at
+         rest. Invisible rather than removed, so the reserved space survives and a screen reader
+         still skips it (the icon inside already carries its own aria-hidden). -->
+    <span class:invisible={mode !== m}>
+      {@render strokeIcon(checkPaths)}
+    </span>
     {label}
   </button>
 {/snippet}

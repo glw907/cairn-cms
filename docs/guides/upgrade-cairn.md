@@ -79,6 +79,48 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: a UA reset layer, a tightened `one-filled-action`, an exported stacked field register, and a skill-exemplar compile gate
+
+The packaged admin sheet now ships a `base` cascade layer, so a bare form control, `dialog`,
+`fieldset`/`legend`, or daisyUI's own `.list` container renders the admin's own face instead of
+the browser's UA default: a bare `<textarea>` no longer falls back to the browser's monospace
+font and resizes vertically only, a native `<dialog class="modal">`, the shape every cairn
+dialog renders, loses Chrome's UA border frame, and daisyUI's `.list` loses its 40px
+bullet-marker gutter. The dialog rule is scoped to `dialog:where(.modal)`, so a bare `<dialog>`
+in your own custom admin route keeps its UA border rather than losing its only visual boundary.
+Cascade layers merge by name across stylesheets, so cairn's `base` layer merges with a `base`
+layer your own Tailwind build declares. Your import order decides which rule wins within that
+merged layer.
+
+The `cairn-admin-screens` skill's own reference docs are now checked against the built admin
+sheet: every class token a worked example teaches has to actually compile. `form-anatomy.md`'s
+two-column form-grid recipe and `exemplar-detail.md`'s divided-list row rhythm both needed a
+small labeled addition to the shipped sheet's compatibility safelist so the taught recipes
+render as written.
+
+`cairn-audit`'s rendered `one-filled-action` rule now partitions a screen only at `nav`, `aside`,
+and the topmost open `dialog` layer. `header`, `footer`, and `main` no longer partition it, so a
+filled action in a page header and a filled action in a card beneath it now count as one surface.
+The same change raises the dark theme's `.btn-active` selected-state fill to a visible lightness
+step off a plain `.btn`, since the ruling pushes a segmented control's selected state onto
+`btn-active` rather than `btn-primary`.
+
+**Consumers must:** treat a screen with a filled header action and a filled card action beneath
+it as a finding, and demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen
+the rule to pass a screen instead.
+
+`FieldLabel`, `SelectField`, and `TextField` (`@glw907/cairn-cms/admin-fields`) gain a
+`register: 'inline' | 'stacked'` prop. `'stacked'` puts the label on its own line preceding the
+control and fills the control to its container, so a field composed inside a multi-column form
+grid renders with no extra markup. **`'stacked'` is now the default**, replacing the prior
+label-beside-control layout: `inline` stays available for a genuinely control-adjacent
+composition, but it is now an explicit choice rather than the default. See
+[Admin fields](../reference/admin-fields.md).
+
+**Consumers must:** pass `register="inline"` on any `FieldLabel`, `TextField`, or `SelectField`
+call whose label-beside-control layout should survive the upgrade. Every other call renders the
+new stacked default. Nothing else here requires action.
+
 ## 0.91.1: the admin sheet classes `0.91.0` dropped come back (non-breaking)
 
 `0.91.0` dropped nineteen utility classes from the shipped admin sheet when cairn's own tree

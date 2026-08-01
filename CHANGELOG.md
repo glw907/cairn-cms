@@ -1,3 +1,143 @@
+## Unreleased
+
+### Added
+
+- `FieldLabel`, `SelectField`, and `TextField` (`@glw907/cairn-cms/admin-fields`) gain a
+  `register: 'inline' | 'stacked'` prop (design ratchet Task 3, closes finding 3): `'stacked'`
+  puts the label on its own line above the control, the individual-field-label recipe already
+  proven inside the engine's own `FieldInput`; `'inline'` keeps the prior label-beside-control
+  layout. A `.cairn-field-stacked` sheet hook fills a stacked control to its container, so a
+  consumer cannot forget `w-full`, and a stacked field in a wide multi-column grid track fills its
+  own cell edge-to-edge instead of clamping to daisyUI's fixed 20rem default. The hook matches only
+  a control that's a direct child of the label (fix A2, item 1), not any descendant, so a
+  consumer composing a compact row, a flex wrapper holding two or more narrower controls side by
+  side, inside a stacked field can nest it and keep the row's own
+  width choice instead of every nested control being forced to fill the row. **`'stacked'` is now
+  the default**, a deliberate breaking change (ratified by Geoff 2026-07-30): defaulting to inline
+  reproduces the harvest's trap shape, where the register that staircases in a grid stays the
+  effortless path. `docs/reference/admin-fields.md` documents both registers and the compact-row
+  escape; `skills/cairn-admin-screens/references/form-anatomy.md`'s composition-width guidance now
+  points at `register="stacked"` by name. **Consumers must:** pass `register="inline"` on any
+  `FieldLabel`/`TextField`/`SelectField` call whose inline label-beside-control layout should
+  survive the upgrade; every other call renders the new stacked default. A stacked field composing
+  a compact row needs no extra care: the width hook already reaches only its direct child.
+
+- `cairn-audit`'s rendered rule set gains three geometry rules (design ratchet Task 5, the
+  mechanical halves of findings 1, 3, and 6), the cap the plan set at three: `form-font-parity`
+  asserts every rendered `input`/`select`/`textarea`/`button` computes the same first
+  `font-family` as the admin root, the UA reset layer's own regression tripwire; registered
+  **provisionally at advisory**, promoted to error only once a CI re-check confirms the rendered
+  suite is green against cairn's own admin and showcase on the CI runner.
+  `field-edge-alignment` (advisory) is the staircase detector: two or more form controls in the
+  same visual column of a grid or flex-column container must share a left edge within 1.5px, the
+  shape an `inline`-register field with a varying label width produces.
+  `container-inset-asymmetry` (advisory) is the phantom-gutter detector: a `.card-shell`, `.list`,
+  or `.modal-box` container whose content sits more than 24px closer to one side than the other.
+  `docs/reference/cairn-audit.md`'s rule table gains all three rows.
+
+  Consumers must: nothing; both `field-edge-alignment` and `container-inset-asymmetry` are
+  advisory and `form-font-parity` is provisionally advisory, so none changes the exit code yet.
+
+### Changed
+
+- `cairn-audit`'s `one-filled-action` rendered rule narrows the landmarks that partition a
+  surface from `<main>, <nav>, <aside>, <header>, <footer>` to just `<nav>` and `<aside>`
+  (design ratchet Task 4, closes finding 4, ratified by Geoff 2026-07-30): the topmost open
+  dialog layer still stands apart from the page beneath it, and a nav rail's persistent chrome
+  still partitions, but `<header>`, `<footer>`, and `<main>` itself no longer do. A DOM boundary
+  between a page header and the card beneath it removed none of the harm the rule exists to
+  catch, same visual column, same first look, so it was never a real partition. The same change
+  pushes a segmented control's selected state off `btn-primary` (now two primaries on one surface)
+  and onto `btn-active`, which rebuilds the dark theme's `.btn-active`. The fill mixes `--btn-color`
+  (or `--color-base-200` when no variant is set) toward white rather than daisyUI's own toward-black
+  mix, so a variant selected control (`btn btn-primary btn-active`) keeps its hue and chroma instead
+  of collapsing to a flat neutral, while the neutral case lands a 0.05-0.07 oklch-lightness step off
+  a plain `.btn`, up from 0.011 before this change, in the dark Warm Stone family's own hue. That
+  step is perceptual, not photometric: near-black compresses sRGB luminance, so the lighter fill
+  alone measures 1.14:1 against an unselected sibling. The 3:1 cue WCAG 1.4.11 asks for therefore
+  rides on the border, the design system's 1px inset hairline in the family's own ink, which
+  measures 3.85:1 against the selected fill, 3.68:1 against the base-100 ground, and 4.37:1 against
+  an unselected sibling's fill. The hairline carries no `color-mix`, so an engine without
+  `color-mix` support still gets the cue. A companion `:hover` step keeps the selected control's
+  hover feedback, which the resting override would otherwise have taken away, gated on
+  `@media (hover: hover)` so a tap does not strand it. `btn-outline btn-active` becomes legible:
+  daisyUI fills an active outline button but leaves its ink at the outline color, 1.20:1 on dark,
+  and the override now restates that ink off `--btn-fg` (6.67:1 for the primary case). A disabled
+  selected control keeps daisyUI's own transparent border and fill. The `EditorToolbar` Write and
+  Preview tabs mark the selected tab with a check glyph, the non-color state cue WCAG 1.4.1 asks
+  for and the device `ListToolbar`'s segmented facet already uses. **The light theme was
+  unchanged at first release**: every rule here shipped scoped to the dark root alone, and the
+  tabs' unselected `btn-ghost` is the class they already carried; a later pass widens the outline
+  fix to light too (see the `.btn-active` outline/dash entry further down). `docs/reference/cairn-audit.md`'s
+  `one-filled-action` row states the narrowed partition and its reasoning. A sweep of cairn's own
+  admin and the showcase found no screen newly failing.
+
+  **Consumers must:** treat a screen with a filled header action above a filled card action as a
+  finding: demote the non-primary fill to `btn-ghost` or `btn-outline`. Never loosen the rule to
+  pass a screen.
+
+### Fixed
+
+- The packaged admin sheet ships a `base` cascade layer, so a bare form control, `dialog`,
+  `fieldset`/`legend`, or daisyUI's own `.list` container no longer renders its browser
+  default inside the admin frame. `scripts/admin-css.input.css` reorders its `@layer`
+  declaration to `theme, base, components, utilities`, so the reset loses to daisyUI's
+  component classes and to any consumer override, while still beating unstyled UA defaults.
+  Visible changes: a bare `<textarea>` (and any un-classed button, input, select, or optgroup)
+  now renders the admin's own IBM Plex Sans face and inherited color instead of the browser's
+  UA font; a `<textarea>` resizes vertically only, never horizontally; a native `<dialog>` loses
+  Chrome's UA border frame; a bare `<fieldset>`/`<legend>` loses its UA border, margin, and
+  padding (daisyUI's own `.fieldset` class is unaffected); and daisyUI's `.list` container loses
+  the UA's 40px bullet-marker gutter. The reset never touches a bare `ul`, `ol`, heading, or `p`,
+  since the admin wrapper also hosts the editor's rendered markdown preview.
+
+  Consumers must: nothing.
+
+- The `base` reset above scoped and narrowed two of its rules (design ratchet D2 items 1 and 2,
+  reviewer triage): the `dialog` border reset now targets `dialog:where(.modal)`, the shape
+  every cairn dialog renders, so a bare `<dialog>` in a consumer's own custom admin route keeps
+  its UA border rather than losing its only visual boundary (WCAG 1.4.11); and the `.list`
+  reset drops `list-style: none`, which strips list semantics from the accessibility tree in
+  WebKit/VoiceOver (WCAG 1.3.1) and was never load-bearing, since daisyUI's own `.list-row`
+  renders `display: grid` and so never generates a marker box regardless of `list-style`.
+
+  Consumers must: for a bare `<dialog>` in a custom admin route, nothing (it already kept its UA
+  border; this only narrows what the reset touches). For `.list`, only a consumer whose own
+  `<ul class="list">` holds children that are NOT daisyUI's `.list-row` (which never rendered a
+  marker anyway): those children now render the browser's default bullet again. Add
+  `list-style: none` locally to keep them suppressed.
+
+- The `btn-active` ink override that repairs `.btn-outline`/`.btn-dash`'s selected-state
+  composition is now theme-agnostic (design ratchet D3 items 1-2, review triage): it shipped
+  dark-only inside the neutral `.btn-active` fill rule above, so being unlayered it also
+  outranked a plain selected control's OWN text utility (`btn btn-active text-error` painted
+  `--btn-fg` instead of `text-error`'s ink, dark only). Split into its own rule scoped to
+  `:is(.btn-outline, .btn-dash)`, it now touches neither a plain selected control's text utility
+  (restored on dark) nor the light theme (previously untouched, and stock daisyUI's own light
+  `.btn-outline btn-active` composition is illegible: measured 1.17:1, worse than dark's own
+  pre-repair 1.20:1). Both themes now measure legible: light 6.61:1 primary / 11.44:1 neutral,
+  dark 6.67:1 primary / 14.00:1 neutral.
+
+  Consumers must: nothing for a plain selected control (`btn btn-active`, no outline/dash
+  variant); its text utility already resolved correctly except on dark, which this restores.
+  Anyone reading `btn-outline`/`btn-dash` selected-state ink off `--btn-color` on the light theme
+  (the prior stock composition) sees it now resolve off `--btn-fg` instead, the same repair dark
+  already shipped with.
+
+- The `cairn-admin-screens` skill's own reference docs are now gated against the built admin
+  sheet: a new unit test extracts every class token the references teach (a static `class="..."`
+  attribute inside a fenced example, an inline code span that is a pure class list) and asserts
+  each resolves against `cairn-admin.css`. `form-anatomy.md` prescribed `gap-x-6 gap-y-4` for a
+  two-column form grid, a pair the sheet never compiled (the named `gap-group`/`gap-section`
+  roles both set the single `gap` shorthand and cannot express an axis split, so the raw pair is
+  the deliberate recipe); the gate also caught `exemplar-detail.md`'s divided-list row rhythm
+  (`divide-y`, `divide-[var(--cairn-card-border)]`, `first:pt-0`, `last:pb-0`) never reaching the
+  sheet either. All six join the labeled compatibility safelist in `scripts/admin-css.input.css`
+  as documented interface classes, naming the reference doc each serves.
+
+  Consumers must: nothing; the six classes now compile and render as the exemplars already
+  describe.
+
 ## 0.91.1
 
 <!-- release-size: patch -->

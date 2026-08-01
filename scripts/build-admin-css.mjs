@@ -91,7 +91,17 @@ export async function buildAdminCss({ extraSources = [] } = {}) {
     iaWriterFace(700, 'normal') +
     iaWriterFace(400, 'italic') +
     iaWriterFace(700, 'italic');
-  return fontFace + scoped.css;
+  // scripts/admin-css.input.css declares `@layer theme, base, components, utilities;` up front, but
+  // that bare ordering statement is dropped by the Tailwind/lightningcss pipeline above (each stage
+  // only carries forward the populated `@layer name { ... }` blocks). Without it, precedence rides
+  // on lightningcss's own emission order, which happens to match the declared order for the four
+  // named layers, but Tailwind also emits an undeclared `@layer properties { ... }` block (the
+  // `--tw-*` fallback initializers) after its own `@layer theme, base, components, utilities;`
+  // statement; an undeclared layer registers after every declared one, so `properties` would land
+  // after `utilities` and outrank it. Re-declaring the full order here, first in the output, pins
+  // `properties` ahead of `utilities` regardless of file order.
+  const layerOrder = '@layer properties, theme, base, components, utilities;\n';
+  return layerOrder + fontFace + scoped.css;
 }
 
 // When run as a script, write the compiled sheet into dist, overwriting the variables-only partial

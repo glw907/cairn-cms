@@ -300,6 +300,16 @@ async function collectObservations(baseUrl, roles) {
         // Fonts settle before anything is measured: a metric read against a fallback face is a
         // number no later run reproduces.
         await page.evaluate(() => document.fonts.ready);
+        // The page settles before anything is COUNTED: `load` fires ahead of SvelteKit's streamed
+        // promises and client hydration, so an extraction racing them counts a different set of
+        // elements per run (three 2026-07-31 renders each saw a different subset of the admin
+        // office's late-arriving chips, cells, and toolbar icons). Network idle drains the
+        // streamed data; the double requestAnimationFrame lets the DOM those payloads produce
+        // paint before the walk.
+        await page.waitForLoadState('networkidle');
+        await page.evaluate(
+          () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+        );
         const found = await page.evaluate(extractInPage, {
           path,
           roles: payloadRoles,
@@ -360,6 +370,20 @@ async function main() {
       console.error(
         `${MANIFEST_FILE} is stale: a fresh render does not match the committed manifest. Run \`npm run norms:generate\` against the same server and commit the result.`
       );
+      // Name the drift so a failing run is diagnosable from its log alone: the committed and
+      // fresh lines that differ, paired by line number. Without this, a checker that fails on a
+      // renderer this machine cannot reproduce gives the reader nothing to act on.
+      const committedLines = committed.split('\n');
+      const generatedLines = generated.split('\n');
+      const max = Math.max(committedLines.length, generatedLines.length);
+      let shown = 0;
+      for (let i = 0; i < max && shown < 40; i += 1) {
+        if (committedLines[i] !== generatedLines[i]) {
+          console.error(`  line ${i + 1}: committed ${JSON.stringify(committedLines[i] ?? '<absent>')}`);
+          console.error(`  line ${i + 1}: fresh     ${JSON.stringify(generatedLines[i] ?? '<absent>')}`);
+          shown += 1;
+        }
+      }
       process.exitCode = 1;
       return;
     }

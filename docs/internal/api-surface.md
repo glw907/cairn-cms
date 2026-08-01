@@ -294,14 +294,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/sveltekit`
 
-- `adminAction`: <T>(handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent) => Promise<T>
+- `adminAction`: <T>(handler: (args: { event: AdminActionEvent<AuthEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent<AuthEnv>) => Promise<T>
 - `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
 - `AdminActionAuditRecord`: AdminActionAudit & { editor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
 - `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
 - `AdminActionDeps`: { isDev?: boolean }
 - `AdminActionError`: typeof AdminActionError
-- `AdminActionEvent`: { cookies: CookieJar; locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink }; url: URL; request: Request; platform?: PlatformContext<AuthEnv> }
+- `AdminActionEvent`: { cookies: CookieJar; locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; url: URL; request: Request; platform?: PlatformContext<Env> }
 - `AdminData`: { view: "login"; page: { siteName: string; error: string | null; csrf: string } } | { view: "confirm"; page: { token: string; siteName: string; error: string | null; csrf: string } } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "editors"; page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] } } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminNavConfig`: (AdminNavEntry | AdminNavSection)[]
 - `AdminNavEntry`: { label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean }

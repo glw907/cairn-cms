@@ -129,7 +129,11 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
         log.warn('auth.role.unknown', { email: editor.email, role: editor.role });
       }
       event.locals.editor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
-      event.locals.cairnAccess = access;
+      // access ?? {}, not access: canReach and hasAccessRule agree on undefined and {} in every
+      // branch (both fail closed on an unmapped target the same way), so this is behavior-
+      // identical for a zero-config site. It buys section-action.ts a real signal: an absent
+      // locals.cairnAccess then only ever means the guard never ran on this route.
+      event.locals.cairnAccess = access ?? {};
     }
     const response = await resolve(event);
     applySecurityHeaders(response.headers);

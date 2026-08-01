@@ -184,6 +184,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
+- `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `PublicRoutesDeps`: { site: SiteResolver; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; origin: string; siteName: string; description: string; feeds?: { rss?: string; json?: string }; defaultImage?: string; resolveMedia?: MediaResolve; assetsEnabled?: boolean }
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
@@ -224,6 +226,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `feedView`: (site: SiteResolver, descriptors: ConceptDescriptor[], origin: string) => FeedItem[]
 - `jsonFeedResponse`: (channel: FeedChannel, items: FeedItem[]) => Response
 - `jsonLdScript`: (data: Record<string, unknown>) => string
+- `ManifestEntry`: { id: string; concept: string; title: string; date?: string; permalink: string; summary?: string; draft: boolean; links: CairnRef[]; mediaRefs?: string[]; references?: ReferenceEdge[]; tags?: string[]; includes?: string[]; publishedAt?: string }
+- `newlyPublishedEntries`: (before: Manifest | null, after: Manifest) => ManifestEntry[]
 - `readSeoFields`: (frontmatter: Record<string, unknown>) => SeoFields
 - `ResolvedReference`: { id: string; concept: string; title: string; permalink: string; summary?: string }
 - `resolveImageUrl`: (image: string, origin: string) => string

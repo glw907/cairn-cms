@@ -1,7 +1,7 @@
 // cairn owns CSRF for the admin once a site disables SvelteKit's global checkOrigin. These helpers
 // back the guard's two rules and the loads that issue the double-submit token. See
 // docs/superpowers/specs/2026-06-08-cairn-login-csrf-ownership-design.md.
-import { csrfCookieName, generateCsrfToken } from '../auth/crypto.js';
+import { csrfCookieName, generateCsrfToken, tokensMatch } from '../auth/crypto.js';
 import type { CookieJar, RequestContext } from './types.js';
 
 const UNSAFE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -21,14 +21,6 @@ export function isUnsafeFormRequest(request: Request): boolean {
 /** The faithful framework check: the Origin header equals the request's own origin. */
 export function originMatches(event: Pick<RequestContext, 'url' | 'request'>): boolean {
   return event.request.headers.get('origin') === event.url.origin;
-}
-
-/** A length-checked constant-time compare, so the token check leaks no timing. */
-export function tokensMatch(a: string, b: string): boolean {
-  if (a.length === 0 || a.length !== b.length) return false;
-  let diff = 0;
-  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  return diff === 0;
 }
 
 /**

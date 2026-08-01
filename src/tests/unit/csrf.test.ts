@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import {
   isUnsafeFormRequest,
   originMatches,
-  tokensMatch,
   issueCsrfToken,
   validateCsrfToken,
 } from '../../lib/sveltekit/csrf.js';
@@ -64,15 +63,6 @@ describe('originMatches', () => {
     expect(originMatches(ev('https://x.dev'))).toBe(true);
     expect(originMatches(ev('https://evil.dev'))).toBe(false);
     expect(originMatches(ev(null))).toBe(false);
-  });
-});
-
-describe('tokensMatch', () => {
-  it('is true only for equal non-empty strings', () => {
-    expect(tokensMatch('abc', 'abc')).toBe(true);
-    expect(tokensMatch('abc', 'abd')).toBe(false);
-    expect(tokensMatch('abc', 'ab')).toBe(false);
-    expect(tokensMatch('', '')).toBe(false);
   });
 });
 

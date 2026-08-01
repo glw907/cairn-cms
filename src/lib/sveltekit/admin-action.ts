@@ -11,8 +11,7 @@
 // mutating action, which the engine has no other hook for.
 import { isActionFailure } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
-import { csrfCookieName } from '../auth/crypto.js';
-import { tokensMatch } from './csrf.js';
+import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { CookieJar, EventBase } from './types.js';

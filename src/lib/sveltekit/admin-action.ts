@@ -57,7 +57,15 @@ export interface AdminActionContext {
   audit: (record: AdminActionAudit) => void;
 }
 
-/** Thrown by `adminAction` on a failed guard; a site's error boundary renders it as its `status`. */
+/**
+ * Thrown by `adminAction` on a failed guard.
+ *
+ * `status` is the intended meaning of the refusal, not the transport status the browser sees.
+ * SvelteKit derives a response status only from its own `HttpError` and `SvelteKitError`, so this
+ * plain `Error` subclass always renders as a 500; a site's `handleError` receives the already
+ * computed status and can shape the message, never the code. Read `status` to tell a 403 from a
+ * 500 in a site's own logging or error page.
+ */
 export class AdminActionError extends Error {
   constructor(
     public status: number,

@@ -57,22 +57,28 @@ convergence above was filed as a C2 input; it is done and removed from the agend
 changed what `AdminActionError` means and the naming pass should not name a symbol mid-change, which
 is why this pass ran first.
 
-**Sequencing, per the agenda:** this pass merges to `main` first, the only outstanding merge (both
-prior passes already landed); then, RECOMMENDED and pending Geoff's workflow opt-in, a read-only
-adversarial audit sweep over the settled surface appends confirmed findings to the agenda; then the
-Fable sitting runs over `docs/internal/api-surface.md` (C1 corrected it; it now records nullability
-for the first time) plus the agenda. Execution stays one pass, one diff, one `Consumers must:`
-list, the only genuinely breaking pass in the series.
+**Sequencing, per the agenda:** the convergence pass merged to `main` 2026-08-02
+([PR #18](https://github.com/glw907/cairn-cms/pull/18), CI green), and the three merged worktrees of
+the pre-beta chain (seams two, C1, refusal convergence) are pruned. Geoff has opted into the
+workflow, so next is the read-only adversarial audit sweep over the settled surface, run from a
+fresh Opus 5 session (execution-shaped work; the Fable session that merged the PR handed off at this
+boundary). The sweep appends confirmed findings to the agenda; then the Fable sitting runs over
+`docs/internal/api-surface.md` (C1 corrected it; it now records nullability for the first time) plus
+the agenda. Execution stays one pass, one diff, one `Consumers must:` list, the only genuinely
+breaking pass in the series.
 
-**Resume prompt**, from `~/Projects/cairn-cms`: "Merge `refusal-channel-convergence` to `main` (both
-prior passes are already merged, so this is the only outstanding merge). Then, if Geoff has opted
-into a workflow, run the read-only adversarial audit sweep the C2 agenda recommends
-(`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`), appending confirmed findings to
-that document. Then run the C2 breaking-window sitting on Fable, reading
-`docs/internal/api-surface.md` plus the agenda. Branch the execution worktree off `main` (the stack
-is collapsed; no other branch to reach for). Execution is ONE pass landing every rename and
-adjudicated decision in one diff with one `Consumers must:` list. Hold unpublished at close unless a
-consumer needs it."
+**Resume prompt** (Opus 5 session, from `~/Projects/cairn-cms`, on `main`): "Run the read-only
+adversarial audit sweep grounding the C2 breaking-window agenda
+(`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`). Geoff has opted into a workflow:
+parallel read-only lenses (SvelteKit idiom, API consistency, dead or accidental surface,
+doc-versus-code claims drift, cruft) over the settled surface (`docs/internal/api-surface.md`,
+`src/lib`, the package `exports` map, the published docs arms), each finding adversarially verified
+before it counts. Append confirmed findings to the agenda spec as evidence for the sitting (records,
+not adjudication), commit the updated agenda to `main`, and update this STATUS entry. Arm the
+standard workflow runaway guard. Afterward the C2 sitting runs on Fable, reading
+`docs/internal/api-surface.md` plus the agenda; its execution worktree branches off `main` (the
+stack is collapsed), lands ONE diff with one `Consumers must:` list, and holds unpublished at close
+unless a consumer needs it."
 
 **Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
 (history/revert, preview) slot against the standing template queue (the optical-centering ratchet,

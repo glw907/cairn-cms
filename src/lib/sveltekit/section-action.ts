@@ -130,13 +130,17 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
     opts: SectionActionOptions,
   ): (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
     const guarded = adminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
-      // adminAction's own declared event type is pinned to AuthEnv; it never reads
+      // adminAction's own declared event type is pinned to CairnEnv; it never reads
       // event.platform, so relabeling to this factory's own Env here is a type-level
       // correction, never a runtime behavior change (the underlying object is exactly what
-      // this wrapper's caller passed in). Env is unconstrained (a site's own binding env
-      // shares no property names with AuthEnv, which TypeScript's weak-type check would
-      // otherwise reject as a likely mistake), so the relabeling goes through `unknown`.
-      const siteEvent = event as unknown as AdminActionEvent<Env>;
+      // this wrapper's caller passed in). A direct assertion suffices: TypeScript's
+      // comparability check for an `as` cast treats the unconstrained `Env` permissively
+      // regardless of which concrete env it is relabeled from, so no `unknown` bridge is
+      // needed here (the R5 env-story ruling's env-genericity tripwire proved the
+      // EMAIL-return-type incompatibility this used to work around no longer exists; this
+      // relabeling cast is a separate, still-necessary one, for the unrelated reason that
+      // `Env` is a fully unconstrained generic type parameter).
+      const siteEvent = event as AdminActionEvent<Env>;
       const path = siteEvent.url.pathname;
       const target = opts.target ?? path;
 
@@ -224,12 +228,11 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       return handler({ event: siteEvent, form, ctx: { ...ctx, db: resolvedDb } });
     });
 
-    // The same relabeling as the `siteEvent` cast above, applied on the way out: adminAction hands
-    // back an action typed against its own AuthEnv-pinned event, while this wrapper's contract is
-    // the site's Env. Type-level only, and through `unknown` for the same weak-type reason.
-    return guarded as unknown as (
-      event: AdminActionEvent<Env>,
-    ) => Promise<T | ActionFailure<{ error: string }>>;
+    // The same relabeling as the `siteEvent` cast above, applied on the way out: adminAction
+    // hands back an action typed against its own CairnEnv-pinned event, while this wrapper's
+    // contract is the site's Env. Type-level only; see that cast's comment for why a direct
+    // assertion, with no `unknown` bridge, is now enough.
+    return guarded as (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
   };
 }
 

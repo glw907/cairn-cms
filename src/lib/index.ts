@@ -1,6 +1,7 @@
 // Engine entry. Auth landed in Plan 01, the content model and adapter in Plan 02, and the
 // GitHub read-and-commit backend in Plan 03; render and nav follow.
-export type { Role, Editor, AuthEnv, EmailRecipient, EmailAttachment, CairnRolesRegister } from './auth/types.js';
+export type { Role, Editor, EmailRecipient, EmailAttachment, CairnRolesRegister } from './auth/types.js';
+export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.
 export { defineRoles, resolveCapability, roleHome, ownerLevelRoles, DEFAULT_ROLES } from './auth/roles.js';
@@ -10,7 +11,7 @@ export type { Capability, RoleDeclaration, RolesDeclaration } from './auth/roles
 // reads, so route gating and sidebar visibility cannot drift apart.
 export { defineAccess, canReach, hasAccessRule } from './auth/access.js';
 export type { AccessMap } from './auth/access.js';
-export type { AuthBranding, MagicLinkMessage, SendMagicLink } from './email.js';
+export type { AuthBranding, MagicLinkMessage, SendMagicLink, EmailSender } from './email.js';
 
 // Content model and adapter contract (Plan 02).
 export type {
@@ -67,7 +68,7 @@ export type { RepoFile, CommitAuthor } from './github/types.js';
 export { CommitConflictError } from './github/types.js';
 // The Backend seam (Contract v2 backend phase): the store interface and its default GitHub provider.
 export { githubApp } from './github/backend.js';
-export type { Backend, BackendProvider, GithubAppProvider, BackendEnv } from './github/backend.js';
+export type { Backend, BackendProvider, GithubAppProvider } from './github/backend.js';
 export type { FileChange } from './github/repo.js';
 
 // Nav tree and site-config helpers (Plan 06).

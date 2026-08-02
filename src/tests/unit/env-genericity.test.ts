@@ -45,12 +45,7 @@ describe('env-genericity compile fixtures', () => {
  * A realistic COMPLIANT site's Platform.env: the documented `CairnPlatformBindings &
  * CairnMediaBindings` intersection plus one site-specific binding. This proves the sweep's pins
  * assign clean for a site that follows `platform-bindings.ts`'s own documented pattern, which
- * every fixture below assumes. It proves NOTHING about a site whose `Platform.env` is built some
- * other way, most importantly a bare `wrangler types`-generated `Env` sourced directly from
- * `@cloudflare/workers-types` rather than through `CairnPlatformBindings`: see
- * `BareWranglerSiteEnv` below, a deliberately-disjoint stand-in that fails to assign, and is the
- * reason a site MUST intersect `CairnPlatformBindings` rather than hand-rolling a structurally
- * similar env of its own.
+ * every fixture below assumes.
  */
 type SiteEnv = CairnPlatformBindings & CairnMediaBindings & { APP_DB: D1Database };
 
@@ -65,17 +60,19 @@ type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ 
 type SiteServerLoadEvent = Omit<ServerLoadEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
 
 /**
- * The KNOWN-INCOMPATIBLE case, deliberately failing (env-genericity finding 1, pre-beta C1 review
- * pass). Not a stand-in this sweep proves compatible: it models a site whose `Platform.env` is
- * built the way `wrangler types` actually generates it, straight from `@cloudflare/workers-types`,
- * never intersected with cairn's own `CairnPlatformBindings`.
- *
- * Root cause: `@cloudflare/workers-types`'s `SendEmail.send` overload returns
- * `Promise<EmailSendResult>` (`node_modules/@cloudflare/workers-types/index.d.ts`, the `SendEmail`
- * interface), while `AuthEnv['EMAIL'].send` (`../../lib/auth/types.ts:69-86`) declares
- * `Promise<void>`. `CairnPlatformBindings.EMAIL` (`../../lib/sveltekit/platform-bindings.ts:34`) is
- * typed as `NonNullable<AuthEnv['EMAIL']>`, so a bare wrangler-generated `EMAIL` binding's wider
- * return type is not assignable to the narrower one cairn declares.
+ * A site whose `Platform.env` is built the way `wrangler types` actually generates it, straight
+ * from `@cloudflare/workers-types`, never intersected with cairn's own `CairnPlatformBindings`
+ * (env-genericity finding 1, pre-beta C1 review pass, resolved by the R5 env-story ruling, C2
+ * breaking-window pass). This once failed to assign: `@cloudflare/workers-types`'s `SendEmail.send`
+ * overload returns `Promise<EmailSendResult>`, while `CairnPlatformBindings.EMAIL` (via `CairnEnv`,
+ * `../../lib/env.ts`) declared `Promise<void>`. `CairnEnv['EMAIL']` is now typed against
+ * `EmailSender` (`../../lib/email.ts`), whose `send` returns `Promise<unknown>`, which structurally
+ * accepts the wider Cloudflare return type with no cast. This fixture now stands for the opposite
+ * claim of its old name: a bare wrangler-generated env assigns cleanly into
+ * `CairnPlatformBindings` with no intersection required, so `CairnPlatformBindings` is a
+ * recommended convenience preset (catches a forgotten binding at compile time), not a requirement
+ * every route factory's structural typing depends on. The `satisfies` below, with no directive,
+ * is what fails this test the day a return-type narrowing on either side reopens the gap.
  */
 type BareWranglerSiteEnv = {
   AUTH_DB: D1Database;
@@ -84,21 +81,10 @@ type BareWranglerSiteEnv = {
   GITHUB_APP_PRIVATE_KEY_B64: string;
 };
 
-/**
- * The tripwire: if this line ever stops erroring, `BareWranglerSiteEnv` has started assigning into
- * `CairnPlatformBindings`, which means either `@cloudflare/workers-types` changed `SendEmail.send`'s
- * return type or `AuthEnv['EMAIL'].send` did. Either way, `npm run check` fails on an unused
- * `@ts-expect-error` (TS2578), which is the signal that this finding's constraint changed and the
- * doc comments above need revisiting, not that the fixture is broken.
- */
-function typeOnlyBareWranglerEnvIsIncompatible(bare: BareWranglerSiteEnv): void {
-  // @ts-expect-error known-incompatible: BareWranglerSiteEnv.EMAIL.send returns
-  // Promise<EmailSendResult> (@cloudflare/workers-types), not the Promise<void> AuthEnv and
-  // CairnPlatformBindings both declare. A site must intersect CairnPlatformBindings rather than
-  // hand-rolling a structurally similar env straight from @cloudflare/workers-types.
+function typeOnlyBareWranglerEnvAssignsClean(bare: BareWranglerSiteEnv): void {
   bare satisfies CairnPlatformBindings;
 }
-void typeOnlyBareWranglerEnvIsIncompatible;
+void typeOnlyBareWranglerEnvAssignsClean;
 
 /**
  * The tightened action-return shape (env-genericity finding 6, pre-beta C1 review pass): faithful
@@ -123,7 +109,7 @@ function typeOnlyCairnAdminAssignability(): void {
 void typeOnlyCairnAdminAssignability;
 
 // adminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
-// 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<AuthEnv>)
+// 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<CairnEnv>)
 // => Promise<T>` via the default type parameter; this proves that assigns clean into a route's
 // generated `Actions`, on the same `CairnPlatformBindings` grounds as every pin above, never
 // because it "does not read event.platform" (see the corrected doc comment at admin-action.ts).
@@ -147,7 +133,7 @@ function typeOnlyAuthGuardAssignability(): void {
 }
 void typeOnlyAuthGuardAssignability;
 
-// createContentRoutes: every returned load/action reads a ContentEvent (EventBase<BackendEnv>).
+// createContentRoutes: every returned load/action reads a ContentEvent (EventBase<CairnEnv>).
 // Plain SiteRequestEvent covers it: with no generated `$app/types` in this repo, kit's own
 // `RequestEvent['params']` already resolves to `Record<string, string>` (verified directly:
 // `RequestEvent<AppLayoutParams<'/'>>`'s default falls back to that shape here), so a
@@ -166,7 +152,7 @@ function typeOnlyNavRoutesAssignability(): void {
 }
 void typeOnlyNavRoutesAssignability;
 
-// createAuthRoutes: every handler reads a RequestContext (EventBase<AuthEnv> plus cookies and
+// createAuthRoutes: every handler reads a RequestContext (EventBase<CairnEnv> plus cookies and
 // setHeaders), the event shape a site's /admin/auth/* route shims assign from their own
 // SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
@@ -189,7 +175,7 @@ function typeOnlyEditorRoutesAssignability(): void {
 }
 void typeOnlyEditorRoutesAssignability;
 
-// healthLoad: its own inline `{ platform?: { env?: BackendEnv } }` param, checked against the same
+// healthLoad: its own inline `{ platform?: { env?: CairnEnv } }` param, checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
   healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;

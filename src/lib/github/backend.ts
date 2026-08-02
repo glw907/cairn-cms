@@ -8,14 +8,10 @@ import { readRaw, listMarkdown, commitFiles } from './repo.js';
 import type { FileChange } from './repo.js';
 import { branchHeadSha, createBranch as createBranchRef, deleteBranch, listBranches } from './branches.js';
 import { appCredentials } from './credentials.js';
-import type { BackendEnv } from './credentials.js';
 import { cachedInstallationToken } from './signing.js';
 import { CommitConflictError } from './types.js';
 import type { CommitAuthor, RepoFile } from './types.js';
-
-// One BackendEnv declaration lives in credentials.js (the secret-channel owner). Re-export it here so
-// the seam and connect() name the same type the public root surfaces, with no duplicate declaration.
-export type { BackendEnv };
+import type { CairnEnv } from '../env.js';
 
 /**
  * A live, connected content store pinned to a default branch. The GitHub implementation already
@@ -66,7 +62,7 @@ export interface BackendProvider {
   /** The default branch, surfaced before connect() so compose-time code can read it. */
   readonly branch: string;
   /** Connect to a live Backend; the GitHub implementation mints and caches its token lazily. */
-  connect(env: BackendEnv): Backend;
+  connect(env: CairnEnv): Backend;
 }
 
 /** What githubApp() returns: the generic provider plus the GitHub App's non-secret identity facts. */

@@ -23,9 +23,9 @@ import {
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthBranding, SendMagicLink } from '../email.js';
-import type { AuthEnv, Editor } from '../auth/types.js';
+import type { Editor } from '../auth/types.js';
 import type { Capability } from '../auth/roles.js';
-import type { BackendEnv } from '../github/credentials.js';
+import type { CairnEnv } from '../env.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { CookieJar, EventBase } from './types.js';
 
@@ -34,18 +34,18 @@ import type { CookieJar, EventBase } from './types.js';
  * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
  * and setHeaders). A real SvelteKit RequestEvent satisfies it.
  *
- * Deliberately pinned to `BackendEnv & AuthEnv`, not generic over a site's own `Env` (env-genericity
+ * Deliberately pinned to `CairnEnv`, not generic over a site's own `Env` (env-genericity
  * sweep, pre-beta C1 Task 2): a compile-only fixture proving `createCairnAdmin`'s `load`, `actions`,
  * and `shellLoad` against a site's own generated route event, under a realistic compliant
  * `App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the
  * pattern `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
  * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN`/`GITHUB_APP_PRIVATE_KEY_B64` property names with
- * `BackendEnv & AuthEnv`, which is exactly what keeps TypeScript's weak-type detection (TS2559) from
+ * `CairnEnv`, which is exactly what keeps TypeScript's weak-type detection (TS2559) from
  * rejecting the assignment; a genuinely disjoint env (sharing no property names) still fails it, so
  * the pin costs a compliant site nothing. Adding a type parameter here would be public surface with
  * no fixture forcing it.
  */
-export interface AdminEvent extends EventBase<BackendEnv & AuthEnv> {
+export interface AdminEvent extends EventBase<CairnEnv> {
   cookies: CookieJar;
   setHeaders(headers: Record<string, string>): void;
 }

@@ -12,7 +12,7 @@ unexported here. They back the login flow only; no real caller outside the engin
 they are not proven surface.
 
 Every function takes the site's `AUTH_DB` `D1Database` binding as its first argument, the same
-binding `AuthEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's
+binding `CairnEnv` (see [core](./core.md)) types and a site's `wrangler.jsonc` declares. The engine's
 own `editors-routes` calls these exact functions, over the same rows, so a consumer script and the
 `ManageEditors` screen stay consistent.
 

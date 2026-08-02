@@ -57,8 +57,9 @@ const KEPT = [
   'RequestContext',
   'CookieJar',
   'HandleInput',
-  'BackendEnv',
-  'AuthEnv',
+  'PlatformContext',
+  'CairnEnv',
+  'EmailSender',
 ];
 
 const DTS = resolve(

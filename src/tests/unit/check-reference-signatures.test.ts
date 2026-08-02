@@ -58,9 +58,9 @@ describe('normalizeSignature optional-artifact stripping', () => {
 
   it('strips a doubly-nested optional member chain', () => {
     const s = normalizeSignature(
-      '(event: { platform?: { env?: BackendEnv | undefined } | undefined }, r: C) => Promise<H>',
+      '(event: { platform?: { env?: CairnEnv | undefined } | undefined }, r: C) => Promise<H>',
     );
-    expect(s).toBe('(event: { platform?: { env?: BackendEnv } }, r: C) => Promise<H>');
+    expect(s).toBe('(event: { platform?: { env?: CairnEnv } }, r: C) => Promise<H>');
   });
 
   it('keeps a required union nested inside a type argument under an optional parameter', () => {

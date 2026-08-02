@@ -77,11 +77,10 @@ export {
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
-export type { RequestContext, CookieJar, HandleInput } from './types.js';
-// Re-exported here, not from root, so the consumer's app.d.ts Platform block can name it.
-export type { BackendEnv } from '../github/credentials.js';
+export type { RequestContext, CookieJar, HandleInput, PlatformContext } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
-export type { AuthEnv } from '../auth/types.js';
+export type { CairnEnv } from '../env.js';
+export type { EmailSender } from '../email.js';
 // The binding-shaped types a site's app.d.ts intersects into its own Platform.env; /sveltekit is
 // their canonical home (decision: surface-pruning Task 6).
 export type { CairnPlatformBindings, CairnMediaBindings } from './platform-bindings.js';

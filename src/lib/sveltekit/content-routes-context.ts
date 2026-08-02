@@ -6,7 +6,7 @@
 // the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
 // where their shared captures come from.
 import type { Backend } from '../github/backend.js';
-import type { BackendEnv } from '../github/credentials.js';
+import type { CairnEnv } from '../env.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
 import { normalizeAdminNav, validateNavLayout, validateAccessComposition, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
@@ -25,17 +25,17 @@ import Anthropic from '@anthropic-ai/sdk';
 /**
  * The structural event the content routes read; a real SvelteKit RequestEvent satisfies it.
  *
- * Deliberately pinned to `BackendEnv`, not generic over a site's own `Env` (env-genericity sweep,
+ * Deliberately pinned to `CairnEnv`, not generic over a site's own `Env` (env-genericity sweep,
  * pre-beta C1 Task 2): a compile-only fixture proving `createContentRoutes` and `createNavRoutes`
  * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
  * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
  * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares the `GITHUB_APP_PRIVATE_KEY_B64` property name with `BackendEnv`, which is exactly what
+ * shares the `GITHUB_APP_PRIVATE_KEY_B64` property name with `CairnEnv`, which is exactly what
  * keeps TypeScript's weak-type detection (TS2559) from rejecting the assignment; a genuinely
  * disjoint env (sharing no property names) still fails it, so the pin costs a compliant site
  * nothing. Adding a type parameter here would be public surface with no fixture forcing it.
  */
-export interface ContentEvent extends EventBase<BackendEnv> {
+export interface ContentEvent extends EventBase<CairnEnv> {
   params: Record<string, string>;
   /**
    * SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF

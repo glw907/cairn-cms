@@ -1,11 +1,12 @@
 // The email boundary. The send is injected so tests capture links in a sink with no
 // send_email binding; production passes `cloudflareSend`, which calls env.EMAIL.send
 // (Cloudflare Email Sending, arbitrary recipients).
-import type { AuthEnv, EmailAttachment, EmailRecipient } from './auth/types.js';
+import type { EmailAttachment, EmailRecipient } from './auth/types.js';
+import type { CairnEnv } from './env.js';
 import { CairnError } from './diagnostics/index.js';
 import { escapeHtml } from './escape.js';
 
-export type { AuthEnv, EmailAttachment, EmailRecipient };
+export type { EmailAttachment, EmailRecipient };
 
 /**
  * The message a built magic-link email carries. `to`/`from`/`subject`/`html`/`text` are the
@@ -34,11 +35,22 @@ export interface AuthBranding {
 }
 
 /**
+ * The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference:
+ * a binding, or an injected sender, that takes a built magic-link message. The return type is
+ * `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send`
+ * (`@cloudflare/workers-types`), which resolves `Promise<EmailSendResult>`, satisfies this
+ * structurally with no cast.
+ */
+export interface EmailSender {
+  send(message: MagicLinkMessage): Promise<unknown>;
+}
+
+/**
  * The injected send. Production uses `cloudflareSend`; tests pass a sink. A thrown error's
  *  text reaches the structured log (scrubbed and truncated), so a custom sender must not embed
  *  the message body or the magic link in what it throws.
  */
-export type SendMagicLink = (env: AuthEnv, message: MagicLinkMessage) => Promise<void>;
+export type SendMagicLink = (env: CairnEnv, message: MagicLinkMessage) => Promise<void>;
 
 /** Build the confirmation email. The link is the only action; the copy stays plain. */
 export function buildMagicLinkMessage(input: {

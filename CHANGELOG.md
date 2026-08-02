@@ -35,15 +35,32 @@
   compiles clean as is, on the grounds `CairnPlatformBindings` documents, and each now carries a
   doc comment recording the pin as deliberate rather than an oversight. The sweep's fixtures also
   proved a sharper consequence the pins had never surfaced: a site whose `App.Platform['env']` is
-  a bare `wrangler types`-generated `Env`, with no `CairnPlatformBindings` intersection, fails to
+  a bare `wrangler types`-generated `Env`, with no `CairnPlatformBindings` intersection, failed to
   compile `export const actions = admin.actions` (and every other route factory assignment),
   since `@cloudflare/workers-types`' `SendEmail.send` returns `Promise<EmailSendResult>` while
-  `AuthEnv['EMAIL'].send` declares `Promise<void>`. The reference docs now state the
-  `CairnPlatformBindings` intersection as a requirement rather than a recommended style. See
-  [SvelteKit](docs/reference/sveltekit.md#cairnplatformbindings). **Consumers must:** intersect
-  `CairnPlatformBindings` into `App.Platform['env']` in `app.d.ts`; a site that hand-rolls its own
-  env type from `@cloudflare/workers-types` output instead hits a compile error on every route
-  factory assignment.
+  `AuthEnv['EMAIL'].send` declared `Promise<void>`. **This incompatibility dissolved in the
+  breaking-window pass below** (`EmailSender.send` now returns `Promise<unknown>`), so
+  `CairnPlatformBindings` demotes back to a recommended convenience preset rather than a
+  requirement; see that entry for the current claim.
+
+- `AuthEnv` and `BackendEnv` collapse into one all-optional `CairnEnv` (`AUTH_DB`,
+  `PUBLIC_ORIGIN`, `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`), exported from both
+  the root barrel and `./sveltekit`; the split's only purpose, typing which routes need what, is
+  now reference-page prose rather than a second declaration. `EmailSender` is named once
+  (`{ send(message: MagicLinkMessage): Promise<unknown> }`) and referenced from both `CairnEnv`
+  and `CairnPlatformBindings`; the widened `Promise<unknown>` return (not `Promise<void>`)
+  structurally accepts `@cloudflare/workers-types`' `SendEmail.send`, whose return is
+  `Promise<EmailSendResult>`, dissolving the env-genericity sweep's incompatibility recorded
+  above: a bare `wrangler types`-generated env now assigns cleanly into `CairnPlatformBindings`
+  with no intersection required, so `CairnPlatformBindings` demotes from a requirement back to a
+  recommended convenience preset (it still catches a forgotten binding at compile time). Route
+  factory event params (`BackendProvider.connect`, `SendMagicLink`, `healthLoad`, `appCredentials`)
+  now read against `CairnEnv`. `PlatformContext` narrows to `{ env?: Env }` (the engine never read
+  `ctx`/`context`) and is now exported from `./sveltekit`. See
+  [SvelteKit](docs/reference/sveltekit.md#cairnenv) and [Core](docs/reference/core.md#cairnenv).
+  **Consumers must:** replace any imported `AuthEnv`/`BackendEnv` with `CairnEnv` on the same
+  subpath; a site relying on `PlatformContext.ctx` or `.context` (the engine never read either)
+  removes that reliance, since the type no longer carries them.
 
 - The root `package.json` now declares `"engines": { "node": ">=22" }`, giving npm's own install
   check the Node floor the tutorial has always stated. This is a build-toolchain floor, not a

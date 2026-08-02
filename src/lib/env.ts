@@ -5,6 +5,32 @@
 import type { D1Database } from '@cloudflare/workers-types';
 import { CairnError } from './diagnostics/index.js';
 import type { DeliveryBucket } from './media/delivery-bucket.js';
+import type { EmailSender } from './email.js';
+
+/**
+ * The Worker bindings and vars the whole engine reads, all optional: the auth layer's D1 store
+ * and origin config, the dev-backend tripwire flag, the Email Sending binding, and the GitHub
+ * App's private-key secret. One shape serves every factory that needs platform bindings, rather
+ * than a per-layer split (auth vs backend), since the split's only purpose, typing which routes
+ * need what, is better served by reference-page prose than by a second declaration.
+ */
+export interface CairnEnv {
+  /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
+  AUTH_DB?: D1Database;
+  /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
+  PUBLIC_ORIGIN?: string;
+  /**
+   * Dev-backend tripwire flag. The dev backend sets this in local development; if it is ever set
+   * in a deployed runtime the guard refuses (the build-foldable `dev` gate should have eliminated
+   * the dev backend, so a set flag signals a polluted environment). A string from a Worker var or
+   * a boolean.
+   */
+  CAIRN_DEV_BACKEND?: string | boolean;
+  /** Cloudflare Email Sending binding, or an injected sender with the same structural shape. */
+  EMAIL?: EmailSender;
+  /** The GitHub App's private key, base64 of the PEM on one line, decoded with `atob()` before signing. */
+  GITHUB_APP_PRIVATE_KEY_B64?: string;
+}
 
 /**
  * Returns the site's public origin from configuration.

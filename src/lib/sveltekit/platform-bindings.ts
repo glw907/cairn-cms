@@ -5,7 +5,7 @@
 // still fires on a text-only site: `CairnPlatformBindings` names the bindings every site needs,
 // and `CairnMediaBindings` is a second intersection member a media-enabled site adds.
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
-import type { AuthEnv } from '../auth/types.js';
+import type { EmailSender } from '../email.js';
 
 /**
  * The Cloudflare bindings and vars every cairn site's Worker needs, required (not optional) so a
@@ -21,6 +21,11 @@ import type { AuthEnv } from '../auth/types.js';
  * }
  * ```
  *
+ * A recommended convenience preset, not a requirement: every route factory's env parameter is
+ *  structurally satisfied by a bare `wrangler types`-generated env too (env-genericity sweep,
+ *  R5), so this type exists to catch a forgotten binding at compile time, not to unblock the
+ *  factory assignments themselves.
+ *
  * A media-enabled site also intersects {@link CairnMediaBindings}, since `MEDIA_BUCKET` exists only
  *  on a site that turns media on. The GitHub App's id and installation id are not runtime bindings:
  *  they name which App the commit signer authenticates as, so the adapter passes them as compile-time
@@ -31,7 +36,7 @@ export interface CairnPlatformBindings {
   /** The self-owned magic-link auth store: the allowlist, sessions, and single-use tokens. */
   AUTH_DB: D1Database;
   /** Cloudflare Email Sending binding for the magic-link message. */
-  EMAIL: NonNullable<AuthEnv['EMAIL']>;
+  EMAIL: EmailSender;
   /** Canonical origin for confirmation links, never read from a request header (spec 7.1, risk H3). */
   PUBLIC_ORIGIN: string;
   /** The GitHub App's private key, base64 of the PEM on one line, decoded with `atob()` before signing. */

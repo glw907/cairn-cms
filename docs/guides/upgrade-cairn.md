@@ -102,16 +102,16 @@ Consumers must: nothing. Both additions are additive, and the `RateLimitLike` re
 existing shape and location on `/sveltekit`.
 
 A review pass across the whole seam contract settled a handful of long-standing questions, none
-of which changed an exported type or a route contract, but one of which names something you must
-check. The reference docs now state, as a requirement rather than a recommended style, that your
-`app.d.ts` must intersect [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings)
-into `App.Platform['env']`: typing your platform env any other way, hand-rolled bindings or a
-bare `wrangler types`-generated `Env` straight off `@cloudflare/workers-types`, fails to compile
-`export const actions = admin.actions` (and every other route factory assignment) rather than
-failing at runtime, because `@cloudflare/workers-types`' `SendEmail.send` returns
-`Promise<EmailSendResult>` while cairn's own `EMAIL.send` declares `Promise<void>`. If your
-`app.d.ts` already follows [Deploy to Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), this
-was already true for you and nothing changes.
+of which changed an exported type or a route contract. It found that a bare `wrangler
+types`-generated `Env`, with no [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings)
+intersection, failed to compile `export const actions = admin.actions` (and every other route
+factory assignment), because `@cloudflare/workers-types`' `SendEmail.send` returns
+`Promise<EmailSendResult>` while cairn's own `EMAIL.send` declared `Promise<void>`. **This
+incompatibility dissolved in the C2 breaking-window pass** (see that section below): cairn's
+`EmailSender.send` now returns `Promise<unknown>`, which structurally accepts the wider Cloudflare
+return type, so `CairnPlatformBindings` stays a recommended convenience preset rather than a
+requirement. If your `app.d.ts` already follows [Deploy to
+Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), nothing changes for you either way.
 
 `adminAction`'s audit sink now holds its advertised fail-open promise at the engine's own call
 site: a hand-rolled `event.locals.auditSink` that throws, or one that rejects asynchronously, no
@@ -140,13 +140,24 @@ stays exported, but now means only the dev-only unaudited-action defect signal, 
 that never reaches a production response. See [Refusal
 channels](../reference/sveltekit.md#refusal-channels).
 
-Consumers must: intersect `CairnPlatformBindings` into `App.Platform['env']` if you haven't
-already, be on Node 22 or later for your build toolchain (already the tutorial's stated
+Consumers must: be on Node 22 or later for your build toolchain (already the tutorial's stated
 requirement, now a declared one too), and remove any `AdminActionError` mapping from your
 `handleError` (`adminAction`'s authorization refusals need no mapping anymore). Nothing else in
 this window changes an exported type, a route contract, or a behavior you'd observe without
-hitting one of those three: a throwing or rejecting audit sink previously failed the action it
+hitting one of those two: a throwing or rejecting audit sink previously failed the action it
 audited and now does not.
+
+`AuthEnv` and `BackendEnv` collapse into one all-optional `CairnEnv` (`AUTH_DB`, `PUBLIC_ORIGIN`,
+`CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`), exported from both the root barrel
+and `/sveltekit`. `EmailSender` is named once (`{ send(message): Promise<unknown> }`) and
+referenced from both `CairnEnv` and `CairnPlatformBindings`; the widened `Promise<unknown>`
+return dissolves the `SendEmail.send` incompatibility above, so `CairnPlatformBindings` demotes
+from a requirement back to a recommended convenience preset. `PlatformContext` narrows to
+`{ env?: Env }` (the engine never read `ctx`/`context`) and is now exported from `/sveltekit`. See
+[SvelteKit](../reference/sveltekit.md#cairnenv).
+
+Consumers must: replace any imported `AuthEnv`/`BackendEnv` with `CairnEnv` on the same subpath,
+and drop any reliance on `PlatformContext.ctx`/`.context` (the engine never read either).
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
@@ -184,8 +195,9 @@ its own check. The factory composes `adminAction`'s editor resolution, CSRF, and
 with an optional rate limit (degrade-to-open) and the same access-map check `requireAccess` runs,
 then hands your handler its resolved database binding; authorization runs before that binding
 check, so a refused session never learns whether the binding is deployed. `AdminActionEvent`
-becomes generic over your platform env, defaulting to today's `AuthEnv` so no existing call site
-changes, and `App.Locals` gains the `cairnAccess` map the guard already attaches. See
+becomes generic over your platform env, defaulting to `CairnEnv` (named `AuthEnv` before the C2
+breaking-window pass) so no existing call site changes, and `App.Locals` gains the `cairnAccess`
+map the guard already attaches. See
 [SvelteKit](../reference/sveltekit.md#createsectionaction).
 
 The `@codemirror/*` editor dependencies moved to their latest 6.x releases within cairn's existing

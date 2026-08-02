@@ -1,8 +1,9 @@
 // Structural subsets of SvelteKit's RequestEvent. A site passes its real event, which has
 // these and more, so the engine never imports a site's generated App.* ambient types.
-import type { AuthEnv, Editor } from '../auth/types.js';
+import type { Editor } from '../auth/types.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Backend } from '../github/backend.js';
+import type { CairnEnv } from '../env.js';
 
 export interface CookieSetOptions {
   path: string;
@@ -18,11 +19,13 @@ export interface CookieJar {
   delete(name: string, opts: { path: string }): void;
 }
 
-/** The Cloudflare platform wrapper an event carries; `context` is the legacy alias for `ctx`. */
-interface PlatformContext<Env> {
+/**
+ * The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own
+ * `App.Platform` type is free to carry `ctx` (or any other member) alongside it, since a real
+ * SvelteKit `RequestEvent` has more than this structural subset and still satisfies it.
+ */
+export interface PlatformContext<Env> {
   env?: Env;
-  ctx?: { waitUntil(promise: Promise<unknown>): void };
-  context?: { waitUntil(promise: Promise<unknown>): void };
 }
 
 /**
@@ -44,17 +47,17 @@ export interface EventBase<Env> {
 }
 
 /**
- * Deliberately pinned to `AuthEnv`, not generic over a site's own `Env` (env-genericity sweep,
+ * Deliberately pinned to `CairnEnv`, not generic over a site's own `Env` (env-genericity sweep,
  * pre-beta C1 Task 2): a compile-only fixture proving `createAuthRoutes` and `createEditorRoutes`
  * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
  * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
  * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `AuthEnv`, which is exactly what
+ * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `CairnEnv`, which is exactly what
  * keeps TypeScript's weak-type detection (TS2559) from rejecting the assignment; a genuinely
  * disjoint env (sharing no property names) still fails it, so the pin costs a compliant site
  * nothing. Adding a type parameter here would be public surface with no fixture forcing it.
  */
-export interface RequestContext extends EventBase<AuthEnv> {
+export interface RequestContext extends EventBase<CairnEnv> {
   cookies: CookieJar;
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
   // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
@@ -62,7 +65,7 @@ export interface RequestContext extends EventBase<AuthEnv> {
 }
 
 /**
- * Chained to {@link RequestContext}'s own `AuthEnv` pin, so it inherits that pin's reasoning
+ * Chained to {@link RequestContext}'s own `CairnEnv` pin, so it inherits that pin's reasoning
  * unchanged: a compile-only fixture proves `createAuthGuard`'s returned `Handle` assigns into
  * `sequence()` under a realistic compliant `App.Platform['env']` with zero casts. See
  * `RequestContext`'s doc comment for why the pin is safe.

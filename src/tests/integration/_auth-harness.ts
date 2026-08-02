@@ -57,9 +57,8 @@ export function makeEvent(input: {
   form?: Record<string, string>;
   cookies?: CookieJar;
   editor?: Editor | null;
-  waitUntil?: (promise: Promise<unknown>) => void;
 }) {
-  const { url, form, cookies = makeCookies(), editor = null, waitUntil } = input;
+  const { url, form, cookies = makeCookies(), editor = null } = input;
   const request = form
     ? new Request(url, { method: 'POST', body: new URLSearchParams(form) })
     : new Request(url);
@@ -70,7 +69,6 @@ export function makeEvent(input: {
     locals: { editor },
     platform: {
       env: { AUTH_DB: env.AUTH_DB, PUBLIC_ORIGIN: 'https://test.dev' },
-      ctx: waitUntil ? { waitUntil } : undefined,
     },
     setHeaders: () => {},
   };

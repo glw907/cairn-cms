@@ -5,11 +5,10 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AccessMap`: { [x: string]: ("owner" | "editor")[] }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
-- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> } }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; createBranch: (name: string, fromBranch: string) => Promise<void>; deleteBranch: (name: string) => Promise<void> }
-- `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
-- `BackendProvider`: { kind: string; branch: string; connect: (env: BackendEnv) => Backend }
+- `BackendProvider`: { kind: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; adminNav?: AdminNavConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig } }
+- `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
 - `CairnRolesRegister`: { }
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; adminNav?: AdminNavConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
@@ -36,6 +35,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Editor`: { email: string; displayName: string; role: "owner" | "editor"; capability: "owner" | "editor" | "none" }
 - `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "attachment" | "inline" }
 - `EmailRecipient`: string | { email: string; name?: string }
+- `EmailSender`: { send: (message: MagicLinkMessage) => Promise<unknown> }
 - `extractMenu`: (config: SiteConfig, name: string, maxDepth: number) => NavNode[]
 - `extractVocabulary`: (config: SiteConfig) => VocabularyEntry[]
 - `FieldDescriptor`: TextField | TextareaField | NumberField | SelectField | MultiselectField | UrlField | EmailField | DateField | DatetimeField | BooleanField | IconField | ImageField | ObjectField | ReferenceField | ArrayField
@@ -46,7 +46,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `FileChange`: { path: string; content: string | null }
 - `FragmentResolve`: (id: string) => string | undefined
 - `githubApp`: (config: { owner: string; repo: string; branch: string; appId: string; installationId: string }) => GithubAppProvider
-- `GithubAppProvider`: { kind: "github-app"; owner: string; repo: string; appId: string; installationId: string; branch: string; connect: (env: BackendEnv) => Backend }
+- `GithubAppProvider`: { kind: "github-app"; owner: string; repo: string; appId: string; installationId: string; branch: string; connect: (env: CairnEnv) => Backend }
 - `glyph`: (name: string, icons: IconSet) => Element
 - `hasAccessRule`: (access: AccessMap | undefined, target: string) => boolean
 - `IconSet`: { [x: string]: string }
@@ -70,7 +70,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `roleHome`: (roles: RolesDeclaration | undefined, role: string) => string | undefined
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
 - `SenderConfig`: { from: string; replyTo?: string }
-- `SendMagicLink`: (env: AuthEnv, message: MagicLinkMessage) => Promise<void>
+- `SendMagicLink`: (env: CairnEnv, message: MagicLinkMessage) => Promise<void>
 - `serializeManifest`: (manifest: Manifest) => string
 - `SiteConfig`: { siteName: string; description?: string; author?: string; locale?: string; menus?: Record<string, unknown>; spellcheck?: { dialect?: string }; tidy?: TidyConfig; vocabulary?: VocabularyEntry[] }
 - `SiteConfigError`: typeof SiteConfigError
@@ -302,7 +302,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/sveltekit`
 
-- `adminAction`: <T>(handler: (args: { event: AdminActionEvent<AuthEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent<AuthEnv>) => Promise<T>
+- `adminAction`: <T>(handler: (args: { event: AdminActionEvent<CairnEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent<CairnEnv>) => Promise<T>
 - `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
 - `AdminActionAuditRecord`: AdminActionAudit & { editor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
@@ -319,13 +319,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdvisoryAction`: { label: string; href?: string }
 - `AdvisoryNotice`: { kind: string; severity: "warn"; message: string; actions?: AdvisoryAction[] }
 - `AttentionItem`: { href: string; count: number; label?: string }
-- `AuthEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> } }
 - `AuthRoutesConfig`: { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }
-- `BackendEnv`: { GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnAdminDeps`: { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: ContentEvent }) => AttentionItem[] | Promise<AttentionItem[]>) }
+- `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
-- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: { send(message: { to: string; from: string; subject: string; html: string; text: string; cc?: EmailRecipient | EmailRecipient[]; bcc?: EmailRecipient | EmailRecipient[]; replyTo?: string; attachments?: EmailAttachment[] }): Promise<void> }; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
-- `ContentEvent`: { params: { [x: string]: string }; cookies?: CookieJar; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend; cairnAccess?: AccessMap }; platform?: PlatformContext<BackendEnv> }
+- `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
+- `ContentEvent`: { params: { [x: string]: string }; cookies?: CookieJar; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend; cairnAccess?: AccessMap }; platform?: PlatformContext<CairnEnv> }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: "link" | "include"; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }
 - `ContentRoutesDeps`: { tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: ContentEvent }) => AttentionItem[] | Promise<AttentionItem[]>) }
 - `CookieJar`: { get: (name: string) => string | undefined; set: (name: string, value: string, opts: CookieSetOptions) => void; delete: (name: string, opts: { path: string }) => void }
@@ -340,11 +339,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => <T>(handler: (args: { event: AdminActionEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>
 - `DeleteRefusal`: { error: string; inboundLinks: InboundLink[]; inboundKind?: "link" | "include"; id: string }
 - `EditData`: { conceptId: string; id: string; label: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; saved: boolean; renamed: boolean; error: string | null; slug: string; linkTargets: LinkTarget[]; fragmentTargets: FragmentTarget[] | null; routable: boolean; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: InboundLink[]; pending: boolean; published: boolean; publishedFlash: boolean; publishActions: PublishActionLink[]; discardedFlash: boolean; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
+- `EmailSender`: { send: (message: MagicLinkMessage) => Promise<unknown> }
 - `EngineScreenId`: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {})
 - `EntrySummary`: { id: string; title: string; date: string | null; draft: boolean; status: "published" | "edited" | "new"; summary: string | null }
 - `HandleInput`: { event: RequestContext; resolve: (event: RequestContext) => Response | Promise<Response> }
 - `HealthData`: { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail?: string } } }
-- `healthLoad`: (event: { platform?: { env?: BackendEnv } }, runtime: CairnRuntime) => Promise<HealthData>
+- `healthLoad`: (event: { platform?: { env?: CairnEnv } }, runtime: CairnRuntime) => Promise<HealthData>
 - `HelpData`: { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact?: string }
 - `ListData`: { conceptId: string; label: string; singular: string; dated: boolean; routable: boolean; entries: EntrySummary[]; error: string | null; formError: string | null; publishedAll: number | null }
 - `MediaAltPropagateFailure`: { error: string }
@@ -361,12 +361,13 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: ("owner" | "editor")[]; collapsed?: boolean }
 - `NavLoadData`: { menu: { name: string; label: string; maxDepth: number }; tree: NavNode[]; pages: NavPageOption[]; saved: boolean; error: string | null }
 - `NavPageOption`: { label: string; url: string }
+- `PlatformContext`: { env?: Env }
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionLink`: { label: string; href: string }
 - `PublishActionsConfig`: PublishActionEntry[]
 - `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
 - `RenameFailure`: { error: string }
-- `RequestContext`: { cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend; cairnAccess?: AccessMap }; platform?: PlatformContext<AuthEnv> }
+- `RequestContext`: { cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend; cairnAccess?: AccessMap }; platform?: PlatformContext<CairnEnv> }
 - `RequestResult`: { status: "sent"; sent: true } | { status: "send_error"; sent: false } | { status: "throttled"; sent: false }
 - `requireAccess`: (event: { locals: { editor?: Editor | null; cairnAccess?: AccessMap }; url: URL }, target?: string) => Editor
 - `requireEditor`: (event: { locals: { editor?: Editor | null } }) => Editor

@@ -16,7 +16,7 @@ import { validateCsrfHeader } from './csrf.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { CookieJar, EventBase } from './types.js';
-import type { AuthEnv } from '../auth/types.js';
+import type { CairnEnv } from '../env.js';
 import type { AccessMap } from '../auth/access.js';
 
 /** One audit-log record a mutating admin action must emit through `ctx.audit`. */
@@ -45,7 +45,7 @@ export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
  * itself never reads `event.platform`. `locals.cairnAccess` mirrors what `EventBase` already
  * carries, typed here so a wrapper built on this event can read it without a cast.
  */
-export interface AdminActionEvent<Env = AuthEnv> extends EventBase<Env> {
+export interface AdminActionEvent<Env = CairnEnv> extends EventBase<Env> {
   cookies: CookieJar;
   locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap };
 }
@@ -137,12 +137,12 @@ function serializeThrownError(error: unknown): string {
  *
  * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
  * Task 2), on the same grounds as `RequestContext`'s pin (`./types.js`), not because it never
- * reads `event.platform`: its returned function is declared as taking `AdminActionEvent<AuthEnv>`
+ * reads `event.platform`: its returned function is declared as taking `AdminActionEvent<CairnEnv>`
  * (the default type parameter), and a compile-only fixture
  * (`src/tests/unit/env-genericity.test.ts`) proves that assigns clean into a route's generated
  * `Actions` under a realistic compliant `App.Platform['env']`, because `CairnPlatformBindings`
  * (`./platform-bindings.js`) shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with
- * `AuthEnv`, which is what keeps TypeScript's weak-type detection (TS2559) from rejecting the
+ * `CairnEnv`, which is what keeps TypeScript's weak-type detection (TS2559) from rejecting the
  * assignment. A site whose action needs its own env bindings, plus a database binding to resolve,
  * reaches for `createSectionAction` (`./section-action.js`), which is generic over `Env` for
  * exactly that reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-

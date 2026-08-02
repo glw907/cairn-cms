@@ -93,9 +93,8 @@ describe('request hardening (Unit 4)', () => {
     expect(await countRows('magic_token')).toBe(1);
   });
 
-  it('awaits the send and never backgrounds it through waitUntil', async () => {
+  it('awaits the send before returning, never backgrounding it', async () => {
     await seedEditor('ed@x.dev', 'Ed', 'editor');
-    const promises: Promise<unknown>[] = [];
     let finished = false;
     const routes = createAuthRoutes({
       branding,
@@ -104,11 +103,8 @@ describe('request hardening (Unit 4)', () => {
         finished = true;
       },
     });
-    const result = await routes.requestAction(
-      makeEvent({ url, form: { email: 'ed@x.dev' }, waitUntil: (p) => promises.push(p) }),
-    );
+    const result = await routes.requestAction(makeEvent({ url, form: { email: 'ed@x.dev' } }));
     expect(finished).toBe(true); // the send completed before requestAction returned
-    expect(promises).toHaveLength(0); // the send was not handed to waitUntil
     expect(result).toEqual({ status: 'sent', sent: true });
   });
 

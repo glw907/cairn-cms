@@ -14,9 +14,11 @@
 // deliberately: the rate limit degrades to open (an unresolved binding, or a throwing
 // `key()`/`limit()` call, never blocks) and its `fail(429)` branch emits no `ctx.audit` (back
 // pressure is not a domain-state change). Every other refusal audits through `ctx.audit`
-// (adminAction's own contract). Every user-facing message stays deliberately generic (both 403s
-// share one string, both 500s share another) so a session learns no deployment or gating detail
-// from a refusal; the branch identity lives in the audit `detail` and the structured log.
+// (adminAction's own contract). Every user-facing message stays deliberately generic (every 403
+// shares one string, both 500s share another) so a session learns no deployment or gating detail
+// from a refusal; the branch identity lives in the audit `detail` and the structured log. The
+// local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
+// than a convention five separate branches each have to keep.
 import { fail } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
 import { canReach, hasAccessRule } from '../auth/access.js';
@@ -125,7 +127,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
     }) => Promise<T>,
     opts: SectionActionOptions,
   ): (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
-    return adminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
+    const guarded = adminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
       // adminAction's own declared event type is pinned to AuthEnv; it never reads
       // event.platform, so relabeling to this factory's own Env here is a type-level
       // correction, never a runtime behavior change (the underlying object is exactly what
@@ -135,6 +137,20 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       const siteEvent = event as unknown as AdminActionEvent<Env>;
       const path = siteEvent.url.pathname;
       const target = opts.target ?? path;
+
+      /** One refused-authorization exit: the audit carries which gate refused, the response never does. */
+      function deny(detail: string): ActionFailure<{ error: string }> {
+        ctx.audit({ action: opts.action, entity: opts.entity, detail });
+        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
+        return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
+      }
+
+      /** One deployment-fault exit: a 500 the site's operator reads in the log, not in the response. */
+      function misconfigured(detail: string, reason: string): ActionFailure<{ error: string }> {
+        ctx.audit({ action: opts.action, entity: opts.entity, detail });
+        log.error('admin.action.misconfigured', { path, reason });
+        return fail(500, { error: UNAVAILABLE_MESSAGE });
+      }
 
       if (config.rateLimit) {
         const limiter = config.rateLimit.resolve(siteEvent.platform?.env);
@@ -174,45 +190,35 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // authorize against a map that was never attached), never before the rate limit above.
       const access: AccessMap | undefined = siteEvent.locals.cairnAccess;
       if (access === undefined) {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: access map not attached' });
-        log.error('admin.action.misconfigured', { path, reason: 'access_map_not_attached' });
-        return fail(500, { error: UNAVAILABLE_MESSAGE });
+        return misconfigured('rejected: access map not attached', 'access_map_not_attached');
       }
 
-      if (!hasAccessRule(access, target)) {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: no access rule' });
-        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
-        return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
-      }
-
-      if (!canReach(access, ctx.editor, target)) {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: role not admitted' });
-        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
-        return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
-      }
-
-      if (opts.ownerOnly && ctx.editor.capability !== 'owner') {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: not owner' });
-        log.warn('auth.access.denied', { email: ctx.editor.email, role: ctx.editor.role, target });
-        return fail(403, { error: opts.deniedMessage ?? DENIED_MESSAGE });
-      }
+      // All three, in this order. hasAccessRule never collapses into canReach: canReach reads an
+      // unmapped target permissively, which is nav semantics, not an authorization floor. ownerOnly
+      // stacks on the map check rather than standing in for it.
+      if (!hasAccessRule(access, target)) return deny('rejected: no access rule');
+      if (!canReach(access, ctx.editor, target)) return deny('rejected: role not admitted');
+      if (opts.ownerOnly && ctx.editor.capability !== 'owner') return deny('rejected: not owner');
 
       // resolveDb runs last, after every authorization check, so a session the access map
       // refuses learns nothing about whether the section's binding is deployed: its refusal
       // audits as a denial, never a config fault.
       const db = config.resolveDb(siteEvent.platform?.env);
-      if (db == null) {
-        ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: database not bound' });
-        log.error('admin.action.misconfigured', { path, reason: 'db_not_bound' });
-        return fail(500, { error: UNAVAILABLE_MESSAGE });
-      }
+      if (db == null) return misconfigured('rejected: database not bound', 'db_not_bound');
 
       // db excludes null and undefined by the check above; NonNullable<Db> also strips a null a
       // caller's own explicit Db argument might otherwise admit, so the check order above is what
       // a handler's ctx.db can rely on, never a type argument alone.
       const resolvedDb = db as NonNullable<Db>;
       return handler({ event: siteEvent, form, ctx: { ...ctx, db: resolvedDb } });
-    }) as unknown as (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+    });
+
+    // The same relabeling as the `siteEvent` cast above, applied on the way out: adminAction hands
+    // back an action typed against its own AuthEnv-pinned event, while this wrapper's contract is
+    // the site's Env. Type-level only, and through `unknown` for the same weak-type reason.
+    return guarded as unknown as (
+      event: AdminActionEvent<Env>,
+    ) => Promise<T | ActionFailure<{ error: string }>>;
   };
 }
 

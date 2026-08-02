@@ -1,12 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { isActionFailure } from '@sveltejs/kit';
-import { createSectionAction, type RateLimitLike, type SectionActionContext } from '../../lib/sveltekit/section-action.js';
+import {
+  createSectionAction,
+  type RateLimitLike,
+  type SectionActionConfig,
+  type SectionActionContext,
+  type SectionActionOptions,
+} from '../../lib/sveltekit/section-action.js';
 import { log } from '../../lib/log/index.js';
 import type { AdminActionEvent, AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
-import type { Action, RequestEvent } from '@sveltejs/kit';
+import type { Action, ActionFailure, RequestEvent } from '@sveltejs/kit';
 
 afterEach(() => {
   vi.restoreAllMocks();
@@ -90,11 +96,35 @@ function okHandler() {
   });
 }
 
+/** The everything-wired config: the section's binding off the platform env, no rate limit. */
+const boundDb: SectionActionConfig<TestEnv, FakeDb> = { resolveDb: (env) => env?.SECTION_DB };
+
+/**
+ * One wrapped action and the handler behind it, over the shared `approve`/`event` verbs, so each
+ * test below passes only the config or option it is actually proving.
+ */
+function approveAction(
+  config: SectionActionConfig<TestEnv, FakeDb> = boundDb,
+  opts: Omit<SectionActionOptions, 'action' | 'entity'> = {},
+) {
+  const handler = okHandler();
+  const action = createSectionAction<TestEnv, FakeDb>(config)(handler, {
+    action: 'approve',
+    entity: 'event',
+    ...opts,
+  });
+  return { handler, action };
+}
+
+/** Narrow an action's result to the refusal a test expects, so the assertions read as one line each. */
+function refusal(result: unknown): ActionFailure {
+  if (!isActionFailure(result)) throw new Error('expected an ActionFailure, got a handler result');
+  return result;
+}
+
 describe('createSectionAction: no rate limit configured', () => {
   it('runs the handler given a matching CSRF pair, a valid editor, and a mapped path', async () => {
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction();
     const result = await action(readyEvent());
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -104,12 +134,10 @@ describe('createSectionAction: no rate limit configured', () => {
 describe('createSectionAction: rate limit degrade-to-open', () => {
   it('runs the handler when rateLimit.resolve returns undefined, and audits nothing for it', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({
-      resolveDb: (env) => env?.SECTION_DB,
+    const { handler, action } = approveAction({
+      ...boundDb,
       rateLimit: { resolve: () => undefined, key: () => 'k' },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent({ auditSink: sink }));
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -119,12 +147,10 @@ describe('createSectionAction: rate limit degrade-to-open', () => {
   it('runs the handler when limit() throws, and logs rate_limit_failed, never rate_limit_absent', async () => {
     const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
     const limiter: RateLimitLike = { limit: async () => Promise.reject(new Error('binding unreachable')) };
-    const wrap = createSectionAction<TestEnv, FakeDb>({
-      resolveDb: (env) => env?.SECTION_DB,
+    const { handler, action } = approveAction({
+      ...boundDb,
       rateLimit: { resolve: () => limiter, key: () => 'k' },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent());
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -141,12 +167,10 @@ describe('createSectionAction: rate limit degrade-to-open', () => {
     const throwingKey = () => {
       throw new Error('key derivation failed');
     };
-    const wrap = createSectionAction<TestEnv, FakeDb>({
-      resolveDb: (env) => env?.SECTION_DB,
+    const { handler, action } = approveAction({
+      ...boundDb,
       rateLimit: { resolve: () => limiter, key: throwingKey },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent());
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -162,28 +186,23 @@ describe('createSectionAction: rate limit enforcement', () => {
   it('returns 429 over the limit, never calls the handler, and audits nothing', async () => {
     const sink = vi.fn();
     const limiter: RateLimitLike = { limit: async () => ({ success: false }) };
-    const wrap = createSectionAction<TestEnv, FakeDb>({
-      resolveDb: (env) => env?.SECTION_DB,
+    const { handler, action } = approveAction({
+      ...boundDb,
       rateLimit: { resolve: () => limiter, key: () => 'k' },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent({ auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(429);
+    expect(refusal(result).status).toBe(429);
     expect(auditsOf(sink)).toEqual([]);
   });
 
   it('runs the handler under the limit, and calls rateLimit.key with the verified editor', async () => {
     const keyFn = vi.fn(() => 'k');
     const limiter: RateLimitLike = { limit: async () => ({ success: true }) };
-    const wrap = createSectionAction<TestEnv, FakeDb>({
-      resolveDb: (env) => env?.SECTION_DB,
+    const { handler, action } = approveAction({
+      ...boundDb,
       rateLimit: { resolve: () => limiter, key: keyFn },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     await action(readyEvent());
     expect(handler).toHaveBeenCalledOnce();
     expect(keyFn).toHaveBeenCalledWith(expect.objectContaining({ editor: expect.objectContaining({ email: staff.email }) }));
@@ -193,14 +212,12 @@ describe('createSectionAction: rate limit enforcement', () => {
 describe('createSectionAction: database not bound', () => {
   it('returns 500 with the shared unavailable message, audited, handler never called', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: () => undefined });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction({ resolveDb: () => undefined });
     const result = await action(readyEvent({ auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(500);
-    expect(result.data).toEqual({ error: 'This section is not available.' });
+    const failure = refusal(result);
+    expect(failure.status).toBe(500);
+    expect(failure.data).toEqual({ error: 'This section is not available.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: database not bound' })]);
   });
 
@@ -208,14 +225,12 @@ describe('createSectionAction: database not bound', () => {
     const sink = vi.fn();
     // A structural cast: resolveDb's declared return type is `Db | undefined`, but a site's own
     // resolver can return `null` (a nullable binding type), which is exactly what this guards.
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: () => null as unknown as FakeDb | undefined });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction({ resolveDb: () => null as unknown as FakeDb | undefined });
     const result = await action(readyEvent({ auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(500);
-    expect(result.data).toEqual({ error: 'This section is not available.' });
+    const failure = refusal(result);
+    expect(failure.status).toBe(500);
+    expect(failure.data).toEqual({ error: 'This section is not available.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: database not bound' })]);
   });
 });
@@ -223,14 +238,12 @@ describe('createSectionAction: database not bound', () => {
 describe('createSectionAction: access map not attached', () => {
   it('returns 500, audited, handler never called', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction();
     const result = await action(readyEvent({ cairnAccess: undefined, auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(500);
-    expect(result.data).toEqual({ error: 'This section is not available.' });
+    const failure = refusal(result);
+    expect(failure.status).toBe(500);
+    expect(failure.data).toEqual({ error: 'This section is not available.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: access map not attached' })]);
   });
 });
@@ -238,26 +251,20 @@ describe('createSectionAction: access map not attached', () => {
 describe('createSectionAction: no access rule (fail-closed, owner included)', () => {
   it('an EMPTY map (the zero-config sentinel) refuses even an owner-capability session', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction();
     const result = await action(readyEvent({ editor: owner, cairnAccess: {}, auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
+    expect(refusal(result).status).toBe(403);
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: no access rule' })]);
   });
 
   it('a map with no rule matching the pathname refuses an owner too, though canReach alone would admit', async () => {
     const sink = vi.fn();
     const unmatchedAccess: AccessMap = { '/admin/other': ['editor'] };
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction();
     const result = await action(readyEvent({ editor: owner, cairnAccess: unmatchedAccess, auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
+    expect(refusal(result).status).toBe(403);
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: no access rule' })]);
   });
 });
@@ -265,42 +272,35 @@ describe('createSectionAction: no access rule (fail-closed, owner included)', ()
 describe('createSectionAction: role not admitted', () => {
   it('refuses with the shared default message, and again with deniedMessage overriding it', async () => {
     const roleGatedAccess: AccessMap = { [mappedTarget]: ['owner'] };
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
 
     const sink = vi.fn();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction();
     const result = await action(readyEvent({ editor: staff, cairnAccess: roleGatedAccess, auditSink: sink }));
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
-    expect(result.data).toEqual({ error: 'You do not have access to this action.' });
+    const failure = refusal(result);
+    expect(failure.status).toBe(403);
+    expect(failure.data).toEqual({ error: 'You do not have access to this action.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: role not admitted' })]);
 
-    const overridden = wrap(handler, { action: 'approve', entity: 'event', deniedMessage: 'Not for you.' });
-    const overriddenResult = await overridden(readyEvent({ editor: staff, cairnAccess: roleGatedAccess }));
-    if (!isActionFailure(overriddenResult)) throw new Error('expected an ActionFailure');
-    expect(overriddenResult.data).toEqual({ error: 'Not for you.' });
+    const overridden = approveAction(boundDb, { deniedMessage: 'Not for you.' });
+    const overriddenResult = await overridden.action(readyEvent({ editor: staff, cairnAccess: roleGatedAccess }));
+    expect(refusal(overriddenResult).data).toEqual({ error: 'Not for you.' });
 
     expect(handler).not.toHaveBeenCalled();
+    expect(overridden.handler).not.toHaveBeenCalled();
   });
 });
 
 describe('createSectionAction: opts.target overrides event.url.pathname (the catch-all defense)', () => {
   it('refuses when the map admits the pathname but not the declared target', async () => {
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event', target: '/admin/club/other' });
+    const { handler, action } = approveAction(boundDb, { target: '/admin/club/other' });
     const result = await action(readyEvent({ cairnAccess: mappedAccess })); // mappedAccess admits pathname, not the target
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
+    expect(refusal(result).status).toBe(403);
     expect(handler).not.toHaveBeenCalled();
   });
 
   it('admits when the map admits the declared target but not the pathname', async () => {
     const targetOnlyAccess: AccessMap = { '/admin/club/other': ['editor'] };
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event', target: '/admin/club/other' });
+    const { handler, action } = approveAction(boundDb, { target: '/admin/club/other' });
     const result = await action(readyEvent({ cairnAccess: targetOnlyAccess })); // admits the target, not the pathname
     expect(handler).toHaveBeenCalledOnce();
     expect(result).toEqual({ ok: true, db: fakeDb });
@@ -310,14 +310,12 @@ describe('createSectionAction: opts.target overrides event.url.pathname (the cat
 describe('createSectionAction: ownerOnly stacks on the map check', () => {
   it('refuses an editor-capability session a permissive map admits, with the shared default message', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event', ownerOnly: true });
+    const { handler, action } = approveAction(boundDb, { ownerOnly: true });
     const result = await action(readyEvent({ auditSink: sink })); // staff editor, mappedAccess admits 'editor'
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
-    expect(result.data).toEqual({ error: 'You do not have access to this action.' });
+    const failure = refusal(result);
+    expect(failure.status).toBe(403);
+    expect(failure.data).toEqual({ error: 'You do not have access to this action.' });
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: not owner' })]);
   });
 });
@@ -325,28 +323,22 @@ describe('createSectionAction: ownerOnly stacks on the map check', () => {
 describe('createSectionAction: check ordering', () => {
   it('an over-limit binding AND an unbound db: the 429 wins', async () => {
     const limiter: RateLimitLike = { limit: async () => ({ success: false }) };
-    const wrap = createSectionAction<TestEnv, FakeDb>({
+    const { handler, action } = approveAction({
       resolveDb: () => undefined,
       rateLimit: { resolve: () => limiter, key: () => 'k' },
     });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
     const result = await action(readyEvent());
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(429);
+    expect(refusal(result).status).toBe(429);
     expect(handler).not.toHaveBeenCalled();
   });
 
   it('an unbound db AND a session the map refuses: the 403 wins, audited as a denial not a config fault', async () => {
     const sink = vi.fn();
     const unmatchedAccess: AccessMap = { '/admin/other': ['editor'] };
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: () => undefined });
-    const handler = okHandler();
-    const action = wrap(handler, { action: 'approve', entity: 'event' });
+    const { handler, action } = approveAction({ resolveDb: () => undefined });
     const result = await action(readyEvent({ cairnAccess: unmatchedAccess, auditSink: sink }));
     expect(handler).not.toHaveBeenCalled();
-    if (!isActionFailure(result)) throw new Error('expected an ActionFailure');
-    expect(result.status).toBe(403);
+    expect(refusal(result).status).toBe(403);
     expect(auditsOf(sink)).toEqual([expect.objectContaining({ detail: 'rejected: no access rule' })]);
   });
 });
@@ -354,7 +346,7 @@ describe('createSectionAction: check ordering', () => {
 describe('createSectionAction: happy path', () => {
   it('hands the handler the exact db object, returns its value, and audits exactly once', async () => {
     const sink = vi.fn();
-    const wrap = createSectionAction<TestEnv, FakeDb>({ resolveDb: (env) => env?.SECTION_DB });
+    const wrap = createSectionAction<TestEnv, FakeDb>(boundDb);
     const handler = vi.fn(async ({ ctx }: { ctx: SectionActionContext<FakeDb> }) => {
       expect(ctx.db).toBe(fakeDb);
       ctx.audit({ action: 'approve', entity: 'event', entityId: '1' });

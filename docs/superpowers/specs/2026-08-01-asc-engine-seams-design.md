@@ -315,3 +315,42 @@ ASC-proven form UX), and the exposure it worried about closes by requiring `requ
 in a section's `load`, so reads and writes share one fail-closed predicate. The
 `applySecurityHeaders` promotion the review suggested is filed to ROADMAP rather than
 adopted here; the auth-crypto reference names the header set instead.
+
+## Pass-end review record (2026-08-01), including one amended decision
+
+The same two reviewers ran again over the implemented pass one and both returned
+ship-with-fixes, no blockers. Most findings were straightforward defects, folded in
+`adde6e3c` (a `null` binding slipping past an `undefined`-only guard; a throwing rate-limit
+`key()` logged under an event that claimed the binding was absent, now its own
+`admin.action.rate_limit_failed`; a `declare global` leaking a project-wide `App.Platform`
+augmentation out of a test file; `App.Locals` missing the `cairnAccess` this pass promoted to
+documented contract; a case-sensitive `__Host-` guard against case-insensitive browser
+matching; two crypto tests that proved less than they claimed).
+
+**One decision in this spec is amended by that review: the check order.** Steps 3 and 4 above
+put `resolveDb`'s 500 before the authorization checks. Both reviewers independently found the
+same defect in it: a session the access map refuses would learn from the status whether the
+section's binding is deployed, and its refused attempt would audit as a config fault rather
+than as a denial. The implemented order therefore runs authorization first, and the reference
+page documents that order, not this section's:
+
+1. Rate limit (unchanged, still first, so back-pressure precedes any work).
+2. `locals.cairnAccess` absent, `fail(500)`. This one stays ahead of authorization out of
+   necessity, since nothing can authorize against a map that was never attached, and it leaks
+   nothing per-editor: every session gets the identical answer.
+3. `hasAccessRule` false, `fail(403)`.
+4. `canReach` false, `fail(403)`.
+5. `ownerOnly` against a non-owner, `fail(403)`.
+6. `resolveDb` returning null or undefined, audited `fail(500)`.
+7. The handler.
+
+The audit `detail` strings, log events, statuses, and shared user-facing copy are unchanged;
+only the sequence moved. Pass two inherits the amended order: the packaged D1 audit sink's
+reference should describe denials as arriving before any binding resolution.
+
+One suggestion was deliberately not adopted, alongside the earlier fail-over-throw call:
+detecting a rest-parameter route and refusing the default authorization target. `opts.target`
+is declarative on purpose, with the requirement stated in the reference and the guide; a
+pathname-shape heuristic is the cleverness the pre-implementation review record already argues
+against, and it would refuse legitimate routes while still missing the multi-section case that
+has no rest parameter at all.

@@ -14,84 +14,96 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-01: ASC seams pass two DONE and holding; next is phase C1)
+## Immediate next action (2026-08-02: phase C1 DONE and holding; next is phase C2, the naming pass)
 
-**PASS TWO IS UNMERGED BY DECISION (Geoff, 2026-08-01): it merges after C1, not before.** The work
-sits on `asc-engine-seams-2` as [PR #16](https://github.com/glw907/cairn-cms/pull/16), all five CI
-checks green including `e2e`. **This changes where C1 branches from.** `main` does NOT carry the
-`./cloudflare` subpath, `createD1AuditSink`, `migrations/0002_audit.sql`, or their `api-surface.md`
-entries, so **C1's worktree branches off `asc-engine-seams-2`, never off `main`**. That matters most
-for C1's first task: regenerating the surface snapshot from a `main` that is missing pass two's
-exports would produce a wrong diff and could silently drop them. The worktree at
-`.claude/worktrees/asc-engine-seams-2` stays in place until both merge.
+**TWO PASSES ARE NOW UNMERGED, BY DECISION. This changes where C2 branches from.** ASC seams pass
+two sits on `asc-engine-seams-2` ([PR #16](https://github.com/glw907/cairn-cms/pull/16)), and phase
+C1 sits on `pre-beta-c1-seam-shape`, which is branched off it. `main` carries NEITHER. So **C2
+branches off `pre-beta-c1-seam-shape`**, never off `main`: a cold session branches off `main` by
+default and would build against an engine missing the `./cloudflare` subpath, `createD1AuditSink`,
+the corrected surface snapshot, and every C1 ruling. Both worktrees stay in place until they merge.
 
-**ASC engine-seams pass two is DONE on `asc-engine-seams-2`, and it HOLDS UNPUBLISHED.** The pass
-shipped the `./cloudflare` server-only subpath (`verifyTurnstile`, `checkRateLimit`,
-`checkRateLimitKeys`, and the consolidated `RateLimitLike`) and the packaged D1 audit sink
-(`createD1AuditSink` on `./sveltekit` plus `migrations/0002_audit.sql`), closing the last three
-seams of the ASC consumer brief. Both changelog entries are additive, `Consumers must: nothing`,
-and the window sits at `release-size: minor`. No consumer is blocked on it, so it batches with the
-next window rather than cutting a release; `0.94.0` is the next free number, verified at the cut and
-never before. The post-mortem is appended to
-`docs/superpowers/plans/2026-08-01-asc-engine-seams-2.md`.
+**Phase C1, the seam-shape pass, is DONE and HOLDS UNPUBLISHED.** All five ROADMAP contract entries
+landed across twelve commits. The window (still pass two's `## Unreleased`, `release-size: minor`)
+now also carries C1. One entry has real consumer content: **a site's `App.Platform['env']` must
+intersect `CairnPlatformBindings`**, which was previously documented as a recommendation. The
+post-mortem is appended to `docs/superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md`.
 
-**What that pass proved about the gates.** Every gate was green when the reviewer fan-out began, and
-the pass still carried a defect in each of its two headline features: the audit sink's advertised
-fail-open covered only a rejected promise (so an unbound binding turned a completed mutation into a
-500 the editor would retry), and `verifyTurnstile`'s body guard checked that `success` existed and
-then tested it for truthiness, so `{"success":"false"}` verified as a solved token. Both were
-probe-confirmed by two independent reviewers. Neither was reachable by a test written first, because
-both were failures of a claim the implementation made about itself. The mandatory
-`web-auth-security-reviewer` plus `cloudflare-workers-reviewer` fan-out earned its place twice over.
+What C1 settled, in one line each:
 
-**NEXT: phase C1, the seam-shape pass** (ROADMAP, "The pre-beta pass series and the two-release
-shape"). It needs a design sitting only for what the entries leave open; its four contract entries
-are already written in ROADMAP's Next tier. Contents, in this order:
+1. **The surface snapshot stopped lying about nullability.** `normalizeSignature` stripped
+   `| undefined` unconditionally and `check-surface.mjs` imports it, so `| undefined` occurred ZERO
+   times in `api-surface.md`. The regen corrected 27 entries across 8 subpaths, return types
+   included. No reference page needed editing.
+2. **The env-genericity sweep changed no type**, and that conclusion is scoped: it holds for a site
+   that intersects `CairnPlatformBindings`, NOT for a bare `wrangler types` env. See below.
+3. **Function-color rulings** are recorded per seam. `render(md)` needed nothing: it has been
+   `Promise<string>` since `0.76.0`, and the ROADMAP entry claiming otherwise was five weeks stale.
+4. **Five refusal channels are documented** (the entry said two). The third, `requireOwner`/
+   `requireAccess` throwing SvelteKit-native `error()`, is the one the custom-screen guide teaches
+   first.
+5. **The supported-toolchain matrix** ships at `docs/reference/supported-toolchain.md`, plus
+   `engines: { node: ">=22" }`. The TypeScript floor is 5.0, forced by `const` type parameters on
+   the public surface, far below the `^6.0.3` the engine develops against.
 
-1. **The `check-reference-signatures.mjs` `| undefined` fix, FIRST** (Geoff approved 2026-08-01).
-   `normalizeSignature` strips `| undefined` unconditionally, so this pass's three
-   deliberately-required `T | undefined` parameters (`createD1AuditSink`'s `waitUntil`, and
-   `binding` on both rate-limit helpers) are recorded in `api-surface.md` as plain required
-   parameters. It runs first because its blast radius is unknown until the snapshot regenerates, and
-   because C2's naming sitting reads that snapshot as its review document. **If the regen cascades
-   past a handful of signatures, split it back out to P1 rather than absorbing it.**
-2. The env-genericity sweep of exported event and config types.
-3. The function-color audit (`render(md)` sync, `AdminActionAuditSink`'s `(record) => void`), each
-   ruling recorded on its reference page.
-4. The refusal-channel ruling (`adminAction` throws, `createSectionAction` returns `fail(...)`):
-   document the two-channel model in the `./sveltekit` reference or converge it.
-5. The supported-toolchain matrix.
+**The defect C1 found and deliberately did NOT fix, which C2 inherits.** `AdminActionError`'s
+`status` never reaches the browser: SvelteKit derives a response status only from its own
+`HttpError`/`SvelteKitError`, so a plain `Error` subclass always renders 500, and `handleError`
+receives the status as an input and cannot change it. A 403 authorization refusal is therefore
+indistinguishable from an engine fault in logs and monitoring. Not a security defect (the refusal
+still happens, fail-closed) and not urgent (the guard refuses both conditions pre-routing, so the
+branches rarely fire), but not something to carry into beta. The filed shape: converge the channel
+rather than document the workaround, with `adminAction`'s missing-editor branch throwing
+`redirect(303, '/admin/login')` and its CSRF branch throwing `error(403, ...)`. The security review
+argued specifically AGAINST adding an `isAdminActionError` guard, on the grounds that making the
+workaround comfortable removes the pressure to remove the need for it.
 
-**Resume prompt**, from `~/Projects/cairn-cms`: "Execute phase C1, the seam-shape pass, per
-`cairn-pass`. ROADMAP's Next tier carries its five entries; write the just-in-time plan from them
-first, sequencing the `check-reference-signatures.mjs` fix FIRST and splitting it back out if its
-snapshot regen cascades. Then execute on a feature worktree branched off `asc-engine-seams-2` (NOT
-off `main`: pass two is deliberately unmerged, so `main` lacks the exports C1's snapshot work reads),
-dispatching each task to
-`cairn-implementer`. Documentation goes LAST in any task where code is still moving. Hold
-unpublished at close unless a consumer needs it."
+**NEXT: phase C2, the naming pass** (ROADMAP, "The pre-beta pass series and the two-release
+shape"). Its shape is unchanged: a Fable sitting over `docs/internal/api-surface.md` settles the
+rename set and the `locals` policy, then ONE execution pass lands every rename in one diff with one
+`Consumers must:` list. It is the only genuinely breaking pass in the series. Two things that are
+different now than when C2 was described:
 
-**The process lesson pass two paid for, which the next pass inherits.** Documentation ran as a
-sibling of code changes and therefore described a moving target: stale failure-mode lists, a stale
-`created_at` format claim, and a retention command that silently never prunes its boundary day. Half
-of the second review round was that self-inflicted staleness rather than new defects. **When code is
-still moving, documentation goes last, not alongside**, and that holds within a single dispatch as
-well as across them.
+1. **The snapshot it reads is finally accurate.** That was C1's first task and the whole reason it
+   ran first. The sitting reads real nullability for the first time.
+2. **Four C2 carry-ins are filed in ROADMAP's Next tier**, and they are inputs to the sitting, not
+   separate work: the refusal-channel convergence above; the env-genericity decision whole (whether
+   the route factories become generic over `Env`, which is NOT free the way pass one's
+   `AdminActionEvent` fix was, since a site would have to write `createCairnAdmin<SiteEnv>(runtime)`
+   explicitly); the two near-identical log event names `admin.audit.sink_failed` and
+   `admin.action.audit_sink_failed`, both still unpublished so the rename is free; and a gate gap
+   where `check:reference:signatures` reads only fenced `ts` blocks, leaving a signature stated only
+   in a reference table ungated.
 
-**The pre-beta shape is unchanged** (ROADMAP, "Toward 1.0"): phases C then F, RELEASE ONE as the
-last substantial `0.x`, then phase P, the go-public pass, the dress rehearsal, and RELEASE TWO as
-`1.0.0-beta.1`. **Open question for Geoff, still deliberately unanswered:** where the two feature
-design sittings (history/revert, preview) slot against the standing template queue (the
-optical-centering ratchet, the cairn.pub voice sitting, the ASC Assets trial, Topo, the scaffolder).
-That call comes due after C1, not before it.
+**Resume prompt**, from `~/Projects/cairn-cms`: "Run the phase C2 naming sitting per `cairn-pass`.
+Read `docs/internal/api-surface.md` as the review document (C1 corrected it; it now records
+nullability). ROADMAP's Next tier carries the four C2 carry-ins C1 filed, which are inputs to the
+sitting rather than separate work. The sitting settles the rename set plus the `locals` namespace
+policy; execution is ONE pass landing every rename in one diff with one `Consumers must:` list.
+Branch the execution worktree off `pre-beta-c1-seam-shape` (NOT off `main`: pass two and C1 are both
+deliberately unmerged, so `main` lacks the `./cloudflare` subpath, `createD1AuditSink`, the corrected
+snapshot, and every C1 ruling). Hold unpublished at close unless a consumer needs it."
+
+**Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
+(history/revert, preview) slot against the standing template queue (the optical-centering ratchet,
+the cairn.pub voice sitting, the ASC Assets trial, Topo, the scaffolder). C1 said this call comes due
+after it. It is now after it.
+
+**A process finding worth keeping.** C1's review gate found five real defects with every gate green,
+three of them the species pass two named: a claim the code makes about itself, invisible to every
+mechanical check. The most important was that Task 2's compile fixtures built their site env from
+cairn's own types, so part of what they proved was circular. A negative control (which C1 ran, and
+which passed) proves a fixture CAN fail; it does not prove the fixture models the real input.
+**When a fixture stands in for a consumer, build its input from the consumer's sources, not from the
+library's own types.**
 
 **Carry-forwards (live):** admin error statuses flattening to HTTP 200 under the shell's streamed
 pending count (upstream sveltejs/kit#12987, OPEN; cairn-side mitigation weighed in ROADMAP); mermaid
 diagrams near-illegible at 320/390 (candidate: the Topo pass); section-index breadcrumbs duplicating
 the arm name; the cairn.pub live admin smoke (Geoff's magic link plus publish round-trip) is owed;
 the `/admin/help` first-steps card overlap (ROADMAP, Now); the `sideEffects` coverage gate filed as
-mechanical hardening (the fix works today, nothing tests it, and the glob is depth-fixed). ASC's own
-retrofits run in that repo on its own clock, both seams passes now landed.
+mechanical hardening. ASC's own retrofits run in that repo on its own clock, both seams passes now
+landed.
 
 ## Archives
 

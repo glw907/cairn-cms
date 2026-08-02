@@ -166,3 +166,50 @@ describe('adminAction: the required audit emit', () => {
     expect(await statusOf(action(event))).toBe(500);
   });
 });
+
+describe('adminAction: the audit sink is fail-open', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('completes the handler and returns its result when locals.auditSink throws synchronously', async () => {
+    const sink = vi.fn(() => {
+      throw new Error('sink exploded');
+    });
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    const result = await action(event);
+    expect(result).toEqual({ done: true });
+    expect(sink).toHaveBeenCalledOnce();
+  });
+
+  it('logs admin.action.audit_sink_failed with the action identity and the error, never the record contents', async () => {
+    const sink = vi.fn(() => {
+      throw new Error('sink exploded');
+    });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42', detail: 'top secret detail' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    await action(event);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.action.audit_sink_failed',
+        path: '/admin/club/events',
+        action: 'approve',
+        entity: 'signup',
+        entityId: '42',
+        editor: editor.email,
+        error: 'sink exploded',
+      }),
+    );
+    const [record] = spy.mock.calls[0] as [Record<string, unknown>];
+    expect(record.detail).toBeUndefined();
+  });
+});

@@ -135,7 +135,24 @@ export function adminAction<T>(
         emitted++;
         const full: AdminActionAuditRecord = { ...record, editor: editor.email };
         log.info('admin.action.audited', { ...full });
-        event.locals.auditSink?.(full);
+        // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
+        // own hand-rolled sink is arbitrary code the engine does not control, and the mutation
+        // this record describes already completed. A throw here must never turn that completed
+        // write into a failed action. `admin.action.audited` above already logged the full
+        // record, so this failure log carries only the identity fields and the error, never
+        // `record.detail`, which can hold arbitrary site data.
+        try {
+          event.locals.auditSink?.(full);
+        } catch (error) {
+          log.error('admin.action.audit_sink_failed', {
+            path: event.url.pathname,
+            action: record.action,
+            entity: record.entity,
+            entityId: record.entityId,
+            editor: editor.email,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       },
     };
 

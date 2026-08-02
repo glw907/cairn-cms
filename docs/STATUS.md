@@ -14,8 +14,8 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-02: the C2 audit sweep is DONE and appended to the agenda; next
-is the C2 sitting on Fable)
+## Immediate next action (2026-08-02: the C2 sitting is DONE; next is C2 execution in a fresh
+Opus 5 session)
 
 **THE STACK IS COLLAPSED. `main` IS CURRENT.** PRs #16 (ASC seams pass two) and #17 (phase C1, the
 seam-shape pass) both merged to `main` on 2026-08-02. A cold session branches off `main` again by
@@ -46,34 +46,34 @@ SvelteKit's default: the strongest demonstration that cairn needs no mapping. Th
 `## Unreleased`, `release-size: minor`) now carries the ASC seams pass two, C1, and this
 convergence pass together.
 
-**NEXT: phase C2, now widened to the breaking-window pass** (ROADMAP, "The pre-beta pass series and
-the two-release shape"). The full agenda is consolidated at
-`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md` (DRAFT, adjudication pending): the
-rename set, the `locals` namespace policy, the subpath taxonomy, the event-shape trio, the
-env-genericity decision whole, the log-event vocabulary, the deprecated-alias sweep,
-`AdminActionError`'s residual identity, `SectionActionConfig.resolveDb`'s shape, the built-in
-actions' refusal pattern, and reserved vocabulary for the F features. The refusal-channel
-convergence above was filed as a C2 input; it is done and removed from the agenda's list, since it
-changed what `AdminActionError` means and the naming pass should not name a symbol mid-change, which
-is why this pass ran first.
+**NEXT: execute phase C2, the breaking-window pass.** The Fable sitting ran 2026-08-02 and
+adjudicated every in-window item and all 31 confirmed audit findings. The rulings AND the
+execution plan live in **`docs/superpowers/plans/2026-08-02-c2-breaking-window.md`** (fourteen
+tasks; the agenda spec is now historical input). The design bar Geoff set for the sitting: a
+truly beautiful API surface, no compatibility hedging for current sites, judged for a human
+developer and an AI coding agent at once. Headline rulings: one `CairnEvent<Env>` replaces the
+four named plus five inline event shapes; `AuthEnv`/`BackendEnv` collapse into `CairnEnv` with
+structural email-binding acceptance (the env-genericity tripwire is the proof); `locals` keys
+take the flat `cairn*` prefix with no aliases; role names widen to `string` (capabilities stay
+closed); one naming grammar covers members, facade keys, bags, and factory verbs;
+`/admin-fields` merges into `/admin-toolkit`; `adminNav` retires (`navLayout` is the one nav
+seam); `AdminActionError` becomes `UnauditedActionError`; six log events rename and every
+`reason`/`scope` value goes snake_case; the refusal channel converges on `fail()` plus a
+bounded error-code union (closing the `?error=` phishing surface); every type named in a public
+signature becomes exported.
 
-**Sequencing, per the agenda:** the read-only adversarial audit sweep ran 2026-08-02 as the
-opted-in workflow (five Opus-pinned lenses over the settled surface; 46 raw findings, 42 after
-dedup, every one adversarially verified, 31 confirmed and 11 refuted). The confirmed findings are
-appended to the agenda spec under "Audit-sweep evidence (2026-08-02)", grouped by agenda item.
-Items 5 and 11 drew no findings; five findings fit no existing item and sit under "New findings".
-The sweep is records, not adjudication. Next the Fable sitting reads
-`docs/internal/api-surface.md` (C1 corrected it; it now records nullability for the first time)
-plus the full agenda, evidence included, and adjudicates every in-window item. Execution stays one
-pass, one diff, one `Consumers must:` list, the only genuinely breaking pass in the series.
+**One open call for Geoff at plan approval:** the plan honors the one-diff mandate but
+recommends pre-approving a contingency split at Task 12 (the refusal-channel convergence, the
+only behavioral task) into pass C2b, same unpublished window, one combined `Consumers must:`
+list at the cut.
 
-**Resume prompt** (Fable planning sitting, from `~/Projects/cairn-cms`, on `main`): "Run the C2
-breaking-window sitting. Read
-`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md` in full, the audit-sweep evidence
-section included, plus `docs/internal/api-surface.md`. Adjudicate every in-window item (silence is
-not a decision) and write the execution plan. The sitting ends at plan approval; execution runs in
-a fresh Opus 5 session on a worktree off `main` (the stack is collapsed), lands ONE diff with one
-`Consumers must:` list, and holds unpublished at close unless a consumer needs it."
+**Resume prompt** (fresh Opus 5 execution session, from `~/Projects/cairn-cms`, on `main`):
+"Execute the C2 breaking-window pass. Invoke `cairn-pass`, read
+`docs/superpowers/plans/2026-08-02-c2-breaking-window.md` in full, create a worktree off
+`main`, and run the fourteen tasks in order via `cairn-implementer` dispatches, reviewing each
+diff and confirming the full gate between tasks. Task 1's tripwire proof gates the pass:
+if `BareWranglerSiteEnv` does not fail TS2578, stop and report. One PR, one `Consumers must:`
+list assembled task by task, hold unpublished at close."
 
 **Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
 (history/revert, preview) slot against the standing template queue (the optical-centering ratchet,

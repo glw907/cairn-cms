@@ -1,11 +1,12 @@
 # The C2 breaking-window agenda
 
-**Status: DRAFT agenda, adjudication pending.** This document widens phase C2's charter from "the
-naming pass" to "the breaking-window pass" (Geoff signaled the widening 2026-08-02; the sitting
-ratifies it by working this agenda). It exists so the last cheap breaking window is spent
-deliberately and exhaustively rather than item by item. Release one is the final release a consumer
-absorbs breakage as one batch; at beta, compatibility-SemVer makes every deferred item here a major
-version or a permanent resident.
+**Status: ADJUDICATED 2026-08-02.** The C2 sitting ran on Fable and ruled on every in-window item
+and every confirmed finding; the rulings and the execution plan live in
+`docs/superpowers/plans/2026-08-02-c2-breaking-window.md`, which supersedes this document. This
+spec stays as the historical input: the agenda as widened (Geoff signaled the widening
+2026-08-02) plus the audit-sweep evidence the sitting adjudicated. Release one is the final
+release a consumer absorbs breakage as one batch; at beta, compatibility-SemVer makes every
+deferred item here a major version or a permanent resident.
 
 **Sequencing:** the refusal-channel convergence pass landed first (it changed what `AdminActionError`
 means, and the sitting should not name a symbol mid-change; merged as PR #18). The read-only

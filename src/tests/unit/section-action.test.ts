@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { isActionFailure } from '@sveltejs/kit';
+import { isActionFailure, isRedirect, redirect } from '@sveltejs/kit';
 import {
   createSectionAction,
   type RateLimitLike,
@@ -303,6 +303,27 @@ describe('createSectionAction: role not admitted', () => {
 
     expect(handler).not.toHaveBeenCalled();
     expect(overridden.handler).not.toHaveBeenCalled();
+  });
+});
+
+describe('createSectionAction: rate limit catch rethrows control-flow shapes', () => {
+  it('propagates a redirect() thrown from rateLimit.key, rather than degrading to open', async () => {
+    const limiter: RateLimitLike = { limit: async () => ({ success: true }) };
+    const throwingKey = () => {
+      redirect(303, '/somewhere');
+    };
+    const { handler, action } = approveAction({
+      ...boundDb,
+      rateLimit: { resolve: () => limiter, key: throwingKey },
+    });
+    let thrown: unknown;
+    try {
+      await action(readyEvent());
+    } catch (err) {
+      thrown = err;
+    }
+    expect(isRedirect(thrown)).toBe(true);
+    expect(handler).not.toHaveBeenCalled();
   });
 });
 

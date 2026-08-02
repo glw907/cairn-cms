@@ -123,15 +123,22 @@ toolchain](../reference/supported-toolchain.md), states the versions cairn promi
 proves against, for `@sveltejs/kit`, `svelte`, `vite`, `typescript`, `node`, and TypeScript module
 resolution.
 
-`adminAction`'s two authorization refusals, a missing signed-in editor and a CSRF mismatch, now
+`adminAction`'s two refusals, a missing signed-in editor (authentication) and a CSRF mismatch, now
 throw SvelteKit's own `redirect()` and `error(403, ...)` instead of `AdminActionError`, the same
 framework-native shapes `requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`
-already throw. If your `hooks.server.ts` defines a `handleError` only to map `AdminActionError`
-into a legible response for these two refusals, remove that mapping: it does nothing useful now,
-and a site relying on the old `500` these refusals produced for alerting now sees a `303` (the
-redirect) and a `403` (the SvelteKit-native error) instead. `AdminActionError` stays exported, but
-now means only the dev-only unaudited-action defect signal, a build-time check that never reaches
-a production response. See [Refusal channels](../reference/sveltekit.md#refusal-channels).
+throw for their own authorization checks. `adminAction` itself still performs no authorization: a
+`none`-capability editor's session passes both of its checks and reaches your handler unchanged;
+add [`requireAccess`](../reference/sveltekit.md#requireaccess) inside the handler, or build on
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction), for a capability check.
+If your `hooks.server.ts` defines a `handleError` only to map `AdminActionError` into a legible
+response for these two refusals, remove that mapping: it does nothing useful now, and a site
+relying on the old `500` these refusals produced for alerting now sees a `303` (the redirect) and
+a `403` (the SvelteKit-native error) instead. Both now navigate away from the submitting page (the
+redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved form
+input, where the old `500` left the page itself intact and recoverable with Back. `AdminActionError`
+stays exported, but now means only the dev-only unaudited-action defect signal, a build-time check
+that never reaches a production response. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels).
 
 Consumers must: intersect `CairnPlatformBindings` into `App.Platform['env']` if you haven't
 already, be on Node 22 or later for your build toolchain (already the tutorial's stated

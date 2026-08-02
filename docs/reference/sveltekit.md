@@ -238,13 +238,15 @@ export const load = (event) => {
 The admin action surface refuses a request through one of two developer-facing shapes, depending
 on which helper does the refusing.
 
-`requireOwner`, `requireEditor`, `requireAccess`, `requireSession`, and
-[`adminAction`](#adminaction)'s own authorization checks all throw SvelteKit's own `error()` (a
-403) or `redirect()` (a 303 to `/admin/login`), whether called directly inside a hand-rolled load
-or action, or underneath `adminAction`'s wrapper. SvelteKit recognizes both as its native thrown
-shapes and renders the correct status through the nearest `+error.svelte`, or follows the
-redirect, with no site code required to translate either one, and no `handleError` mapping to
-write.
+`requireOwner`, `requireEditor`, `requireAccess`, and `requireSession` all perform authorization: a
+signed-in session either carries the required role or capability, or the call throws. `adminAction`
+performs authentication and CSRF verification only, never authorization; a `none`-capability
+editor's session still passes both its checks and reaches the wrapped handler. All five throw
+SvelteKit's own `error()` (a 403) or `redirect()` (a 303 to `/admin/login`), whether called
+directly inside a hand-rolled load or action, or underneath `adminAction`'s wrapper. SvelteKit
+recognizes both as its native thrown shapes and renders the correct status through the nearest
+`+error.svelte`, or follows the redirect, with no site code required to translate either one, and
+no `handleError` mapping to write.
 
 [`createSectionAction`](#createsectionaction)'s own authorization, rate-limit, and
 database-binding branches return SvelteKit's `fail(...)`, an `ActionFailure`, never a throw. The
@@ -259,9 +261,17 @@ This split is deliberate, not an inconsistency to converge:
 
 A site that defines its own `handleError` for some other reason should know it **replaces**
 SvelteKit's own default hook (a `console.error` of every server error) rather than layering on top
-of it; log first, unconditionally, the way the showcase's own
-`examples/showcase/src/hooks.server.ts` did before it dropped the hook entirely, or the site loses
-all default server-error logging silently. Nothing in this reference requires a site to define one.
+of it. Log first, unconditionally, or the site loses all default server-error logging silently:
+
+```ts
+import type { HandleServerError } from '@sveltejs/kit';
+
+export const handleError: HandleServerError = ({ error }) => {
+  console.error(error);
+};
+```
+
+Nothing in this reference requires a site to define one.
 
 Two further channels exist inside the engine and are never written by a site directly. The
 built-in content actions redirect on failure (`redirect(303, '/admin/<concept>?error=...')`), the
@@ -298,6 +308,11 @@ action calls for the engine's editor and audit contract.
 check is defense-in-depth, not the sole gate; its real job is resolving the signed-in editor as a
 typed `ctx.editor` and requiring an audit emit for a mutating action, a hook the engine has no other
 seam for.
+
+`adminAction` authenticates and verifies CSRF; it performs no authorization of its own. A
+`none`-capability editor's session still passes both checks and reaches the wrapped handler
+unchanged. Add [`requireAccess`](#requireaccess) inside the handler, or build the action on
+[`createSectionAction`](#createsectionaction), for a capability check.
 
 In order, fail-closed at every step: (1) `event.locals.editor` must be populated, else a redirect
 to `/admin/login`, matching [`requireSession`](#requiresession) exactly (a lapsed session needs the

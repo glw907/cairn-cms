@@ -93,7 +93,10 @@ release-one boundary; the passes are invariant.
   features in one window. The standing pipeline consumes it (the Waymark rebuilds, ASC's
   retrofit) — the one round of breaking changes.
 - **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
-  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep); P2
+  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep, and a
+  small showcase route exercising `adminAction` and its converged refusal paths end to end, since
+  the showcase exercises neither today and a kit-version drift in action-thrown redirect/error
+  rendering would go uncaught); P2
   the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
   walkthrough as the attended session at phase end plus a fixes rider; P5 the
   `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the

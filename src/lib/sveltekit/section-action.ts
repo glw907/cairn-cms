@@ -12,14 +12,15 @@
 // `canReach`, never `canReach` alone, whose permissive unmapped-target reading is nav semantics,
 // not an authorization floor a POST can rely on. It is fail-closed at every step but two,
 // deliberately: the rate limit degrades to open (an unresolved binding, or a throwing
-// `key()`/`limit()` call, never blocks) and its `fail(429)` branch emits no `ctx.audit` (back
+// `key()`/`limit()` call, never blocks, except SvelteKit's own `redirect()`/`error()`, which
+// propagate untouched rather than degrading) and its `fail(429)` branch emits no `ctx.audit` (back
 // pressure is not a domain-state change). Every other refusal audits through `ctx.audit`
 // (adminAction's own contract). Every user-facing message stays deliberately generic (every 403
 // shares one string, both 500s share another) so a session learns no deployment or gating detail
 // from a refusal; the branch identity lives in the audit `detail` and the structured log. The
 // local `deny` and `misconfigured` helpers below are what make that uniformity structural, rather
 // than a convention five separate branches each have to keep.
-import { fail } from '@sveltejs/kit';
+import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
 import { canReach, hasAccessRule } from '../auth/access.js';
 import { log } from '../log/index.js';
@@ -79,9 +80,11 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  *    degrades to open (never blocks) and logs `admin.action.rate_limit_absent` (unresolved
  *    binding) or `admin.action.rate_limit_failed` (a throwing call), so a forgotten
  *    `[[ratelimits]]` block or a transient binding error is observable, not a silent bypass or a
- *    500 the hand-rolled code never produced. A present binding over its limit logs
- *    `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this branch: a
- *    limiter denial is back-pressure, not a domain-state change.
+ *    500 the hand-rolled code never produced. A `key()`/`limit()` call that throws SvelteKit's own
+ *    `redirect()`/`error()` is the one exception: those propagate untouched rather than degrading,
+ *    the same rethrow `adminAction`'s own audit-sink guard applies. A present binding over its
+ *    limit logs `admin.action.rate_limited` and returns `fail(429)`. No `ctx.audit` on this
+ *    branch: a limiter denial is back-pressure, not a domain-state change.
  * 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
  *    `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route (a
  *    zero-config site attaches an empty map instead, per the guard's own contract). This check
@@ -167,6 +170,12 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
             // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
             // argument to limit(), inside this same try); either way the limit was never
             // actually checked, which is distinct from rate_limit_absent's "no binding at all".
+            // SvelteKit's own redirect()/error(), thrown from a site-supplied key() or limit()
+            // callback, are plain classes, not Error instances, and a site relying on either as
+            // control flow (a hand-rolled auth check inside key(), say) must not be swallowed
+            // into a degrade-to-open pass, mirroring adminAction's own audit-sink guard
+            // (./admin-action.js) exactly: rethrow both untouched before logging.
+            if (isRedirect(err) || isHttpError(err)) throw err;
             log.warn('admin.action.rate_limit_failed', {
               path,
               action: opts.action,

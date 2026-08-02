@@ -19,6 +19,7 @@ function jar(initial: Record<string, string> = {}): CookieJar {
 function makeEvent(opts: {
   cookie?: string;
   csrfField?: string;
+  csrfHeader?: string;
   editor?: Editor | null;
   extra?: Record<string, string>;
   auditSink?: (record: AdminActionAuditRecord) => void;
@@ -26,9 +27,11 @@ function makeEvent(opts: {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   for (const [k, v] of Object.entries(opts.extra ?? {})) body.set(k, v);
+  const headers: Record<string, string> = { 'content-type': 'application/x-www-form-urlencoded' };
+  if (opts.csrfHeader !== undefined) headers['x-cairn-csrf'] = opts.csrfHeader;
   const request = new Request('https://x.dev/admin/club/events', {
     method: 'POST',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    headers,
     body: body.toString(),
   });
   return {
@@ -80,6 +83,19 @@ describe('adminAction: editor guard', () => {
     expect(await redirectOf(action(event))).toEqual({ status: 303, location: '/admin/login' });
     expect(handler).not.toHaveBeenCalled();
   });
+
+  it('logs admin.action.session_absent with the path before redirecting', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const handler = vi.fn();
+    const action = adminAction(handler);
+    const event = makeEvent({ editor: null, cookie: 'TOK', csrfField: 'TOK' });
+    await redirectOf(action(event));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.session_absent',
+      expect.objectContaining({ path: '/admin/club/events' }),
+    );
+    warnSpy.mockRestore();
+  });
 });
 
 describe('adminAction: CSRF guard (defense-in-depth)', () => {
@@ -127,6 +143,24 @@ describe('adminAction: CSRF guard (defense-in-depth)', () => {
     const result = await action(makeEvent({ cookie: 'MATCH', csrfField: 'MATCH' }));
     expect(result).toEqual({ ok: true });
     expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('accepts a valid X-Cairn-CSRF header witness with no csrf form field, mirroring the guard', async () => {
+    const handler = vi.fn(async ({ ctx }: { ctx: { audit: (r: { action: string; entity: string }) => void } }) => {
+      ctx.audit({ action: 'noop', entity: 'test' });
+      return { ok: true };
+    });
+    const action = adminAction(handler);
+    const result = await action(makeEvent({ cookie: 'MATCH', csrfHeader: 'MATCH' }));
+    expect(result).toEqual({ ok: true });
+    expect(handler).toHaveBeenCalledOnce();
+  });
+
+  it('falls back to the form field when the header is absent or mismatched', async () => {
+    const handler = vi.fn();
+    const action = adminAction(handler);
+    expect(await httpErrorStatusOf(action(makeEvent({ cookie: 'MATCH', csrfHeader: 'WRONG' })))).toBe(403);
+    expect(handler).not.toHaveBeenCalled();
   });
 });
 

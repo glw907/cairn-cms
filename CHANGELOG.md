@@ -52,17 +52,21 @@
   [Supported toolchain](docs/reference/supported-toolchain.md). **Consumers must:** be on Node 22
   or later for the build toolchain.
 
-- `adminAction`'s two authorization refusals, a missing signed-in editor and a CSRF mismatch, now
-  ride SvelteKit's own `redirect()` and `error(403, ...)`, the same shapes `requireOwner`,
-  `requireEditor`, `requireAccess`, and `requireSession` already throw, so neither needs a site
-  `handleError` mapping. `AdminActionError` stays exported, now meaning only the dev-only
+- `adminAction`'s two refusals, a missing signed-in editor (authentication) and a CSRF mismatch,
+  now ride SvelteKit's own `redirect()` and `error(403, ...)`, the same shapes `requireOwner`,
+  `requireEditor`, `requireAccess`, and `requireSession` throw for their own authorization checks,
+  so neither of `adminAction`'s two needs a site `handleError` mapping. `adminAction` itself still
+  performs no authorization: a `none`-capability editor's session passes both checks and reaches
+  the wrapped handler unchanged. `AdminActionError` stays exported, now meaning only the dev-only
   unaudited-action defect signal (a build-time check, never a production response). The CSRF branch
   logs the new `admin.action.csrf_rejected` event before it throws. See
   [SvelteKit](docs/reference/sveltekit.md#refusal-channels) and
   [log events](docs/reference/log-events.md). **Consumers must:** remove any `AdminActionError`
-  mapping from `handleError`; `adminAction`'s authorization refusals are now SvelteKit's own
-  `redirect()` and `error(403)`, which need no mapping. A site that alerted on the old `500` these
-  refusals used to produce now sees a `303` and a `403` instead.
+  mapping from `handleError`; `adminAction`'s two refusals are now SvelteKit's own `redirect()` and
+  `error(403)`, which need no mapping. A site that alerted on the old `500` these refusals used to
+  produce now sees a `303` and a `403` instead, and both now navigate away from the submitting page
+  (the redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved
+  form input, where the old `500` left the page itself intact and recoverable with Back.
 
 ### Fixed
 

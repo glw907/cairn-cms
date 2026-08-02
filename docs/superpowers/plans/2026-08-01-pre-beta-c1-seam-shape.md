@@ -527,3 +527,134 @@ with the `engines` field present; no docs page contradicts the matrix.
 - Reviewer fan-out folded (`svelte-reviewer` and `web-auth-security-reviewer` are the relevant two:
   Task 3 changes an auth-adjacent call site, Task 2 changes types every route assigns through).
 - The pass holds unpublished on `pre-beta-c1-seam-shape`.
+
+---
+
+## Post-mortem (2026-08-02)
+
+**Shipped.** All five ROADMAP contract entries, across eleven commits on
+`pre-beta-c1-seam-shape`, holding unpublished. Full gate green at close: `npm run check` 0/0,
+`npm test` exit 0 unpiped (383 files, 4717 tests), and every named gate passing, including all
+four CI-only ones (`check:comments`, `check:reference:signatures`, `check:surface`,
+`check:snippets`) plus `check:package`, `check:docs`, `check:arm-indexes`, and `check:version`.
+
+**What each entry actually turned out to be**, which in three of five cases was not what the entry
+said:
+
+1. **The signature normalizer** was written as a three-parameter problem and was a systemic one.
+   `check-surface.mjs` imports the same `normalizeSignature`, so the blanket `| undefined` strip ran
+   over the surface snapshot too, including return types. `| undefined` occurred **zero times** in
+   `api-surface.md`: no nullability change on the public surface had ever produced a diff in the
+   gate that exists to catch surface drift. The regen corrected 27 entries across 8 subpaths,
+   including `ContentIndex.byId`, `SiteResolver.byPermalink`, and `CookieJar.get`, all recorded as
+   returning a value that cannot be missing. No reference page needed editing: the pages were right
+   and only the internal snapshot was wrong.
+2. **The env-genericity sweep** ended with no type made generic, and that conclusion was then found
+   to be scoped narrower than it was stated. See "The thing this pass got wrong" below.
+3. **The function-color audit's headline case was stale.** `render(md)` has returned
+   `Promise<string>` since `0.76.0` (commit `deaa3854`, in that release's `Consumers must:` list).
+   The ROADMAP line describing it as sync predated the change by five weeks. The audit's real
+   subjects were the seams with no ruling at all: `ComponentDef.build`, `FieldsetOptions.refine`,
+   and `RendererOptions.sanitizeSchema`.
+4. **The refusal-channel entry undercounted at two.** There are five, and the third
+   (`requireOwner`/`requireAccess` throwing SvelteKit-native `error()`) is the one
+   `add-a-custom-admin-screen.md` teaches first, un-contrasted against the `createSectionAction`
+   pattern it upgrades to later.
+5. **The toolchain matrix** was the only entry that was what it said. Its one surprise: the
+   TypeScript floor is 5.0, forced by `const` type parameters on the public surface, nowhere near
+   the `^6.0.3` the engine develops against.
+
+**The thing this pass got wrong, and how it got caught.** Task 2 concluded "no generics needed" from
+seven compile fixtures, and the orchestrator verified the negative control (a disjoint env fails all
+seven) before accepting it. That check was real but insufficient. The `svelte-reviewer` found that
+the fixtures built `SiteEnv` from `CairnPlatformBindings`, whose `EMAIL` is declared as
+`NonNullable<AuthEnv['EMAIL']>`, so for that member the fixture proved cairn's own type assigns to
+cairn's own type. A site using the standard Cloudflare workflow (`wrangler types` to generate `Env`)
+does **not** assign, because `@cloudflare/workers-types`' `SendEmail.send` returns
+`Promise<EmailSendResult>` where `AuthEnv['EMAIL'].send` declares `Promise<void>`. Independently
+compile-verified before folding.
+
+The lesson is narrower than "test your tests". A negative control proves a fixture can fail; it does
+not prove the fixture models the real input. Both checks are needed, and the second one is the one a
+builder skips, because the fixture's own author picks the input from the same materials they built
+with. **When a fixture stands in for a consumer, build its input from the consumer's sources, not
+from the library's own types.**
+
+The fix was not to make the types generic. Unlike pass one's `AdminActionEvent` (a type consumers
+reference), making the factories generic requires a site to write `createCairnAdmin<SiteEnv>(runtime)`
+explicitly, since inference has nothing to work from, so it is a `Consumers must:` change and a
+design question. C1 recorded the truth instead: a `@ts-expect-error` tripwire in
+`src/tests/unit/env-genericity.test.ts` locks the known-incompatible shape and fails the build on
+TS2578 if the incompatibility is ever fixed upstream, and the `CairnPlatformBindings` intersection is
+now documented as a requirement rather than a recommendation. The decision itself goes to C2 whole.
+
+Note for a reader of `git log`: commit `38d23a3a`'s message says "no generics needed" without that
+qualification. It was accurate to what was known then and was not rewritten.
+
+**What the review gate earned, for the third pass running.** Every gate was green when the fan-out
+began, and two reviewers found five real defects between them, two of them independently:
+
+- The fixtures' circular env (above), which no gate could see.
+- `adminAction`'s non-generic ruling was reasoned from a true premise to a conclusion that does not
+  follow: what breaks a site's `Actions` assignment is the returned function's declared parameter
+  type, not what its body reads. The ruling was also the one seam ruled on with no fixture behind
+  it, in a file whose whole premise is that the sweep compiles rather than argues.
+- The audit-sink `catch` swallowed SvelteKit's `redirect()` and `error()`, which are plain classes
+  rather than `Error` instances, and logged them as the literal string `"[object Object]"`. That is
+  precisely what this plan's own Task 3 forbade in writing.
+- The fail-open promise did not cover an async sink: `(record) => void` admits an `async` function
+  through void-return bivariance, and the un-awaited call's rejection escaped the `try`. So the
+  shim that existed to make a documented promise true was itself one line short of true.
+- The showcase `handleError` silently disabled SvelteKit's default server error logging, found by
+  both reviewers independently. Defining the hook replaces the default rather than layering on it.
+
+Three of these five are the same species pass two named: **a claim the code makes about itself,
+invisible to every mechanical check.** The orchestrator's own diff review caught two more of the
+same species (an `audit-sink.ts` rationale that Task 3's guard had just invalidated, and
+`AdminActionError`'s doc block asserting behavior SvelteKit does not implement).
+
+**The defect the pass found but did not fix.** `AdminActionError`'s `status` never reaches the
+browser. SvelteKit's `get_status` derives a status only from its own `HttpError`/`SvelteKitError`,
+so a plain `Error` subclass always renders 500, and `handleError` receives the status as an input
+and cannot change it. A 403 authorization refusal is therefore indistinguishable from an engine
+fault in logs and monitoring. Not a security defect (the refusal still happens, fail-closed) and not
+urgent (the guard refuses both conditions pre-routing in practice, so the branches rarely fire), but
+not something to carry into beta. The security review's recommended shape is filed for C2: converge
+the channel rather than document the workaround. It also argued against adding an
+`isAdminActionError` guard on the grounds that making the workaround comfortable removes the
+pressure to remove the need for it. This pass had already declined that export for a different
+reason.
+
+**Sequencing decisions that paid off.**
+
+- **Running the normalizer fix first, against the pre-authorized split.** The trigger fired (27
+  entries, past "a handful"), but the measurement showed the cascade was a regenerated artifact
+  rather than work, and that P1 sits after the C2 sitting that reads the snapshot. Splitting it out
+  would have defeated the item's own stated purpose. The bound that kept it honest: the task changed
+  no API, and the one signature that looks wrong on the merits
+  (`SectionActionConfig.resolveDb`) was recorded for C2 rather than fixed.
+- **Documentation last.** Pass two's lesson held. Tasks 1 through 3 moved code, Tasks 4 through 6
+  described it, and no doc in this pass described a moving target. The two stale-comment defects
+  that did occur were both in code comments written *before* the code moved, which is the same
+  failure at a smaller grain and argues for extending the rule: a comment explaining why code does
+  something is invalidated by changing that something, so it belongs to the change, not to the
+  documentation task.
+
+**Carried, and where.** Four C2 carry-ins filed in ROADMAP: the refusal-channel convergence, the
+env-genericity decision whole, the two near-identical log event names
+(`admin.audit.sink_failed` versus `admin.action.audit_sink_failed`, both still unpublished so the
+rename is free), and a gate gap where `check:reference:signatures` reads only fenced `ts` blocks, so
+a signature stated only in a reference table is ungated. Also filed: extending `cairn-doctor`'s
+`config.dependency-floors` check beyond svelte and kit, which is the only floor enforcement that
+reaches a real consumer.
+
+One boundary recorded rather than fixed, found by `code-simplifier`: for a hypothetical
+`f?: (a: string) => T | undefined`, the page form and the real type normalize differently, so the
+gate fails loudly rather than passing silently. That is the safe direction and the shape does not
+occur in the surface today.
+
+**Process note on pass size.** Six content tasks, a simplifier pass, a two-reviewer fan-out, and a
+two-part review fold. The fold was repair of this pass's own work rather than new scope, so it
+stayed in; the orchestrator raised the length with Geoff unprompted at the point it became clear,
+and offered the docs half as a clean cut. Worth watching: a pass whose review gate finds five real
+defects is a pass whose fold is a second pass in miniature.

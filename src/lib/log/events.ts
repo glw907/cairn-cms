@@ -52,4 +52,5 @@ export type CairnLogEvent =
   | 'admin.action.rate_limit_absent'
   | 'admin.action.rate_limit_failed'
   | 'admin.action.rate_limited'
-  | 'admin.action.misconfigured';
+  | 'admin.action.misconfigured'
+  | 'turnstile.verify_failed';

@@ -151,6 +151,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `Role`: "owner" | "editor"
 - `setEditorRole`: (db: D1Database, email: string, role: "owner" | "editor") => Promise<void>
 
+## `/cloudflare`
+
+- `checkRateLimit`: (binding: RateLimitLike, key: string) => Promise<boolean>
+- `checkRateLimitKeys`: (binding: RateLimitLike, keys: string[]) => Promise<boolean>
+- `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
+- `verifyTurnstile`: (token: string, secret: string, opts?: VerifyTurnstileOptions) => Promise<boolean>
+- `VerifyTurnstileOptions`: { ip?: string; hostname?: string; action?: string }
+
 ## `/components`
 
 - `CairnAdmin`: Component<Props, {}, "">

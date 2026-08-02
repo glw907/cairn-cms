@@ -79,6 +79,21 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
+## Unreleased: a cloudflare export (non-breaking)
+
+A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
+Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the
+Turnstile siteverify fetch, fail-closed on every failure mode; and `checkRateLimit` and
+`checkRateLimitKeys`, the Workers `RateLimit` binding wrapper, degrade-to-open on an absent
+binding. Reach for it when you build your own Turnstile-guarded form or your own rate-limited
+endpoint, so you reuse the same primitives instead of copying them by hand. `RateLimitLike`
+moves to this subpath as its one declaration in the source tree; if you imported it from
+`@glw907/cairn-cms/sveltekit`, that import keeps working unchanged. See
+[Cloudflare](../reference/cloudflare.md).
+
+Consumers must: nothing. The subpath is additive, and the `RateLimitLike` re-export keeps its
+existing shape and location on `/sveltekit`.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

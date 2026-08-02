@@ -1,3 +1,20 @@
+## Unreleased
+
+<!-- release-size: minor -->
+
+### Added
+
+- A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
+  Cloudflare-native platform primitives two sites already copy by hand:
+  `verifyTurnstile(token, secret, opts?)`, the siteverify fetch, fail-closed on every
+  failure mode (a non-200 response, an unparseable body, a thrown fetch, or a `hostname`
+  or `action` mismatch all return `false`, never throw); and `checkRateLimit(binding, key)`
+  plus `checkRateLimitKeys(binding, keys)`, the Workers `RateLimit` binding wrapper,
+  degrade-to-open on an absent binding. `RateLimitLike`, already public on `./sveltekit`
+  for `createSectionAction`, moves to this subpath as its one declaration and is
+  re-exported from `./sveltekit` unchanged. See [Cloudflare](docs/reference/cloudflare.md).
+  Consumers must: nothing.
+
 ## 0.93.0
 
 <!-- release-size: minor -->

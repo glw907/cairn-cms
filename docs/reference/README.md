@@ -45,6 +45,7 @@ anywhere in the package fails as stale prose (`scripts/reference-coverage.mjs`).
 - [Media (`/media`)](./media.md): the node-safe media surface: the config normalizer, the manifest functions, the naming and transform-URL helpers, the `media:` codec, and the render resolver.
 - [Auth store (`/auth-store`)](./auth-store.md): the server-only editor-provisioning functions backing D1.
 - [Auth crypto (`/auth-crypto`)](./auth-crypto.md): the server-only token, hash, compare, and cookie-naming primitives for a site's own second-audience auth flow.
+- [Cloudflare (`/cloudflare`)](./cloudflare.md): the server-only Turnstile verification and rate-limit wrapper for Cloudflare-native platform primitives.
 - [Vite (`/vite`)](./vite.md): the `cairnManifest()` build plugin.
 - [Ambient types (`/ambient`)](./ambient.md): the one-line `App.Locals.editor` augmentation for a site's `app.d.ts`.
 - [The `cairn-manifest` CLI](./cli-cairn-manifest.md): the manifest regenerate command.

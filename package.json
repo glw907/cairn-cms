@@ -131,6 +131,11 @@
       "browser": "./dist/auth-crypto/browser.js",
       "default": "./dist/auth-crypto/index.js"
     },
+    "./cloudflare": {
+      "types": "./dist/cloudflare/index.d.ts",
+      "browser": "./dist/cloudflare/browser.js",
+      "default": "./dist/cloudflare/index.js"
+    },
     "./vite": {
       "types": "./dist/vite/index.d.ts",
       "default": "./dist/vite/index.js"

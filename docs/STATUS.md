@@ -16,6 +16,15 @@ library's own development proves changes against `examples/showcase`.
 
 ## Immediate next action (2026-08-01: ASC seams pass two DONE and holding; next is phase C1)
 
+**PASS TWO IS UNMERGED BY DECISION (Geoff, 2026-08-01): it merges after C1, not before.** The work
+sits on `asc-engine-seams-2` as [PR #16](https://github.com/glw907/cairn-cms/pull/16), all five CI
+checks green including `e2e`. **This changes where C1 branches from.** `main` does NOT carry the
+`./cloudflare` subpath, `createD1AuditSink`, `migrations/0002_audit.sql`, or their `api-surface.md`
+entries, so **C1's worktree branches off `asc-engine-seams-2`, never off `main`**. That matters most
+for C1's first task: regenerating the surface snapshot from a `main` that is missing pass two's
+exports would produce a wrong diff and could silently drop them. The worktree at
+`.claude/worktrees/asc-engine-seams-2` stays in place until both merge.
+
 **ASC engine-seams pass two is DONE on `asc-engine-seams-2`, and it HOLDS UNPUBLISHED.** The pass
 shipped the `./cloudflare` server-only subpath (`verifyTurnstile`, `checkRateLimit`,
 `checkRateLimitKeys`, and the consolidated `RateLimitLike`) and the packaged D1 audit sink
@@ -56,7 +65,9 @@ are already written in ROADMAP's Next tier. Contents, in this order:
 **Resume prompt**, from `~/Projects/cairn-cms`: "Execute phase C1, the seam-shape pass, per
 `cairn-pass`. ROADMAP's Next tier carries its five entries; write the just-in-time plan from them
 first, sequencing the `check-reference-signatures.mjs` fix FIRST and splitting it back out if its
-snapshot regen cascades. Then execute on a feature worktree off `main`, dispatching each task to
+snapshot regen cascades. Then execute on a feature worktree branched off `asc-engine-seams-2` (NOT
+off `main`: pass two is deliberately unmerged, so `main` lacks the exports C1's snapshot work reads),
+dispatching each task to
 `cairn-implementer`. Documentation goes LAST in any task where code is still moving. Hold
 unpublished at close unless a consumer needs it."
 

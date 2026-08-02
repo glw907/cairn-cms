@@ -473,7 +473,11 @@ deviation rather than complying. The standing lesson from pass one held again: a
 and its prose are starting points, and an implementer that verifies beats one that complies.
 
 **Budgets.** Three workflows (nine agents, then five, then two) plus a scoped simplifier run and
-one inline main-loop fix, against a plan that expected five dispatches and one review gate. The
+one inline main-loop fix, against a plan that expected five dispatches and one review gate. Subagent
+tokens, by workflow: 1,145,459 for the implementation and first review; 628,867 for the first fold
+and its verification; 326,861 for the verification-round close; 84,056 for the fold simplifier.
+About 2.19M across seventeen agents, and the two review-and-fold rounds account for roughly 47% of
+it. The
 pass roughly doubled, and the honest split is that the review rounds found real defects while the
 documentation staleness was self-inflicted. Human interaction points: five. One was the pass-start
 instruction and one was a substantive decision (adding the fifth item to C1, with its sizing

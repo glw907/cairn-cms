@@ -26,11 +26,9 @@ import { log } from '../log/index.js';
 import type { AdminActionContext, AdminActionEvent } from './admin-action.js';
 import type { AccessMap } from '../auth/access.js';
 import type { ActionFailure } from '@sveltejs/kit';
+import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 
-/** The structural slice of a Workers RateLimit binding the wrapper calls; any conforming limiter serves. */
-export interface RateLimitLike {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
+export type { RateLimitLike };
 
 /** Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know. */
 export interface SectionActionConfig<Env, Db> {

@@ -123,11 +123,23 @@ toolchain](../reference/supported-toolchain.md), states the versions cairn promi
 proves against, for `@sveltejs/kit`, `svelte`, `vite`, `typescript`, `node`, and TypeScript module
 resolution.
 
+`adminAction`'s two authorization refusals, a missing signed-in editor and a CSRF mismatch, now
+throw SvelteKit's own `redirect()` and `error(403, ...)` instead of `AdminActionError`, the same
+framework-native shapes `requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`
+already throw. If your `hooks.server.ts` defines a `handleError` only to map `AdminActionError`
+into a legible response for these two refusals, remove that mapping: it does nothing useful now,
+and a site relying on the old `500` these refusals produced for alerting now sees a `303` (the
+redirect) and a `403` (the SvelteKit-native error) instead. `AdminActionError` stays exported, but
+now means only the dev-only unaudited-action defect signal, a build-time check that never reaches
+a production response. See [Refusal channels](../reference/sveltekit.md#refusal-channels).
+
 Consumers must: intersect `CairnPlatformBindings` into `App.Platform['env']` if you haven't
-already, and be on Node 22 or later for your build toolchain (already the tutorial's stated
-requirement, now a declared one too). Nothing else in this window changes an exported type, a
-route contract, or a behavior you'd observe without hitting one of those two: a throwing or
-rejecting audit sink previously failed the action it audited and now does not.
+already, be on Node 22 or later for your build toolchain (already the tutorial's stated
+requirement, now a declared one too), and remove any `AdminActionError` mapping from your
+`handleError` (`adminAction`'s authorization refusals need no mapping anymore). Nothing else in
+this window changes an exported type, a route contract, or a behavior you'd observe without
+hitting one of those three: a throwing or rejecting audit sink previously failed the action it
+audited and now does not.
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 

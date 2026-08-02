@@ -52,6 +52,18 @@
   [Supported toolchain](docs/reference/supported-toolchain.md). **Consumers must:** be on Node 22
   or later for the build toolchain.
 
+- `adminAction`'s two authorization refusals, a missing signed-in editor and a CSRF mismatch, now
+  ride SvelteKit's own `redirect()` and `error(403, ...)`, the same shapes `requireOwner`,
+  `requireEditor`, `requireAccess`, and `requireSession` already throw, so neither needs a site
+  `handleError` mapping. `AdminActionError` stays exported, now meaning only the dev-only
+  unaudited-action defect signal (a build-time check, never a production response). The CSRF branch
+  logs the new `admin.action.csrf_rejected` event before it throws. See
+  [SvelteKit](docs/reference/sveltekit.md#refusal-channels) and
+  [log events](docs/reference/log-events.md). **Consumers must:** remove any `AdminActionError`
+  mapping from `handleError`; `adminAction`'s authorization refusals are now SvelteKit's own
+  `redirect()` and `error(403)`, which need no mapping. A site that alerted on the old `500` these
+  refusals used to produce now sees a `303` and a `403` instead.
+
 ### Fixed
 
 - `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`
@@ -78,15 +90,16 @@
 
 ### Documentation
 
-- The `./sveltekit` reference documents the admin action surface's five refusal channels (thrown
-  SvelteKit `error()`/`redirect()`, thrown `AdminActionError`, `fail(...)`, the built-in actions'
-  own redirect, and the guard's pre-routing raw `Response`), rules on the seams whose sync-or-async
+- The `./sveltekit` reference documents the admin action surface's refusal channels: the
+  framework-native `error()`/`redirect()` shared by `requireOwner`/`requireEditor`/`requireAccess`/
+  `requireSession` and `adminAction`'s own authorization guards, `fail(...)` from
+  `createSectionAction`'s own branches, and, internal to the engine only, the built-in actions' own
+  redirect and the guard's pre-routing raw `Response`. It rules on the seams whose sync-or-async
   color was previously undocumented (`ComponentDef.build`, `FieldsetOptions.refine`,
-  `RendererOptions.sanitizeSchema`, and the resolver family), and states what exporting a
-  `handleError` costs a site (it replaces SvelteKit's own default logging hook, not just adds to
-  it). A new reference page, [Supported toolchain](docs/reference/supported-toolchain.md), states
-  the package's minimum-supported and proven-against versions for `@sveltejs/kit`, `svelte`,
-  `vite`, `typescript`, `node`, and TypeScript module resolution. No consumer action.
+  `RendererOptions.sanitizeSchema`, and the resolver family). A new reference page,
+  [Supported toolchain](docs/reference/supported-toolchain.md), states the package's
+  minimum-supported and proven-against versions for `@sveltejs/kit`, `svelte`, `vite`,
+  `typescript`, `node`, and TypeScript module resolution. No consumer action.
 
 ## 0.93.0
 

@@ -14,75 +14,65 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-02: phase C1 DONE and holding; next is phase C2, the naming pass)
+## Immediate next action (2026-08-02: refusal-channel convergence DONE and holding; next is C2, the
+breaking-window pass)
 
-**TWO PASSES ARE NOW UNMERGED, BY DECISION. This changes where C2 branches from.** ASC seams pass
-two sits on `asc-engine-seams-2` ([PR #16](https://github.com/glw907/cairn-cms/pull/16)), and phase
-C1 sits on `pre-beta-c1-seam-shape`, which is branched off it. `main` carries NEITHER. So **C2
-branches off `pre-beta-c1-seam-shape`**, never off `main`: a cold session branches off `main` by
-default and would build against an engine missing the `./cloudflare` subpath, `createD1AuditSink`,
-the corrected surface snapshot, and every C1 ruling. Both worktrees stay in place until they merge.
+**THE STACK IS COLLAPSED. `main` IS CURRENT.** PRs #16 (ASC seams pass two) and #17 (phase C1, the
+seam-shape pass) both merged to `main` on 2026-08-02. A cold session branches off `main` again by
+default, and `main` now carries the `./cloudflare` subpath, `createD1AuditSink`, the corrected
+surface snapshot, and every C1 ruling.
 
-**Phase C1, the seam-shape pass, is DONE and HOLDS UNPUBLISHED.** All five ROADMAP contract entries
-landed across twelve commits. The window (still pass two's `## Unreleased`, `release-size: minor`)
-now also carries C1. One entry has real consumer content: **a site's `App.Platform['env']` must
-intersect `CairnPlatformBindings`**, which was previously documented as a recommendation. The
-post-mortem is appended to `docs/superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md`.
+**Phase C1, the seam-shape pass, and the refusal-channel-convergence pass are both DONE and HOLD
+UNPUBLISHED.** C1 landed all five of its ROADMAP contract entries: the surface snapshot's
+nullability fix (`| undefined` was stripped unconditionally, corrected across 27 entries and 8
+subpaths), the env-genericity sweep (no type changed, scoped to a site that intersects
+`CairnPlatformBindings`), the function-color rulings, the refusal-channel documentation, and the
+supported-toolchain matrix plus `engines: { node: ">=22" }`. One C1 entry has real consumer
+content: **a site's `App.Platform['env']` must intersect `CairnPlatformBindings`**, previously only
+a recommendation. Its post-mortem is appended to
+`docs/superpowers/plans/2026-08-01-pre-beta-c1-seam-shape.md`.
 
-What C1 settled, in one line each:
+C1 also found, and deliberately did not fix, a defect this pass then closed: `AdminActionError`'s
+`status` never reached the browser, since SvelteKit derives a response status only from its own
+`HttpError`/`SvelteKitError`, so a plain `Error` subclass always rendered 500 regardless of the
+status it carried. **The refusal-channel-convergence pass converged `adminAction`'s two
+authorization refusals onto SvelteKit's own native shapes**: a missing editor now redirects to
+`/admin/login` (matching `requireSession` exactly), a CSRF mismatch throws `error(403, ...)`
+(logging the new `admin.action.csrf_rejected` event first), and `AdminActionError` stays exported
+but now means only the dev-only unaudited-action defect signal. The docs rewrite dropped the
+`handleError` requirement everywhere it was stated (the reference, the custom-admin-screen guide),
+and the showcase's `hooks.server.ts` had its `handleError` hook deleted entirely, restoring
+SvelteKit's default: the strongest demonstration that cairn needs no mapping. The window (still
+`## Unreleased`, `release-size: minor`) now carries the ASC seams pass two, C1, and this
+convergence pass together.
 
-1. **The surface snapshot stopped lying about nullability.** `normalizeSignature` stripped
-   `| undefined` unconditionally and `check-surface.mjs` imports it, so `| undefined` occurred ZERO
-   times in `api-surface.md`. The regen corrected 27 entries across 8 subpaths, return types
-   included. No reference page needed editing.
-2. **The env-genericity sweep changed no type**, and that conclusion is scoped: it holds for a site
-   that intersects `CairnPlatformBindings`, NOT for a bare `wrangler types` env. See below.
-3. **Function-color rulings** are recorded per seam. `render(md)` needed nothing: it has been
-   `Promise<string>` since `0.76.0`, and the ROADMAP entry claiming otherwise was five weeks stale.
-4. **Five refusal channels are documented** (the entry said two). The third, `requireOwner`/
-   `requireAccess` throwing SvelteKit-native `error()`, is the one the custom-screen guide teaches
-   first.
-5. **The supported-toolchain matrix** ships at `docs/reference/supported-toolchain.md`, plus
-   `engines: { node: ">=22" }`. The TypeScript floor is 5.0, forced by `const` type parameters on
-   the public surface, far below the `^6.0.3` the engine develops against.
+**NEXT: phase C2, now widened to the breaking-window pass** (ROADMAP, "The pre-beta pass series and
+the two-release shape"). The full agenda is consolidated at
+`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md` (DRAFT, adjudication pending): the
+rename set, the `locals` namespace policy, the subpath taxonomy, the event-shape trio, the
+env-genericity decision whole, the log-event vocabulary, the deprecated-alias sweep,
+`AdminActionError`'s residual identity, `SectionActionConfig.resolveDb`'s shape, the built-in
+actions' refusal pattern, and reserved vocabulary for the F features. The refusal-channel
+convergence above was filed as a C2 input; it is done and removed from the agenda's list, since it
+changed what `AdminActionError` means and the naming pass should not name a symbol mid-change, which
+is why this pass ran first.
 
-**The defect C1 found and deliberately did NOT fix, which C2 inherits.** `AdminActionError`'s
-`status` never reaches the browser: SvelteKit derives a response status only from its own
-`HttpError`/`SvelteKitError`, so a plain `Error` subclass always renders 500, and `handleError`
-receives the status as an input and cannot change it. A 403 authorization refusal is therefore
-indistinguishable from an engine fault in logs and monitoring. Not a security defect (the refusal
-still happens, fail-closed) and not urgent (the guard refuses both conditions pre-routing, so the
-branches rarely fire), but not something to carry into beta. The filed shape: converge the channel
-rather than document the workaround, with `adminAction`'s missing-editor branch throwing
-`redirect(303, '/admin/login')` and its CSRF branch throwing `error(403, ...)`. The security review
-argued specifically AGAINST adding an `isAdminActionError` guard, on the grounds that making the
-workaround comfortable removes the pressure to remove the need for it.
+**Sequencing, per the agenda:** this pass merges to `main` first, the only outstanding merge (both
+prior passes already landed); then, RECOMMENDED and pending Geoff's workflow opt-in, a read-only
+adversarial audit sweep over the settled surface appends confirmed findings to the agenda; then the
+Fable sitting runs over `docs/internal/api-surface.md` (C1 corrected it; it now records nullability
+for the first time) plus the agenda. Execution stays one pass, one diff, one `Consumers must:`
+list, the only genuinely breaking pass in the series.
 
-**NEXT: phase C2, the naming pass** (ROADMAP, "The pre-beta pass series and the two-release
-shape"). Its shape is unchanged: a Fable sitting over `docs/internal/api-surface.md` settles the
-rename set and the `locals` policy, then ONE execution pass lands every rename in one diff with one
-`Consumers must:` list. It is the only genuinely breaking pass in the series. Two things that are
-different now than when C2 was described:
-
-1. **The snapshot it reads is finally accurate.** That was C1's first task and the whole reason it
-   ran first. The sitting reads real nullability for the first time.
-2. **Four C2 carry-ins are filed in ROADMAP's Next tier**, and they are inputs to the sitting, not
-   separate work: the refusal-channel convergence above; the env-genericity decision whole (whether
-   the route factories become generic over `Env`, which is NOT free the way pass one's
-   `AdminActionEvent` fix was, since a site would have to write `createCairnAdmin<SiteEnv>(runtime)`
-   explicitly); the two near-identical log event names `admin.audit.sink_failed` and
-   `admin.action.audit_sink_failed`, both still unpublished so the rename is free; and a gate gap
-   where `check:reference:signatures` reads only fenced `ts` blocks, leaving a signature stated only
-   in a reference table ungated.
-
-**Resume prompt**, from `~/Projects/cairn-cms`: "Run the phase C2 naming sitting per `cairn-pass`.
-Read `docs/internal/api-surface.md` as the review document (C1 corrected it; it now records
-nullability). ROADMAP's Next tier carries the four C2 carry-ins C1 filed, which are inputs to the
-sitting rather than separate work. The sitting settles the rename set plus the `locals` namespace
-policy; execution is ONE pass landing every rename in one diff with one `Consumers must:` list.
-Branch the execution worktree off `pre-beta-c1-seam-shape` (NOT off `main`: pass two and C1 are both
-deliberately unmerged, so `main` lacks the `./cloudflare` subpath, `createD1AuditSink`, the corrected
-snapshot, and every C1 ruling). Hold unpublished at close unless a consumer needs it."
+**Resume prompt**, from `~/Projects/cairn-cms`: "Merge `refusal-channel-convergence` to `main` (both
+prior passes are already merged, so this is the only outstanding merge). Then, if Geoff has opted
+into a workflow, run the read-only adversarial audit sweep the C2 agenda recommends
+(`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`), appending confirmed findings to
+that document. Then run the C2 breaking-window sitting on Fable, reading
+`docs/internal/api-surface.md` plus the agenda. Branch the execution worktree off `main` (the stack
+is collapsed; no other branch to reach for). Execution is ONE pass landing every rename and
+adjudicated decision in one diff with one `Consumers must:` list. Hold unpublished at close unless a
+consumer needs it."
 
 **Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
 (history/revert, preview) slot against the standing template queue (the optical-centering ratchet,

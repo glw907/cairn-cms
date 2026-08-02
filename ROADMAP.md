@@ -695,18 +695,13 @@ the named human gates only):**
   together. `docs/internal/api-surface.md` (the `check:surface` snapshot) is the ready-made review
   document, and every rename lands while renames are still cheap. The single
   cheapest-now/dearest-later item in the pre-beta set.
-- **C2 input: converge `adminAction`'s refusal channel rather than only document it (filed by the
-  pre-beta C1 seam-shape pass's review fold, 2026-08-01).** `AdminActionError`'s `status` never
-  reaches the browser: SvelteKit derives a response status only from its own `HttpError`/
-  `SvelteKitError`, so a plain `Error` subclass always renders 500, and `handleError` receives that
-  computed status as an input it can't change. The security review's recommended shape:
-  `adminAction`'s missing-editor branch throws `redirect(303, '/admin/login')`, matching
-  `requireSession`; the CSRF branch throws `error(403, ...)`; and `AdminActionError` stays only for
-  the dev-only unaudited case, which genuinely is a 500. That deletes the `handleError`
-  requirement for the common branches rather than documenting it, at the cost of one
-  `Consumers must:` line. The review also argued against adding an exported `isAdminActionError`
-  guard for the interim: it would make the workaround comfortable and remove the pressure to
-  remove the need for it.
+- **The full C2 breaking-window agenda is consolidated at
+  [`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`](docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md).**
+  It widens C2's charter from "the naming pass" to "the breaking-window pass" and folds the rename
+  set, the `locals` namespace policy, and the three C2 inputs filed below into one adjudicated
+  document, so the sitting reads evidence rather than a session's recollection. A fourth C2 input
+  filed alongside these, converging `adminAction`'s refusal channel, has already shipped (the
+  `refusal-channel-convergence` pass) and is removed from this list.
 - **C2 input: the env-genericity decision, whole (filed by the pre-beta C1 seam-shape pass's
   review fold, 2026-08-01).** Whether `RequestContext`, `HandleInput`, and the remaining
   `AuthEnv`-pinned types should become generic over `Env` so a bare wrangler-generated env assigns

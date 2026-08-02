@@ -1,25 +1,11 @@
-import { AdminActionError, createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import type { Handle, HandleServerError } from '@sveltejs/kit';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import type { Handle } from '@sveltejs/kit';
 import { devBackendEnabled } from '$chassis/dev-gate';
 
-// Exporting handleError REPLACES SvelteKit's own default (a console.error), it does not layer on
-// top of it, so this hook logs first and unconditionally, before the AdminActionError branch.
-// Skipping that would leave every unexpected server error logged nowhere.
-//
-// adminAction's own guards (see the SvelteKit reference's "Refusal channels") throw
-// AdminActionError rather than one of SvelteKit's own recognized shapes, so an unhandled
-// instance would otherwise surface as a generic 500 with no useful message. This does not
-// change the transport status SvelteKit reports (still 500 for this channel); it shapes the
-// message a site's own error page renders instead of the framework's generic "Internal Error".
-// Any other error returns nothing, which leaves SvelteKit's own default error SHAPE in place
-// (still renders the generic message), but NOT its default logging, since exporting this hook
-// at all already replaced that.
-export const handleError: HandleServerError = ({ error }) => {
-  console.error(error);
-  if (error instanceof AdminActionError) {
-    return { message: error.message };
-  }
-};
+// No handleError hook: adminAction's own authorization refusals (see the SvelteKit reference's
+// "Refusal channels") throw SvelteKit's own redirect()/error() now, which SvelteKit already
+// renders correctly with no site mapping, so this hook has nothing left to do. SvelteKit's
+// default handleError (a console.error of every server error) stays in place instead.
 
 // The dev backend activates only behind devBackendEnabled, a build-foldable gate (see
 // $chassis/dev-gate.ts): a default `npm run build` folds this branch away, and its dynamic import,

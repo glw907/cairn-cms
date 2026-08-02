@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { fail } from '@sveltejs/kit';
+import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
@@ -211,5 +211,83 @@ describe('adminAction: the audit sink is fail-open', () => {
     );
     const [record] = spy.mock.calls[0] as [Record<string, unknown>];
     expect(record.detail).toBeUndefined();
+  });
+
+  it("propagates a sink that throws SvelteKit's own redirect(), rather than swallowing it into a log line", async () => {
+    const sink = vi.fn(() => {
+      redirect(303, '/somewhere');
+    });
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    let thrown: unknown;
+    try {
+      await action(event);
+    } catch (err) {
+      thrown = err;
+    }
+    expect(isRedirect(thrown)).toBe(true);
+  });
+
+  it("propagates a sink that throws SvelteKit's own error(), rather than swallowing it into a log line", async () => {
+    const sink = vi.fn(() => {
+      error(500, 'sink refused');
+    });
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    let thrown: unknown;
+    try {
+      await action(event);
+    } catch (err) {
+      thrown = err;
+    }
+    expect(isHttpError(thrown)).toBe(true);
+  });
+
+  it('logs a diagnostic string, never "[object Object]", when a sink throws a plain object', async () => {
+    const sink = vi.fn(() => {
+      throw { code: 'boom', detail: 'internal sink state' };
+    });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    await action(event);
+    const [record] = spy.mock.calls[0] as [Record<string, unknown>];
+    expect(record.error).not.toBe('[object Object]');
+    expect(record.error).toContain('boom');
+  });
+
+  it('does not fail the action when locals.auditSink is async and rejects, and still logs the failure', async () => {
+    const sink = vi.fn(async () => {
+      throw new Error('async sink exploded');
+    });
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const action = adminAction(async ({ ctx }) => {
+      ctx.audit({ action: 'approve', entity: 'signup', entityId: '42' });
+      return { done: true };
+    });
+    const event = makeEvent({ cookie: 'MATCH', csrfField: 'MATCH', auditSink: sink });
+    const result = await action(event);
+    expect(result).toEqual({ done: true });
+    // The rejection handler is attached fire-and-forget: flush the microtask queue so it has run.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.action.audit_sink_failed',
+        action: 'approve',
+        entity: 'signup',
+        entityId: '42',
+        editor: editor.email,
+        error: 'async sink exploded',
+      }),
+    );
   });
 });

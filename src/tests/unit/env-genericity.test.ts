@@ -15,10 +15,12 @@ import { createNavRoutes } from '../../lib/sveltekit/nav-routes.js';
 import { createAuthRoutes, type RequestResult } from '../../lib/sveltekit/auth-routes.js';
 import { createEditorRoutes } from '../../lib/sveltekit/editors-routes.js';
 import { healthLoad, type HealthData } from '../../lib/sveltekit/health.js';
+import { adminAction } from '../../lib/sveltekit/admin-action.js';
+import { createMediaRoute } from '../../lib/sveltekit/media-route.js';
 import type { CairnPlatformBindings, CairnMediaBindings } from '../../lib/sveltekit/platform-bindings.js';
 import type { AdminShellData } from '../../lib/sveltekit/content-routes-core.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { D1Database } from '@cloudflare/workers-types';
+import type { D1Database, SendEmail } from '@cloudflare/workers-types';
 import type { RequestEvent, ServerLoadEvent, ResolveOptions } from '@sveltejs/kit';
 
 // The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no
@@ -34,13 +36,21 @@ describe('env-genericity compile fixtures', () => {
     expect(typeof createAuthRoutes).toBe('function');
     expect(typeof createEditorRoutes).toBe('function');
     expect(typeof healthLoad).toBe('function');
+    expect(typeof adminAction).toBe('function');
+    expect(typeof createMediaRoute).toBe('function');
   });
 });
 
 /**
- * A realistic compliant site's Platform.env: the documented `CairnPlatformBindings &
- * CairnMediaBindings` intersection plus one site-specific binding, proving the sweep against the
- * shape a real `app.d.ts` declares rather than an ad hoc, deliberately-disjoint stand-in.
+ * A realistic COMPLIANT site's Platform.env: the documented `CairnPlatformBindings &
+ * CairnMediaBindings` intersection plus one site-specific binding. This proves the sweep's pins
+ * assign clean for a site that follows `platform-bindings.ts`'s own documented pattern, which
+ * every fixture below assumes. It proves NOTHING about a site whose `Platform.env` is built some
+ * other way, most importantly a bare `wrangler types`-generated `Env` sourced directly from
+ * `@cloudflare/workers-types` rather than through `CairnPlatformBindings`: see
+ * `BareWranglerSiteEnv` below, a deliberately-disjoint stand-in that fails to assign, and is the
+ * reason a site MUST intersect `CairnPlatformBindings` rather than hand-rolling a structurally
+ * similar env of its own.
  */
 type SiteEnv = CairnPlatformBindings & CairnMediaBindings & { APP_DB: D1Database };
 
@@ -54,6 +64,53 @@ type SiteRequestEvent = Omit<RequestEvent, 'platform'> & { platform: Readonly<{ 
 /** The same local override for a generated `PageServerLoad`/`LayoutServerLoad`'s event. */
 type SiteServerLoadEvent = Omit<ServerLoadEvent, 'platform'> & { platform: Readonly<{ env: SiteEnv }> | undefined };
 
+/**
+ * The KNOWN-INCOMPATIBLE case, deliberately failing (env-genericity finding 1, pre-beta C1 review
+ * pass). Not a stand-in this sweep proves compatible: it models a site whose `Platform.env` is
+ * built the way `wrangler types` actually generates it, straight from `@cloudflare/workers-types`,
+ * never intersected with cairn's own `CairnPlatformBindings`.
+ *
+ * Root cause: `@cloudflare/workers-types`'s `SendEmail.send` overload returns
+ * `Promise<EmailSendResult>` (`node_modules/@cloudflare/workers-types/index.d.ts`, the `SendEmail`
+ * interface), while `AuthEnv['EMAIL'].send` (`../../lib/auth/types.ts:69-86`) declares
+ * `Promise<void>`. `CairnPlatformBindings.EMAIL` (`../../lib/sveltekit/platform-bindings.ts:34`) is
+ * typed as `NonNullable<AuthEnv['EMAIL']>`, so a bare wrangler-generated `EMAIL` binding's wider
+ * return type is not assignable to the narrower one cairn declares.
+ */
+type BareWranglerSiteEnv = {
+  AUTH_DB: D1Database;
+  EMAIL: SendEmail;
+  PUBLIC_ORIGIN: string;
+  GITHUB_APP_PRIVATE_KEY_B64: string;
+};
+
+/**
+ * The tripwire: if this line ever stops erroring, `BareWranglerSiteEnv` has started assigning into
+ * `CairnPlatformBindings`, which means either `@cloudflare/workers-types` changed `SendEmail.send`'s
+ * return type or `AuthEnv['EMAIL'].send` did. Either way, `npm run check` fails on an unused
+ * `@ts-expect-error` (TS2578), which is the signal that this finding's constraint changed and the
+ * doc comments above need revisiting, not that the fixture is broken.
+ */
+function typeOnlyBareWranglerEnvIsIncompatible(bare: BareWranglerSiteEnv): void {
+  // @ts-expect-error known-incompatible: BareWranglerSiteEnv.EMAIL.send returns
+  // Promise<EmailSendResult> (@cloudflare/workers-types), not the Promise<void> AuthEnv and
+  // CairnPlatformBindings both declare. A site must intersect CairnPlatformBindings rather than
+  // hand-rolling a structurally similar env straight from @cloudflare/workers-types.
+  bare satisfies CairnPlatformBindings;
+}
+void typeOnlyBareWranglerEnvIsIncompatible;
+
+/**
+ * The tightened action-return shape (env-genericity finding 6, pre-beta C1 review pass): faithful
+ * to SvelteKit's own generated `Actions`, whose `Action` return is `MaybePromise<Record<string,
+ * any> | void>` (kit's own `OutputData` default), rather than the looser `unknown` that accepts
+ * any return, checked or not. `any`, not `unknown`, matches kit exactly: an interface return type
+ * with no explicit index signature (`HelpData`, `NavLoadData`, an `ActionFailure`) is not
+ * structurally assignable to `Record<string, unknown>`, the same reason kit's own default reaches
+ * for `any` here.
+ */
+type SiteActionReturn = Record<string, any> | void | Promise<Record<string, any> | void>;
+
 // createCairnAdmin: HIGHEST PRIORITY. Every documented site writes
 // `export const actions = admin.actions;`, structurally the same assignment that produced the
 // original AdminActionEvent bug this sweep follows up on.
@@ -61,9 +118,20 @@ function typeOnlyCairnAdminAssignability(): void {
   const admin = createCairnAdmin({} as CairnRuntime);
   admin.load satisfies (event: SiteServerLoadEvent) => Promise<AdminData>;
   admin.shellLoad satisfies (event: SiteServerLoadEvent) => Promise<{ shell: AdminShellData }>;
-  admin.actions satisfies Record<string, (event: SiteRequestEvent) => unknown>;
+  admin.actions satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyCairnAdminAssignability;
+
+// adminAction: the one seam the sweep ruled on with no fixture behind it (env-genericity finding
+// 2, pre-beta C1 review pass). Its returned function is typed `(event: AdminActionEvent<AuthEnv>)
+// => Promise<T>` via the default type parameter; this proves that assigns clean into a route's
+// generated `Actions`, on the same `CairnPlatformBindings` grounds as every pin above, never
+// because it "does not read event.platform" (see the corrected doc comment at admin-action.ts).
+function typeOnlyAdminActionAssignability(): void {
+  const action = adminAction(async () => ({ ok: true }) as Record<string, unknown>);
+  action satisfies (event: SiteRequestEvent) => SiteActionReturn;
+}
+void typeOnlyAdminActionAssignability;
 
 // createAuthGuard: prove the returned Handle assigns into sequence()'s own site-declared slot.
 // Kit's own `Handle` type is not parameterizable over Env, so SiteHandle mirrors its shape with
@@ -80,20 +148,21 @@ function typeOnlyAuthGuardAssignability(): void {
 void typeOnlyAuthGuardAssignability;
 
 // createContentRoutes: every returned load/action reads a ContentEvent (EventBase<BackendEnv>).
-// SiteContentEvent narrows SiteRequestEvent to what ContentEvent additionally requires: params as
-// a plain required record (kit's own params type is route-specific and always a subtype of that).
-type SiteContentEvent = Omit<SiteRequestEvent, 'params'> & { params: Record<string, string> };
-
+// Plain SiteRequestEvent covers it: with no generated `$app/types` in this repo, kit's own
+// `RequestEvent['params']` already resolves to `Record<string, string>` (verified directly:
+// `RequestEvent<AppLayoutParams<'/'>>`'s default falls back to that shape here), so a
+// params-narrowing override would be a no-op. A generated app narrows `params` per route instead,
+// always to a subtype of `Record<string, string>`, so this stays a faithful stand-in there too.
 function typeOnlyContentRoutesAssignability(): void {
   const routes = createContentRoutes({} as CairnRuntime);
-  routes satisfies Record<string, (event: SiteContentEvent) => unknown>;
+  routes satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyContentRoutesAssignability;
 
 // createNavRoutes: navLoad/navSave both read the same ContentEvent slot as content-routes.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({} as CairnRuntime);
-  nav satisfies Record<string, (event: SiteContentEvent) => unknown>;
+  nav satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyNavRoutesAssignability;
 
@@ -126,3 +195,15 @@ function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime
   healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;
+
+// createMediaRoute: excluded from the sweep proper (its public signature is kit's own ambient
+// RequestHandler, not a cairn-declared Env-parameterized type), but its body still casts
+// event.platform (env-genericity finding 6, pre-beta C1 review pass), so this closes the coverage
+// gap with the same SiteHandle-style local mirror createAuthGuard's fixture uses above.
+type SiteRequestHandler = (event: SiteRequestEvent) => Promise<Response> | Response;
+
+function typeOnlyMediaRouteAssignability(runtime: CairnRuntime): void {
+  const handler = createMediaRoute(runtime);
+  handler satisfies SiteRequestHandler;
+}
+void typeOnlyMediaRouteAssignability;

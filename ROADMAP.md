@@ -38,6 +38,13 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
   extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
   contract a developer builds on.
+- [ ] **The docs claims-verification audit has run** (Geoff, 2026-08-02): an adversarial sweep of the
+  whole docs corpus tracing every factual claim a page makes about engine behavior to the code, the
+  defect class no mechanical gate catches (the five-channels model, the `handleError` requirement that
+  never worked, and the falsified `csrf_rejected` log row all passed every gate). Workflow-shaped:
+  extract claims per page, verify each against source, fold what fails. Runs AFTER `beta.1` so its
+  inputs exist (stranger issues, the friction log, Topo's docs-effectiveness signal) and BEFORE
+  `1.0.0` ships; it is a blocking gate on the final release, not a someday sweep.
 - [x] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression initiative is done
   (the admin sweep, the starter-template fold, and the docs phase), so the surface a developer copies is
   native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.
@@ -93,7 +100,10 @@ release-one boundary; the passes are invariant.
   features in one window. The standing pipeline consumes it (the Waymark rebuilds, ASC's
   retrofit) — the one round of breaking changes.
 - **Phase P, polish and docs (non-breaking; internal order flexible):** P1 mechanical hardening
-  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep); P2
+  (ci-parity, the `commitFiles` test, the surface machine artifact, the error-message sweep, and a
+  small showcase route exercising `adminAction` and its converged refusal paths end to end, since
+  the showcase exercises neither today and a kit-version drift in action-thrown redirect/error
+  rendering would go uncaught); P2
   the zero-state pass; P3 viewport extremes; P4 sign-in touchpoints, with the keyboard/SR
   walkthrough as the attended session at phase end plus a fixes rider; P5 the
   `CairnMediaLibrary` split; P6 front-door docs (cold-reader, diagnostic-pair); P7 the
@@ -695,18 +705,13 @@ the named human gates only):**
   together. `docs/internal/api-surface.md` (the `check:surface` snapshot) is the ready-made review
   document, and every rename lands while renames are still cheap. The single
   cheapest-now/dearest-later item in the pre-beta set.
-- **C2 input: converge `adminAction`'s refusal channel rather than only document it (filed by the
-  pre-beta C1 seam-shape pass's review fold, 2026-08-01).** `AdminActionError`'s `status` never
-  reaches the browser: SvelteKit derives a response status only from its own `HttpError`/
-  `SvelteKitError`, so a plain `Error` subclass always renders 500, and `handleError` receives that
-  computed status as an input it can't change. The security review's recommended shape:
-  `adminAction`'s missing-editor branch throws `redirect(303, '/admin/login')`, matching
-  `requireSession`; the CSRF branch throws `error(403, ...)`; and `AdminActionError` stays only for
-  the dev-only unaudited case, which genuinely is a 500. That deletes the `handleError`
-  requirement for the common branches rather than documenting it, at the cost of one
-  `Consumers must:` line. The review also argued against adding an exported `isAdminActionError`
-  guard for the interim: it would make the workaround comfortable and remove the pressure to
-  remove the need for it.
+- **The full C2 breaking-window agenda is consolidated at
+  [`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`](docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md).**
+  It widens C2's charter from "the naming pass" to "the breaking-window pass" and folds the rename
+  set, the `locals` namespace policy, and the three C2 inputs filed below into one adjudicated
+  document, so the sitting reads evidence rather than a session's recollection. A fourth C2 input
+  filed alongside these, converging `adminAction`'s refusal channel, has already shipped (the
+  `refusal-channel-convergence` pass) and is removed from this list.
 - **C2 input: the env-genericity decision, whole (filed by the pre-beta C1 seam-shape pass's
   review fold, 2026-08-01).** Whether `RequestContext`, `HandleInput`, and the remaining
   `AuthEnv`-pinned types should become generic over `Env` so a bare wrangler-generated env assigns

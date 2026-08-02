@@ -254,10 +254,10 @@ matters once your own screen adds error handling. The `requireOwner(event)` call
 [preceding signups example](#gate-it-with-requiresession-requireeditor-or-requireowner) throws
 SvelteKit's own `error()`; the framework renders the correct status through your `+error.svelte`
 with nothing further to wire. `adminAction`'s own guards, the ones `createSectionAction` composes
-below, throw `AdminActionError` instead, a shape SvelteKit doesn't recognize, so an unhandled
-instance renders as a generic 500 until your `hooks.server.ts` adds a `handleError` that reads
-`.status` off it. `createSectionAction`'s own authorization and database-binding checks return
-`fail(...)`, which never throws at all and renders as inline form state on the page instead. See
+below, throw the same SvelteKit-native shapes, a `redirect()` for a missing session, an `error()`
+for a CSRF mismatch, so they need no `handleError` of your own either.
+`createSectionAction`'s own authorization and database-binding checks return `fail(...)` instead,
+which never throws at all and renders as inline form state on the page. See
 [Refusal channels](../reference/sveltekit.md#refusal-channels) for the full model.
 
 Writing the access-map check by hand at the top of every action is exactly the boilerplate

@@ -14,8 +14,8 @@ Its consumer sites (ecnordic-ski, 907-life) install `@glw907/cairn-cms` from the
 version range. The old `~/Projects/cairn/` meta-workspace and its symlink-dev loop are retired, and the
 library's own development proves changes against `examples/showcase`.
 
-## Immediate next action (2026-08-02: refusal-channel convergence DONE and holding; next is C2, the
-breaking-window pass)
+## Immediate next action (2026-08-02: the C2 audit sweep is DONE and appended to the agenda; next
+is the C2 sitting on Fable)
 
 **THE STACK IS COLLAPSED. `main` IS CURRENT.** PRs #16 (ASC seams pass two) and #17 (phase C1, the
 seam-shape pass) both merged to `main` on 2026-08-02. A cold session branches off `main` again by
@@ -57,28 +57,23 @@ convergence above was filed as a C2 input; it is done and removed from the agend
 changed what `AdminActionError` means and the naming pass should not name a symbol mid-change, which
 is why this pass ran first.
 
-**Sequencing, per the agenda:** the convergence pass merged to `main` 2026-08-02
-([PR #18](https://github.com/glw907/cairn-cms/pull/18), CI green), and the three merged worktrees of
-the pre-beta chain (seams two, C1, refusal convergence) are pruned. Geoff has opted into the
-workflow, so next is the read-only adversarial audit sweep over the settled surface, run from a
-fresh Opus 5 session (execution-shaped work; the Fable session that merged the PR handed off at this
-boundary). The sweep appends confirmed findings to the agenda; then the Fable sitting runs over
-`docs/internal/api-surface.md` (C1 corrected it; it now records nullability for the first time) plus
-the agenda. Execution stays one pass, one diff, one `Consumers must:` list, the only genuinely
-breaking pass in the series.
+**Sequencing, per the agenda:** the read-only adversarial audit sweep ran 2026-08-02 as the
+opted-in workflow (five Opus-pinned lenses over the settled surface; 46 raw findings, 42 after
+dedup, every one adversarially verified, 31 confirmed and 11 refuted). The confirmed findings are
+appended to the agenda spec under "Audit-sweep evidence (2026-08-02)", grouped by agenda item.
+Items 5 and 11 drew no findings; five findings fit no existing item and sit under "New findings".
+The sweep is records, not adjudication. Next the Fable sitting reads
+`docs/internal/api-surface.md` (C1 corrected it; it now records nullability for the first time)
+plus the full agenda, evidence included, and adjudicates every in-window item. Execution stays one
+pass, one diff, one `Consumers must:` list, the only genuinely breaking pass in the series.
 
-**Resume prompt** (Opus 5 session, from `~/Projects/cairn-cms`, on `main`): "Run the read-only
-adversarial audit sweep grounding the C2 breaking-window agenda
-(`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`). Geoff has opted into a workflow:
-parallel read-only lenses (SvelteKit idiom, API consistency, dead or accidental surface,
-doc-versus-code claims drift, cruft) over the settled surface (`docs/internal/api-surface.md`,
-`src/lib`, the package `exports` map, the published docs arms), each finding adversarially verified
-before it counts. Append confirmed findings to the agenda spec as evidence for the sitting (records,
-not adjudication), commit the updated agenda to `main`, and update this STATUS entry. Arm the
-standard workflow runaway guard. Afterward the C2 sitting runs on Fable, reading
-`docs/internal/api-surface.md` plus the agenda; its execution worktree branches off `main` (the
-stack is collapsed), lands ONE diff with one `Consumers must:` list, and holds unpublished at close
-unless a consumer needs it."
+**Resume prompt** (Fable planning sitting, from `~/Projects/cairn-cms`, on `main`): "Run the C2
+breaking-window sitting. Read
+`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md` in full, the audit-sweep evidence
+section included, plus `docs/internal/api-surface.md`. Adjudicate every in-window item (silence is
+not a decision) and write the execution plan. The sitting ends at plan approval; execution runs in
+a fresh Opus 5 session on a worktree off `main` (the stack is collapsed), lands ONE diff with one
+`Consumers must:` list, and holds unpublished at close unless a consumer needs it."
 
 **Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
 (history/revert, preview) slot against the standing template queue (the optical-centering ratchet,

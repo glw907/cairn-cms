@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a cloudflare export and a packaged audit sink (non-breaking)
+## Unreleased: a cloudflare export, a packaged audit sink, and the seam-shape contract settled (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
 Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the
@@ -100,6 +100,34 @@ truncates every bound field to a documented maximum. See
 
 Consumers must: nothing. Both additions are additive, and the `RateLimitLike` re-export keeps its
 existing shape and location on `/sveltekit`.
+
+A review pass across the whole seam contract settled a handful of long-standing questions, none
+of which changed an exported type or a route contract, but one of which names something you must
+check. The reference docs now state, as a requirement rather than a recommended style, that your
+`app.d.ts` must intersect [`CairnPlatformBindings`](../reference/sveltekit.md#cairnplatformbindings)
+into `App.Platform['env']`: typing your platform env any other way, hand-rolled bindings or a
+bare `wrangler types`-generated `Env` straight off `@cloudflare/workers-types`, fails to compile
+`export const actions = admin.actions` (and every other route factory assignment) rather than
+failing at runtime, because `@cloudflare/workers-types`' `SendEmail.send` returns
+`Promise<EmailSendResult>` while cairn's own `EMAIL.send` declares `Promise<void>`. If your
+`app.d.ts` already follows [Deploy to Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), this
+was already true for you and nothing changes.
+
+`adminAction`'s audit sink now holds its advertised fail-open promise at the engine's own call
+site: a hand-rolled `event.locals.auditSink` that throws, or one that rejects asynchronously, no
+longer fails the action it audited, and the failure logs the new `admin.action.audit_sink_failed`
+event instead of disappearing.
+
+The package now declares `"engines": { "node": ">=22" }`, and a new reference page, [Supported
+toolchain](../reference/supported-toolchain.md), states the versions cairn promises against and
+proves against, for `@sveltejs/kit`, `svelte`, `vite`, `typescript`, `node`, and TypeScript module
+resolution.
+
+Consumers must: intersect `CairnPlatformBindings` into `App.Platform['env']` if you haven't
+already, and be on Node 22 or later for your build toolchain (already the tutorial's stated
+requirement, now a declared one too). Nothing else in this window changes an exported type, a
+route contract, or a behavior you'd observe without hitting one of those two: a throwing or
+rejecting audit sink previously failed the action it audited and now does not.
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 

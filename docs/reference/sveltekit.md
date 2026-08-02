@@ -255,6 +255,12 @@ message every unrecognized thrown value gets. A site implements
 shapes the message a site's `+error.svelte` renders, but it does not change the transport status
 SvelteKit already computed, which stays `500` for this channel.
 
+Exporting a `handleError` **replaces** SvelteKit's own default hook (a `console.error` of every
+server error) rather than layering on top of it, so a site that adds only the `AdminActionError`
+mapping loses all default server-error logging silently, the opposite of this repo's logs-first
+diagnostic doctrine. Log first, unconditionally, before checking for `AdminActionError`, the way
+the showcase's own `examples/showcase/src/hooks.server.ts` does.
+
 [`createSectionAction`](#createsectionaction)'s own authorization, rate-limit, and
 database-binding branches return SvelteKit's `fail(...)`, an `ActionFailure`, never a throw. The
 result renders as inline form state on the page that submitted it, the same shape a validation
@@ -270,10 +276,18 @@ Two further channels exist inside the engine and are never written by a site dir
 built-in content actions redirect on failure (`redirect(303, '/admin/<concept>?error=...')`), the
 same native shape `requireSession`'s session gate uses. And [`createAuthGuard`](#createauthguard)
 itself refuses at the `Handle`, before any route's own load or action runs, returning a raw,
-branded `Response` for a CSRF, origin, HTTPS, or missing-binding failure. This last channel is why
-`adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal already covers
-every unsafe POST under `/admin/**`, so `adminAction`'s own check is rarely the one that actually
-fires.
+branded `Response` for a CSRF, origin, HTTPS, missing-binding, or dev-backend-in-production
+failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a deployed runtime, so a
+build that leaked its dev fixture fails loud rather than serving it). This last channel is why
+`adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal already
+covers every unsafe POST under `/admin/**` whose content type is one of the three a browser can
+send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
+`multipart/form-data`, `text/plain`), not literally every unsafe POST; a JSON POST is not
+screened by this check. That is not a gap in practice: those three are exactly the content types
+a browser can forge cross-origin without a preflight the site never answers, and SvelteKit itself
+rejects a non-form-content-type action POST with a 415 before the action ever runs. It does mean
+this section is not license to hand-roll a JSON admin endpoint under the same protection. So
+`adminAction`'s own check is rarely the one that actually fires.
 
 ### `adminAction`
 
@@ -314,20 +328,32 @@ Every preceding branch that refuses the request throws [`AdminActionError`](#typ
 SvelteKit's own recognized shapes (see [Refusal channels](#refusal-channels)). A site implements
 [`handleError`](https://svelte.dev/docs/kit/hooks#Shared-hooks-handleError) to read `.status` and
 `.message` off it and shape a legible response; without one, an unhandled `AdminActionError`
-surfaces as a generic 500. A site building on [`createSectionAction`](#createsectionaction) still
+surfaces as a generic 500. Exporting one replaces SvelteKit's own default `handleError` (a
+`console.error` of every server error) rather than adding to it, so log first, unconditionally,
+the way [Refusal channels](#refusal-channels) above shows, or the site loses all default
+server-error logging silently. A site building on [`createSectionAction`](#createsectionaction) still
 needs this `handleError` for `adminAction`'s own three throwing guards underneath it; only that
 factory's own authorization, rate-limit, and binding branches return `fail(...)` instead.
 
 [`AdminActionAuditSink`](#adminactionauditsink) is deliberately synchronous and fire-and-forget: it
 returns `void`, and `ctx.audit` never reads or awaits that return value. The engine holds the
-seam's fail-open promise at its own call site, not merely by the sink's own discipline: a sink that
-throws synchronously does not fail the action. `ctx.audit` catches the throw itself, so the
-handler's own result still returns exactly as if the sink had succeeded, and the failure logs
-`admin.action.audit_sink_failed` (see [log events](./log-events.md)) rather than disappearing. This
-is a distinct event from `createD1AuditSink`'s own `admin.audit.sink_failed`: that one covers the
-packaged sink's internal persist failure, which the packaged sink already catches before it can
-reach the engine's call site, while `admin.action.audit_sink_failed` covers any sink, hand-rolled or
-otherwise, that throws synchronously at the point `ctx.audit` invokes it.
+seam's fail-open promise at its own call site, not merely by the sink's own discipline, and it
+holds it against both failure shapes: a sink that throws synchronously, and a sink that returns a
+rejecting promise. The rejecting case is reachable in practice, not theoretical: the seam's
+`(record) => void` type admits an async function through void-return bivariance, the same pressure
+that writes a sink following the `waitUntil` advice in [add a custom admin
+screen](../guides/add-a-custom-admin-screen.md#wire-the-auditsink). `ctx.audit` catches the
+synchronous throw directly and attaches a fire-and-forget rejection handler to a promise-returning
+result, so the handler's own result still returns exactly as if the sink had succeeded either way,
+and the failure logs `admin.action.audit_sink_failed` (see [log events](./log-events.md)) rather
+than disappearing. The catch rethrows SvelteKit's own `redirect()`/`error()` untouched instead of
+logging them: both are plain classes, not `Error` instances, so a sink built on one of those
+control-flow primitives (a hand-rolled auth check inside a sink, say) is never swallowed into a
+log line the site never sees. This is a distinct event from `createD1AuditSink`'s own
+`admin.audit.sink_failed`: that one covers the packaged sink's internal persist failure, which the
+packaged sink already catches before it can reach the engine's call site, while
+`admin.action.audit_sink_failed` covers any sink, hand-rolled or otherwise, that throws or rejects
+at the point `ctx.audit` invokes it.
 
 ```ts
 // src/routes/admin/club/events/[id]/+page.server.ts
@@ -1575,5 +1601,5 @@ imports the matching `*Data` type to type its `data` prop.
 | `HandleInput` | Extension API | `interface HandleInput { event: RequestContext; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input. |
 | `BackendEnv` | Extension API | `interface BackendEnv { GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker secret carrier the backend provider's `connect` reads to mint the GitHub App token; it also types the `healthLoad` event env. |
 | `AuthEnv` | Extension API | `interface AuthEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; EMAIL?: { send(message): Promise<void> }; CAIRN_DEV_BACKEND?: string \| boolean }` | The Cloudflare env shape the auth and email bindings live on: the D1 session store, the canonical confirmation-link origin, the Email Sending binding, and the `CAIRN_DEV_BACKEND` tripwire flag the guard reads. Every member is optional, since a test or a partial handler builds one piece at a time; a site's `app.d.ts` names {@link CairnPlatformBindings} instead, which requires them. The `EMAIL.send` message shape mirrors `MagicLinkMessage`: the five required fields, plus optional `cc`, `bcc`, a single-address `replyTo`, and `attachments`, widening the Email Sending API surface, live-verified 2026-07-07. |
-| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: NonNullable<AuthEnv['EMAIL']>; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional), so a forgotten binding fails `app.d.ts` at compile time instead of surfacing as a runtime `config.bindings-missing` error; `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
+| <a id="cairnplatformbindings"></a>`CairnPlatformBindings` | Extension API | `interface CairnPlatformBindings { AUTH_DB: D1Database; EMAIL: NonNullable<AuthEnv['EMAIL']>; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }` | The Cloudflare bindings and vars every cairn site's Worker needs. Every member but `ANTHROPIC_API_KEY` is required (not optional). **A site's `app.d.ts` must intersect this type into `App.Platform['env']`; this is a requirement, not a recommended style.** A site that instead types `App.Platform['env']` some other way, hand-rolled bindings or a bare `wrangler types`-generated `Env` straight off `@cloudflare/workers-types`, doesn't fail at a forgotten-binding property; it fails to compile the assignment every documented site writes, `export const actions = admin.actions;` (and every other route factory's return), as a type error, never a runtime failure. The cause: `@cloudflare/workers-types`' `SendEmail.send` returns `Promise<EmailSendResult>`, while `AuthEnv['EMAIL'].send` (which this type's `EMAIL` member narrows to) declares `Promise<void>`, so the two shapes aren't assignable. The fix is the intersection below; don't hand-roll the `EMAIL` binding shape from `@cloudflare/workers-types`. `ANTHROPIC_API_KEY` stays optional since only the opt-in tidy action reads it. The GitHub App's id and installation id aren't runtime bindings: the adapter passes them as compile-time config to `githubApp({ appId, installationId })`, and only the private key names a Worker secret this type carries. `/sveltekit` is the canonical home for this and the other binding-shaped types; intersect it into `App.Platform.env` (`/ambient` augments only `App.Locals`, never `App.Platform`, since a second `Platform` declaration would collide with a site's own through interface merging): `env: CairnPlatformBindings & { /* the site's own bindings */ }`. A media-enabled site also intersects `CairnMediaBindings`. |
 | <a id="cairnmediabindings"></a>`CairnMediaBindings` | Extension API | `interface CairnMediaBindings { MEDIA_BUCKET: R2Bucket }` | The R2 binding a media-enabled site adds to its `Platform.env` intersection, split from `CairnPlatformBindings` since `MEDIA_BUCKET` exists only when the adapter's `assets` block turns media on: `env: CairnPlatformBindings & CairnMediaBindings & { /* the site's own bindings */ }`. |

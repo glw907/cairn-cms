@@ -152,9 +152,14 @@ The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates 
 it. The guard sets `event.locals.editor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
 and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
-App credentials); type `App.Platform.env` by intersecting
-[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) rather than restating each one by
-hand, so a binding a site forgets to wire fails at compile time:
+App credentials); intersecting
+[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) into `App.Platform.env` is
+required, not merely the tidier way to type it. A site that types `App.Platform.env` any other
+way, hand-rolled bindings or a bare `wrangler types`-generated `Env` straight off
+`@cloudflare/workers-types`, fails to compile `export const actions = admin.actions` below rather
+than surfacing at runtime, because `@cloudflare/workers-types`' `SendEmail.send` returns
+`Promise<EmailSendResult>` while the auth env's `EMAIL.send` declares `Promise<void>`. See
+[`CairnPlatformBindings`](./sveltekit.md#cairnplatformbindings) for the full requirement:
 
 ```ts
 // src/app.d.ts

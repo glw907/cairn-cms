@@ -47,7 +47,10 @@ about a consumer. The consumer-facing floor comes from Vite 8 and SvelteKit 2, b
 already require a current Node to build; Node 22 is stated explicitly because it is already the
 published requirement in the
 [tutorial](../tutorial/build-your-first-cairn-site.md), and the `engines.node` field in
-`package.json` now enforces it at install time.
+`package.json` now gives npm something to check against. That check is a warning, not an install
+block: `npm install` on an older Node prints an `EBADENGINE` notice naming the mismatch, and
+installs anyway, unless the consumer's own `.npmrc` sets `engine-strict=true`, which turns the
+same mismatch into a hard install failure.
 
 ## TypeScript module resolution
 

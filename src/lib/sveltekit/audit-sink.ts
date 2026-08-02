@@ -54,7 +54,9 @@ export function createD1AuditSink(
     // Parameterized deliberately: never interpolate audit content into the SQL string, however
     // tempting a template-string simplification looks later.
     const insert = db
-      .prepare('INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?, ?, ?, ?, ?)')
+      .prepare(
+        'INSERT INTO audit_log (actor, action, entity, entity_id, detail) VALUES (?, ?, ?, ?, ?)',
+      )
       .bind(actor, action, entity, entityId, detail)
       .run()
       .catch((error: unknown) => {

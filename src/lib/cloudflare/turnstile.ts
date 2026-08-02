@@ -72,13 +72,9 @@ export async function verifyTurnstile(
     return false;
   }
 
-  let body: unknown;
-  try {
-    body = await res.json();
-  } catch {
-    log.warn('turnstile.verify_failed', { reason: 'unparseable' });
-    return false;
-  }
+  // A body that will not parse and a body of the wrong shape are one refusal, so a parse failure
+  // becomes undefined and falls into the shape guard below rather than returning on its own.
+  const body: unknown = await res.json().catch(() => undefined);
   if (!isSiteverifyBody(body)) {
     log.warn('turnstile.verify_failed', { reason: 'unparseable' });
     return false;

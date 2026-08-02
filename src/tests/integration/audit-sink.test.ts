@@ -11,28 +11,42 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM audit_log')]);
 });
 
-async function selectRows() {
+interface AuditRow {
+  actor: string;
+  action: string;
+  entity: string;
+  entity_id: string | null;
+  detail: string | null;
+  created_at: string;
+}
+
+async function selectRows(): Promise<AuditRow[]> {
   const { results } = await db
-    .prepare('SELECT actor, action, entity, entity_id, detail, created_at FROM audit_log ORDER BY id')
-    .all<{ actor: string; action: string; entity: string; entity_id: string | null; detail: string | null; created_at: string }>();
+    .prepare(
+      'SELECT actor, action, entity, entity_id, detail, created_at FROM audit_log ORDER BY id',
+    )
+    .all<AuditRow>();
   return results;
+}
+
+/** Persist one record through the sink, taking the insert promise from `waitUntil` to await it. */
+async function persist(record: AdminActionAuditRecord): Promise<void> {
+  let pending: Promise<unknown> | undefined;
+  createD1AuditSink(db, (p) => {
+    pending = p;
+  })(record);
+  await pending;
 }
 
 describe('createD1AuditSink against a real D1', () => {
   it('inserts a record and the database populates created_at', async () => {
-    const record: AdminActionAuditRecord = {
+    await persist({
       editor: 'ed@x.dev',
       action: 'approve',
       entity: 'event',
       entityId: 'evt-1',
       detail: 'approved for the fall season',
-    };
-    let pending: Promise<unknown> | undefined;
-    const sink = createD1AuditSink(db, (p) => {
-      pending = p;
     });
-    sink(record);
-    await pending;
 
     const rows = await selectRows();
     expect(rows).toHaveLength(1);
@@ -48,12 +62,7 @@ describe('createD1AuditSink against a real D1', () => {
   });
 
   it('inserts entity_id and detail as null when the record omits them', async () => {
-    let pending: Promise<unknown> | undefined;
-    const sink = createD1AuditSink(db, (p) => {
-      pending = p;
-    });
-    sink({ editor: 'ed@x.dev', action: 'sign-in', entity: 'session' });
-    await pending;
+    await persist({ editor: 'ed@x.dev', action: 'sign-in', entity: 'session' });
 
     const rows = await selectRows();
     expect(rows).toHaveLength(1);

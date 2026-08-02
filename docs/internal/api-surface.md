@@ -128,7 +128,16 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/ambient`
 
-- `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink }
+- `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }
+
+## `/auth-crypto`
+
+- `cookieName`: (base: string, secure: boolean) => string
+- `generateCsrfToken`: () => string
+- `generateSessionId`: () => string
+- `generateToken`: () => string
+- `hashToken`: (token: string) => Promise<string>
+- `tokensMatch`: (a: string, b: string) => boolean
 
 ## `/auth-store`
 
@@ -285,14 +294,14 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/sveltekit`
 
-- `adminAction`: <T>(handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent) => Promise<T>
+- `adminAction`: <T>(handler: (args: { event: AdminActionEvent<AuthEnv>; form: FormData; ctx: AdminActionContext }) => Promise<T>, deps?: AdminActionDeps) => (event: AdminActionEvent<AuthEnv>) => Promise<T>
 - `AdminActionAudit`: { action: string; entity: string; entityId?: string | number; detail?: string }
 - `AdminActionAuditRecord`: AdminActionAudit & { editor: string }
 - `AdminActionAuditSink`: (record: AdminActionAuditRecord) => void
 - `AdminActionContext`: { editor: Editor; audit: (record: AdminActionAudit) => void }
 - `AdminActionDeps`: { isDev?: boolean }
 - `AdminActionError`: typeof AdminActionError
-- `AdminActionEvent`: { cookies: CookieJar; locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink }; url: URL; request: Request; platform?: PlatformContext<AuthEnv> }
+- `AdminActionEvent`: { cookies: CookieJar; locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; url: URL; request: Request; platform?: PlatformContext<Env> }
 - `AdminData`: { view: "login"; page: { siteName: string; error: string | null; csrf: string } } | { view: "confirm"; page: { token: string; siteName: string; error: string | null; csrf: string } } | { view: "list"; page: ListData } | { view: "edit"; page: EditData } | { view: "editors"; page: { editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] } } | { view: "nav"; page: NavLoadData } | { view: "media"; page: MediaLibraryData } | { view: "settings"; page: SettingsData } | { view: "vocabulary"; page: VocabularyLoadData } | { view: "help"; page: HelpData } | { view: "welcome"; page: WelcomeData }
 - `AdminNavConfig`: (AdminNavEntry | AdminNavSection)[]
 - `AdminNavEntry`: { label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean }
@@ -319,6 +328,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `createEditorRoutes`: (opts?: { roles?: RolesDeclaration }) => { editorsLoad: (event: RequestContext) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>; addEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>; removeEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>; setRoleAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }> }
 - `createMediaRoute`: (runtime: CairnRuntime) => RequestHandler
 - `createNavRoutes`: (runtime: CairnRuntime) => { navLoad: (event: ContentEvent) => Promise<NavLoadData>; navSave: (event: ContentEvent) => Promise<never> }
+- `createSectionAction`: <Env, Db>(config: SectionActionConfig<Env, Db>) => <T>(handler: (args: { event: AdminActionEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>, opts: SectionActionOptions) => (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>
 - `DeleteRefusal`: { error: string; inboundLinks: InboundLink[]; inboundKind?: "link" | "include"; id: string }
 - `EditData`: { conceptId: string; id: string; label: string; fields: NamedField[]; frontmatter: { [x: string]: unknown }; body: string; title: string; isNew: boolean; saved: boolean; renamed: boolean; error: string | null; slug: string; linkTargets: LinkTarget[]; fragmentTargets: FragmentTarget[] | null; routable: boolean; mediaTargets: { [x: string]: { slug: string; ext: string; contentType: string } }; mediaLibrary: { [x: string]: MediaLibraryEntry }; inboundLinks: InboundLink[]; pending: boolean; published: boolean; publishedFlash: boolean; publishActions: PublishActionLink[]; discardedFlash: boolean; preview: ResolvedPreview | null; spellcheckDictionary: string; siteDictionary: string[]; tidy: { enabled: boolean; model: string; conventions: TidyConventions }; advisories: AdvisoryNotice[]; orphanTags: string[] }
 - `EngineScreenId`: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {})
@@ -345,6 +355,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `PublishActionEntry`: { label: string; href: string; concepts?: string[] }
 - `PublishActionLink`: { label: string; href: string }
 - `PublishActionsConfig`: PublishActionEntry[]
+- `RateLimitLike`: { limit: (options: { key: string }) => Promise<{ success: boolean }> }
 - `RenameFailure`: { error: string }
 - `RequestContext`: { cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; url: URL; request: Request; locals: { editor?: Editor | null; backend?: Backend; cairnAccess?: AccessMap }; platform?: PlatformContext<AuthEnv> }
 - `RequestResult`: { status: "sent"; sent: true } | { status: "send_error"; sent: false } | { status: "throttled"; sent: false }
@@ -363,6 +374,9 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `resolveNavLayout`: (opts: ResolveNavLayoutOptions) => ResolvedNavLayout
 - `ResolveNavLayoutOptions`: { layout: NavLayout; adminNav: ResolvedNavItem[]; concepts: { id: string; label: string; routing?: { dated: boolean } }[]; navMenuLabel: string | null; access?: AccessMap; editor: Editor }
 - `SaveFailure`: { error: string; brokenLinks: string[]; body: string }
+- `SectionActionConfig`: { resolveDb: (env: Env) => Db; rateLimit?: { resolve: (env: Env) => RateLimitLike; key: (ctx: AdminActionContext) => string; message?: string } }
+- `SectionActionContext`: AdminActionContext & { db: NonNullable<Db> }
+- `SectionActionOptions`: { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }
 - `SettingsData`: { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult | "missing"; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string | null }
 - `UploadResult`: { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }
 - `validateNavLayout`: (layout: NavLayout, ctx: { conceptIds: string[]; navMenuConfigured: boolean; roleNames: string[]; hasAdminNav: boolean }) => void

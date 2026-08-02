@@ -48,4 +48,8 @@ export type CairnLogEvent =
   | 'tidy.empty'
   | 'admin.action.audited'
   | 'admin.action.unaudited'
-  | 'admin.action.failed';
+  | 'admin.action.failed'
+  | 'admin.action.rate_limit_absent'
+  | 'admin.action.rate_limit_failed'
+  | 'admin.action.rate_limited'
+  | 'admin.action.misconfigured';

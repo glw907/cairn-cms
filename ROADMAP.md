@@ -1040,3 +1040,9 @@ the named human gates only):**
 - **A strong/gentle CTA pair in the starter template (DaisyUI Aura).** The template could offer a
   developer two call-to-action treatments to choose from: a strong one using DaisyUI's Aura animated glow
   and a gentle one without. Template only. The admin interface stays restrained and never uses Aura.
+- **Export `applySecurityHeaders` for a second audience.** `createAuthGuard` applies cairn's hardened
+  admin response-header set only under `/admin`; a site's second authenticated audience built on
+  `./auth-crypto` (a member portal, an offer-token flow) has no exported way to apply the same set to
+  its own responses and reimplements it by hand. Filed by the 2026-08-01 ASC engine-seams adversarial
+  review as a promotion candidate rather than adopted in that pass; take it up when a second audience
+  actually needs it.

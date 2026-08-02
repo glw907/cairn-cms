@@ -67,6 +67,13 @@ export {
   type AdminActionDeps,
   type AdminActionEvent,
 } from './admin-action.js';
+export {
+  createSectionAction,
+  type RateLimitLike,
+  type SectionActionConfig,
+  type SectionActionOptions,
+  type SectionActionContext,
+} from './section-action.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { RequestContext, CookieJar, HandleInput } from './types.js';

@@ -11,12 +11,12 @@
 // mutating action, which the engine has no other hook for.
 import { isActionFailure } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
-import { csrfCookieName } from '../auth/crypto.js';
-import { tokensMatch } from './csrf.js';
+import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
 import type { CookieJar, EventBase } from './types.js';
 import type { AuthEnv } from '../auth/types.js';
+import type { AccessMap } from '../auth/access.js';
 
 /** One audit-log record a mutating admin action must emit through `ctx.audit`. */
 export interface AdminActionAudit {
@@ -36,10 +36,17 @@ export type AdminActionAuditRecord = AdminActionAudit & { editor: string };
 /** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 
-/** The minimal event shape `adminAction` reads: enough to verify CSRF, the editor, and the sink. */
-export interface AdminActionEvent extends EventBase<AuthEnv> {
+/**
+ * The minimal event shape `adminAction` reads: enough to verify CSRF, the editor, and the sink.
+ * Generic over the platform env so `createSectionAction`'s produced wrapper (`./section-action.js`)
+ * stays assignable to a route's generated `Actions` when a site's own `App.Platform['env']` names
+ * its own bindings; the default preserves every existing consumer's meaning, since `adminAction`
+ * itself never reads `event.platform`. `locals.cairnAccess` mirrors what `EventBase` already
+ * carries, typed here so a wrapper built on this event can read it without a cast.
+ */
+export interface AdminActionEvent<Env = AuthEnv> extends EventBase<Env> {
   cookies: CookieJar;
-  locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink };
+  locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap };
 }
 
 /** What a wrapped handler receives: the verified editor and a bound audit emitter. */

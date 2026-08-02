@@ -283,6 +283,125 @@ export const actions = {
 };
 ```
 
+### `createSectionAction`
+
+Stability tier: Extension API.
+
+```ts
+declare function createSectionAction<Env, Db>(
+  config: SectionActionConfig<Env, Db>,
+): <T>(
+  handler: (args: { event: AdminActionEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
+  opts: SectionActionOptions,
+) => (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+```
+
+Build a whole section's guarded action wrapper in one call, the enforcement every site-built
+admin section otherwise hand-rolls: SvelteKit dispatches a matched action directly, with no
+ancestor layout `load` run first, so a page's own guard never runs before a POST to one of its
+actions. `createSectionAction` composes [`adminAction`](#adminaction) (editor identity, CSRF,
+the single form read, the audit contract) with the same access-map check
+[`requireAccess`](#requireaccess) runs, an optional rate limit, and the section's own database
+binding, so a section's own actions need no hand-rolled precondition.
+
+The config is site-fixed, called once per section: `config.resolveDb` reads the section's own
+binding off the platform env, and `config.rateLimit`, when set, names the binding and the
+per-call key. The returned wrapper is called once per action, with the call-site's own
+`opts: { action, entity, target?, ownerOnly?, deniedMessage? }`, `action` and `entity` reused
+verbatim as the audit verbs on every denial too, so a refused attempt reads in the audit log
+like the write it was refused from. `target` defaults to `event.url.pathname`; a route serving
+more than one section, or any route with a rest parameter, must declare it explicitly, since
+SvelteKit dispatches actions by `?/name` while the access map matches paths, and on a catch-all
+route the pathname is attacker-chosen. `ownerOnly` requires owner capability on top of the map
+check, never instead of it.
+
+`Env` does not infer from `resolveDb`'s parameter alone; annotate it, as the snippet below
+does, or pass explicit type arguments, else it collapses to `{}` and every downstream binding
+read stops typechecking usefully.
+
+Check order, refusals returned as SvelteKit `fail(...)`, fail-closed at every step but the rate
+limit, which deliberately degrades to open. Authorization runs before the database-binding
+check: a session the access map refuses learns nothing about whether the section's own database
+is deployed:
+
+1. `adminAction` resolves the editor, verifies CSRF, and reads the form once. Its own guards
+   throw `AdminActionError`, not a `fail()`, so a site maps it in `handleError`; only this
+   factory's own branches below render as form failures.
+2. The rate limit, when configured: an unresolved binding logs `admin.action.rate_limit_absent`
+   and degrades to open (never blocks); a `key()` or `limit()` call that throws logs
+   `admin.action.rate_limit_failed` and degrades to open the same way, so a forgotten
+   `[[ratelimits]]` block reads distinctly from a transient binding error rather than either one
+   being a silent bypass. A present binding over its limit logs `admin.action.rate_limited` and
+   returns `fail(429)`. This branch calls no `ctx.audit`: a limiter denial is back-pressure, not
+   a domain-state change.
+3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
+   `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route.
+   Only [`createAuthGuard`](#createauthguard) may write `locals.editor` and `locals.cairnAccess`,
+   and it must be the last handle in the sequence to set them. This check runs before
+   authorization out of necessity (a route cannot authorize against a map that was never
+   attached) and leaks nothing per-editor: it is identical for every session.
+4. `hasAccessRule` false audits `'rejected: no access rule'` and returns `fail(403)`, mirroring
+   `requireAccess` exactly, owner included: **a section path must carry an access-map rule**, or
+   every call through it refuses. The section's layout `load` must call `requireAccess` too, so
+   reads and writes gate on the same fail-closed predicate and a denied POST's page render
+   exposes nothing the load would already have refused.
+5. `canReach` false, or `opts.ownerOnly` set against a non-owner session, audits
+   `'rejected: role not admitted'` / `'rejected: not owner'` and returns `fail(403)`.
+6. `config.resolveDb` returning `null` or `undefined` audits `'rejected: database not bound'`,
+   logs `admin.action.misconfigured`, and returns `fail(500)`: a deployment misconfiguration, not
+   a denial. This runs last, so a refused session's attempt always audits as a denial, never as a
+   config fault that leaks a deployment detail.
+7. The handler runs once with `ctx: { ...ctx, db }`, `db` narrowed to `NonNullable<Db>`.
+
+The three 403 branches share one default message and the two 500 branches another
+(`deniedMessage` overrides the 403 copy only), so a session learns no deployment or gating
+detail from the response; the branch identity lives in the audit `detail` and the structured
+log. All three 403 branches also emit the guard's own `auth.access.denied` (see [log
+events](./log-events.md)), so a site alerting on load denials covers POST denials with the same
+query, and both 500 branches emit `admin.action.misconfigured`. A denial's own audit record
+carries no `entityId` (the refused write never named one); a handler's own `ctx.audit` call
+should, when its entity has one. `createSectionAction` never guards a POST that reaches the
+section through SvelteKit remote functions, only a form action's own POST: a remote function
+call never dispatches through `Actions` at all, and it also bypasses the admin guard's own CSRF
+check (that check runs on `Actions` dispatch too), so a site that adds a remote function under
+`/admin` owns that verification itself, with no seam here to lean on.
+
+The rate-limit `key` must carry an actor-scoped, normalized component (the editor's email,
+lowercased), never the bare request path alone, and one binding backs one shared budget across
+every action that reads it, not a budget per action; the limiter runs after `adminAction`'s own
+form read, so it never bounds the cost of parsing the request body.
+
+`Env` is your site's `App.Platform['env']` in a real route; the example below names the section's
+own binding shape (`SectionEnv`) standalone, so the resolver's annotation is explicit either way:
+
+```ts
+// src/routes/admin/club/events/[id]/+page.server.ts
+import { createSectionAction, type RateLimitLike } from '@glw907/cairn-cms/sveltekit';
+import type { D1Database } from '@cloudflare/workers-types';
+
+interface SectionEnv {
+  SECTION_DB: D1Database;
+  SECTION_RATE_LIMIT?: RateLimitLike;
+}
+
+const sectionAction = createSectionAction<SectionEnv, D1Database>({
+  resolveDb: (env: SectionEnv | undefined) => env?.SECTION_DB,
+  rateLimit: {
+    resolve: (env: SectionEnv | undefined) => env?.SECTION_RATE_LIMIT,
+    key: (ctx) => `section-action:${ctx.editor.email}`,
+  },
+});
+
+export const actions = {
+  approve: sectionAction(async ({ form, ctx }) => {
+    const id = String(form.get('id'));
+    await ctx.db.prepare('update event set approved = 1 where id = ?').bind(id).run();
+    ctx.audit({ action: 'approve', entity: 'event', entityId: id });
+    return { ok: true };
+  }, { action: 'approve', entity: 'event' }),
+};
+```
+
 ## Per-route factories (advanced)
 
 The four factories below are the advanced per-route seam. `createCairnAdmin` wraps them, so a
@@ -1234,7 +1353,11 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
 | `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
 | <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. Optional; every emit logs `admin.action.audited` regardless. |
-| `AdminActionEvent` | Extension API | `interface AdminActionEvent { url: URL; request: Request; cookies: CookieJar; locals: { editor?: Editor \| null; auditSink?: AdminActionAuditSink } }` | The minimal event shape `adminAction` reads: enough to verify CSRF, resolve the editor, and reach the site's optional audit sink. A real SvelteKit `RequestEvent` satisfies it. |
+| `AdminActionEvent` | Extension API | `interface AdminActionEvent<Env = AuthEnv> { url: URL; request: Request; cookies: CookieJar; locals: { editor?: Editor \| null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: { env?: Env } }` | The minimal event shape `adminAction` reads: enough to verify CSRF, resolve the editor, reach the site's optional audit sink, and (since `createSectionAction`) read the guard's attached access map. Generic over the platform env, `Env`, defaulting to `AuthEnv` so every existing call site keeps today's meaning; a site building on `createSectionAction` passes its own `App.Platform['env']`. A real SvelteKit `RequestEvent` satisfies it. |
+| <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`createSectionAction`](#createsectionaction) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. |
+| <a id="sectionactionconfig"></a>`SectionActionConfig` | Extension API | `interface SectionActionConfig<Env, Db> { resolveDb: (env: Env \| undefined) => Db \| undefined; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key: (ctx: AdminActionContext) => string; message?: string } }` | Site-fixed configuration for one [`createSectionAction`](#createsectionaction) factory, called once per section: the DB binding resolver (`undefined` fails the action closed with a 500) and the optional rate limit, degrade-to-open. |
+| <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, reused verbatim on every denial, the optional authorization `target` override (defaults to `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
+| <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = AdminActionContext & { db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
 | `AdminActionDeps` | Extension API | `interface AdminActionDeps { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
 | `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` on a failed guard (403) or a required-audit violation in dev (500). A site's error boundary reads `status` to render the right response. |

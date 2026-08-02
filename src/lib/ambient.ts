@@ -15,9 +15,14 @@
 // `auditSink` is the site-supplied persistence seam `adminAction` forwards audit records through.
 // A site assigns it in its own hooks handle; typing it here means that assignment typechecks
 // without the site hand-writing a `declare global` block for an engine-read field.
+//
+// `cairnAccess` is the site's declared access map, attached by `createAuthGuard` alongside
+// `editor`. Typing it here means a custom route or a `createSectionAction` wrapper reads it with
+// no cast, the same way `editor` already does.
 import type { Editor } from './auth/types.js';
 import type { Backend } from './github/backend.js';
 import type { AdminActionAuditSink } from './sveltekit/admin-action.js';
+import type { AccessMap } from './auth/access.js';
 
 declare global {
   namespace App {
@@ -25,6 +30,7 @@ declare global {
       editor?: Editor | null;
       backend?: Backend;
       auditSink?: AdminActionAuditSink;
+      cairnAccess?: AccessMap;
     }
   }
 }

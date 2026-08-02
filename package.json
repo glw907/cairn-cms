@@ -126,6 +126,11 @@
       "types": "./dist/auth-store/index.d.ts",
       "default": "./dist/auth-store/index.js"
     },
+    "./auth-crypto": {
+      "types": "./dist/auth-crypto/index.d.ts",
+      "browser": "./dist/auth-crypto/browser.js",
+      "default": "./dist/auth-crypto/index.js"
+    },
     "./vite": {
       "types": "./dist/vite/index.d.ts",
       "default": "./dist/vite/index.js"

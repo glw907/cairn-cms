@@ -168,80 +168,124 @@ next section shows how), but hiding a link isn't access control, and nothing sto
 typing the URL directly. The `requireOwner(event)` call at the top of every load and action is what
 actually turns that request away.
 
-## A custom section with its own role
+## A custom section gated by the access map
 
 `requireOwner` answers one question: is this editor cairn's owner? A section with its own
-authorization axis, a club committee seat, a paid membership tier, anything that is not cairn's
-content role, needs a role model of its own, stored in the site's own database and checked on the
-site's own terms. The pattern below, worked from a production club-admin section, is the shape
-that scales past one screen to a whole `/admin/club/**` tree.
+authorization axis, a club committee seat, a named subset of staff cairn's default owner/editor
+pair doesn't distinguish, needs its own declared role and its own access rule. The pattern
+below, worked from a production club-admin section, is the shape that scales past one screen to
+a whole `/admin/club/**` tree.
 
-Start with a `+layout.server.ts` on the section's root that resolves the site's own role and
-refuses a signed-in editor who holds none:
+### Declare the role and the access rule
+
+Add the section's role to the site's vocabulary with
+[`defineRoles`](../reference/core.md#roles), mapped to whichever capability fits (`editor`
+here, since a club-admin edits but doesn't manage the roster), then declare an [access
+map](../reference/core.md#access-map) rule covering the section's whole path and wire it to
+[`createAuthGuard`](../reference/sveltekit.md#createauthguard), the same two-places pattern
+[Restrict admin access by role](./restrict-admin-access.md) walks through in full:
+
+<!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the roles member -->
+```ts
+// src/lib/cairn.config.ts
+import { defineAdapter, defineRoles } from '@glw907/cairn-cms';
+
+export const roles = defineRoles({
+  owner: 'owner',
+  'club-admin': 'editor',
+});
+
+export const cairn = defineAdapter({
+  // ...content, backend, email, rendering...
+  roles,
+});
+```
+
+```ts
+// src/lib/cairn.access.ts
+import { defineAccess } from '@glw907/cairn-cms';
+import { roles } from './cairn.config.js';
+
+export const access = defineAccess(roles, {
+  '/admin/club': ['club-admin'],
+});
+```
+
+```ts
+// src/hooks.server.ts
+import { sequence } from '@sveltejs/kit/hooks';
+import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { roles } from './lib/cairn.config.js';
+import { access } from './lib/cairn.access.js';
+
+export const handle = sequence(createAuthGuard({ roles, access }));
+```
+
+`/admin/club` matches every path underneath it by prefix (`canReach`'s deepest-prefix rule), so
+one rule covers the section's events, classes, members, and assets screens without repeating it
+per route.
+
+### Gate the layout `load`
+
+Every screen under the section calls
+[`requireAccess`](../reference/sveltekit.md#requireaccess) at the top of its `load`, the same
+predicate the section's actions gate on below, so a page and its own form never disagree about
+who's admitted:
 
 ```ts
 // src/routes/admin/club/+layout.server.ts
-import { error } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
-import { requireSession } from '@glw907/cairn-cms/sveltekit';
-import { getClubRole, resolveClubDb } from '$lib/club/roles.js';
+import { requireAccess } from '@glw907/cairn-cms/sveltekit';
 
-export const load: LayoutServerLoad = async (event) => {
-  const editor = requireSession(event);
-  const db = resolveClubDb(event.platform?.env);
-  const role = db ? await getClubRole(db, editor.email) : null;
-  if (!role) error(403, 'Your account has no club role. Ask a club owner to grant one.');
-  return { role };
+export const load: LayoutServerLoad = (event) => {
+  const editor = requireAccess(event); // denies every role the map doesn't name for /admin/club
+  return { editor };
 };
 ```
 
 **A layout guard like this one protects loads only. SvelteKit dispatches a matched form action
 directly, with no ancestor `load` run first, so this guard never runs before a POST to
-`/admin/club/events?/update`.** Every mutating action under the section needs the same role check
-inline, or an editor with no club role at all can still submit a POST directly to a URL they were
+`/admin/club/events?/update`.** Every mutating action under the section needs the same check
+inline, or a session the layout would refuse can still submit a POST directly to a URL it was
 never shown a link to. Writing that check by hand at the top of every action is exactly the
-boilerplate that produces a missed screen; the fix is a site-local wrapper that composes the
-engine's [`adminAction`](../reference/sveltekit.md#adminaction) with the section's own role
-precondition once, so a new screen cannot forget it:
+boilerplate [`createSectionAction`](../reference/sveltekit.md#createsectionaction) exists to
+close: it composes [`adminAction`](../reference/sveltekit.md#adminaction)'s editor resolution,
+CSRF, and audit contract with the same access-map check `requireAccess` runs, plus the section's
+own database binding, in one call:
 
 ```ts
 // src/lib/club/action.ts
-import { fail } from '@sveltejs/kit';
-import { adminAction } from '@glw907/cairn-cms/sveltekit';
-import type { AdminActionContext, AdminActionEvent } from '@glw907/cairn-cms/sveltekit';
-import { getClubRole, resolveClubDb, type ClubRole } from './roles.js';
+import { createSectionAction } from '@glw907/cairn-cms/sveltekit';
+import type { D1Database } from '@cloudflare/workers-types';
+import { resolveClubDb, type ClubEnv } from './roles.js';
 
-interface ClubActionContext extends AdminActionContext {
-  role: ClubRole;
-}
+export const clubAction = createSectionAction<ClubEnv, D1Database>({
+  resolveDb: (env: ClubEnv | undefined) => resolveClubDb(env),
+});
+```
 
-/** Compose the engine's adminAction with the Club section's own role precondition. adminAction
- *  itself resolves the editor, verifies CSRF, and reads the form once; this wrapper adds the
- *  section's own role check on top, fail-closed, before the handler ever runs. */
-export function clubAction<T>(
-  handler: (args: { event: AdminActionEvent; form: FormData; ctx: ClubActionContext }) => Promise<T>,
-  opts: { action: string; entity: string },
-) {
-  return adminAction(async ({ event, form, ctx }) => {
-    const db = resolveClubDb(event.platform?.env);
-    const role = db ? await getClubRole(db, ctx.editor.email) : null;
-    if (!role) {
-      ctx.audit({ action: opts.action, entity: opts.entity, detail: 'rejected: no club role' });
-      return fail(403, { error: 'A club role is required.' });
-    }
-    return handler({ event, form, ctx: { ...ctx, role } });
-  });
-}
+```ts
+// src/routes/admin/club/events/[id]/+page.server.ts
+import { clubAction } from '$lib/club/action.js';
+import type { Actions } from './$types';
+
+export const actions: Actions = {
+  approve: clubAction(async ({ form, ctx }) => {
+    const id = String(form.get('id'));
+    await ctx.db.prepare('update event set approved = 1 where id = ?').bind(id).run();
+    ctx.audit({ action: 'approve', entity: 'event', entityId: id });
+    return { ok: true };
+  }, { action: 'approve', entity: 'event' }),
+};
 ```
 
 Every action under `/admin/club/**` wraps with `clubAction` instead of calling `adminAction`
-directly, the same way every load calls `requireSession`. A validation reject or a role refusal
-that returns `fail()` from inside a `clubAction`-wrapped handler owes `adminAction` no audit
-record for the rejection itself: a request that mutated nothing needs no audit trail of its own
-non-mutation. Record only the handler's own domain-meaningful rejects, like the role check above.
-The exemption cuts one way: reject *before* you write. A handler that mutates
-and then returns `fail()` must still emit its own audit, because nothing rolls its writes back
-and the wrapper can't see them.
+directly, the same way every load calls `requireAccess`. A refused request never reaches the
+handler: a missing binding, an unmapped path, or a role the map doesn't admit each returns an
+already-audited `fail()`, so the handler above owes an audit record only for the mutation it
+actually performs. A handler that mutates and then returns `fail()` for its own domain reason
+must still emit its own audit, because nothing rolls its writes back and the wrapper can't see
+them.
 
 ## Wire the `auditSink`
 
@@ -259,6 +303,8 @@ to the section so the rest of `/admin` never resolves a binding it has no use fo
 import { sequence } from '@sveltejs/kit/hooks';
 import type { Handle } from '@sveltejs/kit';
 import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import { roles } from '$lib/cairn.config.js';
+import { access } from '$lib/cairn.access.js';
 import { resolveClubDb } from '$lib/club/roles.js';
 import { createClubAuditSink } from '$lib/club/audit-sink.js';
 
@@ -271,7 +317,7 @@ const wireClubAuditSink: Handle = ({ event, resolve }) => {
   return resolve(event);
 };
 
-export const handle = sequence(wireClubAuditSink, createAuthGuard());
+export const handle = sequence(wireClubAuditSink, createAuthGuard({ roles, access }));
 ```
 
 **`AdminActionAuditSink` is synchronous (`(record) => void`); `adminAction` calls it without
@@ -343,20 +389,24 @@ full seam, including the validated `ResolvedNavEntry` shape the shell
 actually renders, is [the custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam)
 in the SvelteKit reference.
 
-**`ownerOnly`, and `navLayout`'s own declarative `roles`, only reach cairn's own declared role
-vocabulary.** A whole section gated by a site-owned role, the Club section above, say, needs its
-sidebar entry hidden from an editor who has no club role at all, a question neither can answer.
-`navFilter`, a per-request hook on [`createCairnAdmin`](../reference/admin-routes.md) and
-`createContentRoutes`, is that seam: it receives the already-arranged, already-gated top-level nodes
-(sections and loose entries, cairn's own screens included when the site declares `navLayout`) plus
-the signed-in editor, and returns the nodes to render.
+The Club section built so far needs no `adminNav` entry or `navFilter` call to hide itself from a
+non-`club-admin` editor: since it's gated by the access map, [`resolveNavLayout`](../reference/sveltekit.md#the-navlayout-seam)
+reads the same map and drops it from the sidebar for any role the map doesn't name, and
+`navLayout`'s own declarative `roles` (see [Organize your admin nav](./organize-your-admin-nav.md))
+reaches the same declared vocabulary. **`navFilter` earns its keep for a criterion cairn's role
+vocabulary can't express at all**, a feature your own database turns on per site rather than a
+role name. Say the club only sometimes tracks boats: a per-request hook on
+[`createCairnAdmin`](../reference/admin-routes.md) and `createContentRoutes` receives the
+already-arranged, already-gated top-level nodes (sections and loose entries, cairn's own screens
+included when the site declares `navLayout`) plus the signed-in editor, and returns the nodes to
+render:
 
 ```ts
 // src/lib/cairn.server.ts
 import { composeRuntime } from '@glw907/cairn-cms';
 import { createCairnAdmin } from '@glw907/cairn-cms/sveltekit';
 import { cairn, siteConfig } from './cairn.config.js';
-import { getClubRole, resolveClubDb } from './club/roles.js';
+import { clubFeatureEnabled, resolveClubDb } from './club/roles.js';
 import type { ResolvedLayoutNode } from '@glw907/cairn-cms/sveltekit';
 import type { Editor } from '@glw907/cairn-cms';
 import type { ContentEvent } from '@glw907/cairn-cms/sveltekit';
@@ -366,17 +416,17 @@ async function filterClubNav(
   ctx: { editor: Editor; event: ContentEvent },
 ): Promise<ResolvedLayoutNode[]> {
   const db = resolveClubDb(ctx.event.platform?.env);
-  const role = db ? await getClubRole(db, ctx.editor.email) : null;
-  return role ? items : items.filter((item) => item.label !== 'Club');
+  const boatsEnabled = db ? await clubFeatureEnabled(db, 'boats') : false;
+  return boatsEnabled ? items : items.filter((item) => item.label !== 'Boats');
 }
 
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 export const admin = createCairnAdmin(runtime, { navFilter: filterClubNav });
 ```
 
-Hiding the link this way is a courtesy, not a gate: an editor without the role never sees "Club" in
-the sidebar, and never lands on a URL the section's own `+layout.server.ts` guard would then refuse
-anyway. See [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) for the full
+Hiding the link this way is a courtesy, not a gate: pair it with a guard inside the Boats screen's
+own `load` (`requireAccess`, plus your own feature check) so a direct URL still refuses when the
+feature is off. See [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) for the full
 `navFilter` signature, and [Organize your admin nav](./organize-your-admin-nav.md) for arranging
 cairn's own screens alongside a section like this one.
 
@@ -417,18 +467,23 @@ Sign in to `/admin` as an owner and open `/admin/signups` directly (or click the
 you added one). Add a row, then delete it. Sign in as a non-owner editor and try the same URL: the
 `requireOwner` call returns a 403 instead of rendering the list.
 
-For a role-gated section, sign in as an editor with no club role and confirm the sidebar hides the
-section entirely, then confirm typing the URL directly still returns a 403 from the layout guard.
-Submit a form action directly (curl, or a saved request) as that same editor, bypassing the
-sidebar and the page entirely, and confirm `clubAction` refuses it too: the layout guard alone is
-not enough.
+For the Club section, sign in as an editor without the `club-admin` role and confirm the sidebar
+hides the section entirely, then confirm typing `/admin/club` directly still returns a 403 from
+the layout `load`. Submit a form action directly (curl, or a saved request) as that same editor,
+bypassing the sidebar and the page entirely, and confirm `clubAction` refuses it too: the layout
+guard alone isn't enough. Sign in as a `club-admin` and confirm both the load and the action admit
+it.
 
 ## Related reference
 
-[`requireSession`](../reference/sveltekit.md#requiresession) and
-[`requireOwner`](../reference/sveltekit.md#requireowner) document the two guard calls this guide
+[`requireOwner`](../reference/sveltekit.md#requireowner) and
+[`requireAccess`](../reference/sveltekit.md#requireaccess) document the two guard calls this guide
 used. [`adminAction`](../reference/sveltekit.md#adminaction) documents the admin-scoped action
-wrapper the custom section composes. [The custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
+wrapper `createSectionAction`, [documented in full](../reference/sveltekit.md#createsectionaction),
+composes. [`defineRoles`](../reference/core.md#roles) and [Access map](../reference/core.md#access-map)
+document the declarations the Club section builds on, and [Restrict admin access by
+role](./restrict-admin-access.md) walks through wiring them in full. [The custom admin-nav
+seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
 `AdminNavEntry`, `AdminNavIcon`, and the validated `ResolvedNavEntry` shape in full, and
 [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) documents `navFilter`.
 [Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging

@@ -194,12 +194,12 @@ describe('the access map (Task 2)', () => {
     expect(ev.locals.cairnAccess).toBe(access);
   });
 
-  it('leaves locals.cairnAccess undefined when no map is declared', async () => {
+  it('attaches an empty map, not undefined, when no map is declared (Task 3: an absent map then only ever means the guard never ran)', async () => {
     const cookies = await seedSession('own2@x.dev');
     const ev = event('/admin', cookies);
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.cairnAccess).toBeUndefined();
+    expect(ev.locals.cairnAccess).toEqual({});
   });
 });
 

@@ -9,7 +9,7 @@
 // check below is therefore defense-in-depth, not the sole gate; this wrapper's real value is
 // resolving the signed-in editor as a typed `ctx.editor` and requiring an audit emit for a
 // mutating action, which the engine has no other hook for.
-import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
+import { error, isActionFailure, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
 import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { log } from '../log/index.js';
@@ -58,13 +58,13 @@ export interface AdminActionContext {
 }
 
 /**
- * Thrown by `adminAction` on a failed guard.
- *
- * `status` is the intended meaning of the refusal, not the transport status the browser sees.
- * SvelteKit derives a response status only from its own `HttpError` and `SvelteKitError`, so this
- * plain `Error` subclass always renders as a 500; a site's `handleError` receives the already
- * computed status and can shape the message, never the code. Read `status` to tell a 403 from a
- * 500 in a site's own logging or error page.
+ * Thrown by `adminAction` for its one remaining dev-time defect signal: a handler that returned
+ * normally (not `fail()`) having emitted zero `ctx.audit` records, thrown only when running under
+ * `esm-env`'s `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal:
+ * in production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
+ * Every other refusal `adminAction` makes, a missing editor session or a CSRF mismatch, is
+ * SvelteKit's own `redirect()` or `error()`, which carry their status to the browser directly and
+ * need no `handleError` mapping; this class no longer stands in for one.
  */
 export class AdminActionError extends Error {
   constructor(
@@ -100,9 +100,13 @@ function serializeThrownError(error: unknown): string {
  * Wrap a custom admin action's handler. In order, fail-closed at every step:
  *
  * 1. `event.locals.editor` must be populated (the engine's admin guard already resolved it); its
- *    absence throws a 403, never a redirect, since an action is not a page navigation.
+ *    absence means the session expired or was never established, so this redirects to
+ *    `/admin/login`, matching `requireSession` (`./guard.js`) exactly: an editor whose session
+ *    lapsed needs the login page, not an error page.
  * 2. The double-submit CSRF token (the cookie the engine's admin loads issue, versus the `csrf`
- *    form field) must verify, constant-time. Defense-in-depth: the guard already checked this.
+ *    form field) must verify, constant-time. Defense-in-depth: the guard already checked this. A
+ *    mismatch here is a genuine refusal, not a session expiry, and throws SvelteKit's own
+ *    `error(403, ...)`, rendered through the nearest `+error.svelte`.
  * 3. The handler runs once with a typed `ctx.audit` emitter closed over the verified editor. A
  *    handler that returns normally (its request succeeded) and emitted zero records throws a 500
  *    in dev (a loud signal an author fixes before shipping) and logs `admin.action.unaudited` in
@@ -148,7 +152,7 @@ export function adminAction<T>(
   const dev = deps.isDev ?? DEV;
   return async (event: AdminActionEvent): Promise<T> => {
     const editor = event.locals.editor;
-    if (!editor) throw new AdminActionError(403, 'admin action without an editor session');
+    if (!editor) throw redirect(303, '/admin/login');
 
     // Read the form once: this is both the CSRF field's source and the handler's own body, so no
     // second read (a clone or a re-parse) ever runs against the same request.
@@ -156,7 +160,12 @@ export function adminAction<T>(
     const cookie = event.cookies.get(csrfCookieName(event.url.protocol === 'https:'));
     const submitted = String(form.get('csrf') ?? '');
     if (!cookie || !tokensMatch(submitted, cookie)) {
-      throw new AdminActionError(403, 'CSRF verification failed');
+      // The admin guard already validates this double-submit pair on every unsafe /admin/** POST
+      // before resolve() runs, so a mismatch reaching here is defense-in-depth catching what
+      // should already be impossible in production. Log the specific reason; the response never
+      // gets it, since it renders to a real browser through the nearest +error.svelte.
+      log.warn('admin.action.csrf_rejected', { path: event.url.pathname, editor: editor.email });
+      throw error(403, 'This request could not be verified. Please refresh the page and try again.');
     }
 
     let emitted = 0;

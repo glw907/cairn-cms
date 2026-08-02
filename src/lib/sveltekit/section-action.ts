@@ -72,8 +72,9 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
  * site and produces a SvelteKit action, checked in order, fail-closed throughout:
  *
  * 1. `adminAction` composes underneath: editor resolution, CSRF, the single form read, the audit
- *    contract. A refusal it throws (`AdminActionError`) propagates untouched; a site maps it in
- *    `handleError`.
+ *    contract. A missing-editor session redirects to `/admin/login`; a CSRF mismatch throws
+ *    SvelteKit's own `error(403, ...)`. Both propagate untouched, and both need no site
+ *    `handleError` mapping: they are SvelteKit's own framework-native refusal channels.
  * 2. Rate limit, when configured: an unresolved binding, or a `key()`/`limit()` call that throws,
  *    degrades to open (never blocks) and logs `admin.action.rate_limit_absent` (unresolved
  *    binding) or `admin.action.rate_limit_failed` (a throwing call), so a forgotten

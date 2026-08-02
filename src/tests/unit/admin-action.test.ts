@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
 import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import { log } from '../../lib/log/index.js';
 import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
@@ -48,23 +49,46 @@ async function statusOf(promise: Promise<unknown>): Promise<number> {
   }
 }
 
+/** Assert the promise rejects with SvelteKit's own `redirect()`, and return its status and location. */
+async function redirectOf(promise: Promise<unknown>): Promise<{ status: number; location: string }> {
+  try {
+    await promise;
+    throw new Error('expected adminAction to redirect');
+  } catch (err) {
+    expect(isRedirect(err)).toBe(true);
+    const redirected = err as { status: number; location: string };
+    return { status: redirected.status, location: redirected.location };
+  }
+}
+
+/** Assert the promise rejects with SvelteKit's own `error()`, and return its status. */
+async function httpErrorStatusOf(promise: Promise<unknown>): Promise<number> {
+  try {
+    await promise;
+    throw new Error("expected adminAction to throw SvelteKit's error()");
+  } catch (err) {
+    expect(isHttpError(err)).toBe(true);
+    return (err as { status: number }).status;
+  }
+}
+
 describe('adminAction: editor guard', () => {
-  it('throws a 403 with no locals.editor, and never calls the handler', async () => {
+  it('redirects to /admin/login with no locals.editor, and never calls the handler', async () => {
     const handler = vi.fn();
     const action = adminAction(handler);
     const event = makeEvent({ editor: null, cookie: 'TOK', csrfField: 'TOK' });
-    expect(await statusOf(action(event))).toBe(403);
+    expect(await redirectOf(action(event))).toEqual({ status: 303, location: '/admin/login' });
     expect(handler).not.toHaveBeenCalled();
   });
 });
 
 describe('adminAction: CSRF guard (defense-in-depth)', () => {
-  it('rejects a missing cookie, a missing field, and a same-length mismatch, all 403', async () => {
+  it('rejects a missing cookie, a missing field, and a same-length mismatch, all with a 403 error()', async () => {
     const handler = vi.fn();
     const action = adminAction(handler);
-    expect(await statusOf(action(makeEvent({ csrfField: 'TOK' })))).toBe(403); // no cookie
-    expect(await statusOf(action(makeEvent({ cookie: 'TOK' })))).toBe(403); // no field
-    expect(await statusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })))).toBe(403); // same-length mismatch
+    expect(await httpErrorStatusOf(action(makeEvent({ csrfField: 'TOK' })))).toBe(403); // no cookie
+    expect(await httpErrorStatusOf(action(makeEvent({ cookie: 'TOK' })))).toBe(403); // no field
+    expect(await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })))).toBe(403); // same-length mismatch
     expect(handler).not.toHaveBeenCalled();
   });
 
@@ -77,9 +101,21 @@ describe('adminAction: CSRF guard (defense-in-depth)', () => {
       ['', 'nonempty'],
     ];
     for (const [cookie, csrfField] of mismatches) {
-      expect(await statusOf(action(makeEvent({ cookie, csrfField })))).toBe(403);
+      expect(await httpErrorStatusOf(action(makeEvent({ cookie, csrfField })))).toBe(403);
     }
     expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('logs admin.action.csrf_rejected with the path and editor, never the response', async () => {
+    const warnSpy = vi.spyOn(log, 'warn').mockImplementation(() => {});
+    const handler = vi.fn();
+    const action = adminAction(handler);
+    await httpErrorStatusOf(action(makeEvent({ cookie: 'AAAA', csrfField: 'AAAB' })));
+    expect(warnSpy).toHaveBeenCalledWith(
+      'admin.action.csrf_rejected',
+      expect.objectContaining({ path: '/admin/club/events', editor: editor.email }),
+    );
+    warnSpy.mockRestore();
   });
 
   it('accepts a matching cookie and field', async () => {

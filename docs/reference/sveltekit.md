@@ -233,6 +233,48 @@ export const load = (event) => {
 };
 ```
 
+### Refusal channels
+
+The admin action surface refuses a request through one of three shapes, depending on which
+helper does the refusing.
+
+`requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`, called directly inside a
+hand-rolled load or action, throw SvelteKit's own `error()` (a 403) or `redirect()` (a 303 to
+`/admin/login`). SvelteKit recognizes both as its native thrown shapes and renders the correct
+status through the nearest `+error.svelte`, or follows the redirect, with no site code required to
+translate either one.
+
+[`adminAction`](#adminaction)'s own guards, a missing `locals.editor`, a failed CSRF check, and (in
+dev) the required-audit violation, throw [`AdminActionError`](#types), a plain `Error` subclass
+carrying a `status`. SvelteKit does not recognize it as one of its own thrown shapes, so an
+unhandled `AdminActionError` reaches the site as an unexpected error: the response reports `500`
+regardless of the `status` the error carries, and the body is the generic `"Internal Error"`
+message every unrecognized thrown value gets. A site implements
+[`handleError`](https://svelte.dev/docs/kit/hooks#Shared-hooks-handleError) to read `.status` and
+`.message` off `AdminActionError` and return a matching `App.Error` body instead; `handleError`
+shapes the message a site's `+error.svelte` renders, but it does not change the transport status
+SvelteKit already computed, which stays `500` for this channel.
+
+[`createSectionAction`](#createsectionaction)'s own authorization, rate-limit, and
+database-binding branches return SvelteKit's `fail(...)`, an `ActionFailure`, never a throw. The
+result renders as inline form state on the page that submitted it, the same shape a validation
+reject produces.
+
+This split is deliberate, not an inconsistency to converge:
+
+> One security finding was deliberately not adopted: throwing for the 403/500 branches. `fail(...)`
+> is kept (type-verified, ASC-proven form UX), and the exposure it worried about closes by requiring
+> `requireAccess` in a section's `load`, so reads and writes share one fail-closed predicate.
+
+Two further channels exist inside the engine and are never written by a site directly. The
+built-in content actions redirect on failure (`redirect(303, '/admin/<concept>?error=...')`), the
+same native shape `requireSession`'s session gate uses. And [`createAuthGuard`](#createauthguard)
+itself refuses at the `Handle`, before any route's own load or action runs, returning a raw,
+branded `Response` for a CSRF, origin, HTTPS, or missing-binding failure. This last channel is why
+`adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal already covers
+every unsafe POST under `/admin/**`, so `adminAction`'s own check is rarely the one that actually
+fires.
+
 ### `adminAction`
 
 Stability tier: Extension API.
@@ -267,6 +309,14 @@ before mutating; a handler that writes and then returns `fail()` must still emit
 since nothing rolls its writes back and the wrapper can't see them. Every emit logs `admin.action.audited` (see
 [log events](./log-events.md)) and, when the site sets one, forwards the record to
 `event.locals.auditSink`.
+
+Every preceding branch that refuses the request throws [`AdminActionError`](#types), not one of
+SvelteKit's own recognized shapes (see [Refusal channels](#refusal-channels)). A site implements
+[`handleError`](https://svelte.dev/docs/kit/hooks#Shared-hooks-handleError) to read `.status` and
+`.message` off it and shape a legible response; without one, an unhandled `AdminActionError`
+surfaces as a generic 500. A site building on [`createSectionAction`](#createsectionaction) still
+needs this `handleError` for `adminAction`'s own three throwing guards underneath it; only that
+factory's own authorization, rate-limit, and binding branches return `fail(...)` instead.
 
 [`AdminActionAuditSink`](#adminactionauditsink) is deliberately synchronous and fire-and-forget: it
 returns `void`, and `ctx.audit` never reads or awaits that return value. The engine holds the
@@ -1489,7 +1539,7 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = AdminActionContext & { db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
 | `AdminActionDeps` | Extension API | `interface AdminActionDeps { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
-| `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` on a failed guard (403) or a required-audit violation in dev (500). A site's error boundary reads `status` to render the right response. |
+| `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` on a failed guard (403) or a required-audit violation in dev (500). SvelteKit does not recognize it as its own `HttpError`, so an unhandled instance surfaces as a generic 500; a site implements `handleError` (see [Refusal channels](#refusal-channels)) to read `.status` and `.message` off it and shape a legible response instead. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: Role; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellPayload` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` follows the [core](./core.md) `Role` type, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` or `adminNav` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |

@@ -1,6 +1,17 @@
-import { createAuthGuard } from '@glw907/cairn-cms/sveltekit';
-import type { Handle } from '@sveltejs/kit';
+import { AdminActionError, createAuthGuard } from '@glw907/cairn-cms/sveltekit';
+import type { Handle, HandleServerError } from '@sveltejs/kit';
 import { devBackendEnabled } from '$chassis/dev-gate';
+
+// adminAction's own guards (see the SvelteKit reference's "Refusal channels") throw
+// AdminActionError rather than one of SvelteKit's own recognized shapes, so an unhandled
+// instance would otherwise surface as a generic 500 with no useful message. This does not
+// change the transport status SvelteKit reports (still 500 for this channel); it shapes the
+// message a site's own error page renders instead of the framework's generic "Internal Error".
+export const handleError: HandleServerError = ({ error }) => {
+  if (error instanceof AdminActionError) {
+    return { message: error.message };
+  }
+};
 
 // The dev backend activates only behind devBackendEnabled, a build-foldable gate (see
 // $chassis/dev-gate.ts): a default `npm run build` folds this branch away, and its dynamic import,

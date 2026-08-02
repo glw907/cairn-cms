@@ -247,11 +247,24 @@ export const load: LayoutServerLoad = (event) => {
 directly, with no ancestor `load` run first, so this guard never runs before a POST to
 `/admin/club/events?/update`.** Every mutating action under the section needs the same check
 inline, or a session the layout would refuse can still submit a POST directly to a URL it was
-never shown a link to. Writing that check by hand at the top of every action is exactly the
-boilerplate [`createSectionAction`](../reference/sveltekit.md#createsectionaction) exists to
-close: it composes [`adminAction`](../reference/sveltekit.md#adminaction)'s editor resolution,
-CSRF, and audit contract with the same access-map check `requireAccess` runs, plus the section's
-own database binding, in one call:
+never shown a link to.
+
+This is also where the guide's two patterns start refusing differently, and the difference
+matters once your own screen adds error handling. The `requireOwner(event)` call in the
+[preceding signups example](#gate-it-with-requiresession-requireeditor-or-requireowner) throws
+SvelteKit's own `error()`; the framework renders the correct status through your `+error.svelte`
+with nothing further to wire. `adminAction`'s own guards, the ones `createSectionAction` composes
+below, throw `AdminActionError` instead, a shape SvelteKit doesn't recognize, so an unhandled
+instance renders as a generic 500 until your `hooks.server.ts` adds a `handleError` that reads
+`.status` off it. `createSectionAction`'s own authorization and database-binding checks return
+`fail(...)`, which never throws at all and renders as inline form state on the page instead. See
+[Refusal channels](../reference/sveltekit.md#refusal-channels) for the full model.
+
+Writing the access-map check by hand at the top of every action is exactly the boilerplate
+[`createSectionAction`](../reference/sveltekit.md#createsectionaction) exists to close: it
+composes [`adminAction`](../reference/sveltekit.md#adminaction)'s editor resolution, CSRF, and
+audit contract with the same access-map check `requireAccess` runs, plus the section's own
+database binding, in one call:
 
 ```ts
 // src/lib/club/action.ts

@@ -79,7 +79,7 @@ one. cairn's runtime emits one for every commit, auth, and guard failure: [Log
 events](../reference/log-events.md) names each event and its fields, and [Read cairn's
 logs](./read-cairn-logs.md) covers querying them on a deployed Worker.
 
-## Unreleased: a cloudflare export (non-breaking)
+## Unreleased: a cloudflare export and a packaged audit sink (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/cloudflare`, publishes the
 Cloudflare-native platform primitives two sites already copy by hand: `verifyTurnstile`, the
@@ -91,7 +91,14 @@ moves to this subpath as its one declaration in the source tree; if you imported
 `@glw907/cairn-cms/sveltekit`, that import keeps working unchanged. See
 [Cloudflare](../reference/cloudflare.md).
 
-Consumers must: nothing. The subpath is additive, and the `RateLimitLike` re-export keeps its
+A new factory on `@glw907/cairn-cms/sveltekit`, `createD1AuditSink(db, waitUntil)`, is the first
+packaged implementation of the `AdminActionAuditSink` seam: apply the bundled
+`migrations/0002_audit.sql` and wire the factory to persist every `ctx.audit` record into one
+`audit_log` table, instead of hand-rolling your own sink module. It's opt-in, fail-open, and
+truncates every bound field to a documented maximum. See
+[`createD1AuditSink`](../reference/sveltekit.md#created1auditsink).
+
+Consumers must: nothing. Both additions are additive, and the `RateLimitLike` re-export keeps its
 existing shape and location on `/sveltekit`.
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)

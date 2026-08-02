@@ -294,8 +294,21 @@ one structured `admin.action.audited` record through the engine's own logger. Th
 read in Workers Logs, but nothing persists it to a queryable table until the site wires
 `event.locals.auditSink` itself: cairn ships the seam, not the storage. The
 `import '@glw907/cairn-cms/ambient'` line already in your `src/app.d.ts` types the assignment
-(see the [ambient types reference](../reference/ambient.md)). Set it in `hooks.server.ts`, scoped
-to the section so the rest of `/admin` never resolves a binding it has no use for:
+(see the [ambient types reference](../reference/ambient.md)).
+
+cairn packages one implementation of that seam,
+[`createD1AuditSink`](../reference/sveltekit.md#created1auditsink) on
+`@glw907/cairn-cms/sveltekit`: copy its bundled migration
+(`cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/`, then `wrangler d1
+migrations apply`) and wire the factory in `hooks.server.ts`, no hand-rolled sink module of your
+own to write. The reference page carries the full contract: the required `waitUntil`, the
+truncation maxima, and why a section using `createSectionAction` should also configure its rate
+limit, since an authorization denial audits before the section's own database binding is ever
+read. Reach for a hand-rolled sink, like the Club section's below, only when a section's own
+`audit_log` schema needs to differ from the packaged one.
+
+Set it in `hooks.server.ts`, scoped to the section so the rest of `/admin` never resolves a binding
+it has no use for:
 
 <!-- snippet-check-skip: reads App.Platform (env, context.waitUntil), which only the site's own app.d.ts declares; see "Reach your own data" below -->
 ```ts

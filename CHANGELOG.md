@@ -15,6 +15,16 @@
   re-exported from `./sveltekit` unchanged. See [Cloudflare](docs/reference/cloudflare.md).
   Consumers must: nothing.
 
+- A new factory on `@glw907/cairn-cms/sveltekit`, `createD1AuditSink(db, waitUntil)`, is the
+  first implementation of the `AdminActionAuditSink` seam: a fire-and-forget, parameterized
+  insert into a packaged `audit_log` table (`migrations/0002_audit.sql`, opt-in, applied the
+  same way as the auth migrations), fail-open so a persist failure never fails the audited
+  action, with every bound field truncated to a documented maximum so an oversized `detail`
+  can't suppress its own row. `waitUntil` is a required parameter that explicitly accepts
+  `undefined`, so a site chooses the drop risk rather than defaulting into it. A rejected
+  insert logs the whole truncated record and the error as `admin.audit.sink_failed`. See
+  [SvelteKit](docs/reference/sveltekit.md#created1auditsink). Consumers must: nothing.
+
 ## 0.93.0
 
 <!-- release-size: minor -->

@@ -67,6 +67,7 @@ export {
   type AdminActionDeps,
   type AdminActionEvent,
 } from './admin-action.js';
+export { createD1AuditSink } from './audit-sink.js';
 export {
   createSectionAction,
   type RateLimitLike,

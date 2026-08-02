@@ -283,6 +283,67 @@ export const actions = {
 };
 ```
 
+### `createD1AuditSink`
+
+Stability tier: Extension API.
+
+```ts
+declare function createD1AuditSink(
+  db: D1Database,
+  waitUntil: ((promise: Promise<unknown>) => void) | undefined,
+): AdminActionAuditSink;
+```
+
+The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsink) seam:
+persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
+table, opt-in the same way the auth migrations are. Copy the bundled migration once and apply it
+to both the local database `wrangler dev` reads and the remote one your deploy reads:
+
+```bash
+cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/
+npx wrangler d1 migrations apply your-site-auth --local
+npx wrangler d1 migrations apply your-site-auth --remote
+```
+
+The table carries `id`, `actor`, `action`, `entity`, `entity_id`, `detail`, and a `created_at` the
+database populates (`datetime('now')`), a column read by a human in a query, not by the engine.
+
+`createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
+optional parameter would make the shortest call the one that silently drops the insert when the
+isolate tears down before it settles, so omitting it (typically when no `event.platform.context` is
+reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
+
+The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
+it returns synchronously, before the insert settles, so a persist failure never fails the audited
+action, and a rejected insert logs `admin.audit.sink_failed` (see [log events](./log-events.md))
+carrying the whole truncated record plus the error, since the audited action already completed and
+this is the only remaining trace of that row. Every bound field truncates to a documented maximum
+before binding, so an oversized `detail` (the one field a handler composes freely) cannot suppress
+its own audit row by failing the insert: `actor` to 320 characters, `action` to 100, `entity` to
+100, `entityId` to 200, `detail` to 500.
+
+**A site wiring this sink should also configure [`createSectionAction`](#createsectionaction)'s
+`rateLimit`.** `createSectionAction` audits every refusal, not only a successful action, and its
+check order runs authorization before any database-binding resolution, so a session the access map
+refuses still produces an audit row before the section's own binding is ever read. Persisting that
+trail with no rate limit configured lets a refused caller cheaply fill the table.
+
+<!-- snippet-check-skip: reads App.Platform (env, context.waitUntil), which only the site's own app.d.ts declares -->
+```ts
+// src/hooks.server.ts
+import { createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
+import type { Handle } from '@sveltejs/kit';
+
+const wireAuditSink: Handle = ({ event, resolve }) => {
+  const db = event.platform?.env.AUTH_DB;
+  const waitUntil = event.platform?.context?.waitUntil?.bind(event.platform.context);
+  if (db) event.locals.auditSink = createD1AuditSink(db, waitUntil);
+  return resolve(event);
+};
+
+export const handle = wireAuditSink;
+```
+
 ### `createSectionAction`
 
 Stability tier: Extension API.

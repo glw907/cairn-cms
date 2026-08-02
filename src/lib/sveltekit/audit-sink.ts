@@ -104,12 +104,11 @@ export function createD1AuditSink(
     // truncate() call throws before reassigning it.
     let entityId: string | null = UNCOERCIBLE_PLACEHOLDER;
     let detail: string | null = UNCOERCIBLE_PLACEHOLDER;
-    // Which stage the try below reached before throwing, so the catch can log a reason precise
-    // enough to triage: a coercion failure, a synchronous prepare()/bind() failure (no insert was
-    // ever created), and waitUntil() itself throwing (the insert was already created and is still
-    // running) are three different situations, not one.
-    let truncationDone = false;
-    let insertDispatched = false;
+    // What the catch below reports, advanced as each stage of the try completes, so a failure is
+    // triaged by where it happened: a coercion failure, a synchronous prepare()/bind() failure (no
+    // insert was ever created), and waitUntil() itself throwing (the insert was already created
+    // and is still running) are three different situations, not one.
+    let failureReason = 'coercion_failed';
     let sinkFailedLogged = false;
 
     function logSinkFailed(reason: string) {
@@ -137,7 +136,7 @@ export function createD1AuditSink(
       entity = truncate(record.entity, MAX_ENTITY_LENGTH);
       entityId = record.entityId == null ? null : truncate(record.entityId, MAX_ENTITY_ID_LENGTH);
       detail = record.detail == null ? null : truncate(record.detail, MAX_DETAIL_LENGTH);
-      truncationDone = true;
+      failureReason = 'prepare_failed';
 
       // Parameterized deliberately: never interpolate audit content into the SQL string, however
       // tempting a template-string simplification looks later.
@@ -148,16 +147,11 @@ export function createD1AuditSink(
         .bind(actor, action, entity, entityId, detail)
         .run()
         .catch(logSinkFailed('insert_rejected'));
-      insertDispatched = true;
+      failureReason = 'wait_until_failed';
 
       waitUntil?.(insert);
     } catch (error) {
-      const reason = !truncationDone
-        ? 'coercion_failed'
-        : insertDispatched
-          ? 'wait_until_failed'
-          : 'prepare_failed';
-      logSinkFailed(reason)(error);
+      logSinkFailed(failureReason)(error);
     }
   };
 }

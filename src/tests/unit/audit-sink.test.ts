@@ -9,6 +9,11 @@ const MAX_ENTITY_LENGTH = 100;
 const MAX_ENTITY_ID_LENGTH = 200;
 const MAX_DETAIL_LENGTH = 500;
 
+// One unpaired UTF-16 surrogate, the shape D1's bind() rejects. Deliberately not the module's own
+// LONE_SURROGATE (which is unexported, and reusing it would let a bug in it pass its own tests),
+// and deliberately non-global, so .test() stays stateless across calls.
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
 interface RecordedCall {
   sql: string;
   args: unknown[];
@@ -151,8 +156,7 @@ describe('createD1AuditSink', () => {
     const calls = await recordedCalls({ detail: prefix + '🎉' + 'y'.repeat(20) });
 
     const detail = calls[0].args[4] as string;
-    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-    expect(loneSurrogate.test(detail)).toBe(false);
+    expect(LONE_SURROGATE.test(detail)).toBe(false);
     expect(detail.endsWith('…')).toBe(true);
   });
 
@@ -163,8 +167,7 @@ describe('createD1AuditSink', () => {
     const calls = await recordedCalls({ detail: 'before \uD800 after' });
 
     const detail = calls[0].args[4] as string;
-    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
-    expect(loneSurrogate.test(detail)).toBe(false);
+    expect(LONE_SURROGATE.test(detail)).toBe(false);
     expect(detail).toBe('before � after');
   });
 

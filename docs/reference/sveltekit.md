@@ -296,29 +296,57 @@ declare function createD1AuditSink(
 
 The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsink) seam:
 persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
-table, opt-in the same way the auth migrations are. Copy the bundled migration once and apply it
-to both the local database `wrangler dev` reads and the remote one your deploy reads. `0002` is
-only the number the package ships it under. A site that has already written its own migrations
-renames the copy to the next free number in its own `migrations/` directory. Only the ordering
-relative to your other migrations is load-bearing, not the filename:
+table, opt-in the same way the auth migrations are.
+
+`db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
+example below, keeps audit writes from contending with session and token lookups, since D1
+serializes writes per database, and the `hooks.server.ts` example below binds a dedicated
+`AUDIT_DB` rather than reusing `AUTH_DB`.
+
+`wrangler d1 migrations apply` reads a database's migrations from that `d1_databases` entry's own
+`migrations_dir`, `./migrations` by default. Give the audit database its own `migrations_dir`,
+distinct from the auth database's: every entry that leaves `migrations_dir` unset resolves to that
+same default directory, so copying `0002_audit.sql` next to the auth migrations and applying it to
+the audit database applies the auth migrations there too.
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "AUTH_DB",
+    "database_name": "your-site-auth",
+    "database_id": "<the id wrangler d1 create printed>"
+  },
+  {
+    "binding": "AUDIT_DB",
+    "database_name": "your-site-audit",
+    "database_id": "<the id wrangler d1 create printed>",
+    "migrations_dir": "migrations/audit"
+  }
+]
+```
 
 ```bash
-cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/
+mkdir -p migrations/audit
+cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/audit/
 npx wrangler d1 migrations apply your-site-audit --local
 npx wrangler d1 migrations apply your-site-audit --remote
 ```
 
-`db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
-preceding example, keeps audit writes from contending with session and token lookups, since D1
-serializes writes per database, and the `hooks.server.ts` example below binds a dedicated
-`AUDIT_DB` rather than reusing `AUTH_DB`. The table is append-only and this package prunes
-nothing, so a site that expects real traffic should retire old rows itself, on a schedule (a
+`0002` is only the number the package ships it under. Only the ordering relative to any other
+file already in `migrations/audit/` is load-bearing, not the filename. The table is append-only
+and this package prunes nothing, so a site that expects real traffic should retire old rows
+itself, on a schedule (a
 [Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)) or by
 hand:
 
 ```bash
-npx wrangler d1 execute your-site-audit --remote --command "DELETE FROM audit_log WHERE created_at < datetime('now', '-90 days')"
+npx wrangler d1 execute your-site-audit --remote --command "DELETE FROM audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')"
 ```
+
+The comparison has to use the same `strftime` expression the column's own default uses, not
+`datetime('now', ...)`: SQLite compares `TEXT` columns byte for byte, and an ISO string's `T`
+(`0x54`) sorts after a space (`0x20`) at the same position, so comparing against a
+`datetime('now', ...)` value would silently stop pruning the oldest rows at the boundary day.
 
 A screen reading the table back right after a write can miss the row that caused it: the insert
 may still be in flight behind `waitUntil` when the response renders, and D1's own read
@@ -328,7 +356,12 @@ own just-made row needs
 not a plain read.
 
 The table carries `id`, `actor`, `action`, `entity`, `entity_id`, `detail`, and a `created_at` the
-database populates (`datetime('now')`), a column read by a human in a query, not by the engine.
+database populates as an ISO 8601 UTC string (`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`), a column
+read by a human in a query, not by the engine.
+[`formatTimestamp`](./admin-toolkit.md#formattimestamp) doesn't apply to this column: it expects
+the space-separated `"YYYY-MM-DD HH:MM:SS"` shape SQLite's `datetime('now')` produces, and swaps
+in the `T` and `Z` itself. This column's value already carries both, so render it directly;
+`new Date(createdAt)` already reads it correctly as UTC.
 
 `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
 optional parameter would make the shortest call the one that silently drops the insert when the

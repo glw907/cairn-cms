@@ -29,11 +29,13 @@ declare function verifyTurnstile(
 ): Promise<boolean>;
 ```
 
-Verify a Turnstile token against Cloudflare's siteverify endpoint. Every failure mode, a
-non-200 response, an unparseable or non-object body, a thrown fetch, and a hostname or action
+Verify a Turnstile token against Cloudflare's siteverify endpoint. Every failure mode, a `token`
+or `secret` that isn't a string or is blank after trimming, a `token` over 2048 characters (past
+the length Cloudflare's documented token format can reach), a fetch that throws or hangs past a
+5-second deadline, a non-200 response, a body that fails to parse as JSON or fails validation of
+every field this function reads, a `success: false` response, and a `hostname` or `action`
 mismatch, returns `false` by contract, never throws: this function is fail-closed, so a future
-refactor cannot flip it open by accident. A blank `token` or `secret` also returns `false`
-without a request.
+refactor can't flip it open by accident.
 
 `opts.ip` must come from `CF-Connecting-IP`, never a client-forwardable header such as
 `X-Forwarded-For`: a request can set that header to anything, so passing it through would let a
@@ -53,8 +55,24 @@ token solved on any widget sharing the sitekey replays against every other form 
 with `verifyTurnstile`. With them, a response whose `hostname` or `action` does not match the
 supplied value also returns `false`.
 
-This function never logs the secret or the response body, only a `reason` and, for a mismatch,
-the expected and actual values; see [`turnstile.verify_failed`](./log-events.md).
+TypeScript can't tell an omitted `hostname` or `action` from one explicitly set to `undefined`,
+so `verifyTurnstile(token, secret, { hostname: env.SOME_UNSET_VAR })` silently skips that check
+with no type error and no log. Check your config actually holds a value before you pass it.
+Don't trust `opts.hostname` or `opts.action` to be present just because your call site names
+them.
+
+This function logs on every refusal but one. The pre-flight bounds check, a non-string, blank, or
+over-length `token` or `secret`, logs `reason: 'invalid_input'` with the token's length
+(`tokenLength`), never the token itself. A fetch that throws or times out logs
+`reason: 'request_failed'` with the error's message. A non-200 response logs
+`reason: 'bad_status'` with the response `status`. A body that fails to parse or fails shape
+validation logs `reason: 'unparseable'` with no other field. A `success: false` response logs
+`reason: 'rejected'` with the response's `codes`, unless every code is one of the two routine
+causes (`invalid-input-response`, `timeout-or-duplicate`), in which case it logs nothing, since
+that's the function working as intended. A `hostname` or `action` mismatch logs
+`reason: 'hostname_mismatch'` or `reason: 'action_mismatch'` with the `expected` and `actual`
+values. The secret and the full response body are never logged, only the fields named here. See
+[`turnstile.verify_failed`](./log-events.md) for the full table.
 
 Degrade-to-open, skipping the check entirely when a site has no secret configured, is the
 caller's own convention, never this function's: verification and that policy stay separate.
@@ -117,10 +135,13 @@ Normalize an identity before keying on it (lowercase an email, and strip a plus 
 site's own semantics already treat `user+tag@example.com` as `user@example.com`), or an attacker
 gets a fresh budget for every case or tag variant of the same address. Derive any IP component
 from `CF-Connecting-IP` only, the same rule [`verifyTurnstile`](#verifyturnstile) enforces for its
-own `opts.ip`, never a client-forwardable header such as `X-Forwarded-For`. One binding backs one
-shared budget: every key checked against it draws down the same underlying counter space, not a
-budget per key. A `key` built by concatenating unbounded caller input can exceed the binding's own
-key-length limit, and `limit()` throws rather than truncating it silently.
+own `opts.ip`, never a client-forwardable header such as `X-Forwarded-For`. One binding carries one
+configured limit and period (the preceding `simple: { limit, period }` example), applied
+independently to each distinct key: two different keys draw from two separate counters, never a
+shared one. That's exactly why an unnormalized identity hands an attacker a fresh budget per case
+or tag variant. A `key` built by concatenating unbounded caller input can exceed the binding's own
+key-length limit; bound the key yourself rather than relying on the binding's own handling of an
+oversized one.
 
 Both helpers degrade to open with no log line of their own, by design: neither has the call-site
 context to say what a misspelled binding name or a not-yet-provisioned limiter should mean for the

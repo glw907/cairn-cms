@@ -57,8 +57,9 @@ describe('createD1AuditSink against a real D1', () => {
       entity_id: 'evt-1',
       detail: 'approved for the fall season',
     });
-    expect(rows[0].created_at).toEqual(expect.any(String));
-    expect(rows[0].created_at.length).toBeGreaterThan(0);
+    // Unambiguous UTC, millisecond resolution: parseable with `new Date(...)` in any timezone and
+    // sortable within the same second across several audits.
+    expect(rows[0].created_at).toMatch(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/);
   });
 
   it('inserts entity_id and detail as null when the record omits them', async () => {
@@ -68,5 +69,21 @@ describe('createD1AuditSink against a real D1', () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].entity_id).toBeNull();
     expect(rows[0].detail).toBeNull();
+  });
+
+  it('inserts a detail truncated at an emoji boundary without D1 rejecting a lone surrogate', async () => {
+    // A unit-test fake cannot catch this: a real D1 bind() rejects a lone UTF-16 surrogate, which
+    // is exactly what a naive code-unit slice can produce at this boundary.
+    const MAX_DETAIL_LENGTH = 500;
+    const detail = 'x'.repeat(MAX_DETAIL_LENGTH - 1) + '🎉' + 'y'.repeat(20);
+
+    await persist({ editor: 'ed@x.dev', action: 'approve', entity: 'event', detail });
+
+    const rows = await selectRows();
+    expect(rows).toHaveLength(1);
+    const stored = rows[0].detail as string;
+    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+    expect(loneSurrogate.test(stored)).toBe(false);
+    expect(stored.endsWith('…')).toBe(true);
   });
 });

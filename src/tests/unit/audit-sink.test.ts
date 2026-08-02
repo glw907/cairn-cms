@@ -96,13 +96,23 @@ describe('createD1AuditSink', () => {
     expect(calls[0].args[4]).toBeNull();
   });
 
+  it('binds null, not the literal string "null", for an explicit null entityId and detail', async () => {
+    const calls = await recordedCalls({
+      entityId: null as unknown as string | undefined,
+      detail: null as unknown as string | undefined,
+    });
+
+    expect(calls[0].args[3]).toBeNull();
+    expect(calls[0].args[4]).toBeNull();
+  });
+
   it('binds a numeric entityId as a string', async () => {
     const calls = await recordedCalls({ entityId: 42 });
 
     expect(calls[0].args[3]).toBe('42');
   });
 
-  it('truncates every field to its documented maximum', async () => {
+  it('truncates every field to its documented maximum and marks it with an ellipsis', async () => {
     const calls = await recordedCalls({
       editor: 'x'.repeat(MAX_ACTOR_LENGTH + 50),
       action: 'x'.repeat(MAX_ACTION_LENGTH + 50),
@@ -117,6 +127,29 @@ describe('createD1AuditSink', () => {
     expect(entity).toHaveLength(MAX_ENTITY_LENGTH);
     expect(entityId).toHaveLength(MAX_ENTITY_ID_LENGTH);
     expect(detail).toHaveLength(MAX_DETAIL_LENGTH);
+    // A truncated value is self-identifying, so an operator reading the table (or the fallback
+    // log) never mistakes a cut value for one the caller genuinely supplied that short.
+    expect(actor.endsWith('…')).toBe(true);
+    expect(detail.endsWith('…')).toBe(true);
+  });
+
+  it('does not mark an untruncated value with an ellipsis', async () => {
+    const calls = await recordedCalls({ detail: 'short and unremarkable' });
+
+    expect(calls[0].args[4]).toBe('short and unremarkable');
+  });
+
+  it('slices on a code-point boundary, never leaving a lone surrogate half', async () => {
+    // An emoji ('🎉') is one code point but two UTF-16 code units. A naive `.slice(0, max)` on
+    // UTF-16 units can land exactly between the two, storing a lone surrogate a D1 bind() can
+    // reject; place the emoji straddling that boundary in code-unit terms.
+    const prefix = 'x'.repeat(MAX_DETAIL_LENGTH - 1);
+    const calls = await recordedCalls({ detail: prefix + '🎉' + 'y'.repeat(20) });
+
+    const detail = calls[0].args[4] as string;
+    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+    expect(loneSurrogate.test(detail)).toBe(false);
+    expect(detail.endsWith('…')).toBe(true);
   });
 
   it('returns synchronously, before the insert settles', () => {
@@ -160,12 +193,92 @@ describe('createD1AuditSink', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'admin.audit.sink_failed',
-        actor: 'ed@x.dev',
+        editor: 'ed@x.dev',
         action: 'approve',
         entity: 'event',
         entityId: 'evt-1',
         detail: 'approved for the fall season',
         error: expect.stringContaining('D1_ERROR'),
+      }),
+    );
+    spy.mockRestore();
+  });
+
+  it('does not throw when db.prepare() throws synchronously, and logs the failure', () => {
+    const db = {
+      prepare() {
+        throw new Error('typo binding: AUTH_DB is undefined');
+      },
+    } as unknown as D1Database;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const waitUntil = vi.fn();
+    const sink = createD1AuditSink(db, waitUntil);
+
+    expect(() => sink(record())).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.audit.sink_failed',
+        editor: 'ed@x.dev',
+        error: expect.stringContaining('typo binding'),
+      }),
+    );
+    // Nothing to hand waitUntil: no promise was ever created on this synchronous path.
+    expect(waitUntil).not.toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it('does not throw when bind() throws synchronously (D1_TYPE_ERROR), and logs the failure', () => {
+    const db = {
+      prepare() {
+        return {
+          bind() {
+            throw new Error('D1_TYPE_ERROR: unsupported bind value');
+          },
+        };
+      },
+    } as unknown as D1Database;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createD1AuditSink(db, undefined);
+
+    expect(() => sink(record())).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.audit.sink_failed',
+        error: expect.stringContaining('D1_TYPE_ERROR'),
+      }),
+    );
+    spy.mockRestore();
+  });
+
+  it('does not throw when the db binding itself is undefined (a not-yet-provisioned or typo\'d binding)', () => {
+    const db = undefined as unknown as D1Database;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createD1AuditSink(db, undefined);
+
+    expect(() => sink(record())).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'admin.audit.sink_failed' }),
+    );
+    spy.mockRestore();
+  });
+
+  it('does not throw when waitUntil itself throws synchronously (an unbound method, "Illegal invocation")', () => {
+    const { db } = fakeD1();
+    const waitUntil = (() => {
+      throw new Error('Illegal invocation');
+    }) as (promise: Promise<unknown>) => void;
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createD1AuditSink(db, waitUntil);
+
+    expect(() => sink(record())).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.audit.sink_failed',
+        error: expect.stringContaining('Illegal invocation'),
       }),
     );
     spy.mockRestore();

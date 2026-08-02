@@ -5,6 +5,15 @@ import { log } from '../log/index.js';
 
 const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
+// Cloudflare documents the solved-token format at up to 2048 characters; anything longer cannot
+// be a genuine token and is rejected before it reaches the outbound fetch.
+const MAX_TOKEN_LENGTH = 2048;
+
+// A rotated or misconfigured secret is the one failure siteverify reports as HTTP 200 with
+// success: false, distinguishable only by its error-codes. These two are the routine, expected
+// causes (a bot's response, or a token already consumed); anything else is worth a log line.
+const ROUTINE_ERROR_CODES = new Set(['invalid-input-response', 'timeout-or-duplicate']);
+
 /** Narrowing a caller may supply to a {@link verifyTurnstile} call. */
 export interface VerifyTurnstileOptions {
   /**
@@ -23,31 +32,47 @@ interface SiteverifyBody {
   success: boolean;
   hostname?: string;
   action?: string;
+  'error-codes'?: string[];
 }
 
 function isSiteverifyBody(value: unknown): value is SiteverifyBody {
-  return typeof value === 'object' && value !== null && 'success' in value;
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'success' in value &&
+    typeof (value as { success: unknown }).success === 'boolean'
+  );
 }
 
 /**
  * Verify a Turnstile token against Cloudflare's siteverify endpoint.
  *
- * Every failure mode, a non-200 response, an unparseable or non-object body, a thrown fetch, and
- * a hostname or action mismatch, returns false rather than throwing: this function is fail-closed
- * by contract, so a future refactor cannot flip it open by accident. Degrade-to-open (skipping the
- * check entirely when a site has no secret configured) is the caller's own convention
- * (`if (secret && ...)`), never this function's; verification and that policy stay separate.
- * Supplying `hostname` and `action` is what stops a token solved on one widget from replaying
- * against another form that shares the same sitekey; without them, siteverify only proves the
- * token is genuine, not which form it was solved for. This function never logs the secret or the
- * response body, only a `reason` and, for a mismatch, the expected and actual values.
+ * Every failure mode, a non-200 response, an unparseable or non-object body, a thrown fetch or a
+ * request that hangs past its deadline, and a hostname or action mismatch, returns false rather
+ * than throwing: this function is fail-closed by contract, so a future refactor cannot flip it
+ * open by accident. Degrade-to-open (skipping the check entirely when a site has no secret
+ * configured) is the caller's own convention (`if (secret && ...)`), never this function's;
+ * verification and that policy stay separate. Supplying `hostname` and `action` is what stops a
+ * token solved on one widget from replaying against another form that shares the same sitekey;
+ * without them, siteverify only proves the token is genuine, not which form it was solved for.
+ * `hostname` compares case-insensitively, since siteverify reports it lowercased regardless of
+ * the sitekey's configured casing. This function never logs the secret, and on a mismatch logs no
+ * response field beyond `hostname` and `action` (never the full body).
  */
 export async function verifyTurnstile(
   token: string,
   secret: string,
   opts: VerifyTurnstileOptions = {},
 ): Promise<boolean> {
-  if (!token.trim() || !secret.trim()) return false;
+  if (
+    typeof token !== 'string' ||
+    typeof secret !== 'string' ||
+    !token.trim() ||
+    !secret.trim() ||
+    token.length > MAX_TOKEN_LENGTH
+  ) {
+    return false;
+  }
 
   const params = new URLSearchParams({ secret, response: token });
   if (opts.ip) params.set('remoteip', opts.ip);
@@ -58,6 +83,13 @@ export async function verifyTurnstile(
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
       body: params.toString(),
+      // A 307/308 redirect preserves method and body, which would re-POST the secret to
+      // whatever the redirect target is; 'manual' stops that, and a redirect response then
+      // falls through the not-ok branch below and logs as bad_status.
+      redirect: 'manual',
+      // Bounds how long a hung siteverify call can hold the request open; an AbortError lands
+      // in the catch below and logs the same as any other network failure.
+      signal: AbortSignal.timeout(5000),
     });
   } catch (err) {
     log.warn('turnstile.verify_failed', {
@@ -79,9 +111,23 @@ export async function verifyTurnstile(
     log.warn('turnstile.verify_failed', { reason: 'unparseable' });
     return false;
   }
-  if (!body.success) return false;
+  if (body.success !== true) {
+    // siteverify reports a rotated or missing secret, or a malformed request, as HTTP 200 with
+    // success: false and a configuration error-codes entry: the same shape a genuine bot
+    // rejection takes. Logging only the non-routine codes surfaces a misconfigured secret
+    // (which silently locks out every real visitor) without noise on ordinary bot traffic.
+    const codes = body['error-codes'] ?? [];
+    const isRoutine = codes.every((code) => ROUTINE_ERROR_CODES.has(code));
+    if (!isRoutine) {
+      log.warn('turnstile.verify_failed', { reason: 'rejected', codes });
+    }
+    return false;
+  }
 
-  if (opts.hostname !== undefined && body.hostname !== opts.hostname) {
+  if (
+    opts.hostname !== undefined &&
+    body.hostname?.toLowerCase() !== opts.hostname.toLowerCase()
+  ) {
     log.warn('turnstile.verify_failed', {
       reason: 'hostname_mismatch',
       expected: opts.hostname,

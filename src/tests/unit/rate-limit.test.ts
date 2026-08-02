@@ -46,6 +46,13 @@ describe('checkRateLimit', () => {
     };
     await expect(checkRateLimit(binding, 'k')).rejects.toThrow('boom');
   });
+
+  it('returns false when a malformed limiter response has no boolean success field', async () => {
+    const binding: RateLimitLike = {
+      limit: vi.fn(async () => ({}) as any),
+    };
+    expect(await checkRateLimit(binding, 'k')).toBe(false);
+  });
 });
 
 describe('checkRateLimitKeys', () => {

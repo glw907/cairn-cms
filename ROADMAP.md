@@ -246,7 +246,8 @@ the named human gates only):**
   `editor` table with raw `wrangler d1 execute`, which is why this is filed rather than urgent. Closing it
   at the database is a schema change against two production sites, so it wants batching with the next
   migration rather than a migration of its own. Found by the pass's review gate while confirming the
-  lockout defect the store fix closed.
+  lockout defect the store fix closed. `migrations/0002_audit.sql` (the ASC engine-seams pass two audit
+  sink) claimed `0002`, so this migration takes the next free number, `0003`, whenever it lands.
 
 - **Cairn's own admin's error tier is clean (design infrastructure Pass 3, 2026-07-29).** The four
   error-tier defect groups Pass 2 calibration found against six admin routes in both themes

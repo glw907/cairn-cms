@@ -7,6 +7,7 @@ import { devBackendEnabled } from '$chassis/dev-gate';
 // instance would otherwise surface as a generic 500 with no useful message. This does not
 // change the transport status SvelteKit reports (still 500 for this channel); it shapes the
 // message a site's own error page renders instead of the framework's generic "Internal Error".
+// Any other error returns nothing, which leaves SvelteKit's own default error shape in place.
 export const handleError: HandleServerError = ({ error }) => {
   if (error instanceof AdminActionError) {
     return { message: error.message };

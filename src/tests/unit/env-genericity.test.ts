@@ -21,6 +21,10 @@ import type { CairnRuntime } from '../../lib/content/types.js';
 import type { D1Database } from '@cloudflare/workers-types';
 import type { RequestEvent, ServerLoadEvent, ResolveOptions } from '@sveltejs/kit';
 
+// The one runtime test in this compile-only file. Vitest fails a `.test.ts` that declares no
+// suite ("No test suite found in file"), so this block is what lets the fixtures below live in a
+// file the test run also collects. It asserts only that each factory this sweep covers is present
+// and callable; the assignability claims are the compile-only blocks after it.
 describe('env-genericity compile fixtures', () => {
   it('exercises every public factory this sweep covers', () => {
     expect(typeof createCairnAdmin).toBe('function');
@@ -57,8 +61,7 @@ function typeOnlyCairnAdminAssignability(): void {
   const admin = createCairnAdmin({} as CairnRuntime);
   admin.load satisfies (event: SiteServerLoadEvent) => Promise<AdminData>;
   admin.shellLoad satisfies (event: SiteServerLoadEvent) => Promise<{ shell: AdminShellData }>;
-  const actions = admin.actions satisfies Record<string, (event: SiteRequestEvent) => unknown>;
-  void actions;
+  admin.actions satisfies Record<string, (event: SiteRequestEvent) => unknown>;
 }
 void typeOnlyCairnAdminAssignability;
 
@@ -83,16 +86,14 @@ type SiteContentEvent = Omit<SiteRequestEvent, 'params'> & { params: Record<stri
 
 function typeOnlyContentRoutesAssignability(): void {
   const routes = createContentRoutes({} as CairnRuntime);
-  const assignable = routes satisfies Record<string, (event: SiteContentEvent) => unknown>;
-  void assignable;
+  routes satisfies Record<string, (event: SiteContentEvent) => unknown>;
 }
 void typeOnlyContentRoutesAssignability;
 
 // createNavRoutes: navLoad/navSave both read the same ContentEvent slot as content-routes.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({} as CairnRuntime);
-  const assignable = nav satisfies Record<string, (event: SiteContentEvent) => unknown>;
-  void assignable;
+  nav satisfies Record<string, (event: SiteContentEvent) => unknown>;
 }
 void typeOnlyNavRoutesAssignability;
 
@@ -122,7 +123,6 @@ void typeOnlyEditorRoutesAssignability;
 // healthLoad: its own inline `{ platform?: { env?: BackendEnv } }` param, checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
-  const result: Promise<HealthData> = healthLoad(siteEvent, runtime);
-  void result;
+  healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;
 }
 void typeOnlyHealthLoadAssignability;

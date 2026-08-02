@@ -192,4 +192,4 @@ Stability tier: Extension API.
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
 | `EditorRow` | Extension API | `type EditorRow = { email: string; displayName: string; role: Role }` | An allowlist row as the store reads it: email, displayName, and the bare role name. The store has no access to a site's declared vocabulary, so it never resolves `capability`; a caller that needs a full [`Editor`](./core.md#editor) resolves capability itself and spreads it onto this shape. |
-| `Role` | Extension API | `type Role` | The role names `locals.editor.role` carries, re-exported from [core](./core.md#role) for convenience: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
+| `Role` | Extension API | `type Role` | The role names `locals.cairnEditor.role` carries, re-exported from [core](./core.md#role) for convenience: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |

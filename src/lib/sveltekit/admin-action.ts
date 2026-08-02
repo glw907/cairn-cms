@@ -32,7 +32,7 @@ export interface AdminActionAudit {
 /** What a site's audit sink receives: the record plus the acting editor's email. */
 export type AdminActionAuditRecord = AdminActionAudit & { editor: string };
 
-/** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. */
+/** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
 
 /** What a wrapped handler receives: the verified editor and a bound audit emitter. */
@@ -85,7 +85,7 @@ function serializeThrownError(error: unknown): string {
 /**
  * Wrap a custom admin action's handler. In order, fail-closed at every step:
  *
- * 1. `event.locals.editor` must be populated (the engine's admin guard already resolved it); its
+ * 1. `event.locals.cairnEditor` must be populated (the engine's admin guard already resolved it); its
  *    absence means the session expired or was never established, so this logs
  *    `admin.action.session_absent` and redirects to `/admin/login`, matching `requireSession`
  *    (`./guard.js`) exactly: an editor whose session lapsed needs the login page, not an error
@@ -140,7 +140,7 @@ export function adminAction<T>(
 ): (event: CairnEvent) => Promise<T> {
   const dev = deps.isDev ?? DEV;
   return async (event: CairnEvent): Promise<T> => {
-    const editor = event.locals.editor;
+    const editor = event.locals.cairnEditor;
     if (!editor) {
       log.warn('admin.action.session_absent', { path: event.url.pathname });
       throw redirect(303, '/admin/login');
@@ -191,7 +191,7 @@ export function adminAction<T>(
           });
         };
         try {
-          const outcome = event.locals.auditSink?.(full);
+          const outcome = event.locals.cairnAuditSink?.(full);
           // The sink's declared type is `(record) => void`, but TypeScript's void-return
           // bivariance admits an async function with no error (docs/guides/add-a-custom-admin-
           // screen.md's own `waitUntil` advice is exactly the pressure that writes one). The

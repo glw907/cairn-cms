@@ -34,9 +34,9 @@ interface CairnEvent<Env = CairnEnv> {
   cookies: CookieJar;
   setHeaders(headers: Record<string, string>): void;
   locals: {
-    editor?: Editor | null;
-    backend?: Backend;
-    auditSink?: AdminActionAuditSink;
+    cairnEditor?: Editor | null;
+    cairnBackend?: Backend;
+    cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
   };
   platform?: PlatformContext<Env>;
@@ -54,12 +54,13 @@ reading route identity out of a form body: a real kit event always carries both,
 `null`; a matched `load` or form action always sees a real route id. `cookies` and `setHeaders`
 are always present on a real kit server event.
 
-`locals` carries four optional keys: `editor` (the session [`createAuthGuard`](#createauthguard)
-resolved), `backend` (a dev or test double for the content store; a production request leaves it
-absent and the real GitHub provider connects), `auditSink` (a site's optional
-[`AdminActionAuditSink`](#adminactionauditsink), wired through `adminAction`'s audit contract),
-and `cairnAccess` (the site's declared [access map](./core.md#access-map), attached by the guard
-alongside `editor`).
+`locals` carries four optional keys, each sharing the flat `cairn` prefix so a grep for one name
+finds every engine read in any repo: `cairnEditor` (the session
+[`createAuthGuard`](#createauthguard) resolved), `cairnBackend` (a dev or test double for the
+content store; a production request leaves it absent and the real GitHub provider connects),
+`cairnAuditSink` (a site's optional [`AdminActionAuditSink`](#adminactionauditsink), wired through
+`adminAction`'s audit contract), and `cairnAccess` (the site's declared [access
+map](./core.md#access-map), attached by the guard alongside `cairnEditor`).
 
 `Env` defaults to [`CairnEnv`](#cairnenv): a compile-only fixture proves every factory on this
 page assigns clean into a site's own generated route event, under a realistic compliant
@@ -87,13 +88,13 @@ last, so the site hook sees every request and the guard owns admin gating.
 `opts.roles` is the site's declared [role vocabulary](./core.md#roles) (`defineRoles`, a [core](./core.md)
 export); omitted, the guard resolves every session against the implicit owner/editor pair, so a
 zero-config site sees no behavior change. The guard resolves capability once per request and
-attaches it to `locals.editor.capability`, so every downstream load and action reads it with no
-re-derivation.
+attaches it to `locals.cairnEditor.capability`, so every downstream load and action reads it with
+no re-derivation.
 
 `opts.access` is the site's declared [access map](./core.md#access-map) (`defineAccess`, a
 [core](./core.md) export); omitted, every engine screen and [`requireAccess`](#requireaccess) call
 keeps today's any-editor-capability behavior. The guard attaches it internally to
-`locals.cairnAccess`, alongside `locals.editor`, so `requireAccess` needs no extra argument.
+`locals.cairnAccess`, alongside `locals.cairnEditor`, so `requireAccess` needs no extra argument.
 
 ```ts
 // src/hooks.server.ts
@@ -132,7 +133,7 @@ once for the whole `/admin/**` subtree rather than per view. Stability tier: Ext
 versioned seam a site's own `/admin/` route depends on.
 
 `deps.branding` defaults from the runtime's `siteName` and `sender`, so most sites pass no deps. The
-showcase reads through a fake GitHub backend in development, which rides `event.locals.backend` from a
+showcase reads through a fake GitHub backend in development, which rides `event.locals.cairnBackend` from a
 fenced dev handle rather than through a dep.
 
 `actions` covers the full admin action vocabulary. Each named action parses the pathname the
@@ -229,13 +230,13 @@ own content routes and every admin-mutation surface call this instead of `requir
 switch that makes `none` capability real.
 
 **The none contract, a documented guarantee:** a none-capability session still authenticates and
-carries a populated, typed `locals.editor`; it passes through the
+carries a populated, typed `locals.cairnEditor`; it passes through the
 [`CairnAdminShell`](./components.md#cairnadminshell) custom-route seam untouched. Only the
 engine's own content and roster surfaces refuse it with `requireEditor`/`requireOwner`. A
 site-mounted admin route gates itself: nothing about `none` blocks the route from resolving, so a
 custom route that wants a `none`-capability role to reach it (an instructor's own class roster,
 say) needs no extra wiring, and one that wants to refuse it calls `requireEditor`, `requireOwner`,
-or its own capability check on `event.locals.editor.capability`.
+or its own capability check on `event.locals.cairnEditor.capability`.
 
 ```ts
 import { requireEditor } from '@glw907/cairn-cms/sveltekit';
@@ -361,7 +362,7 @@ seam for.
 unchanged. Add [`requireAccess`](#requireaccess) inside the handler, or build the action on
 [`createSectionAction`](#createsectionaction), for a capability check.
 
-In order, fail-closed at every step: (1) `event.locals.editor` must be populated, else a redirect
+In order, fail-closed at every step: (1) `event.locals.cairnEditor` must be populated, else a redirect
 to `/admin/login`, matching [`requireSession`](#requiresession) exactly (a lapsed session needs the
 login page, not an error page); (2) the CSRF cookie and the posted `csrf` field must match,
 constant-time, else SvelteKit's own `error(403, ...)`, rendered through the nearest `+error.svelte`;
@@ -377,7 +378,7 @@ a spurious `ctx.audit` call just to satisfy the wrapper. The exemption assumes t
 before mutating; a handler that writes and then returns `fail()` must still emit its own audit,
 since nothing rolls its writes back and the wrapper can't see them. Every emit logs `admin.action.audited` (see
 [log events](./log-events.md)) and, when the site sets one, forwards the record to
-`event.locals.auditSink`.
+`event.locals.cairnAuditSink`.
 
 Both preceding authorization branches throw one of SvelteKit's own recognized shapes (see [Refusal
 channels](#refusal-channels)): the missing-editor redirect and the CSRF `error(403, ...)` carry
@@ -535,7 +536,7 @@ const wireAuditSink: Handle = ({ event, resolve }) => {
   const ctx = event.platform?.ctx;
   // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
   const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
-  if (db) event.locals.auditSink = createD1AuditSink(db, waitUntil);
+  if (db) event.locals.cairnAuditSink = createD1AuditSink(db, waitUntil);
   return resolve(event);
 };
 
@@ -595,7 +596,7 @@ is deployed:
    a domain-state change.
 3. `event.locals.cairnAccess` absent audits `'rejected: access map not attached'`, logs
    `admin.action.misconfigured`, and returns `fail(500)`: the guard never ran on this route.
-   Only [`createAuthGuard`](#createauthguard) may write `locals.editor` and `locals.cairnAccess`,
+   Only [`createAuthGuard`](#createauthguard) may write `locals.cairnEditor` and `locals.cairnAccess`,
    and it must be the last handle in the sequence to set them. This check runs before
    authorization out of necessity (a route cannot authorize against a map that was never
    attached) and leaks nothing per-editor: it is identical for every session.
@@ -856,7 +857,7 @@ unverifiable cross-branch usage read refuses the whole batch (503) and commits n
 single-mount composer registers the trio under `mediaBulkDelete`, `mediaOrphanScan`, and `mediaPurge`
 (the purge action's shorter composer name), each gated to the media view, so the Media Library posts
 `?/mediaBulkDelete`, `?/mediaOrphanScan`, and `?/mediaPurge`. The showcase runs in dev without a real
-key because its fake GitHub backend rides `event.locals.backend` from a fenced dev handle, so no GitHub
+key because its fake GitHub backend rides `event.locals.cairnBackend` from a fenced dev handle, so no GitHub
 App token mint runs.
 
 A save holds the edit on the entry's pending branch (`cairn/<concept>/<id>`) and does not touch
@@ -1005,7 +1006,7 @@ declare function createNavRoutes(runtime: CairnRuntime): {
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
 tree and the page options for the URL picker, and `navSave` commits an edited tree to the
 git-committed site-config file. Like the content routes, a handler resolves its backend from
-`event.locals.backend`, falling back to the runtime's connected backend. A production caller
+`event.locals.cairnBackend`, falling back to the runtime's connected backend. A production caller
 passes no second argument. The `NavTree` component posts the named `?/save` action, so a
 hand-mounted route registers `navSave` under `save`.
 
@@ -1608,7 +1609,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
 | `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
-| <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. Optional; every emit logs `admin.action.audited` regardless. |
+| <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.cairnAuditSink`. Optional; every emit logs `admin.action.audited` regardless. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`createSectionAction`](#createsectionaction) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. |
 | <a id="sectionactionconfig"></a>`SectionActionConfig` | Extension API | `interface SectionActionConfig<Env, Db> { resolveDb: (env: Env \| undefined) => Db \| undefined; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key: (ctx: AdminActionContext) => string; message?: string } }` | Site-fixed configuration for one [`createSectionAction`](#createsectionaction) factory, called once per section: the DB binding resolver (`undefined` fails the action closed with a 500) and the optional rate limit, degrade-to-open. |
 | <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, reused verbatim on every denial, the optional authorization `target` override (defaults to `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
@@ -1641,7 +1642,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: ContentRoutesDeps['tidy']; navFilter?: ContentRoutesDeps['navFilter']; attention?: ContentRoutesDeps['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes; `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellPayload` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesDeps` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.backend`, so a dev or test backend rides locals rather than a dep. |
+| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: ContentRoutesDeps['tidy']; navFilter?: ContentRoutesDeps['navFilter']; attention?: ContentRoutesDeps['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes; `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellPayload` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesDeps` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |

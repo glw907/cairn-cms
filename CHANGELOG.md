@@ -68,13 +68,28 @@
   `route: { id: string | null }`, ending the documented anti-idiom of reading route identity out of a
   form body and giving `SectionActionOptions.target` an honest derivation, and makes `cookies` and
   `setHeaders` unconditionally required, since a real SvelteKit event always carries all four.
-  `locals` keeps its current key names (`editor`, `backend`, `auditSink`, `cairnAccess`);
-  `requireSession`, `requireOwner`, `requireEditor`, and `requireAccess` now take `CairnEvent` in
-  place of their old minimal inline shapes. See
+  `locals`'s key names are renamed by the entry below; `requireSession`, `requireOwner`,
+  `requireEditor`, and `requireAccess` now take `CairnEvent` in place of their old minimal inline
+  shapes. See
   [SvelteKit](docs/reference/sveltekit.md#the-event-shape). **Consumers must:** replace any
   imported `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`, or `AdminActionEvent` with
   `CairnEvent` on the same subpath; a hand-built event fixture (a test, a script) now needs
   `params` and `route` alongside the fields it already carried.
+
+- `locals`'s four keys take the flat `cairn` prefix, with no alias and no fallback read of the
+  old names: `editor` becomes `cairnEditor`, `backend` becomes `cairnBackend`, and `auditSink`
+  becomes `cairnAuditSink` (`cairnAccess` already carried the prefix and stays as is). A flat key
+  costs a site one optional hop (`event.locals.cairnEditor`) instead of a nested
+  `locals.cairn.editor`, and a grep for `cairnEditor` now finds every engine read of the field in
+  any repo. `docs/reference/ambient.md` is rewritten from `src/lib/ambient.ts`, which fixes a
+  drift the rewrite surfaced: the page never documented `cairnAccess` at all. See
+  [Ambient types](docs/reference/ambient.md) and
+  [SvelteKit](docs/reference/sveltekit.md#the-event-shape). **Consumers must:** rename every
+  `event.locals.editor`, `event.locals.backend`, and `event.locals.auditSink` read or write in
+  your own `hooks.server.ts` and any custom admin route to `event.locals.cairnEditor`,
+  `event.locals.cairnBackend`, and `event.locals.cairnAuditSink`; a custom `App.Locals`
+  augmentation that duplicates the old field names (rather than importing
+  `@glw907/cairn-cms/ambient`) needs the same rename.
 
 - The root `package.json` now declares `"engines": { "node": ">=22" }`, giving npm's own install
   check the Node floor the tutorial has always stated. This is a build-toolchain floor, not a
@@ -113,7 +128,7 @@
   themselves were already correct. Consumers must: nothing.
 
 - `adminAction`'s `ctx.audit` now holds the audit sink's advertised fail-open promise at its own
-  call site, not only by a sink's own discipline: a hand-rolled `event.locals.auditSink` that
+  call site, not only by a sink's own discipline: a hand-rolled `event.locals.cairnAuditSink` that
   throws synchronously, or one that returns a rejecting promise (the seam's `(record) => void`
   type admits an async sink through void-return bivariance), no longer fails the wrapped action
   either way; the failure logs a new `admin.action.audit_sink_failed` event instead. The same

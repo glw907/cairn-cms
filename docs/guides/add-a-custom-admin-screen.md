@@ -137,14 +137,14 @@ screen belongs to; the Club section's own screens below all pass `eyebrow="Club"
 ## Gate it with `requireSession`, `requireEditor`, or `requireOwner`
 
 The engine's auth guard already ran before this route's `load` does, and it set
-`event.locals.editor` for the whole `/admin/*` subtree, typed with no work on your part by the one
-`import '@glw907/cairn-cms/ambient';` line every site's `src/app.d.ts` carries (see the [ambient
+`event.locals.cairnEditor` for the whole `/admin/*` subtree, typed with no work on your part by the
+one `import '@glw907/cairn-cms/ambient';` line every site's `src/app.d.ts` carries (see the [ambient
 types reference](../reference/ambient.md)). Reading that identity, and refusing the request when it
 isn't good enough, is
 [`requireSession`](../reference/sveltekit.md#requiresession),
 [`requireEditor`](../reference/sveltekit.md#requireeditor), and
 [`requireOwner`](../reference/sveltekit.md#requireowner). All three take the same minimal shape,
-`{ locals: { editor } }`, so they read straight off your route's own `load` or action event.
+`{ locals: { cairnEditor } }`, so they read straight off your route's own `load` or action event.
 `requireSession` returns the signed-in editor, of any [capability](../reference/core.md#roles), or
 redirects to `/admin/login`. `requireEditor` does the same, then also answers a `none`-capability
 session with a 403. `requireOwner` goes further still, answering anything short of owner with a
@@ -154,11 +154,11 @@ session with a 403. `requireOwner` goes further still, answering anything short 
 
 **A `none`-capability session, the third rung of cairn's [declared role
 vocabulary](../reference/core.md#roles), still authenticates like any other editor: it carries the
-same populated, typed `locals.editor` and passes through this custom-route seam untouched.** Only
-cairn's own content and roster surfaces refuse it, by calling `requireEditor` or `requireOwner`
-themselves. Nothing here blocks a `none`-capability role from reaching your own screen. You decide
-with whichever of the three preceding calls matches the screen, or your own check on
-`event.locals.editor.capability`. [Give a role its own admin
+same populated, typed `locals.cairnEditor` and passes through this custom-route seam untouched.**
+Only cairn's own content and roster surfaces refuse it, by calling `requireEditor` or
+`requireOwner` themselves. Nothing here blocks a `none`-capability role from reaching your own
+screen. You decide with whichever of the three preceding calls matches the screen, or your own
+check on `event.locals.cairnEditor.capability`. [Give a role its own admin
 area](./give-a-role-its-own-admin-area.md) walks that exact case end to end, and [the
 `requireEditor` reference](../reference/sveltekit.md#requireeditor) states the none contract in
 full.
@@ -305,7 +305,7 @@ them.
 `ctx.audit` (available on every `adminAction`-wrapped handler, `clubAction` included) always logs
 one structured `admin.action.audited` record through the engine's own logger. That is enough to
 read in Workers Logs, but nothing persists it to a queryable table until the site wires
-`event.locals.auditSink` itself: cairn ships the seam, not the storage. The
+`event.locals.cairnAuditSink` itself: cairn ships the seam, not the storage. The
 `import '@glw907/cairn-cms/ambient'` line already in your `src/app.d.ts` types the assignment
 (see the [ambient types reference](../reference/ambient.md)).
 
@@ -340,7 +340,7 @@ const wireClubAuditSink: Handle = ({ event, resolve }) => {
     const ctx = event.platform?.ctx;
     // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
     const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
-    if (db) event.locals.auditSink = createClubAuditSink(db, waitUntil);
+    if (db) event.locals.cairnAuditSink = createClubAuditSink(db, waitUntil);
   }
   return resolve(event);
 };
@@ -524,4 +524,4 @@ frame a triage screen composes in one wrap. [`CsrfField`](../reference/component
 documents the field every one of this guide's forms needs.
 [The canonical admin mount](../reference/admin-routes.md)
 covers the route pair and layout this guide assumed were already in place, and [the ambient types
-reference](../reference/ambient.md) covers the `locals.editor` typing in full.
+reference](../reference/ambient.md) covers the `locals.cairnEditor` typing in full.

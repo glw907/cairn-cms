@@ -1,5 +1,5 @@
 // A developer's own custom admin screen, the Plan 1 extension-seam proof. It is a concrete route
-// under /admin (so it wins over the catch-all), inherits the guard-populated locals.editor, renders
+// under /admin (so it wins over the catch-all), inherits the guard-populated locals.cairnEditor, renders
 // inside the shared CairnAdminShell from the parent layout, and reads and writes its own APP_DB
 // binding (the engine never touches it). requireOwner is the real server-side gate; the ownerOnly
 // nav flag is cosmetic only.

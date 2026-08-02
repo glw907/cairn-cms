@@ -68,7 +68,7 @@ export function makeEvent(input: {
     params: {},
     route: { id: '/admin/auth/[...path]' },
     cookies,
-    locals: { editor },
+    locals: { cairnEditor: editor },
     platform: {
       env: { AUTH_DB: env.AUTH_DB, PUBLIC_ORIGIN: 'https://test.dev' },
     },

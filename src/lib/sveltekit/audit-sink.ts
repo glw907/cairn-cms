@@ -1,6 +1,6 @@
 // cairn-cms: the packaged implementation of the `AdminActionAuditSink` seam (seam 5 of the
 // 2026-08-01 ASC engine-seams design). `adminAction` and `createSectionAction` already call
-// `event.locals.auditSink` for every mutating action and every authorization refusal; this is the
+// `event.locals.cairnAuditSink` for every mutating action and every authorization refusal; this is the
 // first sink the engine ships, backed by the `audit_log` table `migrations/0002_audit.sql` adds.
 // Opt-in: a site applies the migration and wires this factory only if it wants the trail
 // persisted, and nothing changes for a site that does not.
@@ -61,7 +61,7 @@ function truncate(rawValue: unknown, max: number): string {
 /**
  * Build an `AdminActionAuditSink` (`./admin-action.js`) that persists every record to the
  * packaged `audit_log` table. A site opts in by applying `migrations/0002_audit.sql` and wiring
- * the returned function to `event.locals.auditSink`.
+ * the returned function to `event.locals.cairnAuditSink`.
  *
  * The sink is fail-open end to end: it returns synchronously, before the insert settles, and a
  * failure anywhere in the attempt, a throwing coercion, a synchronous throw from `prepare`,

@@ -18,7 +18,7 @@ function noneEvent(params: Record<string, string> = {}) {
     url: new URL('https://test.example/admin/posts'),
     params,
     request: new Request('https://test.example/admin/posts'),
-    locals: { editor: NONE_EDITOR },
+    locals: { cairnEditor: NONE_EDITOR },
     platform: { env: {} },
   };
 }

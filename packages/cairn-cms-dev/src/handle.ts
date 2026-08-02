@@ -74,10 +74,11 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
     const isAdmin = path === '/admin' || path.startsWith('/admin/');
     const isMedia = path === '/media' || path.startsWith('/media/');
     if (isAdmin || isMedia) {
-      // The dev Backend rides event.locals.backend, the per-request channel the engine resolves
-      // (locals.backend ?? runtime.backend.connect(env)). It replaces the retired global-fetch
-      // patch: the engine's reads and commits hit the in-memory repo through this object.
-      (event.locals as { backend?: Backend }).backend = backend;
+      // The dev Backend rides event.locals.cairnBackend, the per-request channel the engine
+      // resolves (locals.cairnBackend ?? runtime.backend.connect(env)). It replaces the retired
+      // global-fetch patch: the engine's reads and commits hit the in-memory repo through this
+      // object.
+      (event.locals as { cairnBackend?: Backend }).cairnBackend = backend;
 
       // The binding doubles ride platform.env the way the Cloudflare adapter would supply the real
       // ones. The template's App.Platform also declares context and caches, which the dev routes
@@ -99,7 +100,7 @@ export function devBackendHandle(options?: DevBackendOptions): Handle {
       // Editor shape: { email, displayName, role, capability }, the engine's Editor type
       // (src/lib/auth/types.ts). The dev backend always mints an owner session, so capability is
       // the literal 'owner' rather than a resolveCapability() call against a declared vocabulary.
-      event.locals.editor = {
+      event.locals.cairnEditor = {
         email: 'editor@showcase.test',
         displayName: 'Demo Editor',
         role: 'owner',

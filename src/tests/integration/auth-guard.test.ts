@@ -87,12 +87,12 @@ describe('guard (scenario 6)', () => {
     expect(r).toEqual({ status: 303, location: '/admin/login' });
   });
 
-  it('admits a valid session and populates locals.editor', async () => {
+  it('admits a valid session and populates locals.cairnEditor', async () => {
     const cookies = await seedSession('own@x.dev');
     const ev = event('/admin', cookies);
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'own@x.dev', displayName: 'Ed', role: 'owner', capability: 'owner' });
   });
 
   it('lets the login and auth endpoints through without a session', async () => {
@@ -125,7 +125,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-club' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'club@x.dev', displayName: 'Club', role: 'club-admin', capability: 'editor' });
   });
 
   it('resolves a declared none-capability role, authenticating without a warn log', async () => {
@@ -138,7 +138,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-inst' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'inst@x.dev', displayName: 'Inst', role: 'instructor', capability: 'none' });
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events).not.toContain('auth.role.unknown');
     vi.restoreAllMocks();
@@ -154,7 +154,7 @@ describe('capability resolution (a site-declared vocabulary)', () => {
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-orphan' }));
     const res = await guard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor).toEqual({ email: 'orphan@x.dev', displayName: 'Orphan', role: 'retired-role', capability: 'none' });
+    expect(ev.locals.cairnEditor).toEqual({ email: 'orphan@x.dev', displayName: 'Orphan', role: 'retired-role', capability: 'none' });
     const records = warnSpy.mock.calls.map(
       (c) => c[0] as { event?: string; email?: string; role?: string },
     );
@@ -181,8 +181,8 @@ describe('double-wiring: a custom role against a guard that was never handed the
     const ev = event('/admin', makeCookies({ [sessionCookieName(true)]: 'sid-unwired' }));
     const res = await unwiredGuard({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.capability).toBe('none');
-    expect(ev.locals.editor?.capability).not.toBe('owner');
+    expect(ev.locals.cairnEditor?.capability).toBe('none');
+    expect(ev.locals.cairnEditor?.capability).not.toBe('owner');
     const records = warnSpy.mock.calls.map((c) => c[0] as { event?: string; role?: string });
     expect(records.some((r) => r.event === 'auth.role.unknown' && r.role === 'instructor')).toBe(true);
     vi.restoreAllMocks();
@@ -190,7 +190,7 @@ describe('double-wiring: a custom role against a guard that was never handed the
 });
 
 describe('the access map (Task 2)', () => {
-  it('attaches the declared map to locals.cairnAccess alongside locals.editor', async () => {
+  it('attaches the declared map to locals.cairnAccess alongside locals.cairnEditor', async () => {
     const access: AccessMap = { '/admin/money': r('club-admin') };
     const guard = createAuthGuard({ access });
     const cookies = await seedSession('own@x.dev');
@@ -328,7 +328,7 @@ describe('CSRF (cairn owns it)', () => {
     };
     const res = await handle({ event: ev, resolve: async () => OK });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.cairnEditor?.email).toBe('own@x.dev');
   });
 
   it('passes an admin POST whose X-Cairn-CSRF header matches, with no form field (the upload path)', async () => {
@@ -361,7 +361,7 @@ describe('CSRF (cairn owns it)', () => {
       },
     });
     expect(res).toBe(OK);
-    expect(ev.locals.editor?.email).toBe('own@x.dev');
+    expect(ev.locals.cairnEditor?.email).toBe('own@x.dev');
     expect(seen).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
   });
 

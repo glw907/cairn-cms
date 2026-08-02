@@ -51,7 +51,7 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-// The default read/commit backend every event's `locals.backend` rides.
+// The default read/commit backend every event's `locals.cairnBackend` rides.
 const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A fake cookie jar that returns the csrf cookie under the https `__Host-` name. */
@@ -87,7 +87,7 @@ function uploadEvent(opts: UploadOpts & { backend?: Backend }): CairnEvent {
     params: {},
     route: { id: '/admin/media' },
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor, backend: opts.backend ?? backend },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor, cairnBackend: opts.backend ?? backend },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},

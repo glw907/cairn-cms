@@ -114,7 +114,7 @@ requirement. If your `app.d.ts` already follows [Deploy to
 Cloudflare](./deploy-to-cloudflare.md#wire-the-guard), nothing changes for you either way.
 
 `adminAction`'s audit sink now holds its advertised fail-open promise at the engine's own call
-site: a hand-rolled `event.locals.auditSink` that throws, or one that rejects asynchronously, no
+site: a hand-rolled `event.locals.cairnAuditSink` that throws, or one that rejects asynchronously, no
 longer fails the action it audited, and the failure logs the new `admin.action.audit_sink_failed`
 event instead of disappearing.
 
@@ -164,13 +164,28 @@ and drop any reliance on `PlatformContext.ctx`/`.context` (the engine never read
 CairnEnv>`. It adds `params` and `route: { id: string | null }` (ending the anti-idiom of reading route
 identity out of a form body, and giving `SectionActionOptions.target` an honest derivation), and
 makes `cookies` and `setHeaders` unconditionally required, since a real SvelteKit event always
-carries all four; `locals` keeps its current key names. `requireSession`, `requireOwner`,
+carries all four. The entry below renames `locals`'s key names. `requireSession`, `requireOwner`,
 `requireEditor`, and `requireAccess` now take `CairnEvent` in place of their old minimal inline
 shapes. See [the event shape](../reference/sveltekit.md#the-event-shape).
 
 Consumers must: replace any imported `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`,
 or `AdminActionEvent` with `CairnEvent` on the same subpath; a hand-built event fixture (a test, a
 script) now needs `params` and `route` alongside the fields it already carried.
+
+`locals`'s four keys take the flat `cairn` prefix: `editor` becomes `cairnEditor`, `backend`
+becomes `cairnBackend`, and `auditSink` becomes `cairnAuditSink` (`cairnAccess` already carried
+the prefix and is unchanged). A flat key costs a site one optional hop
+(`event.locals.cairnEditor`) instead of a nested `locals.cairn.editor`, and a grep for
+`cairnEditor` now finds every engine read of the field in any repo. There is no alias and no
+fallback read of the old names: the rename applies everywhere at once. See [the ambient types
+reference](../reference/ambient.md) for the full four-key shape and [the event
+shape](../reference/sveltekit.md#the-event-shape) for `CairnEvent['locals']`.
+
+Consumers must: rename every `event.locals.editor`, `event.locals.backend`, and
+`event.locals.auditSink` read or write in your own `hooks.server.ts` and any custom admin route to
+`event.locals.cairnEditor`, `event.locals.cairnBackend`, and `event.locals.cairnAuditSink`; a
+custom `App.Locals` augmentation that duplicates the old field names (rather than importing
+`@glw907/cairn-cms/ambient`) needs the same rename.
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 

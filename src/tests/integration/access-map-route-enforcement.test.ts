@@ -86,7 +86,7 @@ function event(
     url: new URL(url),
     params,
     request: new Request(url, init),
-    locals: { editor: { email: `${role}@test`, displayName: role, role, capability }, backend },
+    locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
     platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
   };

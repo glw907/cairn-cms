@@ -43,19 +43,19 @@ function event(locals: CairnEvent['locals'], url = new URL('https://x.test/admin
 
 describe('requireOwner', () => {
   it('requireOwner accepts a minimal event and returns an owner', () => {
-    expect(requireOwner(event({ editor: owner }))).toBe(owner);
+    expect(requireOwner(event({ cairnEditor: owner }))).toBe(owner);
   });
   it('requireOwner rejects a non-owner with 403', () => {
     // error() throws an HttpError object (status + body.message), not an Error instance.
-    expect(() => requireOwner(event({ editor }))).toThrowError(
+    expect(() => requireOwner(event({ cairnEditor: editor }))).toThrowError(
       expect.objectContaining({ status: 403, body: { message: 'Owner access required' } }),
     );
   });
   it('requireOwner redirects when no editor', () => {
-    expect(() => requireOwner(event({ editor: null }))).toThrow();
+    expect(() => requireOwner(event({ cairnEditor: null }))).toThrow();
   });
   it('requireOwner rejects a none-capability editor with 403', () => {
-    expect(() => requireOwner(event({ editor: noneCapability }))).toThrowError(
+    expect(() => requireOwner(event({ cairnEditor: noneCapability }))).toThrowError(
       expect.objectContaining({ status: 403 }),
     );
   });
@@ -63,34 +63,34 @@ describe('requireOwner', () => {
 
 describe('requireEditor', () => {
   it('accepts an owner-capability editor', () => {
-    expect(requireEditor(event({ editor: owner }))).toBe(owner);
+    expect(requireEditor(event({ cairnEditor: owner }))).toBe(owner);
   });
   it('accepts an editor-capability editor', () => {
-    expect(requireEditor(event({ editor }))).toBe(editor);
+    expect(requireEditor(event({ cairnEditor: editor }))).toBe(editor);
   });
   it('rejects a none-capability editor with 403', () => {
-    expect(() => requireEditor(event({ editor: noneCapability }))).toThrowError(
+    expect(() => requireEditor(event({ cairnEditor: noneCapability }))).toThrowError(
       expect.objectContaining({ status: 403, body: { message: 'Editor access required' } }),
     );
   });
   it('rejects an unknown-role editor resolved to none with 403', () => {
-    expect(() => requireEditor(event({ editor: unknownRole }))).toThrowError(
+    expect(() => requireEditor(event({ cairnEditor: unknownRole }))).toThrowError(
       expect.objectContaining({ status: 403 }),
     );
   });
   it('redirects when no editor', () => {
-    expect(() => requireEditor(event({ editor: null }))).toThrow();
+    expect(() => requireEditor(event({ cairnEditor: null }))).toThrow();
   });
 });
 
 describe('requireSession admits any authenticated identity, including none capability', () => {
   it('admits owner, editor, and none-capability editors alike', () => {
-    expect(requireSession(event({ editor: owner }))).toBe(owner);
-    expect(requireSession(event({ editor }))).toBe(editor);
-    expect(requireSession(event({ editor: noneCapability }))).toBe(noneCapability);
+    expect(requireSession(event({ cairnEditor: owner }))).toBe(owner);
+    expect(requireSession(event({ cairnEditor: editor }))).toBe(editor);
+    expect(requireSession(event({ cairnEditor: noneCapability }))).toBe(noneCapability);
   });
   it('redirects when no editor', () => {
-    expect(() => requireSession(event({ editor: null }))).toThrow();
+    expect(() => requireSession(event({ cairnEditor: null }))).toThrow();
   });
 });
 
@@ -100,17 +100,17 @@ describe('requireAccess', () => {
   const access: AccessMap = { '/admin/money': r('publisher') };
 
   it('redirects when there is no session', () => {
-    expect(() => requireAccess(event({ editor: null }, new URL('https://x.test/admin/money')))).toThrow();
+    expect(() => requireAccess(event({ cairnEditor: null }, new URL('https://x.test/admin/money')))).toThrow();
   });
 
   it('returns the editor when the map admits the resolved target', () => {
-    const fixture = event({ editor: publisher, cairnAccess: access }, new URL('https://x.test/admin/money'));
+    const fixture = event({ cairnEditor: publisher, cairnAccess: access }, new URL('https://x.test/admin/money'));
     expect(requireAccess(fixture)).toBe(publisher);
   });
 
   it('403s and emits auth.access.denied when the map denies the target', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const fixture = event({ editor: webmaster, cairnAccess: access }, new URL('https://x.test/admin/money'));
+    const fixture = event({ cairnEditor: webmaster, cairnAccess: access }, new URL('https://x.test/admin/money'));
     expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
     const records = warnSpy.mock.calls.map(
       (c) => c[0] as { event?: string; email?: string; role?: string; target?: string },
@@ -132,10 +132,10 @@ describe('requireAccess', () => {
     const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };
     const unmatchedUrl = new URL('https://x.test/admin/unmapped');
     expect(() =>
-      requireAccess(event({ editor: publisher, cairnAccess: access }, unmatchedUrl)),
+      requireAccess(event({ cairnEditor: publisher, cairnAccess: access }, unmatchedUrl)),
     ).toThrowError(expect.objectContaining({ status: 403 }));
     expect(() =>
-      requireAccess(event({ editor: owner, cairnAccess: access }, unmatchedUrl)),
+      requireAccess(event({ cairnEditor: owner, cairnAccess: access }, unmatchedUrl)),
     ).toThrowError(expect.objectContaining({ status: 403 }));
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events.filter((e) => e === 'auth.access.denied')).toHaveLength(2);
@@ -143,7 +143,7 @@ describe('requireAccess', () => {
   });
 
   it('lets an explicit target argument override the URL pathname', () => {
-    const fixture = event({ editor: publisher, cairnAccess: access }, new URL('https://x.test/admin/unmapped'));
+    const fixture = event({ cairnEditor: publisher, cairnAccess: access }, new URL('https://x.test/admin/unmapped'));
     expect(requireAccess(fixture, '/admin/money')).toBe(publisher);
   });
 });

@@ -1,6 +1,6 @@
 // The admin nav-editing routes: the load and save a site's /admin/nav shim calls. A factory closes
 // over the composed runtime, mirroring createContentRoutes, so the read and commit paths are
-// unit-testable against a fetch double riding the event's locals.backend seam.
+// unit-testable against a fetch double riding the event's locals.cairnBackend seam.
 import { redirect, error } from '@sveltejs/kit';
 import { log } from '../log/index.js';
 import { parseSiteConfig, extractMenu, validateNavTree, setMenu, type NavNode } from '../nav/site-config.js';
@@ -28,12 +28,12 @@ export interface NavLoadData {
 /** Build the nav editor's load and save functions, closed over the composed runtime. */
 export function createNavRoutes(runtime: CairnRuntime) {
   /**
-   * Resolve the live content backend for one request: the dev double's `event.locals.backend`,
-   *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.backend`
+   * Resolve the live content backend for one request: the dev double's `event.locals.cairnBackend`,
+   *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.cairnBackend`
    *  seam the dev double uses, so the read and commit paths run with no real token mint.
    */
   function resolveBackend(event: CairnEvent): Backend {
-    return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   /** List page-like concepts (routable, not dated) for the URL picker. Best-effort per concept. */

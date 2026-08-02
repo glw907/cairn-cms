@@ -32,7 +32,7 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM editor')]);
 });
 
-/** Build an event whose locals.editor is the acting owner (as the guard would set it). */
+/** Build an event whose locals.cairnEditor is the acting owner (as the guard would set it). */
 function asOwner(form?: Record<string, string>) {
   const ev = makeEvent({ url: 'https://test.dev/admin/editors', form, editor: { email: 'own@x.dev', displayName: 'Own', role: 'owner', capability: 'owner' } });
   return ev;

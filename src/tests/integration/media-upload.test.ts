@@ -1,7 +1,7 @@
 // Task 5: the upload action's untrusted-input contract. The server owns every committed field and
 // trusts no client value. These tests drive the action directly through createContentRoutes against
 // the miniflare R2 bucket, with a constructed ContentEvent carrying the raw-body POST, the
-// X-Cairn-* headers, locals.editor, platform.env, and a fake cookie jar that returns the csrf cookie.
+// X-Cairn-* headers, locals.cairnEditor, platform.env, and a fake cookie jar that returns the csrf cookie.
 import { env } from 'cloudflare:test';
 import { githubApp } from '../../lib/index.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -88,7 +88,7 @@ function uploadEvent(opts: UploadOpts): CairnEvent {
     // A Uint8Array is a valid fetch body at runtime; the DOM lib's BodyInit predates the typed-array
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},
@@ -212,7 +212,7 @@ describe('upload action: the untrusted-input contract (Task 5)', () => {
     expect(res.data?.error).toBe('csrf');
   });
 
-  it('returns fail(401) JSON, not a 303, when locals.editor is absent', async () => {
+  it('returns fail(401) JSON, not a 303, when locals.cairnEditor is absent', async () => {
     const routes = createContentRoutes(runtime());
     const res = (await routes.uploadAction(uploadEvent({ bytes: PNG, hasEditor: false }))) as ActionResult;
     expect(res.status).toBe(401);

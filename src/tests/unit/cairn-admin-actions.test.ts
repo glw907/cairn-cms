@@ -29,7 +29,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+// The dev double rides event.locals.cairnBackend; createCairnAdmin no longer takes a backend dep.
 const backend = makeGithubBackend(REPO, async () => 'tok');
 const deps = {};
 
@@ -87,11 +87,11 @@ function actionEvent(
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`, { method: 'POST', body: new URLSearchParams(opts.form ?? {}) }),
     locals: {
-      editor:
+      cairnEditor:
         opts.editor === undefined
           ? { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }
           : opts.editor,
-      backend,
+      cairnBackend: backend,
     },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x', ...opts.env } },
     cookies: {
@@ -305,7 +305,7 @@ describe('content actions', () => {
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
@@ -349,7 +349,7 @@ describe('content actions', () => {
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
@@ -609,7 +609,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing create action on the list view redirects with the calm copy and logs admin.action.failed', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/pages', { form: { title: 'Trailhead', slug: 'trailhead' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = await expectRedirectAssertion(() => admin.actions.create(event as never));
     expect(result).toEqual({ status: 303, location: `/admin/pages?error=${encodeURIComponent(CALM_COPY)}` });
@@ -625,7 +625,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing save action on the edit view logs the concept, id, and editor, and redirects with the calm copy (no new=1: the flag was never posted)', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
     expect(result).toEqual({ status: 303, location: `/admin/posts/2026-05-01-hi?error=${encodeURIComponent(CALM_COPY)}` });
@@ -642,7 +642,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
   it('a throwing save on a brand-new entry (new=1) preserves the flag on the bounce, so the next load does not 404 the stranded draft', async () => {
     const admin = createCairnAdmin(runtime(), deps);
     const base = actionEvent('/admin/posts/2026-05-01-hi', { form: { title: 'Hi', body: 'body', new: '1' } });
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const result = await expectRedirectAssertion(() => admin.actions.save(event as never));
     expect(result).toEqual({
       status: 303,
@@ -665,7 +665,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
         body: JSON.stringify({ word: 'trailhead' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),
         set: () => {},
@@ -674,7 +674,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
       setHeaders: () => {},
     };
     const admin = createCairnAdmin(runtime(), deps);
-    const event = { ...base, locals: { ...base.locals, backend: throwingBackend() } };
+    const event = { ...base, locals: { ...base.locals, cairnBackend: throwingBackend() } };
     const errorSpy = vi.spyOn(log, 'error').mockImplementation(() => {});
     const result = (await admin.actions.addDictionaryWord(event as never)) as {
       status?: number;
@@ -713,7 +713,7 @@ describe('unexpected admin action failures (admin.action.failed, no raw 500)', (
         body: JSON.stringify({ text: 'teh trail', scope: 'document' }),
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': csrf },
       }),
-      locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
+      locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const } },
       platform: { env: { ANTHROPIC_API_KEY: 'sk-test-key' } },
       cookies: {
         get: (name: string) => (name === '__Host-cairn_csrf' ? csrf : undefined),

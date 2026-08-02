@@ -70,7 +70,7 @@ If your site already has a `handle` hook of its own, sequence the guard last wit
 SvelteKit's own `sequence(yourHook, createAuthGuard())`, so your hook sees every request and
 the guard still owns `/admin` gating.
 
-The guard sets `event.locals.editor`, and the bindings it and the mount read (the D1 store,
+The guard sets `event.locals.cairnEditor`, and the bindings it and the mount read (the D1 store,
 the email sender, the GitHub App key) need typing on `App.Platform.env`. Intersecting the
 engine's binding types is required, not a style choice: typing `App.Platform.env` any other way,
 hand-rolled bindings or a bare `wrangler types`-generated `Env`, fails to compile the route wiring

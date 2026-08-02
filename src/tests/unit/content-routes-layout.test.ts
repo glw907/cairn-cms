@@ -81,8 +81,8 @@ function customRoleEvent(
     route: { id: '/admin/[...path]' },
     request: new Request(`https://test.example${pathname}`),
     locals: {
-      editor: { email: 'inst@test', displayName: 'Inst', role, capability },
-      backend: eventBackend,
+      cairnEditor: { email: 'inst@test', displayName: 'Inst', role, capability },
+      cairnBackend: eventBackend,
     },
     platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
@@ -181,8 +181,8 @@ describe('shellPayload', () => {
       params: {},
       request: new Request('https://test.example/admin/posts'),
       locals: {
-        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
-        backend: quickFailBackend(),
+        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        cairnBackend: quickFailBackend(),
       },
       platform: { env: {} },
       cookies: { get: () => undefined, set: () => {}, delete: () => {} },
@@ -216,8 +216,8 @@ describe('shellPayload', () => {
       params: {},
       request: new Request('https://test.example/admin/posts'),
       locals: {
-        editor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
-        backend: { listBranches },
+        cairnEditor: { email: 'inst@test', displayName: 'Inst', role: 'instructor', capability: 'none' },
+        cairnBackend: { listBranches },
       },
       platform: { env: {} },
       cookies: { get: () => undefined, set: () => {}, delete: () => {} },

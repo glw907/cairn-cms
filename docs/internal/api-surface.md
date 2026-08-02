@@ -128,7 +128,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `/ambient`
 
-- `App.Locals`: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }
+- `App.Locals`: { cairnEditor?: Editor | null; cairnBackend?: Backend; cairnAuditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }
 
 ## `/auth-crypto`
 
@@ -321,7 +321,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AuthRoutesConfig`: { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }
 - `CairnAdminDeps`: { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: { client?: ((opts: { apiKey: string }) => TidyClient); timeoutMs?: number }; navFilter?: ((items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>); attention?: ((ctx: { editor: Editor; event: CairnEvent<CairnEnv> }) => AttentionItem[] | Promise<AttentionItem[]>) }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
-- `CairnEvent`: { url: URL; request: Request; params: { [x: string]: string }; route: { id: string | null }; cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; locals: { editor?: Editor | null; backend?: Backend; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: PlatformContext<Env> }
+- `CairnEvent`: { url: URL; request: Request; params: { [x: string]: string }; route: { id: string | null }; cookies: CookieJar; setHeaders: (headers: Record<string, string>) => void; locals: { cairnEditor?: Editor | null; cairnBackend?: Backend; cairnAuditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: PlatformContext<Env> }
 - `CairnMediaBindings`: { MEDIA_BUCKET: R2Bucket }
 - `CairnPlatformBindings`: { AUTH_DB: D1Database; EMAIL: EmailSender; PUBLIC_ORIGIN: string; GITHUB_APP_PRIVATE_KEY_B64: string; ANTHROPIC_API_KEY?: string }
 - `ContentFormFailure`: { error?: string; brokenLinks?: string[]; body?: string; inboundLinks?: InboundLink[]; inboundKind?: "link" | "include"; id?: string; hash?: string; usage?: UsageEntry[]; foundIn?: number }

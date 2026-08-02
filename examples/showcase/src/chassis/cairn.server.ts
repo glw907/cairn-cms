@@ -10,7 +10,7 @@ import { devBackendEnabled } from './dev-gate.js';
 export const runtime = composeRuntime({ adapter: cairn, siteConfig });
 
 // Under the dev backend the tidy action calls a deterministic stub instead of the real Anthropic
-// SDK. The dev content backend now rides event.locals.backend (set by the fenced devBackendHandle),
+// SDK. The dev content backend now rides event.locals.cairnBackend (set by the fenced devBackendHandle),
 // so there is no token stub here. The block sits behind devBackendEnabled, a build-foldable gate
 // (see ./dev-gate.ts), and the fake-anthropic import is dynamic, so a default production build
 // folds the whole block out (DCE), keeping the dev package's bypass barrel out of the deployed

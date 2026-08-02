@@ -64,9 +64,9 @@ function makeEvent(opts: {
     route: { id: '/admin/club/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
     locals: {
-      editor: opts.editor === undefined ? owner : opts.editor,
+      cairnEditor: opts.editor === undefined ? owner : opts.editor,
       cairnAccess: opts.cairnAccess,
-      auditSink: opts.auditSink,
+      cairnAuditSink: opts.auditSink,
     },
     platform: opts.env === undefined ? undefined : { env: opts.env },
     setHeaders: () => {},

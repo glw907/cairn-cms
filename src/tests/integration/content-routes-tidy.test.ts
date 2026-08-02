@@ -66,7 +66,7 @@ function tidyEvent(opts: TidyOpts = {}): CairnEvent {
     params: { concept: 'posts', id: 'my-entry' },
     route: { id: '/admin/[concept]/[id]' },
     request: new Request(url, { method: 'POST', body, headers }),
-    locals: { editor: opts.hasEditor === false ? null : editor },
+    locals: { cairnEditor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { ANTHROPIC_API_KEY: 'sk-test-key' } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
     setHeaders: () => {},

@@ -120,7 +120,7 @@ describe('navLoad', () => {
       url: new URL('https://t.example/admin/nav'),
       params: {},
       request: new Request('https://t.example/admin/nav'),
-      locals: { editor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
+      locals: { cairnEditor: { email: 'inst@t', displayName: 'Inst', role: 'instructor', capability: 'none' } },
       platform: { env: {} },
     };
     await expect(routes.navLoad(event as never)).rejects.toMatchObject({ status: 403 });

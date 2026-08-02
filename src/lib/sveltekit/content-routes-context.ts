@@ -174,7 +174,7 @@ export interface ContentRoutesContext {
   /** The tidy action's own request deadline in milliseconds. */
   tidyTimeoutMs: number;
   /**
-   * Resolve the live content backend for one request. The dev double's `event.locals.backend`
+   * Resolve the live content backend for one request. The dev double's `event.locals.cairnBackend`
    *  wins, else the production `runtime.backend.connect(env)`.
    */
   resolveBackend(event: CairnEvent): Backend;
@@ -248,14 +248,14 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
   const publishActions = normalizePublishActions(runtime.publishActions, runtime.concepts);
 
   /**
-   * Resolve the live content backend for one request. The dev double's `event.locals.backend`
+   * Resolve the live content backend for one request. The dev double's `event.locals.cairnBackend`
    *  wins, else the production `runtime.backend.connect(env)`. A test rides the same
-   *  `locals.backend` seam the dev double uses, so the read and commit paths run with no real
+   *  `locals.cairnBackend` seam the dev double uses, so the read and commit paths run with no real
    *  token mint. The GitHub provider mints and caches its installation token lazily behind
    *  `connect`, so a per-request resolve re-signs only on a cache miss.
    */
   function resolveBackend(event: CairnEvent): Backend {
-    return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
+    return event.locals.cairnBackend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
   // The default Anthropic factory builds the real SDK client from the resolved key. Tests inject a fake

@@ -90,7 +90,7 @@ export const admin = createCairnAdmin(runtime);
 `createCairnAdmin` defaults the magic-link branding from the runtime's `siteName` and `sender`,
 so most sites pass no deps at all. A site that does override something passes the grouped
 `CairnAdminDeps` bag: `{ auth: { branding?, send? }, tidy: { client?, timeoutMs? } }`. The showcase
-reads markdown through a fake GitHub backend in development, which rides `event.locals.backend`
+reads markdown through a fake GitHub backend in development, which rides `event.locals.cairnBackend`
 from a fenced dev handle rather than through a dep. A deployed site connects the real backend and
 mints installation tokens on demand, so it passes no backend dep. See
 [`CairnAdminDeps`](./sveltekit.md#cairnadmindeps) for the full shape.
@@ -149,7 +149,7 @@ version bump alone; there is no per-site action table to keep in sync.
 
 The engine's auth guard (`createAuthGuard()`, wired in `hooks.server.ts`) gates the whole
 `/admin/*` subtree before any load runs. The mount itself does no access control; the guard owns
-it. The guard sets `event.locals.editor`, and one line in `src/app.d.ts` types it:
+it. The guard sets `event.locals.cairnEditor`, and one line in `src/app.d.ts` types it:
 `import '@glw907/cairn-cms/ambient';` (see the [ambient types reference](./ambient.md)). The guard
 and the mount also read a set of Cloudflare bindings (the auth store, the email sender, the GitHub
 App credentials); intersecting

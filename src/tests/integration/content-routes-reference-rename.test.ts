@@ -63,7 +63,7 @@ function runtime(): CairnRuntime {
   } as CairnRuntime;
 }
 
-// The read/commit backend every event's `locals.backend` rides.
+// The read/commit backend every event's `locals.cairnBackend` rides.
 const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A rename POST for posts/<id> to <slug>. */
@@ -73,7 +73,7 @@ function renameEvent(id: string, slug: string) {
     url: new URL(`https://t.example/admin/posts/${id}`),
     params: { concept: 'posts', id },
     request: new Request(`https://t.example/admin/posts/${id}`, { method: 'POST', body }),
-    locals: { editor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }, backend },
+    locals: { cairnEditor: { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const }, cairnBackend: backend },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
   };
 }

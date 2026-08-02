@@ -866,7 +866,7 @@ declare function roleHome(roles: RolesDeclaration | undefined, role: string): st
 declare function ownerLevelRoles(roles: RolesDeclaration | undefined): string[];
 ```
 
-The engine calls these to resolve `locals.editor.capability` and the `/admin` landing at the guard
+The engine calls these to resolve `locals.cairnEditor.capability` and the `/admin` landing at the guard
 and the routes; a custom admin route reads the same helpers to gate itself against a vocabulary
 without re-deriving the mapping. `resolveCapability` returns the mapped capability, treating an
 `undefined` vocabulary as `DEFAULT_ROLES`, and returns `'none'` for a role name absent from the
@@ -878,7 +878,7 @@ guard counts across instead of the literal `'owner'` string.
 #### The typed read-side: `CairnRolesRegister`
 
 A site augments this empty registry interface once to narrow the public `Role` type to its own
-declared names everywhere the engine and the site's own routes read `locals.editor.role`,
+declared names everywhere the engine and the site's own routes read `locals.cairnEditor.role`,
 including custom admin routes. Unaugmented, `Role` stays exactly `'owner' | 'editor'`, today's type.
 
 ```ts
@@ -1013,8 +1013,8 @@ function signatures above reference these.
 | `RoleDeclaration` | Extension API | `type RoleDeclaration` | One role's mapping in a `defineRoles` vocabulary: a bare `Capability`, or `{ capability: Capability; home?: string }` naming the `/admin` route that role lands on. |
 | `RolesDeclaration` | Extension API | `type RolesDeclaration` | A site's whole role vocabulary: role name to `RoleDeclaration`, the shape `defineRoles` validates and returns. |
 | <a id="cairnrolesregister"></a>`CairnRolesRegister` | Extension API | `interface CairnRolesRegister {}` | The empty registry interface a site augments to narrow `Role` to its own declared role names (see the preceding [Roles](#roles) section). |
-| <a id="role"></a>`Role` | Extension API | `type Role` | The role names `locals.editor.role` carries: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
-| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role, and its resolved `capability`. `locals.editor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.editor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
+| <a id="role"></a>`Role` | Extension API | `type Role` | The role names `locals.cairnEditor.role` carries: registry-derived from `CairnRolesRegister`, defaulting to `'owner' \| 'editor'` when a site declares no vocabulary. |
+| <a id="editor"></a>`Editor` | Extension API | `interface Editor` | The signed-in admin identity the whole admin reads: email, displayName, role, and its resolved `capability`. `locals.cairnEditor` carries it for every `/admin/**` route (a custom route reads it directly or through `requireSession`/`requireOwner`/`requireEditor`), and the ambient declaration that types `locals.cairnEditor` ships from the [`./ambient`](./ambient.md) subpath. Email is always trimmed and lowercased, an invariant held at every write and lookup path (the `auth.role-vocabulary` and `auth.email-normalization` [doctor checks](./doctor.md) flag a drift). |
 | `AccessMap` | Extension API | `type AccessMap = Record<string, Role[]>` | A site's whole access declaration: a target (an engine screen id or an `/admin`-prefixed route path) to the role names admitted to it. A target absent from the map keeps today's behavior. See [Access map](#access-map). |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv` | The Worker bindings and vars the whole engine reads, all optional: `AUTH_DB`, `PUBLIC_ORIGIN`, `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`. One shape for every factory that needs platform bindings; a site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the required subset compile-checked. |
 | `EmailRecipient` | Extension API | `type EmailRecipient = string \| { email: string; name?: string }` | A `cc`/`bcc` recipient for the Email Sending API: a bare address, or an address with a display name. |

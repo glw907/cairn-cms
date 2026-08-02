@@ -38,7 +38,7 @@ already on a larger vocabulary has this applied already.
 
 ## Narrow the `Role` type
 
-Augment `CairnRolesRegister` once in your `app.d.ts` so `locals.editor.role` narrows to your
+Augment `CairnRolesRegister` once in your `app.d.ts` so `locals.cairnEditor.role` narrows to your
 declared names everywhere it's read, custom routes included, instead of staying the unaugmented
 `'owner' | 'editor'`:
 
@@ -63,7 +63,7 @@ for a role-gated section built on the same vocabulary this guide declares.
 
 A `/admin/classes` route is an ordinary SvelteKit route dropped next to cairn's own admin
 routes, the same seam [Add a custom admin screen](./add-a-custom-admin-screen.md) covers in full.
-The auth guard already ran and set a populated, typed `event.locals.editor` before this route's
+The auth guard already ran and set a populated, typed `event.locals.cairnEditor` before this route's
 `load` does, for an `instructor` session exactly as for an owner or an editor: a `none`-capability
 session still authenticates and reaches this route untouched. Nothing about `none` blocks the
 route from resolving, so gate it yourself.

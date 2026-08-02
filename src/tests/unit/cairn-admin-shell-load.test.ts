@@ -25,7 +25,7 @@ function runtime(): CairnRuntime {
   };
 }
 
-// The dev double rides event.locals.backend; createCairnAdmin no longer takes a backend dep.
+// The dev double rides event.locals.cairnBackend; createCairnAdmin no longer takes a backend dep.
 const backend = makeGithubBackend(REPO, async () => 'tok');
 const deps = {};
 
@@ -41,11 +41,11 @@ function eventFor(
     url: new URL(`https://t.example${pathname}`),
     request: new Request(`https://t.example${pathname}`),
     locals: {
-      editor:
+      cairnEditor:
         opts.editor === undefined
           ? { email: 'e@t', displayName: 'E', role: 'editor' as const, capability: 'editor' as const }
           : opts.editor,
-      backend,
+      cairnBackend: backend,
     },
     platform: { env: { GITHUB_APP_PRIVATE_KEY_B64: 'x' } },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },

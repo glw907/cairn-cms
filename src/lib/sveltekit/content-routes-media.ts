@@ -456,7 +456,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   async function ingestAndStore(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
-    const editor = event.locals.editor ?? null;
+    const editor = event.locals.cairnEditor ?? null;
     const refuse = (status: number, reason: string): ReturnType<typeof fail> => {
       log.warn('media.upload_failed', { editor: editor?.email, reason });
       return fail(status, { error: reason } satisfies MediaUploadFailure);
@@ -601,7 +601,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
   async function mediaLibraryUploadAction(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     const result = await ingestAndStore(event);
     if (!('record' in result)) return result;
-    const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
+    const editor = event.locals.cairnEditor!; // ingestAndStore already refused a missing session.
     const backend = ctx.resolveBackend(event);
 
     // Read the head BEFORE the manifest, so this expectedHead is at-or-before the bytes the commit

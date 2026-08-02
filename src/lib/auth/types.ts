@@ -10,7 +10,7 @@ import type { Capability, RolesDeclaration } from './roles.js';
 export interface CairnRolesRegister {}
 
 /**
- * The role names the engine reads on `locals.editor`. Registry-derived: the site's declared names
+ * The role names the engine reads on `locals.cairnEditor`. Registry-derived: the site's declared names
  * when it augments `CairnRolesRegister`, else the implicit `'owner' | 'editor'` pair.
  */
 export type Role = CairnRolesRegister extends { roles: infer R }

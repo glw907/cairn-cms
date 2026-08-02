@@ -16,7 +16,7 @@ export { expectRedirect, expectHttpError } from '../_redirect-assertions.js';
 /** The GitHub App identity every content-routes/nav-routes unit test commits against. */
 export const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
-/** The read/commit backend every event's `locals.backend` rides by default. */
+/** The read/commit backend every event's `locals.cairnBackend` rides by default. */
 export const backend = makeGithubBackend(REPO, () => Promise.resolve('test-token'));
 
 /** A single dated "posts" concept with no fields, the default every runtime() starts from. */
@@ -109,7 +109,7 @@ export function contentEvent(opts: ContentEventOptions) {
     params,
     route: { id: route },
     request: new Request(url, init),
-    locals: { editor, backend: eventBackend },
+    locals: { cairnEditor: editor, cairnBackend: eventBackend },
     platform: { env },
     cookies,
     setHeaders: () => {},

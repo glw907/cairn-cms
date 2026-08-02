@@ -122,13 +122,13 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
       const editor = id ? await resolveSession(env.AUTH_DB, id, Date.now()) : null;
       if (!editor) throw redirect(303, '/admin/login');
       // Resolve capability once per request, here, so every downstream load/action reads it off
-      // locals.editor with no re-derivation. A role absent from the vocabulary (a pruned config, a
-      // hand-edited row) still authenticates at none capability; only the log names it, so a stale
-      // config never locks the person out of sign-in.
+      // locals.cairnEditor with no re-derivation. A role absent from the vocabulary (a pruned
+      // config, a hand-edited row) still authenticates at none capability; only the log names it,
+      // so a stale config never locks the person out of sign-in.
       if (!Object.hasOwn(vocabulary, editor.role)) {
         log.warn('auth.role.unknown', { email: editor.email, role: editor.role });
       }
-      event.locals.editor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
+      event.locals.cairnEditor = { ...editor, capability: resolveCapability(vocabulary, editor.role) };
       // access ?? {}, not access: canReach and hasAccessRule agree on undefined and {} in every
       // branch (both fail closed on an unmapped target the same way), so this is behavior-
       // identical for a zero-config site. It buys section-action.ts a real signal: an absent
@@ -146,7 +146,7 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
  *  Takes {@link CairnEvent}, so every engine load/action and a site's own real event satisfy it.
  */
 export function requireSession(event: CairnEvent): Editor {
-  const editor = event.locals.editor;
+  const editor = event.locals.cairnEditor;
   if (!editor) throw redirect(303, '/admin/login');
   return editor;
 }
@@ -163,7 +163,7 @@ export function requireOwner(event: CairnEvent): Editor {
 /**
  * For the engine's own content and admin-mutation surfaces: a signed-in owner or editor, or 403
  * for a none-capability session. The none contract (spec section 4): a none session still
- * authenticates and carries a populated `locals.editor`, so it passes through the
+ * authenticates and carries a populated `locals.cairnEditor`, so it passes through the
  * `CairnAdminShell` custom-route seam untouched; only the engine's own content and roster loads
  * and actions call this and refuse it.
  */

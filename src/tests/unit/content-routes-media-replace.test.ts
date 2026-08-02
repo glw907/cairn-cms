@@ -119,7 +119,7 @@ function previewEvent(
 }
 
 /** The apply event: a FormData POST. The `media` field carries the new asset's optimistic record as
- *  JSON (the untrusted-record validator parses it). requireSession reads locals.editor. */
+ *  JSON (the untrusted-record validator parses it). requireSession reads locals.cairnEditor. */
 function applyEvent(fields: { oldHash?: string; newHash?: string; confirmSlug?: string; media?: MediaEntry[] | string }) {
   const form = new FormData();
   if (fields.oldHash !== undefined) form.set('oldHash', fields.oldHash);

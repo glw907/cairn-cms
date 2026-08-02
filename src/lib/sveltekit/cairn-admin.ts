@@ -29,7 +29,7 @@ import type { CairnEvent } from './types.js';
 
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
- *  content backend rides `event.locals.backend` (the dev double) or the adapter's provider, so it
+ *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
  *  is not a dep here.
  */
 export interface CairnAdminDeps {
@@ -242,7 +242,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
         if ('id' in view) fields.id = view.id;
         // A failure reading the editor must never mask the original error logged above.
         try {
-          const editor = event.locals.editor;
+          const editor = event.locals.cairnEditor;
           if (editor) fields.editor = editor.email;
         } catch {
           // No editor to attribute; the record still names the action and the error.

@@ -85,7 +85,7 @@ function event(role: string, capability: 'owner' | 'editor' | 'none') {
     url: new URL('https://test.example/admin/posts'),
     params: {},
     request: new Request('https://test.example/admin/posts'),
-    locals: { editor: { email: `${role}@test`, displayName: role, role, capability }, backend },
+    locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
     platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
   };
@@ -197,7 +197,7 @@ function accessEvent(role: string, capability: 'owner' | 'editor') {
     url: new URL(url),
     params: {},
     request: new Request(url),
-    locals: { editor: { email: `${role}@test`, displayName: role, role, capability }, backend },
+    locals: { cairnEditor: { email: `${role}@test`, displayName: role, role, capability }, cairnBackend: backend },
     platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
   };

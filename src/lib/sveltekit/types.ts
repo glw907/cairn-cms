@@ -69,17 +69,19 @@ export interface CairnEvent<Env = CairnEnv> {
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
   // (spec 7.1). A real SvelteKit RequestEvent always supplies it.
   setHeaders(headers: Record<string, string>): void;
-  // `backend` is the per-request content store the dev-backend handle injects; the engine resolves
-  // it ahead of the real provider, so typing it here makes the seam a checked contract rather than a
-  // cast. A production request leaves it absent and the real `githubApp` provider connects.
-  // `cairnAccess` is the site's declared access map, attached by the guard alongside `editor`; it is
-  // internal (never serialized to a page payload) and exists only so `requireAccess` needs no extra
-  // argument at the call site. `auditSink` is a site's optional sink for `adminAction`'s audit
-  // records, wired the same way.
+  // The four members share the flat `cairn` prefix (C2 breaking-window pass, R2 ruling), so a
+  // grep for one name finds every engine read in any repo with no namespace to peel back first.
+  // `cairnBackend` is the per-request content store the dev-backend handle injects; the engine
+  // resolves it ahead of the real provider, so typing it here makes the seam a checked contract
+  // rather than a cast. A production request leaves it absent and the real `githubApp` provider
+  // connects. `cairnAccess` is the site's declared access map, attached by the guard alongside
+  // `cairnEditor`; it is internal (never serialized to a page payload) and exists only so
+  // `requireAccess` needs no extra argument at the call site. `cairnAuditSink` is a site's
+  // optional sink for `adminAction`'s audit records, wired the same way.
   locals: {
-    editor?: Editor | null;
-    backend?: Backend;
-    auditSink?: AdminActionAuditSink;
+    cairnEditor?: Editor | null;
+    cairnBackend?: Backend;
+    cairnAuditSink?: AdminActionAuditSink;
     cairnAccess?: AccessMap;
   };
   platform?: PlatformContext<Env>;

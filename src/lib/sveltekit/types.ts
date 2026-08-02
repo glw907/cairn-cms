@@ -43,6 +43,17 @@ export interface EventBase<Env> {
   platform?: PlatformContext<Env>;
 }
 
+/**
+ * Deliberately pinned to `AuthEnv`, not generic over a site's own `Env` (env-genericity sweep,
+ * pre-beta C1 Task 2): a compile-only fixture proving `createAuthRoutes` and `createEditorRoutes`
+ * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
+ * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
+ * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
+ * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `AuthEnv`, which is exactly what
+ * keeps TypeScript's weak-type detection (TS2559) from rejecting the assignment; a genuinely
+ * disjoint env (sharing no property names) still fails it, so the pin costs a compliant site
+ * nothing. Adding a type parameter here would be public surface with no fixture forcing it.
+ */
 export interface RequestContext extends EventBase<AuthEnv> {
   cookies: CookieJar;
   // Required so a site cannot silently drop the confirm page's Referrer-Policy header
@@ -50,6 +61,12 @@ export interface RequestContext extends EventBase<AuthEnv> {
   setHeaders(headers: Record<string, string>): void;
 }
 
+/**
+ * Chained to {@link RequestContext}'s own `AuthEnv` pin, so it inherits that pin's reasoning
+ * unchanged: a compile-only fixture proves `createAuthGuard`'s returned `Handle` assigns into
+ * `sequence()` under a realistic compliant `App.Platform['env']` with zero casts. See
+ * `RequestContext`'s doc comment for why the pin is safe.
+ */
 export interface HandleInput {
   event: RequestContext;
   resolve(event: RequestContext): Promise<Response> | Response;

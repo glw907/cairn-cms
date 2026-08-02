@@ -103,6 +103,12 @@ export interface AdminActionDeps {
  *   }),
  * };
  * ```
+ *
+ * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
+ * Task 2): it never reads `event.platform`, so it has no binding-typed value to thread through in
+ * the first place. A site whose action needs its own env bindings reaches for
+ * `createSectionAction` (`./section-action.js`), which is generic over `Env` for exactly that
+ * reason. This is not a missed instance of the sweep; it is the seam that does not need one.
  */
 export function adminAction<T>(
   handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,

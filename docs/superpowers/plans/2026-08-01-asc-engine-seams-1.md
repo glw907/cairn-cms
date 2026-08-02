@@ -464,3 +464,64 @@ rule; the fifth is one line.
 - Pass-end runs the `cairn-pass` ritual: code-simplifier over the changed code, the reviewer
   fan-out (`web-auth-security-reviewer` is mandatory here: the pass touches auth crypto and
   an authorization wrapper), docs and ROADMAP dimensions, STATUS update, post-mortem.
+
+---
+
+## Post-mortem (2026-08-01)
+
+**Shipped.** All four tasks landed, plus a fifth fold commit and a refinement commit, on
+`asc-engine-seams-1`:
+
+- `af886673` the `cookieName` primitive and the `tokensMatch` consolidation
+- `19659a39` the `./auth-crypto` server-only subpath
+- `a3812180` the `createSectionAction` module and its suite
+- `43eade69` the barrel export and the documentation
+- `adde6e3c` the pass-end review fold
+- `9226f3b0` the code-simplifier refinement and the spec's amended check order
+
+**Verified.** `npm run check` 1545 files 0 errors 0 warnings; `npm test` 377 files, 4638
+tests, exit 0 confirmed unpiped (a first run captured `tail`'s status through a pipe, which is
+exactly the masking the shell-gate-hygiene rule names); `check:comments`,
+`check:reference`, `check:reference:signatures`, `check:package`, `check:docs`,
+`check:snippets` (183 blocks), and `check:surface` all green, the four CI-only gates run by
+name. The consumer build is proven by CI's own checkout on PR #15, not by the worktree, whose
+symlinked showcase `node_modules` resolves to main's build.
+
+**Decisions locked.**
+
+1. **The check order moved, and the spec is amended, not the code excused.** `resolveDb` runs
+   after every authorization check. Both pass-end reviewers independently found that the
+   spec's order let a refused session read deployment state off the status code and audited
+   its attempt as a config fault. The access-map-attached 500 stays ahead of authorization out
+   of necessity and leaks nothing per-editor.
+2. **Uniform refusal copy is now structural.** The simplifier factored the five refusal
+   branches into `deny` and `misconfigured` helpers, so there is exactly one place each
+   response body is built. The security property was previously a convention five branches
+   had to keep by hand.
+3. **Two review suggestions deliberately not adopted**, both recorded in the spec: throwing
+   rather than `fail(...)` for the 403/500 branches (kept, with `requireAccess` in the
+   section's load as the compensating requirement), and detecting a rest-parameter route to
+   refuse the default target (`opts.target` is declarative on purpose; a pathname heuristic
+   would refuse legitimate routes and still miss the multi-section case).
+
+**Plan defects found in execution, all by verifying rather than complying.** Task 2's and
+Task 4's instruction to add anchors to `scripts/check-reference-signatures.mjs` was wrong in
+both directions: that list is an *exemption* allowlist, so following it would have skipped the
+signature check for exactly the exports this pass added. Both implementers verified the gate
+before and after and left the file untouched. Task 3's file list also omitted two compile
+necessities (`src/lib/log/events.ts` for the new log vocabulary, and an integration test
+asserting `cairnAccess` was literally `undefined`, which the guard amendment changed to `{}`).
+The standing lesson holds: a plan's file list is a starting point, and `grep` beats trust in
+"behavior-identical".
+
+**Carried forward.** Pass two inherits the amended order and must describe denials as arriving
+before binding resolution in the audit sink's reference. The `applySecurityHeaders` promotion
+is filed in ROADMAP under Considering. A weak-type generic constraint (`Env extends AuthEnv`
+fails TS2559 against a real site env, because an all-optional constraint triggers weak-type
+detection) forced two narrow, commented casts in `section-action.ts`; both are load-bearing
+and documented at the cast site.
+
+**Budgets.** Six implementer/simplifier dispatches plus a four-agent workflow (two
+implementers, two reviewers). Human interaction points: one, the pass-start instruction. Every
+subsequent decision was either specified by the plan or settled against the spec. The
+mid-pass roadmap conversation was Geoff-initiated and separate from the pass's own execution.

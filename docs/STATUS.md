@@ -62,18 +62,18 @@ seam); `AdminActionError` becomes `UnauditedActionError`; six log events rename 
 bounded error-code union (closing the `?error=` phishing surface); every type named in a public
 signature becomes exported.
 
-**One open call for Geoff at plan approval:** the plan honors the one-diff mandate but
-recommends pre-approving a contingency split at Task 12 (the refusal-channel convergence, the
-only behavioral task) into pass C2b, same unpublished window, one combined `Consumers must:`
-list at the cut.
+**PLAN APPROVED 2026-08-02 (Geoff), Task-12 split PRE-APPROVED:** if the pass bursts,
+execution cuts at Task 12 (the refusal-channel convergence) into pass C2b on its own judgment,
+same unpublished window, one combined `Consumers must:` list at the cut, no further ask.
 
 **Resume prompt** (fresh Opus 5 execution session, from `~/Projects/cairn-cms`, on `main`):
 "Execute the C2 breaking-window pass. Invoke `cairn-pass`, read
 `docs/superpowers/plans/2026-08-02-c2-breaking-window.md` in full, create a worktree off
 `main`, and run the fourteen tasks in order via `cairn-implementer` dispatches, reviewing each
 diff and confirming the full gate between tasks. Task 1's tripwire proof gates the pass:
-if `BareWranglerSiteEnv` does not fail TS2578, stop and report. One PR, one `Consumers must:`
-list assembled task by task, hold unpublished at close."
+if `BareWranglerSiteEnv` does not fail TS2578, stop and report. The Task-12 contingency split
+into C2b is pre-approved; exercise it if the pass bursts. One PR (two if split), one
+`Consumers must:` list assembled task by task, hold unpublished at close."
 
 **Open question for Geoff, still unanswered and now due.** Where the two feature design sittings
 (history/revert, preview) slot against the standing template queue (the optical-centering ratchet,

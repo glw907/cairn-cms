@@ -6,6 +6,9 @@
 > (`docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`) is now historical input;
 > every ruling lives here.
 
+**Status: APPROVED 2026-08-02 (Geoff), the Task-12 contingency split PRE-APPROVED.** Execution
+may cut at Task 12 into pass C2b without a further ask; see the pass-size ruling below.
+
 **Goal:** spend the last cheap breaking window in one deliberate reshape that leaves the public
 surface uniform, honest, and derivable, then hold unpublished.
 
@@ -52,7 +55,8 @@ now rather than after two task splits force it: **if the pass bursts, Task 12 (t
 refusal-channel convergence, ruling R10) becomes pass C2b** on its own worktree immediately
 after C2 merges. Both passes sit in the same unpublished window and the `Consumers must:` list
 is assembled across both at the cut, so the consumer still absorbs one batch.
-**Recommendation to Geoff at approval: pre-approve the split.** Task 12 is the one behavioral
+**The split is PRE-APPROVED (Geoff, 2026-08-02): execution exercises it on its own judgment if
+the pass bursts, with no further ask.** Task 12 is the one behavioral
 (not naming/typing) task, it has its own review gate (`web-auth-security-reviewer` plus a visual
 read of the admin's failure rendering), and everything before it is mechanically verifiable by
 the type gates.

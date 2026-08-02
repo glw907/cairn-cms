@@ -137,3 +137,68 @@ Documentation task. The code has settled.
   mandatory, not optional.
 - No documented path still tells a site to map `AdminActionError`.
 - Holds unpublished on `refusal-channel-convergence`.
+
+---
+
+## Post-mortem (2026-08-02)
+
+**Shipped.** Both tasks plus the security-review fold, five commits on `refusal-channel-convergence`
+(`f7f93e01` the convergence, `f056a856` the docs retirement, `576c620d` the fold, plus the plan and
+the main merge). Holds unpublished in the shared `## Unreleased` window. Full gate green at close:
+`npm run check` 0/0, `npm test` exit 0 unpiped (4722 tests), every named gate including the four
+CI-only ones, showcase build and typecheck against this worktree's own engine.
+
+**What changed.** `adminAction`'s two authorization-era refusals ride SvelteKit's own channels:
+missing editor logs `admin.action.session_absent` and redirects `303` to `/admin/login` (matching
+`requireSession` exactly); a CSRF mismatch logs `admin.action.csrf_rejected` and throws kit's
+`error(403, ...)` with a browser-safe message. `AdminActionError` survives as exactly one thing, the
+dev-only unaudited-action signal. The `handleError` requirement is retired from the reference, the
+guide, and the showcase (whose hook is deleted, restoring kit's default logging). The implementer
+verified both converged shapes against kit 2.61.1's action source on BOTH the enhanced and
+plain-form paths before reporting, which is the assumption-checking this arc keeps proving
+necessary.
+
+**What the mandatory review earned.** Verdict sound, but it found the pass had built asymmetries in
+both directions:
+
+1. **The layers disagreed on what counts as a CSRF witness.** The guard accepts a valid
+   `X-Cairn-CSRF` header and short-circuits; `adminAction` read only the `csrf` form field. A
+   fetch-based custom action using the header (the engine's own documented media-upload pattern)
+   would clear the outer gate and 403 on the inner one, every request, benignly, and the new
+   log-events row told operators to treat exactly that as a possible attack. The fold aligned the
+   inner check on the same helper (`validateCsrfHeader` first, form-field fallback), which is the
+   correct direction: an inner defense-in-depth layer must accept at least what the outer layer
+   deliberately admits.
+2. **One converged branch got observability and the other lost its only signal.** The CSRF branch
+   gained a log event; the missing-editor branch silently 303ed, having lost the loud
+   `AdminActionError` message it used to carry. A developer mounting an action outside the guard's
+   coverage would read the symptom as "sessions keep expiring." Now logged as
+   `admin.action.session_absent`.
+3. The review also corrected a conflation this pass INTRODUCED: grouping `adminAction` with the
+   `require*` helpers as "authorization." It authenticates and verifies CSRF; it authorizes nothing,
+   and a `none`-capability editor reaches the handler. The docs now say so and point at
+   `requireAccess`/`createSectionAction` for capability checks.
+
+The species ledger, across C1 and this pass: C1's reviews caught code breaking promises the docs
+made; this one caught a doc making an operational promise the code's own outer layer falsifies. Same
+seam, both directions. The claims-verification docs audit now filed as a 1.0 gate (ROADMAP, "Toward
+1.0") is that lesson made structural.
+
+**Smaller fold items.** `createSectionAction`'s rate-limit catch now rethrows kit control-flow shapes
+instead of degrading them to open, mirroring the audit-sink guard. The changelog and upgrade guide
+name the UX consequence (both refusals navigate away, discarding unsaved input, where the old 500
+left the page recoverable). The reference inlines a log-first `handleError` snippet instead of
+pointing at the showcase file that no longer demonstrates it. ROADMAP's P1 cluster notes the showcase
+exercises neither `adminAction` nor the converged paths end to end, so kit-version drift in
+action-thrown rendering would go uncaught.
+
+**Sequencing note.** This pass ran before C2 because it changed what `AdminActionError` means, and
+the naming sitting should not name a symbol mid-change. The full breaking-window agenda (eleven
+items in, four out) is `docs/superpowers/specs/2026-08-02-c2-breaking-window-agenda.md`; this pass
+added two entries to its vocabulary item (the `csrf_rejected`/`guard.rejected` pair and the
+`session_absent` naming).
+
+**Carried.** The docs claims-verification audit (1.0 gate, filed). The showcase adminAction coverage
+gap (P1). The guard's own unlogged redirect paths (deliberately untouched here; the consistency call
+is C2-adjacent vocabulary work). Whether `AdminActionError` keeps its name in its shrunken role is
+agenda item 8.

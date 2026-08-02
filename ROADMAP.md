@@ -38,6 +38,13 @@ event, not an everyday one." Cut it when the surface stops moving, not on a date
 - [ ] **The reference docs cover every export**, the guides and the upgrade guide are current, and the
   extending-developer seams (the thin seams plus the admin design vocabulary) are documented as the versioned
   contract a developer builds on.
+- [ ] **The docs claims-verification audit has run** (Geoff, 2026-08-02): an adversarial sweep of the
+  whole docs corpus tracing every factual claim a page makes about engine behavior to the code, the
+  defect class no mechanical gate catches (the five-channels model, the `handleError` requirement that
+  never worked, and the falsified `csrf_rejected` log row all passed every gate). Workflow-shaped:
+  extract claims per page, verify each against source, fold what fails. Runs AFTER `beta.1` so its
+  inputs exist (stranger issues, the friction log, Topo's docs-effectiveness signal) and BEFORE
+  `1.0.0` ships; it is a blocking gate on the final release, not a someday sweep.
 - [x] **The admin reads as an idiomatic exemplar**: the admin idiomatic re-expression initiative is done
   (the admin sweep, the starter-template fold, and the docs phase), so the surface a developer copies is
   native, not bespoke, and the developer-facing design vocabulary is a documented, versioned seam.

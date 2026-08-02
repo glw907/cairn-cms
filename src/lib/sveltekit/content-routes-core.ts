@@ -40,7 +40,8 @@ import { resolvePublishActions, type PublishActionLink } from './publish-actions
 import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
 import type { Editor, Role } from '../auth/types.js';
-import type { ContentRoutesContext, ContentEvent, AttentionItem } from './content-routes-context.js';
+import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 
 // The advisory notice types are defined alongside the cross-branch address index in the content
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
@@ -366,7 +367,7 @@ function conceptOf(runtime: CairnRuntime, params: Record<string, string>): Conce
  *  editor's own delete, and rename; the concept list's delete reads its id from the posted form
  *  instead, a different shape left to validate inline.
  */
-function requireEntryFromParams(runtime: CairnRuntime, event: ContentEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
+function requireEntryFromParams(runtime: CairnRuntime, event: CairnEvent): { editor: Editor; concept: ConceptDescriptor; id: string } {
   const editor = requireEditor(event);
   const concept = conceptOf(runtime, event.params);
   requireEngineAccess(runtime.access, editor, concept.id);
@@ -409,7 +410,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  the declared (or default) tree first, then the site's `deps.navFilter`, if configured, narrows
    *  that already-gated `items` set, fresh every request.
    */
-  async function shellPayload(event: ContentEvent): Promise<{ shell: AdminShellData }> {
+  async function shellPayload(event: CairnEvent): Promise<{ shell: AdminShellData }> {
     // The theme cookie carries no auth, so a public (login/auth) path reads and honors it too:
     // a signed-out visitor's dark-mode pick should not revert to light the moment they sign out.
     const cookieTheme = event.cookies?.get('cairn-admin-theme');
@@ -531,7 +532,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  pending branches, the markdown reference, and the runtime's support contact. A GitHub failure
    *  degrades to an empty corpus (0 of 3) rather than failing the screen, the same GitHub fail-safe the shell uses.
    */
-  async function helpLoad(event: ContentEvent): Promise<HelpData> {
+  async function helpLoad(event: CairnEvent): Promise<HelpData> {
     requireEditor(event);
     let manifest = emptyManifest();
     let pending: { concept: string; id: string }[] = [];
@@ -561,7 +562,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  page, so an unexpected-failure `?error=` those actions bounce back with rides along on every
    *  redirect branch, keeping the editor-visible guarantee for the two actions that always land here.
    */
-  function indexRedirect(event: ContentEvent): { view: 'welcome'; page: WelcomeData } {
+  function indexRedirect(event: CairnEvent): { view: 'welcome'; page: WelcomeData } {
     const editor = requireSession(event);
     const bounced = event.url.searchParams.get('error');
     const suffix = bounced ? `?error=${encodeURIComponent(bounced)}` : '';
@@ -638,7 +639,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  with no manifest row appends a `new` row read from its branch. A listing failure degrades
    *  to an inline error, not a thrown 500.
    */
-  async function listLoad(event: ContentEvent): Promise<ListData> {
+  async function listLoad(event: CairnEvent): Promise<ListData> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -685,7 +686,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Create a new entry: validate the slug, compose a dated id when the concept is dated, refuse to clobber. */
-  async function createAction(event: ContentEvent): Promise<never> {
+  async function createAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -729,7 +730,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Open a file for editing. A `?new=1` miss yields a blank document; any other miss is a 404. */
-  async function editLoad(event: ContentEvent): Promise<EditData> {
+  async function editLoad(event: CairnEvent): Promise<EditData> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -991,7 +992,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  frontmatter, a branch-commit conflict). Main stays untouched.
    */
   async function saveToBranch(
-    event: ContentEvent,
+    event: CairnEvent,
     editor: Editor,
     concept: ConceptDescriptor,
     id: string,
@@ -1172,7 +1173,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Save an edit: validate, then commit to the entry's pending branch with the session editor
    *  as author. Main and its manifest stay untouched until publish. Fails safe on 409.
    */
-  async function saveAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function saveAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1192,7 +1193,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  The branch is deleted only when its head still matches the commit this action made; a
    *  concurrent save moved it, so the entry stays pending and the next publish picks it up.
    */
-  async function publishAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function publishAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const held = await saveToBranch(event, editor, concept, id);
     if (!('branchSha' in held)) return held;
@@ -1273,7 +1274,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  concept id, so a role mapped away from a concept never has that concept's entries published
    *  on its behalf, the same deny-at-the-route guarantee applied per entry instead of per route.
    */
-  async function publishAllAction(event: ContentEvent): Promise<never> {
+  async function publishAllAction(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     const first = runtime.concepts[0];
     if (!first) throw error(404, 'No content types configured');
@@ -1372,7 +1373,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    * Discard an entry's pending edits: delete the branch (tolerant of already-gone) and return to
    *  the edit page when the entry lives on main, else to the list (the entry is gone entirely).
    */
-  async function discardAction(event: ContentEvent): Promise<never> {
+  async function discardAction(event: CairnEvent): Promise<never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 
@@ -1392,7 +1393,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  enforced once.
    */
   async function deleteEntry(
-    event: ContentEvent,
+    event: CairnEvent,
     concept: ConceptDescriptor,
     id: string,
     editor: Editor,
@@ -1501,13 +1502,13 @@ export function createCoreActions(ctx: ContentRoutesContext) {
   }
 
   /** Delete an entry from its editor. The id comes from the route param. */
-  async function deleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function deleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     return deleteEntry(event, concept, id, editor);
   }
 
   /** Delete an entry from the concept list. The id comes from the form body. */
-  async function listDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function listDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     const concept = conceptOf(runtime, event.params);
     requireEngineAccess(runtime.access, editor, concept.id);
@@ -1523,7 +1524,7 @@ export function createCoreActions(ctx: ContentRoutesContext) {
    *  are the authoritative gate. The same last-writer-wins manifest race as save and delete applies,
    *  caught by the build's fail-closed backstop.
    */
-  async function renameAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function renameAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const { editor, concept, id } = requireEntryFromParams(runtime, event);
     const backend = ctx.resolveBackend(event);
 

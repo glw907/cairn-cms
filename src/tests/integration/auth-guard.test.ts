@@ -5,7 +5,7 @@ import { createAuthGuard } from '../../lib/sveltekit/guard.js';
 import { createSession } from '../../lib/auth/store.js';
 import { sessionCookieName, csrfCookieName } from '../../lib/auth/crypto.js';
 import { defineRoles } from '../../lib/auth/roles.js';
-import type { RequestContext } from '../../lib/sveltekit/types.js';
+import type { CairnEvent } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Role } from '../../lib/auth/types.js';
 
@@ -23,11 +23,13 @@ beforeEach(async () => {
   await db.batch([db.prepare('DELETE FROM session'), db.prepare('DELETE FROM editor')]);
 });
 
-function event(pathname: string, cookies = makeCookies()): RequestContext {
+function event(pathname: string, cookies = makeCookies()): CairnEvent {
   const url = `https://test.dev${pathname}`;
   return {
     url: new URL(url),
     request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -35,11 +37,13 @@ function event(pathname: string, cookies = makeCookies()): RequestContext {
   };
 }
 
-function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies()): RequestContext {
+function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies()): CairnEvent {
   const url = `http://${host}${pathname}`;
   return {
     url: new URL(url),
     request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies,
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: `https://${host}` } },
@@ -50,7 +54,7 @@ function httpEvent(pathname: string, host = 'test.dev', cookies = makeCookies())
 function formEvent(
   pathname: string,
   opts: { csrfCookie?: string; csrfField?: string; csrfHeader?: string; origin?: string } = {},
-): RequestContext {
+): CairnEvent {
   const url = `https://test.dev${pathname}`;
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
@@ -62,6 +66,8 @@ function formEvent(
   return {
     url: new URL(url),
     request: new Request(url, { method: 'POST', headers, body }),
+    params: {},
+    route: { id: '/admin/[...path]' },
     cookies: makeCookies(cookieMap),
     locals: {},
     platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -306,13 +312,15 @@ describe('CSRF (cairn owns it)', () => {
     const cookies = await seedSession('own@x.dev');
     cookies.jar.set(csrfCookieName(true), 'TOK');
     const url = 'https://test.dev/admin/posts/p1';
-    const ev: RequestContext = {
+    const ev: CairnEvent = {
       url: new URL(url),
       request: new Request(url, {
         method: 'POST',
         headers: { 'content-type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({ csrf: 'TOK', title: 'x' }),
       }),
+      params: { concept: 'posts', id: 'p1' },
+      route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
       platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -327,7 +335,7 @@ describe('CSRF (cairn owns it)', () => {
     const cookies = await seedSession('own@x.dev');
     cookies.jar.set(csrfCookieName(true), 'TOK');
     const url = 'https://test.dev/admin/posts/p1';
-    const ev: RequestContext = {
+    const ev: CairnEvent = {
       url: new URL(url),
       // A text/plain raw-body upload with the token in the header and no csrf form field.
       request: new Request(url, {
@@ -335,6 +343,8 @@ describe('CSRF (cairn owns it)', () => {
         headers: { 'content-type': 'text/plain', 'x-cairn-csrf': 'TOK' },
         body: new Uint8Array([0xff, 0xd8, 0xff]),
       }),
+      params: { concept: 'posts', id: 'p1' },
+      route: { id: '/admin/[concept]/[id]' },
       cookies,
       locals: {},
       platform: { env: { AUTH_DB: db, PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -366,11 +376,13 @@ describe('CSRF (cairn owns it)', () => {
 });
 
 describe('missing AUTH_DB binding (operator fault)', () => {
-  function unboundEvent(pathname: string): RequestContext {
+  function unboundEvent(pathname: string): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
       request: new Request(url),
+      params: {},
+      route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
       platform: { env: { PUBLIC_ORIGIN: 'https://test.dev' } },
@@ -439,11 +451,13 @@ describe('missing AUTH_DB binding (operator fault)', () => {
 describe('dev-backend flag in a deployed runtime (fail-closed tripwire)', () => {
   // AUTH_DB is bound so a refusal proves the tripwire fires before the bindings/session logic, not
   // because a binding is missing. The string '1' is the Worker-var form the dev backend sets.
-  function devBackendEvent(pathname: string, flag: string | boolean): RequestContext {
+  function devBackendEvent(pathname: string, flag: string | boolean): CairnEvent {
     const url = `https://test.dev${pathname}`;
     return {
       url: new URL(url),
       request: new Request(url),
+      params: {},
+      route: { id: '/admin/[...path]' },
       cookies: makeCookies(),
       locals: {},
       platform: { env: { AUTH_DB: db, CAIRN_DEV_BACKEND: flag } },

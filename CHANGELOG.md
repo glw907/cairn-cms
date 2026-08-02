@@ -62,6 +62,20 @@
   subpath; a site relying on `PlatformContext.ctx` or `.context` (the engine never read either)
   removes that reliance, since the type no longer carries them.
 
+- `EventBase`, `RequestContext`, the content routes' `ContentEvent`, the admin facade's
+  `AdminEvent`, and `adminAction`'s own `AdminActionEvent` collapse into one `CairnEvent<Env =
+  CairnEnv>`, exported from `./sveltekit`. It adds `params: Record<string, string>` and
+  `route: { id: string | null }`, ending the documented anti-idiom of reading route identity out of a
+  form body and giving `SectionActionOptions.target` an honest derivation, and makes `cookies` and
+  `setHeaders` unconditionally required, since a real SvelteKit event always carries all four.
+  `locals` keeps its current key names (`editor`, `backend`, `auditSink`, `cairnAccess`);
+  `requireSession`, `requireOwner`, `requireEditor`, and `requireAccess` now take `CairnEvent` in
+  place of their old minimal inline shapes. See
+  [SvelteKit](docs/reference/sveltekit.md#the-event-shape). **Consumers must:** replace any
+  imported `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`, or `AdminActionEvent` with
+  `CairnEvent` on the same subpath; a hand-built event fixture (a test, a script) now needs
+  `params` and `route` alongside the fields it already carried.
+
 - The root `package.json` now declares `"engines": { "node": ">=22" }`, giving npm's own install
   check the Node floor the tutorial has always stated. This is a build-toolchain floor, not a
   runtime claim (the runtime is workerd, never Node); npm's own `EBADENGINE` is a warning that

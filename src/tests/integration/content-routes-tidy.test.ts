@@ -6,11 +6,11 @@
 // the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { githubApp } from '../../lib/index.js';
-import { createContentRoutes, type ContentEvent, type TidyClient } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes, type TidyClient } from '../../lib/sveltekit/content-routes.js';
 import { keyKnownUnhealthy, resetKeyHealthForTest } from '../../lib/sveltekit/tidy-key-health.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 afterEach(() => resetKeyHealthForTest());
@@ -53,9 +53,9 @@ interface TidyOpts {
   rawBody?: string;
 }
 
-/** Build the ContentEvent for a tidy POST: the JSON `{ text, scope }` rides the raw `text/plain` body,
+/** Build the CairnEvent for a tidy POST: the JSON `{ text, scope }` rides the raw `text/plain` body,
  *  the CSRF token in the X-Cairn-CSRF header. */
-function tidyEvent(opts: TidyOpts = {}): ContentEvent {
+function tidyEvent(opts: TidyOpts = {}): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', 'text/plain');
   if ('csrf' in opts ? opts.csrf !== undefined : true) headers.set('x-cairn-csrf', opts.csrf ?? CSRF);
@@ -64,10 +64,12 @@ function tidyEvent(opts: TidyOpts = {}): ContentEvent {
   return {
     url,
     params: { concept: 'posts', id: 'my-entry' },
+    route: { id: '/admin/[concept]/[id]' },
     request: new Request(url, { method: 'POST', body, headers }),
     locals: { editor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { ANTHROPIC_API_KEY: 'sk-test-key' } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 

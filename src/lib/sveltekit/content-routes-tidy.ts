@@ -9,7 +9,8 @@ import { validateCsrfHeader } from './csrf.js';
 import { buildTidyPrompt } from './tidy-prompt.js';
 import { tidyClientErrorStatus } from './content-routes-context.js';
 import { markKeyHealthy, markKeyUnhealthy } from './tidy-key-health.js';
-import type { ContentRoutesContext, ContentEvent, TidyClient } from './content-routes-context.js';
+import type { ContentRoutesContext, TidyClient } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 
 /**
  * The successful tidy outcome (spec 2.1): the corrected markdown, the model that produced it, and the
@@ -75,7 +76,7 @@ export function createTidyActions(ctx: ContentRoutesContext) {
    *  stays the retryable "Try again." copy, with the log's `reason` field (`timeout`/`abort`/`model`)
    *  naming which.
    */
-  async function tidyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | TidyResult> {
+  async function tidyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | TidyResult> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority. A failed check refuses
     // before the session read and before any model call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {

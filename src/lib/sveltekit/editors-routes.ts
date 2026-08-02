@@ -19,7 +19,7 @@ import {
 import { resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
 import type { Editor, Role } from '../auth/types.js';
-import type { RequestContext } from './types.js';
+import type { CairnEvent } from './types.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
 
@@ -54,7 +54,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    *  further field it needs off the returned `form` itself. `owner` is the acting owner's email,
    *  threaded through so a landed mutation can log who made it.
    */
-  async function ownerAction(event: RequestContext): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
+  async function ownerAction(event: CairnEvent): Promise<{ db: D1Database; form: FormData; email: string; owner: string }> {
     const owner = requireOwner(event);
     const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
@@ -69,7 +69,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    *  bounced back with (the same redirect convention `list`, `edit`, `nav`, and `settings`
    *  already carry their own errors through).
    */
-  async function editorsLoad(event: RequestContext): Promise<{
+  async function editorsLoad(event: CairnEvent): Promise<{
     editors: Editor[];
     self: string;
     error: string | null;
@@ -86,7 +86,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
   }
 
   /** POST add an editor. Owner-only. Rejects a role outside the declared vocabulary. */
-  async function addEditorAction(event: RequestContext) {
+  async function addEditorAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const name = String(form.get('name') ?? '').trim();
     const role = parseRole(form.get('role'));
@@ -107,7 +107,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
   }
 
   /** POST remove an editor. Owner-only. Refuses the last owner-capability row, atomically. */
-  async function removeEditorAction(event: RequestContext) {
+  async function removeEditorAction(event: CairnEvent) {
     const { db, email, owner } = await ownerAction(event);
     const target = await findEditor(db, email);
     if (!target) return fail(400, { error: 'No such editor' } satisfies EditorActionFailure);
@@ -126,7 +126,7 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
    * POST change an editor's role. Owner-only. Rejects a role outside the declared vocabulary and
    *  refuses demoting the last owner-capability row, atomically.
    */
-  async function setRoleAction(event: RequestContext) {
+  async function setRoleAction(event: CairnEvent) {
     const { db, form, email, owner } = await ownerAction(event);
     const role = parseRole(form.get('role'));
     if (!role) return fail(400, { error: 'Choose a valid role' } satisfies EditorActionFailure);

@@ -8,7 +8,7 @@ import { requireEditor, requireEngineAccess } from './guard.js';
 import { commitFailure } from './commit-log.js';
 import type { CairnRuntime } from '../content/types.js';
 import type { Backend } from '../github/backend.js';
-import type { ContentEvent } from './content-routes.js';
+import type { CairnEvent } from './types.js';
 
 /** One page option for the URL picker datalist. */
 export interface NavPageOption {
@@ -32,7 +32,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
    *  else the production `runtime.backend.connect(env)`. A test rides the same `locals.backend`
    *  seam the dev double uses, so the read and commit paths run with no real token mint.
    */
-  function resolveBackend(event: ContentEvent): Backend {
+  function resolveBackend(event: CairnEvent): Backend {
     return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 
@@ -53,7 +53,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
   }
 
   /** Load the nav editor. A missing or unparsable config degrades to an empty tree so it still opens. */
-  async function navLoad(event: ContentEvent): Promise<NavLoadData> {
+  async function navLoad(event: CairnEvent): Promise<NavLoadData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;
@@ -95,7 +95,7 @@ export function createNavRoutes(runtime: CairnRuntime) {
   }
 
   /** Save the nav tree: validate, then read-modify-commit the one menu with the session editor as author. */
-  async function navSave(event: ContentEvent): Promise<never> {
+  async function navSave(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'nav');
     const config = runtime.navMenu;

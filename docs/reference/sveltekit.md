@@ -18,6 +18,56 @@ name here against them.
 
 ---
 
+## The event shape
+
+Stability tier: Extension API.
+
+```ts
+import type { Editor, AccessMap, Backend } from '@glw907/cairn-cms';
+import type { CairnEnv, CookieJar, PlatformContext, AdminActionAuditSink } from '@glw907/cairn-cms/sveltekit';
+
+interface CairnEvent<Env = CairnEnv> {
+  url: URL;
+  request: Request;
+  params: Record<string, string>;
+  route: { id: string | null };
+  cookies: CookieJar;
+  setHeaders(headers: Record<string, string>): void;
+  locals: {
+    editor?: Editor | null;
+    backend?: Backend;
+    auditSink?: AdminActionAuditSink;
+    cairnAccess?: AccessMap;
+  };
+  platform?: PlatformContext<Env>;
+}
+```
+
+Every load, action, and guard helper on this subpath reads one structural event shape,
+`CairnEvent<Env = CairnEnv>`. A real SvelteKit `RequestEvent` or `ServerLoadEvent` carries every
+member here and more, and the engine never imports a site's generated `App.*` ambient types, so
+any kit server event satisfies it with zero casts. `params` and `route` end the anti-idiom of
+reading route identity out of a form body: a real kit event always carries both, and a seam like
+[`createSectionAction`](#createsectionaction)'s `SectionActionOptions.target` derives from
+`event.route.id`. `route.id` is nullable because kit's own is: [`createAuthGuard`](#createauthguard)'s
+`Handle` genuinely runs for an unmatched request (a 404, a static asset), where kit reports
+`null`; a matched `load` or form action always sees a real route id. `cookies` and `setHeaders`
+are always present on a real kit server event.
+
+`locals` carries four optional keys: `editor` (the session [`createAuthGuard`](#createauthguard)
+resolved), `backend` (a dev or test double for the content store; a production request leaves it
+absent and the real GitHub provider connects), `auditSink` (a site's optional
+[`AdminActionAuditSink`](#adminactionauditsink), wired through `adminAction`'s audit contract),
+and `cairnAccess` (the site's declared [access map](./core.md#access-map), attached by the guard
+alongside `editor`).
+
+`Env` defaults to [`CairnEnv`](#cairnenv): a compile-only fixture proves every factory on this
+page assigns clean into a site's own generated route event, under a realistic compliant
+`App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding), with
+zero casts. A factory whose own binding needs are wider instantiates `CairnEvent<Env>` with its
+own unconstrained, defaulted type parameter instead ([`createSectionAction`](#createsectionaction)
+is the one example on this page).
+
 ## Single-mount admin (recommended)
 
 The facade and its two guard helpers: the one path most sites wire.
@@ -59,9 +109,9 @@ export const handle = sequence(theme, createAuthGuard({ roles }));
 
 ```ts
 declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps): {
-  load: (event: AdminEvent) => Promise<AdminData>;
-  actions: Record<string, (event: AdminEvent) => Promise<unknown>>;
-  shellLoad: (event: AdminEvent) => Promise<{ shell: AdminShellData }>;
+  load: (event: CairnEvent) => Promise<AdminData>;
+  actions: Record<string, (event: CairnEvent) => Promise<unknown>>;
+  shellLoad: (event: CairnEvent) => Promise<{ shell: AdminShellData }>;
 };
 ```
 
@@ -129,12 +179,12 @@ discriminated `AdminData` the load returns.
 Stability tier: Extension API.
 
 ```ts
-declare function requireSession(event: { locals: { editor?: Editor | null } }): Editor;
+declare function requireSession(event: CairnEvent<CairnEnv>): Editor;
 ```
 
 Return the session the guard already resolved, or throw a redirect to `/admin/login`. Call it at the
-top of a protected `load` or action that needs the signed-in editor. Its parameter is structural
-and asks only for `locals`, so any event shape that carries the guard's editor satisfies it.
+top of a protected `load` or action that needs the signed-in editor. Its parameter is
+[`CairnEvent`](#the-event-shape), so any real kit event that carries the guard's editor satisfies it.
 
 ```ts
 import { requireSession } from '@glw907/cairn-cms/sveltekit';
@@ -148,13 +198,13 @@ export const load = (event) => {
 ### `requireOwner`
 
 ```ts
-declare function requireOwner(event: { locals: { editor?: Editor | null } }): Editor;
+declare function requireOwner(event: CairnEvent<CairnEnv>): Editor;
 ```
 
 Return a signed-in owner, or throw a 403 for an editor. Guards the management surface, such as the
-editor list, where only an owner may act. Its parameter is the same minimal structural shape
-`requireSession` asks for (just `locals.editor`), so a custom `/admin/` route's standard load event
-satisfies it: a hand-built admin screen gates itself with one call and needs no engine event type.
+editor list, where only an owner may act. Its parameter is the same
+[`CairnEvent`](#the-event-shape) `requireSession` takes, so a custom `/admin/` route's standard
+load event satisfies it: a hand-built admin screen gates itself with one call.
 Stability tier: Extension API.
 
 ```ts
@@ -171,7 +221,7 @@ export const load = (event) => {
 Stability tier: Extension API.
 
 ```ts
-declare function requireEditor(event: { locals: { editor?: Editor | null } }): Editor;
+declare function requireEditor(event: CairnEvent<CairnEnv>): Editor;
 ```
 
 Return a signed-in owner- or editor-capability session, or throw a 403 for `none`. The engine's
@@ -201,10 +251,7 @@ export const load = (event) => {
 Stability tier: Extension API.
 
 ```ts
-declare function requireAccess(
-  event: { locals: { editor?: Editor | null; cairnAccess?: AccessMap }; url: URL },
-  target?: string,
-): Editor;
+declare function requireAccess(event: CairnEvent<CairnEnv>, target?: string): Editor;
 ```
 
 The one-line authorization story for a site's own custom route: the session the guard already
@@ -296,9 +343,9 @@ Stability tier: Extension API.
 
 ```ts
 declare function adminAction<T>(
-  handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
+  handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
   deps?: AdminActionDeps,
-): (event: AdminActionEvent) => Promise<T>;
+): (event: CairnEvent) => Promise<T>;
 ```
 
 Wrap a custom admin action's handler: the admin-scoped server helper a site's own `/admin/` form
@@ -503,9 +550,9 @@ Stability tier: Extension API.
 declare function createSectionAction<Env, Db>(
   config: SectionActionConfig<Env, Db>,
 ): <T>(
-  handler: (args: { event: AdminActionEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
+  handler: (args: { event: CairnEvent<Env>; form: FormData; ctx: SectionActionContext<Db> }) => Promise<T>,
   opts: SectionActionOptions,
-) => (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+) => (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
 ```
 
 Build a whole section's guarded action wrapper in one call, the enforcement every site-built
@@ -633,11 +680,11 @@ type RequestResult =
   | { status: 'throttled'; sent: false };
 
 declare function createAuthRoutes(config: AuthRoutesConfig): {
-  loginLoad: (event: RequestContext) => { siteName: string; error: string | null; csrf: string };
-  requestAction: (event: RequestContext) => Promise<RequestResult>;
-  confirmLoad: (event: RequestContext) => { token: string; siteName: string; error: string | null; csrf: string };
-  confirmAction: (event: RequestContext) => Promise<never>;
-  logoutAction: (event: RequestContext) => Promise<never>;
+  loginLoad: (event: CairnEvent<CairnEnv>) => { siteName: string; error: string | null; csrf: string };
+  requestAction: (event: CairnEvent<CairnEnv>) => Promise<RequestResult>;
+  confirmLoad: (event: CairnEvent<CairnEnv>) => { token: string; siteName: string; error: string | null; csrf: string };
+  confirmAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  logoutAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
 };
 ```
 
@@ -678,10 +725,10 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createEditorRoutes(opts?: { roles?: RolesDeclaration }): {
-  editorsLoad: (event: RequestContext) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>;
-  addEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  removeEditorAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
-  setRoleAction: (event: RequestContext) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>;
+  addEditorAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  removeEditorAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
+  setRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
 };
 ```
 
@@ -715,37 +762,37 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
-  shellPayload: (event: ContentEvent) => Promise<{ shell: AdminShellData }>;
-  helpLoad: (event: ContentEvent) => Promise<HelpData>;
-  indexRedirect: (event: ContentEvent) => { view: "welcome"; page: WelcomeData };
-  listLoad: (event: ContentEvent) => Promise<ListData>;
-  mediaLibraryLoad: (event: ContentEvent) => Promise<MediaLibraryData>;
-  settingsLoad: (event: ContentEvent) => Promise<SettingsData>;
-  settingsSave: (event: ContentEvent) => Promise<never>;
-  vocabularyLoad: (event: ContentEvent) => Promise<VocabularyLoadData>;
-  vocabularySave: (event: ContentEvent) => Promise<never>;
-  createAction: (event: ContentEvent) => Promise<never>;
-  editLoad: (event: ContentEvent) => Promise<EditData>;
-  saveAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  publishAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  publishAllAction: (event: ContentEvent) => Promise<never>;
-  discardAction: (event: ContentEvent) => Promise<never>;
-  deleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  listDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  renameAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  uploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
-  mediaLibraryUploadAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | UploadResult>;
-  mediaDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaBulkDeleteAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
-  mediaOrphanScanAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | OrphanScan>;
-  mediaPurgeOrphansAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
-  mediaUpdateAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaReplacePreviewAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
-  mediaReplaceApplyAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  mediaAltPreviewAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
-  mediaAltApplyAction: (event: ContentEvent) => Promise<ActionFailure<unknown>>;
-  addDictionaryWordAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
-  tidyAction: (event: ContentEvent) => Promise<ActionFailure<unknown> | TidyResult>;
+  shellPayload: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
+  helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>;
+  indexRedirect: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
+  listLoad: (event: CairnEvent<CairnEnv>) => Promise<ListData>;
+  mediaLibraryLoad: (event: CairnEvent<CairnEnv>) => Promise<MediaLibraryData>;
+  settingsLoad: (event: CairnEvent<CairnEnv>) => Promise<SettingsData>;
+  settingsSave: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  vocabularyLoad: (event: CairnEvent<CairnEnv>) => Promise<VocabularyLoadData>;
+  vocabularySave: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  createAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  editLoad: (event: CairnEvent<CairnEnv>) => Promise<EditData>;
+  saveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  publishAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  publishAllAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  discardAction: (event: CairnEvent<CairnEnv>) => Promise<never>;
+  deleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  listDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  renameAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  uploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | UploadResult>;
+  mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | UploadResult>;
+  mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
+  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | OrphanScan>;
+  mediaPurgeOrphansAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
+  mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
+  mediaReplaceApplyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  mediaAltPreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaAltPreviewPlan>;
+  mediaAltApplyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
+  addDictionaryWordAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | DictionaryAddResult>;
+  tidyAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | TidyResult>;
 };
 ```
 
@@ -950,8 +997,8 @@ Stability tier: Unstable API.
 
 ```ts
 declare function createNavRoutes(runtime: CairnRuntime): {
-  navLoad: (event: ContentEvent) => Promise<NavLoadData>;
-  navSave: (event: ContentEvent) => Promise<never>;
+  navLoad: (event: CairnEvent<CairnEnv>) => Promise<NavLoadData>;
+  navSave: (event: CairnEvent<CairnEnv>) => Promise<never>;
 };
 ```
 
@@ -985,10 +1032,7 @@ catch-all route.
 Stability tier: Scaffold API.
 
 ```ts
-declare function healthLoad(
-  event: { platform?: { env?: CairnEnv } },
-  runtime: CairnRuntime,
-): Promise<HealthData>;
+declare function healthLoad(event: CairnEvent<CairnEnv>, runtime: CairnRuntime): Promise<HealthData>;
 ```
 
 Run the GitHub App signing self-test against the configured App id and the Worker's key secret.
@@ -1565,7 +1609,6 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
 | `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
 | <a id="adminactionauditsink"></a>`AdminActionAuditSink` | Extension API | `type AdminActionAuditSink = (record: AdminActionAuditRecord) => void` | A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. Optional; every emit logs `admin.action.audited` regardless. |
-| `AdminActionEvent` | Extension API | `interface AdminActionEvent<Env = CairnEnv> { url: URL; request: Request; cookies: CookieJar; locals: { editor?: Editor \| null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap }; platform?: { env?: Env } }` | The minimal event shape `adminAction` reads: enough to verify CSRF, resolve the editor, reach the site's optional audit sink, and (since `createSectionAction`) read the guard's attached access map. Generic over the platform env, `Env`, defaulting to `CairnEnv` so every existing call site keeps today's meaning; a site building on `createSectionAction` passes its own `App.Platform['env']`. A real SvelteKit `RequestEvent` satisfies it. |
 | <a id="ratelimitlike"></a>`RateLimitLike` | Extension API | `interface RateLimitLike { limit(options: { key: string }): Promise<{ success: boolean }> }` | The structural slice of a Workers `RateLimit` binding [`createSectionAction`](#createsectionaction) calls; any conforming limiter serves, so the surface takes no dependency on `@cloudflare/workers-types`. |
 | <a id="sectionactionconfig"></a>`SectionActionConfig` | Extension API | `interface SectionActionConfig<Env, Db> { resolveDb: (env: Env \| undefined) => Db \| undefined; rateLimit?: { resolve: (env: Env \| undefined) => RateLimitLike \| undefined; key: (ctx: AdminActionContext) => string; message?: string } }` | Site-fixed configuration for one [`createSectionAction`](#createsectionaction) factory, called once per section: the DB binding resolver (`undefined` fails the action closed with a 500) and the optional rate limit, degrade-to-open. |
 | <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, reused verbatim on every denial, the optional authorization `target` override (defaults to `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
@@ -1586,8 +1629,7 @@ imports the matching `*Data` type to type its `data` prop.
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
-| `ContentEvent` | Unstable API | `interface ContentEvent { url: URL; params; request: Request; locals: { editor? }; platform? }` | The structural event the content routes read; a real SvelteKit `RequestEvent` satisfies it. |
-| <a id="contentroutesdeps"></a>`ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: ContentEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: ContentEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellPayload` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
+| <a id="contentroutesdeps"></a>`ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellPayload` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -1603,9 +1645,8 @@ imports the matching `*Data` type to type its `data` prop.
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
-| `RequestContext` | Extension API | `interface RequestContext { url; request; cookies: CookieJar; locals; platform?; setHeaders }` | The structural request the auth helpers read; a real SvelteKit `RequestEvent` satisfies it. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
-| `HandleInput` | Extension API | `interface HandleInput { event: RequestContext; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input. |
+| `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
 | <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |

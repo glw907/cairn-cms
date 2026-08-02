@@ -21,7 +21,8 @@ import { buildTagUsageIndex } from '../content/tag-usage-index.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { probeTidyKey, type TidyKeyProbeResult } from './tidy-key-probe.js';
 import { cachedProbeResult } from './tidy-key-health.js';
-import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
+import type { ContentRoutesContext } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 
 /**
  * The two-tier tidy settings load (spec 2.8, Task 15). The developer tier is read-only: `enabled`,
@@ -153,7 +154,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  truthful visibility gate, never the key itself: the key is a Worker secret, so this only reports
    *  that a non-empty `ANTHROPIC_API_KEY` exists and the value never leaves the server.
    */
-  function keyConfigured(event: ContentEvent): boolean {
+  function keyConfigured(event: CairnEvent): boolean {
     const env = (event.platform?.env ?? {}) as Record<string, unknown>;
     return typeof env.ANTHROPIC_API_KEY === 'string' && env.ANTHROPIC_API_KEY.length > 0;
   }
@@ -180,7 +181,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  itself bounded by `ctx.tidyTimeoutMs`, the same deadline a tidy call gets, rather than the
    *  Anthropic SDK's own multi-minute default.
    */
-  async function settingsLoad(event: ContentEvent): Promise<SettingsData> {
+  async function settingsLoad(event: CairnEvent): Promise<SettingsData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     const tidy = runtime.tidy;
@@ -220,7 +221,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  never flip the developer-tier deploy facts. The save refuses before any commit when tidy is not
    *  enabled, so the gate state's absent editor tier can never be saved past.
    */
-  async function settingsSave(event: ContentEvent): Promise<never> {
+  async function settingsSave(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'settings');
     // The editor tier does not exist when tidy is off, so a save in that state is a 404 (no editable
@@ -279,7 +280,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  `{}` and `unlisted` to `[]` on any failure, keeping the committed vocabulary visible. The safety
    *  boundary is the strict gate on vocabularySave, never this load, so degrading here is correct.
    */
-  async function vocabularyLoad(event: ContentEvent): Promise<VocabularyLoadData> {
+  async function vocabularyLoad(event: CairnEvent): Promise<VocabularyLoadData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
     const backend = ctx.resolveBackend(event);
@@ -339,7 +340,7 @@ export function createSettingsActions(ctx: ContentRoutesContext) {
    *  strict index reads (main plus open cairn/* branches) is rejected by name, so a still-used tag can
    *  never be deleted out from under a draft. Rename (label change, same value) and add always commit.
    */
-  async function vocabularySave(event: ContentEvent): Promise<never> {
+  async function vocabularySave(event: CairnEvent): Promise<never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'vocabulary');
 

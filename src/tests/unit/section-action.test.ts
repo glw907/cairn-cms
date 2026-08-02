@@ -8,8 +8,8 @@ import {
   type SectionActionOptions,
 } from '../../lib/sveltekit/section-action.js';
 import { log } from '../../lib/log/index.js';
-import type { AdminActionEvent, AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
+import type { AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { Action, ActionFailure, RequestEvent } from '@sveltejs/kit';
@@ -49,7 +49,7 @@ function makeEvent(opts: {
   cairnAccess?: AccessMap;
   env?: TestEnv;
   auditSink?: (record: AdminActionAuditRecord) => void;
-}): AdminActionEvent<TestEnv> {
+}): CairnEvent<TestEnv> {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   const request = new Request('https://x.dev/admin/club/events', {
@@ -60,6 +60,8 @@ function makeEvent(opts: {
   return {
     url: new URL('https://x.dev/admin/club/events'),
     request,
+    params: {},
+    route: { id: '/admin/club/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
     locals: {
       editor: opts.editor === undefined ? owner : opts.editor,
@@ -67,6 +69,7 @@ function makeEvent(opts: {
       auditSink: opts.auditSink,
     },
     platform: opts.env === undefined ? undefined : { env: opts.env },
+    setHeaders: () => {},
   };
 }
 
@@ -74,7 +77,7 @@ const mappedTarget = '/admin/club/events';
 const mappedAccess: AccessMap = { [mappedTarget]: ['editor'] };
 
 /** A ready-to-admit event: a verified CSRF pair, an editor-capability session, and a mapped path. */
-function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): AdminActionEvent<TestEnv> {
+function readyEvent(overrides: Parameters<typeof makeEvent>[0] = {}): CairnEvent<TestEnv> {
   return makeEvent({
     cookie: 'MATCH',
     csrfField: 'MATCH',
@@ -422,7 +425,17 @@ function typeOnlyRouteActionsAssignability(): void {
     return { id: ctx.db.marker };
   }, { action: 'approve', entity: 'event' });
 
-  approve satisfies Action;
+  // Kit's bare `Action` defaults its RouteId param to `string | null` (the fully-ambient,
+  // no-generated-types case); a real `+page.server.ts` never actually types its `actions` export
+  // against that default, since `./$types`'s own `Actions` always narrows RouteId to that route's
+  // non-null literal id. The explicit RouteId argument here matches that reality rather than the
+  // unreachable fully-ambient case (`CairnEvent['route']['id']` stays `string | null`, matching
+  // kit's own ambient default, so this narrower literal still assigns in with no cast).
+  // OutputData keeps kit's own `Record<string, any> | void` default (env-genericity.test.ts's
+  // `SiteActionReturn` explains why `any`, not `unknown`, is the faithful match: an interface
+  // return with no index signature, like `ActionFailure`, is not structurally assignable to
+  // `Record<string, unknown>`).
+  approve satisfies Action<Record<string, string>, Record<string, any> | void, string>;
 
   // The direct assignability check against a real generated route's Actions record, matching how
   // a site's own `export const actions: Actions = { approve }` assigns this factory's output, but

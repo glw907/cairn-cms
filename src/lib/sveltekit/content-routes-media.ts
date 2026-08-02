@@ -30,7 +30,8 @@ import { emptyManifest, parseManifest } from '../content/manifest.js';
 import { validateCsrfHeader } from './csrf.js';
 import { requireEditor, requireEngineAccess } from './guard.js';
 import { canReach } from '../auth/access.js';
-import type { ContentRoutesContext, ContentEvent } from './content-routes-context.js';
+import type { ContentRoutesContext } from './content-routes-context.js';
+import type { CairnEvent } from './types.js';
 // R2Bucket is named only to cast the raw binding for r2Store. It is a type-only import that never
 // appears in an exported signature, so it does not reach the public `.d.ts`.
 import type { R2Bucket } from '@cloudflare/workers-types';
@@ -342,7 +343,7 @@ const MEDIA_DISABLED_MESSAGE = 'Media is not enabled for this site.';
  *  MEDIA_DISABLED_MESSAGE and skip this step.
  */
 function resolveMediaBucket(
-  event: ContentEvent,
+  event: CairnEvent,
   resolved: ResolvedAssetConfig,
 ): { bucket: R2Bucket } | { error: string } {
   if (!resolved.enabled) return { error: MEDIA_DISABLED_MESSAGE };
@@ -366,7 +367,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  still lists the assets with an empty overlay, and a wholesale read failure degrades to the
    *  assets gathered so far rather than a thrown 500, mirroring listLoad's posture.
    */
-  async function mediaLibraryLoad(event: ContentEvent): Promise<MediaLibraryData> {
+  async function mediaLibraryLoad(event: CairnEvent): Promise<MediaLibraryData> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     // Read the flash flags a redirected action carried back, mirroring listLoad's `?error`/
@@ -452,7 +453,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    * status-0 response under the client's `redirect: 'manual'`), so the `fail(401, 'session-expired')`
    * below is a belt-and-suspenders for a direct or un-guarded call, not the primary path.
    */
-  async function ingestAndStore(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function ingestAndStore(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     // Read the editor up front for log attribution; the gate at step 4 enforces its presence. The
     // pre-session gates (1 to 3) may log with an undefined editor email, which is fine.
     const editor = event.locals.editor ?? null;
@@ -583,7 +584,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    * `UploadResult` (also a 200 envelope). The action logs `media.upload_failed` on a refusal and
    * `media.uploaded` on success. Delegates to `ingestAndStore`, the shared store-and-derive body.
    */
-  async function uploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function uploadAction(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     return ingestAndStore(event);
   }
 
@@ -597,7 +598,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  Mirrors the safe-delete/rename commit shape, but returns a `fail(409)` envelope on a conflict
    *  rather than a redirect, since this action's client reads a JSON envelope, not a bounce.
    */
-  async function mediaLibraryUploadAction(event: ContentEvent): Promise<ReturnType<typeof fail> | UploadResult> {
+  async function mediaLibraryUploadAction(event: CairnEvent): Promise<ReturnType<typeof fail> | UploadResult> {
     const result = await ingestAndStore(event);
     if (!('record' in result)) return result;
     const editor = event.locals.editor!; // ingestAndStore already refused a missing session.
@@ -650,7 +651,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  hash, so a reference added in that window still resolves to bytes that may be gone, the same
    *  delete-races-an-edit window every safe delete carries.
    */
-  async function mediaDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -761,7 +762,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  aborts the rest of the batch. The result is an itemized 207-style summary the component renders
    *  (deleted / skipped with reasons / failed); there is no success redirect.
    */
-  async function mediaBulkDeleteAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
+  async function mediaBulkDeleteAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaBulkDeleteResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -865,7 +866,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown with their
    *  where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
-  async function mediaOrphanScanAction(event: ContentEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
+  async function mediaOrphanScanAction(event: CairnEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -923,7 +924,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  the R2 object directly. Each delete is best-effort and batch-resilient: a per-object error is
    *  reported in `failed` and the loop continues; an absent object is a no-op (the R2 contract).
    */
-  async function mediaPurgeOrphansAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
+  async function mediaPurgeOrphansAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanPurgeResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -997,7 +998,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  rename never breaks an existing `media:` reference. The default alt is the asset's value for the
    *  next placement, never a propagating edit of the alt already committed in existing placements.
    */
-  async function mediaUpdateAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaUpdateAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1049,7 +1050,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  with the MediaReplaceFailure shape (the same fail shape the apply uses), so the client reads
    *  `type`/`status` from the body, never the HTTP status.
    */
-  async function mediaReplacePreviewAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
+  async function mediaReplacePreviewAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaReplacePreviewPlan> {
     // CSRF first: this is a raw-body (JSON) POST, so the header witness is the authority, like the
     // upload action. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1132,7 +1133,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  bytes are KEPT (the old row stays in media.json), so this action writes only to git and never
    *  resolves the bucket binding. It guards `resolvedAssets.enabled` for the media-off case only.
    */
-  async function mediaReplaceApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaReplaceApplyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);
@@ -1245,7 +1246,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  ActionResult the client reads. A refusal rides a `fail(status, ...)` envelope with the
    *  MediaAltPropagateFailure shape, so the client reads `type`/`status` from the body.
    */
-  async function mediaAltPreviewAction(event: ContentEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
+  async function mediaAltPreviewAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaAltPreviewPlan> {
     // CSRF first: a raw-body (JSON) POST, so the header witness is the authority, like the upload and
     // replace-preview actions. A failed check refuses before the session read or any GitHub call.
     if (!event.cookies || !validateCsrfHeader({ url: event.url, request: event.request, cookies: event.cookies })) {
@@ -1323,7 +1324,7 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  that changes nothing commits nothing and still redirects (a no-op success). It fails the operation
    *  closed on an unverifiable usage read, and writes only entry files in git (no R2 op).
    */
-  async function mediaAltApplyAction(event: ContentEvent): Promise<ReturnType<typeof fail> | never> {
+  async function mediaAltApplyAction(event: CairnEvent): Promise<ReturnType<typeof fail> | never> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);

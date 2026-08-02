@@ -24,7 +24,8 @@ import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
 import { canReach, hasAccessRule } from '../auth/access.js';
 import { log } from '../log/index.js';
-import type { AdminActionContext, AdminActionEvent } from './admin-action.js';
+import type { AdminActionContext } from './admin-action.js';
+import type { CairnEvent } from './types.js';
 import type { AccessMap } from '../auth/access.js';
 import type { ActionFailure } from '@sveltejs/kit';
 import type { RateLimitLike } from '../cloudflare/rate-limit.js';
@@ -123,12 +124,12 @@ const UNAVAILABLE_MESSAGE = 'This section is not available.';
 export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db>) {
   return function wrap<T>(
     handler: (args: {
-      event: AdminActionEvent<Env>;
+      event: CairnEvent<Env>;
       form: FormData;
       ctx: SectionActionContext<Db>;
     }) => Promise<T>,
     opts: SectionActionOptions,
-  ): (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
+  ): (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>> {
     const guarded = adminAction<T | ActionFailure<{ error: string }>>(async ({ event, form, ctx }) => {
       // adminAction's own declared event type is pinned to CairnEnv; it never reads
       // event.platform, so relabeling to this factory's own Env here is a type-level
@@ -140,7 +141,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // EMAIL-return-type incompatibility this used to work around no longer exists; this
       // relabeling cast is a separate, still-necessary one, for the unrelated reason that
       // `Env` is a fully unconstrained generic type parameter).
-      const siteEvent = event as AdminActionEvent<Env>;
+      const siteEvent = event as CairnEvent<Env>;
       const path = siteEvent.url.pathname;
       const target = opts.target ?? path;
 
@@ -232,7 +233,7 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
     // hands back an action typed against its own CairnEnv-pinned event, while this wrapper's
     // contract is the site's Env. Type-level only; see that cast's comment for why a direct
     // assertion, with no `unknown` bridge, is now enough.
-    return guarded as (event: AdminActionEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
+    return guarded as (event: CairnEvent<Env>) => Promise<T | ActionFailure<{ error: string }>>;
   };
 }
 

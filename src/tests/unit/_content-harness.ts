@@ -56,6 +56,11 @@ export function runtime(overrides: Partial<CairnRuntime> = {}): CairnRuntime {
 /** The editor literal the majority of this cluster's fixtures commit as. */
 export const ED_EDITOR = { email: 'ed@t', displayName: 'Ed Editor', role: 'editor' as const, capability: 'editor' as const };
 
+/** A no-op cookie jar, the default when a fixture does not care about cookies. */
+function noopCookies(): CookieJar {
+  return { get: () => undefined, set: () => {}, delete: () => {} };
+}
+
 /** Options for {@link contentEvent}; every field but `url` is optional and defaults to the
  *  cluster's common fixture shape. */
 export interface ContentEventOptions {
@@ -63,6 +68,8 @@ export interface ContentEventOptions {
   url: string;
   /** Route params, e.g. `{ concept: 'posts', id: '2026-05-hi' }`. */
   params?: Record<string, string>;
+  /** The catch-all admin route id; every fixture in this cluster serves through the same route. */
+  route?: string;
   /** GET by default; explicit only when neither `form` nor `body` implies POST. */
   method?: 'GET' | 'POST';
   /** Form-encodes to a POST body; mutually exclusive with `body`. */
@@ -81,12 +88,13 @@ export function contentEvent(opts: ContentEventOptions) {
   const {
     url,
     params = {},
+    route = '/admin/[...path]',
     form,
     body,
     headers,
     eventBackend = backend,
     editor = ED_EDITOR,
-    cookies,
+    cookies = noopCookies(),
     env = { GITHUB_APP_PRIVATE_KEY_B64: 'x' },
   } = opts;
   const method = opts.method ?? (form !== undefined || body !== undefined ? 'POST' : 'GET');
@@ -99,10 +107,12 @@ export function contentEvent(opts: ContentEventOptions) {
   return {
     url: new URL(url),
     params,
+    route: { id: route },
     request: new Request(url, init),
     locals: { editor, backend: eventBackend },
     platform: { env },
-    ...(cookies ? { cookies } : {}),
+    cookies,
+    setHeaders: () => {},
   };
 }
 

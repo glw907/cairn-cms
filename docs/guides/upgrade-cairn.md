@@ -159,6 +159,19 @@ from a requirement back to a recommended convenience preset. `PlatformContext` n
 Consumers must: replace any imported `AuthEnv`/`BackendEnv` with `CairnEnv` on the same subpath,
 and drop any reliance on `PlatformContext.ctx`/`.context` (the engine never read either).
 
+`EventBase`, `RequestContext`, the content routes' `ContentEvent`, the admin facade's
+`AdminEvent`, and `adminAction`'s own `AdminActionEvent` collapse into one `CairnEvent<Env =
+CairnEnv>`. It adds `params` and `route: { id: string | null }` (ending the anti-idiom of reading route
+identity out of a form body, and giving `SectionActionOptions.target` an honest derivation), and
+makes `cookies` and `setHeaders` unconditionally required, since a real SvelteKit event always
+carries all four; `locals` keeps its current key names. `requireSession`, `requireOwner`,
+`requireEditor`, and `requireAccess` now take `CairnEvent` in place of their old minimal inline
+shapes. See [the event shape](../reference/sveltekit.md#the-event-shape).
+
+Consumers must: replace any imported `EventBase`, `RequestContext`, `ContentEvent`, `AdminEvent`,
+or `AdminActionEvent` with `CairnEvent` on the same subpath; a hand-built event fixture (a test, a
+script) now needs `params` and `route` alongside the fields it already carried.
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

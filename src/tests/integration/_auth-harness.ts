@@ -65,6 +65,8 @@ export function makeEvent(input: {
   return {
     url: new URL(url),
     request,
+    params: {},
+    route: { id: '/admin/auth/[...path]' },
     cookies,
     locals: { editor },
     platform: {

@@ -437,11 +437,11 @@ import { cairn, siteConfig } from './cairn.config.js';
 import { clubFeatureEnabled, resolveClubDb } from './club/roles.js';
 import type { ResolvedLayoutNode } from '@glw907/cairn-cms/sveltekit';
 import type { Editor } from '@glw907/cairn-cms';
-import type { ContentEvent } from '@glw907/cairn-cms/sveltekit';
+import type { CairnEvent } from '@glw907/cairn-cms/sveltekit';
 
 async function filterClubNav(
   items: ResolvedLayoutNode[],
-  ctx: { editor: Editor; event: ContentEvent },
+  ctx: { editor: Editor; event: CairnEvent },
 ): Promise<ResolvedLayoutNode[]> {
   const db = resolveClubDb(ctx.event.platform?.env);
   const boatsEnabled = db ? await clubFeatureEnabled(db, 'boats') : false;

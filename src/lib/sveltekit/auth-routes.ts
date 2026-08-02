@@ -24,7 +24,7 @@ import {
 import { buildMagicLinkMessage, cloudflareSend, emailSendFailure, errorCode, type AuthBranding, type SendMagicLink } from '../email.js';
 import { issueCsrfToken } from './csrf.js';
 import { log } from '../log/index.js';
-import type { RequestContext } from './types.js';
+import type { CairnEvent } from './types.js';
 
 export interface AuthRoutesConfig {
   branding: AuthBranding;
@@ -71,7 +71,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * emails the confirmation link, and awaits the send so the status reflects its outcome. The
    * neutral and send-ok responses are identical, so the common case never leaks membership.
    */
-  async function requestAction(event: RequestContext): Promise<RequestResult> {
+  async function requestAction(event: CairnEvent): Promise<RequestResult> {
     const env = event.platform?.env ?? {};
     const origin = requireOrigin(env);
     const db = requireDb(env);
@@ -128,7 +128,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   }
 
   /** GET /admin/login. Public. Carries the site name, an optional `?error`, and the CSRF token. */
-  function loginLoad(event: RequestContext): { siteName: string; error: string | null; csrf: string } {
+  function loginLoad(event: CairnEvent): { siteName: string; error: string | null; csrf: string } {
     return {
       siteName: config.branding.siteName,
       error: event.url.searchParams.get('error'),
@@ -142,7 +142,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * issues the CSRF token so the confirm form can render the hidden field.
    */
   function confirmLoad(
-    event: RequestContext,
+    event: CairnEvent,
   ): { token: string; siteName: string; error: string | null; csrf: string } {
     event.setHeaders({ 'Referrer-Policy': 'no-referrer' });
     return {
@@ -158,7 +158,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
    * token yields the email; the handler creates a session, sets the cookie, and redirects to
    * /admin. An invalid, replayed, or expired token redirects to the login page.
    */
-  async function confirmAction(event: RequestContext): Promise<never> {
+  async function confirmAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
     const form = await event.request.formData();
     const token = String(form.get('token') ?? '');
@@ -185,7 +185,7 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
   }
 
   /** POST /admin/auth/logout. Deletes the session row and clears the cookie. */
-  async function logoutAction(event: RequestContext): Promise<never> {
+  async function logoutAction(event: CairnEvent): Promise<never> {
     const db = requireDb(event.platform?.env ?? {});
     const name = sessionCookieName(event.url.protocol === 'https:');
     const id = event.cookies.get(name);

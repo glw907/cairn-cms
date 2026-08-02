@@ -78,6 +78,7 @@ function customRoleEvent(
   return {
     url: new URL(`https://test.example${pathname}`),
     params: {},
+    route: { id: '/admin/[...path]' },
     request: new Request(`https://test.example${pathname}`),
     locals: {
       editor: { email: 'inst@test', displayName: 'Inst', role, capability },
@@ -85,6 +86,7 @@ function customRoleEvent(
     },
     platform: { env: {} },
     cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    setHeaders: () => {},
   };
 }
 

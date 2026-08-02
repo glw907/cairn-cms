@@ -133,8 +133,8 @@ function typeOnlyAuthGuardAssignability(): void {
 }
 void typeOnlyAuthGuardAssignability;
 
-// createContentRoutes: every returned load/action reads a ContentEvent (EventBase<CairnEnv>).
-// Plain SiteRequestEvent covers it: with no generated `$app/types` in this repo, kit's own
+// createContentRoutes: every returned load/action reads a CairnEvent<CairnEnv>. Plain
+// SiteRequestEvent covers it: with no generated `$app/types` in this repo, kit's own
 // `RequestEvent['params']` already resolves to `Record<string, string>` (verified directly:
 // `RequestEvent<AppLayoutParams<'/'>>`'s default falls back to that shape here), so a
 // params-narrowing override would be a no-op. A generated app narrows `params` per route instead,
@@ -145,16 +145,15 @@ function typeOnlyContentRoutesAssignability(): void {
 }
 void typeOnlyContentRoutesAssignability;
 
-// createNavRoutes: navLoad/navSave both read the same ContentEvent slot as content-routes.
+// createNavRoutes: navLoad/navSave both read the same CairnEvent slot as content-routes.
 function typeOnlyNavRoutesAssignability(): void {
   const nav = createNavRoutes({} as CairnRuntime);
   nav satisfies Record<string, (event: SiteRequestEvent) => SiteActionReturn>;
 }
 void typeOnlyNavRoutesAssignability;
 
-// createAuthRoutes: every handler reads a RequestContext (EventBase<CairnEnv> plus cookies and
-// setHeaders), the event shape a site's /admin/auth/* route shims assign from their own
-// SiteRequestEvent.
+// createAuthRoutes: every handler reads a CairnEvent<CairnEnv>, the event shape a site's
+// /admin/auth/* route shims assign from their own SiteRequestEvent.
 function typeOnlyAuthRoutesAssignability(): void {
   const auth = createAuthRoutes({ branding: { siteName: 'Site', from: 'noreply@example.com' } });
   auth.requestAction satisfies (event: SiteRequestEvent) => Promise<RequestResult>;
@@ -165,7 +164,7 @@ function typeOnlyAuthRoutesAssignability(): void {
 }
 void typeOnlyAuthRoutesAssignability;
 
-// createEditorRoutes: every handler reads the same RequestContext slot as auth-routes.
+// createEditorRoutes: every handler reads the same CairnEvent slot as auth-routes.
 function typeOnlyEditorRoutesAssignability(): void {
   const editors = createEditorRoutes();
   editors.editorsLoad satisfies (event: SiteRequestEvent) => unknown;
@@ -175,7 +174,7 @@ function typeOnlyEditorRoutesAssignability(): void {
 }
 void typeOnlyEditorRoutesAssignability;
 
-// healthLoad: its own inline `{ platform?: { env?: CairnEnv } }` param, checked against the same
+// healthLoad: takes CairnEvent (C2 breaking-window, R4), checked against the same
 // SiteServerLoadEvent a site's `/admin/healthz` route load calls it with.
 function typeOnlyHealthLoadAssignability(siteEvent: SiteServerLoadEvent, runtime: CairnRuntime): void {
   healthLoad(siteEvent, runtime) satisfies Promise<HealthData>;

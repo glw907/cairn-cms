@@ -5,11 +5,11 @@
 import { env } from 'cloudflare:test';
 import { githubApp } from '../../lib/index.js';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { createContentRoutes, type ContentEvent } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { r2Key, hashBytes, shortHash } from '../../lib/media/naming.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const bucket = env.MEDIA_BUCKET;
@@ -66,9 +66,9 @@ interface UploadOpts {
   platformEnv?: Record<string, unknown>;
 }
 
-/** Build the ContentEvent for an upload POST. The raw body is the bytes; the metadata travels in
+/** Build the CairnEvent for an upload POST. The raw body is the bytes; the metadata travels in
  *  percent-encoded request headers. */
-function uploadEvent(opts: UploadOpts): ContentEvent {
+function uploadEvent(opts: UploadOpts): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', opts.contentType ?? 'image/png');
   const length = opts.contentLength === undefined ? String(opts.bytes.length) : opts.contentLength;
@@ -84,12 +84,14 @@ function uploadEvent(opts: UploadOpts): ContentEvent {
   return {
     url,
     params: { concept: 'posts', id: 'my-entry' },
+    route: { id: '/admin/[concept]/[id]' },
     // A Uint8Array is a valid fetch body at runtime; the DOM lib's BodyInit predates the typed-array
     // overload, so cast through BodyInit to satisfy the constructor type.
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
     locals: { editor: opts.hasEditor === false ? null : editor },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 

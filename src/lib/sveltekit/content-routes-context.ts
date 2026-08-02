@@ -6,14 +6,13 @@
 // the seam a pure closure-lift produces: the domain modules are unchanged in behavior, only in
 // where their shared captures come from.
 import type { Backend } from '../github/backend.js';
-import type { CairnEnv } from '../env.js';
 import { emptyManifest, parseManifest, type Manifest } from '../content/manifest.js';
 import type { CairnRuntime } from '../content/types.js';
 import { normalizeAdminNav, validateNavLayout, validateAccessComposition, type ResolvedNavItem, type ResolvedLayoutNode } from './admin-nav.js';
 import { DEFAULT_ROLES } from '../auth/roles.js';
 import { normalizePublishActions, type ResolvedPublishAction } from './publish-actions.js';
 import { logCommitFailed, commitFailure } from './commit-log.js';
-import type { CookieJar, EventBase } from './types.js';
+import type { CairnEvent } from './types.js';
 import type { Editor } from '../auth/types.js';
 // Server-only: the Anthropic SDK ships the API-key path and never reaches a browser bundle. It is
 // imported only here (a Worker module no component imports statically), and the server-only-deps test
@@ -21,28 +20,6 @@ import type { Editor } from '../auth/types.js';
 // type below keeps the action's surface small and the test seam injectable, so the SDK's deep types
 // never leak into a public signature.
 import Anthropic from '@anthropic-ai/sdk';
-
-/**
- * The structural event the content routes read; a real SvelteKit RequestEvent satisfies it.
- *
- * Deliberately pinned to `CairnEnv`, not generic over a site's own `Env` (env-genericity sweep,
- * pre-beta C1 Task 2): a compile-only fixture proving `createContentRoutes` and `createNavRoutes`
- * against a site's own generated route event, under a realistic compliant `App.Platform['env']`
- * (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the pattern
- * `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares the `GITHUB_APP_PRIVATE_KEY_B64` property name with `CairnEnv`, which is exactly what
- * keeps TypeScript's weak-type detection (TS2559) from rejecting the assignment; a genuinely
- * disjoint env (sharing no property names) still fails it, so the pin costs a compliant site
- * nothing. Adding a type parameter here would be public surface with no fixture forcing it.
- */
-export interface ContentEvent extends EventBase<CairnEnv> {
-  params: Record<string, string>;
-  /**
-   * SvelteKit's cookie jar. The layout load reads the persisted admin theme and issues the CSRF
-   *  token. Optional for non-route callers.
-   */
-  cookies?: CookieJar;
-}
 
 /**
  * The minimal Anthropic client surface the tidy action uses, typed structurally so the SDK's deep
@@ -130,7 +107,7 @@ export interface ContentRoutesDeps {
    */
   navFilter?: (
     items: ResolvedLayoutNode[],
-    ctx: { editor: Editor; event: ContentEvent },
+    ctx: { editor: Editor; event: CairnEvent },
   ) => ResolvedLayoutNode[] | Promise<ResolvedLayoutNode[]>;
   /**
    * Per-session pending-work counts for the shell's nav badges (a queue of unread asset
@@ -146,7 +123,7 @@ export interface ContentRoutesDeps {
    */
   attention?: (ctx: {
     editor: Editor;
-    event: ContentEvent;
+    event: CairnEvent;
   }) => AttentionItem[] | Promise<AttentionItem[]>;
 }
 
@@ -200,7 +177,7 @@ export interface ContentRoutesContext {
    * Resolve the live content backend for one request. The dev double's `event.locals.backend`
    *  wins, else the production `runtime.backend.connect(env)`.
    */
-  resolveBackend(event: ContentEvent): Backend;
+  resolveBackend(event: CairnEvent): Backend;
   /**
    * Main's manifest, parsed. A missing file starts empty (a fresh repo before the first commit).
    *  Always read from main: pending branches carry no manifest copy.
@@ -277,7 +254,7 @@ export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentR
    *  token mint. The GitHub provider mints and caches its installation token lazily behind
    *  `connect`, so a per-request resolve re-signs only on a cache miss.
    */
-  function resolveBackend(event: ContentEvent): Backend {
+  function resolveBackend(event: CairnEvent): Backend {
     return event.locals.backend ?? runtime.backend.connect(event.platform?.env ?? {});
   }
 

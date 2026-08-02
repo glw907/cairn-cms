@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { adminAction, AdminActionError, type AdminActionEvent, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import { adminAction, AdminActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import { log } from '../../lib/log/index.js';
-import type { CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 
 const editor: Editor = { email: 'owner@example.com', displayName: 'Owner', role: 'owner', capability: 'owner' };
@@ -23,7 +23,7 @@ function makeEvent(opts: {
   editor?: Editor | null;
   extra?: Record<string, string>;
   auditSink?: (record: AdminActionAuditRecord) => void;
-}): AdminActionEvent {
+}): CairnEvent {
   const body = new URLSearchParams();
   if (opts.csrfField !== undefined) body.set('csrf', opts.csrfField);
   for (const [k, v] of Object.entries(opts.extra ?? {})) body.set(k, v);
@@ -37,8 +37,11 @@ function makeEvent(opts: {
   return {
     url: new URL('https://x.dev/admin/club/events'),
     request,
+    params: {},
+    route: { id: '/admin/club/events' },
     cookies: jar(opts.cookie !== undefined ? { '__Host-cairn_csrf': opts.cookie } : {}),
     locals: { editor: opts.editor === undefined ? editor : opts.editor, auditSink: opts.auditSink },
+    setHeaders: () => {},
   };
 }
 

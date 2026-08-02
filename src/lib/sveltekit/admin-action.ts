@@ -15,9 +15,7 @@ import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { validateCsrfHeader } from './csrf.js';
 import { log } from '../log/index.js';
 import type { Editor } from '../auth/types.js';
-import type { CookieJar, EventBase } from './types.js';
-import type { CairnEnv } from '../env.js';
-import type { AccessMap } from '../auth/access.js';
+import type { CairnEvent } from './types.js';
 
 /** One audit-log record a mutating admin action must emit through `ctx.audit`. */
 export interface AdminActionAudit {
@@ -36,19 +34,6 @@ export type AdminActionAuditRecord = AdminActionAudit & { editor: string };
 
 /** A site-supplied sink for `adminAction`'s audit records, wired through `event.locals.auditSink`. */
 export type AdminActionAuditSink = (record: AdminActionAuditRecord) => void;
-
-/**
- * The minimal event shape `adminAction` reads: enough to verify CSRF, the editor, and the sink.
- * Generic over the platform env so `createSectionAction`'s produced wrapper (`./section-action.js`)
- * stays assignable to a route's generated `Actions` when a site's own `App.Platform['env']` names
- * its own bindings; the default preserves every existing consumer's meaning, since `adminAction`
- * itself never reads `event.platform`. `locals.cairnAccess` mirrors what `EventBase` already
- * carries, typed here so a wrapper built on this event can read it without a cast.
- */
-export interface AdminActionEvent<Env = CairnEnv> extends EventBase<Env> {
-  cookies: CookieJar;
-  locals: { editor?: Editor | null; auditSink?: AdminActionAuditSink; cairnAccess?: AccessMap };
-}
 
 /** What a wrapped handler receives: the verified editor and a bound audit emitter. */
 export interface AdminActionContext {
@@ -136,25 +121,25 @@ function serializeThrownError(error: unknown): string {
  * ```
  *
  * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
- * Task 2), on the same grounds as `RequestContext`'s pin (`./types.js`), not because it never
- * reads `event.platform`: its returned function is declared as taking `AdminActionEvent<CairnEnv>`
- * (the default type parameter), and a compile-only fixture
- * (`src/tests/unit/env-genericity.test.ts`) proves that assigns clean into a route's generated
- * `Actions` under a realistic compliant `App.Platform['env']`, because `CairnPlatformBindings`
- * (`./platform-bindings.js`) shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with
- * `CairnEnv`, which is what keeps TypeScript's weak-type detection (TS2559) from rejecting the
- * assignment. A site whose action needs its own env bindings, plus a database binding to resolve,
- * reaches for `createSectionAction` (`./section-action.js`), which is generic over `Env` for
- * exactly that reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-
- * plus-audit contract with no database binding stays on `adminAction` itself rather than reaching
- * for that door.
+ * Task 2), on the same grounds as {@link CairnEvent}'s own default, not because it never reads
+ * `event.platform`: its returned function is declared as taking `CairnEvent<CairnEnv>` (the
+ * default type parameter), and a compile-only fixture (`src/tests/unit/env-genericity.test.ts`)
+ * proves that assigns clean into a route's generated `Actions` under a realistic compliant
+ * `App.Platform['env']`, because `CairnPlatformBindings` (`./platform-bindings.js`) shares
+ * `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with `CairnEnv`, which is what keeps
+ * TypeScript's weak-type detection (TS2559) from rejecting the assignment. A site whose action
+ * needs its own env bindings, plus a database binding to resolve, reaches for
+ * `createSectionAction` (`./section-action.js`), which is generic over `Env` for exactly that
+ * reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-plus-audit
+ * contract with no database binding stays on `adminAction` itself rather than reaching for that
+ * door.
  */
 export function adminAction<T>(
-  handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
+  handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
   deps: AdminActionDeps = {},
-): (event: AdminActionEvent) => Promise<T> {
+): (event: CairnEvent) => Promise<T> {
   const dev = deps.isDev ?? DEV;
-  return async (event: AdminActionEvent): Promise<T> => {
+  return async (event: CairnEvent): Promise<T> => {
     const editor = event.locals.editor;
     if (!editor) {
       log.warn('admin.action.session_absent', { path: event.url.pathname });

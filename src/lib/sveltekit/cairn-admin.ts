@@ -10,7 +10,6 @@ import { log } from '../log/index.js';
 import { createAuthRoutes } from './auth-routes.js';
 import {
   createContentRoutes,
-  type ContentEvent,
   type ContentRoutesDeps,
   type ListData,
   type EditData,
@@ -25,30 +24,8 @@ import { createNavRoutes, type NavLoadData } from './nav-routes.js';
 import type { AuthBranding, SendMagicLink } from '../email.js';
 import type { Editor } from '../auth/types.js';
 import type { Capability } from '../auth/roles.js';
-import type { CairnEnv } from '../env.js';
 import type { CairnRuntime } from '../content/types.js';
-import type { CookieJar, EventBase } from './types.js';
-
-/**
- * The structural event the single-mount load reads: the union of what the wrapped loads need
- * (ContentEvent minus params, which the dispatcher synthesizes, plus RequestContext's cookies
- * and setHeaders). A real SvelteKit RequestEvent satisfies it.
- *
- * Deliberately pinned to `CairnEnv`, not generic over a site's own `Env` (env-genericity
- * sweep, pre-beta C1 Task 2): a compile-only fixture proving `createCairnAdmin`'s `load`, `actions`,
- * and `shellLoad` against a site's own generated route event, under a realistic compliant
- * `App.Platform['env']` (`CairnPlatformBindings & CairnMediaBindings` plus a site binding, the
- * pattern `platform-bindings.ts` documents), assigns clean with zero casts. `CairnPlatformBindings`
- * shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN`/`GITHUB_APP_PRIVATE_KEY_B64` property names with
- * `CairnEnv`, which is exactly what keeps TypeScript's weak-type detection (TS2559) from
- * rejecting the assignment; a genuinely disjoint env (sharing no property names) still fails it, so
- * the pin costs a compliant site nothing. Adding a type parameter here would be public surface with
- * no fixture forcing it.
- */
-export interface AdminEvent extends EventBase<CairnEnv> {
-  cookies: CookieJar;
-  setHeaders(headers: Record<string, string>): void;
-}
+import type { CairnEvent } from './types.js';
 
 /**
  * Injectable dependencies, grouped into the two cohesive bags a site actually overrides. The
@@ -127,19 +104,22 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
 
   /**
    * Build the event a wrapped content load reads. The catch-all route carries only a rest
-   *  param, so `concept` and `id` are synthesized from the parsed view. The override names
-   *  each field explicitly rather than spreading: a real RequestEvent's fields can sit behind
-   *  getters a bare spread copies poorly, and the structural ContentEvent contract needs only
-   *  these.
+   *  param, so `concept` and `id` are synthesized from the parsed view; `route` rides through
+   *  unchanged, since it names the catch-all route itself, not the synthesized view. The
+   *  override names each field explicitly rather than spreading: a real RequestEvent's fields
+   *  can sit behind getters a bare spread copies poorly, and the structural CairnEvent contract
+   *  needs only these.
    */
-  function contentEvent(event: AdminEvent, params: Record<string, string>): ContentEvent {
+  function contentEvent(event: CairnEvent, params: Record<string, string>): CairnEvent {
     return {
       url: event.url,
       params,
+      route: event.route,
       request: event.request,
       locals: event.locals,
       platform: event.platform,
       cookies: event.cookies,
+      setHeaders: event.setHeaders,
     };
   }
 
@@ -148,7 +128,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  Each authed view loads only its own page data; the shared chrome rides the separate shell
    *  load (`/admin/+layout.server.ts`), so this load no longer re-fetches the nav per view.
    */
-  async function load(event: AdminEvent): Promise<AdminData> {
+  async function load(event: CairnEvent): Promise<AdminData> {
     const view = parseAdminPath(event.url.pathname, runtime.concepts);
     if (!view) throw error(404, 'Not found');
     switch (view.view) {
@@ -239,9 +219,9 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
   function viewAction<V extends AdminView['view'], R>(
     action: string,
     allowed: readonly V[],
-    delegate: (event: AdminEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
+    delegate: (event: CairnEvent, view: Extract<AdminView, { view: V }>) => Promise<R>,
     opts: { carriesNewFlag?: boolean; scriptPosted?: boolean } = {},
-  ): (event: AdminEvent) => Promise<R> {
+  ): (event: CairnEvent) => Promise<R> {
     return async (event) => {
       const view = parseAdminPath(event.url.pathname, runtime.concepts);
       if (!view || !(allowed as readonly string[]).includes(view.view)) throw error(404, 'Not found');
@@ -365,7 +345,7 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
    *  payload (bare for a public path; the authed nav, user, and streamed pending set otherwise),
    *  so every `/admin/**` route renders inside one chrome without re-loading it per view.
    */
-  const shellLoad = (event: AdminEvent) => content.shellPayload(contentEvent(event, {}));
+  const shellLoad = (event: CairnEvent) => content.shellPayload(contentEvent(event, {}));
 
   return { load, actions, shellLoad };
 }

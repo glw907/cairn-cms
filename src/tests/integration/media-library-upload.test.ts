@@ -9,11 +9,11 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { makeGithubBackend } from '../../lib/github/backend.js';
 import { githubApp } from '../../lib/index.js';
 import { GithubDouble } from '../unit/_github-double.js';
-import { createContentRoutes, type ContentEvent } from '../../lib/sveltekit/content-routes.js';
+import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import { parseMediaManifest, serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { hashBytes, shortHash } from '../../lib/media/naming.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { CookieJar } from '../../lib/sveltekit/types.js';
+import type { CairnEvent, CookieJar } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
 import type { Backend } from '../../lib/github/backend.js';
 
@@ -72,9 +72,9 @@ interface UploadOpts {
   platformEnv?: Record<string, unknown>;
 }
 
-/** Build the ContentEvent for an upload POST. The raw body is the bytes; the filename travels in a
+/** Build the CairnEvent for an upload POST. The raw body is the bytes; the filename travels in a
  *  percent-encoded request header, exactly as the editor upload does. */
-function uploadEvent(opts: UploadOpts & { backend?: Backend }): ContentEvent {
+function uploadEvent(opts: UploadOpts & { backend?: Backend }): CairnEvent {
   const headers = new Headers();
   headers.set('content-type', 'image/png');
   headers.set('content-length', String(opts.bytes.length));
@@ -85,10 +85,12 @@ function uploadEvent(opts: UploadOpts & { backend?: Backend }): ContentEvent {
   return {
     url,
     params: {},
+    route: { id: '/admin/media' },
     request: new Request(url, { method: 'POST', body: opts.bytes as unknown as BodyInit, headers }),
     locals: { editor: opts.hasEditor === false ? null : editor, backend: opts.backend ?? backend },
     platform: { env: opts.platformEnv ?? { MEDIA_BUCKET: bucket } },
     cookies: cookieJar(opts.cookieCsrf === undefined ? CSRF : opts.cookieCsrf),
+    setHeaders: () => {},
   };
 }
 

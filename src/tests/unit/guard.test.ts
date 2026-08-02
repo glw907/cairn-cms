@@ -8,6 +8,7 @@ import {
 } from '../../lib/sveltekit/guard.js';
 import type { Role } from '../../lib/auth/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
+import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
 const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };
 const editor = { email: 'e@x.test', displayName: 'E', role: 'editor' as const, capability: 'editor' as const };
@@ -25,21 +26,36 @@ function r(...names: string[]): Role[] {
   return names as unknown as Role[];
 }
 
+/** Build a full CairnEvent from just the locals under test, so each fixture states only what
+ *  makes it different; `url` defaults to a plausible admin path, overridden where a test's own
+ *  URL drives `requireAccess`'s target resolution. */
+function event(locals: CairnEvent['locals'], url = new URL('https://x.test/admin/money')): CairnEvent {
+  return {
+    url,
+    request: new Request(url),
+    params: {},
+    route: { id: '/admin/[...path]' },
+    cookies: { get: () => undefined, set: () => {}, delete: () => {} },
+    setHeaders: () => {},
+    locals,
+  };
+}
+
 describe('requireOwner', () => {
-  it('requireOwner accepts a minimal { locals: { editor } } and returns an owner', () => {
-    expect(requireOwner({ locals: { editor: owner } })).toBe(owner);
+  it('requireOwner accepts a minimal event and returns an owner', () => {
+    expect(requireOwner(event({ editor: owner }))).toBe(owner);
   });
   it('requireOwner rejects a non-owner with 403', () => {
     // error() throws an HttpError object (status + body.message), not an Error instance.
-    expect(() => requireOwner({ locals: { editor } })).toThrowError(
+    expect(() => requireOwner(event({ editor }))).toThrowError(
       expect.objectContaining({ status: 403, body: { message: 'Owner access required' } }),
     );
   });
   it('requireOwner redirects when no editor', () => {
-    expect(() => requireOwner({ locals: { editor: null } })).toThrow();
+    expect(() => requireOwner(event({ editor: null }))).toThrow();
   });
   it('requireOwner rejects a none-capability editor with 403', () => {
-    expect(() => requireOwner({ locals: { editor: noneCapability } })).toThrowError(
+    expect(() => requireOwner(event({ editor: noneCapability }))).toThrowError(
       expect.objectContaining({ status: 403 }),
     );
   });
@@ -47,34 +63,34 @@ describe('requireOwner', () => {
 
 describe('requireEditor', () => {
   it('accepts an owner-capability editor', () => {
-    expect(requireEditor({ locals: { editor: owner } })).toBe(owner);
+    expect(requireEditor(event({ editor: owner }))).toBe(owner);
   });
   it('accepts an editor-capability editor', () => {
-    expect(requireEditor({ locals: { editor } })).toBe(editor);
+    expect(requireEditor(event({ editor }))).toBe(editor);
   });
   it('rejects a none-capability editor with 403', () => {
-    expect(() => requireEditor({ locals: { editor: noneCapability } })).toThrowError(
+    expect(() => requireEditor(event({ editor: noneCapability }))).toThrowError(
       expect.objectContaining({ status: 403, body: { message: 'Editor access required' } }),
     );
   });
   it('rejects an unknown-role editor resolved to none with 403', () => {
-    expect(() => requireEditor({ locals: { editor: unknownRole } })).toThrowError(
+    expect(() => requireEditor(event({ editor: unknownRole }))).toThrowError(
       expect.objectContaining({ status: 403 }),
     );
   });
   it('redirects when no editor', () => {
-    expect(() => requireEditor({ locals: { editor: null } })).toThrow();
+    expect(() => requireEditor(event({ editor: null }))).toThrow();
   });
 });
 
 describe('requireSession admits any authenticated identity, including none capability', () => {
   it('admits owner, editor, and none-capability editors alike', () => {
-    expect(requireSession({ locals: { editor: owner } })).toBe(owner);
-    expect(requireSession({ locals: { editor } })).toBe(editor);
-    expect(requireSession({ locals: { editor: noneCapability } })).toBe(noneCapability);
+    expect(requireSession(event({ editor: owner }))).toBe(owner);
+    expect(requireSession(event({ editor }))).toBe(editor);
+    expect(requireSession(event({ editor: noneCapability }))).toBe(noneCapability);
   });
   it('redirects when no editor', () => {
-    expect(() => requireSession({ locals: { editor: null } })).toThrow();
+    expect(() => requireSession(event({ editor: null }))).toThrow();
   });
 });
 
@@ -84,26 +100,18 @@ describe('requireAccess', () => {
   const access: AccessMap = { '/admin/money': r('publisher') };
 
   it('redirects when there is no session', () => {
-    expect(() =>
-      requireAccess({ locals: { editor: null }, url: new URL('https://x.test/admin/money') }),
-    ).toThrow();
+    expect(() => requireAccess(event({ editor: null }, new URL('https://x.test/admin/money')))).toThrow();
   });
 
   it('returns the editor when the map admits the resolved target', () => {
-    const event = {
-      locals: { editor: publisher, cairnAccess: access },
-      url: new URL('https://x.test/admin/money'),
-    };
-    expect(requireAccess(event)).toBe(publisher);
+    const fixture = event({ editor: publisher, cairnAccess: access }, new URL('https://x.test/admin/money'));
+    expect(requireAccess(fixture)).toBe(publisher);
   });
 
   it('403s and emits auth.access.denied when the map denies the target', () => {
     const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const event = {
-      locals: { editor: webmaster, cairnAccess: access },
-      url: new URL('https://x.test/admin/money'),
-    };
-    expect(() => requireAccess(event)).toThrowError(expect.objectContaining({ status: 403 }));
+    const fixture = event({ editor: webmaster, cairnAccess: access }, new URL('https://x.test/admin/money'));
+    expect(() => requireAccess(fixture)).toThrowError(expect.objectContaining({ status: 403 }));
     const records = warnSpy.mock.calls.map(
       (c) => c[0] as { event?: string; email?: string; role?: string; target?: string },
     );
@@ -124,10 +132,10 @@ describe('requireAccess', () => {
     const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };
     const unmatchedUrl = new URL('https://x.test/admin/unmapped');
     expect(() =>
-      requireAccess({ locals: { editor: publisher, cairnAccess: access }, url: unmatchedUrl }),
+      requireAccess(event({ editor: publisher, cairnAccess: access }, unmatchedUrl)),
     ).toThrowError(expect.objectContaining({ status: 403 }));
     expect(() =>
-      requireAccess({ locals: { editor: owner, cairnAccess: access }, url: unmatchedUrl }),
+      requireAccess(event({ editor: owner, cairnAccess: access }, unmatchedUrl)),
     ).toThrowError(expect.objectContaining({ status: 403 }));
     const events = warnSpy.mock.calls.map((c) => (c[0] as { event?: string }).event);
     expect(events.filter((e) => e === 'auth.access.denied')).toHaveLength(2);
@@ -135,11 +143,8 @@ describe('requireAccess', () => {
   });
 
   it('lets an explicit target argument override the URL pathname', () => {
-    const event = {
-      locals: { editor: publisher, cairnAccess: access },
-      url: new URL('https://x.test/admin/unmapped'),
-    };
-    expect(requireAccess(event, '/admin/money')).toBe(publisher);
+    const fixture = event({ editor: publisher, cairnAccess: access }, new URL('https://x.test/admin/unmapped'));
+    expect(requireAccess(fixture, '/admin/money')).toBe(publisher);
   });
 });
 

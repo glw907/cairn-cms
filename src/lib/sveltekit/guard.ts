@@ -13,7 +13,7 @@ import { canReach, hasAccessRule } from '../auth/access.js';
 import type { RolesDeclaration } from '../auth/roles.js';
 import type { AccessMap } from '../auth/access.js';
 import type { Editor } from '../auth/types.js';
-import type { HandleInput } from './types.js';
+import type { CairnEvent, HandleInput } from './types.js';
 
 /** The login page and the auth endpoints are public; everything else under /admin is gated. */
 export function isPublicAdminPath(pathname: string): boolean {
@@ -143,21 +143,18 @@ export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: Acces
 
 /**
  * For a protected load/action: the session the guard already resolved, or a login redirect.
- *  The parameter is the minimal structural need (just `locals`), so every engine event shape
- *  (RequestContext, the content routes' ContentEvent) and a real RequestEvent all satisfy it.
+ *  Takes {@link CairnEvent}, so every engine load/action and a site's own real event satisfy it.
  */
-export function requireSession(event: { locals: { editor?: Editor | null } }): Editor {
+export function requireSession(event: CairnEvent): Editor {
   const editor = event.locals.editor;
   if (!editor) throw redirect(303, '/admin/login');
   return editor;
 }
 
 /**
- * For the management surface: a signed-in owner, or 403 for anyone else. The parameter is the
- * same minimal structural need as `requireSession` (just `locals.editor`), so a custom route's
- * standard load event satisfies it without the full RequestContext.
+ * For the management surface: a signed-in owner, or 403 for anyone else.
  */
-export function requireOwner(event: { locals: { editor?: Editor | null } }): Editor {
+export function requireOwner(event: CairnEvent): Editor {
   const editor = requireSession(event);
   if (editor.capability !== 'owner') throw error(403, 'Owner access required');
   return editor;
@@ -170,7 +167,7 @@ export function requireOwner(event: { locals: { editor?: Editor | null } }): Edi
  * `CairnAdminShell` custom-route seam untouched; only the engine's own content and roster loads
  * and actions call this and refuse it.
  */
-export function requireEditor(event: { locals: { editor?: Editor | null } }): Editor {
+export function requireEditor(event: CairnEvent): Editor {
   const editor = requireSession(event);
   if (editor.capability === 'none') throw error(403, 'Editor access required');
   return editor;
@@ -205,10 +202,7 @@ export function requireEngineAccess(access: AccessMap | undefined, editor: Edito
  * bypass does not apply here. A route that wants the zero-config any-editor behavior should not
  * call this helper for that path.
  */
-export function requireAccess(
-  event: { locals: { editor?: Editor | null; cairnAccess?: AccessMap }; url: URL },
-  target?: string,
-): Editor {
+export function requireAccess(event: CairnEvent, target?: string): Editor {
   const editor = requireSession(event);
   const resolvedTarget = target ?? event.url.pathname;
   const access = event.locals.cairnAccess;

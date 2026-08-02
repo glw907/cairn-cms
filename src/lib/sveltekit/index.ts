@@ -19,7 +19,6 @@ export type {
   VocabularyLoadData,
   MediaUsageInfo,
   MediaLibraryData,
-  ContentEvent,
   ContentRoutesDeps,
   AttentionItem,
   SaveFailure,
@@ -65,7 +64,6 @@ export {
   type AdminActionAuditSink,
   type AdminActionContext,
   type AdminActionDeps,
-  type AdminActionEvent,
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
 export {
@@ -77,7 +75,7 @@ export {
 } from './section-action.js';
 export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
-export type { RequestContext, CookieJar, HandleInput, PlatformContext } from './types.js';
+export type { CairnEvent, CookieJar, HandleInput, PlatformContext } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.
 export type { CairnEnv } from '../env.js';
 export type { EmailSender } from '../email.js';

@@ -310,7 +310,7 @@ read. Reach for a hand-rolled sink, like the Club section's below, only when a s
 Set it in `hooks.server.ts`, scoped to the section so the rest of `/admin` never resolves a binding
 it has no use for:
 
-<!-- snippet-check-skip: reads App.Platform (env, context.waitUntil), which only the site's own app.d.ts declares; see "Reach your own data" below -->
+<!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's own app.d.ts declares; see "Reach your own data" below -->
 ```ts
 // src/hooks.server.ts
 import { sequence } from '@sveltejs/kit/hooks';
@@ -324,7 +324,9 @@ import { createClubAuditSink } from '$lib/club/audit-sink.js';
 const wireClubAuditSink: Handle = ({ event, resolve }) => {
   if (event.url.pathname.startsWith('/admin/club')) {
     const db = resolveClubDb(event.platform?.env);
-    const waitUntil = event.platform?.context?.waitUntil?.bind(event.platform.context);
+    const ctx = event.platform?.ctx;
+    // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
+    const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
     if (db) event.locals.auditSink = createClubAuditSink(db, waitUntil);
   }
   return resolve(event);

@@ -297,20 +297,42 @@ declare function createD1AuditSink(
 The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsink) seam:
 persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
 table, opt-in the same way the auth migrations are. Copy the bundled migration once and apply it
-to both the local database `wrangler dev` reads and the remote one your deploy reads:
+to both the local database `wrangler dev` reads and the remote one your deploy reads. `0002` is
+only the number the package ships it under. A site that has already written its own migrations
+renames the copy to the next free number in its own `migrations/` directory. Only the ordering
+relative to your other migrations is load-bearing, not the filename:
 
 ```bash
 cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/
-npx wrangler d1 migrations apply your-site-auth --local
-npx wrangler d1 migrations apply your-site-auth --remote
+npx wrangler d1 migrations apply your-site-audit --local
+npx wrangler d1 migrations apply your-site-audit --remote
 ```
+
+`db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
+preceding example, keeps audit writes from contending with session and token lookups, since D1
+serializes writes per database, and the `hooks.server.ts` example below binds a dedicated
+`AUDIT_DB` rather than reusing `AUTH_DB`. The table is append-only and this package prunes
+nothing, so a site that expects real traffic should retire old rows itself, on a schedule (a
+[Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)) or by
+hand:
+
+```bash
+npx wrangler d1 execute your-site-audit --remote --command "DELETE FROM audit_log WHERE created_at < datetime('now', '-90 days')"
+```
+
+A screen reading the table back right after a write can miss the row that caused it: the insert
+may still be in flight behind `waitUntil` when the response renders, and D1's own read
+replication can serve a replica that has not received the write yet. A screen that must show its
+own just-made row needs
+[first-primary bookmark routing](https://developers.cloudflare.com/d1/best-practices/read-replication/#bookmarks),
+not a plain read.
 
 The table carries `id`, `actor`, `action`, `entity`, `entity_id`, `detail`, and a `created_at` the
 database populates (`datetime('now')`), a column read by a human in a query, not by the engine.
 
 `createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
 optional parameter would make the shortest call the one that silently drops the insert when the
-isolate tears down before it settles, so omitting it (typically when no `event.platform.context` is
+isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
 reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
 
 The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
@@ -328,15 +350,17 @@ check order runs authorization before any database-binding resolution, so a sess
 refuses still produces an audit row before the section's own binding is ever read. Persisting that
 trail with no rate limit configured lets a refused caller cheaply fill the table.
 
-<!-- snippet-check-skip: reads App.Platform (env, context.waitUntil), which only the site's own app.d.ts declares -->
+<!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's own app.d.ts declares -->
 ```ts
 // src/hooks.server.ts
 import { createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
 import type { Handle } from '@sveltejs/kit';
 
 const wireAuditSink: Handle = ({ event, resolve }) => {
-  const db = event.platform?.env.AUTH_DB;
-  const waitUntil = event.platform?.context?.waitUntil?.bind(event.platform.context);
+  const db = event.platform?.env.AUDIT_DB;
+  const ctx = event.platform?.ctx;
+  // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
+  const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
   if (db) event.locals.auditSink = createD1AuditSink(db, waitUntil);
   return resolve(event);
 };

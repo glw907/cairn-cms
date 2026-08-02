@@ -37,9 +37,15 @@ without a request.
 
 `opts.ip` must come from `CF-Connecting-IP`, never a client-forwardable header such as
 `X-Forwarded-For`: a request can set that header to anything, so passing it through would let a
-bot supply its own IP to siteverify. A solved token is single-use and valid for a roughly
-300-second window; siteverify itself enforces both, and a second call against the same token
-returns `false`.
+bot supply its own IP to siteverify.
+
+Cloudflare documents a solved token as single-use and valid for a roughly 300-second window.
+Siteverify is what enforces that, not this function, and it's a property of a remote, eventually
+consistent service that this engine neither adds to nor verifies. A site gating a privileged
+one-shot action on a token, an account claim, a first login, a redemption, still has to bind the
+token (or a value derived from it) to its own server-side state, the way the engine's own
+magic-link flow consumes its token with a single atomic delete that returns the row to the first
+caller and nothing to any repeat. A Turnstile pass alone is bot resistance, not a claim ticket.
 
 Supply `opts.hostname` and `opts.action` whenever a sitekey serves more than one form. Without
 them, siteverify proves only that the token is genuine, not which form it was solved for, so a
@@ -51,15 +57,18 @@ This function never logs the secret or the response body, only a `reason` and, f
 the expected and actual values; see [`turnstile.verify_failed`](./log-events.md).
 
 Degrade-to-open, skipping the check entirely when a site has no secret configured, is the
-caller's own convention, never this function's: verification and that policy stay separate. The
-site key and any `window.turnstile` ambient declaration for the client-side widget are also the
-site's own, never this package's:
+caller's own convention, never this function's: verification and that policy stay separate.
+Choosing it means that branch runs with no bot protection at all, and `verifyTurnstile` is never
+called, so nothing logs the skip on its own; a site adopting the convention should log or alert
+on the missing-secret branch itself. The site key and any `window.turnstile` ambient declaration
+for the client-side widget are also the site's own, never this package's:
 
 ```ts
 import { verifyTurnstile } from '@glw907/cairn-cms/cloudflare';
 
 async function verifySubmission(token: string, secret: string | undefined): Promise<boolean> {
   // Caller's own convention: no secret configured means the check passes.
+  // A site should log or alert here, since this branch runs with zero bot protection.
   if (secret && !(await verifyTurnstile(token, secret, { hostname: 'example.com', action: 'contact' }))) {
     return false;
   }
@@ -68,6 +77,22 @@ async function verifySubmission(token: string, secret: string | undefined): Prom
 ```
 
 ## Checking a rate limit
+
+Both helpers read a Workers
+[`RateLimit`](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+binding, declared in `wrangler.jsonc`:
+
+```jsonc
+"ratelimits": [
+  {
+    "binding": "MY_RATE_LIMITER",
+    "namespace_id": "1001",
+    "simple": { "limit": 10, "period": 60 }
+  }
+]
+```
+
+`period` accepts only `10` or `60` (seconds); there's no third option.
 
 ### `checkRateLimit`
 
@@ -79,13 +104,30 @@ declare function checkRateLimit(binding: RateLimitLike | undefined, key: string)
 
 Check one key against a Workers `RateLimit` binding. The Workers limiter is per-location and
 eventually consistent, so this is best-effort back pressure, never an authoritative security
-control; reach for the engine's own D1-backed send cooldown (the pattern `createAuthGuard` uses
+control. Reach for the engine's own D1-backed send cooldown (the pattern `createAuthGuard` uses
 for the magic-link request rate) for anything that must actually hold. An absent `binding`
 degrades to open and returns `true` without a call, the convention for local dev, vitest, and a
 not-yet-provisioned deploy. A throwing `limit()` propagates to the caller rather than being
 swallowed here: a caller decides its own degrade-to-open-on-throw policy, the same way
 [`createSectionAction`](./sveltekit.md#createsectionaction)'s wrapper does for its own rate-limit
 branch.
+
+`key` is the caller's to build, and its construction decides what the limit actually protects.
+Normalize an identity before keying on it (lowercase an email, and strip a plus tag where the
+site's own semantics already treat `user+tag@example.com` as `user@example.com`), or an attacker
+gets a fresh budget for every case or tag variant of the same address. Derive any IP component
+from `CF-Connecting-IP` only, the same rule [`verifyTurnstile`](#verifyturnstile) enforces for its
+own `opts.ip`, never a client-forwardable header such as `X-Forwarded-For`. One binding backs one
+shared budget: every key checked against it draws down the same underlying counter space, not a
+budget per key. A `key` built by concatenating unbounded caller input can exceed the binding's own
+key-length limit, and `limit()` throws rather than truncating it silently.
+
+Both helpers degrade to open with no log line of their own, by design: neither has the call-site
+context to say what a misspelled binding name or a not-yet-provisioned limiter should mean for the
+caller. A site that needs to know reaches for that context itself.
+[`createSectionAction`](./sveltekit.md#createsectionaction) is the worked example: its own
+`rateLimit` option logs `admin.action.rate_limit_absent` when the configured binding resolves to
+nothing (see [log events](./log-events.md)).
 
 ### `checkRateLimitKeys`
 
@@ -99,6 +141,11 @@ Check several keys against a Workers `RateLimit` binding, in order, short-circui
 first failing key: a later key's counter is never incremented once an earlier one has already
 failed. An absent `binding` degrades to open and returns `true` with no call, even with several
 keys.
+
+Order the keys broadest first: the budget that most needs to hold goes at index 0. With the
+narrower key checked first, say an email ahead of an IP, an attacker who saturates that one
+email's budget then fails the check at index 0 on every later attempt, so the broader key behind
+it never runs and its counter never sees the flood.
 
 `createSectionAction`'s own `rateLimit` option is the in-engine consumer of `RateLimitLike`; see
 [SvelteKit](./sveltekit.md#createsectionaction) for the wrapper that resolves a section's own

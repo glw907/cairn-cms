@@ -1,4 +1,4 @@
-## Unreleased
+## 0.93.0
 
 <!-- release-size: minor -->
 

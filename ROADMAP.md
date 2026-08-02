@@ -710,6 +710,18 @@ the named human gates only):**
   whatever the showcase CI proves; beta makes it a promise strangers rely on, and narrowing an
   implicit promise later is a breaking change in practice even when no code moves. Lands as a docs
   table plus perhaps an `engines`/`peerDependencies` tightening.
+- **Extend `cairn-doctor`'s `config.dependency-floors` check beyond svelte and kit (filed by the
+  pre-beta C1 toolchain-matrix task, 2026-08-01).** `src/lib/doctor/check-floors.ts` reads a
+  consumer's `package-lock.json` and compares resolved versions against the engine's own
+  `peerDependencies`, but the loop only ever iterates `svelte` and `@sveltejs/kit`, the package's
+  only two peer entries. It is the only floor enforcement that reaches a real consumer site (CI
+  only proves the engine's own repo), and it currently covers two of the
+  [supported-toolchain matrix](docs/reference/supported-toolchain.md)'s rows. Extending it needs a
+  source for each additional floor: `typescript`'s 5.0 floor has no `peerDependencies` entry to
+  read (it would need a hardcoded constant, since the engine's own devDependency range does not
+  describe the consumer floor), and `vite`/`wrangler`/`@cloudflare/workers-types` carry no engine
+  floor at all today, only a proven-against version. Scope the check to what the matrix actually
+  promises rather than inventing floors the matrix does not assert.
 - **Pre-beta polish: the public-surface naming review (Geoff, 2026-08-01).** One deliberate read of
   every exported name, option key, subpath, and log event as a whole, before beta's
   compatibility-SemVer adoption makes each rename a `Consumers must:` line (and, after 1.0, a

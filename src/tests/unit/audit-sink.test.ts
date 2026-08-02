@@ -140,16 +140,32 @@ describe('createD1AuditSink', () => {
   });
 
   it('slices on a code-point boundary, never leaving a lone surrogate half', async () => {
-    // An emoji ('🎉') is one code point but two UTF-16 code units. A naive `.slice(0, max)` on
-    // UTF-16 units can land exactly between the two, storing a lone surrogate a D1 bind() can
-    // reject; place the emoji straddling that boundary in code-unit terms.
-    const prefix = 'x'.repeat(MAX_DETAIL_LENGTH - 1);
+    // An emoji ('🎉') is one code point but two UTF-16 code units. The cut lands at
+    // MAX_DETAIL_LENGTH - TRUNCATION_MARKER.length (499); with the emoji starting at code-unit
+    // index 498, a naive `.slice(0, 499)` on UTF-16 units grabs the emoji's high surrogate only,
+    // leaving a lone surrogate at the very end. (A prefix of MAX_DETAIL_LENGTH - 1 instead, tried
+    // first, put the whole emoji past the cut on both implementations and could not discriminate
+    // between them; this prefix was verified against a temporary naive `value.slice` to confirm
+    // it actually fails there before trusting it here.)
+    const prefix = 'x'.repeat(MAX_DETAIL_LENGTH - 2);
     const calls = await recordedCalls({ detail: prefix + '🎉' + 'y'.repeat(20) });
 
     const detail = calls[0].args[4] as string;
     const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
     expect(loneSurrogate.test(detail)).toBe(false);
     expect(detail.endsWith('…')).toBe(true);
+  });
+
+  it('replaces a lone surrogate already present in the middle of detail, not created by any cut', async () => {
+    // The code-point slice only prevents the CUT from creating a lone surrogate; one already
+    // present elsewhere in the input (well under the truncation maximum, so no cut happens at
+    // all) must still not reach D1's bind() as an invalid string.
+    const calls = await recordedCalls({ detail: 'before \uD800 after' });
+
+    const detail = calls[0].args[4] as string;
+    const loneSurrogate = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+    expect(loneSurrogate.test(detail)).toBe(false);
+    expect(detail).toBe('before � after');
   });
 
   it('returns synchronously, before the insert settles', () => {
@@ -193,6 +209,7 @@ describe('createD1AuditSink', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'admin.audit.sink_failed',
+        reason: 'insert_rejected',
         editor: 'ed@x.dev',
         action: 'approve',
         entity: 'event',
@@ -219,6 +236,7 @@ describe('createD1AuditSink', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'admin.audit.sink_failed',
+        reason: 'prepare_failed',
         editor: 'ed@x.dev',
         error: expect.stringContaining('typo binding'),
       }),
@@ -246,6 +264,7 @@ describe('createD1AuditSink', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'admin.audit.sink_failed',
+        reason: 'prepare_failed',
         error: expect.stringContaining('D1_TYPE_ERROR'),
       }),
     );
@@ -260,7 +279,7 @@ describe('createD1AuditSink', () => {
     expect(() => sink(record())).not.toThrow();
 
     expect(spy).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'admin.audit.sink_failed' }),
+      expect.objectContaining({ event: 'admin.audit.sink_failed', reason: 'prepare_failed' }),
     );
     spy.mockRestore();
   });
@@ -278,7 +297,73 @@ describe('createD1AuditSink', () => {
     expect(spy).toHaveBeenCalledWith(
       expect.objectContaining({
         event: 'admin.audit.sink_failed',
+        reason: 'wait_until_failed',
         error: expect.stringContaining('Illegal invocation'),
+      }),
+    );
+    spy.mockRestore();
+  });
+
+  it('logs the failure once, tagged wait_until_failed, even when the still-dispatched insert later rejects too', async () => {
+    const { db } = fakeD1('reject');
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const waitUntil = (() => {
+      throw new Error('Illegal invocation');
+    }) as (promise: Promise<unknown>) => void;
+    const sink = createD1AuditSink(db, waitUntil);
+
+    expect(() => sink(record())).not.toThrow();
+    await settled();
+
+    expect(spy).toHaveBeenCalledTimes(1);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'admin.audit.sink_failed', reason: 'wait_until_failed' }),
+    );
+    spy.mockRestore();
+  });
+
+  it('does not throw when a field is a null-prototype object (String() throws for it), and logs the failure with a placeholder for that field', () => {
+    const { db } = fakeD1();
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createD1AuditSink(db, undefined);
+    const badRecord = record({ detail: Object.create(null) as unknown as string });
+
+    expect(() => sink(badRecord)).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.audit.sink_failed',
+        reason: 'coercion_failed',
+        editor: 'ed@x.dev',
+        action: 'approve',
+        entity: 'event',
+        detail: '[unloggable value]',
+        error: expect.stringContaining('Cannot convert object to primitive value'),
+      }),
+    );
+    spy.mockRestore();
+  });
+
+  it('does not throw when a field has a throwing toString, and logs the failure with a placeholder for that field', () => {
+    const { db } = fakeD1();
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const sink = createD1AuditSink(db, undefined);
+    const badRecord = record({
+      detail: {
+        toString() {
+          throw new Error('boom');
+        },
+      } as unknown as string,
+    });
+
+    expect(() => sink(badRecord)).not.toThrow();
+
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'admin.audit.sink_failed',
+        reason: 'coercion_failed',
+        detail: '[unloggable value]',
+        error: expect.stringContaining('boom'),
       }),
     );
     spy.mockRestore();

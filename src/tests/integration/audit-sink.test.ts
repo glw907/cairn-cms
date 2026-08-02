@@ -73,9 +73,14 @@ describe('createD1AuditSink against a real D1', () => {
 
   it('inserts a detail truncated at an emoji boundary without D1 rejecting a lone surrogate', async () => {
     // A unit-test fake cannot catch this: a real D1 bind() rejects a lone UTF-16 surrogate, which
-    // is exactly what a naive code-unit slice can produce at this boundary.
+    // is exactly what a naive code-unit slice can produce at this boundary. The cut lands at
+    // MAX_DETAIL_LENGTH - 1 (the ellipsis marker's length); with the emoji's high surrogate at
+    // code-unit index MAX_DETAIL_LENGTH - 2, a naive `.slice` grabs the high surrogate but not its
+    // pair, leaving a lone surrogate. (MAX_DETAIL_LENGTH - 1 x's instead, tried first, put the
+    // whole emoji past the cut on both a naive slice and a code-point slice and could not
+    // discriminate between them.)
     const MAX_DETAIL_LENGTH = 500;
-    const detail = 'x'.repeat(MAX_DETAIL_LENGTH - 1) + '🎉' + 'y'.repeat(20);
+    const detail = 'x'.repeat(MAX_DETAIL_LENGTH - 2) + '🎉' + 'y'.repeat(20);
 
     await persist({ editor: 'ed@x.dev', action: 'approve', entity: 'event', detail });
 

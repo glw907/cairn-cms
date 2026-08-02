@@ -35,13 +35,26 @@ interface SiteverifyBody {
   'error-codes'?: string[];
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+/**
+ * Narrow a parsed siteverify body, validating every field this module reads, not only `success`.
+ * A field present but the wrong shape, an `error-codes` string instead of an array, or a numeric
+ * `hostname`, fails the guard entirely rather than reaching the code below with an assumed shape
+ * it does not have: `codes.every(...)` on a non-array, or `.toLowerCase()` on a non-string
+ * `hostname`, would otherwise throw, turning a spoofed 200 response into an unhandled exception
+ * instead of the ordinary `false` this function promises to return.
+ */
 function isSiteverifyBody(value: unknown): value is SiteverifyBody {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'success' in value &&
-    typeof (value as { success: unknown }).success === 'boolean'
-  );
+  if (typeof value !== 'object' || value === null) return false;
+  const body = value as Record<string, unknown>;
+  if (typeof body.success !== 'boolean') return false;
+  if (body.hostname !== undefined && typeof body.hostname !== 'string') return false;
+  if (body.action !== undefined && typeof body.action !== 'string') return false;
+  if (body['error-codes'] !== undefined && !isStringArray(body['error-codes'])) return false;
+  return true;
 }
 
 /**
@@ -71,6 +84,14 @@ export async function verifyTurnstile(
     !secret.trim() ||
     token.length > MAX_TOKEN_LENGTH
   ) {
+    // The only refusal path below this one that logs nothing at all: if Cloudflare ever
+    // lengthens the response token past MAX_TOKEN_LENGTH, or a site's own form wrapper
+    // concatenates onto it, every submission would otherwise fail for every visitor with a
+    // completely silent lockout. Carries the token's length, never the token itself.
+    log.warn('turnstile.verify_failed', {
+      reason: 'invalid_input',
+      tokenLength: typeof token === 'string' ? token.length : null,
+    });
     return false;
   }
 

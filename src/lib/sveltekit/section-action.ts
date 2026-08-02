@@ -158,7 +158,10 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
           let blocked = false;
           try {
             const result = await limiter.limit({ key: config.rateLimit.key(ctx) });
-            blocked = !result.success;
+            // Mirrors checkRateLimit's own `result?.success === true` test (rate-limit.ts):
+            // RateLimitLike is structural and publicly exported, so a site-supplied limiter
+            // returning a truthy non-boolean success must read as blocked, not as a pass.
+            blocked = result?.success !== true;
           } catch (err) {
             // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
             // argument to limit(), inside this same try); either way the limit was never

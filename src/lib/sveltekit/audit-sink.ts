@@ -23,18 +23,39 @@ const MAX_DETAIL_LENGTH = 500;
 // rather than looking like a shorter value the caller genuinely supplied.
 const TRUNCATION_MARKER = '…';
 
+// What a field logs as when its own coercion (`String(rawValue)` inside `truncate`) throws,
+// rather than losing the whole `admin.audit.sink_failed` line for the one field that could not
+// be turned into a string.
+const UNCOERCIBLE_PLACEHOLDER = '[unloggable value]';
+
+// Matches one unpaired UTF-16 surrogate: a high surrogate with no following low surrogate, or a
+// low surrogate with no preceding high surrogate. `truncate`'s code-point slice never produces
+// one of these at the cut itself, but a lone surrogate already present anywhere else in the input
+// passes through a naive slice untouched.
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g;
+
 /**
  * Coerce to a string and cut it to at most `max` characters, counting Unicode code points rather
  * than UTF-16 code units so a cut never lands inside a surrogate pair (D1 can reject a bound
  * string ending in a lone surrogate, which would reopen the exact insert failure the maxima exist
  * to prevent). A cut value ends in an ellipsis, both in the stored row and in the fallback log, so
- * truncation is visible rather than a silent, exploitable boundary.
+ * truncation is visible rather than a silent, exploitable boundary. A lone surrogate already
+ * present anywhere in the input, not created by the cut, survives the code-point split as its own
+ * element and would still reach D1's `bind()` as an invalid string; replacing it with the Unicode
+ * replacement character closes that same attacker-chosen-content-suppresses-its-own-row class the
+ * maxima exist to close, rather than leaving it to whatever `bind()` does with it. `String(rawValue)`
+ * itself is left free to throw here (a null-prototype object, a throwing or absent `toString`, or a
+ * throwing Proxy get trap): the caller runs every call to this function inside its own try, so a
+ * coercion failure lands there rather than needing its own handling in two places.
  */
 function truncate(rawValue: unknown, max: number): string {
   const value = String(rawValue);
   const codePoints = Array.from(value);
-  if (codePoints.length <= max) return value;
-  return codePoints.slice(0, Math.max(0, max - TRUNCATION_MARKER.length)).join('') + TRUNCATION_MARKER;
+  const cut =
+    codePoints.length <= max
+      ? value
+      : codePoints.slice(0, Math.max(0, max - TRUNCATION_MARKER.length)).join('') + TRUNCATION_MARKER;
+  return cut.replace(LONE_SURROGATE, '�');
 }
 
 /**
@@ -43,20 +64,26 @@ function truncate(rawValue: unknown, max: number): string {
  * the returned function to `event.locals.auditSink`.
  *
  * The sink is fail-open end to end: it returns synchronously, before the insert settles, and a
- * failure anywhere in the attempt (a synchronous throw from `prepare`, `bind`, or `waitUntil`
- * itself, as well as a rejected insert) is caught and logged rather than left to escape the
- * caller. `adminAction` calls this sink bare inside `ctx.audit`, so an escaping throw here would
- * turn an already-completed domain write into a 500 the editor sees as a failure, inviting a
- * retry that repeats the mutation. Whichever path catches the failure logs the whole truncated
- * record plus the error as `admin.audit.sink_failed`, since the audited action already completed
- * and this is the only remaining trace of that row.
+ * failure anywhere in the attempt, a throwing coercion, a synchronous throw from `prepare`,
+ * `bind`, or `waitUntil` itself, or a rejected insert, is caught and logged rather than left to
+ * escape the caller. `adminAction` calls this sink bare inside `ctx.audit`, so an escaping throw
+ * here would turn an already-completed domain write into a 500 the editor sees as a failure,
+ * inviting a retry that repeats the mutation. Whichever path catches the failure logs the
+ * truncated record (falling back to a placeholder for any field whose own coercion is what threw)
+ * plus a `reason` distinguishing which stage failed (`coercion_failed`, `prepare_failed`,
+ * `insert_rejected`, or `wait_until_failed`) and the error, as `admin.audit.sink_failed`; only the
+ * first of these to fire actually logs, since a `wait_until_failed` throw leaves the insert it was
+ * meant to back still in flight; that insert's own later rejection would otherwise log a second,
+ * redundant line for the same attempt. The audited action already completed by the time any of
+ * this runs, so this is the only surviving record of the *persisted row*; the untruncated original
+ * already logged as `admin.action.audited` (`./admin-action.js`) before this sink was ever called.
  * @param db - The D1 binding the packaged `audit_log` table lives in.
  * @param waitUntil - Required, and explicitly accepting `undefined`: an optional parameter would
  *   make the shortest call the one that silently drops the insert if the isolate tears down
  *   before it settles, so omitting it (passing `undefined`, typically because no
  *   `event.platform.ctx` is available) has to be a decision the caller makes on purpose, with the
  *   drop risk understood, rather than a default nobody chose. When supplied, it must already be
- *   bound to its owning `ExecutionContext` (`event.platform.context.waitUntil.bind(event.platform.context)`):
+ *   bound to its owning `ExecutionContext` (`event.platform.ctx.waitUntil.bind(event.platform.ctx)`):
  *   `ExecutionContext.waitUntil`'s structural type matches this parameter, so passing the
  *   unbound method typechecks and then throws "Illegal invocation" in workerd, a failure this
  *   sink's own try/catch absorbs but that still silently drops the insert.
@@ -66,24 +93,52 @@ export function createD1AuditSink(
   waitUntil: ((promise: Promise<unknown>) => void) | undefined,
 ): AdminActionAuditSink {
   return (record: AdminActionAuditRecord) => {
-    const actor = truncate(record.editor, MAX_ACTOR_LENGTH);
-    const action = truncate(record.action, MAX_ACTION_LENGTH);
-    const entity = truncate(record.entity, MAX_ENTITY_LENGTH);
-    const entityId = record.entityId == null ? null : truncate(record.entityId, MAX_ENTITY_ID_LENGTH);
-    const detail = record.detail == null ? null : truncate(record.detail, MAX_DETAIL_LENGTH);
+    // Declared outside the try below, not inside it, so the catch can still log a recognizable
+    // record even when the failure is a field's own coercion: a value that never finishes
+    // truncating keeps this placeholder rather than the whole log line losing every field.
+    let actor = UNCOERCIBLE_PLACEHOLDER;
+    let action = UNCOERCIBLE_PLACEHOLDER;
+    let entity = UNCOERCIBLE_PLACEHOLDER;
+    // Reassigned to null, not this placeholder, whenever the record's own field is genuinely
+    // absent (the `== null` checks below); this default only surfaces if that check's own
+    // truncate() call throws before reassigning it.
+    let entityId: string | null = UNCOERCIBLE_PLACEHOLDER;
+    let detail: string | null = UNCOERCIBLE_PLACEHOLDER;
+    // Which stage the try below reached before throwing, so the catch can log a reason precise
+    // enough to triage: a coercion failure, a synchronous prepare()/bind() failure (no insert was
+    // ever created), and waitUntil() itself throwing (the insert was already created and is still
+    // running) are three different situations, not one.
+    let truncationDone = false;
+    let insertDispatched = false;
+    let sinkFailedLogged = false;
 
-    const logSinkFailed = (error: unknown): void => {
-      log.error('admin.audit.sink_failed', {
-        editor: actor,
-        action,
-        entity,
-        entityId,
-        detail,
-        error: error instanceof Error ? error.message : String(error),
-      });
-    };
+    function logSinkFailed(reason: string) {
+      return (error: unknown): void => {
+        // A wait_until_failed throw leaves the dispatched insert's own .catch() still armed; if
+        // that insert later rejects too, it would otherwise log a second, misleading line for
+        // the same attempt. Only the first failure to reach this function logs.
+        if (sinkFailedLogged) return;
+        sinkFailedLogged = true;
+        log.error('admin.audit.sink_failed', {
+          reason,
+          editor: actor,
+          action,
+          entity,
+          entityId,
+          detail,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      };
+    }
 
     try {
+      actor = truncate(record.editor, MAX_ACTOR_LENGTH);
+      action = truncate(record.action, MAX_ACTION_LENGTH);
+      entity = truncate(record.entity, MAX_ENTITY_LENGTH);
+      entityId = record.entityId == null ? null : truncate(record.entityId, MAX_ENTITY_ID_LENGTH);
+      detail = record.detail == null ? null : truncate(record.detail, MAX_DETAIL_LENGTH);
+      truncationDone = true;
+
       // Parameterized deliberately: never interpolate audit content into the SQL string, however
       // tempting a template-string simplification looks later.
       const insert = db
@@ -92,16 +147,17 @@ export function createD1AuditSink(
         )
         .bind(actor, action, entity, entityId, detail)
         .run()
-        .catch(logSinkFailed);
+        .catch(logSinkFailed('insert_rejected'));
+      insertDispatched = true;
 
       waitUntil?.(insert);
     } catch (error) {
-      // `prepare`, `bind`, and a nullish `db` all throw synchronously (a typo'd or
-      // not-yet-provisioned binding, or D1's own `D1_TYPE_ERROR` for an unsupported bound value),
-      // and an unbound `waitUntil` throws "Illegal invocation" in workerd. None of these produce a
-      // promise, so the `.catch()` above never runs; this is the only place fail-open can be
-      // enforced for that synchronous path.
-      logSinkFailed(error);
+      const reason = !truncationDone
+        ? 'coercion_failed'
+        : insertDispatched
+          ? 'wait_until_failed'
+          : 'prepare_failed';
+      logSinkFailed(reason)(error);
     }
   };
 }

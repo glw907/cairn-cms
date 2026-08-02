@@ -68,6 +68,29 @@ describe('verifyTurnstile', () => {
     );
   });
 
+  it('returns false and logs unparseable when error-codes is not an array (a spoofed string)', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        jsonResponse({ success: false, 'error-codes': 'invalid-input-secret' }),
+      ),
+    );
+    expect(await verifyTurnstile('tok', 'sec')).toBe(false);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'turnstile.verify_failed', reason: 'unparseable' }),
+    );
+  });
+
+  it('returns false and logs unparseable when hostname is not a string (a spoofed number)', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ success: true, hostname: 12345 })));
+    expect(await verifyTurnstile('tok', 'sec', { hostname: 'site.example' })).toBe(false);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'turnstile.verify_failed', reason: 'unparseable' }),
+    );
+  });
+
   it('returns false on a success value that is not a boolean (a spoofed truthy body)', async () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     vi.stubGlobal('fetch', vi.fn(async () => jsonResponse({ success: 'false' })));
@@ -168,11 +191,35 @@ describe('verifyTurnstile', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it('returns false without calling fetch for a token past the 2048-character Turnstile maximum', async () => {
+  it('returns false without calling fetch for a token past the 2048-character Turnstile maximum, and logs invalid_input with the token length, never the token', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchMock = vi.fn();
     vi.stubGlobal('fetch', fetchMock);
-    expect(await verifyTurnstile('a'.repeat(2049), 'sec')).toBe(false);
+    const token = 'a'.repeat(2049);
+    expect(await verifyTurnstile(token, 'sec')).toBe(false);
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'turnstile.verify_failed',
+        reason: 'invalid_input',
+        tokenLength: 2049,
+      }),
+    );
+    expect(JSON.stringify(spy.mock.calls)).not.toContain(token);
+  });
+
+  it('logs invalid_input with a null tokenLength for a null token (the shape a widget that never rendered supplies)', async () => {
+    const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    expect(await verifyTurnstile(null as any, 'sec')).toBe(false);
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: 'turnstile.verify_failed',
+        reason: 'invalid_input',
+        tokenLength: null,
+      }),
+    );
   });
 
   it('calls fetch for a token at exactly the 2048-character maximum', async () => {

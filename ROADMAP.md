@@ -866,6 +866,23 @@ the named human gates only):**
   landing so it describes real generated output.
 ## Later
 
+- **A packaged component-authoring skill, once the template track supplies the evidence (Geoff,
+  2026-08-01; no hurry).** cairn ships one skill, `cairn-admin-screens`, scoped to `/admin`. Nothing
+  covers the other authoring task a consuming site repeats: defining a content component with
+  `defineComponent`, its directive syntax, and the `hydrate`-plus-`rendering.islands` pairing for the
+  interactive kind. The docs already carry the mechanism (`configure-rendering.md` builds one from
+  nothing, `add-an-island.md` wires a hydrated one, `defineComponent` in the core reference), so a
+  skill written today would mostly restate three pages, and a skill that restates docs is a second
+  copy of one contract that drifts. **The trigger, not a date:** the Waymark rebuilds, Topo, and the
+  scaffolder each define components next. Harvest the friction from those, and if the same judgment
+  calls recur across them (static versus hydrated as the default, directive naming and attribute
+  conventions, how a component behaves in the editor preview under the one-renderer rule, the design
+  tokens a component is expected to reach for), that recurrence is both the skill's content and its
+  justification, the same way `cairn-admin-screens` was born from measured admin-screen drift rather
+  than from anticipation. Write it against the same constraints: the always-loaded core stays inside
+  the `check:package` token budget, and it points at the docs and `cairn-audit`'s mechanical checks
+  rather than restating them. If the harvest shows no recurring judgment call, that is a real answer
+  and the entry closes unbuilt.
 - **Field-label weight: cairn's 500 vs the consumer ruling's 600 (a design ruling, from the
   friction log 2026-07-29).** The form-anatomy contract keeps `font-medium` (500) as cairn's
   individual-field-label weight, matching the dozen-plus existing call sites, while the consumer

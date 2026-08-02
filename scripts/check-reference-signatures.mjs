@@ -63,11 +63,16 @@ export function normalizeSignature(sig) {
   s = s.replace(/,\s*\)/g, ')');
   s = s.replace(/\(\s+/g, '(').replace(/\s+\)/g, ')');
   // typeToString expands an optional parameter or member `x?: T` to `x?: T | undefined`, which the
-  // page writes as the bare `x?: T` (the `?` already carries the undefined). The page never writes
-  // an explicit `| undefined`, so a `| undefined` union member is always the optional artifact here;
-  // drop it. This trades the ability to gate a deliberately-required `T | undefined` (none in the
-  // surface today) for matching the page's `?`-only convention.
-  s = s.replace(/\s*\|\s*undefined\b/g, '');
+  // page writes as the bare `x?: T` (the `?` already carries the undefined). But a deliberately
+  // required parameter or return type can ALSO carry a real `T | undefined` union that the page
+  // writes out in full, so a blanket strip is wrong: it would hide that a required nullable became
+  // optional, or the reverse. The rule is scoped by nesting: a `| undefined` is an optional artifact
+  // only when the innermost enclosing region (the current bracket depth) was introduced by a `?:`,
+  // and a real union member everywhere else. `stripOptionalArtifacts` walks the string once, tracking
+  // bracket depth over `(`, `[`, `{`, `<`, so a doubly-optional type like
+  // `(opts?: { roles?: R | undefined } | undefined)` strips the artifact at both levels while a
+  // sibling required union in the same signature survives.
+  s = stripOptionalArtifacts(s);
   // typeToString prints a trailing `;` before the closing brace of an object type literal; the page
   // writes `string }` not `string; }`. Drop the semicolon that sits just before a `}`.
   s = s.replace(/;\s*}/g, ' }');
@@ -78,6 +83,64 @@ export function normalizeSignature(sig) {
   // Normalize arrow spacing so `(a)=>b` and `(a) => b` match.
   s = s.replace(/\s*=>\s*/g, ' => ');
   return s.trim();
+}
+
+// Strip a `| undefined` union member exactly where it is the artifact of an enclosing optional
+// `?:`, leaving a deliberately-required `T | undefined` alone. A single left-to-right pass tracks
+// bracket depth over `(`, `[`, `{`, `<`: seeing `name?:` marks the CURRENT depth optional, a `,` or
+// `;` clears it (the next parameter or member starts fresh), and entering a new bracket always
+// starts non-optional, so the flag never leaks from an outer region into a nested one or across a
+// sibling. An arrow `=>` is consumed as one token before the bracket check runs, because its
+// trailing `>` would otherwise be read as a generic close and corrupt the depth count, the same
+// hazard `headToArrow` documents below.
+/** @param {string} s */
+function stripOptionalArtifacts(s) {
+  let depth = 0;
+  const optionalAtDepth = [false];
+  let out = '';
+  let i = 0;
+  while (i < s.length) {
+    if (s.startsWith('=>', i)) {
+      out += '=>';
+      i += 2;
+      continue;
+    }
+    if (s.startsWith('?:', i)) {
+      optionalAtDepth[depth] = true;
+      out += '?:';
+      i += 2;
+      continue;
+    }
+    const ch = s[i];
+    if (ch === '(' || ch === '[' || ch === '{' || ch === '<') {
+      depth++;
+      optionalAtDepth[depth] = false;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (ch === ')' || ch === ']' || ch === '}' || ch === '>') {
+      depth--;
+      out += ch;
+      i++;
+      continue;
+    }
+    if (ch === ',' || ch === ';') {
+      optionalAtDepth[depth] = false;
+      out += ch;
+      i++;
+      continue;
+    }
+    const undefinedMatch = /^\s*\|\s*undefined\b/.exec(s.slice(i));
+    if (undefinedMatch) {
+      if (!optionalAtDepth[depth]) out += undefinedMatch[0];
+      i += undefinedMatch[0].length;
+      continue;
+    }
+    out += ch;
+    i++;
+  }
+  return out;
 }
 
 // Rewrite a leading function head `(args): ret` to the arrow head `(args) => ret`. Leaves an input

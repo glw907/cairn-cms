@@ -80,11 +80,9 @@ release-one boundary; the passes are invariant.
 
 - **In flight:** both ASC seams passes have landed. Pass one shipped as `0.93.0`; pass two (the
   `./cloudflare` subpath and the packaged D1 audit sink, additive) is done and holds unpublished.
-- **Phase C, settle the contract:** C1 the seam-shape pass, which opens with the
-  `check-reference-signatures.mjs` fix below (it is the item with unknown blast radius, and C2's
-  naming sitting reads `api-surface.md` as its review document, so the snapshot must stop lying
-  before either pass reads it), then the env-genericity sweep, the function-color and
-  refusal-channel rulings, and the toolchain matrix; C2 the naming pass (a Fable
+- **Phase C, settle the contract:** C1 the seam-shape pass is done and holds unpublished (the
+  `check-reference-signatures.mjs` `| undefined` fix, the env-genericity sweep, the function-color
+  and refusal-channel rulings, and the toolchain matrix); C2 the naming pass (a Fable
   sitting over `api-surface.md` settles the rename set and the `locals` policy, then one
   execution pass lands every rename in one diff, one `Consumers must:` list — the only genuinely
   breaking pass in the series).
@@ -661,17 +659,6 @@ the named human gates only):**
   renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
   set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
   icon vocabulary shipped.
-- **Pre-beta contract: stop `check-reference-signatures.mjs` stripping `| undefined`
-  unconditionally (Geoff approved for C1, 2026-08-01; run it FIRST in that pass).** `normalizeSignature`
-  drops `| undefined` from every parameter, and its own comment claims there is no deliberately-required
-  `T | undefined` in the surface. That stopped being true in the ASC seams passes: `createD1AuditSink`'s
-  `waitUntil` and `checkRateLimit`/`checkRateLimitKeys`'s `binding` all rely on the required-but-accepts-
-  undefined shape, and `docs/internal/api-surface.md` records all three as plain required parameters. A
-  later refactor dropping `| undefined` from `binding` breaks every degrade-to-open caller with zero
-  drift in the snapshot the gate exists to protect. The fix is to strip only where the same parameter
-  carries a `?`. It runs first in C1 because its blast radius is unknown until the snapshot regenerates
-  (if it cascades past a handful of signatures, split it back out rather than absorbing it), and because
-  C2's naming sitting reads that snapshot as its review document.
 - **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
   seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
   a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`
@@ -680,16 +667,6 @@ the named human gates only):**
   an assertion to `scripts/check-package-files.mjs` (already run by `check:package`) that every
   `dist/**/browser.js` the package emits is matched by at least one `sideEffects` glob, failing with the
   offending path. This is a watch converted into a gate, which is the form that cannot be forgotten.
-- **Pre-beta contract: the env-genericity sweep of exported event and config types (Geoff,
-  2026-08-01).** The ASC-seams pass paid for this defect class once: `AdminActionEvent` was
-  hard-fixed to `AuthEnv`, and the pre-implementation adversarial review had to compile-prove it
-  broke route `Actions` assignability for a site whose `App.Platform['env']` is its own generated
-  type. The fix set the pattern: generic over the env with an `AuthEnv` default, so every existing
-  consumer keeps its meaning. One sweep applies that pattern to the rest of the exported surface
-  that extends `EventBase<AuthEnv>` or names `AuthEnv` directly (the route-factory configs, the
-  guard types, the `RequestContext`-adjacent shapes), each instance compile-checked against a
-  synthetic site env the way the section-action suite now does. Post-beta, each missed instance is
-  a consumer bug report and a compatibility event.
 - **Pre-beta contract: a `locals` namespace policy (Geoff, 2026-08-01).** The engine writes four
   keys into the namespace it shares with every site: `editor`, `backend`, `auditSink`, and
   `cairnAccess`. One is prefixed, three are not, and the unprefixed names are maximally
@@ -697,26 +674,18 @@ the named human gates only):**
   after beta breaks every consumer's `app.d.ts` and every read site-wide. Decide the convention
   once, plausibly engine-owned keys carry the `cairn` prefix with the old names as deprecated
   aliases through the beta window, while the whole change is one `Consumers must:` line.
-- **Pre-beta contract: the function-color audit of the seams (Geoff, 2026-08-01).** Sync-vs-async
-  and void-vs-value are contract, and flipping either is breaking. Deliberately re-ratify rather
-  than freeze by accident: `render(md)` (sync today; a site wanting async embeds post-1.0 would
-  force a major) and `AdminActionAuditSink`'s `(record) => void` (deliberately fire-and-forget and
-  fail-open; likely right, but it should be frozen on purpose, and pass two's D1 sink is the moment
-  to state it in the reference). The audit's output is a ruling per seam recorded on its reference
-  page, with at most small additive shims.
-- **Pre-beta contract: the refusal-channel ruling (Geoff, 2026-08-01).** The admin action surface
-  has two refusal channels a consumer must understand: `adminAction` throws `AdminActionError`
-  (needing a site `handleError` mapping) while `createSectionAction`'s own branches return
-  `fail(...)`. The split is deliberate (the 2026-08-01 adversarial review pressed on it and the
-  seams spec kept it, with the rationale in that spec's review record), but the ruling lives in a
-  spec, not in the contract docs. Before beta, either document the two-channel model as the
-  intended contract in the `./sveltekit` reference or converge it; a stranger meeting both
-  channels without the history will file the split as a bug.
-- **Pre-beta contract: declare the supported-toolchain matrix (Geoff, 2026-08-01).** SvelteKit
-  range, Vite/Rolldown, the TypeScript floor, node resolution modes. Today it is implicitly
-  whatever the showcase CI proves; beta makes it a promise strangers rely on, and narrowing an
-  implicit promise later is a breaking change in practice even when no code moves. Lands as a docs
-  table plus perhaps an `engines`/`peerDependencies` tightening.
+- **Extend `cairn-doctor`'s `config.dependency-floors` check beyond svelte and kit (filed by the
+  pre-beta C1 toolchain-matrix task, 2026-08-01).** `src/lib/doctor/check-floors.ts` reads a
+  consumer's `package-lock.json` and compares resolved versions against the engine's own
+  `peerDependencies`, but the loop only ever iterates `svelte` and `@sveltejs/kit`, the package's
+  only two peer entries. It is the only floor enforcement that reaches a real consumer site (CI
+  only proves the engine's own repo), and it currently covers two of the
+  [supported-toolchain matrix](docs/reference/supported-toolchain.md)'s rows. Extending it needs a
+  source for each additional floor: `typescript`'s 5.0 floor has no `peerDependencies` entry to
+  read (it would need a hardcoded constant, since the engine's own devDependency range does not
+  describe the consumer floor), and `vite`/`wrangler`/`@cloudflare/workers-types` carry no engine
+  floor at all today, only a proven-against version. Scope the check to what the matrix actually
+  promises rather than inventing floors the matrix does not assert.
 - **Pre-beta polish: the public-surface naming review (Geoff, 2026-08-01).** One deliberate read of
   every exported name, option key, subpath, and log event as a whole, before beta's
   compatibility-SemVer adoption makes each rename a `Consumers must:` line (and, after 1.0, a
@@ -726,6 +695,40 @@ the named human gates only):**
   together. `docs/internal/api-surface.md` (the `check:surface` snapshot) is the ready-made review
   document, and every rename lands while renames are still cheap. The single
   cheapest-now/dearest-later item in the pre-beta set.
+- **C2 input: converge `adminAction`'s refusal channel rather than only document it (filed by the
+  pre-beta C1 seam-shape pass's review fold, 2026-08-01).** `AdminActionError`'s `status` never
+  reaches the browser: SvelteKit derives a response status only from its own `HttpError`/
+  `SvelteKitError`, so a plain `Error` subclass always renders 500, and `handleError` receives that
+  computed status as an input it can't change. The security review's recommended shape:
+  `adminAction`'s missing-editor branch throws `redirect(303, '/admin/login')`, matching
+  `requireSession`; the CSRF branch throws `error(403, ...)`; and `AdminActionError` stays only for
+  the dev-only unaudited case, which genuinely is a 500. That deletes the `handleError`
+  requirement for the common branches rather than documenting it, at the cost of one
+  `Consumers must:` line. The review also argued against adding an exported `isAdminActionError`
+  guard for the interim: it would make the workaround comfortable and remove the pressure to
+  remove the need for it.
+- **C2 input: the env-genericity decision, whole (filed by the pre-beta C1 seam-shape pass's
+  review fold, 2026-08-01).** Whether `RequestContext`, `HandleInput`, and the remaining
+  `AuthEnv`-pinned types should become generic over `Env` so a bare wrangler-generated env assigns
+  with no `CairnPlatformBindings` intersection at all. Not free the way pass one's
+  `AdminActionEvent` fix was: a site would have to write `createCairnAdmin<SiteEnv>(runtime)`
+  explicitly, since inference has nothing to work from with no compliant default, so any answer
+  here is a `Consumers must:` change, not an invisible one. The compile evidence and the locked
+  incompatibility live in `src/tests/unit/env-genericity.test.ts`'s `@ts-expect-error` tripwire.
+- **C2 input: two near-identical log event names (filed by the pre-beta C1 seam-shape pass's
+  review fold, 2026-08-01).** `admin.audit.sink_failed` (the packaged D1 sink's own internal
+  persist failure) and `admin.action.audit_sink_failed` (a site's own sink throwing or rejecting at
+  the engine's call site) read as typos of each other at a glance, despite covering different
+  failures. Both are still unpublished, so a rename is free until the next release; after that it's
+  a breaking log-event rename, the same weight as any other public name.
+- **Gate gap: `check:reference:signatures` cannot see a table-only signature (filed by the
+  pre-beta C1 seam-shape pass's review fold, 2026-08-01).** The gate reads only fenced `ts` code
+  blocks; a callback's signature stated solely in a reference table's own Signature or Meaning
+  column is invisible to it. `docs/reference/core.md`'s Extension API table already carries both
+  conventions side by side (the resolver family states its signature in the Signature column,
+  `SiteRender`/`SendMagicLink` state theirs in the Meaning column instead), so the gate cannot
+  catch a drift in either form today. Worth closing before C2's naming pass adds more table-only
+  entries the gate can't check.
 - **Pre-beta polish: fold the four CI-only gates into one named script (Geoff, 2026-08-01).**
   `check:comments`, `check:reference:signatures`, `check:surface`, and `check:snippets` run on CI
   but not under `npm run check`/`npm test`, so the pass ritual recites them by name and two passes

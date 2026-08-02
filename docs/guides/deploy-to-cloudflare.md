@@ -71,8 +71,12 @@ SvelteKit's own `sequence(yourHook, createAuthGuard())`, so your hook sees every
 the guard still owns `/admin` gating.
 
 The guard sets `event.locals.editor`, and the bindings it and the mount read (the D1 store,
-the email sender, the GitHub App key) need typing on `App.Platform.env`. Intersect the
-engine's binding types instead of restating each one by hand:
+the email sender, the GitHub App key) need typing on `App.Platform.env`. Intersecting the
+engine's binding types is required, not a style choice: typing `App.Platform.env` any other way,
+hand-rolled bindings or a bare `wrangler types`-generated `Env`, fails to compile the route wiring
+above (`export const actions = admin.actions;`) rather than failing at runtime, since
+`@cloudflare/workers-types`' `SendEmail.send` returns `Promise<EmailSendResult>` where cairn's
+auth env declares `Promise<void>`:
 
 ```ts
 // src/app.d.ts

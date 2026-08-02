@@ -9,7 +9,7 @@
 // check below is therefore defense-in-depth, not the sole gate; this wrapper's real value is
 // resolving the signed-in editor as a typed `ctx.editor` and requiring an audit emit for a
 // mutating action, which the engine has no other hook for.
-import { isActionFailure } from '@sveltejs/kit';
+import { isActionFailure, isHttpError, isRedirect } from '@sveltejs/kit';
 import { DEV } from 'esm-env';
 import { csrfCookieName, tokensMatch } from '../auth/crypto.js';
 import { log } from '../log/index.js';
@@ -57,7 +57,15 @@ export interface AdminActionContext {
   audit: (record: AdminActionAudit) => void;
 }
 
-/** Thrown by `adminAction` on a failed guard; a site's error boundary renders it as its `status`. */
+/**
+ * Thrown by `adminAction` on a failed guard.
+ *
+ * `status` is the intended meaning of the refusal, not the transport status the browser sees.
+ * SvelteKit derives a response status only from its own `HttpError` and `SvelteKitError`, so this
+ * plain `Error` subclass always renders as a 500; a site's `handleError` receives the already
+ * computed status and can shape the message, never the code. Read `status` to tell a 403 from a
+ * 500 in a site's own logging or error page.
+ */
 export class AdminActionError extends Error {
   constructor(
     public status: number,
@@ -71,6 +79,21 @@ export class AdminActionError extends Error {
 export interface AdminActionDeps {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
+}
+
+/**
+ * Turn an arbitrary thrown or rejected value into a diagnostic string for a log record. Bare
+ * `String()` renders a plain object as `"[object Object]"`, which is not diagnostic; this falls
+ * back to `JSON.stringify` for anything that is not already an `Error` or a string.
+ */
+function serializeThrownError(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  try {
+    return JSON.stringify(error);
+  } catch {
+    return String(error);
+  }
 }
 
 /**
@@ -103,6 +126,20 @@ export interface AdminActionDeps {
  *   }),
  * };
  * ```
+ *
+ * `adminAction` itself stays non-generic over `Env` by design (env-genericity sweep, pre-beta C1
+ * Task 2), on the same grounds as `RequestContext`'s pin (`./types.js`), not because it never
+ * reads `event.platform`: its returned function is declared as taking `AdminActionEvent<AuthEnv>`
+ * (the default type parameter), and a compile-only fixture
+ * (`src/tests/unit/env-genericity.test.ts`) proves that assigns clean into a route's generated
+ * `Actions` under a realistic compliant `App.Platform['env']`, because `CairnPlatformBindings`
+ * (`./platform-bindings.js`) shares `AUTH_DB`/`EMAIL`/`PUBLIC_ORIGIN` property names with
+ * `AuthEnv`, which is what keeps TypeScript's weak-type detection (TS2559) from rejecting the
+ * assignment. A site whose action needs its own env bindings, plus a database binding to resolve,
+ * reaches for `createSectionAction` (`./section-action.js`), which is generic over `Env` for
+ * exactly that reason; note its factory requires a `resolveDb`, so a site wanting only the CSRF-
+ * plus-audit contract with no database binding stays on `adminAction` itself rather than reaching
+ * for that door.
  */
 export function adminAction<T>(
   handler: (args: { event: AdminActionEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
@@ -129,7 +166,40 @@ export function adminAction<T>(
         emitted++;
         const full: AdminActionAuditRecord = { ...record, editor: editor.email };
         log.info('admin.action.audited', { ...full });
-        event.locals.auditSink?.(full);
+        // Fail-open, per the seam's documented promise (docs/reference/sveltekit.md): a site's
+        // own hand-rolled sink is arbitrary code the engine does not control, and the mutation
+        // this record describes already completed. A throw, or a rejected async return, here
+        // must never turn that completed write into a failed action. `admin.action.audited`
+        // above already logged the full record, so this failure log carries only the identity
+        // fields and the error, never `record.detail`, which can hold arbitrary site data.
+        const logSinkFailure = (error: unknown): void => {
+          log.error('admin.action.audit_sink_failed', {
+            path: event.url.pathname,
+            action: record.action,
+            entity: record.entity,
+            entityId: record.entityId,
+            editor: editor.email,
+            error: serializeThrownError(error),
+          });
+        };
+        try {
+          const outcome = event.locals.auditSink?.(full);
+          // The sink's declared type is `(record) => void`, but TypeScript's void-return
+          // bivariance admits an async function with no error (docs/guides/add-a-custom-admin-
+          // screen.md's own `waitUntil` advice is exactly the pressure that writes one). The
+          // call above is never awaited, since the seam is synchronous by contract; attach a
+          // rejection handler instead, fire-and-forget, so a rejecting async sink still logs.
+          if (outcome != null && typeof (outcome as { then?: unknown }).then === 'function') {
+            Promise.resolve(outcome as PromiseLike<unknown>).catch(logSinkFailure);
+          }
+        } catch (error) {
+          // SvelteKit's own redirect()/error() are plain classes, not Error instances, and a
+          // sink built on those (a hand-rolled auth check, say) must not be swallowed into a log
+          // line the site never sees. Rethrow SvelteKit's own control-flow shapes untouched; only
+          // a genuine sink failure is caught and logged here.
+          if (isRedirect(error) || isHttpError(error)) throw error;
+          logSinkFailure(error);
+        }
       },
     };
 

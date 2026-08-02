@@ -62,3 +62,5 @@ package subpath:
 - [Admin grammar tokens](./admin-grammar-tokens.md): the admin's structural type and spacing
   vocabulary, the role utilities that reach it from markup, and the palette/grammar boundary a
   site's own theming respects.
+- [Supported toolchain](./supported-toolchain.md): the SvelteKit, Svelte, TypeScript, Vite, and
+  Node versions the package promises against and the versions its own CI proves.

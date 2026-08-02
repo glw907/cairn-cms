@@ -66,9 +66,10 @@ function truncate(rawValue: unknown, max: number): string {
  * The sink is fail-open end to end: it returns synchronously, before the insert settles, and a
  * failure anywhere in the attempt, a throwing coercion, a synchronous throw from `prepare`,
  * `bind`, or `waitUntil` itself, or a rejected insert, is caught and logged rather than left to
- * escape the caller. `adminAction` calls this sink bare inside `ctx.audit`, so an escaping throw
- * here would turn an already-completed domain write into a 500 the editor sees as a failure,
- * inviting a retry that repeats the mutation. Whichever path catches the failure logs the
+ * escape the caller. `adminAction` guards its own `ctx.audit` call too, so an escaping throw is
+ * caught either way; this sink still catches its own, because only here is the failing stage known,
+ * and a caller-level catch could report neither the `reason` nor the record it tried to persist.
+ * Whichever path catches the failure logs the
  * truncated record (falling back to a placeholder for any field whose own coercion is what threw)
  * plus a `reason` distinguishing which stage failed (`coercion_failed`, `prepare_failed`,
  * `insert_rejected`, or `wait_until_failed`) and the error, as `admin.audit.sink_failed`; only the

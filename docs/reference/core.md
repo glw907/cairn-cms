@@ -317,6 +317,12 @@ keep it class-driven and high-fidelity. Absent leaves the component static and s
 [`/islands`](./islands.md) reference carries the runtime, the boundary contract, and the props trust
 boundary.
 
+[`ComponentDef.build`](#definecomponent) is deliberately synchronous: it returns a hast `Element`,
+never a `Promise`, because it runs inline inside the render pipeline's synchronous hast transform,
+once per rendered directive occurrence. A component needing data it does not already have
+pre-fetches that data outside the render pipeline (at content build time, or in the adapter's own
+resolver) and passes the result through `attributes`, since `build` itself has no seam to await one.
+
 ```ts
 import { defineComponent, fields } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
@@ -443,6 +449,12 @@ call, not on a later save. The validator reads a parsed value as well as a form 
 `number`, a `Date` on a `datetime` field, and a lone scalar on a `multiselect` all normalize.
 `options.refine` runs after the per-field rules pass, for cross-field and body-dependent checks.
 
+[`FieldsetOptions.refine`](#field-types) is deliberately synchronous: it returns
+`Record<string, string> | undefined` directly, never a `Promise`, because it runs inline in the
+save action's own request path, on every save. A site needing async validation (a uniqueness check
+against a database, an external lookup) pre-fetches whatever data the check needs and reads it
+inside the synchronous callback, rather than awaiting inside it.
+
 The validator recurses one level into an `object` and an `array`, so a clean nested value normalizes
 and a nested failure reports. On failure the result carries the flat `errors` map keyed by the
 top-level field, plus an additive `issues` array of `ValidationIssue`, each located by a
@@ -485,6 +497,10 @@ markers, then registry-built hast. It returns `renderMarkdown` plus the fully co
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
 carries the sanitize and anchor controls, the table-scroll default, and a
 `remarkPlugins`/`rehypePlugins` seam for a site's own plugins.
+
+[`RendererOptions.sanitizeSchema`](#createrenderer) is deliberately synchronous too: `(defaults:
+Schema) => Schema`, called inline while the pipeline composes its sanitize floor for every render
+call, with no seam to await external data before extending the allowlist.
 
 `renderDocument` takes the same options as `renderMarkdown` and additionally returns `headings`: a
 `DocHeading[]` collected from the final rehype tree, after `rehypeSlug` stamps ids and after any
@@ -981,7 +997,7 @@ function signatures above reference these.
 | `StandardInput` | Extension API | `interface StandardInput` | The validate input the adapter takes: raw frontmatter and the body. |
 | `StandardSchemaV1` | Extension API | `interface StandardSchemaV1<I, O>` | A local copy of the Standard Schema v1 interface, for ecosystem interop. |
 | `CairnRef` | Extension API | `interface CairnRef` | A resolved reference to a content entry by its concept and permanent id. |
-| `LinkResolve` | Extension API | `type LinkResolve` | Resolve a `CairnRef` to its live permalink, or undefined when missing. |
+| `LinkResolve` | Extension API | `type LinkResolve = (ref: CairnRef) => string \| undefined` | Resolve a `CairnRef` to its live permalink. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `FragmentResolve` | Extension API | `type FragmentResolve = (id: string) => string \| undefined` | Resolve a fragment id to its raw markdown body, for the `::include` directive. `undefined` is a preview miss; a resolver that throws is the build backstop. |
 | `Manifest` | Extension API | `interface Manifest` | The whole corpus as one committed file, with a version guard. |
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
@@ -1006,6 +1022,6 @@ function signatures above reference these.
 | `EmailAttachment` | Extension API | `interface EmailAttachment` | A file or inline attachment for the Email Sending API. |
 | `AuthBranding` | Extension API | `interface AuthBranding` | Per-site identity for the magic-link email. |
 | `MagicLinkMessage` | Extension API | `interface MagicLinkMessage` | The message a built magic-link email carries: the five required fields, plus optional `cc`, `bcc`, `replyTo`, and `attachments` widening the Email Sending API surface, live-verified 2026-07-07. `replyTo` takes a single address only; the platform rejects an array there. |
-| `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements; production sends through Cloudflare Email Sending. |
+| `SendMagicLink` | Extension API | `type SendMagicLink` | The injected send a custom `SendMagicLink` implements: `(env, message) => Promise<void>`; production sends through Cloudflare Email Sending. |
 | `RepoFile` | Extension API | `interface RepoFile` | A markdown file in a concept directory: id, name, path. |
 | `CommitAuthor` | Extension API | `interface CommitAuthor` | A commit author: the signed-in editor's name and email. |

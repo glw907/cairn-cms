@@ -26,6 +26,68 @@
   insert logs the whole truncated record and the error as `admin.audit.sink_failed`. See
   [SvelteKit](docs/reference/sveltekit.md#created1auditsink). Consumers must: nothing.
 
+### Changed
+
+- The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`
+  (`AdminEvent`, `RequestContext`, `HandleInput`, `ContentEvent`, `adminAction`'s own event type,
+  and the rest of the route-factory surface) against a compile-only fixture proving each one still
+  assigns into a real site's own `App.Platform['env']`. No exported type changed: every pin
+  compiles clean as is, on the grounds `CairnPlatformBindings` documents, and each now carries a
+  doc comment recording the pin as deliberate rather than an oversight. The sweep's fixtures also
+  proved a sharper consequence the pins had never surfaced: a site whose `App.Platform['env']` is
+  a bare `wrangler types`-generated `Env`, with no `CairnPlatformBindings` intersection, fails to
+  compile `export const actions = admin.actions` (and every other route factory assignment),
+  since `@cloudflare/workers-types`' `SendEmail.send` returns `Promise<EmailSendResult>` while
+  `AuthEnv['EMAIL'].send` declares `Promise<void>`. The reference docs now state the
+  `CairnPlatformBindings` intersection as a requirement rather than a recommended style. See
+  [SvelteKit](docs/reference/sveltekit.md#cairnplatformbindings). **Consumers must:** intersect
+  `CairnPlatformBindings` into `App.Platform['env']` in `app.d.ts`; a site that hand-rolls its own
+  env type from `@cloudflare/workers-types` output instead hits a compile error on every route
+  factory assignment.
+
+- The root `package.json` now declares `"engines": { "node": ">=22" }`, giving npm's own install
+  check the Node floor the tutorial has always stated. This is a build-toolchain floor, not a
+  runtime claim (the runtime is workerd, never Node); npm's own `EBADENGINE` is a warning that
+  still lets the install finish, unless a consumer's own `.npmrc` sets `engine-strict=true`. See
+  [Supported toolchain](docs/reference/supported-toolchain.md). **Consumers must:** be on Node 22
+  or later for the build toolchain.
+
+### Fixed
+
+- `scripts/check-reference-signatures.mjs`'s `normalizeSignature` stripped every `| undefined`
+  unconditionally, so the exported surface's own nullability (`ContentIndex.byId`,
+  `SiteResolver.byPermalink`, `CookieJar.get`, the access-map helpers, and more) never showed up
+  in a signature diff; the comment it carried claimed no deliberately-required `T | undefined`
+  existed on the surface, which stopped being true once `createD1AuditSink`'s `waitUntil` and the
+  rate-limit helpers' `binding` shipped. It now strips a `| undefined` only where the enclosing
+  `?:` makes it an optional-parameter artifact, so a required union survives.
+  `docs/internal/api-surface.md` regenerates with nullability visible for the first time, across
+  all 16 export subpaths (27 entries changed). Internal tooling only; the reference pages
+  themselves were already correct. Consumers must: nothing.
+
+- `adminAction`'s `ctx.audit` now holds the audit sink's advertised fail-open promise at its own
+  call site, not only by a sink's own discipline: a hand-rolled `event.locals.auditSink` that
+  throws synchronously, or one that returns a rejecting promise (the seam's `(record) => void`
+  type admits an async sink through void-return bivariance), no longer fails the wrapped action
+  either way; the failure logs a new `admin.action.audit_sink_failed` event instead. The same
+  catch also rethrows SvelteKit's own `redirect()`/`error()` untouched, so a sink built on one of
+  those control-flow primitives is never swallowed into a log line the site never sees. See
+  [SvelteKit](docs/reference/sveltekit.md#adminaction) and [log
+  events](docs/reference/log-events.md). Consumers must: nothing; a throwing or rejecting sink
+  previously failed the action and now does not.
+
+### Documentation
+
+- The `./sveltekit` reference documents the admin action surface's five refusal channels (thrown
+  SvelteKit `error()`/`redirect()`, thrown `AdminActionError`, `fail(...)`, the built-in actions'
+  own redirect, and the guard's pre-routing raw `Response`), rules on the seams whose sync-or-async
+  color was previously undocumented (`ComponentDef.build`, `FieldsetOptions.refine`,
+  `RendererOptions.sanitizeSchema`, and the resolver family), and states what exporting a
+  `handleError` costs a site (it replaces SvelteKit's own default logging hook, not just adds to
+  it). A new reference page, [Supported toolchain](docs/reference/supported-toolchain.md), states
+  the package's minimum-supported and proven-against versions for `@sveltejs/kit`, `svelte`,
+  `vite`, `typescript`, `node`, and TypeScript module resolution. No consumer action.
+
 ## 0.93.0
 
 <!-- release-size: minor -->

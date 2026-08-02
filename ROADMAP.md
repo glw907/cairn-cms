@@ -78,10 +78,13 @@ held" checklist bullet needs runway), give the dress rehearsal and rebuild dogfo
 surface to run against, and land `beta.1` already stable. Flipping to single-beta moves only the
 release-one boundary; the passes are invariant.
 
-- **In flight:** ASC seams pass one (`0.93.0`), then seams pass two (spec done, plan
-  just-in-time; additive).
-- **Phase C, settle the contract:** C1 the seam-shape pass (env-genericity sweep, the
-  function-color and refusal-channel rulings, the toolchain matrix); C2 the naming pass (a Fable
+- **In flight:** both ASC seams passes have landed. Pass one shipped as `0.93.0`; pass two (the
+  `./cloudflare` subpath and the packaged D1 audit sink, additive) is done and holds unpublished.
+- **Phase C, settle the contract:** C1 the seam-shape pass, which opens with the
+  `check-reference-signatures.mjs` fix below (it is the item with unknown blast radius, and C2's
+  naming sitting reads `api-surface.md` as its review document, so the snapshot must stop lying
+  before either pass reads it), then the env-genericity sweep, the function-color and
+  refusal-channel rulings, and the toolchain matrix; C2 the naming pass (a Fable
   sitting over `api-surface.md` settles the rename set and the `locals` policy, then one
   execution pass lands every rename in one diff, one `Consumers must:` list — the only genuinely
   breaking pass in the series).
@@ -658,6 +661,25 @@ the named human gates only):**
   renderer, reading as an ~14x8px smudge at standalone size. Close the subpath in the engine icon
   set or paint stroke+fill. Deferred because a stroke change sweeps all 27 icons just after the
   icon vocabulary shipped.
+- **Pre-beta contract: stop `check-reference-signatures.mjs` stripping `| undefined`
+  unconditionally (Geoff approved for C1, 2026-08-01; run it FIRST in that pass).** `normalizeSignature`
+  drops `| undefined` from every parameter, and its own comment claims there is no deliberately-required
+  `T | undefined` in the surface. That stopped being true in the ASC seams passes: `createD1AuditSink`'s
+  `waitUntil` and `checkRateLimit`/`checkRateLimitKeys`'s `binding` all rely on the required-but-accepts-
+  undefined shape, and `docs/internal/api-surface.md` records all three as plain required parameters. A
+  later refactor dropping `| undefined` from `binding` breaks every degrade-to-open caller with zero
+  drift in the snapshot the gate exists to protect. The fix is to strip only where the same parameter
+  carries a `?`. It runs first in C1 because its blast radius is unknown until the snapshot regenerates
+  (if it cascades past a handful of signatures, split it back out rather than absorbing it), and because
+  C2's naming sitting reads that snapshot as its review document.
+- **Mechanical hardening: gate the `sideEffects` coverage of the server-only browser stubs (from the
+  seams pass-two review, 2026-08-01).** `package.json`'s `sideEffects` now lists `dist/*/browser.js`, so
+  a bundler cannot tree-shake away the module-level throw that makes `./auth-crypto` and `./cloudflare`
+  server-only in practice. Nothing tests it, and the glob is depth-fixed, so the next server-only subpath
+  at a different depth silently reopens the hole while its reference page still promises the throw. Add
+  an assertion to `scripts/check-package-files.mjs` (already run by `check:package`) that every
+  `dist/**/browser.js` the package emits is matched by at least one `sideEffects` glob, failing with the
+  offending path. This is a watch converted into a gate, which is the form that cannot be forgotten.
 - **Pre-beta contract: the env-genericity sweep of exported event and config types (Geoff,
   2026-08-01).** The ASC-seams pass paid for this defect class once: `AdminActionEvent` was
   hard-fixed to `AuthEnv`, and the pre-implementation adversarial review had to compile-prove it

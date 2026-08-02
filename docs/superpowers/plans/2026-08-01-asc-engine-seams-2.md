@@ -390,3 +390,99 @@ three (the export, the reference and guide prose, the changelog and snapshot).
   additions, `release-size: minor`, `Consumers must: nothing` on each. No version bump; no publish.
 - The pass-end reviewer fan-out runs `web-auth-security-reviewer` and
   `cloudflare-workers-reviewer`, both mandatory (STATUS, 2026-08-01).
+
+## Post-mortem (2026-08-01)
+
+**Built.** The five planned tasks landed as specified, on `asc-engine-seams-2`:
+
+- `d1b23796` `verifyTurnstile`, fail-closed against Cloudflare siteverify
+- `182d3734` the rate-limit wrapper and the `RateLimitLike` consolidation
+- `c3957d70` the `./cloudflare` server-only subpath, its reference page, and the Unreleased window
+- `09492434` the packaged D1 audit sink and `migrations/0002_audit.sql`
+- `70e53cfe` the `createD1AuditSink` export and seam 5's documentation
+- `a3215031` the code-simplifier refinement over the implementation
+
+Then two review rounds and their folds, which are the real story of this pass:
+
+- `a2369bb4` turnstile and rate-limit hardening (round one)
+- `33528d65` the audit sink and its migration (round one)
+- `04880a0a` the documentation sweep (round one)
+- `b013ad2f` the verification-round findings on both modules
+- `27dbf155` the documentation reconciled against the final code
+- `f8ddf88c` `verifyTurnstile`'s own doc block reconciled with it
+
+**Verified.** `npm run check` 1555 files, 0 errors, 0 warnings; `npm test` 382 files, 4705 tests,
+exit 0 confirmed unpiped; `check:comments`, `check:reference`, `check:reference:signatures`,
+`check:package`, `check:docs`, `check:snippets`, `check:surface`, and `check:version` all green,
+the four CI-only gates run by name. The consumer build is proven by CI's own checkout, never by the
+worktree, whose symlinked showcase `node_modules` resolves to main's build. Three reviewers ran the
+pass-end gate (`web-auth-security-reviewer` and `cloudflare-workers-reviewer`, both mandatory per
+STATUS, plus `svelte-reviewer` on the type and export surface); the two mandatory ones then
+re-verified the fold, probing their claims in node rather than asserting them.
+
+**Decisions locked.**
+
+1. **The migration claimed `0002`,** with the queued `COLLATE NOCASE` auth migration renumbered to
+   the next free number in ROADMAP. Its `created_at` default deviates from the spec's
+   "ASC's schema carried whole": `datetime('now')` produces a format that `new Date()` parses as
+   local time in a browser and that sorts non-deterministically within a second, so it ships as
+   `strftime('%Y-%m-%dT%H:%M:%fZ','now')`. The reasoning is in the migration header. Free to fix
+   now, a migration against two production sites later, and the column exists to be read by people.
+   Two indexes ship for the same reason.
+2. **The `./cloudflare` charter line is written twice,** in the barrel header where a contributor
+   adding an export reads it, and in the reference page where a developer proposing one reads it.
+   Cloudflare-native platform primitives are in-stack; a third-party service verifier never rides
+   the Turnstile precedent in.
+3. **`verifyTurnstile` gained a log event the spec did not call for.** A fail-closed verifier that
+   logs nothing turns a Cloudflare outage or a rotated secret into a silent site-wide human lockout.
+   The final shape logs every refusal except an ordinary bot rejection, which is the function
+   working.
+4. **Three review findings deliberately not adopted**, each for a stated reason: a log event on the
+   bare rate-limit helpers' absent-binding branch (a helper with no call-site context emits an
+   untriageable event; the reference page carries the guidance and `createSectionAction` keeps the
+   event where it has the context); changing `createD1AuditSink` to take the `ExecutionContext`
+   object rather than the `waitUntil` method (spec-locked signature, with the bind requirement
+   documented and the try/catch covering the failure); and the
+   `check-reference-signatures.mjs` `| undefined` fix, filed to ROADMAP as C1's opening item
+   because its snapshot regen can cascade.
+
+**What the reviewers caught that the gates could not.** Every gate was green when the first
+reviewer fan-out began, and the pass still had a defect in each of its two headline features. The
+audit sink's advertised fail-open covered only a rejected promise, so an unbound binding or a
+`D1_TYPE_ERROR` from `bind` turned a completed mutation into a 500 the editor would retry, and
+turned `createSectionAction`'s clean 403 into a 500. `isSiteverifyBody` checked that `success`
+existed and then tested it for truthiness, so `{"success":"false"}` verified as a solved token in
+a module whose entire contract is that a refactor cannot flip it open. Both were probe-confirmed by
+two independent reviewers. Neither is reachable by any test that was written first, because both
+are failures of a claim the implementation made about itself.
+
+**The process defect, which repeated.** Documentation ran as a sibling of code changes in the first
+fold, so the reference pages described a moving target: the failure-mode lists, the `created_at`
+format, and a retention command that silently never prunes its boundary day all shipped stale, and
+half of round two's findings were that staleness rather than new defects. Round two ran code first
+and documentation strictly second, against the final code, and the docs dispatch then caught the
+one page the earlier ordering had left behind. **When code is still moving, documentation goes
+last, not alongside.** The same shape appeared inside a single dispatch's output: the sink
+dispatch wrote a TSDoc naming the deprecated `platform.context` while the docs dispatch fixed the
+markdown, and neither fixed the other's copy.
+
+**Plan defects found in execution.** Task 1's "wrap the whole fetch-and-parse in a single
+try/catch" contradicted the same task's test step, which required a rejected fetch and an
+unparseable body to log distinct reasons; the implementer used two guards and reported the
+deviation rather than complying. The standing lesson from pass one held again: a plan's file list
+and its prose are starting points, and an implementer that verifies beats one that complies.
+
+**Budgets.** Three workflows (nine agents, then five, then two) plus a scoped simplifier run and
+one inline main-loop fix, against a plan that expected five dispatches and one review gate. The
+pass roughly doubled, and the honest split is that the review rounds found real defects while the
+documentation staleness was self-inflicted. Human interaction points: five. One was the pass-start
+instruction and one was a substantive decision (adding the fifth item to C1, with its sizing
+caveat). **Two were Geoff asking whether work was still running**, which is an attention cost the
+orchestrator caused by leaving long background work opaque; a progress signal on a multi-hour
+workflow is owed rather than optional. The fifth was a forward-planning question, separate from
+this pass's execution.
+
+**Carried forward.** The `check-reference-signatures.mjs` `| undefined` fix opens C1. The
+`sideEffects` coverage gate is filed as mechanical hardening: the fix works today but nothing tests
+it, and the glob is depth-fixed, so the next server-only subpath silently reopens the hole. The
+window holds unpublished at `release-size: minor`, `Consumers must: nothing` on both entries.

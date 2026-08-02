@@ -131,11 +131,15 @@ the same SSL/TLS, Edge Certificates panel, with a max-age of six months or more.
 
 The `AUTH_DB` D1 database needs to answer, carry the `editor`, `magic_token`, and `session`
 tables, and hold at least one owner-capability row. Missing any of the three means no magic-link
-token can be minted and nobody signs in. Create the database, copy the shipped migrations from
-`node_modules/@glw907/cairn-cms/migrations/` into your `migrations/` directory, apply the schema
-with `wrangler d1 migrations apply your-site-auth --remote`, and seed the owner row (or declare a
+token can be minted and nobody signs in. Create the database, copy `0000_auth.sql` (and
+`0001_roles.sql` if you declare custom roles) from `node_modules/@glw907/cairn-cms/migrations/`
+into your `migrations/` directory, apply the schema with
+`wrangler d1 migrations apply your-site-auth --remote`, and seed the owner row (or declare a
 config bootstrap owner, which needs no D1 access); the
-[configure auth and D1 guide](./configure-auth-and-d1.md) walks the full sequence.
+[configure auth and D1 guide](./configure-auth-and-d1.md) walks the full sequence. Leave
+`0002_audit.sql` uncopied unless you're also wiring the opt-in
+[`createD1AuditSink`](../reference/sveltekit.md#created1auditsink): it adds a separate
+`audit_log` table this check never looks at.
 
 Two more checks read the same table. `auth.role-vocabulary` flags an editor row whose `role` isn't
 one of the site's declared names, a pruned config or a hand-edited row (the runtime resolves it to

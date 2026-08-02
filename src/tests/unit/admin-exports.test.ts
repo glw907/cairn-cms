@@ -11,4 +11,8 @@ describe('sveltekit barrel', () => {
     expect(typeof sveltekit.requireSession).toBe('function');
     expect(typeof sveltekit.requireOwner).toBe('function');
   });
+
+  it('exports the packaged D1 audit sink', () => {
+    expect(typeof sveltekit.createD1AuditSink).toBe('function');
+  });
 });

@@ -283,6 +283,124 @@ export const actions = {
 };
 ```
 
+### `createD1AuditSink`
+
+Stability tier: Extension API.
+
+```ts
+declare function createD1AuditSink(
+  db: D1Database,
+  waitUntil: ((promise: Promise<unknown>) => void) | undefined,
+): AdminActionAuditSink;
+```
+
+The packaged implementation of the [`AdminActionAuditSink`](#adminactionauditsink) seam:
+persists every audit record `adminAction` and `createSectionAction` emit into one `audit_log`
+table, opt-in the same way the auth migrations are.
+
+`db` can be any D1 binding, not only `AUTH_DB`. A separate database, `your-site-audit` in the
+example below, keeps audit writes from contending with session and token lookups, since D1
+serializes writes per database, and the `hooks.server.ts` example below binds a dedicated
+`AUDIT_DB` rather than reusing `AUTH_DB`.
+
+`wrangler d1 migrations apply` reads a database's migrations from that `d1_databases` entry's own
+`migrations_dir`, `./migrations` by default. Give the audit database its own `migrations_dir`,
+distinct from the auth database's: every entry that leaves `migrations_dir` unset resolves to that
+same default directory, so copying `0002_audit.sql` next to the auth migrations and applying it to
+the audit database applies the auth migrations there too.
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "AUTH_DB",
+    "database_name": "your-site-auth",
+    "database_id": "<the id wrangler d1 create printed>"
+  },
+  {
+    "binding": "AUDIT_DB",
+    "database_name": "your-site-audit",
+    "database_id": "<the id wrangler d1 create printed>",
+    "migrations_dir": "migrations/audit"
+  }
+]
+```
+
+```bash
+mkdir -p migrations/audit
+cp node_modules/@glw907/cairn-cms/migrations/0002_audit.sql migrations/audit/
+npx wrangler d1 migrations apply your-site-audit --local
+npx wrangler d1 migrations apply your-site-audit --remote
+```
+
+`0002` is only the number the package ships it under. Only the ordering relative to any other
+file already in `migrations/audit/` is load-bearing, not the filename. The table is append-only
+and this package prunes nothing, so a site that expects real traffic should retire old rows
+itself, on a schedule (a
+[Cron Trigger](https://developers.cloudflare.com/workers/configuration/cron-triggers/)) or by
+hand:
+
+```bash
+npx wrangler d1 execute your-site-audit --remote --command "DELETE FROM audit_log WHERE created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-90 days')"
+```
+
+The comparison has to use the same `strftime` expression the column's own default uses, not
+`datetime('now', ...)`: SQLite compares `TEXT` columns byte for byte, and an ISO string's `T`
+(`0x54`) sorts after a space (`0x20`) at the same position, so comparing against a
+`datetime('now', ...)` value would silently stop pruning the oldest rows at the boundary day.
+
+A screen reading the table back right after a write can miss the row that caused it: the insert
+may still be in flight behind `waitUntil` when the response renders, and D1's own read
+replication can serve a replica that has not received the write yet. A screen that must show its
+own just-made row needs
+[first-primary bookmark routing](https://developers.cloudflare.com/d1/best-practices/read-replication/#bookmarks),
+not a plain read.
+
+The table carries `id`, `actor`, `action`, `entity`, `entity_id`, `detail`, and a `created_at` the
+database populates as an ISO 8601 UTC string (`strftime('%Y-%m-%dT%H:%M:%fZ', 'now')`), a column
+read by a human in a query, not by the engine.
+[`formatTimestamp`](./admin-toolkit.md#formattimestamp) doesn't apply to this column: it expects
+the space-separated `"YYYY-MM-DD HH:MM:SS"` shape SQLite's `datetime('now')` produces, and swaps
+in the `T` and `Z` itself. This column's value already carries both, so render it directly;
+`new Date(createdAt)` already reads it correctly as UTC.
+
+`createD1AuditSink` requires `waitUntil` and takes `undefined` explicitly, not optionally: an
+optional parameter would make the shortest call the one that silently drops the insert when the
+isolate tears down before it settles, so omitting it (typically when no `event.platform.ctx` is
+reachable) has to be a decision the caller makes on purpose, with the drop risk understood.
+
+The sink is fail-open, the same convention as [a hand-rolled one](../guides/add-a-custom-admin-screen.md#wire-the-auditsink):
+it returns synchronously, before the insert settles, so a persist failure never fails the audited
+action, and a rejected insert logs `admin.audit.sink_failed` (see [log events](./log-events.md))
+carrying the whole truncated record plus the error, since the audited action already completed and
+this is the only remaining trace of that row. Every bound field truncates to a documented maximum
+before binding, so an oversized `detail` (the one field a handler composes freely) cannot suppress
+its own audit row by failing the insert: `actor` to 320 characters, `action` to 100, `entity` to
+100, `entityId` to 200, `detail` to 500.
+
+**A site wiring this sink should also configure [`createSectionAction`](#createsectionaction)'s
+`rateLimit`.** `createSectionAction` audits every refusal, not only a successful action, and its
+check order runs authorization before any database-binding resolution, so a session the access map
+refuses still produces an audit row before the section's own binding is ever read. Persisting that
+trail with no rate limit configured lets a refused caller cheaply fill the table.
+
+<!-- snippet-check-skip: reads App.Platform (env, ctx.waitUntil), which only the site's own app.d.ts declares -->
+```ts
+// src/hooks.server.ts
+import { createD1AuditSink } from '@glw907/cairn-cms/sveltekit';
+import type { Handle } from '@sveltejs/kit';
+
+const wireAuditSink: Handle = ({ event, resolve }) => {
+  const db = event.platform?.env.AUDIT_DB;
+  const ctx = event.platform?.ctx;
+  // The bind is required: an unbound `ctx.waitUntil` throws "Illegal invocation" in workerd.
+  const waitUntil = ctx ? ctx.waitUntil.bind(ctx) : undefined;
+  if (db) event.locals.auditSink = createD1AuditSink(db, waitUntil);
+  return resolve(event);
+};
+
+export const handle = wireAuditSink;
+```
+
 ### `createSectionAction`
 
 Stability tier: Extension API.

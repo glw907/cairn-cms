@@ -196,6 +196,22 @@ describe('createSectionAction: rate limit enforcement', () => {
     expect(auditsOf(sink)).toEqual([]);
   });
 
+  it('blocks on a truthy non-boolean success (a malformed limiter response), never a pass', async () => {
+    const sink = vi.fn();
+    // RateLimitLike is structural: a site-supplied limiter can resolve anything shaped like
+    // { success: boolean } without actually being one. A truthy non-boolean must read as blocked,
+    // the same as checkRateLimit's own `result?.success === true` test.
+    const limiter = { limit: async () => ({ success: 1 as unknown as boolean }) } as RateLimitLike;
+    const { handler, action } = approveAction({
+      ...boundDb,
+      rateLimit: { resolve: () => limiter, key: () => 'k' },
+    });
+    const result = await action(readyEvent({ auditSink: sink }));
+    expect(handler).not.toHaveBeenCalled();
+    expect(refusal(result).status).toBe(429);
+    expect(auditsOf(sink)).toEqual([]);
+  });
+
   it('runs the handler under the limit, and calls rateLimit.key with the verified editor', async () => {
     const keyFn = vi.fn(() => 'k');
     const limiter: RateLimitLike = { limit: async () => ({ success: true }) };

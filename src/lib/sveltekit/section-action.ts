@@ -26,11 +26,9 @@ import { log } from '../log/index.js';
 import type { AdminActionContext, AdminActionEvent } from './admin-action.js';
 import type { AccessMap } from '../auth/access.js';
 import type { ActionFailure } from '@sveltejs/kit';
+import type { RateLimitLike } from '../cloudflare/rate-limit.js';
 
-/** The structural slice of a Workers RateLimit binding the wrapper calls; any conforming limiter serves. */
-export interface RateLimitLike {
-  limit(options: { key: string }): Promise<{ success: boolean }>;
-}
+export type { RateLimitLike };
 
 /** Site-fixed configuration for one `createSectionAction` factory: only what the engine cannot know. */
 export interface SectionActionConfig<Env, Db> {
@@ -160,7 +158,10 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
           let blocked = false;
           try {
             const result = await limiter.limit({ key: config.rateLimit.key(ctx) });
-            blocked = !result.success;
+            // Mirrors checkRateLimit's own `result?.success === true` test (rate-limit.ts):
+            // RateLimitLike is structural and publicly exported, so a site-supplied limiter
+            // returning a truthy non-boolean success must read as blocked, not as a pass.
+            blocked = result?.success !== true;
           } catch (err) {
             // Both a throwing key() and a throwing limit() land here (key() is evaluated as an
             // argument to limit(), inside this same try); either way the limit was never

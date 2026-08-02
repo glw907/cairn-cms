@@ -60,17 +60,23 @@ function isSiteverifyBody(value: unknown): value is SiteverifyBody {
 /**
  * Verify a Turnstile token against Cloudflare's siteverify endpoint.
  *
- * Every failure mode, a non-200 response, an unparseable or non-object body, a thrown fetch or a
- * request that hangs past its deadline, and a hostname or action mismatch, returns false rather
- * than throwing: this function is fail-closed by contract, so a future refactor cannot flip it
- * open by accident. Degrade-to-open (skipping the check entirely when a site has no secret
- * configured) is the caller's own convention (`if (secret && ...)`), never this function's;
- * verification and that policy stay separate. Supplying `hostname` and `action` is what stops a
- * token solved on one widget from replaying against another form that shares the same sitekey;
- * without them, siteverify only proves the token is genuine, not which form it was solved for.
- * `hostname` compares case-insensitively, since siteverify reports it lowercased regardless of
- * the sitekey's configured casing. This function never logs the secret, and on a mismatch logs no
- * response field beyond `hostname` and `action` (never the full body).
+ * Every failure mode returns false rather than throwing: a missing or blank token or secret, a
+ * token past the length Turnstile issues, a fetch that throws or hangs past its deadline, a
+ * non-200 response, a body that does not parse or carries a field of the wrong shape, a
+ * siteverify rejection, and a hostname or action mismatch. This function is fail-closed by
+ * contract, so a future refactor cannot flip it open by accident. Degrade-to-open (skipping the
+ * check entirely when a site has no secret configured) is the caller's own convention
+ * (`if (secret && ...)`), never this function's; verification and that policy stay separate.
+ * Supplying `hostname` and `action` is what stops a token solved on one widget from replaying
+ * against another form that shares the same sitekey; without them, siteverify only proves the
+ * token is genuine, not which form it was solved for. `hostname` compares case-insensitively,
+ * since siteverify reports it lowercased regardless of the sitekey's configured casing.
+ *
+ * Every refusal logs `turnstile.verify_failed` with a reason, except an ordinary bot rejection
+ * (`invalid-input-response` or `timeout-or-duplicate`), which is this function working. No record
+ * carries the secret, the token, or the response body. A rejection carries siteverify's own error
+ * codes, a mismatch carries the expected and actual value, and the pre-flight refusal carries the
+ * token's length. The log-events reference has the full table.
  */
 export async function verifyTurnstile(
   token: string,

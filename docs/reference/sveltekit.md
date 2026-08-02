@@ -268,6 +268,17 @@ since nothing rolls its writes back and the wrapper can't see them. Every emit l
 [log events](./log-events.md)) and, when the site sets one, forwards the record to
 `event.locals.auditSink`.
 
+[`AdminActionAuditSink`](#adminactionauditsink) is deliberately synchronous and fire-and-forget: it
+returns `void`, and `ctx.audit` never reads or awaits that return value. The engine holds the
+seam's fail-open promise at its own call site, not merely by the sink's own discipline: a sink that
+throws synchronously does not fail the action. `ctx.audit` catches the throw itself, so the
+handler's own result still returns exactly as if the sink had succeeded, and the failure logs
+`admin.action.audit_sink_failed` (see [log events](./log-events.md)) rather than disappearing. This
+is a distinct event from `createD1AuditSink`'s own `admin.audit.sink_failed`: that one covers the
+packaged sink's internal persist failure, which the packaged sink already catches before it can
+reach the engine's call site, while `admin.action.audit_sink_failed` covers any sink, hand-rolled or
+otherwise, that throws synchronously at the point `ctx.audit` invokes it.
+
 ```ts
 // src/routes/admin/club/events/[id]/+page.server.ts
 import { adminAction } from '@glw907/cairn-cms/sveltekit';

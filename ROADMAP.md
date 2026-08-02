@@ -697,13 +697,6 @@ the named human gates only):**
   after beta breaks every consumer's `app.d.ts` and every read site-wide. Decide the convention
   once, plausibly engine-owned keys carry the `cairn` prefix with the old names as deprecated
   aliases through the beta window, while the whole change is one `Consumers must:` line.
-- **Pre-beta contract: the function-color audit of the seams (Geoff, 2026-08-01).** Sync-vs-async
-  and void-vs-value are contract, and flipping either is breaking. Deliberately re-ratify rather
-  than freeze by accident: `render(md)` (sync today; a site wanting async embeds post-1.0 would
-  force a major) and `AdminActionAuditSink`'s `(record) => void` (deliberately fire-and-forget and
-  fail-open; likely right, but it should be frozen on purpose, and pass two's D1 sink is the moment
-  to state it in the reference). The audit's output is a ruling per seam recorded on its reference
-  page, with at most small additive shims.
 - **Pre-beta contract: the refusal-channel ruling (Geoff, 2026-08-01).** The admin action surface
   has two refusal channels a consumer must understand: `adminAction` throws `AdminActionError`
   (needing a site `handleError` mapping) while `createSectionAction`'s own branches return

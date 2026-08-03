@@ -11,7 +11,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { GithubDouble } from './_github-double.js';
 import { createContentRoutes } from '../../lib/sveltekit/content-routes.js';
 import type { MediaOrphanPurgeResult } from '../../lib/sveltekit/content-routes.js';
-import type { OrphanScan } from '../../lib/media/orphan-scan.js';
+import type { MediaOrphanScanResult } from '../../lib/media/orphan-scan.js';
 import { serializeManifest } from '../../lib/content/manifest.js';
 import { serializeMediaManifest, type MediaEntry, type MediaManifest } from '../../lib/media/manifest.js';
 import { r2Key } from '../../lib/media/naming.js';
@@ -134,7 +134,7 @@ describe('mediaOrphanScan', () => {
     const bucket = fakeBucket(stored, timeline);
     const routes = createContentRoutes(runtime());
 
-    const scan = (await routes.mediaOrphanScanAction(scanEvent(bucket) as never)) as OrphanScan;
+    const scan = (await routes.mediaOrphanScanAction(scanEvent(bucket) as never)) as MediaOrphanScanResult;
 
     // The orphan key (stored, no row) is purgeable.
     expect(scan.orphanedBytes).toHaveLength(1);

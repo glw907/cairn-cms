@@ -2,7 +2,7 @@
 // a render that runs the engine pipeline, and a backend the dev GitHub double answers for.
 import { createRenderer, defineRegistry, defineComponent, fieldset, fields, defineAdapter, defineConcept, githubApp } from '@glw907/cairn-cms';
 import { cardShell, headRow, strAttr } from '@glw907/cairn-cms/render';
-import { normalizeAssets, makeMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
+import { normalizeAssets, buildMediaResolver, readCommittedManifest } from '@glw907/cairn-cms/media';
 import type { IconSet } from '@glw907/cairn-cms';
 import { h } from 'hastscript';
 import type { ElementContent } from 'hast';
@@ -366,7 +366,7 @@ const mediaManifest = readCommittedManifest(
 // published `media:` reference from throwing when no per-call resolver is supplied. Exported so the
 // public route can inject the same resolver for the frontmatter hero, one source of truth.
 const resolvedAssets = normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' });
-export const publicMediaResolver = makeMediaResolver(mediaManifest, resolvedAssets);
+export const publicMediaResolver = buildMediaResolver(mediaManifest, resolvedAssets);
 
 // Whether media is configured on. The public route threads it as `assetsEnabled` so the engine logs
 // `media.resolver_absent` if a future edit drops the resolveMedia wiring while media stays on.

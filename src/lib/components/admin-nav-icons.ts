@@ -36,14 +36,14 @@ import ImageIcon from '@lucide/svelte/icons/image';
 import TagIcon from '@lucide/svelte/icons/tag';
 import HelpCircleIcon from '@lucide/svelte/icons/circle-help';
 import type { Component } from 'svelte';
-import type { AdminNavIcon } from '../sveltekit/admin-nav.js';
+import type { NavIcon } from '../sveltekit/admin-nav.js';
 
 /**
  * Maps each allowed adminNav icon name, or navLayout engine-ref icon override, to its Lucide
  *  component, for the shell to render. `image` and `settings` reuse the same components
  *  {@link ENGINE_NAV_ICONS} carries for its own fixed screens; one Lucide glyph, two allowlists.
  */
-export const ADMIN_NAV_ICONS: Record<AdminNavIcon, Component> = {
+export const ADMIN_NAV_ICONS: Record<NavIcon, Component> = {
   anchor: AnchorIcon,
   banknote: BanknoteIcon,
   bell: BellIcon,

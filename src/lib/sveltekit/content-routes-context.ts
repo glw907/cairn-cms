@@ -73,7 +73,7 @@ export function tidyClientErrorStatus(err: unknown): number | undefined {
   return typeof status === 'number' ? status : undefined;
 }
 
-export interface ContentRoutesDeps {
+export interface ContentRoutesOptions {
   /** The tidy action's injectable dependencies, grouped since both members shape one call. */
   tidy?: {
     /**
@@ -161,7 +161,7 @@ const DEFAULT_TIDY_TIMEOUT_MS = 30_000;
  */
 export interface ContentRoutesContext {
   runtime: CairnRuntime;
-  deps: ContentRoutesDeps;
+  deps: ContentRoutesOptions;
   /** The developer's custom sidebar entries, validated once at construction (server start). */
   adminNav: ResolvedNavItem[];
   /** The developer's publish-actions config, validated once at construction (server start). */
@@ -218,7 +218,7 @@ export interface ContentRoutesContext {
  *  backend/manifest/media-json/dictionary/commit-failure helpers over `runtime`. Every per-domain
  *  sibling factory takes the returned object as its one argument.
  */
-export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesDeps = {}): ContentRoutesContext {
+export function createContentRoutesContext(runtime: CairnRuntime, deps: ContentRoutesOptions = {}): ContentRoutesContext {
   // Validate the developer's custom adminNav once at construction (server start), so a bad icon name
   // or a colliding href throws here rather than per request. The shell payload role-filters this set.
   const adminNav = normalizeAdminNav(runtime.adminNav, runtime.concepts);

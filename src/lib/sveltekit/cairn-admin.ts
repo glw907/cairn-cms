@@ -10,7 +10,7 @@ import { log } from '../log/index.js';
 import { createAuthRoutes } from './auth-routes.js';
 import {
   createContentRoutes,
-  type ContentRoutesDeps,
+  type ContentRoutesOptions,
   type ListData,
   type EditData,
   type MediaLibraryData,
@@ -21,7 +21,8 @@ import {
 } from './content-routes.js';
 import { createEditorRoutes } from './editors-routes.js';
 import { createNavRoutes, type NavLoadData } from './nav-routes.js';
-import type { AuthBranding, SendMagicLink } from '../email.js';
+import type { AuthRoutesConfig } from './auth-routes.js';
+import type { AuthBranding } from '../email.js';
 import type { Editor } from '../auth/types.js';
 import type { Capability } from '../auth/roles.js';
 import type { CairnRuntime } from '../content/types.js';
@@ -32,36 +33,29 @@ import type { CairnEvent } from './types.js';
  *  content backend rides `event.locals.cairnBackend` (the dev double) or the adapter's provider, so it
  *  is not a dep here.
  */
-export interface CairnAdminDeps {
-  /** The magic-link auth seam. */
-  auth?: {
-    /** Defaults from the runtime's `siteName` and `sender`; override to change the email identity. */
-    branding?: AuthBranding;
-    /** The same seam the underlying auth factory takes. */
-    send?: SendMagicLink;
-    /**
-     * A site-declared owner to seed an empty allowlist on the next magic-link request, in place
-     * of a hand-run `wrangler d1 execute` INSERT. See `AuthRoutesConfig['bootstrapOwner']`.
-     */
-    bootstrapOwner?: { email: string; displayName: string };
-  };
+export interface CairnAdminOptions {
+  /**
+   * The magic-link auth seam: the same members `createAuthRoutes` takes, all optional here since
+   *  `branding` defaults from the runtime. See `AuthRoutesConfig`.
+   */
+  auth?: Partial<AuthRoutesConfig>;
   /**
    * Forwarded to the content routes verbatim; a site that enables tidy injects a stub client here
    *  to avoid a real network call.
    */
-  tidy?: ContentRoutesDeps['tidy'];
+  tidy?: ContentRoutesOptions['tidy'];
   /**
    * Forwarded to the content routes verbatim; a site whose own gating lives outside cairn (a role
    *  stored in its own D1, say) injects this to hide a section or an item from the arranged
-   *  sidebar for an editor who fails that check. See `ContentRoutesDeps['navFilter']`.
+   *  sidebar for an editor who fails that check. See `ContentRoutesOptions['navFilter']`.
    */
-  navFilter?: ContentRoutesDeps['navFilter'];
+  navFilter?: ContentRoutesOptions['navFilter'];
   /**
    * Forwarded to the content routes verbatim; a site injects this to surface per-session
    *  pending-work counts as nav badges (a queue of unread asset requests, say). See
-   *  `ContentRoutesDeps['attention']`.
+   *  `ContentRoutesOptions['attention']`.
    */
-  attention?: ContentRoutesDeps['attention'];
+  attention?: ContentRoutesOptions['attention'];
 }
 
 /**
@@ -88,7 +82,7 @@ export type AdminData =
 /**
  *
  */
-export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {}) {
+export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminOptions = {}) {
   // The runtime already composes the site name and the sender identity, so the magic-link
   // branding needs no second copy of either unless a site overrides it.
   const branding: AuthBranding = deps.auth?.branding ?? {
@@ -349,3 +343,6 @@ export function createCairnAdmin(runtime: CairnRuntime, deps: CairnAdminDeps = {
 
   return { load, actions, shellLoad };
 }
+
+/** What `createCairnAdmin` returns: the one load, the full action vocabulary, and the shell load. */
+export type CairnAdminRoutes = ReturnType<typeof createCairnAdmin>;

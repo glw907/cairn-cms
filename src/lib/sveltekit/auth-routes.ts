@@ -199,3 +199,6 @@ export function createAuthRoutes(config: AuthRoutesConfig) {
 
   return { loginLoad, requestAction, confirmLoad, confirmAction, logoutAction };
 }
+
+/** What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers. */
+export type AuthRoutes = ReturnType<typeof createAuthRoutes>;

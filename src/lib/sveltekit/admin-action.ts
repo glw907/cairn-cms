@@ -44,15 +44,16 @@ export interface AdminActionContext {
 }
 
 /**
- * Thrown by `adminAction` for its one remaining dev-time defect signal: a handler that returned
- * normally (not `fail()`) having emitted zero `ctx.audit` records, thrown only when running under
- * `esm-env`'s `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal:
- * in production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
- * Every other refusal `adminAction` makes, a missing editor session or a CSRF mismatch, is
- * SvelteKit's own `redirect()` or `error()`, which carry their status to the browser directly and
- * need no `handleError` mapping; this class no longer stands in for one.
+ * Thrown by `adminAction` for exactly one meaning: a handler that returned normally (not
+ * `fail()`) having emitted zero `ctx.audit` records, thrown only when running under `esm-env`'s
+ * `DEV` (or `deps.isDev`). It is a build-time author signal, not a production refusal: in
+ * production the same condition logs `admin.action.unaudited` instead (see `adminAction`).
+ * `adminAction`'s own authorization refusals, a missing editor session or a CSRF mismatch, throw
+ * SvelteKit's own `redirect()` or `error()` instead, which carry their status to the browser
+ * directly and need no `handleError` mapping; this class carries no production status and never
+ * stood for one.
  */
-export class AdminActionError extends Error {
+export class UnauditedActionError extends Error {
   constructor(
     public status: number,
     message: string,
@@ -62,7 +63,7 @@ export class AdminActionError extends Error {
 }
 
 /** Injectable dependencies for `adminAction`, so a test can drive both branches of the unaudited path. */
-export interface AdminActionDeps {
+export interface AdminActionOptions {
   /** Overrides the build-time dev flag; every real caller takes the default (`esm-env`'s `DEV`). */
   isDev?: boolean;
 }
@@ -136,7 +137,7 @@ function serializeThrownError(error: unknown): string {
  */
 export function adminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
-  deps: AdminActionDeps = {},
+  deps: AdminActionOptions = {},
 ): (event: CairnEvent) => Promise<T> {
   const dev = deps.isDev ?? DEV;
   return async (event: CairnEvent): Promise<T> => {
@@ -217,7 +218,7 @@ export function adminAction<T>(
     // precisely so callers never need to know that class's shape); a rejected request mutated
     // nothing, so it is exempt from the unaudited check below.
     if (emitted === 0 && !isActionFailure(result)) {
-      if (dev) throw new AdminActionError(500, `unaudited admin action (${event.url.pathname})`);
+      if (dev) throw new UnauditedActionError(500, `unaudited admin action (${event.url.pathname})`);
       log.error('admin.action.unaudited', { path: event.url.pathname, editor: editor.email });
     }
     return result;

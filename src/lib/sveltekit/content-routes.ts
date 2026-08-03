@@ -12,7 +12,7 @@
 // file directly) sees the same names at the same path.
 import type { CairnRuntime } from '../content/types.js';
 import { createContentRoutesContext } from './content-routes-context.js';
-import type { ContentRoutesDeps } from './content-routes-context.js';
+import type { ContentRoutesOptions } from './content-routes-context.js';
 import { createCoreActions } from './content-routes-core.js';
 import type { SaveFailure, DeleteRefusal, RenameFailure } from './content-routes-core.js';
 import { createMediaActions } from './content-routes-media.js';
@@ -32,7 +32,7 @@ import { createDictionaryActions } from './content-routes-dictionary.js';
 // layer; re-export them here so EditData's advisories and the /sveltekit subpath carry one shape.
 export type { AdvisoryNotice, AdvisoryAction } from '../content/advisories.js';
 
-export type { ContentRoutesDeps, TidyClient, AttentionItem } from './content-routes-context.js';
+export type { ContentRoutesOptions, TidyClient, AttentionItem } from './content-routes-context.js';
 
 export type {
   NavConcept,
@@ -86,7 +86,7 @@ export type ContentFormFailure = Partial<
  *  by admin surface, not by the internal domain split below), which `check:surface` pins as the
  *  public contract.
  */
-export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDeps = {}) {
+export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesOptions = {}) {
   const ctx = createContentRoutesContext(runtime, deps);
   const core = createCoreActions(ctx);
   const media = createMediaActions(ctx);
@@ -127,3 +127,6 @@ export function createContentRoutes(runtime: CairnRuntime, deps: ContentRoutesDe
     tidyAction: tidy.tidyAction,
   };
 }
+
+/** What `createContentRoutes` returns: the admin content routes' full load and action vocabulary. */
+export type ContentRoutes = ReturnType<typeof createContentRoutes>;

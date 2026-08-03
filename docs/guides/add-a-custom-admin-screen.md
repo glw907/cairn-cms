@@ -399,7 +399,7 @@ That array is the value of `adminNav` on your adapter's `editor` group, the same
 `supportContact` live under.
 
 `icon` has to be one of the nine bundled Lucide names
-([`AdminNavIcon`](../reference/sveltekit.md#adminnavicon):
+([`NavIcon`](../reference/sveltekit.md#navicon):
 `anchor`, `calendar`, `clipboard-list`, `list`, `users`, `package`, `inbox`, `table`, `wrench`), and
 `href` has to be a path no built-in view already owns. Cairn validates both when it builds the
 admin routes at server start, so a typo fails loudly at boot instead of rendering a broken or
@@ -454,7 +454,7 @@ export const admin = createCairnAdmin(runtime, { navFilter: filterClubNav });
 
 Hiding the link this way is a courtesy, not a gate: pair it with a guard inside the Boats screen's
 own `load` (`requireAccess`, plus your own feature check) so a direct URL still refuses when the
-feature is off. See [`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) for the full
+feature is off. See [`ContentRoutesOptions`](../reference/sveltekit.md#contentroutesoptions) for the full
 `navFilter` signature, and [Organize your admin nav](./organize-your-admin-nav.md) for arranging
 cairn's own screens alongside a section like this one.
 
@@ -512,8 +512,8 @@ composes. [`defineRoles`](../reference/core.md#roles) and [Access map](../refere
 document the declarations the Club section builds on, and [Restrict admin access by
 role](./restrict-admin-access.md) walks through wiring them in full. [The custom admin-nav
 seam](../reference/sveltekit.md#the-custom-admin-nav-seam) covers
-`AdminNavEntry`, `AdminNavIcon`, and the validated `ResolvedNavEntry` shape in full, and
-[`ContentRoutesDeps`](../reference/sveltekit.md#contentroutesdeps) documents `navFilter`.
+`AdminNavEntry`, `NavIcon`, and the validated `ResolvedNavEntry` shape in full, and
+[`ContentRoutesOptions`](../reference/sveltekit.md#contentroutesoptions) documents `navFilter`.
 [Organize your admin nav](./organize-your-admin-nav.md) covers `navLayout`, the seam for arranging
 the whole sidebar rather than adding one entry to it.
 [`CairnAdminShell`](../reference/components.md#cairnadminshell) documents the shell your screen

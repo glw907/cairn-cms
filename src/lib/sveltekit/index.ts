@@ -1,9 +1,9 @@
 // SvelteKit server logic consumed by site route shims: the guard plus the auth, editor,
 // content, and health route factories and functions.
-export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess } from './guard.js';
-export { createAuthRoutes, type AuthRoutesConfig, type RequestResult } from './auth-routes.js';
-export { createEditorRoutes } from './editors-routes.js';
-export { createContentRoutes } from './content-routes.js';
+export { createAuthGuard, requireSession, requireOwner, requireEditor, requireAccess, type AuthGuardOptions } from './guard.js';
+export { createAuthRoutes, type AuthRoutesConfig, type RequestResult, type AuthRoutes } from './auth-routes.js';
+export { createEditorRoutes, type EditorRoutesOptions, type EditorRoutes } from './editors-routes.js';
+export { createContentRoutes, type ContentRoutes } from './content-routes.js';
 export { createMediaRoute } from './media-route.js';
 export type {
   NavConcept,
@@ -19,7 +19,7 @@ export type {
   VocabularyLoadData,
   MediaUsageInfo,
   MediaLibraryData,
-  ContentRoutesDeps,
+  ContentRoutesOptions,
   AttentionItem,
   SaveFailure,
   DeleteRefusal,
@@ -32,11 +32,11 @@ export type {
   ContentFormFailure,
   UploadResult,
 } from './content-routes.js';
-export { createNavRoutes } from './nav-routes.js';
+export { createNavRoutes, type NavRoutes } from './nav-routes.js';
 export type { NavLoadData, NavPageOption } from './nav-routes.js';
 export type {
   AdminNavEntry,
-  AdminNavIcon,
+  NavIcon,
   AdminNavSection,
   AdminNavConfig,
   ResolvedNavEntry,
@@ -58,12 +58,12 @@ export { validateNavLayout, resolveNavLayout } from './admin-nav.js';
 export type { PublishActionEntry, PublishActionsConfig, PublishActionLink } from './publish-actions.js';
 export {
   adminAction,
-  AdminActionError,
+  UnauditedActionError,
   type AdminActionAudit,
   type AdminActionAuditRecord,
   type AdminActionAuditSink,
   type AdminActionContext,
-  type AdminActionDeps,
+  type AdminActionOptions,
 } from './admin-action.js';
 export { createD1AuditSink } from './audit-sink.js';
 export {
@@ -73,7 +73,7 @@ export {
   type SectionActionOptions,
   type SectionActionContext,
 } from './section-action.js';
-export { createCairnAdmin, type CairnAdminDeps, type AdminData } from './cairn-admin.js';
+export { createCairnAdmin, type CairnAdminOptions, type CairnAdminRoutes, type AdminData } from './cairn-admin.js';
 export { healthLoad, type HealthData } from './health.js';
 export type { CairnEvent, CookieJar, HandleInput, PlatformContext } from './types.js';
 // Re-exported here, not just from root, so the app.d.ts Platform block can name it.

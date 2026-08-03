@@ -78,7 +78,7 @@ describe('createCairnAdmin shellLoad', () => {
     expect(spy).not.toHaveBeenCalled();
   });
 
-  it('forwards CairnAdminDeps.navFilter to the content routes, so a dropped section is absent from the shell', async () => {
+  it('forwards CairnAdminOptions.navFilter to the content routes, so a dropped section is absent from the shell', async () => {
     new GithubDouble({ main: {} }).install();
     const rt = runtime();
     rt.adminNav = [

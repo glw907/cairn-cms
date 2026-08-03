@@ -176,3 +176,6 @@ export function createRenderer(
     },
   };
 }
+
+/** What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`. */
+export type Renderer = ReturnType<typeof createRenderer>;

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { error, fail, isHttpError, isRedirect, redirect } from '@sveltejs/kit';
-import { adminAction, AdminActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
+import { adminAction, UnauditedActionError, type AdminActionAuditRecord } from '../../lib/sveltekit/admin-action.js';
 import { log } from '../../lib/log/index.js';
 import type { CairnEvent, CookieJar, CookieSetOptions } from '../../lib/sveltekit/types.js';
 import type { Editor } from '../../lib/auth/types.js';
@@ -50,8 +50,8 @@ async function statusOf(promise: Promise<unknown>): Promise<number> {
     await promise;
     throw new Error('expected adminAction to throw');
   } catch (err) {
-    expect(err).toBeInstanceOf(AdminActionError);
-    return (err as AdminActionError).status;
+    expect(err).toBeInstanceOf(UnauditedActionError);
+    return (err as UnauditedActionError).status;
   }
 }
 

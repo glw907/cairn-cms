@@ -33,14 +33,16 @@ A SvelteKit site usually imports the shared symbols through this barrel. The `fe
 Stability tier: Scaffold API.
 
 ```ts
-function createPublicRoutes(deps: PublicRoutesDeps): {
+function createPublicRoutes(deps: PublicRoutesConfig): {
   entryLoad: (event: { url: URL }) => Promise<EntryData>;
   entries: () => { path: string }[];
 };
 ```
 
+`createPublicRoutes` exports its return type by name as [`PublicRoutes`](#publicroutes).
+
 Build the public route loader for a site's unified index. Pass the
-[`PublicRoutesDeps`](#publicroutesdeps): the built site resolver, the render function, the origin, and
+[`PublicRoutesConfig`](#publicroutesconfig): the built site resolver, the render function, the origin, and
 the SEO defaults. The returned object carries `entryLoad`, the one loader the catch-all route calls,
 and `entries`, the prerender enumerator. `entryLoad` resolves one entry by request path and folds in
 the rendered html, the SEO head, and the hero; it throws `error(404)` on a miss.
@@ -82,12 +84,12 @@ export const load: PageServerLoad = async ({ url }) => {
 The shapes the public loaders return and consume. A template reads the loaded data; a server passes
 the deps.
 
-### `PublicRoutesDeps`
+### `PublicRoutesConfig`
 
 Stability tier: Extension API.
 
 ```ts
-interface PublicRoutesDeps {
+interface PublicRoutesConfig {
   site: SiteResolver;
   render: SiteRender;
   origin: string;
@@ -104,6 +106,13 @@ The injected dependencies for the public loaders. `render` turns an entry's mark
 site-wide fallbacks for an entry that declares none. `resolveMedia` resolves a frontmatter `media:`
 hero reference to its delivery path; the site builds it from its committed `media.json` exactly as it
 builds the body resolver, and when it is absent no `heroImage` projection is derived.
+
+### `PublicRoutes`
+
+Stability tier: Scaffold API.
+
+What `createPublicRoutes` returns: the one entry loader and the prerender path enumerator, shown
+expanded in [`createPublicRoutes`](#createpublicroutes).
 
 ### `EntryData`
 

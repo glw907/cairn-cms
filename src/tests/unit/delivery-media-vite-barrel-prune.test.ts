@@ -58,7 +58,7 @@ const DATA_KEPT = [
 
 // The names /delivery adds on top of the re-exported /delivery/data surface (the route-loader
 // factory and its types), unaffected by this task.
-const DELIVERY_ONLY_KEPT = ['createPublicRoutes', 'PublicRoutesDeps', 'EntryData'];
+const DELIVERY_ONLY_KEPT = ['createPublicRoutes', 'PublicRoutesConfig', 'EntryData'];
 
 // The fourteen names the pass demotes from the /media barrel, verbatim from the plan's Task 4 and
 // the audit verdicts doc's `## ./media` section.
@@ -90,7 +90,7 @@ const MEDIA_KEPT = [
   'parseMediaToken',
   'mediaToken',
   'MediaRef',
-  'makeMediaResolver',
+  'buildMediaResolver',
   'MediaResolve',
 ];
 

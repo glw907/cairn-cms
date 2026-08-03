@@ -17,7 +17,7 @@ import { parseMediaToken } from '../media/reference.js';
 import { log } from '../log/index.js';
 
 /** Injected dependencies for the public loaders. */
-export interface PublicRoutesDeps {
+export interface PublicRoutesConfig {
   site: SiteResolver;
   render: SiteRender;
   origin: string;
@@ -34,7 +34,7 @@ export interface PublicRoutesDeps {
   defaultImage?: string;
   /**
    * Resolve a frontmatter `media:` hero reference to its delivery path. The site builds this from its
-   *  committed `media.json` exactly as it builds the body resolver (`makeMediaResolver`). When absent,
+   *  committed `media.json` exactly as it builds the body resolver (`buildMediaResolver`). When absent,
    *  media is off and no `heroImage` projection is derived.
    */
   resolveMedia?: MediaResolve;
@@ -68,7 +68,7 @@ export interface EntryData {
 }
 
 /** Build the public route resolver for a site's unified index. */
-export function createPublicRoutes(deps: PublicRoutesDeps) {
+export function createPublicRoutes(deps: PublicRoutesConfig) {
   const { site, render, origin, siteName, description, feeds, defaultImage, resolveMedia, assetsEnabled } = deps;
 
   // Diagnose a forgotten wire-point: media is configured on but no resolver reached this factory, so
@@ -167,3 +167,6 @@ export function createPublicRoutes(deps: PublicRoutesDeps) {
 
   return { entryLoad, entries };
 }
+
+/** What `createPublicRoutes` returns: the one entry loader and the prerender path enumerator. */
+export type PublicRoutes = ReturnType<typeof createPublicRoutes>;

@@ -29,4 +29,3 @@ Stability tier: Extension API.
 Stability tier: Extension API.
 
 - `ComponentContext` is the structured input a `build` receives (attributes, slots, the stamped node).
-- `MakeIcon` is a site's icon factory signature, `(name, role?) => Element`.

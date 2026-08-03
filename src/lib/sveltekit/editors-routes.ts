@@ -32,13 +32,17 @@ interface EditorActionFailure {
   error: string;
 }
 
-/**
- * Build the owner-gated editor-management routes: list, add, remove, and role-change.
- * `opts.roles` is the site's declared role vocabulary (see `defineRoles`); omitted, the routes
- * validate and resolve against the implicit owner/editor pair, so a zero-config site sees no
- * behavior change.
- */
-export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
+/** Configuration for `createEditorRoutes`: the site's declared role vocabulary. */
+export interface EditorRoutesOptions {
+  /**
+   * The site's declared role vocabulary (see `defineRoles`); omitted, the routes validate and
+   *  resolve against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   */
+  roles?: RolesDeclaration;
+}
+
+/** Build the owner-gated editor-management routes: list, add, remove, and role-change. */
+export function createEditorRoutes(opts: EditorRoutesOptions = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const ownerRoles = ownerLevelRoles(vocabulary);
 
@@ -148,3 +152,6 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
 
   return { editorsLoad, editorAddAction, editorRemoveAction, editorSetRoleAction };
 }
+
+/** What `createEditorRoutes` returns: the owner-gated editor-management load and actions. */
+export type EditorRoutes = ReturnType<typeof createEditorRoutes>;

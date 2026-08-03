@@ -31,7 +31,7 @@ const KEPT = [
   'HelpData',
   'MediaUsageInfo',
   'MediaLibraryData',
-  'ContentRoutesDeps',
+  'ContentRoutesOptions',
   'SaveFailure',
   'DeleteRefusal',
   'RenameFailure',
@@ -46,10 +46,10 @@ const KEPT = [
   'NavLoadData',
   'NavPageOption',
   'AdminNavEntry',
-  'AdminNavIcon',
+  'NavIcon',
   'ResolvedNavEntry',
   'createCairnAdmin',
-  'CairnAdminDeps',
+  'CairnAdminOptions',
   'AdminData',
   'healthLoad',
   'HealthData',
@@ -82,12 +82,12 @@ describe('sveltekit barrel prune', () => {
     expect(missing).toEqual([]);
   });
 
-  it('ContentRoutesDeps carries no backend member on the packaged type', () => {
+  it('ContentRoutesOptions carries no backend member on the packaged type', () => {
     const { checker, symbols } = moduleExports(DTS);
-    const symbol = symbols.find((s) => s.name === 'ContentRoutesDeps');
-    expect(symbol, 'ContentRoutesDeps must still be exported').toBeDefined();
+    const symbol = symbols.find((s) => s.name === 'ContentRoutesOptions');
+    expect(symbol, 'ContentRoutesOptions must still be exported').toBeDefined();
     const declared = symbol!.declarations?.[0];
-    expect(declared, 'ContentRoutesDeps must have a declaration').toBeDefined();
+    expect(declared, 'ContentRoutesOptions must have a declaration').toBeDefined();
     const type = checker.getTypeAtLocation(declared!);
     const memberNames = type.getProperties().map((p) => p.name);
     expect(memberNames).not.toContain('backend');

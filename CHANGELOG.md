@@ -121,16 +121,18 @@
   `requireEditor`, `requireAccess`, and `requireSession` throw for their own authorization checks,
   so neither of `adminAction`'s two needs a site `handleError` mapping. `adminAction` itself still
   performs no authorization: a `none`-capability editor's session passes both checks and reaches
-  the wrapped handler unchanged. `AdminActionError` stays exported, now meaning only the dev-only
-  unaudited-action defect signal (a build-time check, never a production response). The CSRF branch
-  logs the new `admin.action.csrf_rejected` event before it throws. See
-  [SvelteKit](docs/reference/sveltekit.md#refusal-channels) and
-  [log events](docs/reference/log-events.md). **Consumers must:** remove any `AdminActionError`
-  mapping from `handleError`; `adminAction`'s two refusals are now SvelteKit's own `redirect()` and
-  `error(403)`, which need no mapping. A site that alerted on the old `500` these refusals used to
-  produce now sees a `303` and a `403` instead, and both now navigate away from the submitting page
-  (the redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved
-  form input, where the old `500` left the page itself intact and recoverable with Back.
+  the wrapped handler unchanged. The old `AdminActionError` class renames to `UnauditedActionError`
+  and now means exactly one thing, the dev-only unaudited-action defect signal (a build-time check,
+  never a production response); the new name states that plainly instead of describing a refusal
+  channel that no longer exists. The CSRF branch logs the new `admin.action.csrf_rejected` event
+  before it throws. See [SvelteKit](docs/reference/sveltekit.md#refusal-channels) and
+  [log events](docs/reference/log-events.md). **Consumers must:** replace any imported
+  `AdminActionError` with `UnauditedActionError` and remove any `handleError` mapping of that class;
+  `adminAction`'s two refusals are now SvelteKit's own `redirect()` and `error(403)`, which need no
+  mapping. A site that alerted on the old `500` these refusals used to produce now sees a `303` and
+  a `403` instead, and both now navigate away from the submitting page (the redirect to
+  `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved form input, where
+  the old `500` left the page itself intact and recoverable with Back.
 
 - The route-factory members and the admin facade's `actions` keys now follow one grammar: a
   member that is a SvelteKit `load` ends in `Load`, a member that is a form action ends in
@@ -157,6 +159,28 @@
   the new name** (for example `?/saveSettings` to `?/settingsSave`, `?/addEditor` to
   `?/editorAdd`, `?/mediaPurge` to `?/mediaOrphanPurge`); this is a runtime-only failure (a 404 on
   submit), since the action name is a string literal a type gate cannot catch.
+
+- Every injectable-dependency bag renames from `*Deps` to `*Config` (a factory's primary bag) or
+  `*Options` (a secondary or per-call bag): `CairnAdminDeps` to `CairnAdminOptions`,
+  `ContentRoutesDeps` to `ContentRoutesOptions`, `AdminActionDeps` to `AdminActionOptions`, and
+  `PublicRoutesDeps` to `PublicRoutesConfig` (`createPublicRoutes`'s only bag, so it takes the
+  primary-bag name). `createAuthGuard`'s and `createEditorRoutes`'s previously anonymous inline
+  option bags are now named and exported as `AuthGuardOptions` and `EditorRoutesOptions`.
+  `CairnAdminOptions.auth` stops re-declaring `AuthRoutesConfig`'s shape inline and references it
+  directly (`Partial<AuthRoutesConfig>`). Every `create*` factory's return type is now named and
+  exported: `CairnAdminRoutes`, `ContentRoutes`, `AuthRoutes`, `EditorRoutes`, `NavRoutes`,
+  `PublicRoutes`, and `Renderer`. `makeMediaResolver` renames to `buildMediaResolver` (`make` is
+  retired; `build` derives pure data from an already-resolved config). The media orphan-scan result
+  type renames from `OrphanScan` to `MediaOrphanScanResult`, and the custom-nav icon-name type from
+  `AdminNavIcon` to `NavIcon`. `NavLayoutEngineRef.hidden` widens from `hidden?: true` to
+  `hidden?: boolean`, so a computed flag is as valid as the literal; the runtime already treated a
+  falsy `hidden` as visible. The `MakeIcon` re-export is removed from `@glw907/cairn-cms/render`
+  (the type stays internal). `ConceptUrlPolicy` is removed from the root barrel (it stays internal,
+  used by `defineConcept`). See [SvelteKit](docs/reference/sveltekit.md). **Consumers must:**
+  replace any imported `CairnAdminDeps`, `ContentRoutesDeps`, `AdminActionDeps`, or
+  `PublicRoutesDeps` with its renamed `*Options`/`*Config` counterpart; replace `makeMediaResolver`
+  with `buildMediaResolver`; replace any imported `OrphanScan` with `MediaOrphanScanResult` and
+  `AdminNavIcon` with `NavIcon`; and drop any imported `MakeIcon` or `ConceptUrlPolicy`.
 
 ### Fixed
 

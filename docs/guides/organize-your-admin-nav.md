@@ -107,7 +107,7 @@ their own choice, by design: a declared default is a first impression, not a sta
 
 Every concept shares one document icon by default, so two dated concepts (Posts and, say,
 Bulletins) look identical in the sidebar at a glance. Give one an `icon` override, any name from
-the bundled [`AdminNavIcon`](../reference/sveltekit.md#adminnavicon) allowlist:
+the bundled [`NavIcon`](../reference/sveltekit.md#navicon) allowlist:
 
 ```ts
 { screen: 'bulletins', icon: 'megaphone' },
@@ -237,7 +237,7 @@ who should see it.
 `validateNavLayout`, and `resolveNavLayout` in full, including `collapsed` and the `icon` override.
 [The custom admin-nav seam](../reference/sveltekit.md#the-custom-admin-nav-seam) documents
 `AdminNavEntry` and its icon allowlist, the shape a `navLayout` site entry reuses.
-[`ContentRoutesDeps` `navFilter`](../reference/sveltekit.md#contentroutesdeps) is the per-request
+[`ContentRoutesOptions` `navFilter`](../reference/sveltekit.md#contentroutesoptions) is the per-request
 seam for a grant that depends on state outside cairn's own role vocabulary, composed after every
 gate `navLayout` already applies. [The attention seam](../reference/sveltekit.md#the-attention-seam)
 documents the `attention` dep and `AttentionItem` in full. [Restrict admin access by

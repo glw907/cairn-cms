@@ -144,3 +144,6 @@ export function createNavRoutes(runtime: CairnRuntime) {
 
   return { navLoad, navSaveAction };
 }
+
+/** What `createNavRoutes` returns: the nav editor's load and save functions. */
+export type NavRoutes = ReturnType<typeof createNavRoutes>;

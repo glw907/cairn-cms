@@ -46,12 +46,12 @@ export const ADMIN_NAV_ICON_NAMES = [
 ] as const;
 
 /** One of the bundled custom-nav icon names. */
-export type AdminNavIcon = (typeof ADMIN_NAV_ICON_NAMES)[number];
+export type NavIcon = (typeof ADMIN_NAV_ICON_NAMES)[number];
 
 /** A developer's raw custom-nav config: a sidebar link to one of their own `/admin/` routes. */
 export interface AdminNavEntry {
   label: string;
-  icon: AdminNavIcon;
+  icon: NavIcon;
   href: string;
   /** Hides the link from a non-owner; cosmetic only, so the route must still gate server-side. */
   ownerOnly?: boolean;
@@ -75,7 +75,7 @@ export type AdminNavConfig = (AdminNavEntry | AdminNavSection)[];
 /** A validated custom-nav entry the shell renders: the icon name resolved, ownerOnly defaulted. */
 export interface ResolvedNavEntry {
   label: string;
-  iconName: AdminNavIcon;
+  iconName: NavIcon;
   href: string;
   ownerOnly: boolean;
 }
@@ -210,8 +210,8 @@ export type EngineScreenId = (typeof ENGINE_SCREEN_IDS)[number] | (string & {});
 export interface NavLayoutEngineRef {
   screen: EngineScreenId;
   label?: string;
-  hidden?: true;
-  icon?: AdminNavIcon;
+  hidden?: boolean;
+  icon?: NavIcon;
 }
 
 /** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
@@ -442,7 +442,7 @@ export interface ResolvedEngineNavEntry {
    * Present only when the declared {@link NavLayoutEngineRef.icon} overrode the engine-owned
    *  glyph; the shell prefers this over its own default when set.
    */
-  iconName?: AdminNavIcon;
+  iconName?: NavIcon;
 }
 
 /** One resolved leaf in a navLayout tree: a site's own entry, or one of the engine's own screens. */
@@ -542,7 +542,7 @@ function engineEntry(
   screen: string,
   opts: ResolveNavLayoutOptions,
   labelOverride?: string,
-  iconOverride?: AdminNavIcon,
+  iconOverride?: NavIcon,
 ): ResolvedEngineNavEntry {
   const fallback = engineDefault(screen, opts);
   const concept = opts.concepts.find((c) => c.id === screen);

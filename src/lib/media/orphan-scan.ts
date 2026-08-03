@@ -37,7 +37,7 @@ interface BrokenRefRow {
 }
 
 /** The scan surface model: the two row sets the Library renders. */
-export interface OrphanScan {
+export interface MediaOrphanScanResult {
   orphanedBytes: OrphanByteRow[];
   brokenRefs: BrokenRefRow[];
 }
@@ -57,7 +57,7 @@ export function buildOrphanScan(
   reconcile: ReconcileResult,
   manifest: MediaManifest,
   index: UsageIndex,
-): OrphanScan {
+): MediaOrphanScanResult {
   const orphanedBytes: OrphanByteRow[] = [];
   for (const key of reconcile.orphanedObjects) {
     const hash = MEDIA_KEY_RE.exec(key)?.[1];

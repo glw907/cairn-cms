@@ -11,4 +11,4 @@ export { normalizeAssets, type ResolvedAssetConfig } from './config.js';
 export { readCommittedManifest, type MediaEntry, type MediaManifest } from './manifest.js';
 export type { VariantSpec } from './transform-url.js';
 export { parseMediaToken, mediaToken, type MediaRef } from './reference.js';
-export { makeMediaResolver, type MediaResolve } from '../render/resolve-media.js';
+export { buildMediaResolver, type MediaResolve } from '../render/resolve-media.js';

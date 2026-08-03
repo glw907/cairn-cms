@@ -48,7 +48,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
     MediaOrphanPurgeResult,
     MediaBulkFailure,
   } from '../sveltekit/content-routes.js';
-  import type { OrphanScan } from '../media/orphan-scan.js';
+  import type { MediaOrphanScanResult } from '../media/orphan-scan.js';
   import type { BulkDeleteSkip } from '../media/bulk-delete-plan.js';
   import type { AltPlacement } from '../content/media-rewrite.js';
   import type { UsageEntry } from '../media/usage.js';
@@ -1154,7 +1154,7 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   let orphanTitle = $state<HTMLElement | null>(null);
   let orphanPhase = $state<OrphanPhase>('idle');
   // The scan result (the result phase) or the fail-closed error message (the blocked phase).
-  let orphanScan = $state<OrphanScan | null>(null);
+  let orphanScan = $state<MediaOrphanScanResult | null>(null);
   let orphanBlockedError = $state('');
   // The orphaned-byte selection: a Set of R2 KEYS, distinct from the asset-hash Set above. Never
   // mutated in place; every change reassigns (the reactive-Set rule the rest of the screen follows).
@@ -1230,15 +1230,15 @@ projection and pulls in no editor module (the editor-boundary test bars a @codem
   }
 
   // Run the scan: POST ?/mediaOrphanScan, parse the ActionResult envelope, and route to the result
-  // phase (an OrphanScan) or the fail-closed blocked phase (a 503 MediaBulkFailure or a network
-  // throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST with a
-  // 415, so send an empty FormData to carry the form content-type. The CSRF token rides the header.
-  // Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each byte (or the
-  // select-all) deliberately.
+  // phase (a MediaOrphanScanResult) or the fail-closed blocked phase (a 503 MediaBulkFailure or a
+  // network throw). The action reads no fields, but a SvelteKit form action rejects a body-less POST
+  // with a 415, so send an empty FormData to carry the form content-type. The CSRF token rides the
+  // header. Nothing is pre-selected: this feeds an irreversible purge, so the operator picks each
+  // byte (or the select-all) deliberately.
   async function runOrphanScan() {
     orphanPhase = 'scanning';
     orphanBlockedError = '';
-    const outcome = await postFormAction<OrphanScan>(ORPHAN_SCAN_URL, {
+    const outcome = await postFormAction<MediaOrphanScanResult>(ORPHAN_SCAN_URL, {
       method: 'POST',
       headers: { 'X-Cairn-CSRF': csrf?.() ?? '' },
       body: new FormData(),

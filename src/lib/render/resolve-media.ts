@@ -57,7 +57,7 @@ export interface MediaImageDetail {
 }
 
 /**
- * A `MediaResolve` enriched with the optional per-image detail side channel `makeMediaResolver`
+ * A `MediaResolve` enriched with the optional per-image detail side channel `buildMediaResolver`
  *  attaches to its returned function. `remarkResolveMedia` reads it when present to emit
  *  width/height/srcset/sizes on the rendered `<img>`; a hand-rolled `resolveMedia` carries no such
  *  property and the image keeps resolving to its bare src exactly as before this detail existed. The
@@ -86,7 +86,7 @@ export type MediaResolve = (ref: MediaRef) => string | undefined;
  *  Transformations disabled serves correct thumbnails rather than dead /cdn-cgi/image URLs. It returns
  *  undefined when media is off or no entry carries the hash (the preview-miss backstop).
  */
-export function makeMediaResolver(
+export function buildMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
   opts?: { preset?: string },
@@ -181,7 +181,7 @@ function applyImageDetail(node: ResolvableNode, detail: MediaImageDetail | undef
  * Resolve media: image nodes against the VFile's resolver. A non-media src and a malformed token
  *  pass through. A missing target is marked with the cairn-broken-media class (the resolver returns
  *  undefined) or, when the resolver throws, the error propagates and fails the build. When the
- *  resolver carries the imageDetail side channel (built-in makeMediaResolver), the resolved image
+ *  resolver carries the imageDetail side channel (built-in buildMediaResolver), the resolved image
  *  also gains intrinsic width/height and, with zone transformations on and the asset's width known,
  *  a responsive srcset with a sizes hint derived from the enclosing figure's placement role.
  */

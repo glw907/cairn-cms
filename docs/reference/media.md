@@ -12,7 +12,7 @@ upload and preview pipeline; every real caller reaches them by relative import, 
 unexported internals rather than public surface.
 
 ```ts
-import { makeMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
+import { buildMediaResolver, normalizeAssets } from '@glw907/cairn-cms/media';
 ```
 
 A site reaches into this subpath to back its public render path with a media resolver: it reads the
@@ -22,10 +22,10 @@ types in `src/lib/media` and `src/lib/render/resolve-media.ts` are the source of
 export-coverage gate checks every name here against them.
 
 ```ts
-import { normalizeAssets, makeMediaResolver } from '@glw907/cairn-cms/media';
+import { normalizeAssets, buildMediaResolver } from '@glw907/cairn-cms/media';
 import mediaManifest from '../content/.cairn/media.json';
 
-const resolveMedia = makeMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
+const resolveMedia = buildMediaResolver(mediaManifest, normalizeAssets({ bucketBinding: 'MEDIA_BUCKET' }));
 ```
 
 ---
@@ -102,12 +102,12 @@ round trip is stable.
 
 ## The render resolver
 
-### `makeMediaResolver`
+### `buildMediaResolver`
 
 Stability tier: Extension API.
 
 ```ts
-declare function makeMediaResolver(
+declare function buildMediaResolver(
   manifest: MediaManifest,
   resolved: ResolvedAssetConfig,
   opts?: { preset?: string },

@@ -492,6 +492,8 @@ declare function createRenderer(
 };
 ```
 
+`createRenderer` exports its return type by name as [`Renderer`](#types).
+
 Compose a site's render pipeline from its component registry: directive syntax, then stamped
 markers, then registry-built hast. It returns `renderMarkdown` plus the fully composed remark and
 rehype plugin arrays, so the admin editor preview reuses the exact same set. `RendererOptions`
@@ -964,7 +966,6 @@ function signatures above reference these.
 | `CairnAdapter` | Extension API | `interface CairnAdapter` | The one seam the engine consumes, declared at `src/lib/cairn.config.ts`. |
 | `ConceptConfig` | Extension API | `interface ConceptConfig<S>` | Per-site configuration for one content concept: dir, label, singular, fields, routing, permalink, datePrefix, summaryFields. The optional `singular` names the create affordances ("New post") and defaults to `label`; `routing`/`permalink`/`datePrefix` set the concept's URL policy. |
 | `ConceptDescriptor` | Extension API | `interface ConceptDescriptor` | The engine-internal, uniform view of one concept after normalization, including the resolved `singular` (defaulted to `label`). |
-| `ConceptUrlPolicy` | Extension API | `interface ConceptUrlPolicy` | A concept's permalink pattern and date-prefix granularity, declared per concept via `defineConcept`. |
 | `Backend` | Extension API | `interface Backend` | The live, connected content store the engine resolves per request: read, commit, and branch operations over files, never a query. |
 | `BackendProvider` | Extension API | `interface BackendProvider` | The adapter's `backend` value: carries the `kind` and default `branch`, and `connect(env)`s to a live `Backend`. |
 | `GithubAppProvider` | Extension API | `interface GithubAppProvider` | What `githubApp(...)` returns: a `BackendProvider` plus the GitHub App's non-secret identity (`owner`, `repo`, `appId`, `installationId`). |
@@ -988,9 +989,9 @@ function signatures above reference these.
 | `ComponentDef` | Extension API | `interface ComponentDef` | A site component: how it inserts (editor) and how it renders (rehype). Its `attributes` are a `fields.*` record of scalar leaves, with any cross-field rule in the co-bundled `behavior` table; `defineComponent` builds the `attributeSchema` from them. The optional `icon` and `group` place its picker row, `hidden` keeps it off the top-level picker, `preview` is a sample that seeds the guided form and opts the configure step into the two-pane live preview, and `hydrate` opts the directive into a client [island](./islands.md). |
 | `ComponentRegistry` | Extension API | `interface ComponentRegistry` | The single source the render pipeline and the editor palette both read. |
 | `IconSet` | Extension API | `type IconSet` | A glyph name to SVG path-data map the site owns. |
-| `MakeIcon` | Extension API | `type MakeIcon` | A site's icon factory: turn a stamped name and role into a hast element. |
 | `SiteRender` | Extension API | `type SiteRender` | The site's one renderer seam: an entry-aware `render({ body, concept?, frontmatter?, resolve?, resolveMedia?, resolveFragment? }): Promise<string>` the editor preview and every public page call. |
 | `RendererOptions` | Extension API | `interface RendererOptions` | The render pipeline's sanitize, anchor, table-scroll, and plugin-seam controls. |
+| `Renderer` | Extension API | `type Renderer` | What `createRenderer` returns: the composed plugin arrays plus `renderMarkdown`/`renderDocument`, shown expanded in [`createRenderer`](#createrenderer). |
 | `DocHeading` | Extension API | `interface DocHeading` | One heading `renderDocument` collected from a rendered page: `id`, flattened `text`, and `depth` (1-6), in document order. |
 | `SiteConfig` | Extension API | `interface SiteConfig` | The shape of the YAML site-config file. |
 | `NavNode` | Extension API | `interface NavNode` | One navigation node: label, optional url, optional children. |

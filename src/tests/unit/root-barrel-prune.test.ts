@@ -86,6 +86,11 @@ const DEMOTED = [
   'RoutingRule',
 ];
 
+// C2 breaking window (2026-08-02, R1): `ConceptUrlPolicy` demoted from the root barrel. The
+// 2026-07-01 KEEP verdict carried no recorded defense; the type stays internal (used by
+// `normalizeConcepts` and `defineConcept`), just no longer re-exported at the root.
+const C2_DEMOTED = ['ConceptUrlPolicy'];
+
 // The keep list for the root subpath, from the audit verdicts doc's `## .` section
 // (`docs/superpowers/plans/2026-07-01-surface-pruning-audit-verdicts.md`).
 const KEPT = [
@@ -125,7 +130,6 @@ const KEPT = [
   'PreviewConfig',
   'AssetConfig',
   'ConceptDescriptor',
-  'ConceptUrlPolicy',
   'CairnRuntime',
   'SiteRender',
   'ComposeInput',
@@ -172,5 +176,11 @@ describe('root barrel prune', () => {
     const names = new Set(enumerateExports(DTS));
     const missing = KEPT.filter((name) => !names.has(name));
     expect(missing).toEqual([]);
+  });
+
+  it('no longer resolves the C2 demoted names from the root subpath', () => {
+    const names = new Set(enumerateExports(DTS));
+    const stillPresent = C2_DEMOTED.filter((name) => names.has(name));
+    expect(stillPresent).toEqual([]);
   });
 });

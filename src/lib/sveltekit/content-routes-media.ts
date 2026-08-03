@@ -17,7 +17,7 @@ import { buildUsageIndex } from '../media/usage.js';
 import type { UsageEntry } from '../media/usage.js';
 import { runReconcile, MEDIA_KEY_RE, type ReconcileBucket } from '../media/reconcile.js';
 import type { ResolvedAssetConfig } from '../media/config.js';
-import { buildOrphanScan, type OrphanScan } from '../media/orphan-scan.js';
+import { buildOrphanScan, type MediaOrphanScanResult } from '../media/orphan-scan.js';
 import { repointMediaRef, fillAltForHash } from '../content/media-rewrite.js';
 import type { RepointPlacement, AltPlacement } from '../content/media-rewrite.js';
 import { planMediaRewrite } from '../media/rewrite-plan.js';
@@ -862,11 +862,11 @@ export function createMediaActions(ctx: ContentRoutesContext) {
    *  unread branch would make a branch-referenced asset look orphaned. A wrong orphan verdict here
    *  feeds the irreversible purge, so the scan refuses rather than risk it.
    *
-   *  The result is the OrphanScan projection: orphanedBytes (stored keys with no manifest row, the
-   *  purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown with their
-   *  where-used so an operator can re-ingest rather than purge a still-referenced record).
+   *  The result is the MediaOrphanScanResult projection: orphanedBytes (stored keys with no manifest
+   *  row, the purge surface) and brokenRefs (manifest rows whose bytes are gone, read-only, shown
+   *  with their where-used so an operator can re-ingest rather than purge a still-referenced record).
    */
-  async function mediaOrphanScanAction(event: CairnEvent): Promise<ReturnType<typeof fail> | OrphanScan> {
+  async function mediaOrphanScanAction(event: CairnEvent): Promise<ReturnType<typeof fail> | MediaOrphanScanResult> {
     const editor = requireEditor(event);
     requireEngineAccess(runtime.access, editor, 'media');
     const backend = ctx.resolveBackend(event);

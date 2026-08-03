@@ -124,28 +124,30 @@ proves against, for `@sveltejs/kit`, `svelte`, `vite`, `typescript`, `node`, and
 resolution.
 
 `adminAction`'s two refusals, a missing signed-in editor (authentication) and a CSRF mismatch, now
-throw SvelteKit's own `redirect()` and `error(403, ...)` instead of `AdminActionError`, the same
-framework-native shapes `requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`
+throw SvelteKit's own `redirect()` and `error(403, ...)` instead of the dev-only error class, the
+same framework-native shapes `requireOwner`, `requireEditor`, `requireAccess`, and `requireSession`
 throw for their own authorization checks. `adminAction` itself still performs no authorization: a
 `none`-capability editor's session passes both of its checks and reaches your handler unchanged;
 add [`requireAccess`](../reference/sveltekit.md#requireaccess) inside the handler, or build on
 [`createSectionAction`](../reference/sveltekit.md#createsectionaction), for a capability check.
-If your `hooks.server.ts` defines a `handleError` only to map `AdminActionError` into a legible
-response for these two refusals, remove that mapping: it does nothing useful now, and a site
-relying on the old `500` these refusals produced for alerting now sees a `303` (the redirect) and
-a `403` (the SvelteKit-native error) instead. Both now navigate away from the submitting page (the
-redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved form
-input, where the old `500` left the page itself intact and recoverable with Back. `AdminActionError`
-stays exported, but now means only the dev-only unaudited-action defect signal, a build-time check
-that never reaches a production response. See [Refusal
+If your `hooks.server.ts` defines a `handleError` only to map the old `AdminActionError` into a
+legible response for these two refusals, remove that mapping: it does nothing useful now, and a
+site relying on the old `500` these refusals produced for alerting now sees a `303` (the redirect)
+and a `403` (the SvelteKit-native error) instead. Both now navigate away from the submitting page
+(the redirect to `/admin/login`, the 403 to the nearest error boundary), discarding any unsaved
+form input, where the old `500` left the page itself intact and recoverable with Back. The class
+itself renames to [`UnauditedActionError`](../reference/sveltekit.md#types): after this refusal
+channel convergence it means exactly one thing, the dev-only unaudited-action defect signal, a
+build-time check that never reaches a production response, and the new name states that plainly.
+See [Refusal
 channels](../reference/sveltekit.md#refusal-channels).
 
 Consumers must: be on Node 22 or later for your build toolchain (already the tutorial's stated
-requirement, now a declared one too), and remove any `AdminActionError` mapping from your
-`handleError` (`adminAction`'s authorization refusals need no mapping anymore). Nothing else in
-this window changes an exported type, a route contract, or a behavior you'd observe without
-hitting one of those two: a throwing or rejecting audit sink previously failed the action it
-audited and now does not.
+requirement, now a declared one too); replace any imported `AdminActionError` with
+`UnauditedActionError`; and remove any `handleError` mapping of that class for `adminAction`'s two
+authorization refusals (they need no mapping anymore). Nothing else in this window changes an
+exported type, a route contract, or a behavior you'd observe without hitting one of those two: a
+throwing or rejecting audit sink previously failed the action it audited and now does not.
 
 `AuthEnv` and `BackendEnv` collapse into one all-optional `CairnEnv` (`AUTH_DB`, `PUBLIC_ORIGIN`,
 `CAIRN_DEV_BACKEND`, `EMAIL`, `GITHUB_APP_PRIVATE_KEY_B64`), exported from both the root barrel
@@ -226,6 +228,37 @@ change the posted `?/` action string to the new name (for example `?/saveSetting
 `?/settingsSave`, `?/addEditor` to `?/editorAdd`, `?/mediaPurge` to `?/mediaOrphanPurge`); a
 mismatched name fails at runtime as a 404 on submit, not at compile time, since the action name is
 a string literal.
+
+Every injectable-dependency bag renames from `*Deps` to `*Config` (the factory's primary bag) or
+`*Options` (a secondary or per-call bag), the parameter-bag half of the same grammar: `CairnAdminDeps`
+to `CairnAdminOptions`, `ContentRoutesDeps` to `ContentRoutesOptions`, `AdminActionDeps` to
+`AdminActionOptions`, and `PublicRoutesDeps` to `PublicRoutesConfig` (`createPublicRoutes`'s only
+bag, so it takes the primary-bag name). `createAuthGuard`'s and `createEditorRoutes`'s previously
+anonymous inline option bags are now named and exported too, as `AuthGuardOptions` and
+`EditorRoutesOptions`; a site typing its own wrapper around either factory can now name the
+parameter instead of writing the shape out. `CairnAdminOptions.auth` also stops re-declaring
+`AuthRoutesConfig`'s shape inline and references it directly (`Partial<AuthRoutesConfig>`), so the
+two stay in lockstep. Every `create*` factory's return type is named and exported too:
+`CairnAdminRoutes`, `ContentRoutes`, `AuthRoutes`, `EditorRoutes`, `NavRoutes`, `PublicRoutes`, and
+`Renderer`, so a site can name a variable or a wrapper function's return type instead of writing the
+returned shape out by hand. `makeMediaResolver` renames to `buildMediaResolver`, matching the
+four-verb grammar (`build` derives pure data from an already-resolved config; `make` is retired).
+The media orphan-scan result type renames from `OrphanScan` to `MediaOrphanScanResult`, and the
+custom-nav icon-name type from `AdminNavIcon` to `NavIcon`. `NavLayoutEngineRef.hidden` widens from
+the literal `hidden?: true` to `hidden?: boolean`, so a computed flag (a feature switch, a role
+check) is as valid as the literal; the runtime already treated a falsy `hidden` as visible. The
+`MakeIcon` re-export is removed from `@glw907/cairn-cms/render` (the type stays internal; it named a
+site's icon factory signature with zero real callers). `ConceptUrlPolicy` is removed from the root
+barrel (it stays internal, used by `defineConcept`); a site never constructed one directly, since
+`defineConcept`'s own `permalink`/`datePrefix` config builds it. See
+[SvelteKit](../reference/sveltekit.md).
+
+Consumers must: replace any imported `CairnAdminDeps`, `ContentRoutesDeps`, `AdminActionDeps`, or
+`PublicRoutesDeps` with its renamed `*Options`/`*Config` counterpart; replace `makeMediaResolver`
+with `buildMediaResolver`; replace any imported `OrphanScan` with `MediaOrphanScanResult` and
+`AdminNavIcon` with `NavIcon`; and drop any imported `MakeIcon` or `ConceptUrlPolicy` (or inline
+their shape, since both stay usable as unexported internals only through their owning modules'
+public factories).
 
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 

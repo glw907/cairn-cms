@@ -78,7 +78,7 @@ The facade and its two guard helpers: the one path most sites wire.
 Stability tier: Scaffold API.
 
 ```ts
-declare function createAuthGuard(opts?: { roles?: RolesDeclaration; access?: AccessMap }): ({ event, resolve }: HandleInput) => Promise<Response>;
+declare function createAuthGuard(opts?: AuthGuardOptions): ({ event, resolve }: HandleInput) => Promise<Response>;
 ```
 
 Build the SvelteKit `Handle` that gates every `/admin/**` path and hardens the admin response
@@ -109,12 +109,14 @@ export const handle = sequence(theme, createAuthGuard({ roles }));
 ### `createCairnAdmin`
 
 ```ts
-declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminDeps): {
+declare function createCairnAdmin(runtime: CairnRuntime, deps?: CairnAdminOptions): {
   load: (event: CairnEvent) => Promise<AdminData>;
   actions: Record<string, (event: CairnEvent) => Promise<unknown>>;
   shellLoad: (event: CairnEvent) => Promise<{ shell: AdminShellData }>;
 };
 ```
+
+`createCairnAdmin` exports its return type by name as [`CairnAdminRoutes`](#types).
 
 The single-mount admin facade. It instantiates the auth, content, editor, and nav route
 factories over the composed runtime and serves every admin view through one `load`, so a site
@@ -345,7 +347,7 @@ Stability tier: Extension API.
 ```ts
 declare function adminAction<T>(
   handler: (args: { event: CairnEvent; form: FormData; ctx: AdminActionContext }) => Promise<T>,
-  deps?: AdminActionDeps,
+  deps?: AdminActionOptions,
 ): (event: CairnEvent) => Promise<T>;
 ```
 
@@ -369,7 +371,7 @@ constant-time, else SvelteKit's own `error(403, ...)`, rendered through the near
 (3) the handler runs once, reading `event.request.formData()` exactly once so the handler never
 re-reads an already-consumed body; (4) a handler that returns normally (its request succeeded) must
 call `ctx.audit` at least once. A successful mutating action that emits zero audit records throws
-`AdminActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
+`UnauditedActionError(500, ...)` in dev (`esm-env`'s `DEV`, overridable through `deps.isDev` for a
 test) and logs `admin.action.unaudited` in production, since an unaudited state change is a defect
 here but should never 500 a live site. A handler that returns SvelteKit's `fail()` (an
 `ActionFailure`, detected with `@sveltejs/kit`'s own `isActionFailure`) is exempt from the required-audit
@@ -383,7 +385,7 @@ since nothing rolls its writes back and the wrapper can't see them. Every emit l
 Both preceding authorization branches throw one of SvelteKit's own recognized shapes (see [Refusal
 channels](#refusal-channels)): the missing-editor redirect and the CSRF `error(403, ...)` carry
 their status to the browser directly, and neither needs a site `handleError` mapping. Only the
-dev-only required-audit check throws [`AdminActionError`](#types), which SvelteKit doesn't
+dev-only required-audit check throws [`UnauditedActionError`](#types), which SvelteKit doesn't
 recognize as one of its own thrown shapes; it fires only under `esm-env`'s `DEV`, so it's a
 build-time author signal, never a production response, and it too needs no `handleError` mapping.
 A site building on [`createSectionAction`](#createsectionaction) inherits `adminAction`'s two
@@ -689,6 +691,8 @@ declare function createAuthRoutes(config: AuthRoutesConfig): {
 };
 ```
 
+`createAuthRoutes` exports its return type by name as [`AuthRoutes`](#types).
+
 Build the magic-link login flow. `loginLoad` and `requestAction` back the sign-in view at
 `/admin/login`, `confirmLoad` and `confirmAction` back the magic-link landing at
 `/admin/auth/confirm`, and `logoutAction` clears the session; the admin shell posts it as the
@@ -725,13 +729,15 @@ export const actions = { request: auth.requestAction };
 Stability tier: Unstable API.
 
 ```ts
-declare function createEditorRoutes(opts?: { roles?: RolesDeclaration }): {
+declare function createEditorRoutes(opts?: EditorRoutesOptions): {
   editorsLoad: (event: CairnEvent<CairnEnv>) => Promise<{ editors: Editor[]; self: string; error: string | null; vocabulary: { role: string; capability: Capability }[] }>;
   editorAddAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   editorRemoveAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
   editorSetRoleAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<{ error: string }> | { ok: true }>;
 };
 ```
+
+`createEditorRoutes` exports its return type by name as [`EditorRoutes`](#types).
 
 Build the loads and actions for the editor-management view at `/admin/editors`. `editorsLoad` lists
 the editors, names the current user, and returns `vocabulary`, the declared roles with their
@@ -762,7 +768,7 @@ export const actions = {
 Stability tier: Unstable API.
 
 ```ts
-declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesDeps): {
+declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutesOptions): {
   shellLoad: (event: CairnEvent<CairnEnv>) => Promise<{ shell: AdminShellData }>;
   helpLoad: (event: CairnEvent<CairnEnv>) => Promise<HelpData>;
   indexLoad: (event: CairnEvent<CairnEnv>) => { view: "welcome"; page: WelcomeData };
@@ -785,7 +791,7 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
   mediaLibraryUploadAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | UploadResult>;
   mediaDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   mediaBulkDeleteAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaBulkDeleteResult>;
-  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | OrphanScan>;
+  mediaOrphanScanAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanScanResult>;
   mediaOrphanPurgeAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaOrphanPurgeResult>;
   mediaUpdateAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown>>;
   mediaReplacePreviewAction: (event: CairnEvent<CairnEnv>) => Promise<ActionFailure<unknown> | MediaReplacePreviewPlan>;
@@ -798,14 +804,15 @@ declare function createContentRoutes(runtime: CairnRuntime, deps?: ContentRoutes
 ```
 
 The core of the admin surface. It takes the composed runtime and returns the loads and actions for
-the authed admin shell, the concept list, and the entry editor. `shellLoad` backs the shared admin
+the authed admin shell, the concept list, and the entry editor, exported by name as
+[`ContentRoutes`](#types). `shellLoad` backs the shared admin
 shell (the `/admin/+layout` load wires it through `createCairnAdmin`'s `shellLoad`): it returns the
 lean `{ shell: AdminShellData }` chrome payload, bare for a public path and the streamed authed nav
 otherwise. Its caller awaits it: `shellLoad` calls [`resolveNavLayout`](#resolvenavlayout) up
 front to arrange and gate the whole sidebar, a declared `navLayout` or, absent one, today's
 default arrangement synthesized through the same resolver, then applies the site's
 `deps.navFilter`, if configured, to the arranged `items` alone (see [the navLayout
-seam](#the-navlayout-seam) and `ContentRoutesDeps` below). `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
+seam](#the-navlayout-seam) and `ContentRoutesOptions` below). `listLoad` with the `create`, `delete` (`listDeleteAction`), and `publishAll`
 actions back a concept's list view, and `editLoad` with the `save`, `publish`, `discard`,
 `delete`, and `rename` actions back the entry editor. `uploadAction` ingests an image for a
 media-enabled site: a raw-body JSON endpoint that stores the bytes in R2, returns a `UploadResult`
@@ -845,7 +852,7 @@ skips any still in use, reporting them in the returned `MediaBulkDeleteResult` (
 `skipped`, and `failed` arrays) rather than force-deleting. The row removals land as one commit before
 the R2 objects are deleted, so a bulk delete is reversible from git history, the same delete-order the
 single safe-delete uses. `mediaOrphanScanAction` runs a storage reconcile plus a strict usage read and
-returns the `OrphanScan` projection: `orphanedBytes` (stored keys with no manifest row and no
+returns the `MediaOrphanScanResult` projection: `orphanedBytes` (stored keys with no manifest row and no
 reference anywhere across `main` and every open branch) and the broken-reference rows (manifest hashes
 whose bytes are gone). A branch-only upload's bytes are excluded from `orphanedBytes`, since the branch
 that uploaded them references them. `mediaOrphanPurgeAction` is the one irreversible media action: it
@@ -1003,6 +1010,8 @@ declare function createNavRoutes(runtime: CairnRuntime): {
 };
 ```
 
+`createNavRoutes` exports its return type by name as [`NavRoutes`](#types).
+
 Build the load and save for the navigation editor at `/admin/nav`. `navLoad` reads the current menu
 tree and the page options for the URL picker, and `navSaveAction` commits an edited tree to the
 git-committed site-config file. Like the content routes, a handler resolves its backend from
@@ -1077,25 +1086,25 @@ Stability tier: Extension API.
 ```ts
 interface AdminNavEntry {
   label: string;
-  icon: AdminNavIcon;
+  icon: NavIcon;
   href: string;
   ownerOnly?: boolean;
 }
 ```
 
 One developer-declared sidebar entry. `label` names the link, `icon` is a name from the bundled
-allowlist (see [`AdminNavIcon`](#adminnavicon)), and `href` points at the site's own `/admin/` route.
+allowlist (see [`NavIcon`](#navicon)), and `href` points at the site's own `/admin/` route.
 The href must not collide with a built-in admin view; a collision throws at startup with the
 conflicting view named. Set `ownerOnly` to hide the link from a session that does not resolve to
 owner capability, regardless of its role name. The flag is cosmetic, so the route itself must still
 gate server-side.
 
-### `AdminNavIcon`
+### `NavIcon`
 
 Stability tier: Extension API.
 
 ```ts
-type AdminNavIcon =
+type NavIcon =
   | 'anchor'
   | 'banknote'
   | 'bell'
@@ -1136,7 +1145,7 @@ Stability tier: Extension API.
 ```ts
 interface ResolvedNavEntry {
   label: string;
-  iconName: AdminNavIcon;
+  iconName: NavIcon;
   href: string;
   ownerOnly: boolean;
 }
@@ -1245,18 +1254,19 @@ Stability tier: Extension API.
 interface NavLayoutEngineRef {
   screen: EngineScreenId;
   label?: string;
-  hidden?: true;
-  icon?: AdminNavIcon;
+  hidden?: boolean;
+  icon?: NavIcon;
 }
 ```
 
 A `navLayout` node that places one of the engine's own screens: a concept's list/edit pair, or one
 of the fixed utility screens (`media`, `vocabulary`, `nav`, `settings`, `editors`, `help`). `label`
 relabels the door without touching its engine-owned icon or href (`{ screen: 'settings', label:
-'Site settings' }`); `hidden: true` removes it. `nav` is a valid reference only when the adapter
-configures a nav menu. `icon`, one of the bundled [`AdminNavIcon`](#adminnavicon) names, overrides
-the engine-owned glyph for that door (two dated concepts otherwise share one newspaper icon); an
-unknown name throws the same allowlist error a site entry's own icon does.
+'Site settings' }`). `hidden` removes it deliberately, a plain `boolean` so a computed flag is as
+valid as the literal `true`. `nav` is a valid reference only when the adapter configures a nav menu.
+`icon`, one of the bundled [`NavIcon`](#navicon) names, overrides the engine-owned glyph for that
+door, since two dated concepts otherwise share one newspaper icon. An unknown name throws the same
+allowlist error a site entry's own icon does.
 
 ### `NavLayoutEntry`
 
@@ -1340,7 +1350,7 @@ interface ResolvedEngineNavEntry {
   label: string;
   href: string;
   dated?: boolean;
-  iconName?: AdminNavIcon;
+  iconName?: NavIcon;
 }
 ```
 
@@ -1389,7 +1399,7 @@ type ResolvedLayoutNode = ResolvedLayoutChild | ResolvedLayoutSection;
 ```
 
 One resolved top-level `navLayout` node: a loose child, or a section of them. This is the shape
-`navFilter` receives and returns (see [`ContentRoutesDeps`](#contentroutesdeps)).
+`navFilter` receives and returns (see [`ContentRoutesOptions`](#contentroutesoptions)).
 
 ### `ResolvedNavLayout`
 
@@ -1456,7 +1466,7 @@ A site surfaces its own pending-work counts as quiet pill badges on the sidebar,
 answer to "what needs my attention right now": an unreviewed signup queue, an unread message
 inbox, whatever a site's own domain tracks. The engine renders the pills; the site computes what
 counts. Stability tier: Unstable API for the `attention` dep itself (grouped with the other
-`ContentRoutesDeps` members), Extension API for the `AttentionItem` shape it returns.
+`ContentRoutesOptions` members), Extension API for the `AttentionItem` shape it returns.
 
 ### `AttentionItem`
 
@@ -1493,8 +1503,8 @@ export async function attention({ editor }) {
 }
 ```
 
-Wire the function above onto [`ContentRoutesDeps.attention`](#contentroutesdeps) (or
-[`CairnAdminDeps.attention`](#cairnadmindeps) on the single-mount facade), which is awaited
+Wire the function above onto [`ContentRoutesOptions.attention`](#contentroutesoptions) (or
+[`CairnAdminOptions.attention`](#cairnadminoptions) on the single-mount facade), which is awaited
 exactly once per request, after nav resolution and `navFilter` have both already run: the site
 computes items per session from its own domain queues, and the engine drops anything the session
 cannot act on before any rendering or summing. An item is dropped when its `count` is
@@ -1605,7 +1615,8 @@ imports the matching `*Data` type to type its `data` prop.
 
 | Name | Stability | Signature | Meaning |
 | --- | --- | --- | --- |
-| `AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }` | The config `createAuthRoutes` takes: the email branding, an optional custom sender, and the optional [config-declared bootstrap owner](#createauthroutes). |
+| <a id="authroutesconfig"></a>`AuthRoutesConfig` | Unstable API | `interface AuthRoutesConfig { branding: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }` | The config `createAuthRoutes` takes: the email branding, an optional custom sender, and the optional [config-declared bootstrap owner](#createauthroutes). |
+| `AuthRoutes` | Unstable API | `type AuthRoutes` | What `createAuthRoutes` returns: the magic-link login, confirm, and logout handlers, shown expanded in [`createAuthRoutes`](#createauthroutes). |
 | `RequestResult` | Unstable API | `type RequestResult = { status: 'sent'; sent: true } \| { status: 'send_error'; sent: false } \| { status: 'throttled'; sent: false }` | The magic-link request outcome `requestAction` resolves: a successful or membership-hiding send, a send error, or a cooldown throttle. A site reads `form.status` (or the legacy `form.sent` boolean) off this. |
 | `AdminActionAudit` | Extension API | `interface AdminActionAudit { action: string; entity: string; entityId?: string \| number; detail?: string }` | One audit-log record an `adminAction`-wrapped handler emits through `ctx.audit`: the imperative verb, the domain entity, its id when the action names one, and a compact detail (never a secret, a token, or a full record). |
 | `AdminActionAuditRecord` | Extension API | `type AdminActionAuditRecord = AdminActionAudit & { editor: string }` | What a site's `auditSink` receives: the `AdminActionAudit` record plus the acting editor's email. |
@@ -1615,8 +1626,8 @@ imports the matching `*Data` type to type its `data` prop.
 | <a id="sectionactionoptions"></a>`SectionActionOptions` | Extension API | `interface SectionActionOptions { action: string; entity: string; target?: string; ownerOnly?: boolean; deniedMessage?: string }` | Per-call-site options for one [`createSectionAction`](#createsectionaction)-wrapped handler: the audit verbs, reused verbatim on every denial, the optional authorization `target` override (defaults to `event.url.pathname`), the `ownerOnly` stack, and an override for the shared 403 copy. |
 | <a id="sectionactioncontext"></a>`SectionActionContext` | Extension API | `type SectionActionContext<Db> = AdminActionContext & { db: NonNullable<Db> }` | What a [`createSectionAction`](#createsectionaction)-wrapped handler receives: `adminAction`'s own context plus the resolved, non-nullable database binding, so no handler re-resolves it. |
 | `AdminActionContext` | Extension API | `interface AdminActionContext { editor: Editor; audit: (record: AdminActionAudit) => void }` | What a wrapped handler receives: the verified editor and the bound `audit` emitter. |
-| `AdminActionDeps` | Extension API | `interface AdminActionDeps { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
-| `AdminActionError` | Extension API | `class AdminActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one case: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authorization refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
+| `AdminActionOptions` | Extension API | `interface AdminActionOptions { isDev?: boolean }` | Injectable dependencies for `adminAction`. `isDev` overrides the build-time dev flag (`esm-env`'s `DEV`) so a test can drive both branches of the required-audit path; every real caller takes the default. |
+| `UnauditedActionError` | Extension API | `class UnauditedActionError extends Error { status: number }` | Thrown by `adminAction` for exactly one meaning: a required-audit violation caught in dev (`esm-env`'s `DEV`), a build-time author signal, never a production refusal. `adminAction`'s own authorization refusals (a missing editor, a CSRF mismatch) throw SvelteKit's own `redirect()`/`error()` instead (see [Refusal channels](#refusal-channels)), so this class carries no production status a site needs to map through `handleError`. |
 | `UploadResult` | Unstable API | `interface UploadResult { reference: string; record: MediaEntry; reused: boolean; mismatch: boolean }` | What `uploadAction` returns on a successful image upload: the `media:` reference the editor inserts, the server-owned manifest record, whether an identical asset was reused, and whether a same-name mismatch was found. |
 | `AdminShellData` | Extension API | `type AdminShellData = { public: true; siteName } \| { public: false; siteName; user: { displayName; email; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname; theme; collapsedNav: string[] \| null; csrf; pendingEntries: Promise<{ concept; id }[] \| null>; attention: Record<string, { count: number; label: string }> }` | The shared admin shell's payload, produced by `shellLoad` and rendered by [`CairnAdminShell`](./components.md#cairnadminshell). A discriminated union: a public (login/auth) path carries only the site name and renders bare; an authed path carries the full admin payload, the site identity, the signed-in editor (`user.role` is the open, site-declared role name, `user.capability` its resolved [`Capability`](./core.md#capability)), the one resolved sidebar `nav` ([`ResolvedNavLayout`](#resolvednavlayout), see [the navLayout seam](#the-navlayout-seam)), the active path, the CSRF token, and streams `pendingEntries` as a deferred promise so the shell never blocks on GitHub. `collapsedNav` is `null` when no nav-collapse cookie exists yet (the shell then seeds from each section's declared `collapsed: true` default) or the decoded cookie set, which wins entirely, even over a declared default, once present. `attention` carries the site's per-session pending-work counts (see [the attention seam](#the-attention-seam)), keyed by the visible nav href they decorate, empty when the site configures no `attention` dep. For a none-capability session, `concepts` is empty and `nav` carries no engine screen anywhere, in `items` or `fallback`; a site's own `navLayout` or `adminNav` entries still render, since `CairnAdminShell` renders exactly what `nav` resolved for that session. |
 | `NavConcept` | Extension API | `interface NavConcept { id: string; label: string }` | A sidebar concept entry, just enough to render the nav without shipping validators to the client. |
@@ -1630,7 +1641,8 @@ imports the matching `*Data` type to type its `data` prop.
 | `HelpData` | Extension API | `interface HelpData { gettingStarted: GettingStarted; reference: MarkdownReferenceRow[]; supportContact? }` | The Help home view's data: the getting-started progress derived from the committed manifest and the open pending branches (degrading to 0 of 3 when GitHub is unreachable), the markdown reference (the component curates by group), and the runtime's support contact, composed to cairn's hosted help when the adapter sets none, and left empty when the adapter sets it to an explicit empty string. |
 | `SettingsData` | Extension API | `interface SettingsData { enabled: boolean; tidyEnabled: boolean; keyConfigured: boolean; keyStatus: TidyKeyProbeResult \| 'missing'; model: string; modelLabel: string; conventions: TidyConventions; saved: boolean; error: string \| null }` | The tidy settings view's data: the truthful two-tier gate (`enabled` is true only when tidy is on, the key is present, and the active probe has not confirmed it invalid), the developer-tier facts (`tidyEnabled`, `keyConfigured`, `keyStatus`, `model`, `modelLabel`), the editor-tier `conventions` the save writes back, and the status flags. |
 | `VocabularyLoadData` | Extension API | `interface VocabularyLoadData { vocabulary: VocabularyEntry[]; usage: Record<string, number>; unlisted: { value: string; count: number }[]; error: string \| null }` | The tag-vocabulary view's data: the committed vocabulary in config order, a per-value cross-branch usage count, and the in-use-but-unlisted seed candidates. The usage overlay is best-effort and degrades to empty on a read failure, keeping the committed vocabulary visible. |
-| <a id="contentroutesdeps"></a>`ContentRoutesDeps` | Unstable API | `interface ContentRoutesDeps { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
+| <a id="contentroutesoptions"></a>`ContentRoutesOptions` | Unstable API | `interface ContentRoutesOptions { tidy?: { client?: (opts: { apiKey: string }) => TidyClient; timeoutMs?: number }; navFilter?: (items: ResolvedLayoutNode[], ctx: { editor: Editor; event: CairnEvent }) => ResolvedLayoutNode[] \| Promise<ResolvedLayoutNode[]>; attention?: (ctx: { editor: Editor; event: CairnEvent }) => AttentionItem[] \| Promise<AttentionItem[]> }` | Injectable dependencies for `createContentRoutes`, grouped into the one bag the tidy action reads (`tidy.client` so a test's tidy action calls a stubbed model, `tidy.timeoutMs` to assert the deadline path), plus `navFilter`, a per-request filter over the site's whole arranged sidebar. `shellLoad` calls it, when configured, on every request, after every built-in gate (engine capability, `ownerOnly`, declarative `roles`) has already applied: `navFilter` receives the resolved `navLayout`'s top-level `items`, sections and loose entries, engine references included, and the signed-in editor, and returns the items to render. `fallback`, the trailing group of engine screens the layout never referenced, never passes through this seam, since it's engine-only and already gated; a site hides one of its own doors with `hidden: true` inside its own `navLayout` instead. A site whose own gating lives outside cairn (a role stored in its own D1, say) uses this to hide a section or an item from an editor who fails that check, rather than teasing a link the route then refuses. The engine awaits an async filter fresh every request and never caches its result; absent `navFilter`, the shell renders exactly the arranged, gated tree. `attention` is the site's per-session pending-work seam (see [the attention seam](#the-attention-seam)): awaited exactly once per request, after nav resolution and `navFilter` have both already run, and never cached by the engine. |
+| `ContentRoutes` | Unstable API | `type ContentRoutes` | What `createContentRoutes` returns: the admin content routes' full load and action vocabulary, shown expanded in [`createContentRoutes`](#createcontentroutes). |
 | `SaveFailure` | Unstable API | `interface SaveFailure { error: string; brokenLinks: string[]; body: string }` | A blocked save or publish: the one-line summary, the cairn tokens that resolve to no entry, and the author's edited markdown for reseeding the editor. |
 | `DeleteRefusal` | Unstable API | `interface DeleteRefusal { error: string; inboundLinks: InboundLink[]; inboundKind?: 'link' \| 'include'; id: string }` | A refused delete: the one-line summary, the entries that still link to (or include) the refused one, and its id so a list marks the right row. `inboundKind` names which gate refused, `'include'` for a blocked fragment delete and `'link'` (the default when absent) otherwise, so the refusal copy names the real blocker. |
 | `RenameFailure` | Unstable API | `interface RenameFailure { error: string }` | A refused rename (bad slug, collision, or pending edits): just the one-line summary. |
@@ -1640,14 +1652,19 @@ imports the matching `*Data` type to type its `data` prop.
 | `MediaAltPropagateFailure` | Unstable API | `interface MediaAltPropagateFailure { error: string }` | A refused media alt-propagation: just the one-line summary. Usage could not be verified across main and every open branch (503), or the bucket is unbound. Alt fill has no typed-slug gate. |
 | `MediaBulkFailure` | Unstable API | `interface MediaBulkFailure { error: string }` | A refused media bulk delete or orphan purge: just the one-line summary. The whole batch failed closed because cross-branch usage could not be verified (503), or media is off / the bucket is unbound. Per-item outcomes ride the returned summary, not this fail. |
 | `ContentFormFailure` | Unstable API | `type ContentFormFailure = Partial<SaveFailure & DeleteRefusal & RenameFailure & MediaDeleteRefusal & MediaUpdateFailure & MediaReplaceFailure & MediaAltPropagateFailure & MediaBulkFailure>` | The shape a route's single `form` export presents to a view component: whichever content action last failed, every field optional, `error` always set on a failure. The media refusals merge in too, so the Media Library's one `form` prop carries a `?/mediaDelete`, `?/mediaUpdate`, `?/mediaReplace`, or `?/mediaAltPropagate` refusal. |
+| `EditorRoutesOptions` | Unstable API | `interface EditorRoutesOptions { roles?: RolesDeclaration }` | Configuration for `createEditorRoutes`: the site's declared role vocabulary; omitted, the routes validate and resolve against the implicit owner/editor pair. |
+| `EditorRoutes` | Unstable API | `type EditorRoutes` | What `createEditorRoutes` returns: the owner-gated editor-management load and actions, shown expanded in [`createEditorRoutes`](#createeditorroutes). |
 | `NavPageOption` | Extension API | `interface NavPageOption { label: string; url: string }` | One page option for the nav editor's URL picker datalist. |
 | `NavLoadData` | Extension API | `interface NavLoadData { menu: { name; label; maxDepth }; tree: NavNode[]; pages: NavPageOption[]; saved; error: string \| null }` | The nav editor's load data: the menu meta, the current tree, the page options, and the status flags. |
-| <a id="cairnadmindeps"></a>`CairnAdminDeps` | Extension API | `interface CairnAdminDeps { auth?: { branding?: AuthBranding; send?: SendMagicLink; bootstrapOwner?: { email: string; displayName: string } }; tidy?: ContentRoutesDeps['tidy']; navFilter?: ContentRoutesDeps['navFilter']; attention?: ContentRoutesDeps['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth.branding` defaults from the runtime's `siteName` and `sender`; `auth.send` is the same seam the underlying auth factory takes; `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesDeps` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
+| `NavRoutes` | Unstable API | `type NavRoutes` | What `createNavRoutes` returns: the nav editor's load and save functions, shown expanded in [`createNavRoutes`](#createnavroutes). |
+| <a id="cairnadminoptions"></a>`CairnAdminOptions` | Extension API | `interface CairnAdminOptions { auth?: Partial<AuthRoutesConfig>; tidy?: ContentRoutesOptions['tidy']; navFilter?: ContentRoutesOptions['navFilter']; attention?: ContentRoutesOptions['attention'] }` | Injectable dependencies for `createCairnAdmin`, grouped into the bags a site actually overrides. `auth` is [`AuthRoutesConfig`](#authroutesconfig) made fully optional, so it references that shape once instead of re-declaring it; `auth.branding` defaults from the runtime's `siteName` and `sender` when omitted, `auth.send` is the same seam the underlying auth factory takes, and `auth.bootstrapOwner` is the [config-declared bootstrap owner](#createauthroutes). `tidy`, `navFilter`, and `attention` all forward verbatim to the wrapped content routes: `tidy` is what the tidy action reads, `navFilter` is the per-request arranged-nav filter `shellLoad` calls, and `attention` is the per-session pending-work seam (see `ContentRoutesOptions` below and [the attention seam](#the-attention-seam)), so a site built on this single-mount facade reaches the same seams a site calling `createContentRoutes` directly gets. `roles` and `access`, the declared role vocabulary and access map, are not deps here: they live on the adapter (`CairnAdapter.roles`, `CairnAdapter.access`) and reach `createCairnAdmin` through the composed `runtime.roles`/`runtime.access` instead. Each handler resolves its content backend from `event.locals.cairnBackend`, so a dev or test backend rides locals rather than a dep. |
+| `CairnAdminRoutes` | Extension API | `type CairnAdminRoutes` | What `createCairnAdmin` returns: the one `load`, the full `actions` vocabulary, and `shellLoad`, shown expanded in [`createCairnAdmin`](#createcairnadmin). |
 | `AdminData` | Extension API | `type AdminData = { view: 'login' \| 'confirm' \| 'list' \| 'edit' \| 'editors' \| 'nav' \| 'media' \| 'settings' \| 'vocabulary' \| 'help' \| 'welcome'; page }` | One admin view's data, discriminated on `view` for the admin page component's switch. Each member carries only its view's own `page` (`ListData`, `EditData`, `MediaLibraryData`, `NavLoadData`, `VocabularyLoadData` for the `vocabulary` view, `WelcomeData` for the `welcome` view, the auth page data, or the editor list); the shared chrome rides the separate shell load (`AdminShellData`), not this per-view load. |
 | `WelcomeData` | Extension API | `interface WelcomeData { displayName: string; siteName: string }` | The `'welcome'` view's data: the calm, minimal admin-root landing a none-capability role with no declared `home` gets. [`CairnAdmin`](./components.md#cairnadmin) switches it to a bare internal view inside the shell, so any site-granted nav stays visible. |
 | `HealthData` | Extension API | `interface HealthData { ok: boolean; checks: { githubAppSigning: { ok: boolean; detail? } } }` | The `/healthz` payload: the overall status and the signing self-test result. |
 | `CookieJar` | Extension API | `interface CookieJar { get; set; delete }` | The cookie accessor the auth helpers use, matching SvelteKit's `cookies`. |
 | `HandleInput` | Extension API | `interface HandleInput { event: CairnEvent; resolve(event): Promise<Response> \| Response }` | The argument the `createAuthGuard` handle receives, matching SvelteKit's `Handle` input; `event` is [`CairnEvent`](#the-event-shape). |
+| `AuthGuardOptions` | Scaffold API | `interface AuthGuardOptions { roles?: RolesDeclaration; access?: AccessMap }` | Configuration for `createAuthGuard`: the site's declared role vocabulary and access map, each omitted defaulting to today's zero-config behavior (see [`createAuthGuard`](#createauthguard)). |
 | <a id="platformcontext"></a>`PlatformContext` | Extension API | `interface PlatformContext<Env> { env?: Env }` | The Cloudflare platform wrapper an event carries. The engine reads only `env`; a site's own `App.Platform` type is free to carry other members (`ctx`, and so on) alongside it, since a real SvelteKit `RequestEvent` has more than this structural subset and still satisfies it. |
 | <a id="cairnenv"></a>`CairnEnv` | Extension API | `interface CairnEnv { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string \| boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }` | The Worker bindings and vars the whole engine reads, all optional: the D1 session store, the canonical confirmation-link origin, the `CAIRN_DEV_BACKEND` tripwire flag the guard reads, the Email Sending binding, and the GitHub App's private-key secret. One shape serves every factory that needs platform bindings, rather than a per-layer split; every member is optional, since a test or a partial handler builds one piece at a time. A site's `app.d.ts` names {@link CairnPlatformBindings} instead, a recommended convenience preset that makes the members every site needs compile-checked (not a requirement: see that type's own row). |
 | `EmailSender` | Extension API | `interface EmailSender { send(message: MagicLinkMessage): Promise<unknown> }` | The email-sending seam `CairnEnv['EMAIL']` and `CairnPlatformBindings['EMAIL']` both reference. `Promise<unknown>`, not `Promise<void>`, so a Cloudflare Email Sending binding's `SendEmail.send` (`Promise<EmailSendResult>`) satisfies it structurally with no cast. |

@@ -131,7 +131,7 @@ The engine ships no signup flow, on purpose: cairn's allowlist is a roster you c
 can't add themselves; the first owner row gets in one of two ways.
 
 The config-declared bootstrap owner needs no D1 access at all: name yourself on
-`CairnAdminDeps.auth.bootstrapOwner` (or `AuthRoutesConfig.bootstrapOwner` on a per-route mount),
+`CairnAdminOptions.auth.bootstrapOwner` (or `AuthRoutesConfig.bootstrapOwner` on a per-route mount),
 and your very first magic-link request, once the `editor` table is empty, inserts that row and
 signs you in normally.
 

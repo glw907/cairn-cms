@@ -301,5 +301,5 @@ The [delivery data reference](../reference/delivery-data.md#unlistedroutes) has 
 from. [`resolveReferences`](../reference/delivery-data.md#resolvereferences) documents the
 reference-resolution helper on its own. [Configure rendering](./configure-rendering.md) covers the
 `render` function this guide's routes call. The [media reference](../reference/media.md) covers
-`makeMediaResolver` and the `resolveMedia` render option that resolves a `media:` reference to its
+`buildMediaResolver` and the `resolveMedia` render option that resolves a `media:` reference to its
 delivery URL.

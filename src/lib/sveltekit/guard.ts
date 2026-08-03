@@ -40,14 +40,24 @@ function isLocalHost(hostname: string): boolean {
   );
 }
 
+/** Configuration for `createAuthGuard`: the site's declared role vocabulary and access map. */
+export interface AuthGuardOptions {
+  /**
+   * The site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every
+   *  session against the implicit owner/editor pair, so a zero-config site sees no behavior change.
+   */
+  roles?: RolesDeclaration;
+  /**
+   * The site's declared access map (see `defineAccess`); omitted, every engine screen and
+   *  `requireAccess` call keeps today's any-editor-capability behavior.
+   */
+  access?: AccessMap;
+}
+
 /**
- * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses. `opts.roles` is the
- * site's declared role vocabulary (see `defineRoles`); omitted, the guard resolves every session
- * against the implicit owner/editor pair, so a zero-config site sees no behavior change.
- * `opts.access` is the site's declared access map (see `defineAccess`); omitted, every engine
- * screen and `requireAccess` call keeps today's any-editor-capability behavior.
+ * The SvelteKit `Handle` that guards `/admin/**` and hardens admin responses.
  */
-export function createAuthGuard(opts: { roles?: RolesDeclaration; access?: AccessMap } = {}) {
+export function createAuthGuard(opts: AuthGuardOptions = {}) {
   const vocabulary: RolesDeclaration = opts.roles ?? DEFAULT_ROLES;
   const access = opts.access;
   return async function handle({ event, resolve }: HandleInput): Promise<Response> {

@@ -53,10 +53,10 @@ describe('mount contract shape (surface-pruning Task 6)', () => {
     expect(paramType).toBe('CairnRuntime');
   });
 
-  it('CairnAdminDeps regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
-    const { names } = memberNames(SVELTEKIT_DTS, 'CairnAdminDeps');
-    // navFilter forwards to ContentRoutesDeps['navFilter'] alongside tidy, added for the
-    // per-request custom-adminNav filter seam; attention forwards ContentRoutesDeps['attention']
+  it('CairnAdminOptions regroups into auth and tidy bags, with no flat branding/send/anthropic/tidyTimeoutMs', () => {
+    const { names } = memberNames(SVELTEKIT_DTS, 'CairnAdminOptions');
+    // navFilter forwards to ContentRoutesOptions['navFilter'] alongside tidy, added for the
+    // per-request custom-adminNav filter seam; attention forwards ContentRoutesOptions['attention']
     // the same way, added for the per-session pending-work seam (admin access-and-attention pass).
     expect(names).toEqual(['auth', 'tidy', 'navFilter', 'attention']);
   });

@@ -1,7 +1,7 @@
 // Task 11: the tidy Worker action, the first remote model call in the library and the highest blast
 // radius on the server side (untrusted content, the API key). These tests drive tidyAction directly
 // through createContentRoutes against the workerd pool, with the Anthropic client INJECTED so no
-// network call ever happens and no real key is needed. The injection seam is ContentRoutesDeps.tidy.client:
+// network call ever happens and no real key is needed. The injection seam is ContentRoutesOptions.tidy.client:
 // a factory the action calls with the resolved key, returning a structural client whose messages.create
 // the test stubs. The default factory (unset here) builds the real SDK client.
 import { describe, it, expect, vi, afterEach } from 'vitest';

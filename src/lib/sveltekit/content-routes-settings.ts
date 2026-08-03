@@ -121,8 +121,13 @@ function tidyModelLabel(model: string): string {
  *  unrecognized key), not an editor mistake, and the tidy and vocabulary screens render no `form` prop
  *  over a plain, non-enhanced form, so a `fail(400)` would re-render with no visible error; the
  *  redirect carries the message through each screen's own `?error=` validation idiom instead. Any
- *  other error propagates unchanged. `scope` names the calling screen, so the shared
- *  `config.invalid` record distinguishes this redirect path from the two loads' own degrade path.
+ *  other error propagates unchanged. `scope` names the calling screen (`'settings'` or
+ *  `'vocabulary'`), which is enough on its own for the settings caller, since nothing else in this
+ *  module emits `config.invalid` with `scope: 'settings'`. It is not enough for the vocabulary
+ *  caller: vocabularyLoad's own degrade-path emit also carries `scope: 'vocabulary'` with the same
+ *  `conditionId`, so the record alone cannot tell this redirect path from that load's degrade path;
+ *  only the reference doc's prose (a load degrades, a save redirects) does. See
+ *  docs/reference/log-events.md's `config.invalid` row, which documents this collision directly.
  */
 function parseSiteConfigOrRedirect(raw: string, errorPath: string, scope: 'settings' | 'vocabulary'): SiteConfig {
   try {

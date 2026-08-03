@@ -187,13 +187,16 @@ export function createSectionAction<Env, Db>(config: SectionActionConfig<Env, Db
       // adminAction's own declared event type is pinned to CairnEnv; it never reads
       // event.platform, so relabeling to this factory's own Env here is a type-level
       // correction, never a runtime behavior change (the underlying object is exactly what
-      // this wrapper's caller passed in). A direct assertion suffices: TypeScript's
-      // comparability check for an `as` cast treats the unconstrained `Env` permissively
-      // regardless of which concrete env it is relabeled from, so no `unknown` bridge is
-      // needed here (the R5 env-story ruling's env-genericity tripwire proved the
-      // EMAIL-return-type incompatibility this used to work around no longer exists; this
-      // relabeling cast is a separate, still-necessary one, for the unrelated reason that
-      // `Env` is a fully unconstrained generic type parameter).
+      // this wrapper's caller passed in). A direct `as` assertion suffices, with no `unknown`
+      // bridge: TypeScript's comparability check for an `as` cast treats the unconstrained
+      // `Env` permissively regardless of which concrete env it is relabeled from. The pre-C2
+      // code carried an `as unknown as` double hop here, on the stated grounds that AuthEnv and
+      // Env shared no property names and would trip TypeScript's weak-type check; that reasoning
+      // did not hold up on re-verification (dropping the `unknown` bridge still compiles clean
+      // under the renamed CairnEnv), so the bridge came out as unneeded ceremony, not because R5's
+      // EmailSender/CairnPlatformBindings fix touched this cast. The cast itself stays: removing
+      // it entirely reproduces a real TS2345 (`Env` is a fully unconstrained generic type
+      // parameter, so `CairnEnv` is not assignable to it in either direction).
       const siteEvent = event as CairnEvent<Env>;
       const path = siteEvent.url.pathname;
       // event.route.id, never url.pathname: on a catch-all route the pathname is

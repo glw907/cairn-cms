@@ -65,6 +65,12 @@ each links to its full entry under Changed for the reasoning and the exact old a
    on a kebab-case media upload `reason` or on `github.unreachable`'s `scope: 'layout'` (which
    never fired) to the corrected snake_case value. See [Log events](docs/reference/log-events.md).
    None of this breaks at compile time; these are runtime values, not exported types.
+7. **`requireAccess`'s default target.** Rekey any access map behind a
+   [`requireAccess`](docs/reference/sveltekit.md#requireaccess) call on a parameterized or
+   catch-all admin route from the concrete request path to the bracket-form route id
+   (`/admin/posts/[id]`), the same rekey step 5 already covers for `createSectionAction`; a map
+   still keyed by the concrete path now fails closed and refuses every session, including owner. A
+   site with no parameterized or catch-all route behind `requireAccess` sees no change.
 
 Two more steps, neither gated by a compiler: a call to `formatCivilDate` that relied on its old
 `'Not yet'` default for a missing date now renders an empty string unless you pass
@@ -342,6 +348,23 @@ removal, nothing this list needs to carry.
   [SvelteKit](docs/reference/sveltekit.md#createsectionaction). **Consumers must:** for any
   parameterized or catch-all route behind `createSectionAction`, rekey the site's access map from
   the concrete path to the bracket-form route id, or the section silently refuses every session.
+
+- `requireAccess`'s own `target` parameter now defaults the same way (pass C2b, the
+  refusal-channel convergence): `event.route.id`, never `event.url.pathname`, closing the
+  asymmetry the C2 breaking-window post-mortem flagged between the load-side helper and
+  `createSectionAction`'s already-corrected default. The shared derivation
+  (`targetFromRouteId`, internal to the engine) moves out of `section-action.ts` into
+  `auth/access.ts`, next to `canReach` and `hasAccessRule`, so both call sites import one copy
+  rather than keeping a second in sync by hand. Behavior is otherwise identical to
+  `createSectionAction`'s own R9 change: route-group segments drop
+  (`/admin/(app)/roster` reads as `/admin/roster`), a parameterized route id resolves verbatim
+  (`/admin/posts/[id]`), and a null `route.id` falls back to a fixed constant that matches no
+  access-map key, never to the request path. See
+  [`requireAccess`](docs/reference/sveltekit.md#requireaccess). **Consumers must:** for any
+  `requireAccess`-guarded parameterized or catch-all route, rekey the site's access map from the
+  concrete request path to the bracket-form route id, or the helper fails closed and refuses
+  every session, including owner. A static route's id and path are the same string, so a site
+  with no parameterized or catch-all `requireAccess` route sees no change.
 
 - The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, past-tense for an
   occurrence or a state adjective for a detected condition) and every `reason`/`scope` value goes

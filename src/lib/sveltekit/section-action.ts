@@ -22,7 +22,7 @@
 // than a convention five separate branches each have to keep.
 import { fail, isHttpError, isRedirect } from '@sveltejs/kit';
 import { adminAction } from './admin-action.js';
-import { canReach, hasAccessRule } from '../auth/access.js';
+import { canReach, hasAccessRule, targetFromRouteId } from '../auth/access.js';
 import { log } from '../log/index.js';
 import type { AdminActionContext } from './admin-action.js';
 import type { CairnEvent } from './types.js';
@@ -93,32 +93,6 @@ export type SectionActionContext<Db> = Omit<AdminActionContext, 'audit'> & {
 
 const DENIED_MESSAGE = 'You do not have access to this action.';
 const UNAVAILABLE_MESSAGE = 'This section is not available.';
-// Guaranteed to equal no real route id or pathname (both always start with `/`), so a null
-// `event.route.id` fails the authorization check closed instead of falling back to the
-// attacker-chosen `url.pathname` R9 removes: an access map never declares a rule for this key,
-// so `hasAccessRule` always refuses it.
-const UNRESOLVED_ROUTE_TARGET = '(unresolved route)';
-// One whole route-group segment: a path segment that opens with `(` and closes with `)` right
-// before the next separator or the end. Anchored on both boundaries so a segment that merely
-// contains parentheses (`/(a)b`) is left alone.
-const ROUTE_GROUP_SEGMENT = /\/\([^/]+\)(?=\/|$)/g;
-
-/**
- * Derive the authorization target from a route id: SvelteKit's route-group segments stripped, so
- * the target matches the URL shape an access map is keyed by. A group is organizational only and
- * never appears in a URL, so `/admin/(app)/roster` and `/admin/roster` are the same door, while
- * `hasAccessRule`'s path-segment-prefix matching would refuse the group form against a map keyed
- * `/admin/roster` and fail-close every session, owner included. The group name comes from the
- * site's own directory layout, never from the request, so stripping it reintroduces nothing
- * attacker-chosen; every surviving segment, a `[id]` parameter included, stays the compile-time
- * literal the route id carries. A null id, and an id that is nothing but groups, both resolve to
- * the fixed non-matching sentinel rather than the request path or an empty string.
- */
-function targetFromRouteId(routeId: string | null): string {
-  if (routeId === null) return UNRESOLVED_ROUTE_TARGET;
-  const stripped = routeId.replace(ROUTE_GROUP_SEGMENT, '');
-  return stripped === '' ? UNRESOLVED_ROUTE_TARGET : stripped;
-}
 
 /**
  * Build a section's form-action wrapper. The returned function takes `(handler, opts)` per call

@@ -342,6 +342,19 @@ with no parameterized or catch-all section behind `createSectionAction` needs no
 groups need no change either: the derived target drops group segments, so `/admin/(app)/roster`
 keeps matching a map keyed `/admin/roster`.
 
+`requireAccess`'s own `target` parameter now defaults the same way: `event.route.id`, never
+`event.url.pathname`. This closes the asymmetry between the two halves of the same authorization
+story that the C2 breaking-window post-mortem flagged. `createSectionAction` already made this
+change in the preceding entry, and `requireAccess` had not. The internal derivation the two share
+moves out of `section-action.ts` into `auth/access.ts`, invisible from a site. See
+[`requireAccess`](../reference/sveltekit.md#requireaccess).
+
+**Consumers must:** for any `requireAccess`-guarded parameterized or catch-all route, rekey the
+site's access map from the concrete request path to the bracket-form route id, the same rekey
+step described for `createSectionAction` in the preceding entry, or the helper fails closed and
+refuses every session, including owner. A static route's id and path are the same string, so a
+site with no parameterized or catch-all `requireAccess` route needs no change.
+
 The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, a past-tense verb
 phrase for an occurrence or a state adjective for a detected condition) and every `reason`/`scope`
 value goes snake_case. Six events rename to fit: `admin.audit.sink_failed` to

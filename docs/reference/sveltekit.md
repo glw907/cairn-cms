@@ -284,10 +284,17 @@ declare function requireAccess(event: CairnEvent<CairnEnv>, target?: string): Ed
 The one-line authorization story for a site's own custom route: the session the guard already
 resolved, checked against the site's declared [access map](./core.md#access-map) (attached to
 `locals.cairnAccess` by [`createAuthGuard`](#createauthguard)), or a 403. `target` defaults to
-`event.url.pathname`, so the common call, `const editor = requireAccess(event);`, is the whole
-authorization story for a route that opts into the map. Every denial, mapped or unmatched, emits
-`auth.access.denied` (see [log events](./log-events.md)) with the editor's email, role, and the
-resolved target.
+`event.route.id`, never `event.url.pathname`: on a catch-all route the request path is
+attacker-chosen while the route id is not, the same reasoning
+[`createSectionAction`](#createsectionaction)'s `SectionActionOptions.target` follows, so a
+route's load and its own POST action agree on what they are checking. The derived default drops
+route-group segments (`/admin/(app)/roster` reads as `/admin/roster`), so a map stays keyed by
+URL shape, and resolves a parameterized route id verbatim (`/admin/posts/[id]`), so a map keyed by
+its prefix still matches; a declared `target` is used exactly as given, never normalized. So the
+common call, `const editor = requireAccess(event);`, is still the whole authorization story for a
+route that opts into the map. Every denial, mapped or unmatched, emits `auth.access.denied` (see
+[log events](./log-events.md)) with the editor's email, role, and the resolved (normalized)
+target.
 
 The unmatched case, the map has no rule at all for `target`, refuses every session with a 403,
 owner included: the helper's contract is "this route opted into the map and the map has no

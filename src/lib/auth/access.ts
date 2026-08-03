@@ -6,7 +6,9 @@
 // table, which only composition (createCairnAdmin) has, so that check lands with the composition
 // task. hasAccessRule backs requireAccess's fail-closed contract: a target the map has no key for
 // route-gates as a misconfiguration, distinct from canReach's own unmapped-target reading used for
-// nav visibility.
+// nav visibility. targetFromRouteId is the shared default-target derivation both authorization call
+// sites use, requireAccess (guard.ts) and createSectionAction (section-action.ts), so the load and
+// action halves of one route's authorization story never disagree on what they are checking.
 import type { RolesDeclaration } from './roles.js';
 import type { Editor } from './types.js';
 
@@ -142,4 +144,38 @@ export function hasAccessRule(access: AccessMap | undefined, target: string): bo
     return matchHrefKey(access, target) !== undefined;
   }
   return Object.hasOwn(access, target);
+}
+
+// Guaranteed to equal no real route id or pathname (both always start with `/`), so a null
+// `event.route.id` fails the authorization check closed instead of falling back to the
+// attacker-chosen `url.pathname` R9 removed: an access map never declares a rule for this key,
+// so `hasAccessRule` always refuses it.
+const UNRESOLVED_ROUTE_TARGET = '(unresolved route)';
+// One whole route-group segment: a path segment that opens with `(` and closes with `)` right
+// before the next separator or the end. Anchored on both boundaries so a segment that merely
+// contains parentheses (`/(a)b`) is left alone.
+const ROUTE_GROUP_SEGMENT = /\/\([^/]+\)(?=\/|$)/g;
+
+/**
+ * Derive the authorization target from a route id: SvelteKit's route-group segments stripped, so
+ * the target matches the URL shape an access map is keyed by. A group is organizational only and
+ * never appears in a URL, so `/admin/(app)/roster` and `/admin/roster` are the same door, while
+ * `hasAccessRule`'s path-segment-prefix matching would refuse the group form against a map keyed
+ * `/admin/roster` and fail-close every session, owner included. The group name comes from the
+ * site's own directory layout, never from the request, so stripping it reintroduces nothing
+ * attacker-chosen; every surviving segment, a `[id]` parameter included, stays the compile-time
+ * literal the route id carries. A null id, and an id that is nothing but groups, both resolve to
+ * the fixed non-matching sentinel rather than the request path or an empty string.
+ *
+ * Shared by `createSectionAction` (section-action.ts) and `requireAccess` (guard.ts), the two
+ * halves of one authorization story (C2 R9 and C2b): both derive their default target this way,
+ * never from `event.url.pathname`, so a load and its own POST agree on what a session is allowed
+ * to reach. It stays internal to the engine, never re-exported from a package subpath: a site
+ * declares its own target through `SectionActionOptions.target` or `requireAccess`'s own
+ * parameter, never by importing this helper directly.
+ */
+export function targetFromRouteId(routeId: string | null): string {
+  if (routeId === null) return UNRESOLVED_ROUTE_TARGET;
+  const stripped = routeId.replace(ROUTE_GROUP_SEGMENT, '');
+  return stripped === '' ? UNRESOLVED_ROUTE_TARGET : stripped;
 }

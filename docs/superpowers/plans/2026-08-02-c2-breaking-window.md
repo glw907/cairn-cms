@@ -61,6 +61,28 @@ the pass bursts, with no further ask.** Task 12 is the one behavioral
 read of the admin's failure rendering), and everything before it is mechanically verifiable by
 the type gates.
 
+### The cut is TAKEN (Geoff, 2026-08-02, mid-execution)
+
+Execution proposed the cut after Task 4 and Geoff took it, so this is no longer a contingency:
+
+- **C2 carries Tasks 1-11, 13, and 14.**
+- **C2b carries Task 12** (the refusal channel, R10) on its own worktree off `main`, immediately
+  after C2 merges, in the same unpublished window.
+- Task 14 assembles C2's `Consumers must:` list for Tasks 1-11 and 13; C2b appends its own at its
+  close, so the window still presents the consumer one combined batch.
+
+The evidence behind the call was not a task split (there were none) but the cost trajectory and
+the accretion rate: Tasks 1-4, the mechanically-verifiable ones, cost roughly 1.4M subagent
+tokens, and every remaining heavyweight (8, 9, 11, 12, 14) sits in the back half. Two pieces of
+discovered work were absorbed at dispatch time in those four tasks (removing `CairnRolesRegister`
+once `Role`'s deletion orphaned it, and repairing `examples/showcase/e2e/access-map.spec.ts`,
+which sits outside `tsconfig.json`'s include so no gate sees it). Both were routed to the task
+that already owned the file rather than becoming tasks of their own.
+
+An earlier cut was considered and rejected: Tasks 5 through 11 are one coherent grammar sweep,
+and splitting inside them would leave the public surface half-renamed across two merges, which
+costs a consumer more than either whole.
+
 ---
 
 ## The rulings

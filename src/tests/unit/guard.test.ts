@@ -6,25 +6,16 @@ import {
   requireAccess,
   isPublicAdminPath,
 } from '../../lib/sveltekit/guard.js';
-import type { Role } from '../../lib/auth/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 import type { CairnEvent } from '../../lib/sveltekit/types.js';
 
 const owner = { email: 'o@x.test', displayName: 'O', role: 'owner' as const, capability: 'owner' as const };
 const editor = { email: 'e@x.test', displayName: 'E', role: 'editor' as const, capability: 'editor' as const };
-// Role narrows to 'owner' | 'editor' in this unaugmented test file; a site that declares a wider
-// vocabulary widens it via the CairnRolesRegister augmentation (see auth-roles.test.ts). The
-// double cast stands in for that augmentation so this fixture can name an out-of-vocabulary role,
-// the shape the guard produces (capability already resolved to 'none') for a row outside a site's
+// Role names are open (`string`), so a fixture can name any out-of-vocabulary role directly, the
+// shape the guard produces (capability already resolved to 'none') for a row outside a site's
 // declared vocabulary.
-const unknownRole = { email: 'u@x.test', displayName: 'U', role: 'club-admin' as unknown as Role, capability: 'none' as const };
-const noneCapability = { email: 'n@x.test', displayName: 'N', role: 'instructor' as unknown as Role, capability: 'none' as const };
-
-// Same double-cast stand-in as auth-access.test.ts: this file names roles outside the
-// unaugmented owner/editor vocabulary, so an AccessMap value needs the same helper.
-function r(...names: string[]): Role[] {
-  return names as unknown as Role[];
-}
+const unknownRole = { email: 'u@x.test', displayName: 'U', role: 'club-admin', capability: 'none' as const };
+const noneCapability = { email: 'n@x.test', displayName: 'N', role: 'instructor', capability: 'none' as const };
 
 /** Build a full CairnEvent from just the locals under test, so each fixture states only what
  *  makes it different; `url` defaults to a plausible admin path, overridden where a test's own
@@ -95,9 +86,9 @@ describe('requireSession admits any authenticated identity, including none capab
 });
 
 describe('requireAccess', () => {
-  const publisher = { email: 'p@x.test', displayName: 'P', role: 'publisher' as unknown as Role, capability: 'editor' as const };
-  const webmaster = { email: 'w@x.test', displayName: 'W', role: 'webmaster' as unknown as Role, capability: 'editor' as const };
-  const access: AccessMap = { '/admin/money': r('publisher') };
+  const publisher = { email: 'p@x.test', displayName: 'P', role: 'publisher', capability: 'editor' as const };
+  const webmaster = { email: 'w@x.test', displayName: 'W', role: 'webmaster', capability: 'editor' as const };
+  const access: AccessMap = { '/admin/money': ['publisher'] };
 
   it('redirects when there is no session', () => {
     expect(() => requireAccess(event({ cairnEditor: null }, new URL('https://x.test/admin/money')))).toThrow();

@@ -280,9 +280,8 @@ export const cairn = defineAdapter({
 
 Each name on the left maps onto one of the three levels on the right. `instructor` here lands on
 its own screen after sign-in and never touches content at all. [Roles](../reference/core.md#roles)
-in the core reference covers the full validation rules, the typed `CairnRolesRegister`
-augmentation, and the helpers a custom admin route calls to gate itself against the same
-vocabulary.
+in the core reference covers the full validation rules and the helpers a custom admin route calls
+to gate itself against the same vocabulary.
 
 ## What's next
 

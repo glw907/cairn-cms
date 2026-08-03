@@ -39,7 +39,7 @@ import { resolveNavLayout, type ResolvedNavLayout, type ResolvedLayoutChild } fr
 import { resolvePublishActions, type PublishActionLink } from './publish-actions.js';
 import { roleHome, type Capability } from '../auth/roles.js';
 import type { CairnRuntime, ConceptDescriptor, NamedField, PreviewConfig, ResolvedPreview } from '../content/types.js';
-import type { Editor, Role } from '../auth/types.js';
+import type { Editor } from '../auth/types.js';
 import type { ContentRoutesContext, AttentionItem } from './content-routes-context.js';
 import type { CairnEvent } from './types.js';
 
@@ -68,7 +68,7 @@ export type AdminShellData =
   | {
       public: false;
       siteName: string;
-      user: { displayName: string; email: string; role: Role; capability: Capability };
+      user: { displayName: string; email: string; role: string; capability: Capability };
       concepts: NavConcept[];
       /**
        * The site's whole arranged, filtered sidebar for this request: a declared `navLayout`

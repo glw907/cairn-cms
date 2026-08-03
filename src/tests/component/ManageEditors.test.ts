@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import ManageEditors from '../../lib/components/ManageEditors.svelte';
 import type { Capability } from '../../lib/auth/roles.js';
-import type { Role } from '../../lib/auth/types.js';
 
 const DEFAULT_VOCABULARY: { role: string; capability: Capability }[] = [
   { role: 'owner', capability: 'owner' },
@@ -113,7 +112,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
           {
             email: 'ted@t',
             displayName: 'Ted Instructor',
-            role: 'instructor' as unknown as Role,
+            role: 'instructor',
             capability: 'none' as const,
           },
         ],
@@ -139,7 +138,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
           {
             email: 'ted@t',
             displayName: 'Ted Instructor',
-            role: 'club-admin' as unknown as Role,
+            role: 'club-admin',
             capability: 'editor' as const,
           },
         ],
@@ -180,7 +179,7 @@ describe('ManageEditors vocabulary-driven role control', () => {
           {
             email: 'pres@t',
             displayName: 'President Two',
-            role: 'president' as unknown as Role,
+            role: 'president',
             capability: 'owner' as const,
           },
         ],

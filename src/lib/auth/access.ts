@@ -8,14 +8,14 @@
 // route-gates as a misconfiguration, distinct from canReach's own unmapped-target reading used for
 // nav visibility.
 import type { RolesDeclaration } from './roles.js';
-import type { Editor, Role } from './types.js';
+import type { Editor } from './types.js';
 
 /**
  * A site's whole access declaration: a target (an engine screen id, or an `/admin`-prefixed route
  * path) to the role names admitted to it. A target absent from the map keeps today's behavior (any
  * editor-capability session reaches it); see {@link canReach}.
  */
-export type AccessMap = Record<string, Role[]>;
+export type AccessMap = Record<string, string[]>;
 
 /** True when a key or target names a route path rather than a screen id. */
 function isHrefKey(key: string): boolean {

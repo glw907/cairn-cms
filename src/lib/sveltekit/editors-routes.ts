@@ -18,7 +18,7 @@ import {
 } from '../auth/store.js';
 import { resolveCapability, ownerLevelRoles, DEFAULT_ROLES } from '../auth/roles.js';
 import type { Capability, RolesDeclaration } from '../auth/roles.js';
-import type { Editor, Role } from '../auth/types.js';
+import type { Editor } from '../auth/types.js';
 import type { CairnEvent } from './types.js';
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -99,9 +99,9 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
     if (await findEditor(db, email)) {
       return fail(400, { error: 'That editor already exists' } satisfies EditorActionFailure);
     }
-    // Validated against the vocabulary above; Role stays the engine's typed read-side, so the
-    // store's stable signature keeps a guarded cast here rather than widening to a bare string.
-    await insertEditor(db, email, name, role as Role, Date.now());
+    // Validated against the vocabulary above; role names are open (`string`), so the store's
+    // signature takes it directly, with no cast.
+    await insertEditor(db, email, name, role, Date.now());
     log.info('editor.added', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };
   }
@@ -139,8 +139,8 @@ export function createEditorRoutes(opts: { roles?: RolesDeclaration } = {}) {
         return fail(400, { error: 'You cannot demote the last owner' } satisfies EditorActionFailure);
       }
     } else {
-      // Validated against the vocabulary above; see the same guarded-cast note in addEditorAction.
-      await setEditorRole(db, email, role as Role);
+      // Validated against the vocabulary above; see the same open-role note in addEditorAction.
+      await setEditorRole(db, email, role);
     }
     log.info('editor.role_changed', { owner, target: email, role, capability: resolveCapability(vocabulary, role) });
     return { ok: true as const };

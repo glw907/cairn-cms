@@ -108,7 +108,6 @@ const KEPT = [
   'verifyReferences',
   'CommitConflictError',
   'SiteConfigError',
-  'Role',
   'Editor',
   'CairnEnv',
   'AuthBranding',

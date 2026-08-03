@@ -53,9 +53,9 @@ engine-owned; `{ screen: 'settings', label: 'Site settings' }` places the built-
 under a relabel, so it never collides with a same-named screen of your own. `roles: ['owner']`
 renders the Club section only for that role; swap it for whatever your own vocabulary names a
 club-admin audience once you've declared one with `defineRoles` (see [Give a role its own admin
-area](./give-a-role-its-own-admin-area.md)). `roles` narrows against your declared names the same
-way, through the `CairnRolesRegister` augmentation. Wire the tree onto the adapter next to your
-other editor-experience knobs:
+area](./give-a-role-its-own-admin-area.md)). `roles` takes any role name your vocabulary declares,
+since role names type as plain strings. Wire the tree onto the adapter next to your other
+editor-experience knobs:
 
 <!-- snippet-check-skip: elides the adapter's other required groups (shown in full in core.md's worked example) to focus on the editor group -->
 ```ts

@@ -13,7 +13,6 @@ import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
 import type { NavLayout } from '../../lib/sveltekit/admin-nav.js';
-import type { AccessMap } from '../../lib/auth/access.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
@@ -40,10 +39,8 @@ const ROLES = defineRoles({
 /** A single top-level engine door (posts), a roles-gated Club section (owner and club-admin
  *  only), and an ungated Marker section the site's own navFilter drops for every session. The
  *  Club section proves the declarative `roles` gate; Marker proves navFilter runs as its own
- *  stage, after every built-in gate, for every role alike. 'club-admin' is not in the default
- *  owner/editor Role union; a real site's own augmented vocabulary is what makes a name like
- *  this assignable, so the cast exercises the same custom-role shape the validate suite casts. */
-const NAV_LAYOUT = [
+ *  stage, after every built-in gate, for every role alike. */
+const NAV_LAYOUT: NavLayout = [
   { screen: 'posts' },
   {
     label: 'Club',
@@ -54,7 +51,7 @@ const NAV_LAYOUT = [
     label: 'Marker',
     children: [{ label: 'Marker item', icon: 'inbox', href: '/admin/marker' }],
   },
-] as unknown as NavLayout;
+];
 
 function runtime(): CairnRuntime {
   return {
@@ -155,7 +152,7 @@ const ACCESS_ROLES = defineRoles({
 const ACCESS_MAP = defineAccess(ACCESS_ROLES, {
   pages: ['webmaster'],
   '/admin/money': ['webmaster'],
-} as unknown as AccessMap);
+});
 
 function accessRuntime(): CairnRuntime {
   return {

@@ -13,7 +13,6 @@ import { defineAccess } from '../../lib/auth/access.js';
 import { githubApp } from '../../lib/index.js';
 import { fieldset } from '../../lib/content/fieldset.js';
 import type { CairnRuntime } from '../../lib/content/types.js';
-import type { AccessMap } from '../../lib/auth/access.js';
 
 const REPO = { owner: 'o', repo: 'r', branch: 'main', appId: '1', installationId: '2' };
 
@@ -31,15 +30,13 @@ const ROLES = defineRoles({
 });
 
 // pages is restricted to webmaster; posts carries no rule and keeps today's any-editor behavior;
-// the four fixed screens this pass enforces are all restricted to webmaster too. The double cast
-// mirrors auth-access.test.ts's `r()` helper: 'webmaster' is outside the unaugmented owner/editor
-// Role union this test file sees, the same shape a real site's CairnRolesRegister widens away.
+// the four fixed screens this pass enforces are all restricted to webmaster too.
 const ACCESS = defineAccess(ROLES, {
   pages: ['webmaster'],
   media: ['webmaster'],
   vocabulary: ['webmaster'],
   settings: ['webmaster'],
-} as unknown as AccessMap);
+});
 
 function concept(id: string) {
   return {

@@ -36,29 +36,6 @@ D1](./configure-auth-and-d1.md#provision-the-d1-database) for copying it out of
 `node_modules/@glw907/cairn-cms/migrations/` and the `wrangler d1 migrations apply` step; a site
 already on a larger vocabulary has this applied already.
 
-## Narrow the `Role` type
-
-Augment `CairnRolesRegister` once in your `app.d.ts` so `locals.cairnEditor.role` narrows to your
-declared names everywhere it's read, custom routes included, instead of staying the unaugmented
-`'owner' | 'editor'`:
-
-```ts
-// src/app.d.ts
-import { roles } from './lib/cairn.config.js';
-
-declare module '@glw907/cairn-cms' {
-  interface CairnRolesRegister {
-    roles: typeof roles;
-  }
-}
-```
-
-[The `CairnRolesRegister` reference](../reference/core.md#roles) covers what this augmentation
-changes and what it doesn't: it's a read-side type only, and it has no effect on which capability a
-role resolves to at runtime. It's also the type a `navLayout` node's `roles` list narrows against
-once you declare one: see [Organize your admin nav](./organize-your-admin-nav.md#declare-the-tree)
-for a role-gated section built on the same vocabulary this guide declares.
-
 ## Mount the screen
 
 A `/admin/classes` route is an ordinary SvelteKit route dropped next to cairn's own admin
@@ -143,8 +120,8 @@ confirm `/admin/classes` still opens, since the preceding load admits owner capa
 
 ## Related reference
 
-[The declared role vocabulary](../reference/core.md#roles) documents `defineRoles`,
-`CairnRolesRegister`, and the capability-resolution helpers this guide used.
+[The declared role vocabulary](../reference/core.md#roles) documents `defineRoles` and the
+capability-resolution helpers this guide used.
 [Restrict admin access by role](./restrict-admin-access.md) covers `defineAccess`,
 `requireAccess`, and the deny-not-hide doctrine this guide's recommended path builds on.
 [`requireSession`](../reference/sveltekit.md#requiresession) and

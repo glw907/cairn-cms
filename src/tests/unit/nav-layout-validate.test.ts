@@ -63,19 +63,16 @@ describe('validateNavLayout: construction throws', () => {
   });
 
   it('rejects a roles name outside the declared vocabulary, on a top-level entry', () => {
-    // 'club-admin' is not in the default owner/editor Role union; a real site's own augmented
-    // vocabulary is what makes a name like this assignable, so the test casts to exercise the
-    // runtime check this task adds, the same way the codebase's own custom-role fixtures do.
-    const layout = [
+    const layout: NavLayout = [
       { label: 'Signups', icon: 'inbox', href: '/admin/signups', roles: ['club-admin'] },
-    ] as unknown as NavLayout;
+    ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
   });
 
   it('rejects a roles name outside the declared vocabulary, on a section', () => {
-    const layout = [
+    const layout: NavLayout = [
       { label: 'Club', roles: ['club-admin'], children: [{ screen: 'editors' }] },
-    ] as unknown as NavLayout;
+    ];
     expect(() => validateNavLayout(layout, ctx())).toThrow(/role "club-admin".*outside the declared vocabulary/);
   });
 

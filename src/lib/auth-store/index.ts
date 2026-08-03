@@ -13,4 +13,3 @@ export {
   demoteOwnerIfNotLast,
 } from '../auth/store.js';
 export type { EditorRow } from '../auth/store.js';
-export type { Role } from '../auth/types.js';

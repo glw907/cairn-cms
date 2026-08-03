@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { resolveNavLayout, type NavLayout } from '../../lib/sveltekit/admin-nav.js';
 import type { ResolvedNavItem, ResolvedLayoutSection } from '../../lib/sveltekit/admin-nav.js';
 import type { Capability } from '../../lib/auth/roles.js';
-import type { Editor, Role } from '../../lib/auth/types.js';
+import type { Editor } from '../../lib/auth/types.js';
 import type { AccessMap } from '../../lib/auth/access.js';
 
 /**
@@ -25,7 +25,7 @@ function opts(
       { id: 'pages', label: 'Pages' },
     ],
     navMenuLabel: 'Navigation',
-    editor: { email: `${role}@test`, displayName: role, role: role as Role, capability } as Editor,
+    editor: { email: `${role}@test`, displayName: role, role, capability } as Editor,
     ...rest,
   };
 }
@@ -249,10 +249,7 @@ describe('resolveNavLayout: empty sections disappear', () => {
 
 // The access-map seam (Task 4): the resolver reads the same canReach authority the guard and the
 // engine routes read, so a declared map narrows nav visibility identically to route enforcement.
-// The maps below carry role names ('webmaster', 'publisher') outside the unaugmented owner/editor
-// Role union this file sees, the same cast auth-access.test.ts and access-map-route-enforcement.test.ts
-// use for a custom vocabulary.
-const PAGES_RESTRICTED = { pages: ['webmaster'] } as unknown as AccessMap;
+const PAGES_RESTRICTED: AccessMap = { pages: ['webmaster'] };
 
 describe('resolveNavLayout: the access map gates a concept door', () => {
   it('drops a mapped-away concept for the excluded role, keeps it for the included role and for owner', () => {

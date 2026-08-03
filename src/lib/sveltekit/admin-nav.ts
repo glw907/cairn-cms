@@ -6,7 +6,7 @@
 import { parseAdminPath } from './admin-dispatch.js';
 import type { ConceptDescriptor } from '../content/types.js';
 import type { Capability } from '../auth/roles.js';
-import type { Editor, Role } from '../auth/types.js';
+import type { Editor } from '../auth/types.js';
 import { canReach, hasAccessRule, type AccessMap } from '../auth/access.js';
 
 /**
@@ -217,7 +217,7 @@ export interface NavLayoutEngineRef {
 /** A site's own nav entry inside a navLayout tree: today's `AdminNavEntry`, plus declarative role visibility. */
 export interface NavLayoutEntry extends AdminNavEntry {
   /** Renders only when the signed-in editor's role is in this list; absent renders for every role. */
-  roles?: Role[];
+  roles?: string[];
 }
 
 /**
@@ -228,7 +228,7 @@ export interface NavLayoutEntry extends AdminNavEntry {
 export interface NavLayoutSection {
   label: string;
   children: (NavLayoutEntry | NavLayoutEngineRef)[];
-  roles?: Role[];
+  roles?: string[];
   /**
    * Whether this group starts collapsed for a visitor with no persisted nav-collapse cookie;
    *  absent (or false) renders open, today's behavior. Once any header is touched, the
@@ -306,7 +306,7 @@ export function validateNavLayout(
     seenEntryHrefs.add(href);
   }
 
-  function checkRoles(roles: Role[] | undefined, where: string): void {
+  function checkRoles(roles: string[] | undefined, where: string): void {
     if (!roles) return;
     for (const name of roles) {
       if (!ctx.roleNames.includes(name)) {
@@ -598,14 +598,11 @@ function resolvedLayoutEntry(entry: NavLayoutEntry): ResolvedNavEntry {
 }
 
 /**
- * Whether a node's declarative `roles` list admits the current request's role. `roles` is typed
- *  against the site's own Register-narrowed `Role` union, while the resolver only ever carries a
- *  plain `string` (the signed-in editor's role name, unnarrowed at this generic layer); `Role`
- *  always extends `string`, so the readonly-array widening below is the one safe hop, not a
- *  blanket escape. Absent `roles` always admits.
+ * Whether a node's declarative `roles` list admits the current request's role. Absent `roles`
+ *  always admits.
  */
-function roleMatches(roles: Role[] | undefined, role: string): boolean {
-  return !roles || (roles as readonly string[]).includes(role);
+function roleMatches(roles: string[] | undefined, role: string): boolean {
+  return !roles || roles.includes(role);
 }
 
 /**

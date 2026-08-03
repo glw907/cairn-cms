@@ -1,6 +1,6 @@
 // Engine entry. Auth landed in Plan 01, the content model and adapter in Plan 02, and the
 // GitHub read-and-commit backend in Plan 03; render and nav follow.
-export type { Role, Editor, EmailRecipient, EmailAttachment, CairnRolesRegister } from './auth/types.js';
+export type { Editor, EmailRecipient, EmailAttachment } from './auth/types.js';
 export type { CairnEnv } from './env.js';
 // Site-declared role vocabulary (extensible-roles): sites map their own role names onto the three
 // engine capability levels. A zero-config site declares nothing and keeps the owner/editor default.

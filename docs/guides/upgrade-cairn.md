@@ -187,6 +187,21 @@ Consumers must: rename every `event.locals.editor`, `event.locals.backend`, and
 custom `App.Locals` augmentation that duplicates the old field names (rather than importing
 `@glw907/cairn-cms/ambient`) needs the same rename.
 
+Every role-*name* position (`Editor.role`, `EditorRow.role`, `insertEditor`'s and
+`setEditorRole`'s `role` parameters, `AccessMap`'s values, and a `navLayout` entry's or
+section's `roles`) widens from the implicit `'owner' | 'editor'` union to a plain `string` (or
+`string[]`): role names are open, since you name your own vocabulary with `defineRoles`, and the
+old literal union stopped being true the moment you declared a role like `webmaster`.
+`Capability` (`'owner' | 'editor' | 'none'`) is unchanged. The `Role` type is removed from the
+root barrel and `/auth-store`, along with the `CairnRolesRegister` registry interface it existed
+solely to narrow. See [Roles](../reference/core.md#roles) and [Auth
+store](../reference/auth-store.md).
+
+Consumers must: replace any imported `Role` type with `string`; if your `app.d.ts` augments
+`interface CairnRolesRegister { roles: typeof roles }`, remove that block, since it no longer
+narrows anything; drop any cast you added to force a custom role name past the old `Role` union
+(an `AccessMap` value, a `navLayout` entry's `roles`, or an `Editor`/`EditorRow` fixture).
+
 ## 0.93.0: an auth-store export, an auth-crypto export, a section-action factory, a first-publish stamp, and a CodeMirror dependency bump (non-breaking)
 
 A new server-only export subpath, `@glw907/cairn-cms/auth-store`, re-exports the D1

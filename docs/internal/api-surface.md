@@ -2,7 +2,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 ## `.`
 
-- `AccessMap`: { [x: string]: ("owner" | "editor")[] }
+- `AccessMap`: { [x: string]: string[] }
 - `AssetConfig`: { bucketBinding: string; publicBase?: string; urlForm?: "slug" | "opaque"; maxUploadBytes?: number; allowedTypes?: string[]; variants?: Record<string, VariantSpec>; transformations?: boolean }
 - `AuthBranding`: { siteName: string; from: string; replyTo?: string }
 - `Backend`: { defaultBranch: string; readFile: (path: string, ref: string) => Promise<string | null>; readEntries: (dir: string, ref: string) => Promise<RepoFile[]>; branchHead: (branch: string) => Promise<string | null>; listBranches: (prefix: string) => Promise<string[]>; commit: (branch: string, changes: FileChange[], author: CommitAuthor, message: string, expectedHead?: string) => Promise<string>; createBranch: (name: string, fromBranch: string) => Promise<void>; deleteBranch: (name: string) => Promise<void> }
@@ -10,7 +10,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `CairnAdapter`: { content: { [x: string]: ConceptConfig<Fieldset<Record<string, FieldDescriptor>>> }; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; email: SenderConfig; rendering: { render: SiteRender; components?: ComponentRegistry; icons?: IconSet; islands?: IslandRegistry }; media?: AssetConfig; editor?: { preview?: PreviewConfig; nav?: NavMenuConfig; supportContact?: string; adminNav?: AdminNavConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig } }
 - `CairnEnv`: { AUTH_DB?: D1Database; PUBLIC_ORIGIN?: string; CAIRN_DEV_BACKEND?: string | boolean; EMAIL?: EmailSender; GITHUB_APP_PRIVATE_KEY_B64?: string }
 - `CairnRef`: { concept: string; id: string }
-- `CairnRolesRegister`: { }
 - `CairnRuntime`: { siteName: string; concepts: ConceptDescriptor[]; roles?: RolesDeclaration; access?: AccessMap; backend: BackendProvider; sender: SenderConfig; supportContact?: string; render: (input: { body: string; concept?: string; frontmatter?: Record<string, unknown>; resolve?: LinkResolve; resolveMedia?: MediaResolve; resolveFragment?: FragmentResolve }) => Promise<string>; manifestPath: string; mediaManifestPath: string; dictionaryPath?: string; resolvedAssets: { enabled: false } | { enabled: true; bucketBinding: string; publicBase: string; urlForm: "slug" | "opaque"; maxUploadBytes: number; allowedTypes: string[]; variants: Record<string, VariantSpec>; transformations: boolean }; registry?: ComponentRegistry; icons?: IconSet; navMenu?: NavMenuConfig; adminNav?: AdminNavConfig; navLayout?: NavLayout; publishActions?: PublishActionsConfig; preview?: PreviewConfig; assets?: AssetConfig; spellcheckDictionary?: string; tidy?: TidyConfig; vocabulary: VocabularyEntry[] }
 - `canReach`: (access: AccessMap | undefined, editor: Editor, target: string) => boolean
 - `Capability`: "owner" | "editor" | "none"
@@ -32,7 +31,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `defineRegistry`: ({ components }: { components: ComponentDef[] }) => ComponentRegistry
 - `defineRoles`: <const R extends RolesDeclaration>(roles: R) => R
 - `DocHeading`: { id: string; text: string; depth: number }
-- `Editor`: { email: string; displayName: string; role: "owner" | "editor"; capability: "owner" | "editor" | "none" }
+- `Editor`: { email: string; displayName: string; role: string; capability: "owner" | "editor" | "none" }
 - `EmailAttachment`: { content: string | ArrayBuffer | ArrayBufferView<ArrayBufferLike>; filename: string; type: string; disposition: "attachment" | "inline" }
 - `EmailRecipient`: string | { email: string; name?: string }
 - `EmailSender`: { send: (message: MagicLinkMessage) => Promise<unknown> }
@@ -65,7 +64,6 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `RendererOptions`: { sanitizeSchema?: ((defaults: Schema) => Schema); unsafeDisableSanitize?: boolean; anchorRel?: string | false; tableScroll?: boolean; remarkPlugins?: PluggableList; rehypePlugins?: PluggableList }
 - `RepoFile`: { id: string; name: string; path: string }
 - `resolveCapability`: (roles: RolesDeclaration | undefined, role: string) => Capability
-- `Role`: "owner" | "editor"
 - `RoleDeclaration`: Capability | { capability: Capability; home?: string }
 - `roleHome`: (roles: RolesDeclaration | undefined, role: string) => string | undefined
 - `RolesDeclaration`: { [x: string]: RoleDeclaration }
@@ -143,13 +141,12 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 
 - `deleteEditor`: (db: D1Database, email: string) => Promise<void>
 - `demoteOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[], newRole: string) => Promise<boolean>
-- `EditorRow`: { email: string; displayName: string; role: "owner" | "editor" }
-- `insertEditor`: (db: D1Database, email: string, displayName: string, role: "owner" | "editor", now: number) => Promise<void>
+- `EditorRow`: { email: string; displayName: string; role: string }
+- `insertEditor`: (db: D1Database, email: string, displayName: string, role: string, now: number) => Promise<void>
 - `insertOwnerIfEmpty`: (db: D1Database, email: string, displayName: string, now: number) => Promise<boolean>
 - `listEditors`: (db: D1Database) => Promise<EditorRow[]>
 - `removeOwnerIfNotLast`: (db: D1Database, email: string, ownerRoles: string[]) => Promise<boolean>
-- `Role`: "owner" | "editor"
-- `setEditorRole`: (db: D1Database, email: string, role: "owner" | "editor") => Promise<void>
+- `setEditorRole`: (db: D1Database, email: string, role: string) => Promise<void>
 
 ## `/cloudflare`
 
@@ -314,7 +311,7 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `AdminNavEntry`: { label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean }
 - `AdminNavIcon`: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"
 - `AdminNavSection`: { label: string; children: AdminNavEntry[] }
-- `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: "owner" | "editor"; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }> }
+- `AdminShellData`: { public: true; siteName: string; theme: "cairn-admin" | "cairn-admin-dark" } | { public: false; siteName: string; user: { displayName: string; email: string; role: string; capability: Capability }; concepts: NavConcept[]; nav: ResolvedNavLayout; pathname: string; theme: "cairn-admin" | "cairn-admin-dark"; collapsedNav: string[] | null; csrf: string; pendingEntries: Promise<{ concept: string; id: string }[] | null>; attention: Record<string, { count: number; label: string }> }
 - `AdvisoryAction`: { label: string; href?: string }
 - `AdvisoryNotice`: { kind: string; severity: "warn"; message: string; actions?: AdvisoryAction[] }
 - `AttentionItem`: { href: string; count: number; label?: string }
@@ -356,8 +353,8 @@ GENERATED — run `npm run check:surface -- --update` to regenerate
 - `NavConcept`: { id: string; label: string }
 - `NavLayout`: (NavLayoutEntry | NavLayoutEngineRef | NavLayoutSection)[]
 - `NavLayoutEngineRef`: { screen: "help" | "settings" | "media" | "vocabulary" | "nav" | "editors" | (string & {}); label?: string; hidden?: true; icon?: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench" }
-- `NavLayoutEntry`: { roles?: ("owner" | "editor")[]; label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean }
-- `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: ("owner" | "editor")[]; collapsed?: boolean }
+- `NavLayoutEntry`: { roles?: string[]; label: string; icon: "anchor" | "banknote" | "bell" | "calendar" | "clipboard-list" | "file-pen" | "files" | "graduation-cap" | "image" | "inbox" | "key-round" | "life-buoy" | "list" | "list-ordered" | "mail" | "megaphone" | "menu" | "package" | "puzzle" | "send" | "settings" | "shield-check" | "table" | "tags" | "users" | "users-round" | "wrench"; href: string; ownerOnly?: boolean }
+- `NavLayoutSection`: { label: string; children: (NavLayoutEntry | NavLayoutEngineRef)[]; roles?: string[]; collapsed?: boolean }
 - `NavLoadData`: { menu: { name: string; label: string; maxDepth: number }; tree: NavNode[]; pages: NavPageOption[]; saved: boolean; error: string | null }
 - `NavPageOption`: { label: string; url: string }
 - `PlatformContext`: { env?: Env }

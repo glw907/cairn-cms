@@ -6,8 +6,8 @@ export { expectRedirect, expectHttpError } from '../_redirect-assertions.js';
 
 /**
  * Insert an editor row directly. The editor table is the allowlist, so a row is "may sign in".
- * `role` is a plain string (not the typed `Role`): migration 0001 dropped the column's CHECK
- * constraint, so a fixture can seed any vocabulary-shaped role name a test needs.
+ * `role` is open (`string`): migration 0001 dropped the column's CHECK constraint, so a fixture
+ * can seed any vocabulary-shaped role name a test needs.
  */
 export async function seedEditor(email: string, displayName: string, role: string, now = Date.now()): Promise<void> {
   await env.AUTH_DB.prepare(

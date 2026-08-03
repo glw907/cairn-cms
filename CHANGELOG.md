@@ -91,6 +91,24 @@
   augmentation that duplicates the old field names (rather than importing
   `@glw907/cairn-cms/ambient`) needs the same rename.
 
+- Every role-*name* position (`Editor.role`, `EditorRow.role`, `insertEditor`'s and
+  `setEditorRole`'s `role` parameters, `AccessMap`'s values, `NavLayoutEntry.roles`,
+  `NavLayoutSection.roles`, `AdminShellData.user.role`) widens from the implicit `'owner' |
+  'editor'` union to `string` / `string[]`: role names are open (a site names its own vocabulary
+  with `defineRoles`), and the literal union was a type lie the moment a site declared a role like
+  `webmaster`. `Capability` (`'owner' | 'editor' | 'none'`) is unchanged and stays the one closed
+  role-shaped union, since that vocabulary is genuinely fixed. The `Role` export (root barrel and
+  `/auth-store`) is removed, along with the now-dead `CairnRolesRegister` registry interface it
+  existed solely to narrow: with `Role` gone, no code anywhere declares the augmentation, so it
+  carried no remaining read-side to serve. `editors-routes.ts`'s two `role as Role` casts, forced
+  by the old narrow union, are now plain assignments. See
+  [Core](docs/reference/core.md#roles) and [Auth store](docs/reference/auth-store.md).
+  **Consumers must:** drop any imported `Role` type (root barrel or `/auth-store`) and use
+  `string` in its place; drop any `interface CairnRolesRegister { roles: typeof roles }`
+  augmentation from `app.d.ts`, since it no longer narrows anything; a hand-built `AccessMap`,
+  `NavLayoutEntry`/`NavLayoutSection.roles`, or `Editor`/`EditorRow` fixture that cast a custom
+  role name to `Role` drops the cast.
+
 - The root `package.json` now declares `"engines": { "node": ">=22" }`, giving npm's own install
   check the Node floor the tutorial has always stated. This is a build-toolchain floor, not a
   runtime claim (the runtime is workerd, never Node); npm's own `EBADENGINE` is a warning that

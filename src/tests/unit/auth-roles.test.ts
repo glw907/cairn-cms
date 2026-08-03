@@ -6,7 +6,7 @@ import {
   ownerLevelRoles,
   DEFAULT_ROLES,
 } from '../../lib/auth/roles.js';
-import type { Role, Editor } from '../../lib/auth/types.js';
+import type { Editor } from '../../lib/auth/types.js';
 
 describe('defineRoles validation', () => {
   it('returns the vocabulary unchanged for a valid declaration', () => {
@@ -118,16 +118,8 @@ describe('ownerLevelRoles', () => {
   });
 });
 
-describe('Role and Editor types', () => {
-  it('pins the unaugmented Role to the owner/editor default', () => {
-    // The live, unaugmented registry keeps today's union exactly, so zero-config sites are unchanged.
-    expectTypeOf<Role>().toEqualTypeOf<'owner' | 'editor'>();
-  });
-
-  it('pins the augmented narrowing: defineRoles const-captures the declared names', () => {
-    // The registry-augmented branch of `Role` reads `keyof CairnRolesRegister['roles']`; a global
-    // module augmentation cannot be tested alongside the default in one program, so this pins the
-    // substrate the augmented branch consumes: `defineRoles` preserves the literal key set.
+describe('role vocabulary and Editor types', () => {
+  it('pins defineRoles: it const-captures the declared literal key set', () => {
     const asc = defineRoles({
       owner: 'owner',
       'club-admin': 'editor',
@@ -136,8 +128,9 @@ describe('Role and Editor types', () => {
     expectTypeOf<Extract<keyof typeof asc, string>>().toEqualTypeOf<'owner' | 'club-admin' | 'instructor'>();
   });
 
-  it('carries capability alongside role on Editor', () => {
+  it('carries capability alongside an open (string) role on Editor', () => {
     expectTypeOf<Editor>().toHaveProperty('capability');
+    expectTypeOf<Editor['role']>().toEqualTypeOf<string>();
     const ed: Editor = { email: 'e@x.test', displayName: 'E', role: 'owner', capability: 'owner' };
     expect(ed.capability).toBe('owner');
   });

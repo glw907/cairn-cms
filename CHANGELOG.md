@@ -134,6 +134,15 @@ removal, nothing this list needs to carry.
   [Delivery data](docs/reference/delivery-data.md#types). Consumers must: nothing; every addition
   is a new named export with no renamed or removed symbol.
 
+- Five new refusal-shape exports on `./sveltekit` (pass C2b, the refusal-channel convergence),
+  one per action the pass moved off the query channel onto `fail()`: `CreateFailure` (a refused
+  create), `NavSaveFailure`, `SettingsSaveFailure`, and `VocabularySaveFailure` (a refused nav,
+  settings, or vocabulary save), and `MediaUploadFailure` (a refused upload, including the Media
+  Library's own direct-commit conflict bounce). Each is the bare `{ error: string }` one-line
+  summary the engine's other single-field refusals already use. See
+  [SvelteKit](docs/reference/sveltekit.md#createcontentroutes). Consumers must: nothing; every
+  addition is a new named export.
+
 ### Changed
 
 - The env-genericity sweep audited every exported event and config type pinned to `AuthEnv`
@@ -369,6 +378,62 @@ removal, nothing this list needs to carry.
   concrete request path to the bracket-form route id, or the helper fails closed and refuses
   every session, including owner. A static route's id and path are the same string, so a site
   with no parameterized or catch-all `requireAccess` route sees no change.
+
+- The admin refusal channel converges on `fail()` (pass C2b, the refusal-channel convergence, R10
+  ruling): every content, media, settings, vocabulary, and nav action's own validation and
+  commit-conflict refusal now answers `fail(...)` in place, keeping the editor on the page with the
+  submitted body intact, rather than throwing a redirect that discarded it. The shared
+  `commitFailure` helper (reached from every read-modify-commit action) stops throwing and returns
+  its caller's own typed `ActionFailure` instead. `settingsSaveAction` widens from
+  `Promise<never>` to `Promise<ActionFailure<SettingsSaveFailure>>`, and `vocabularySaveAction`,
+  `navSaveAction`, and `createAction` widen the same way to their own new failure type
+  (`VocabularySaveFailure`, `NavSaveFailure`, `CreateFailure`). `NavTree`, `CairnTidySettings`, and
+  `VocabularyAdmin` now receive `form` from the shell, the same way `ManageEditors` always has, so
+  their conflict and validation refusals render. Every same-route save-validation bounce on the
+  edit and list screens converts the same way; `ConceptList` and `EditPage` already received
+  `form`, so no shell wiring was needed there. See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels) and
+  [`createContentRoutes`](docs/reference/sveltekit.md#createcontentroutes). **Consumers must:**
+  update the return-type annotation of any hand-duplicated wrapper around `settingsSaveAction`,
+  `vocabularySaveAction`, `navSaveAction`, or `createAction` that assumed `Promise<never>`. A site
+  that renders these built-in screens through `createCairnAdmin` or `createContentRoutes` /
+  `createNavRoutes` directly, with no such wrapper, sees no change beyond the behavior note below.
+
+- The admin facade's `viewAction` wrapper drops its `scriptPosted` branch (pass C2b, R10 ruling):
+  every action's own unexpected failure now answers `fail(500, { error })` in place, form-posted or
+  script-posted alike, instead of a form-posted action redirecting while a script-posted one (tidy,
+  a dictionary word, an upload) got the `fail()` treatment already. The `scriptPosted` and
+  `carriesNewFlag` facade options, and the request clone that supported reconstructing a dropped
+  `new=1` flag on the redirect path, are removed; they had no other reader. Because this arm is
+  shared, the facade's `confirm`, `logout`, `discard`, and `publishAll` actions each widen their
+  own call-site return annotation to include `ActionFailure<{ error: string }>` alongside the
+  `never` their underlying delegate still declares (each delegate only ever throws on its own
+  deliberate success or expected-refusal path; the wrapper is what can now also return): a failed
+  discard, sign-in confirm, logout, or publish-all answers in place with the same calm retry copy
+  instead of navigating away on an unexpected failure. See
+  [Refusal channels](docs/reference/sveltekit.md#refusal-channels). Consumers must: nothing;
+  `scriptPosted` and `carriesNewFlag` were never public, since `viewAction` is internal to the
+  facade, and the behavior change touches only an unexpected-failure path, not a deliberate
+  success or a validated refusal.
+
+- Every refusal that genuinely navigates (three survive: an expired sign-in link, publish-all's two
+  outcomes, and the `/admin` landing relay that forwards one onward) now carries a bounded internal
+  `RefusalCode` on `?error=` instead of a redirect target's own free-form string, resolved
+  server-side against a small closed vocabulary that drops any value it doesn't recognize (pass
+  C2b, R10 ruling; this closes a link-crafting surface documented in [the security
+  model](docs/explanation/security-model.md#who-may-edit)). `RefusalCode` stays internal to the
+  engine; no exported signature names it, so `ListData.formError`, `LoginData.error`, and
+  `ConfirmData.error` keep their existing `string | null` type. Six other `?error=` readers now sit
+  orphaned, since the redirect that used to fill them converted to `fail()` earlier in this pass,
+  and are removed outright along with their data field: `EditData.error`, `EditorsData.error`,
+  `NavLoadData.error`, `SettingsData.error`, `VocabularyLoadData.error`, and
+  `MediaLibraryData.flashError`. See [Refusal
+  channels](docs/reference/sveltekit.md#refusal-channels). **Consumers must:** drop any read of
+  `EditData.error`, `EditorsData.error`, `NavLoadData.error`, `SettingsData.error`,
+  `VocabularyLoadData.error`, or `MediaLibraryData.flashError`; each field is gone, not renamed,
+  since its own producing refusal now answers through `fail()` instead of a redirect that carried
+  it. A site that never read one of these fields directly (the common case, since cairn's own
+  components already handled them) sees no change.
 
 - The log-event vocabulary settles on one grammar (`area[.subject].verb_phrase`, past-tense for an
   occurrence or a state adjective for a detected condition) and every `reason`/`scope` value goes

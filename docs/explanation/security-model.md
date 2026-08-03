@@ -54,6 +54,16 @@ the auth database binding is missing, rather than rendering a login form that ca
 Every response the guard lets through carries a baseline of hardening headers regardless: no
 framing, no sniffing, no referrer, HSTS.
 
+A crafted `?error=` link is inert. Every admin load that can receive an `?error=` value resolves
+it against a small internal vocabulary before it ever reaches a component, and drops anything it
+doesn't recognize; no admin screen puts the raw query string in front of an editor, whether in a
+plain alert or an `aria-live` region a screen reader announces immediately. This closes a
+link-crafting surface: eight loads used to read `?error=` and render its value verbatim inside a
+branded alert, so a link carrying an arbitrary sentence in the query string could put
+attacker-chosen text inside the CMS's own voice, on a page the editor already trusts. The login
+and confirm pages carry the two remaining raw `?error=` reads; both treat the value as a boolean
+flag, showing or hiding one fixed, engine-authored sentence, never the query value itself.
+
 **Residual risk.** The email account is now the credential. Anyone who reads an editor's inbox
 in the ten minutes after a request can claim their session, which is the trade every magic-link
 system makes in exchange for never asking a non-technical editor to manage a password.

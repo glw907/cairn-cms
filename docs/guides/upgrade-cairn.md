@@ -355,6 +355,50 @@ step described for `createSectionAction` in the preceding entry, or the helper f
 refuses every session, including owner. A static route's id and path are the same string, so a
 site with no parameterized or catch-all `requireAccess` route needs no change.
 
+The admin refusal channel converges on `fail()`: every built-in content, media, settings,
+vocabulary, and nav action's own validation and commit-conflict refusal now answers `fail(...)`
+in place, keeping your submitted body on the page, instead of throwing a redirect that discarded
+it. `settingsSaveAction`, `vocabularySaveAction`, `navSaveAction`, and `createAction` each widen
+from `Promise<never>` to `Promise<ActionFailure<T>>` (`SettingsSaveFailure`,
+`VocabularySaveFailure`, `NavSaveFailure`, and `CreateFailure` respectively). If you mount these
+route-factory members yourself, through `createContentRoutes` or `createNavRoutes` rather than
+the single-mount `createCairnAdmin` facade, and you hand-annotated one of their return types as
+`Promise<never>`, widen it to match. If you mount through the facade, or through these factories
+with no such annotation, you see no change beyond the new failure shapes reaching your own `form`
+prop, the same way `saveAction`'s `SaveFailure` already does. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels).
+
+**Consumers must:** update any hand-annotated `Promise<never>` return type on
+`settingsSaveAction`, `vocabularySaveAction`, `navSaveAction`, or `createAction`. Nothing else
+here needs a code change.
+
+The facade's `viewAction` wrapper drops its `scriptPosted` branch: every action's own unexpected
+failure, whether the request came from a form post or a `fetch` call, now answers `fail(500, {
+error })` in place instead of a form-posted action redirecting away. A failed discard, sign-in
+confirm, logout, or publish-all now shows the same calm retry message on the page instead of
+bouncing you elsewhere when something unexpected goes wrong; a validated refusal or a deliberate
+success on any of these four is unchanged. The `scriptPosted` and `carriesNewFlag` facade options
+are gone, but neither was ever public. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels).
+
+Consumers must: nothing. `viewAction` is internal to the facade, and the behavior change only
+touches an unexpected-failure path.
+
+Every refusal that genuinely navigates now carries a bounded internal code on `?error=` instead of a
+free-form string, resolved server-side against a small closed vocabulary; an unrecognized value
+resolves to nothing. Only three refusals still navigate at all (an expired sign-in link,
+publish-all's two outcomes) plus the `/admin` landing relay that forwards one of those two
+onward, so six other `?error=` readers and the data field each one filled are removed outright:
+`EditData.error`, `EditorsData.error`, `NavLoadData.error`, `SettingsData.error`,
+`VocabularyLoadData.error`, and `MediaLibraryData.flashError`. See [Refusal
+channels](../reference/sveltekit.md#refusal-channels) and [the security
+model](../explanation/security-model.md#who-may-edit).
+
+**Consumers must:** drop any read of `EditData.error`, `EditorsData.error`, `NavLoadData.error`,
+`SettingsData.error`, `VocabularyLoadData.error`, or `MediaLibraryData.flashError` in your own
+code; each field is gone outright. If you never read one of these fields directly, the common
+case since cairn's own components already handled them, you see no change.
+
 `TidyResult.usage` renames to `TidyResult.tokens`. The name collided with
 `MediaDeleteRefusal.usage` (the where-used rows a refused media delete carries) inside
 SvelteKit's generated `ActionData` union for the admin route, once every content action carried a

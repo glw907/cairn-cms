@@ -316,8 +316,9 @@ export const load = (event) => {
 
 ### Refusal channels
 
-The admin action surface refuses a request through one of two developer-facing shapes, depending
-on which helper does the refusing.
+The admin action surface refuses a request through one of three developer-facing shapes,
+depending on which helper does the refusing and whether the refusal can answer the very request
+that raised it.
 
 `requireOwner`, `requireEditor`, and `requireAccess` all perform authorization: a signed-in session
 either carries the required role or capability, or the call throws. `requireSession` and
@@ -331,12 +332,19 @@ recognizes both as its native thrown shapes and renders the correct status throu
 `+error.svelte`, or follows the redirect, with no site code required to translate either one, and
 no `handleError` mapping to write.
 
+`fail()` is the default for every refusal that answers the request that raised it, and it is
+carried by a precise `ActionFailure<T>` typed to the failing screen's own shape (`SaveFailure`,
+`DeleteRefusal`, `CreateFailure`, `NavSaveFailure`, and the rest documented against
+[`createContentRoutes`](#createcontentroutes) below), never a bare `ActionFailure<unknown>`. Every
+built-in content, media, settings, vocabulary, and nav action's own validation and commit-conflict
+refusal answers this way, and so does
 [`createSectionAction`](#createsectionaction)'s own authorization, rate-limit, and
-database-binding branches return SvelteKit's `fail(...)`, an `ActionFailure`, never a throw. The
-result renders as inline form state on the page that submitted it, the same shape a validation
-reject produces.
+database-binding branches. The result renders as inline form state on the page that submitted it:
+the editor's unsaved input survives in the returned payload, and nothing navigates away. A site's
+own custom action should reach for the same shape, through `createSectionAction` or a hand-rolled
+`fail(...)`, rather than a throw, for a refusal its own route can answer in place.
 
-This split is deliberate, not an inconsistency to converge:
+This split from the two throwing helpers above is deliberate, not an inconsistency to converge:
 
 > One security finding was deliberately not adopted: throwing for the 403/500 branches. `fail(...)`
 > is kept (type-verified, ASC-proven form UX), and the exposure it worried about closes by requiring
@@ -356,16 +364,26 @@ export const handleError: HandleServerError = ({ error }) => {
 
 Nothing in this reference requires a site to define one.
 
-Two further channels exist inside the engine and are never written by a site directly. The
-built-in content actions redirect on failure (`redirect(303, '/admin/<concept>?error=...')`), the
-same native shape `requireSession`'s session gate uses. And [`createAuthGuard`](#createauthguard)
-itself refuses at the `Handle`, before any route's own load or action runs, returning a raw,
-branded `Response` for a CSRF, origin, HTTPS, missing-binding, or dev-backend-in-production
-failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a deployed runtime, so a
-build that leaked its dev fixture fails loud rather than serving it). This last channel is why
-`adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal already
-covers every unsafe POST under `/admin/**` whose content type is one of the three a browser can
-send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
+A small, closed set of refusals can't answer in place, because the request that surfaces them
+didn't originate on the page the refusal concerns: an expired or already-consumed sign-in link
+(the confirm page bounces to the login page), publish-all's outcome (posted from the topbar on any
+screen, so it always lands on the first concept list the session can reach rather than where it
+was raised), and the `/admin` landing relay forwarding an arriving code on to the route it
+redirects to. These three, and only these three, carry a bounded internal code on `?error=`,
+resolved server-side against a small closed vocabulary and rendered as fixed engine copy; an
+unrecognized value resolves to nothing, so a crafted query string carries no meaning past the
+resolver. No site code ever writes or reads a code directly. The login and confirm pages, and
+`listLoad`'s own publish-all outcome banner, treat the resolved value as a boolean flag: a fixed,
+engine-authored sentence shows or doesn't, never the query value itself.
+
+One further channel exists inside the engine and is never written by a site directly:
+[`createAuthGuard`](#createauthguard) itself refuses at the `Handle`, before any route's own load
+or action runs, returning a raw, branded `Response` for a CSRF, origin, HTTPS, missing-binding, or
+dev-backend-in-production failure (the last, a 503, refuses when `CAIRN_DEV_BACKEND` is set in a
+deployed runtime, so a build that leaked its dev fixture fails loud rather than serving it). This
+channel is why `adminAction`'s own CSRF check is defense-in-depth: the guard's pre-routing refusal
+already covers every unsafe POST under `/admin/**` whose content type is one of the three a
+browser can send cross-origin with no CORS preflight (`application/x-www-form-urlencoded`,
 `multipart/form-data`, `text/plain`), not literally every unsafe POST; a JSON POST is not
 screened by this check. That is not a gap in practice: those three are exactly the content types
 a browser can forge cross-origin without a preflight the site never answers, and SvelteKit itself

@@ -87,13 +87,15 @@ release-one boundary; the passes are invariant.
 
 - **In flight:** both ASC seams passes have landed. Pass one shipped as `0.93.0`; pass two (the
   `./cloudflare` subpath and the packaged D1 audit sink, additive) is done and holds unpublished.
-- **Phase C, settle the contract:** C1 the seam-shape pass is done and holds unpublished (the
+- **Phase C, settle the contract: done, holds unpublished.** C1 the seam-shape pass (the
   `check-reference-signatures.mjs` `| undefined` fix, the env-genericity sweep, the function-color
   and refusal-channel rulings, and the toolchain matrix); C2 the naming pass (a Fable sitting over
   `api-surface.md` settled the rename set and the `locals` policy, then one execution pass landed
   every rename in one diff, one `Consumers must:` list — the only genuinely breaking pass in the
-  series) is done and holds unpublished, its one behavioral task (the refusal-channel convergence,
-  R10) split out as **C2b** on its own worktree, in the same unpublished window.
+  series); **C2b**, cut out of C2 mid-execution under its pre-approved contingency split, converged
+  every content-action refusal onto `fail()` with a precise `ActionFailure<T>` (R10) and closed the
+  `requireAccess`/`createSectionAction` target-derivation asymmetry C2's post-mortem flagged. All
+  three land in the same unpublished window.
 - **Phase F, the core features:** F1 the history/revert design sitting; F2 the history view
   pass; F3 the revert pass (the sitting may merge F2/F3); F4 the preview design sitting; F5 the
   preview pass.
